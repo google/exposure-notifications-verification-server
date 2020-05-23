@@ -19,7 +19,7 @@ Then
 1. go run ./cmd/server
 2. visit http://localhost:8080
 3. Configure and issue a pin (keep the server running)
-4. go run ./cmd/client -pin <pin you got>
+4. go run `./cmd/client -pin ISSUEDPIN`
 5. Visit https://jwt.io
 6. Copy the validation payload into the left side
 7. Get the public key from KMS and copy to the right if you want to verify sig.
