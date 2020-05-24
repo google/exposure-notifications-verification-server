@@ -28,7 +28,10 @@ func templateDir() string {
 
 func main() {
 	// Needs better configuration
-	signingKey := "projects/tek-demo-server/locations/us/keyRings/signing/cryptoKeys/teksigning/cryptoKeyVersions/1"
+	signingKey := os.Getenv("SIGNING_KEY")
+	if signingKey == "" {
+		log.Fatalf("Must set env variable `SIGNING_KEY` with reference to GCP KMS Key Version to us.")
+	}
 
 	router := gin.Default()
 	router.LoadHTMLGlob(templateDir() + "/*")

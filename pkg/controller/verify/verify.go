@@ -76,7 +76,7 @@ func (vapi *VerifyAPI) Execute(c *gin.Context) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 
-	signer, err := vapi.signer.NewSigner(ctx, "projects/tek-demo-server/locations/us/keyRings/signing/cryptoKeys/teksigning/cryptoKeyVersions/1")
+	signer, err := vapi.signer.NewSigner(ctx, vapi.key)
 	if err != nil {
 		response.Error = fmt.Sprintf("unable to connect to key management service: %v", err)
 		c.JSON(http.StatusInternalServerError, response)
