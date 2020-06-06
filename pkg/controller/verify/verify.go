@@ -27,10 +27,10 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/mikehelmick/tek-verification-server/pkg/api"
-	"github.com/mikehelmick/tek-verification-server/pkg/controller"
-	"github.com/mikehelmick/tek-verification-server/pkg/database"
-	"github.com/mikehelmick/tek-verification-server/pkg/signer"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 )
 
 type VerifyAPI struct {

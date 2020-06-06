@@ -21,8 +21,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mikehelmick/tek-verification-server/pkg/api"
-	"github.com/mikehelmick/tek-verification-server/pkg/jsonclient"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
 )
 
 func main() {

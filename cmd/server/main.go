@@ -21,15 +21,15 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mikehelmick/tek-verification-server/pkg/controller/issue"
-	"github.com/mikehelmick/tek-verification-server/pkg/controller/issueapi"
-	"github.com/mikehelmick/tek-verification-server/pkg/controller/verify"
-	"github.com/mikehelmick/tek-verification-server/pkg/database"
-	"github.com/mikehelmick/tek-verification-server/pkg/signer"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issue"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/verify"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
 	// Automagically register concrete implementations.
-	_ "github.com/mikehelmick/tek-verification-server/pkg/gcpkms"
-	_ "github.com/mikehelmick/tek-verification-server/pkg/inmemory"
+	_ "github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
+	_ "github.com/google/exposure-notifications-verification-server/pkg/inmemory"
 )
 
 func templateDir() string {
