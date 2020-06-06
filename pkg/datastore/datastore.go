@@ -20,7 +20,7 @@ import (
 	"time"
 
 	gcpdatastore "cloud.google.com/go/datastore"
-	"github.com/mikehelmick/tek-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func init() {
@@ -45,4 +45,8 @@ func (d *Datastore) InsertPIN(pin string, risks []database.TransmissionRisk, add
 
 func (d *Datastore) RetrievePIN(pin string) (database.IssuedPIN, error) {
 	return nil, nil
+}
+
+func (d *Datastore) MarkPINClaimed(pin string) error {
+	return nil
 }

@@ -1,4 +1,4 @@
-module github.com/mikehelmick/tek-verification-server
+module github.com/google/exposure-notifications-verification-server
 
 go 1.14
 

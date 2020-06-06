@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mikehelmick/tek-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func init() {

@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/mikehelmick/tek-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 type IssuePINRequest struct {

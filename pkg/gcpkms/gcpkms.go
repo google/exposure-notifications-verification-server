@@ -19,7 +19,7 @@ import (
 	"crypto"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	"github.com/mikehelmick/tek-verification-server/pkg/signer"
+	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 	"github.com/sethvargo/go-gcpkms/pkg/gcpkms"
 )
 
