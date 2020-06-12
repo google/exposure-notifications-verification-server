@@ -38,7 +38,15 @@ func New(ctx context.Context) (database.Database, error) {
 	}, nil
 }
 
-func (d *InMemoryDB) InsertPIN(pin string, risks []database.TransmissionRisk, addClaims map[string]string, duration time.Duration) (database.IssuedPIN, error) {
+func (d *InMemoryDB) UpdateRevokeCheck(ctx context.Context, u database.User) error {
+	return fmt.Errorf("UpdateRevokeCheck not implemented")
+}
+
+func (d *InMemoryDB) LookupUser(ctx context.Context, email string) (database.User, error) {
+	return nil, fmt.Errorf("LookupUser not implemented")
+}
+
+func (d *InMemoryDB) InsertPIN(ctx context.Context, pin string, risks []database.TransmissionRisk, addClaims map[string]string, duration time.Duration) (database.IssuedPIN, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -60,7 +68,7 @@ func (d *InMemoryDB) InsertPIN(pin string, risks []database.TransmissionRisk, ad
 	return record, nil
 }
 
-func (d *InMemoryDB) RetrievePIN(pin string) (database.IssuedPIN, error) {
+func (d *InMemoryDB) RetrievePIN(ctx context.Context, pin string) (database.IssuedPIN, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -71,7 +79,7 @@ func (d *InMemoryDB) RetrievePIN(pin string) (database.IssuedPIN, error) {
 	return record, nil
 }
 
-func (d *InMemoryDB) MarkPINClaimed(pin string) error {
+func (d *InMemoryDB) MarkPINClaimed(ctx context.Context, pin string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 

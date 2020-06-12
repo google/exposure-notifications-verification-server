@@ -25,6 +25,9 @@ type NewKeyManagerFunc func(context.Context) (KeyManager, error)
 
 type KeyManager interface {
 	NewSigner(ctx context.Context, keyID string) (crypto.Signer, error)
+
+	Encrypt(ctx context.Context, keyID string, cleartext []byte) ([]byte, error)
+	Decrypt(ctx context.Context, keyID string, ciphertext []byte) ([]byte, error)
 }
 
 var (

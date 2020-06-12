@@ -37,9 +37,12 @@ type IssuedPIN interface {
 type NewDBFunc func(context.Context) (Database, error)
 
 type Database interface {
-	InsertPIN(pin string, risks []TransmissionRisk, addClaims map[string]string, duration time.Duration) (IssuedPIN, error)
-	RetrievePIN(pin string) (IssuedPIN, error)
-	MarkPINClaimed(pin string) error
+	InsertPIN(ctx context.Context, pin string, risks []TransmissionRisk, addClaims map[string]string, duration time.Duration) (IssuedPIN, error)
+	RetrievePIN(ctx context.Context, pin string) (IssuedPIN, error)
+	MarkPINClaimed(ctx context.Context, pin string) error
+
+	UpdateRevokeCheck(ctx context.Context, u User) error
+	LookupUser(ctx context.Context, email string) (User, error)
 }
 
 var (

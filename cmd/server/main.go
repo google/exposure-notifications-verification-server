@@ -17,53 +17,56 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issue"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/verify"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
 	// Automagically register concrete implementations.
+	_ "github.com/google/exposure-notifications-verification-server/pkg/datastore"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
-	_ "github.com/google/exposure-notifications-verification-server/pkg/inmemory"
 )
 
-func templateDir() string {
-	koPath := os.Getenv("KO_DATA_PATH")
-	if koPath == "" {
-		koPath = "./cmd/server/kodata"
-	}
-	return koPath
-}
-
 func main() {
-	// Needs better configuration
-	signingKey := os.Getenv("SIGNING_KEY")
-	if signingKey == "" {
-		log.Fatalf("Must set env variable `SIGNING_KEY` with reference to GCP KMS Key Version to us.")
+	ctx := context.Background()
+	config, err := config.New(ctx)
+	if err != nil {
+		log.Fatalf("config error: %v", err)
 	}
 
 	router := gin.Default()
-	router.LoadHTMLGlob(templateDir() + "/*")
+	router.LoadHTMLGlob(config.KoDataPath + "/*")
 
-	ctx := context.Background()
 	db, err := database.NewDefault(ctx)
 	if err != nil {
 		log.Fatalf("no database: %v", err)
 	}
-	signer, err := signer.NewDefault(ctx)
-	if err != nil {
-		log.Fatalf("no key manager: %v", err)
-	}
+	//signer, err := signer.NewDefault(ctx)
+	//if err != nil {
+	//	log.Fatalf("no key manager: %v", err)
+	//}
 
-	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index", gin.H{})
-	})
+	sessions := controller.NewSessionHelper(config, db)
 
+	// Handlers for landing, signin, signout.
+	indexController := index.New(config)
+	router.GET("/", indexController.Execute)
+	signoutController := signout.New(config, db, sessions)
+	router.GET("/signout", signoutController.Execute)
+	sessionController := session.New(ctx, config, db, sessions)
+	router.POST("/session", sessionController.Execute)
+
+	homeController := home.New(ctx, config, db, sessions)
+	router.GET("/home", homeController.Execute)
+
+	/* Temporarily disable the OTP issuance and verification piece.
+	   Focusing on hooking up authn/authz.
 	issueController := issue.New("http://localhost:8080")
 	router.POST("/issue", issueController.Execute)
 
@@ -72,6 +75,7 @@ func main() {
 
 	verifyAPIController := verify.New(db, signer, signingKey)
 	router.POST("/api/verify", verifyAPIController.Execute)
+	*/
 
-	router.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	router.Run()
 }

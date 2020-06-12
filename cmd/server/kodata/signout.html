@@ -1,0 +1,39 @@
+{{define "signout"}}
+<html>
+<head>
+  <title>Signout</title>
+
+  {{template "firebase" .}}
+
+  <script type="text/javascript">
+	window.addEventListener('load', function() {
+		firebase.auth().signOut().then(function() {
+			document.getElementById('signout').textContent = 'You have been successfully logged out';
+		}).catch(function(error) {
+			document.getElementById('signout').textContent = 'Error signing out, close browser window.';
+		});
+  });
+  </script>
+</head>
+
+<body class="bg-light">
+  <div class="container">
+    <div class="row">
+      <div class="py-5 text-center">
+        <h2>Signout</h2>
+      </div>
+    </div>
+
+	  <div class="row">
+		  <div class="col">
+			  <div id="firebaseui-auth-container">
+				  <h2 id="signout">signing out...</h2>
+          {{if .reason}}<h3>You have been signed out for the following reason: <strong>{{.reason}}</strong></h3>{{end}}
+          <h4><a href="/">Sign in again</a></h4>
+			  </div>
+		  </div>
+	   </div>
+  </div>
+</body>
+</html>
+{{end}}

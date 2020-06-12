@@ -86,7 +86,7 @@ func (vapi *VerifyAPI) Execute(c *gin.Context) {
 	claims.SignedMAC = request.ExposureKeyMAC
 	claims.StandardClaims.Audience = "gov.exposure-notifications-server"
 	claims.StandardClaims.Issuer = "Public Health Gov"
-	claims.StandardClaims.ExpiresAt = time.Now().UTC().Add(-5 * time.Minute).Unix()
+	claims.StandardClaims.ExpiresAt = time.Now().UTC().Add(5 * time.Minute).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 

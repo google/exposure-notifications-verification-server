@@ -46,3 +46,12 @@ func (g *GCPKeyManager) NewSigner(ctx context.Context, keyID string) (crypto.Sig
 	}
 	return signer, nil
 }
+
+func (g *GCPKeyManager) Encrypt(ctx context.Context, keyID string, plaintext []byte) ([]byte, error) {
+
+	return nil, nil
+}
+
+func (g *GCPKeyManager) Decrypt(ctx context.Context, keyID string, ciphertext []byte) ([]byte, error) {
+	return nil, nil
+}

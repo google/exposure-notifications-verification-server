@@ -1,0 +1,47 @@
+{{define "home"}}
+<html>
+<head>
+  <title>Verification Server Home</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+  <style>
+  .container {
+    max-width: 960px;
+  }
+
+  .border-top { border-top: 1px solid #e5e5e5; }
+  .border-bottom { border-bottom: 1px solid #e5e5e5; }
+  .border-top-gray { border-top-color: #adb5bd; }
+
+  .box-shadow { box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05); }
+
+  .lh-condensed { line-height: 1.25; }
+  </style>
+</head>
+
+<body class="bg-light">
+
+
+<div class="container">
+ <div class="row">
+  <div class="py-5 text-center">
+    <h2>Welcome Home.</h2>
+    <a href="/signout">Sign me out!</a>
+  </div>
+ </div>
+
+ <div class="row">
+  <div class="py-12 text-left">
+    <ul>
+     <li>email: {{.user.Email}}</li>
+		 <li>{{if .user.Admin}}ADMIN{{else}}not an admin{{end}}</li>
+		 <li>Last revoke check: {{.user.LastRevokeCheck}}</li>
+		</ul>
+  </div>
+ </div>
+</div>
+
+</body>
+</html>
+
+{{end}}
