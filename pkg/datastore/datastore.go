@@ -23,6 +23,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
+const (
+	userKind = "user"
+)
+
 func init() {
 	database.RegisterDatabase("datastore", New)
 }
@@ -39,14 +43,29 @@ func New(ctx context.Context) (database.Database, error) {
 	return &Datastore{client}, nil
 }
 
-func (d *Datastore) InsertPIN(pin string, risks []database.TransmissionRisk, addClaims map[string]string, duration time.Duration) (database.IssuedPIN, error) {
+func (d *Datastore) InsertPIN(ctx context.Context, pin string, risks []database.TransmissionRisk, addClaims map[string]string, duration time.Duration) (database.IssuedPIN, error) {
 	return nil, nil
 }
 
-func (d *Datastore) RetrievePIN(pin string) (database.IssuedPIN, error) {
+func (d *Datastore) RetrievePIN(ctx context.Context, pin string) (database.IssuedPIN, error) {
 	return nil, nil
 }
 
-func (d *Datastore) MarkPINClaimed(pin string) error {
+func (d *Datastore) MarkPINClaimed(ctx context.Context, pin string) error {
+	return nil
+}
+
+func (d *Datastore) LookupUser(ctx context.Context, email string) (database.User, error) {
+	// TODO(mikehelmick) - user lookup should be put through the write thru cache.
+	k := gcpdatastore.NameKey(userKind, email, nil)
+	var entity internalUser
+	if err := d.client.Get(ctx, k, &entity); err != nil {
+		return nil, fmt.Errorf("lookup user datastore.get: %w", err)
+	}
+
+	return entity.toUser(), nil
+}
+
+func (d *Datastore) UpdateRevokeCheck(ctx context.Context, u database.User) error {
 	return nil
 }
