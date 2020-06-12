@@ -34,7 +34,7 @@ type homeController struct {
 	logger  *zap.SugaredLogger
 }
 
-// New creates a new controlelr for the home page.
+// New creates a new controller for the home page.
 func New(ctx context.Context, config *config.Config, db database.Database, session *controller.SessionHelper) controller.Controller {
 	return &homeController{config, db, session, logging.FromContext(ctx)}
 }

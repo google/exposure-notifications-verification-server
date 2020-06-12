@@ -57,8 +57,8 @@ func main() {
 	// Handlers for landing, signin, signout.
 	indexController := index.New(config)
 	router.GET("/", indexController.Execute)
-	signoutControlelr := signout.New(config, db, sessions)
-	router.GET("/signout", signoutControlelr.Execute)
+	signoutController := signout.New(config, db, sessions)
+	router.GET("/signout", signoutController.Execute)
 	sessionController := session.New(ctx, config, db, sessions)
 	router.POST("/session", sessionController.Execute)
 

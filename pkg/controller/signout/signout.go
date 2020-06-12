@@ -30,8 +30,7 @@ type signoutController struct {
 	session *controller.SessionHelper
 }
 
-// New creates a new signout controller that clears the sesion cookie and says
-// nice things to the user.
+// New creates a new signout controller. When run, clears the session cookie.
 func New(config *config.Config, db database.Database, session *controller.SessionHelper) controller.Controller {
 	return &signoutController{config, db, session}
 }

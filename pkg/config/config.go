@@ -32,7 +32,7 @@ func New(ctx context.Context) (*Config, error) {
 		return nil, err
 	}
 
-	// Some fun special one-offs.
+	// For the, when inserting into the javascript, gets escaped and becomes unusable.
 	config.Firebase.DatabaseURL = strings.ReplaceAll(config.Firebase.DatabaseURL, "https://", "")
 
 	return &config, nil

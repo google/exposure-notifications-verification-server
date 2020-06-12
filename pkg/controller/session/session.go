@@ -82,7 +82,7 @@ func (ic *sessionController) Execute(c *gin.Context) {
 
 	user, err := ic.db.LookupUser(ctx, email.(string))
 	if err != nil {
-		c.Redirect(http.StatusTemporaryRedirect, "/signout?reason=unathorized")
+		c.Redirect(http.StatusTemporaryRedirect, "/signout?reason=unauthorized")
 		return
 	}
 	if user.Disabled() {
