@@ -17,14 +17,15 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
-	"github.com/gin-gonic/gin"
-
 	firebase "firebase.google.com/go"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 var (
@@ -33,11 +34,11 @@ var (
 )
 
 type SessionHelper struct {
-	db     database.Database
+	db     *database.Database
 	config *config.Config
 }
 
-func NewSessionHelper(config *config.Config, db database.Database) *SessionHelper {
+func NewSessionHelper(config *config.Config, db *database.Database) *SessionHelper {
 	return &SessionHelper{db, config}
 }
 
@@ -49,7 +50,16 @@ func (s *SessionHelper) DestroySession(c *gin.Context) {
 	c.SetCookie("session", "deleted", 0, "/", "", false, false)
 }
 
-func (s *SessionHelper) LoadUserFromSession(c *gin.Context) (database.User, error) {
+func (s *SessionHelper) RedirectToSignout(c *gin.Context, err error, logger *zap.SugaredLogger) {
+	logger.Errorf("invalid session: %v", err)
+	reason := "unauthorized"
+	if err == ErrorUserDisabled {
+		reason = "account disabled"
+	}
+	c.Redirect(http.StatusFound, "/signout?reason="+reason)
+}
+
+func (s *SessionHelper) LoadUserFromSession(c *gin.Context) (*database.User, error) {
 	cookie, err := c.Cookie("session")
 	if err != nil {
 		return nil, fmt.Errorf("unable to get session cookie: %w", err)
@@ -76,22 +86,25 @@ func (s *SessionHelper) LoadUserFromSession(c *gin.Context) (database.User, erro
 		return nil, fmt.Errorf("session dose not contain email")
 	}
 
-	user, err := s.db.LookupUser(ctx, email.(string))
+	user, err := s.db.FindUser(email.(string))
 	if err != nil {
 		return nil, fmt.Errorf("user not found")
 	}
 
 	// See if we need to perform a revoke check.
-	if time.Now().After(user.LastRevokeCheck().Add(s.config.SessionCookieDuration)) {
+	if time.Now().After(user.LastRevokeCheck.Add(s.config.SessionCookieDuration)) {
 		_, err := client.VerifySessionCookieAndCheckRevoked(ctx, cookie)
 		if err != nil {
 			return nil, fmt.Errorf("session revoked: %w", err)
 		}
 
-		s.db.UpdateRevokeCheck(ctx, user)
+		user.LastRevokeCheck = time.Now()
+		if err := s.db.SaveUser(user); err != nil {
+			return nil, fmt.Errorf("error updating revoke check time: %w", err)
+		}
 	}
 
-	if user.Disabled() {
+	if user.Disabled {
 		return user, ErrorUserDisabled
 	}
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package jsonclient is a simple JSON over HTTP Client.
 package jsonclient
 
 import (
@@ -21,8 +22,8 @@ import (
 	"net/http"
 )
 
+// MakeRequest uses an HTTP client to send and receive JSON based on interface{}.
 func MakeRequest(client *http.Client, url string, input interface{}, output interface{}) error {
-
 	data, err := json.Marshal(input)
 	if err != nil {
 		return err
@@ -40,6 +41,5 @@ func MakeRequest(client *http.Client, url string, input interface{}, output inte
 		return err
 	}
 
-	err = json.Unmarshal(body, output)
-	return nil
+	return json.Unmarshal(body, output)
 }

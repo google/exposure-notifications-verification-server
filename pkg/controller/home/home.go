@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package home defines a web controller for the home page of the verification
+// server. This view allows users to issue OTP codes and tie them to a diagnosis
+// and test date.
 package home
 
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -29,29 +33,31 @@ import (
 
 type homeController struct {
 	config  *config.Config
-	db      database.Database
+	db      *database.Database
 	session *controller.SessionHelper
 	logger  *zap.SugaredLogger
 }
 
 // New creates a new controller for the home page.
-func New(ctx context.Context, config *config.Config, db database.Database, session *controller.SessionHelper) controller.Controller {
+func New(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
 	return &homeController{config, db, session, logging.FromContext(ctx)}
 }
 
 func (hc *homeController) Execute(c *gin.Context) {
 	user, err := hc.session.LoadUserFromSession(c)
-	if err != nil {
-		hc.logger.Errorf("invalid session: %v", err)
-		reason := "unauthorized"
-		if err == controller.ErrorUserDisabled {
-			reason = "account disabled"
-		}
-		c.Redirect(http.StatusFound, "/signout?reason="+reason)
+	if err != nil || user.Disabled {
+		hc.session.RedirectToSignout(c, err, hc.logger)
 		return
 	}
 
-	m := controller.TemplateMap{}
+	m := controller.NewTemplateMap(hc.config)
+
+	// Set test date params
+	now := time.Now()
+	m["maxDate"] = now.Format("2006-01-02")
+	m["minDate"] = now.Add(-14 * 24 * time.Hour).Format("2006-01-02")
+	m["duration"] = hc.config.CodeDuration.String()
+
 	m["user"] = user
 	c.HTML(http.StatusOK, "home", m)
 }

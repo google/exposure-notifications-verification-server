@@ -21,7 +21,6 @@ ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
 
 DOCKER_CMD="$(command -v docker || true)"
 DB_CONTAINER_IMAGE="registry.hub.docker.com/library/postgres:12-alpine"
-MIGRATE_CONTAINER_IMAGE="gcr.io/cloud-devrel-public-resources/exposure-notifications/migrate:latest"
 
 # Database parameters
 DB_HOST="${DB_HOST:-127.0.0.1}"
@@ -152,16 +151,7 @@ function migrate() {
     set -- "up"
   fi
 
-  docker pull --quiet "${MIGRATE_CONTAINER_IMAGE}" > /dev/null
-  docker run \
-    --rm \
-    --interactive \
-    --network "host" \
-    --volume "${ROOT}/migrations:/migrations:ro" \
-    "${MIGRATE_CONTAINER_IMAGE}" \
-      -database "${DB_URL}" \
-      -path "/migrations" \
-      "$@"
+  go run ./cmd/migrate
 }
 
 # dburl returns the full connection url.

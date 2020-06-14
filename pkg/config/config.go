@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package config defines the environment baased configuration for this server.
 package config
 
 import (
 	"context"
 	"strings"
 	"time"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
 
@@ -41,11 +44,17 @@ func New(ctx context.Context) (*Config, error) {
 // Config represents the environment based config for the server.
 type Config struct {
 	Firebase FirebaseConfig
+	Database database.Config
 
+	// Login Config
 	SessionCookieDuration time.Duration `env:"SESSION_DURATION,default=24h"`
 	RevokeCheckPeriod     time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
 
-	ServerName string `env:"SERVER_NAME,default=Diagnosis Verification Server"`
+	// Application Config
+	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
+	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
+	CodeDigits          int           `env:"CODE_DIGITS,default=8"`
+	ColissionRetryCount int           `env:"COLISSION_RETRY_COUNT,default=6"`
 
 	KoDataPath string `env:"KO_DATA_PATH,default=./cmd/server/kodata"`
 }

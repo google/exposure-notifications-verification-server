@@ -12,28 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package database manages database connections and ORM integration.
-package database
+// A binary for running database migrations
+package main
 
 import (
-	"fmt"
+	"context"
+	"log"
 
-	"github.com/jinzhu/gorm"
-	// ensure the postgres dialiect is compiled in.
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
+
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-type Database struct {
-	db *gorm.DB
-}
-
-// Open created a DB connection through gorm.
-func (c Config) Open() (*Database, error) {
-	cstr := c.ConnectionString()
-	fmt.Printf("Connecting to: %v", cstr)
-	db, err := gorm.Open("postgres", c.ConnectionString())
+func main() {
+	ctx := context.Background()
+	config, err := config.New(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("database gorm.Open: %w", err)
+		log.Fatalf("config error: %v", err)
 	}
-	return &Database{db}, nil
+
+	db, err := config.Database.Open()
+	if err != nil {
+		log.Fatalf("db connection failed: %v", err)
+	}
+
+	err = db.RunMigrations(ctx)
+	if err == nil {
+		log.Printf("database migrations completed successfully")
+	} else {
+		log.Fatalf("migration error %v", err)
+	}
 }

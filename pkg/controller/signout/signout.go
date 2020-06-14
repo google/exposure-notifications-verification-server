@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package signout hold the controller for signing out a user / destroying their session.
 package signout
 
 import (
@@ -26,12 +27,12 @@ import (
 
 type signoutController struct {
 	config  *config.Config
-	db      database.Database
+	db      *database.Database
 	session *controller.SessionHelper
 }
 
 // New creates a new signout controller. When run, clears the session cookie.
-func New(config *config.Config, db database.Database, session *controller.SessionHelper) controller.Controller {
+func New(config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
 	return &signoutController{config, db, session}
 }
 

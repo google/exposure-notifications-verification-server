@@ -14,14 +14,35 @@
 
 package database
 
-import "time"
+import (
+	"time"
 
-// User represents immutable qualities of a user.
-// Authentication is delegated to Firebase Auth, but the underlying data store
-// needs to put specific users on the allow list.
-type User interface {
-	Email() string
-	Admin() bool
-	Disabled() bool
-	LastRevokeCheck() time.Time
+	"github.com/jinzhu/gorm"
+)
+
+// User represents a user of the system
+type User struct {
+	gorm.Model
+	Email           string `gorm:"type:varchar(250);unique_index"`
+	Name            string `gorm:"type:varchar(100)"`
+	Admin           bool   `gorm:"default:false"`
+	Disabled        bool
+	LastRevokeCheck time.Time
+}
+
+// FindUser reads back a User struct by email address.
+func (db *Database) FindUser(email string) (*User, error) {
+	var user User
+	if err := db.db.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// SaveUser creates or updates a user record.
+func (db *Database) SaveUser(u *User) error {
+	if u.Model.ID == 0 {
+		return db.db.Create(u).Error
+	}
+	return db.db.Save(u).Error
 }
