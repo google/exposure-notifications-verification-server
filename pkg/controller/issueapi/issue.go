@@ -95,10 +95,7 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 		return
 	}
 
-	ic.logger.Info("issued code: test date: %v type: %v", testDate, request.TestType)
-
 	response.VerificationCode = code
 	response.ExpiresAt = expiryTime.Format(time.RFC1123)
-	ic.logger.Infof("RESPONSE: %+v", response)
 	c.JSON(http.StatusOK, response)
 }
