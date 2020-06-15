@@ -12,34 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package jsonclient is a simple JSON over HTTP Client.
-package jsonclient
+// A binary for running database migrations
+package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
+	"context"
+	"log"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
+
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-// MakeRequest uses an HTTP client to send and receive JSON based on interface{}.
-func MakeRequest(client *http.Client, url string, input interface{}, output interface{}) error {
-	data, err := json.Marshal(input)
+func main() {
+	ctx := context.Background()
+	config, err := config.New(ctx)
 	if err != nil {
-		return err
+		log.Fatalf("config error: %v", err)
 	}
 
-	buffer := bytes.NewBuffer(data)
-	r, err := client.Post(url, "application/json", buffer)
+	db, err := config.Database.Open()
 	if err != nil {
-		return err
+		log.Fatalf("db connection failed: %v", err)
 	}
-	defer r.Body.Close()
+	defer db.Close()
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return err
+	err = db.RunMigrations(ctx)
+	if err == nil {
+		log.Printf("database migrations completed successfully")
+	} else {
+		log.Fatalf("migration error %v", err)
 	}
-
-	return json.Unmarshal(body, output)
 }

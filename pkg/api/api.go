@@ -11,25 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package api defines the JSON-RPC API between the browser and the server as
+// well as between mobile devices and the server.
 package api
 
-import (
-	"time"
-
-	"github.com/dgrijalva/jwt-go"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
-)
-
-type IssuePINRequest struct {
-	ValidFor time.Duration               `json:"validFor"`
-	Risks    []database.TransmissionRisk `json:"transmissionRisks"`
+// IssueCodeRequest defines the parameters to request an new OTP (short term)
+// code. This is called by the Web frontend.
+// API is served at /api/issue
+type IssueCodeRequest struct {
+	TestType string `json:"testType"`
+	TestDate string `json:"testDate"`
 }
 
-type IssuePINResponse struct {
-	PIN   string `json:"pin"`
-	Error string `json:"error"`
+// IssueCodeResponse defines the response type for IssueCodeRequest.
+type IssueCodeResponse struct {
+	VerificationCode string `json:"code"`
+	ExpiresAt        string `json:"expiresAt"`
+	Error            string `json:"error"`
 }
 
+/*
 type VerifyPINRequest struct {
 	PIN            string `json:"pin"`
 	ExposureKeyMAC string `json:"ekmac"`
@@ -50,3 +52,4 @@ type VerificationClaims struct {
 func NewVerificationClaims() *VerificationClaims {
 	return &VerificationClaims{PHAClaims: make(map[string]string)}
 }
+*/

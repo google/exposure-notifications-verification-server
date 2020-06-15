@@ -12,74 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package database manages database connections and ORM integration.
 package database
 
 import (
-	"context"
 	"fmt"
-	"sync"
-	"time"
+
+	"github.com/jinzhu/gorm"
+	// ensure the postgres dialiect is compiled in.
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-type TransmissionRisk struct {
-	Risk               int `json:"risk"`
-	PastRollingPeriods int `json:"pastRollingPeriods"`
+// Database is a handle to the database layer for the Exposure Notifications
+// Verification Server.
+type Database struct {
+	db     *gorm.DB
+	config *Config
 }
 
-type IssuedPIN interface {
-	Pin() string
-	TransmissionRisks() []TransmissionRisk
-	Claims() map[string]string
-	EndTime() time.Time
-	IsClaimed() bool
-}
-
-type NewDBFunc func(context.Context) (Database, error)
-
-type Database interface {
-	InsertPIN(ctx context.Context, pin string, risks []TransmissionRisk, addClaims map[string]string, duration time.Duration) (IssuedPIN, error)
-	RetrievePIN(ctx context.Context, pin string) (IssuedPIN, error)
-	MarkPINClaimed(ctx context.Context, pin string) error
-
-	UpdateRevokeCheck(ctx context.Context, u User) error
-	LookupUser(ctx context.Context, email string) (User, error)
-}
-
-var (
-	registry = map[string]NewDBFunc{}
-	mu       sync.Mutex
-)
-
-func RegisterDatabase(name string, f NewDBFunc) error {
-	mu.Lock()
-	defer mu.Unlock()
-
-	if _, ok := registry[name]; ok {
-		return fmt.Errorf("database is already registered: `%v`", name)
+// Open created a DB connection through gorm.
+func (c *Config) Open() (*Database, error) {
+	cstr := c.ConnectionString()
+	fmt.Printf("Connecting to: %v", cstr)
+	db, err := gorm.Open("postgres", c.ConnectionString())
+	if err != nil {
+		return nil, fmt.Errorf("database gorm.Open: %w", err)
 	}
-	registry[name] = f
-	return nil
+	return &Database{db, c}, nil
 }
 
-func New(ctx context.Context, name string) (Database, error) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	if f, ok := registry[name]; ok {
-		return f(ctx)
-	}
-	return nil, fmt.Errorf("database driver not found: `%v`", name)
-}
-
-func NewDefault(ctx context.Context) (Database, error) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	if len(registry) != 1 {
-		return nil, fmt.Errorf("cannot use default database, more than one registered")
-	}
-	for _, v := range registry {
-		return v(ctx)
-	}
-	return nil, fmt.Errorf("you reached unreachable code, congratulations.")
+// Close will close the database connection. Should be deferred right after Open.
+func (db *Database) Close() error {
+	return db.db.Close()
 }

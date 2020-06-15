@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package session contains the controller that exchanges firebase auth tokens
+// for server side session tokens.
 package session
 
 import (
@@ -30,7 +32,7 @@ import (
 
 type sessionController struct {
 	config  *config.Config
-	db      database.Database
+	db      *database.Database
 	session *controller.SessionHelper
 	logger  *zap.SugaredLogger
 }
@@ -43,7 +45,7 @@ type formData struct {
 // New creates a new session controller. The session controller is responsible
 // for accepting the firebase auth cookie information and establishing a server
 // side session.
-func New(ctx context.Context, config *config.Config, db database.Database, session *controller.SessionHelper) controller.Controller {
+func New(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
 	return &sessionController{config, db, session, logging.FromContext(ctx)}
 }
 
@@ -66,6 +68,7 @@ func (ic *sessionController) Execute(c *gin.Context) {
 		ic.logger.Errorf("ERROR: %v", err)
 	}
 
+	// Make an online call to the firebase auth to verify the token isn't revoked.
 	token, err := client.VerifyIDTokenAndCheckRevoked(ctx, form.IDToken)
 	if err != nil {
 		ic.logger.Errorf("error verifying ID token: %v\n", err)
@@ -80,12 +83,13 @@ func (ic *sessionController) Execute(c *gin.Context) {
 		return
 	}
 
-	user, err := ic.db.LookupUser(ctx, email.(string))
+	user, err := ic.db.FindUser(email.(string))
+	// TODO(mikehelmick) - automatically created users in disabled state (non-disabled by config)
 	if err != nil {
 		c.Redirect(http.StatusTemporaryRedirect, "/signout?reason=unauthorized")
 		return
 	}
-	if user.Disabled() {
+	if user.Disabled {
 		c.Redirect(http.StatusTemporaryRedirect, "/signout?reason=account disabled")
 		return
 	}

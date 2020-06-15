@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package signer defines the interface for signing.
+// TODO(mikehelmick) - this needs to be simplified. Do away w/ dynamic registry
+// and more more towards what we have in exposure-notifications-server
+// Make signing impl in exposure-notifications-server in pkg so we can depend on it.
 package signer
 
 import (
@@ -25,9 +29,6 @@ type NewKeyManagerFunc func(context.Context) (KeyManager, error)
 
 type KeyManager interface {
 	NewSigner(ctx context.Context, keyID string) (crypto.Signer, error)
-
-	Encrypt(ctx context.Context, keyID string, cleartext []byte) ([]byte, error)
-	Decrypt(ctx context.Context, keyID string, ciphertext []byte) ([]byte, error)
 }
 
 var (
@@ -66,5 +67,5 @@ func NewDefault(ctx context.Context) (KeyManager, error) {
 	for _, v := range registry {
 		return v(ctx)
 	}
-	return nil, fmt.Errorf("you reached unreachable code, congratulations.")
+	return nil, fmt.Errorf("you reached unreachable code, congratulations")
 }

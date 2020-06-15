@@ -21,7 +21,7 @@ type TemplateMap map[string]interface{}
 
 func NewTemplateMap(c *config.Config) TemplateMap {
 	m := TemplateMap{}
-	m["name"] = c.ServerName
+	m["server"] = c.ServerName
 	m.AddTitle(c.ServerName)
 	return m
 }

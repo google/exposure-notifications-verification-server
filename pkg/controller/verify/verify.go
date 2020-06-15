@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package verify contains the API implemention for verifying short term OTP tokens
+// and issuing a long term token.
 package verify
+
+/* TODO(mikehelmick) : Salvage this code for new 2 step vode->token exchange.
 
 import (
 	"crypto/rand"
@@ -141,3 +145,4 @@ func (vapi *VerifyAPI) Execute(c *gin.Context) {
 	response.Verification = strings.Join([]string{signingString, jwt.EncodeSegment(sig)}, ".")
 	c.JSON(http.StatusOK, response)
 }
+*/

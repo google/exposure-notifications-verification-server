@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package gcpkms implements cryptographic signing using Google Cloud Key Management Service.
 package gcpkms
 
 import (
@@ -45,13 +46,4 @@ func (g *GCPKeyManager) NewSigner(ctx context.Context, keyID string) (crypto.Sig
 		return nil, err
 	}
 	return signer, nil
-}
-
-func (g *GCPKeyManager) Encrypt(ctx context.Context, keyID string, plaintext []byte) ([]byte, error) {
-
-	return nil, nil
-}
-
-func (g *GCPKeyManager) Decrypt(ctx context.Context, keyID string, ciphertext []byte) ([]byte, error) {
-	return nil, nil
 }

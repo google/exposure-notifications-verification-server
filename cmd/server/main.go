@@ -24,12 +24,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	// Automagically register concrete implementations.
-	_ "github.com/google/exposure-notifications-verification-server/pkg/datastore"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 )
 
@@ -43,10 +42,12 @@ func main() {
 	router := gin.Default()
 	router.LoadHTMLGlob(config.KoDataPath + "/*")
 
-	db, err := database.NewDefault(ctx)
+	db, err := config.Database.Open()
 	if err != nil {
-		log.Fatalf("no database: %v", err)
+		log.Fatalf("db connection failed: %v", err)
 	}
+	defer db.Close()
+
 	//signer, err := signer.NewDefault(ctx)
 	//if err != nil {
 	//	log.Fatalf("no key manager: %v", err)
@@ -65,14 +66,10 @@ func main() {
 	homeController := home.New(ctx, config, db, sessions)
 	router.GET("/home", homeController.Execute)
 
-	/* Temporarily disable the OTP issuance and verification piece.
-	   Focusing on hooking up authn/authz.
-	issueController := issue.New("http://localhost:8080")
-	router.POST("/issue", issueController.Execute)
-
-	issueAPIController := issueapi.New(db)
+	issueAPIController := issueapi.New(ctx, config, db, sessions)
 	router.POST("/api/issue", issueAPIController.Execute)
 
+	/* TODO(mikehelmick) - change to 2 step code <-> token exchange.
 	verifyAPIController := verify.New(db, signer, signingKey)
 	router.POST("/api/verify", verifyAPIController.Execute)
 	*/

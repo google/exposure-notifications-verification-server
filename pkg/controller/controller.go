@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package controller defines the interface for Web and API controllers
+// in our use of go-gonic/gin as well as utility methods for working with
+// HTML templates and session management.
 package controller
 
 import "github.com/gin-gonic/gin"

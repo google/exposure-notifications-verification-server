@@ -14,18 +14,9 @@
 
 package main
 
-import (
-	"crypto/rand"
-	"encoding/base64"
-	"flag"
-	"log"
-	"net/http"
-
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
-)
-
 func main() {
+	/** TODO(mikehelmick): needs to be changed for 2 phase exchange
+
 	pinFlag := flag.String("pin", "", "pin code to sign claims for")
 	flag.Parse()
 
@@ -53,4 +44,5 @@ func main() {
 	}
 
 	log.Printf("Received payload:\n----------\n%+v\n----------\n", response)
+	*/
 }

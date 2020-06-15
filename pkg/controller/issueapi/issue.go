@@ -12,57 +12,91 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package issueapi implements the API handler for taking a code requst, assigning
+// an OTP, saving it to the database and returning the result.
+// This is invoked over AJAX from the Web frontend.
 package issueapi
 
 import (
-	"crypto/rand"
-	"encoding/base64"
+	"context"
+	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/otp"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
+// IssueAPI is a controller for the verification code JSON API.
 type IssueAPI struct {
-	database database.Database
+	config  *config.Config
+	db      *database.Database
+	session *controller.SessionHelper
+	logger  *zap.SugaredLogger
 }
 
-func New(db database.Database) controller.Controller {
-	return &IssueAPI{db}
+// New creates a new IssueAPI controller.
+func New(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
+	return &IssueAPI{config, db, session, logging.FromContext(ctx)}
 }
 
-func (iapi *IssueAPI) Execute(c *gin.Context) {
-	var request api.IssuePINRequest
+func (ic *IssueAPI) Execute(c *gin.Context) {
+	response := api.IssueCodeResponse{}
+	user, err := ic.session.LoadUserFromSession(c)
+	if err != nil || user.Disabled {
+		ic.logger.Errorf("session.LoadUserFromSession: %v", err)
+		response.Error = "unauthorized"
+		c.JSON(http.StatusOK, response)
+		return
+	}
+
+	var request api.IssueCodeRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ic.logger.Errorf("failed to bind request: %v", err)
+		response.Error = fmt.Sprintf("invalid request: %v", err)
+		c.JSON(http.StatusOK, response)
 		return
 	}
 
-	response := api.IssuePINResponse{}
+	var testDate *time.Time
+	if request.TestDate != "" {
+		if parsed, err := time.Parse("2006-01-02", request.TestDate); err != nil {
+			ic.logger.Errorf("time.Parse: %v", err)
+			response.Error = fmt.Sprintf("invalid test date: %v", err)
+			c.JSON(http.StatusOK, response)
+		} else {
+			testDate = &parsed
+		}
+	}
 
-	// Generate PIN
-	source := make([]byte, 6)
-	_, err := rand.Read(source)
+	expiryTime := time.Now().Add(ic.config.CodeDuration)
+
+	// Generate verification code
+	codeRequest := otp.OTPRequest{
+		DB:         ic.db,
+		Length:     ic.config.CodeDigits,
+		ExpiresAt:  expiryTime,
+		TestType:   request.TestType,
+		TestDate:   testDate,
+		MaxTestAge: ic.config.AllowedTestAge,
+	}
+
+	code, err := codeRequest.Issue(c.Request.Context(), ic.config.ColissionRetryCount)
 	if err != nil {
-		response.Error = err.Error()
-		c.JSON(http.StatusInternalServerError, response)
-		return
-	}
-	pinCode := base64.RawStdEncoding.EncodeToString(source)
-
-	claims := map[string]string{
-		"lab":   "test r us",
-		"batch": "test batch number",
-	}
-	_, err = iapi.database.InsertPIN(pinCode, request.Risks, claims, request.ValidFor)
-	if err != nil {
-		response.Error = err.Error()
-		c.JSON(http.StatusInternalServerError, response)
+		ic.logger.Errorf("otp.GenerateCode: %v", err)
+		response.Error = "error generating verification, wait a moment and try again"
+		c.JSON(http.StatusOK, response)
 		return
 	}
 
-	response.PIN = pinCode
+	response.VerificationCode = code
+	response.ExpiresAt = expiryTime.Format(time.RFC1123)
 	c.JSON(http.StatusOK, response)
 }
