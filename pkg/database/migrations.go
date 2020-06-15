@@ -47,6 +47,16 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				return tx.DropTable("verification_codes").Error
 			},
 		},
+		{
+			ID: "00003-CreateAuthorizedApps",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: createing authorized apps table")
+				return tx.AutoMigrate(&AuthorizedApp{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("authorized_apps").Error
+			},
+		},
 	})
 
 	logger.Infof("database migrations complete")
