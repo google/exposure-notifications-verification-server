@@ -40,7 +40,7 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 		{
 			ID: "00002-CreateVerificationCodes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Infof("db migrations: creating verificaion codes table")
+				logger.Infof("db migrations: creating verification codes table")
 				return tx.AutoMigrate(&VerificationCode{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {

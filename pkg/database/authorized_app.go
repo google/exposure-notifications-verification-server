@@ -26,7 +26,7 @@ const (
 	apiKeyBytes = 64 // 64 bytes is 86 chararacters in non-padded base64.
 )
 
-// AuthorizedApp represents a application that is authorized to verify
+// AuthorizedApp represents an application that is authorized to verify
 // verification codes and perform token exchanges.
 // This is controlled via a generated API key.
 type AuthorizedApp struct {
