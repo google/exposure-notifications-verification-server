@@ -35,6 +35,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("db connection failed: %v", err)
 	}
+	defer db.Close()
 
 	err = db.RunMigrations(ctx)
 	if err == nil {

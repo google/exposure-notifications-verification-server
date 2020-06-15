@@ -32,15 +32,24 @@ import (
 )
 
 type homeController struct {
-	config  *config.Config
-	db      *database.Database
-	session *controller.SessionHelper
-	logger  *zap.SugaredLogger
+	config           *config.Config
+	db               *database.Database
+	session          *controller.SessionHelper
+	logger           *zap.SugaredLogger
+	pastDaysDuration time.Duration
 }
 
 // New creates a new controller for the home page.
 func New(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
-	return &homeController{config, db, session, logging.FromContext(ctx)}
+	pastDaysDuration := -1 * config.AllowedTestAge
+
+	return &homeController{
+		config:           config,
+		db:               db,
+		session:          session,
+		logger:           logging.FromContext(ctx),
+		pastDaysDuration: pastDaysDuration,
+	}
 }
 
 func (hc *homeController) Execute(c *gin.Context) {
@@ -55,7 +64,7 @@ func (hc *homeController) Execute(c *gin.Context) {
 	// Set test date params
 	now := time.Now()
 	m["maxDate"] = now.Format("2006-01-02")
-	m["minDate"] = now.Add(-14 * 24 * time.Hour).Format("2006-01-02")
+	m["minDate"] = now.Add(hc.pastDaysDuration).Format("2006-01-02")
 	m["duration"] = hc.config.CodeDuration.String()
 
 	m["user"] = user

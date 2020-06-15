@@ -39,12 +39,14 @@ func main() {
 		log.Fatal("--email must be passed and cannot be empty")
 	}
 
+	parts := strings.Split(*emailFlag, "@")
+	if len(parts) != 2 {
+		log.Fatalf("provide email address may not be valid, double check: '%v'", *emailFlag)
+	}
+
 	name := *nameFlag
 	if name == "" {
-		parts := strings.SplitN(*emailFlag, "@", 1)
-		if len(parts) >= 1 {
-			name = parts[0]
-		}
+		name = parts[0]
 	}
 
 	ctx := context.Background()
@@ -57,6 +59,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("db connection failed: %v", err)
 	}
+	defer db.Close()
 
 	user, err := db.FindUser(*emailFlag)
 	if err == gorm.ErrRecordNotFound {

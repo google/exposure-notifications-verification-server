@@ -80,11 +80,12 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 
 	// Generate verification code
 	codeRequest := otp.OTPRequest{
-		DB:        ic.db,
-		Length:    ic.config.CodeDigits,
-		ExpiresAt: expiryTime,
-		TestType:  request.TestType,
-		TestDate:  testDate,
+		DB:         ic.db,
+		Length:     ic.config.CodeDigits,
+		ExpiresAt:  expiryTime,
+		TestType:   request.TestType,
+		TestDate:   testDate,
+		MaxTestAge: ic.config.AllowedTestAge,
 	}
 
 	code, err := codeRequest.Issue(c.Request.Context(), ic.config.ColissionRetryCount)

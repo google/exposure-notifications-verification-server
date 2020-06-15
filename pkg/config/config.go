@@ -55,6 +55,7 @@ type Config struct {
 	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
 	CodeDigits          int           `env:"CODE_DIGITS,default=8"`
 	ColissionRetryCount int           `env:"COLISSION_RETRY_COUNT,default=6"`
+	AllowedTestAge      time.Duration `env:"ALLOWRD_PAST_TEST_DAYS,default=336h"` // 336h is 14 days.
 
 	KoDataPath string `env:"KO_DATA_PATH,default=./cmd/server/kodata"`
 }

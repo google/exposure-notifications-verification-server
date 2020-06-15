@@ -25,13 +25,14 @@ func TestSaveVerCode(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
+	maxAge := time.Hour * 24 * 14
 	code := VerificationCode{
 		Code:      "12345678",
 		TestType:  "confirmed",
 		ExpiresAt: time.Now().Add(time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(&code); err != nil {
+	if err := db.SaveVerificationCode(&code, maxAge); err != nil {
 		t.Fatalf("error creating verification code: %v", err)
 	}
 
@@ -44,7 +45,7 @@ func TestSaveVerCode(t *testing.T) {
 	}
 
 	code.Claimed = true
-	if err := db.SaveVerificationCode(&code); err != nil {
+	if err := db.SaveVerificationCode(&code, maxAge); err != nil {
 		t.Fatalf("error claiming verification code: %v", err)
 	}
 
@@ -58,6 +59,7 @@ func TestSaveVerCode(t *testing.T) {
 }
 
 func TestVerCodeValidate(t *testing.T) {
+	maxAge := time.Hour * 24 * 14
 	oldTest := time.Now().Add(-1 * 20 * oneDay)
 	cases := []struct {
 		Name string
@@ -99,7 +101,7 @@ func TestVerCodeValidate(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
-			if err := tc.Code.Validate(); err != tc.Err {
+			if err := tc.Code.Validate(maxAge); err != tc.Err {
 				t.Fatalf("wrong error, want %v, got: %v", tc.Err, err)
 			}
 		})

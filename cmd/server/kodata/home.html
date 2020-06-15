@@ -19,7 +19,7 @@
          <label class="form-check-label" for="testType1">
            Confirmed Positive Test Result
          </label>
-         <small id="testType1Help" class="form-text text-muted">means a confirmed test result from an official testing source</small>
+         <small id="testType1Help" class="form-text text-muted">means a confirmed positive test result from an official testing source</small>
         </div>
         <div class="form-check">
          <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" >
@@ -33,7 +33,7 @@
          <label class="form-check-label" for="testType3">
            Confirmed Negative Test Result
          </label>
-         <small id="testType3Help" class="form-text text-muted">means a confirmed test result from an official testing source</small>
+         <small id="testType3Help" class="form-text text-muted">means a confirmed negative test result from an official testing source</small>
         </div>
       </div>
 
@@ -56,7 +56,8 @@
  <script type="text/javascript">
    $(document).ready(function(){
         // click on button submit
-        $("#submit").on('click', function() {
+        $("#submit").on('click', function(event) {
+          event.preventDefault();
           // Disable the submit button so we only issue one code.
           $("#submit").prop('disabled', true);
           var data = {};
@@ -87,8 +88,7 @@
                    $("#coderror").show();
                    console.log(xhr, resp, text);
                  }
-             })
-          return false;
+             });
          });
        $("#startover").on('click', function() {
          // Hide the previously issued code and enable the submit button.

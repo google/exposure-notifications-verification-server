@@ -24,8 +24,6 @@ import (
 
 const (
 	oneDay = 24 * time.Hour
-	// MaxTestAge represents how many days ago a test could have occurred when creating a code.
-	MaxTestAge = 14 * 24 * time.Hour
 	// MinCodeLength defines the minimum number of digits in a code.
 	MinCodeLength = 6
 )
@@ -64,7 +62,7 @@ func (v *VerificationCode) IsExpired() bool {
 }
 
 // Validate validates a verification code before save.
-func (v *VerificationCode) Validate() error {
+func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	v.Code = strings.TrimSpace(v.Code)
 	if len(v.Code) < MinCodeLength {
 		return ErrCodeTooShort
@@ -73,7 +71,7 @@ func (v *VerificationCode) Validate() error {
 		return ErrInvalidTestType
 	}
 	if v.TestDate != nil {
-		minTestDate := time.Now().Add(-1 * MaxTestAge).Truncate(oneDay)
+		minTestDate := time.Now().Add(-1 * maxAge).Truncate(oneDay)
 		if minTestDate.After(*v.TestDate) {
 			return ErrTestTooOld
 		}
@@ -99,8 +97,8 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 }
 
 // SaveVerificationCode created or updates a verification code in the database.
-func (db *Database) SaveVerificationCode(vc *VerificationCode) error {
-	if err := vc.Validate(); err != nil {
+func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Duration) error {
+	if err := vc.Validate(maxAge); err != nil {
 		return err
 	}
 	if vc.Model.ID == 0 {

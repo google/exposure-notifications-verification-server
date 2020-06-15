@@ -16,7 +16,8 @@
 // and issuing a long term token.
 package verify
 
-/*
+/* TODO(mikehelmick) : Salvage this code for new 2 step vode->token exchange.
+
 import (
 	"crypto/rand"
 	"crypto/sha256"

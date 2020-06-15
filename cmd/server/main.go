@@ -46,6 +46,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("db connection failed: %v", err)
 	}
+	defer db.Close()
+
 	//signer, err := signer.NewDefault(ctx)
 	//if err != nil {
 	//	log.Fatalf("no key manager: %v", err)
@@ -67,9 +69,9 @@ func main() {
 	issueAPIController := issueapi.New(ctx, config, db, sessions)
 	router.POST("/api/issue", issueAPIController.Execute)
 
-	/*
-		verifyAPIController := verify.New(db, signer, signingKey)
-		router.POST("/api/verify", verifyAPIController.Execute)
+	/* TODO(mikehelmick) - change to 2 step code <-> token exchange.
+	verifyAPIController := verify.New(db, signer, signingKey)
+	router.POST("/api/verify", verifyAPIController.Execute)
 	*/
 
 	router.Run()

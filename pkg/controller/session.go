@@ -51,6 +51,8 @@ func (s *SessionHelper) DestroySession(c *gin.Context) {
 }
 
 func (s *SessionHelper) RedirectToSignout(c *gin.Context, err error, logger *zap.SugaredLogger) {
+	// TODO(mikehelmick) https://github.com/google/exposure-notifications-verification-server/issues/16
+	//   These redirects should use flash cookies instead of query params.
 	logger.Errorf("invalid session: %v", err)
 	reason := "unauthorized"
 	if err == ErrorUserDisabled {

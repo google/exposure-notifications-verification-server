@@ -23,17 +23,25 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
+// Database is a handle to the database layer for the Exposure Notifications
+// Verification Server.
 type Database struct {
-	db *gorm.DB
+	db     *gorm.DB
+	config *Config
 }
 
 // Open created a DB connection through gorm.
-func (c Config) Open() (*Database, error) {
+func (c *Config) Open() (*Database, error) {
 	cstr := c.ConnectionString()
 	fmt.Printf("Connecting to: %v", cstr)
 	db, err := gorm.Open("postgres", c.ConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("database gorm.Open: %w", err)
 	}
-	return &Database{db}, nil
+	return &Database{db, c}, nil
+}
+
+// Close will close the database connection. Should be deferred right after Open.
+func (db *Database) Close() error {
+	return db.db.Close()
 }

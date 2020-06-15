@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 )
 
 const (
@@ -48,21 +49,24 @@ func generateCode(length int) (string, error) {
 
 // OTPRequest represents the parameters of a verification code request.
 type OTPRequest struct {
-	DB        *database.Database
-	Length    int
-	ExpiresAt time.Time
-	TestType  string
-	TestDate  *time.Time
+	DB         *database.Database
+	Length     int
+	ExpiresAt  time.Time
+	TestType   string
+	TestDate   *time.Time
+	MaxTestAge time.Duration
 }
 
 // Issue wiill generate a verification code and save it to the database, based
 // on the paremters provited.
 func (o *OTPRequest) Issue(ctx context.Context, retryCount int) (string, error) {
+	logger := logging.FromContext(ctx)
 	var code string
 	var err error
 	for i := 0; i < retryCount; i++ {
 		code, err = generateCode(o.Length)
 		if err != nil {
+			logger.Errorf("code generation error: %v", err)
 			continue
 		}
 		verificationCode := database.VerificationCode{
@@ -71,7 +75,8 @@ func (o *OTPRequest) Issue(ctx context.Context, retryCount int) (string, error) 
 			TestDate:  o.TestDate,
 			ExpiresAt: o.ExpiresAt,
 		}
-		if err := o.DB.SaveVerificationCode(&verificationCode); err != nil {
+		if err := o.DB.SaveVerificationCode(&verificationCode, o.MaxTestAge); err != nil {
+			logger.Warnf("duplicate OTP found: %v", err)
 			continue
 		} else {
 			break // successful save, nil error, break out.

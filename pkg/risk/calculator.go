@@ -44,7 +44,7 @@ var (
 )
 
 func init() {
-	// TODO - THESE PARAMETERS NEED TO BE CONFIRMED
+	// TODO(mikehelmick) - THESE PARAMETERS NEED TO BE CONFIRMED
 	TestTypeConfirmed = &TestType{
 		baseRisk:  2,
 		daysValid: 14,
