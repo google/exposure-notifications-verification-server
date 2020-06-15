@@ -52,6 +52,11 @@ type VerificationCode struct {
 	ExpiresAt time.Time
 }
 
+// TableName sets the VerificationCode table name
+func (VerificationCode) TableName() string {
+	return "verification_codes"
+}
+
 // TODO(mikehelmick) - Add method to soft delete expired codes
 // TODO(mikehelmick) - Add method to purge verification codes that are > XX hours old
 //   Keeping expired codes prevents a code from being regenerated during that period of time.
@@ -80,11 +85,6 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 		return ErrCodeAlreadyExpired
 	}
 	return nil
-}
-
-// TableName sets the VerificationCode table name
-func (VerificationCode) TableName() string {
-	return "verification_codes"
 }
 
 // FindVerificationCode find a verification code by the code number.
