@@ -32,8 +32,6 @@ type Database struct {
 
 // Open created a DB connection through gorm.
 func (c *Config) Open() (*Database, error) {
-	cstr := c.ConnectionString()
-	fmt.Printf("Connecting to: %v", cstr)
 	db, err := gorm.Open("postgres", c.ConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("database gorm.Open: %w", err)
