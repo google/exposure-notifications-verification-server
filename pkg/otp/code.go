@@ -75,6 +75,7 @@ func (o *OTPRequest) Issue(ctx context.Context, retryCount int) (string, error) 
 			TestDate:  o.TestDate,
 			ExpiresAt: o.ExpiresAt,
 		}
+		// If a verification code already exists, it will fail to save, and we retry.
 		if err := o.DB.SaveVerificationCode(&verificationCode, o.MaxTestAge); err != nil {
 			logger.Warnf("duplicate OTP found: %v", err)
 			continue
