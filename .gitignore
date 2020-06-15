@@ -14,4 +14,10 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# Output of terraform
+*.tfstate*
+*.terraform/
+*.tfvars
+terraform/state.tf
+
 local/
