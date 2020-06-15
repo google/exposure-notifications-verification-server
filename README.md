@@ -69,3 +69,41 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEA+k9YktDK3UpOhBIy+O17biuwd/g
 IBSEEHOdgpAynz0yrHpkWL6vxjNHxRdWcImZxPgL0NVHMdY4TlsL7qaxBQ==
 -----END PUBLIC KEY-----
 ```
+
+## Configuring your Development Environment for Running Locally
+
+```shell
+gcloud auth login && gcloud auth application-default login
+
+# In case you have this set, unset it to rely on gcloud.
+unset GOOGLE_APPLICATION_CREDENTIALS 
+
+# Initialize Dev Settings
+eval $(./scripts/dev init)
+./scripts/dev dbstart
+
+# Configure These settings to your firebase application
+export FIREBASE_API_KEY="YOUR API KEY"
+export FIREBASE_PROJECT_ID="YOUR-PROJECT-123456"
+export FIREBASE_MESSAGE_SENDER_ID="789123456"
+export FIREBASE_APP_ID="1:123456:web:abcd1234"
+export FIREBASE_MEASUREMENT_ID="G-J12345C"
+
+export FIREBASE_AUTH_DOMAIN="${FIREBASE_PROJECT_ID}.firebaseapp.com"
+export FIREBASE_DATABASE_URL="https://${FIREBASE_PROJECT_ID}.firebaseio.com"
+export FIREBASE_STORAGE_BUCKET="${FIREBASE_PROJECT_ID}.appspot.com"
+
+# Migrate DB
+./scripts/dev dbmigrate
+
+# create a user for whatever email address you want to use
+go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin true
+
+go run ./cmd/server
+```
+
+## A Walkthrough of the Service
+![Login](./docs/images/getting-started/0_login.png)
+![Create Users](./docs/images/getting-started/1_create_user.png)
+![Issue Verification Code](./docs/images/getting-started/2_issue_verification_code.png)
+![Verification Code Issued](./docs/images/getting-started/3_verification_code_issued.png)
