@@ -32,7 +32,7 @@ const (
 type AuthorizedApp struct {
 	gorm.Model
 	Name   string `gorm:"type:varchar(100);unique_index"`
-	APIKey string `gorm:"type:varchar(100);index"`
+	APIKey string `gorm:"type:varchar(100);unique_index"`
 }
 
 // TODO(mikehelmick): Implement revoke API key functionality.
