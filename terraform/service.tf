@@ -44,22 +44,6 @@ resource "google_secret_manager_secret_iam_member" "verification-db" {
   member    = "serviceAccount:${google_service_account.verification.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "verification-firebase" {
-  provider = google-beta
-
-  for_each = toset([
-    "api-key",
-    "app-id",
-    "auth-domain",
-    "measurement-id",
-    "message-sender",
-  ])
-
-  secret_id = google_secret_manager_secret.firebase-secret[each.key].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.verification.email}"
-}
-
 resource "google_cloud_run_service" "verification" {
   name     = "verification"
   location = var.region
@@ -94,8 +78,8 @@ resource "google_cloud_run_service" "verification" {
             DB_USER        = google_sql_user.user.name
 
             # Firebase
-            FIREBASE_API_KEY           = "secret://${google_secret_manager_secret_version.firebase-secret-version["api-key"].id}"
-            FIREBASE_APP_ID            = "secret://${google_secret_manager_secret_version.firebase-secret-version["app-id"].id}"
+            FIREBASE_API_KEY           = data.google_firebase_web_app_config.default.api_key
+            FIREBASE_APP_ID            = google_firebase_web_app.default.app_id
             FIREBASE_AUTH_DOMAIN       = data.google_firebase_web_app_config.default.auth_domain
             FIREBASE_DATABASE_URL      = lookup(data.google_firebase_web_app_config.default, "database_url")
             FIREBASE_MEASUREMENT_ID    = lookup(data.google_firebase_web_app_config.default, "measurement_id")

@@ -56,45 +56,7 @@ resource "google_firebase_web_app" "default" {
   display_name = "Exposure Verifications"
 }
 
-resource "google_secret_manager_secret" "firebase-secret" {
-  provider = google-beta
-
-  for_each = toset([
-    "api-key",
-    "app-id",
-    "auth-domain",
-    "measurement-id",
-    "message-sender",
-  ])
-
-  secret_id = "firebase-${each.key}"
-
-  replication {
-    automatic = true
-  }
-
-  depends_on = [
-    google_project_service.services["secretmanager.googleapis.com"],
-  ]
-}
-
-resource "google_secret_manager_secret_version" "firebase-secret-version" {
-  provider = google-beta
-
-  for_each = {
-    api-key = data.google_firebase_web_app_config.default.api_key
-    app-id  = google_firebase_web_app.default.app_id
-  }
-
-  secret      = google_secret_manager_secret.firebase-secret[each.key].id
-  secret_data = each.value
-}
-
 data "google_firebase_web_app_config" "default" {
   provider   = google-beta.firebase
   web_app_id = google_firebase_web_app.default.app_id
-}
-
-output "foo" {
-  value = data.google_firebase_web_app_config.default
 }
