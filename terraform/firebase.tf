@@ -33,14 +33,6 @@ resource "google_project_iam_member" "firebase" {
   member  = "serviceAccount:${google_service_account.firebase.email}"
 }
 
-resource "google_service_account_iam_binding" "firebase" {
-  service_account_id = google_service_account.firebase.name
-  role               = "roles/iam.serviceAccountTokenCreator"
-  members = [
-    "user:seth@sethvargo.com",
-  ]
-}
-
 provider "google-beta" {
   alias       = "firebase"
   project     = var.project
