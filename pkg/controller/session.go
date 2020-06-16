@@ -15,6 +15,8 @@
 package controller
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -38,6 +40,45 @@ type SessionHelper struct {
 	config *config.Config
 }
 
+type Flash map[string]string
+
+func (s *SessionHelper) AddError(c *gin.Context, value string) error {
+	return s.AddFlash(c, "error", value)
+}
+
+func (s *SessionHelper) AddFlash(c *gin.Context, name, value string) error {
+	flash := s.Flash(c)
+	flash[name] = value
+
+	asBytes, err := json.Marshal(flash)
+	if err != nil {
+		return err
+	}
+	cookie := base64.StdEncoding.EncodeToString(asBytes)
+	c.SetCookie("flash", cookie, 30, "/", "", false, true)
+	return nil
+}
+
+func (s *SessionHelper) Flash(c *gin.Context) Flash {
+	defer c.SetCookie("flash", "", 30, "/", "", false, true)
+	cookie, err := c.Cookie("flash")
+	if err != nil && err != http.ErrNoCookie {
+		return Flash{}
+	}
+	if cookie == "" {
+		return Flash{}
+	}
+	asStr, err := base64.StdEncoding.DecodeString(cookie)
+	if err != nil {
+		return Flash{}
+	}
+	var flash Flash
+	if err := json.Unmarshal([]byte(asStr), &flash); err != nil {
+		return Flash{}
+	}
+	return flash
+}
+
 func NewSessionHelper(config *config.Config, db *database.Database) *SessionHelper {
 	return &SessionHelper{db, config}
 }
@@ -47,18 +88,18 @@ func (s *SessionHelper) SaveSession(c *gin.Context, cookie string) {
 }
 
 func (s *SessionHelper) DestroySession(c *gin.Context) {
-	c.SetCookie("session", "deleted", 0, "/", "", false, false)
+	// negative time deletes a cookie.
+	c.SetCookie("session", "deleted", -1, "/", "", false, false)
 }
 
 func (s *SessionHelper) RedirectToSignout(c *gin.Context, err error, logger *zap.SugaredLogger) {
-	// TODO(mikehelmick) https://github.com/google/exposure-notifications-verification-server/issues/16
-	//   These redirects should use flash cookies instead of query params.
 	logger.Errorf("invalid session: %v", err)
 	reason := "unauthorized"
 	if err == ErrorUserDisabled {
 		reason = "account disabled"
 	}
-	c.Redirect(http.StatusFound, "/signout?reason="+reason)
+	s.AddFlash(c, "error", reason)
+	c.Redirect(http.StatusFound, "/signout")
 }
 
 func (s *SessionHelper) LoadUserFromSession(c *gin.Context) (*database.User, error) {

@@ -1,0 +1,50 @@
+{{define "apikeys"}}
+{{template "top" .}}
+
+<div class="container">
+{{if .apps}}
+
+ <div class="row">
+  <div class="py-5 text-center">
+    <h2>All API Keys</h2>
+
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col">App</th>
+          <th scope="col">API Key</th>
+          <th scope="col">Enabled</th>
+        </tr>
+      </thead>
+      <tbody>
+      {{range .apps}}
+        <tr>
+          <td scope="row">{{.Name}}</td>
+          <td><code>{{.APIKey}}</code></td>
+          <td>{{if .DeletedAt}}<span class="badge badge-pill badge-danger">revoked</span>
+              {{else}}<span class="badge badge-pill badge-success">enabled</span>{{end}}
+          </td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+ </div>
+{{end}}
+
+ <div class="row">
+  <div class="py-5">
+    <h2>Create New API Key</h2>
+
+    <form method="POST" action="/apikeys/create">
+      <div class="form-group">
+        <label for="testType">Application Name</label>
+        <input type="text" id="name" name="name" size="50" value="">
+      </div>
+      <button type="submit" class="btn btn-outline-primary" name="Action" value="save">Create API Key</button>
+    </form>
+  </div>
+ </div>
+
+{{template "bottom" .}}
+{{end}}

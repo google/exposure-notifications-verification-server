@@ -26,9 +26,18 @@
 
 	  <div class="row">
 		  <div class="col">
+        {{if index .flash "error"}}
+        <div class="alert alert-danger" role="alert">
+          {{index .flash "error"}}
+        </div>
+        {{end}}
+        {{if index .flash "alert"}}
+        <div class="alert alert-success" role="alert">
+          {{index .flash "alert"}}
+        </div>
+        {{end}}
 			  <div id="firebaseui-auth-container">
 				  <h2 id="signout">signing out...</h2>
-          {{if .reason}}<h3>You have been signed out for the following reason: <strong>{{.reason}}</strong></h3>{{end}}
           <h4><a href="/">Sign in again</a></h4>
 			  </div>
 		  </div>
