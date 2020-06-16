@@ -57,6 +57,10 @@ func (m TemplateMap) AddRealtimeFlash(name, val string) {
 		m["flash"] = Flash{}
 	}
 
-	errs := m["flash"].(Flash)
+	errs, ok := m["flash"].(Flash)
+	if !ok {
+		errs := Flash{}
+		m["flash"] = errs
+	}
 	errs[name] = val
 }
