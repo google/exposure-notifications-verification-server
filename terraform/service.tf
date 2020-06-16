@@ -80,6 +80,9 @@ resource "google_cloud_run_service" "verification" {
 
         dynamic "env" {
           for_each = {
+            # Assets - these are built into the container
+            ASSETS_PATH = "/assets"
+
             # Database
             DB_HOST        = google_sql_database_instance.db-inst.private_ip_address
             DB_NAME        = google_sql_database.db.name
