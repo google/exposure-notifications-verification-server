@@ -37,7 +37,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	tb.Helper()
 
 	if testing.Short() {
-		tb.Skipf("🚧 Skipping database tests (short!")
+		tb.Skipf("🚧 Skipping database tests (short)!")
 	}
 
 	if skip, _ := strconv.ParseBool(os.Getenv("SKIP_DATABASE_TESTS")); skip {
