@@ -23,6 +23,11 @@
         <li class="nav-item">
           <a class="nav-link" href="/home">Issue Code</a>
         </li>
+        {{if .user.Admin}}
+        <li class="nav-item">
+          <a class="nav-link" href="/apikeys">API Keys</a>
+        </li>
+        {{end}}
       </ul>
 
       <span class="navbar-text">
@@ -42,22 +47,14 @@
 </div>
 {{end}}
 
-{{if .error}}
+{{if index .flash "error"}}
 <div class="alert alert-danger" role="alert">
-  <ul>
-  {{range .error}}
-    <li>{{.}}</li>
-  {{end}}
-  </ul>
+  {{index .flash "error"}}
 </div>
 {{end}}
-{{if .success}}
+{{if index .flash "alert"}}
 <div class="alert alert-success" role="alert">
-  <ul>
-  {{range .success}}
-    <li>{{.}}</li>
-  {{end}}
-  </ul>
+  {{index .flash "alert"}}
 </div>
 {{end}}
 

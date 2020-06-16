@@ -15,7 +15,6 @@
 package database
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -30,13 +29,38 @@ func TestCreateFindAPIKey(t *testing.T) {
 		t.Fatalf("error creating authorized app: %v", err)
 	}
 
-	fmt.Printf("val: %+v", authApp)
-
 	got, err := db.FindAuthoirizedAppByAPIKey(authApp.APIKey)
 	if err != nil {
 		t.Fatalf("error reading authoirzed app by api key: %v", err)
 	}
 	if diff := cmp.Diff(authApp, got); diff != "" {
+		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestListAPIKeys(t *testing.T) {
+	t.Parallel()
+	db := NewTestDatabase(t)
+
+	var authApp1, authApp2 *AuthorizedApp
+	var err error
+
+	authApp1, err = db.CreateAuthoirzedApp("App 1")
+	if err != nil {
+		t.Fatalf("error creating app: %v", err)
+	}
+	authApp2, err = db.CreateAuthoirzedApp("App 2")
+	if err != nil {
+		t.Fatalf("error creating app: %v", err)
+	}
+
+	want := []*AuthorizedApp{authApp1, authApp2}
+	got, err := db.ListAuthorizedApps(false)
+	if err != nil {
+		t.Fatalf("error listing apps: %v", err)
+	}
+
+	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }

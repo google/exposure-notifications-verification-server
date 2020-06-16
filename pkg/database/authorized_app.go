@@ -42,6 +42,22 @@ func (AuthorizedApp) TableName() string {
 	return "authorized_apps"
 }
 
+// ListAuthorizedApps retrieves all of the configured authoirzed apps.
+// Done without pagination, as the expeicted number of authoirzed apps
+// is low signal digits.
+func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, error) {
+	var apps []*AuthorizedApp
+
+	scope := db.db
+	if includeDeleted {
+		scope = db.db.Unscoped()
+	}
+	if err := scope.Order("name ASC").Find(&apps).Error; err != nil {
+		return nil, fmt.Errorf("query authorized apps: %w", err)
+	}
+	return apps, nil
+}
+
 // CreateAuthoirzedApp generates a new APIKey and assignes it to the specified
 // name.
 func (db *Database) CreateAuthoirzedApp(name string) (*AuthorizedApp, error) {

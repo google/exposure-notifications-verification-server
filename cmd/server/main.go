@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -73,6 +74,12 @@ func main() {
 	verifyAPIController := verify.New(db, signer, signingKey)
 	router.POST("/api/verify", verifyAPIController.Execute)
 	*/
+
+	// Admin pages
+	apiKeyList := apikey.NewListController(ctx, config, db, sessions)
+	router.GET("/apikeys", apiKeyList.Execute)
+	apiKeySave := apikey.NewSaveController(ctx, config, db, sessions)
+	router.POST("/apikeys/create", apiKeySave.Execute)
 
 	router.Run()
 }
