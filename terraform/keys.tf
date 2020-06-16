@@ -30,5 +30,7 @@ resource "google_kms_crypto_key" "claims-signer" {
   version_template {
     algorithm        = "EC_SIGN_P256_SHA256"
     protection_level = "HSM"
+
+    # TODO(sethvargo): support automatic rotation
   }
 }
