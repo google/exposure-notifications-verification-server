@@ -28,6 +28,11 @@ data "google_project" "project" {
   project_id = var.project
 }
 
+resource "google_firebase_project" "default" {
+  provider = google-beta
+  project  = var.project
+}
+
 resource "google_project_service" "services" {
   project = var.project
   for_each = toset([
