@@ -54,7 +54,6 @@ resource "google_sql_database_instance" "db-inst" {
 
   depends_on = [
     google_project_service.services["sqladmin.googleapis.com"],
-    google_project_service.services["sqlagent.googleapis.com"],
     google_project_service.services["sql-component.googleapis.com"],
   ]
 }
