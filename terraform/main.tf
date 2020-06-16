@@ -28,11 +28,6 @@ data "google_project" "project" {
   project_id = var.project
 }
 
-resource "google_firebase_project" "default" {
-  provider = google-beta
-  project  = var.project
-}
-
 resource "google_project_service" "services" {
   project = var.project
   for_each = toset([
@@ -41,6 +36,7 @@ resource "google_project_service" "services" {
     "cloudresourcemanager.googleapis.com",
     "compute.googleapis.com",
     "containerregistry.googleapis.com",
+    "firebase.googleapis.com",
     "iam.googleapis.com",
     "run.googleapis.com",
     "secretmanager.googleapis.com",

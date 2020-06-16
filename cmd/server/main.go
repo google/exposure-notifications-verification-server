@@ -41,7 +41,7 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.LoadHTMLGlob(config.KoDataPath + "/*")
+	router.LoadHTMLGlob(config.AssetsPath + "/*")
 
 	db, err := config.Database.Open()
 	if err != nil {
