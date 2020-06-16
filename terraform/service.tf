@@ -12,43 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-locals {
-  common_envvars = [
-    {
-      name  = "DB_SSLMODE"
-      value = "verify-ca"
-    },
-    {
-      name  = "DB_HOST"
-      value = google_sql_database_instance.db-inst.private_ip_address
-    },
-    {
-      name  = "DB_NAME"
-      value = google_sql_database.db.name
-    },
-    {
-      name  = "DB_SSLCERT"
-      value = "secret://${google_secret_manager_secret_version.db-secret-version["sslcert"].id}?target=file"
-    },
-    {
-      name  = "DB_SSLKEY"
-      value = "secret://${google_secret_manager_secret_version.db-secret-version["sslkey"].id}?target=file"
-    },
-    {
-      name  = "DB_SSLROOTCERT"
-      value = "secret://${google_secret_manager_secret_version.db-secret-version["sslrootcert"].id}?target=file"
-    },
-    {
-      name  = "DB_USER"
-      value = google_sql_user.user.name
-    },
-    {
-      name  = "DB_PASSWORD"
-      value = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
-    },
-  ]
-}
-
 resource "google_service_account" "verification" {
   project      = var.project
   account_id   = "en-verification-sa"
@@ -81,6 +44,22 @@ resource "google_secret_manager_secret_iam_member" "verification-db" {
   member    = "serviceAccount:${google_service_account.verification.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "verification-firebase" {
+  provider = google-beta
+
+  for_each = toset([
+    "api-key",
+    "app-id",
+    "auth-domain",
+    "measurement-id",
+    "message-sender",
+  ])
+
+  secret_id = google_secret_manager_secret.firebase-secret[each.key].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.verification.email}"
+}
+
 resource "google_cloud_run_service" "verification" {
   name     = "verification"
   location = var.region
@@ -100,10 +79,31 @@ resource "google_cloud_run_service" "verification" {
         }
 
         dynamic "env" {
-          for_each = local.common_envvars
+          for_each = {
+            # Database
+            DB_HOST        = google_sql_database_instance.db-inst.private_ip_address
+            DB_NAME        = google_sql_database.db.name
+            DB_PASSWORD    = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
+            DB_SSLCERT     = "secret://${google_secret_manager_secret_version.db-secret-version["sslcert"].id}?target=file"
+            DB_SSLKEY      = "secret://${google_secret_manager_secret_version.db-secret-version["sslkey"].id}?target=file"
+            DB_SSLMODE     = "verify-ca"
+            DB_SSLROOTCERT = "secret://${google_secret_manager_secret_version.db-secret-version["sslrootcert"].id}?target=file"
+            DB_USER        = google_sql_user.user.name
+
+            # Firebase
+            FIREBASE_API_KEY           = "secret://${google_secret_manager_secret_version.firebase-secret-version["api-key"].id}"
+            FIREBASE_APP_ID            = "secret://${google_secret_manager_secret_version.firebase-secret-version["app-id"].id}"
+            FIREBASE_AUTH_DOMAIN       = data.google_firebase_web_app_config.default.auth_domain
+            FIREBASE_DATABASE_URL      = lookup(data.google_firebase_web_app_config.default, "database_url")
+            FIREBASE_MEASUREMENT_ID    = lookup(data.google_firebase_web_app_config.default, "measurement_id")
+            FIREBASE_MESSAGE_SENDER_ID = lookup(data.google_firebase_web_app_config.default, "messaging_sender_id")
+            FIREBASE_PROJECT_ID        = google_firebase_web_app.default.project
+            FIREBASE_STORAGE_BUCKET    = lookup(data.google_firebase_web_app_config.default, "storage_bucket")
+          }
+
           content {
-            name  = env.value["name"]
-            value = env.value["value"]
+            name  = env.key
+            value = env.value
           }
         }
 
