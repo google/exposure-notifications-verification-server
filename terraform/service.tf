@@ -15,14 +15,6 @@
 locals {
   common_envvars = [
     {
-      name  = "DB_POOL_MIN_CONNS"
-      value = "2"
-    },
-    {
-      name  = "DB_POOL_MAX_CONNS"
-      value = "10"
-    },
-    {
       name  = "DB_SSLMODE"
       value = "verify-ca"
     },
@@ -38,7 +30,6 @@ locals {
       name  = "DB_SSLCERT"
       value = "secret://${google_secret_manager_secret_version.db-secret-version["sslcert"].id}?target=file"
     },
-
     {
       name  = "DB_SSLKEY"
       value = "secret://${google_secret_manager_secret_version.db-secret-version["sslkey"].id}?target=file"
