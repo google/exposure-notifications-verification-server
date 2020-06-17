@@ -19,6 +19,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
@@ -27,10 +28,12 @@ import (
 func main() {
 	codeFlag := flag.String("code", "", "verification code to exchange")
 	apikeyFlag := flag.String("apikey", "", "API Key to use")
+	addrFlag := flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
+	timeoutFlag := flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	flag.Parse()
 
 	// Make the request.
-	url := "http://localhost:8080/api/verify"
+	url := *addrFlag + "/api/verify"
 	request := api.VerifyCodeRequest{
 		APIKey:           *apikeyFlag,
 		VerificationCode: *codeFlag,
@@ -38,7 +41,9 @@ func main() {
 	log.Printf("Sending: %+v", request)
 
 	var response api.VerifyCodeResponse
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: *timeoutFlag,
+	}
 
 	if err := jsonclient.MakeRequest(client, url, request, &response); err != nil {
 		log.Fatalf("error making API call: %v", err)

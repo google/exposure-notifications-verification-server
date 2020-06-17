@@ -66,8 +66,9 @@ func (db *Database) IssueToken(verCode string, expireAfter time.Duration) (*Toke
 	var tok *Token
 	err = db.db.Transaction(func(tx *gorm.DB) error {
 		// Load the verification code - do quick expiry and claim checks.
+		// Also lock the row for update.
 		var vc VerificationCode
-		if err := db.db.Where("code = ?", verCode).First(&vc).Error; err != nil {
+		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("code = ?", verCode).First(&vc).Error; err != nil {
 			return err
 		}
 		if vc.IsExpired() {
@@ -78,12 +79,10 @@ func (db *Database) IssueToken(verCode string, expireAfter time.Duration) (*Toke
 		}
 
 		// Mark claimed. Transactional update.
-		res := db.db.Model(&vc).Where("code = ? AND claimed = ?", verCode, false).Update("claimed", true)
+		vc.Claimed = true
+		res := db.db.Save(vc)
 		if res.Error != nil {
 			return res.Error
-		}
-		if res.RowsAffected != 1 {
-			return ErrVerificationCodeUsed
 		}
 
 		// Issue the token. Take the generated value and create a new long term token.
@@ -92,7 +91,7 @@ func (db *Database) IssueToken(verCode string, expireAfter time.Duration) (*Toke
 			TestType:  vc.TestType,
 			TestDate:  vc.TestDate,
 			Used:      false,
-			ExpiresAt: time.Now().Add(expireAfter),
+			ExpiresAt: time.Now().UTC().Add(expireAfter),
 		}
 
 		return db.db.Create(tok).Error
