@@ -25,7 +25,7 @@ func TestSaveVerCode(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
-	maxAge := time.Hour * 24 * 14
+	maxAge := time.Hour
 	code := VerificationCode{
 		Code:      "12345678",
 		TestType:  "confirmed",

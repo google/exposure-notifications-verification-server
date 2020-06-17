@@ -31,6 +31,18 @@ type IssueCodeResponse struct {
 	Error            string `json:"error"`
 }
 
+type VerifyCodeRequest struct {
+	APIKey           string `json:"apikey"`
+	VerificationCode string `json:"code"`
+}
+
+type VerifyCodeResponse struct {
+	TestType          string `json:"testtype"`
+	TestDate          string `json:"testdate"` // ISO 8601 formatted date, YYYY-MM-DD
+	VerificationToken string `json:"token"`    // JWT - signed, but encrypted.
+	Error             string `json:"error"`
+}
+
 /*
 type VerifyPINRequest struct {
 	PIN            string `json:"pin"`

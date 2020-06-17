@@ -23,7 +23,7 @@ import (
 )
 
 func TestGenerateCode(t *testing.T) {
-	code, err := generateCode(8)
+	code, err := GenerateCode(8)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

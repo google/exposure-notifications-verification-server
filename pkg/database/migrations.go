@@ -57,6 +57,16 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				return tx.DropTable("authorized_apps").Error
 			},
 		},
+		{
+			ID: "00004-CreateTokens",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: creating tokens table")
+				return tx.AutoMigrate(&Token{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("tokens").Error
+			},
+		},
 	})
 
 	logger.Infof("database migrations complete")
