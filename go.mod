@@ -14,7 +14,6 @@ require (
 	github.com/google/go-cmp v0.4.1
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ory/dockertest v3.3.5+incompatible
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/sethvargo/go-envconfig v0.1.1
 	github.com/sethvargo/go-gcpkms v0.0.0-20200507180216-f1fca850aed2
 	go.uber.org/zap v1.15.0

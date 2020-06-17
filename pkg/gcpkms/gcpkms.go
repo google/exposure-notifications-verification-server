@@ -24,7 +24,7 @@ import (
 	"github.com/sethvargo/go-gcpkms/pkg/gcpkms"
 )
 
-// Compile time check that GCPKeyManager satisifes signer interface
+// Compile time check that GCPKeyManager satisfies signer interface
 var _ signer.KeyManager = (*GCPKeyManager)(nil)
 
 // GCPKeyManager providers a crypto.Signer that uses GCP KSM to sign bytes.

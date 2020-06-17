@@ -43,7 +43,7 @@ type Token struct {
 	ExpiresAt time.Time
 }
 
-// Returns YYYY-MM-DD formatted test date, or "" if nil.
+// FormatTestDate returns YYYY-MM-DD formatted test date, or "" if nil.
 func (t *Token) FormatTestDate() string {
 	if t.TestDate == nil {
 		return ""
@@ -100,9 +100,9 @@ func (db *Database) IssueToken(verCode string, expireAfter time.Duration) (*Toke
 	return tok, err
 }
 
-func (db *Database) FindTokenById(tokenId string) (*Token, error) {
+func (db *Database) FindTokenByID(tokenID string) (*Token, error) {
 	var token Token
-	if err := db.db.Where("token_id = ?", tokenId).First(&token).Error; err != nil {
+	if err := db.db.Where("token_id = ?", tokenID).First(&token).Error; err != nil {
 		return nil, err
 	}
 	return &token, nil

@@ -363,8 +363,6 @@ github.com/golangci/revgrep v0.0.0-20180526074752-d9c87f5ffaf0/go.mod h1:qOQCunE
 github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4/go.mod h1:Izgrg8RkN3rCIMLGE9CyYmU9pY2Jer6DgANEnZ/L/cQ=
 github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
-github.com/google/exposure-notifications-server v0.0.0-20200612211532-0a699b8eb4d8 h1:tc/vMOVbLq+M8CvmQVXksQTuyBsfZApibN60UeKZOeo=
-github.com/google/exposure-notifications-server v0.0.0-20200612211532-0a699b8eb4d8/go.mod h1:4BgVel7Zt+hG705sn0h+qyhbhjT0e35T86vM/oXno0Q=
 github.com/google/exposure-notifications-server v0.0.0-20200616195634-effd5e63127f h1:tqacCfwEIDUQn+t989C/cDGxY7nmPHK9RauvoDBJmi8=
 github.com/google/exposure-notifications-server v0.0.0-20200616195634-effd5e63127f/go.mod h1:sMn150/oWk+QGcGUnw/vdWKu5+5g5/smWIQiryO5H4A=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=

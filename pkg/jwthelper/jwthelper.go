@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package jwthelper implements some common methods on top of the JWT libary.
+// Package jwthelper implements some common methods on top of the JWT library.
 // In particular, we handle signing in this code base and don't delegate to the library
 // since we're using an external signer.
 package jwthelper

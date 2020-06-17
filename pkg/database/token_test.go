@@ -96,7 +96,7 @@ func TestIssueToken(t *testing.T) {
 					t.Errorf("test date missmatch want: %v, got %v", tc.Verification.TestType, tok.TestDate)
 				}
 
-				got, err := db.FindTokenById(tok.TokenID)
+				got, err := db.FindTokenByID(tok.TokenID)
 				if err != nil {
 					t.Fatalf("error reading token from db: %v", err)
 				}
