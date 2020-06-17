@@ -32,7 +32,7 @@ const (
 )
 
 // GenerateCode creates a new OTP code.
-func generateCode(length int) (string, error) {
+func GenerateCode(length int) (string, error) {
 	buffer := make([]byte, length)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -64,7 +64,7 @@ func (o *OTPRequest) Issue(ctx context.Context, retryCount int) (string, error) 
 	var code string
 	var err error
 	for i := 0; i < retryCount; i++ {
-		code, err = generateCode(o.Length)
+		code, err = GenerateCode(o.Length)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
 			continue

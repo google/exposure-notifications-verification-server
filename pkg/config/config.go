@@ -56,6 +56,12 @@ type Config struct {
 	CodeDigits          int           `env:"CODE_DIGITS,default=8"`
 	ColissionRetryCount int           `env:"COLISSION_RETRY_COUNT,default=6"`
 	AllowedTestAge      time.Duration `env:"ALLOWRD_PAST_TEST_DAYS,default=336h"` // 336h is 14 days.
+	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
+
+	// Verification Token Config
+	VerificationTokenDuration time.Duration `env:"VERIFICATION_TOKEN_DURATION,default=24h"`
+	TokenSigningKey           string        `env:"TOKEN_SIGNING_KEY,required"`
+	TokenIssuer               string        `env:"TOKEN_ISSUER,default=diagnosis-verification-example"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 }

@@ -28,9 +28,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 
-	// Automagically register concrete implementations.
-	_ "github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
+	"github.com/google/exposure-notifications-server/pkg/cache"
 )
 
 func main() {
@@ -49,10 +50,10 @@ func main() {
 	}
 	defer db.Close()
 
-	//signer, err := signer.NewDefault(ctx)
-	//if err != nil {
-	//	log.Fatalf("no key manager: %v", err)
-	//}
+	signer, err := gcpkms.New(ctx)
+	if err != nil {
+		log.Fatalf("error creating KeyManager: %v", err)
+	}
 
 	sessions := controller.NewSessionHelper(config, db)
 
@@ -67,8 +68,18 @@ func main() {
 	homeController := home.New(ctx, config, db, sessions)
 	router.GET("/home", homeController.Execute)
 
+	// API for creating new verificatino codes. Caled via AJAX.
 	issueAPIController := issueapi.New(ctx, config, db, sessions)
 	router.POST("/api/issue", issueAPIController.Execute)
+
+	// Device APIs for exchanging short for long term tokens and signing TEKs with
+	// long term tokens.
+	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
+	if err != nil {
+		log.Fatalf("error establishing API Key cache: %v", err)
+	}
+	verifyAPI := verifyapi.New(ctx, config, db, apiKeyCache, signer)
+	router.POST("/api/verify", verifyAPI.Execute)
 
 	/* TODO(mikehelmick) - change to 2 step code <-> token exchange.
 	verifyAPIController := verify.New(db, signer, signingKey)

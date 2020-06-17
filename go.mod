@@ -7,9 +7,10 @@ require (
 	cloud.google.com/go/firestore v1.2.0 // indirect
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/client9/misspell v0.3.4
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.3.0 // indirect
-	github.com/google/exposure-notifications-server v0.0.0-20200612211532-0a699b8eb4d8
+	github.com/google/exposure-notifications-server v0.0.0-20200616195634-effd5e63127f
 	github.com/google/go-cmp v0.4.1
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ory/dockertest v3.3.5+incompatible

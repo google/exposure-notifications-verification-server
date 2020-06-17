@@ -24,10 +24,10 @@ import (
 	"github.com/sethvargo/go-gcpkms/pkg/gcpkms"
 )
 
-func init() {
-	signer.RegisterKeyManager("gcpkms", New)
-}
+// Compile time check that GCPKeyManager satisfies signer interface
+var _ signer.KeyManager = (*GCPKeyManager)(nil)
 
+// GCPKeyManager providers a crypto.Signer that uses GCP KSM to sign bytes.
 type GCPKeyManager struct {
 	client *kms.KeyManagementClient
 }
