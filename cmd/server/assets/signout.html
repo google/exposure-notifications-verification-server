@@ -26,14 +26,17 @@
 
 	  <div class="row">
 		  <div class="col">
-        {{if index .flash "error"}}
+        {{range $msg := .flash.Errors}}
         <div class="alert alert-danger" role="alert">
-          {{index .flash "error"}}
+          {{$msg}}
         </div>
         {{end}}
-        {{if index .flash "alert"}}
-        <div class="alert alert-success" role="alert">
-          {{index .flash "alert"}}
+        {{range $msg := .flash.Alerts}}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{$msg}}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
         {{end}}
 			  <div id="firebaseui-auth-container">

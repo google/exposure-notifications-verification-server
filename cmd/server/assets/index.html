@@ -42,7 +42,8 @@
                 window.location.assign('/home');
               },
               error: function(xhr, status, error) {
-                window.location.assign(encodeURI("/signout?reason=" + error));
+                console.error(error);
+                window.location.assign(encodeURI("/signout"));
               }
             })
           })

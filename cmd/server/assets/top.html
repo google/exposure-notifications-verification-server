@@ -47,14 +47,14 @@
 </div>
 {{end}}
 
-{{if index .flash "error"}}
+{{range $msg := .flash.Errors}}
 <div class="alert alert-danger" role="alert">
-  {{index .flash "error"}}
+  {{$msg}}
 </div>
 {{end}}
-{{if index .flash "alert"}}
-<div class="alert alert-success" role="alert">
-  {{index .flash "alert"}}
+{{range $msg := .flash.Alerts}}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  {{$msg}}
 </div>
 {{end}}
 

@@ -55,6 +55,7 @@ func main() {
 		log.Fatalf("error creating KeyManager: %v", err)
 	}
 
+	router.Use(middleware.FlashHandler(ctx))
 	sessions := controller.NewSessionHelper(config, db)
 
 	// Handlers for landing, signin, signout.
