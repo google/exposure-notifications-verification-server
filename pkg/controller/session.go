@@ -15,20 +15,10 @@
 package controller
 
 import (
-	"errors"
-	"net/http"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-)
-
-var (
-	ErrorUserNotFound = errors.New("user not found")
-	ErrorUserDisabled = errors.New("user disabled in database")
 )
 
 type SessionHelper struct {
@@ -47,14 +37,4 @@ func (s *SessionHelper) SaveSession(c *gin.Context, cookie string) {
 func (s *SessionHelper) DestroySession(c *gin.Context) {
 	// negative time deletes a cookie.
 	c.SetCookie("session", "deleted", -1, "/", "", false, false)
-}
-
-func (s *SessionHelper) RedirectToSignout(c *gin.Context, err error, logger *zap.SugaredLogger) {
-	logger.Errorf("invalid session: %v", err)
-	reason := "unauthorized"
-	if err == ErrorUserDisabled {
-		reason = "account disabled"
-	}
-	flash.FromContext(c).Error(reason)
-	c.Redirect(http.StatusFound, "/signout")
 }
