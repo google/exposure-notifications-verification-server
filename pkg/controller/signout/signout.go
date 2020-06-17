@@ -38,7 +38,7 @@ func New(config *config.Config, db *database.Database, session *controller.Sessi
 
 func (soc *signoutController) Execute(c *gin.Context) {
 	soc.session.DestroySession(c)
-	m := controller.NewTemplateMapFromSession(soc.config, c, soc.session)
+	m := controller.NewTemplateMapFromSession(soc.config, c)
 	if reason := c.Query("reason"); reason != "" {
 		m["reason"] = reason
 	}

@@ -49,13 +49,6 @@ func New(ctx context.Context, config *config.Config, db *database.Database, sess
 
 func (ic *IssueAPI) Execute(c *gin.Context) {
 	response := api.IssueCodeResponse{}
-	user, err := ic.session.LoadUserFromSession(c)
-	if err != nil || user.Disabled {
-		ic.logger.Errorf("session.LoadUserFromSession: %v", err)
-		response.Error = "unauthorized"
-		c.JSON(http.StatusOK, response)
-		return
-	}
 
 	var request api.IssueCodeRequest
 	if err := c.ShouldBindJSON(&request); err != nil {

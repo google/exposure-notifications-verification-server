@@ -34,7 +34,7 @@ func New(config *config.Config) controller.Controller {
 }
 
 func (ic *indexController) Execute(c *gin.Context) {
-	m := controller.NewTemplateMap(ic.config)
+	m := controller.NewTemplateMap(ic.config, c)
 	m["firebase"] = ic.config.Firebase
 	c.HTML(http.StatusOK, "index", m)
 }

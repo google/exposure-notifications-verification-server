@@ -53,13 +53,9 @@ func New(ctx context.Context, config *config.Config, db *database.Database, sess
 }
 
 func (hc *homeController) Execute(c *gin.Context) {
-	user, err := hc.session.LoadUserFromSession(c)
-	if err != nil || user.Disabled {
-		hc.session.RedirectToSignout(c, err, hc.logger)
-		return
-	}
+	user := c.MustGet("user").(*database.User)
 
-	m := controller.NewTemplateMapFromSession(hc.config, c, hc.session)
+	m := controller.NewTemplateMapFromSession(hc.config, c)
 	// Set test date params
 	now := time.Now()
 	m["maxDate"] = now.Format("2006-01-02")
