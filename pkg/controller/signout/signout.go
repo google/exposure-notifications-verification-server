@@ -26,18 +26,18 @@ import (
 )
 
 type signoutController struct {
-	config  *config.Config
-	db      *database.Database
-	session *controller.SessionHelper
+	config *config.Config
+	db     *database.Database
 }
 
 // New creates a new signout controller. When run, clears the session cookie.
-func New(config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
-	return &signoutController{config, db, session}
+func New(config *config.Config, db *database.Database) controller.Controller {
+	return &signoutController{config, db}
 }
 
 func (soc *signoutController) Execute(c *gin.Context) {
-	soc.session.DestroySession(c)
+	c.SetCookie("session", "", -1, "/", "", false, false)
+
 	m := controller.NewTemplateMapFromSession(soc.config, c)
 	if reason := c.Query("reason"); reason != "" {
 		m["reason"] = reason

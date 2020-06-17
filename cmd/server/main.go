@@ -22,7 +22,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
@@ -70,14 +69,12 @@ func main() {
 	router.LoadHTMLGlob(config.AssetsPath + "/*")
 	router.Use(middleware.FlashHandler(ctx))
 
-	sessions := controller.NewSessionHelper(config, db)
-
 	// Handlers for landing, signin, signout.
 	indexController := index.New(config)
 	router.GET("/", indexController.Execute)
-	signoutController := signout.New(config, db, sessions)
+	signoutController := signout.New(config, db)
 	router.GET("/signout", signoutController.Execute)
-	sessionController := session.New(ctx, config, db, sessions)
+	sessionController := session.New(ctx, config, db)
 	router.POST("/session", sessionController.Execute)
 
 	// User pages, requires auth
@@ -85,11 +82,11 @@ func main() {
 		router := router.Group("/")
 		router.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration))
 
-		homeController := home.New(ctx, config, db, sessions)
+		homeController := home.New(ctx, config, db)
 		router.GET("/home", homeController.Execute)
 
 		// API for creating new verification codes. Called via AJAX.
-		issueAPIController := issueapi.New(ctx, config, db, sessions)
+		issueAPIController := issueapi.New(ctx, config, db)
 		router.POST("/api/issue", issueAPIController.Execute)
 	}
 
@@ -99,10 +96,10 @@ func main() {
 		router.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration))
 		router.Use(middleware.RequireAdmin(ctx))
 
-		apiKeyList := apikey.NewListController(ctx, config, db, sessions)
+		apiKeyList := apikey.NewListController(ctx, config, db)
 		router.GET("/apikeys", apiKeyList.Execute)
 
-		apiKeySave := apikey.NewSaveController(ctx, config, db, sessions)
+		apiKeySave := apikey.NewSaveController(ctx, config, db)
 		router.POST("/apikeys/create", apiKeySave.Execute)
 	}
 

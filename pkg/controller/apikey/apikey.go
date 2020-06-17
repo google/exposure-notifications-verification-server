@@ -30,14 +30,13 @@ import (
 )
 
 type apikeyListController struct {
-	config  *config.Config
-	db      *database.Database
-	session *controller.SessionHelper
-	logger  *zap.SugaredLogger
+	config *config.Config
+	db     *database.Database
+	logger *zap.SugaredLogger
 }
 
-func NewListController(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
-	return &apikeyListController{config, db, session, logging.FromContext(ctx)}
+func NewListController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &apikeyListController{config, db, logging.FromContext(ctx)}
 }
 
 func (lc *apikeyListController) Execute(c *gin.Context) {

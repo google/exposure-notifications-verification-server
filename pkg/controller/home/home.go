@@ -34,19 +34,17 @@ import (
 type homeController struct {
 	config           *config.Config
 	db               *database.Database
-	session          *controller.SessionHelper
 	logger           *zap.SugaredLogger
 	pastDaysDuration time.Duration
 }
 
 // New creates a new controller for the home page.
-func New(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
+func New(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
 	pastDaysDuration := -1 * config.AllowedTestAge
 
 	return &homeController{
 		config:           config,
 		db:               db,
-		session:          session,
 		logger:           logging.FromContext(ctx),
 		pastDaysDuration: pastDaysDuration,
 	}

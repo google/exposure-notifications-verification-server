@@ -29,18 +29,17 @@ import (
 )
 
 type apikeySaveController struct {
-	config  *config.Config
-	db      *database.Database
-	session *controller.SessionHelper
-	logger  *zap.SugaredLogger
+	config *config.Config
+	db     *database.Database
+	logger *zap.SugaredLogger
 }
 
 type formData struct {
 	Name string `form:"name"`
 }
 
-func NewSaveController(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
-	return &apikeySaveController{config, db, session, logging.FromContext(ctx)}
+func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &apikeySaveController{config, db, logging.FromContext(ctx)}
 }
 
 func (sc *apikeySaveController) Execute(c *gin.Context) {
