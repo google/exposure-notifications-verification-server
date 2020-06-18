@@ -50,9 +50,9 @@ func New(ctx context.Context, config *config.Config, db *database.Database, sign
 	return &CertificateAPI{config, db, logging.FromContext(ctx), signer, pubKeyCache}
 }
 
-func (ca *CertificateAPI) getPublicKey(c *gin.Context, keyId string) (crypto.PublicKey, error) {
+func (ca *CertificateAPI) getPublicKey(c *gin.Context, keyID string) (crypto.PublicKey, error) {
 	// Get the public key for the Token Signing Key.
-	keyCache, err := ca.pubKeyCache.WriteThruLookup(keyId,
+	keyCache, err := ca.pubKeyCache.WriteThruLookup(keyID,
 		func() (interface{}, error) {
 			signer, err := ca.signer.NewSigner(c.Request.Context(), ca.config.TokenSigningKey)
 			if err != nil {
