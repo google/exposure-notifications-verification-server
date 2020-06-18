@@ -135,3 +135,7 @@ resource "google_cloud_run_service_iam_member" "verification-public" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
+
+output "url" {
+  value = google_cloud_run_service.verification.status.0.url
+}
