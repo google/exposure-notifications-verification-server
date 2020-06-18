@@ -127,3 +127,11 @@ resource "google_cloud_run_service" "verification" {
     ]
   }
 }
+
+resource "google_cloud_run_service_iam_member" "verification-public" {
+  location = google_cloud_run_service.verification.location
+  project  = google_cloud_run_service.verification.project
+  service  = google_cloud_run_service.verification.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
