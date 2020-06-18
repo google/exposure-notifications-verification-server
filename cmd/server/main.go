@@ -18,14 +18,15 @@ import (
 	"context"
 	"log"
 
+	firebase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
@@ -40,37 +41,67 @@ func main() {
 	if err != nil {
 		log.Fatalf("config error: %v", err)
 	}
-
-	router := gin.Default()
-	router.LoadHTMLGlob(config.AssetsPath + "/*")
-
+	// Setup database
 	db, err := config.Database.Open()
 	if err != nil {
 		log.Fatalf("db connection failed: %v", err)
 	}
 	defer db.Close()
 
+	// Setup firebase
+	app, err := firebase.NewApp(ctx, config.FirebaseConfig())
+	if err != nil {
+		log.Fatalf("failed to setup firebase: %v", err)
+	}
+	auth, err := app.Auth(ctx)
+	if err != nil {
+		log.Fatalf("failed to configure firebase auth: %v", err)
+	}
+
+	// Setup signer
 	signer, err := gcpkms.New(ctx)
 	if err != nil {
 		log.Fatalf("error creating KeyManager: %v", err)
 	}
 
-	sessions := controller.NewSessionHelper(config, db)
+	// Create the main router
+	router := gin.Default()
+	router.LoadHTMLGlob(config.AssetsPath + "/*")
+	router.Use(middleware.FlashHandler(ctx))
 
 	// Handlers for landing, signin, signout.
 	indexController := index.New(config)
 	router.GET("/", indexController.Execute)
-	signoutController := signout.New(config, db, sessions)
+	signoutController := signout.New(config, db)
 	router.GET("/signout", signoutController.Execute)
-	sessionController := session.New(ctx, config, db, sessions)
+	sessionController := session.New(ctx, config, db)
 	router.POST("/session", sessionController.Execute)
 
-	homeController := home.New(ctx, config, db, sessions)
-	router.GET("/home", homeController.Execute)
+	// User pages, requires auth
+	{
+		router := router.Group("/")
+		router.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration))
 
-	// API for creating new verificatino codes. Caled via AJAX.
-	issueAPIController := issueapi.New(ctx, config, db, sessions)
-	router.POST("/api/issue", issueAPIController.Execute)
+		homeController := home.New(ctx, config, db)
+		router.GET("/home", homeController.Execute)
+
+		// API for creating new verification codes. Called via AJAX.
+		issueAPIController := issueapi.New(ctx, config, db)
+		router.POST("/api/issue", issueAPIController.Execute)
+	}
+
+	// Admin pages, requires admin auth
+	{
+		router := router.Group("/")
+		router.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration))
+		router.Use(middleware.RequireAdmin(ctx))
+
+		apiKeyList := apikey.NewListController(ctx, config, db)
+		router.GET("/apikeys", apiKeyList.Execute)
+
+		apiKeySave := apikey.NewSaveController(ctx, config, db)
+		router.POST("/apikeys/create", apiKeySave.Execute)
+	}
 
 	// Device APIs for exchanging short for long term tokens and signing TEKs with
 	// long term tokens.
@@ -85,12 +116,6 @@ func main() {
 	verifyAPIController := verify.New(db, signer, signingKey)
 	router.POST("/api/verify", verifyAPIController.Execute)
 	*/
-
-	// Admin pages
-	apiKeyList := apikey.NewListController(ctx, config, db, sessions)
-	router.GET("/apikeys", apiKeyList.Execute)
-	apiKeySave := apikey.NewSaveController(ctx, config, db, sessions)
-	router.POST("/apikeys/create", apiKeySave.Execute)
 
 	router.Run()
 }

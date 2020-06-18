@@ -31,10 +31,9 @@ import (
 )
 
 type sessionController struct {
-	config  *config.Config
-	db      *database.Database
-	session *controller.SessionHelper
-	logger  *zap.SugaredLogger
+	config *config.Config
+	db     *database.Database
+	logger *zap.SugaredLogger
 }
 
 type formData struct {
@@ -45,8 +44,8 @@ type formData struct {
 // New creates a new session controller. The session controller is responsible
 // for accepting the firebase auth cookie information and establishing a server
 // side session.
-func New(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
-	return &sessionController{config, db, session, logging.FromContext(ctx)}
+func New(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &sessionController{config, db, logging.FromContext(ctx)}
 }
 
 func (ic *sessionController) Execute(c *gin.Context) {
@@ -101,6 +100,6 @@ func (ic *sessionController) Execute(c *gin.Context) {
 		c.Redirect(http.StatusTemporaryRedirect, "/signout?reason=stale")
 		return
 	}
-	ic.session.SaveSession(c, cookie)
+	c.SetCookie("session", cookie, int(expiresIn.Seconds()), "/", "", false, false)
 	c.String(http.StatusOK, `{"status": "success"}`)
 }

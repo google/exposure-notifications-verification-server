@@ -17,11 +17,11 @@ package apikey
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
@@ -30,39 +30,27 @@ import (
 )
 
 type apikeyListController struct {
-	config  *config.Config
-	db      *database.Database
-	session *controller.SessionHelper
-	logger  *zap.SugaredLogger
+	config *config.Config
+	db     *database.Database
+	logger *zap.SugaredLogger
 }
 
-func NewListController(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
-	return &apikeyListController{config, db, session, logging.FromContext(ctx)}
+func NewListController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &apikeyListController{config, db, logging.FromContext(ctx)}
 }
 
 func (lc *apikeyListController) Execute(c *gin.Context) {
-	user, err := lc.session.LoadUserFromSession(c)
-	if err != nil || user.Disabled {
-		lc.session.RedirectToSignout(c, err, lc.logger)
-		return
-	}
-	if !user.Admin {
-		lc.session.AddFlash(c, "error", "That action is not authorized.")
-		c.Redirect(http.StatusTemporaryRedirect, "/home")
-		return
-	}
+	user := c.MustGet("user").(*database.User)
+	flash := flash.FromContext(c)
 
-	m := controller.NewTemplateMapFromSession(lc.config, c, lc.session)
+	m := controller.NewTemplateMapFromSession(lc.config, c)
 	m["user"] = user
 
 	apps, err := lc.db.ListAuthorizedApps(true)
 	if err != nil {
-		m.AddError(fmt.Sprintf("Error loading API Keys: %v", err))
-	} else {
-		if len(apps) == 0 {
-			m.AddAlert("There are no API Keys configured.")
-		}
-		m["apps"] = apps
+		flash.ErrorNow("Error loading API Keys: %v", err)
 	}
+
+	m["apps"] = apps
 	c.HTML(http.StatusOK, "apikeys", m)
 }

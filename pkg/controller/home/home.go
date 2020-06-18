@@ -34,32 +34,26 @@ import (
 type homeController struct {
 	config           *config.Config
 	db               *database.Database
-	session          *controller.SessionHelper
 	logger           *zap.SugaredLogger
 	pastDaysDuration time.Duration
 }
 
 // New creates a new controller for the home page.
-func New(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
+func New(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
 	pastDaysDuration := -1 * config.AllowedTestAge
 
 	return &homeController{
 		config:           config,
 		db:               db,
-		session:          session,
 		logger:           logging.FromContext(ctx),
 		pastDaysDuration: pastDaysDuration,
 	}
 }
 
 func (hc *homeController) Execute(c *gin.Context) {
-	user, err := hc.session.LoadUserFromSession(c)
-	if err != nil || user.Disabled {
-		hc.session.RedirectToSignout(c, err, hc.logger)
-		return
-	}
+	user := c.MustGet("user").(*database.User)
 
-	m := controller.NewTemplateMapFromSession(hc.config, c, hc.session)
+	m := controller.NewTemplateMapFromSession(hc.config, c)
 	// Set test date params
 	now := time.Now()
 	m["maxDate"] = now.Format("2006-01-02")

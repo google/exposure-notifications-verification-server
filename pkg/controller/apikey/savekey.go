@@ -16,11 +16,11 @@ package apikey
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
@@ -29,45 +29,35 @@ import (
 )
 
 type apikeySaveController struct {
-	config  *config.Config
-	db      *database.Database
-	session *controller.SessionHelper
-	logger  *zap.SugaredLogger
+	config *config.Config
+	db     *database.Database
+	logger *zap.SugaredLogger
 }
 
 type formData struct {
 	Name string `form:"name"`
 }
 
-func NewSaveController(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
-	return &apikeySaveController{config, db, session, logging.FromContext(ctx)}
+func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &apikeySaveController{config, db, logging.FromContext(ctx)}
 }
 
 func (sc *apikeySaveController) Execute(c *gin.Context) {
-	user, err := sc.session.LoadUserFromSession(c)
-	if err != nil || user.Disabled {
-		sc.session.RedirectToSignout(c, err, sc.logger)
-		return
-	}
-
 	// All roads lead to a GET redirect.
 	defer c.Redirect(http.StatusSeeOther, "/apikeys")
 
-	if !user.Admin {
-		sc.session.AddError(c, "That action is not authorized.")
-		return
-	}
+	flash := flash.FromContext(c)
 
 	var form formData
 	if err := c.Bind(&form); err != nil {
-		sc.session.AddError(c, "Invalid request.")
+		flash.Error("Invalid request.")
 		return
 	}
 
 	if _, err := sc.db.CreateAuthoirzedApp(form.Name); err != nil {
-		sc.session.AddError(c, fmt.Sprintf("Error creating API Key: %v", err))
+		flash.Error("Failed to create API key: %v", err)
 		return
 	}
 
-	sc.session.AddFlash(c, "alert", fmt.Sprintf("Created API Key for '%v'", form.Name))
+	flash.Alert("Created API Key for %q", form.Name)
 }

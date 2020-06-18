@@ -36,26 +36,18 @@ import (
 
 // IssueAPI is a controller for the verification code JSON API.
 type IssueAPI struct {
-	config  *config.Config
-	db      *database.Database
-	session *controller.SessionHelper
-	logger  *zap.SugaredLogger
+	config *config.Config
+	db     *database.Database
+	logger *zap.SugaredLogger
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config *config.Config, db *database.Database, session *controller.SessionHelper) controller.Controller {
-	return &IssueAPI{config, db, session, logging.FromContext(ctx)}
+func New(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &IssueAPI{config, db, logging.FromContext(ctx)}
 }
 
 func (ic *IssueAPI) Execute(c *gin.Context) {
 	response := api.IssueCodeResponse{}
-	user, err := ic.session.LoadUserFromSession(c)
-	if err != nil || user.Disabled {
-		ic.logger.Errorf("session.LoadUserFromSession: %v", err)
-		response.Error = "unauthorized"
-		c.JSON(http.StatusOK, response)
-		return
-	}
 
 	var request api.IssueCodeRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
