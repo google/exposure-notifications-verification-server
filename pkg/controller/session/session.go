@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
@@ -85,11 +86,13 @@ func (ic *sessionController) Execute(c *gin.Context) {
 	user, err := ic.db.FindUser(email.(string))
 	// TODO(mikehelmick) - automatically created users in disabled state (non-disabled by config)
 	if err != nil {
-		c.Redirect(http.StatusTemporaryRedirect, "/signout?reason=unauthorized")
+		flash.FromContext(c).Error("Unauthorized")
+		c.Redirect(http.StatusTemporaryRedirect, "/signout")
 		return
 	}
 	if user.Disabled {
-		c.Redirect(http.StatusTemporaryRedirect, "/signout?reason=account disabled")
+		flash.FromContext(c).Error("Account is disabled")
+		c.Redirect(http.StatusTemporaryRedirect, "/signout")
 		return
 	}
 
@@ -97,7 +100,8 @@ func (ic *sessionController) Execute(c *gin.Context) {
 	cookie, err := client.SessionCookie(c.Request.Context(), form.IDToken, expiresIn)
 	if err != nil {
 		ic.logger.Errorf("failed to create session cookie: %v", err)
-		c.Redirect(http.StatusTemporaryRedirect, "/signout?reason=stale")
+		flash.FromContext(c).Error("Session has expired")
+		c.Redirect(http.StatusTemporaryRedirect, "/signout")
 		return
 	}
 	c.SetCookie("session", cookie, int(expiresIn.Seconds()), "/", "", false, false)
