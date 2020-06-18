@@ -16,9 +16,16 @@
 // well as between mobile devices and the server.
 package api
 
+import "fmt"
+
 // ErrorReturn defines the common error type.
 type ErrorReturn struct {
 	Error string `json:"error"`
+}
+
+// Error creates an ErrorReturn w/ the formateed message.
+func Error(msg string, vars ...interface{}) *ErrorReturn {
+	return &ErrorReturn{Error: fmt.Sprintf(msg, vars...)}
 }
 
 // IssueCodeRequest defines the parameters to request an new OTP (short term)

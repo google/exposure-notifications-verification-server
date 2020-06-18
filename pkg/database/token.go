@@ -60,7 +60,7 @@ func (db *Database) ClaimToken(tokenID string) error {
 			return err
 		}
 
-		if !tok.ExpiresAt.After(time.Now()) {
+		if !tok.ExpiresAt.After(time.Now().UTC()) {
 			return ErrTokenExpired
 		}
 

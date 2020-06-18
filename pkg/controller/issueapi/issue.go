@@ -19,7 +19,6 @@ package issueapi
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -47,13 +46,10 @@ func New(ctx context.Context, config *config.Config, db *database.Database) cont
 }
 
 func (ic *IssueAPI) Execute(c *gin.Context) {
-	response := api.IssueCodeResponse{}
-
 	var request api.IssueCodeRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ic.logger.Errorf("failed to bind request: %v", err)
-		response.Error = fmt.Sprintf("invalid request: %v", err)
-		c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, api.Error("invalid request: %v", err))
 		return
 	}
 
@@ -61,8 +57,7 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 	if request.TestDate != "" {
 		if parsed, err := time.Parse("2006-01-02", request.TestDate); err != nil {
 			ic.logger.Errorf("time.Parse: %v", err)
-			response.Error = fmt.Sprintf("invalid test date: %v", err)
-			c.JSON(http.StatusOK, response)
+			c.JSON(http.StatusOK, api.Error("invalid test date: %v", err))
 		} else {
 			testDate = &parsed
 		}
@@ -83,12 +78,13 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 	code, err := codeRequest.Issue(c.Request.Context(), ic.config.ColissionRetryCount)
 	if err != nil {
 		ic.logger.Errorf("otp.GenerateCode: %v", err)
-		response.Error = "error generating verification, wait a moment and try again"
-		c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, api.Error("error generating verification, wait a moment and try again"))
 		return
 	}
 
-	response.VerificationCode = code
-	response.ExpiresAt = expiryTime.Format(time.RFC1123)
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK,
+		&api.IssueCodeResponse{
+			VerificationCode: code,
+			ExpiresAt:        expiryTime.Format(time.RFC1123),
+		})
 }

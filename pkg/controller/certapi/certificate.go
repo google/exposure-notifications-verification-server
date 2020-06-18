@@ -100,21 +100,21 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	var request api.VerificationCertificateRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ca.logger.Errorf("failed to bind request: %v", err)
-		c.JSON(http.StatusBadRequest, api.ErrorReturn{Error: fmt.Sprintf("invalid request: %v", err)})
+		c.JSON(http.StatusBadRequest, api.Error("invalid request: %v", err))
 		return
 	}
 
 	publicKey, err := ca.getPublicKey(c, ca.config.TokenSigningKey)
 	if err != nil {
 		ca.logger.Errorf("pubPublicKey: %v", err)
-		c.JSON(http.StatusInternalServerError, api.ErrorReturn{Error: "interal server error"})
+		c.JSON(http.StatusInternalServerError, api.Error("interal server error"))
 		return
 	}
 
 	// Parse and validate the verification token.
 	tokenID, err := ca.validateToken(request.VerificationToken, publicKey)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, api.ErrorReturn{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, api.Error(err.Error()))
 		return
 	}
 
@@ -122,7 +122,7 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	signer, err := ca.signer.NewSigner(c.Request.Context(), ca.config.CertificateSigningKey)
 	if err != nil {
 		ca.logger.Errorf("unable to get signing key: %v", err)
-		c.JSON(http.StatusInternalServerError, api.ErrorReturn{Error: "internal server error - unable to sign certificate"})
+		c.JSON(http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
 		return
 	}
 
@@ -143,14 +143,14 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	certificate, err := jwthelper.SignJWT(certToken, signer)
 	if err != nil {
 		ca.logger.Errorf("error signing certificate: %v", err)
-		c.JSON(http.StatusInternalServerError, api.ErrorReturn{Error: "internal server error - unable to sign certificate"})
+		c.JSON(http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
 		return
 	}
 
 	// To the transactional update to the database last so that if it fails, the client can retry.
 	if err := ca.db.ClaimToken(tokenID); err != nil {
 		ca.logger.Errorf("error claiming tokenId: %v err: %v", tokenID, err)
-		c.JSON(http.StatusBadRequest, api.ErrorReturn{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, api.Error(err.Error()))
 		return
 	}
 

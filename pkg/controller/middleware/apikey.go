@@ -17,6 +17,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -28,16 +29,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	// APIKeyHeader is the authorization header requred for APIKey protected requests.
+	APIKeyHeader = "X-API-Key"
+)
+
 // APIKeyAuth returns a gin Middleware function that reads the X-API-Key HTTP header
 // and checkes it against the authorized apps. The provided cache is used as a
 // write through cache.
 func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache) gin.HandlerFunc {
 	logger := logging.FromContext(ctx)
 	return func(c *gin.Context) {
-		apiKey := c.Request.Header.Get("X-API-Key")
+		apiKey := c.Request.Header.Get(APIKeyHeader)
 		if apiKey == "" {
-			logger.Errorf("missing X-API-KEY header")
-			c.JSON(http.StatusUnauthorized, api.ErrorReturn{Error: "invalid request: missing X-API-KEY header"})
+			logger.Errorf("missing %s header", APIKeyHeader)
+			c.JSON(http.StatusUnauthorized, api.ErrorReturn{Error: fmt.Sprintf("invalid request: missing %s header", APIKeyHeader)})
 			c.Abort()
 			return
 		}
