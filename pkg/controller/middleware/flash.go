@@ -16,10 +16,6 @@ package middleware
 
 import (
 	"context"
-	"errors"
-	"net/http"
-	"net/url"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
@@ -31,50 +27,17 @@ func FlashHandler(ctx context.Context) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		// Always mark the current flash cookie for clearing
-		http.SetCookie(c.Writer, &http.Cookie{
-			Name:    "flash",
-			MaxAge:  -1,
-			Expires: time.Unix(0, 0),
-			Path:    "/",
-		})
+		flash.Clear(c)
 
 		// Start with an empty flash
-		f := flash.New()
+		f := flash.FromContext(c)
 
-		// Attempt to load the flash data from a cookie
-		cookie, err := c.Cookie("flash")
-		if err != nil && !errors.Is(err, http.ErrNoCookie) {
-			logger.Errorw("failed to load flash cookie", "error", err)
+		// Load the cookie value
+		if err := f.LoadFromCookie(); err != nil {
+			logger.Errorf("LoadFromCookie", "error", err)
 		}
-
-		// Parse the cookie
-		if cookie != "" {
-			var err error
-			f, err = flash.Load(cookie)
-			if err != nil {
-				logger.Errorw("failed to load flash from cookie", "error", err)
-			}
-		}
-
-		// Put the flash on the context
-		c.Set("flash", f)
 
 		// Call other middlewares and do all the things
 		c.Next()
-
-		// Save the flash into a cookie for the next request
-		val, err := f.Dump()
-		if err != nil {
-			logger.Errorw("failed to dump flash: %w", err)
-		}
-
-		if val != "" {
-			// Update the cookie with the latest flash data
-			http.SetCookie(c.Writer, &http.Cookie{
-				Name:  "flash",
-				Value: url.QueryEscape(val),
-				Path:  "/",
-			})
-		}
 	}
 }

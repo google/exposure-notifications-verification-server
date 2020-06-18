@@ -18,18 +18,26 @@ package flash
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"net/url"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 const (
+	flashKey = "flash"
 	alertKey = "alert"
 	errorKey = "error"
 )
 
 type Flash struct {
+	c *gin.Context
+
 	// now is the current flash (loaded from a cookie in the current context).
 	// next is the upcoming flash to be saved in the next cookie for the next
 	// request.
@@ -37,64 +45,72 @@ type Flash struct {
 	lock      sync.Mutex
 }
 
-// New creates a new Flash instance.
-func New() *Flash {
+// new creates a flash with the context.
+func new(c *gin.Context) *Flash {
 	return &Flash{
+		c:    c,
 		now:  make(map[string][]string),
 		next: make(map[string][]string),
 	}
 }
 
+// Clear marks the request to delete the existing flash cookie.
+func Clear(c *gin.Context) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:    flashKey,
+		MaxAge:  -1,
+		Expires: time.Unix(0, 0),
+		Path:    "/",
+	})
+}
+
 // FromContext returns the flash saved on the given context.
 func FromContext(c *gin.Context) *Flash {
-	f, ok := c.Get("flash")
-	if !ok {
-		f := New()
-		c.Set("flash", f)
-		return f
+	if f, ok := c.Get(flashKey); ok {
+		if typ, ok := f.(*Flash); ok {
+			return typ
+		}
 	}
 
-	typ, ok := f.(*Flash)
-	if !ok {
-		f := New()
-		c.Set("flash", f)
-		return f
-	}
-
-	return typ
+	f := new(c)
+	c.Set(flashKey, f)
+	return f
 }
 
-// Load parses a flash context from the given value. The value is a
-// base64-encoded JSON dump of the flash data.
-func Load(val string) (*Flash, error) {
-	decoded, err := base64.StdEncoding.DecodeString(val)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode value: %w", err)
+// LoadFromCookie parses flash data from a cookie.
+func (f *Flash) LoadFromCookie() error {
+	val, err := f.c.Cookie(flashKey)
+	if err != nil && !errors.Is(err, http.ErrNoCookie) {
+		return err
+	}
+	if val == "" {
+		return nil
 	}
 
+	// Un-url-encode
+	unescaped, err := url.QueryUnescape(val)
+	if err != nil {
+		return fmt.Errorf("failed to unescape value: %w", err)
+	}
+
+	// Decode the string
+	decoded, err := base64.StdEncoding.DecodeString(unescaped)
+	if err != nil {
+		return fmt.Errorf("failed to decode value: %w", err)
+	}
+
+	// Parse as JSON
 	var m map[string][]string
 	if err := json.Unmarshal(decoded, &m); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %w", err)
+		return fmt.Errorf("failed to unmarshal: %w", err)
 	}
 
-	f := New()
-	if len(m) != 0 {
-		f.now = m
+	// If there's any data, set it as now, overwriting any existing flash data at
+	// that key if it exists.
+	for k, v := range m {
+		f.now[k] = v
 	}
-	return f, nil
-}
-
-// Dump produces a saveable output for the next flash value.
-func (f *Flash) Dump() (string, error) {
-	if len(f.next) == 0 {
-		return "", nil
-	}
-
-	b, err := json.Marshal(f.next)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal as json: %w", err)
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
+	return nil
 }
 
 // Error adds a new error to the upcoming flash instance.
@@ -132,6 +148,14 @@ func (f *Flash) Add(key, msg string, vars ...interface{}) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.next[key] = append(f.next[key], fmt.Sprintf(msg, vars...))
+
+	// Set the cookie on write.
+	http.SetCookie(f.c.Writer, &http.Cookie{
+		Name:   flashKey,
+		Value:  f.toCookieValue(f.next),
+		MaxAge: 300,
+		Path:   "/",
+	})
 }
 
 // AddNow inserts the message into the current flash for the given key.
@@ -153,4 +177,22 @@ func (f *Flash) GetNow(key string) []string {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	return f.now[key]
+}
+
+// toCookieValue converts the given map to its cookie value.
+func (f *Flash) toCookieValue(m map[string][]string) string {
+	b, err := json.Marshal(m)
+	if err != nil {
+		// This should never happen because JSON only fails to marshal when the
+		// values are unmarshallable (func, chan), or with circular references,
+		// neither of which can happen here.
+		log.Printf("failed to marshal as json: %v", err)
+	}
+
+	// Base64-encode the json.
+	encoded := base64.StdEncoding.EncodeToString(b)
+
+	// Escape any characters (cookies are finicky that way).
+	escaped := url.QueryEscape(encoded)
+	return escaped
 }
