@@ -1,51 +1,34 @@
 {{define "signout"}}
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <title>Signout</title>
+  {{template "head" .}}
 
   {{template "firebase" .}}
-
-  <script type="text/javascript">
-	window.addEventListener('load', function() {
-		firebase.auth().signOut().then(function() {
-			document.getElementById('signout').textContent = 'You have been successfully logged out';
-		}).catch(function(error) {
-			document.getElementById('signout').textContent = 'Error signing out, close browser window.';
-		});
-  });
-  </script>
 </head>
 
-<body class="bg-light">
-  <div class="container">
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
     <div class="row">
-      <div class="py-5 text-center">
-        <h2>Signout</h2>
+      <div id="firebaseui-auth-container">
+        <p id="signout">Signing out...</p>
       </div>
     </div>
+  </main>
 
-	  <div class="row">
-		  <div class="col">
-        {{range $msg := .flash.Errors}}
-        <div class="alert alert-danger" role="alert">
-          {{$msg}}
-        </div>
-        {{end}}
-        {{range $msg := .flash.Alerts}}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-          {{$msg}}
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        {{end}}
-			  <div id="firebaseui-auth-container">
-				  <h2 id="signout">signing out...</h2>
-          <h4><a href="/">Sign in again</a></h4>
-			  </div>
-		  </div>
-	   </div>
-  </div>
+  {{template "scripts" .}}
+
+  <script type="text/javascript">
+    window.addEventListener('load', function() {
+      firebase.auth().signOut().then(function() {
+        document.getElementById('signout').textContent = 'You have been successfully logged out';
+      }).catch(function(error) {
+        document.getElementById('signout').textContent = 'Error signing out, close browser window.';
+      });
+    });
+  </script>
 </body>
 </html>
 {{end}}

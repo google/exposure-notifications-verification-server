@@ -1,121 +1,142 @@
 {{define "home"}}
-{{template "top" .}}
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
 
+<body>
+  {{template "navbar" .}}
 
-<div class="container">
- <div class="row">
-  <div class="py-5 text-center">
-    <h2>Issue Diagnosis Verification Code</h2>
-  </div>
- </div>
+  <main role="main" class="container">
+    <div class="row">
+      <h1>Issue Diagnosis Verification Code</h1>
+      <p>
+        Complete the following form to issue a single-use token to verify a
+        patient. <strong>Do not submit this form until you are prepared to relay
+        the code to the patient.</strong>
+      </p>
+    </div>
 
- <div class="row">
-  <div class="py-12 text-left">
     <form id="issueForm" action="#">
-      <div class="form-group">
-        <label for="testType" class="display-4">Select COVID-19 Status</label>
-        <div class="form-check">
-         <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked>
-         <label class="form-check-label" for="testType1">
-           Confirmed Positive Test Result
-         </label>
-         <small id="testType1Help" class="form-text text-muted">means a confirmed positive test result from an official testing source</small>
-        </div>
-        <div class="form-check">
-         <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" >
-         <label class="form-check-label" for="testType2">
-           Likely Diagnosis
-         </label>
-         <small id="testType2Help" class="form-text text-muted">means a clinical diagnosis, but does not require a test result</small>
-        </div>
-        <div class="form-check">
-         <input class="form-check-input" type="radio" name="testType" id="testType3" value="negative" >
-         <label class="form-check-label" for="testType3">
-           Confirmed Negative Test Result
-         </label>
-         <small id="testType3Help" class="form-text text-muted">means a confirmed negative test result from an official testing source</small>
+      <div class="form-group row">
+        <label for="testType" class="col-sm-3">COVID-19 status</label>
+        <div class="col-sm-9">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
+            <label class="form-check-label" for="testType1">Confirmed <strong>positive</strong> test</label>
+            <small class="form-text text-muted">
+              Confirmed positive test result from an official testing source
+            </small>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" />
+            <label class="form-check-label" for="testType2">Likely diagnosis</label>
+            <small class="form-text text-muted">
+              Clinical diagnosis without a test
+            </small>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="testType" id="testType3" value="likely" />
+            <label class="form-check-label" for="testType3">Confirmed <strong>negative</strong> test</label>
+            <small class="form-text text-muted">
+              Confirmed negative test result from an official testing source
+            </small>
+          </div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="testDate" class="display-4">Enter A Test Date (Optional)</label>
-        <div class="datepicker date input-group p-0 shadow-sm">
-          <input type="date" id="testDate" name="testDate" value="" min="{{.minDate}}" max="{{.maxDate}}" />
+      <div class="row form-group">
+        <label for="testDate" class="col-sm-3">Test date</label>
+        <div class="col-sm-9">
+          <div class="datepicker date input-group p-0 shadow-sm">
+            <input type="date" id="testDate" name="testDate" vmin="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+          </div>
+          <small class="form-text text-muted">
+            Optional, cannot be more than 14 days prior to today
+          </small>
         </div>
-        <small id="testDateHelp" class="form-text text-muted">can be no greater than 14 days prior to today</small>
       </div>
 
-
-      <p id="testDateHelp" class="form-text"><strong>When you submit this, a verification code will be assigned.<br/>The code will be good for <u>{{.duration}}</u>.<br/>
-      Do not submit this form until you are prepared to give the code to the patient.</p>
+      <div class="row form-group">
+        <div class="offset-sm-3 col-sm-9">
+          <button id="submit" class="btn btn-primary">Generate code</button>
+        </div>
+      </div>
     </form>
-    <button id="submit"class="btn btn-outline-primary">Issue Verification Code</button>
-  </div>
- </div>
+
+    <div id="codearea" style="display:none">
+      <div class="row">
+        <p>
+          Share this code with the patient <strong>immediately</strong>. This
+          code expires at <span id="expiresAt"></span>.
+        </p>
+      </div>
+
+      <div class="row">
+        <p id="vercode" class="display-2 alert alert-info" style="font-family:monospace; letter-spacing:0.5em"></p>
+      </div>
+
+      <div class="row">
+        <button id="startover" class="btn btn-warning">Clear and generate another code</button>
+      </div>
+    </div>
+
+    <div class="row" id="codeerror" style="display:none"></div>
+  </main>
+
+  {{template "scripts" .}}
 
  <script type="text/javascript">
    $(document).ready(function(){
-        // click on button submit
-        $("#submit").on('click', function(event) {
-          event.preventDefault();
-          // Disable the submit button so we only issue one code.
-          $("#submit").prop('disabled', true);
-          var data = {};
-          $($("#issueForm").serializeArray()).each(function(index, obj){
-            data[obj.name] = obj.value;
-          });
-          $.ajax({
-                 url: '/api/issue',
-                 type : "POST",
-                 dataType : 'json',
-                 contentType: 'application/json',
-                 data : JSON.stringify(data),
-                 success : function(result) {
-                     if (result.error != "") {
-                       $("#vercode").text(result.error);
-                       $("#codearea").hide();
-                       $("#coderror").show();
-                     } else {
-                       $("#vercode").text(result.code);
-                       $("#expiresAt").text(result.expiresAt);
-                       $("#codearea").show();
-                       $("#coderror").hide();
-                     }
-                 },
-                 error: function(xhr, resp, text) {
-                   $("#codeerror").text("error: " + text);
-                   $("#codearea").hide();
-                   $("#coderror").show();
-                   console.log(xhr, resp, text);
-                 }
-             });
-         });
-       $("#startover").on('click', function() {
-         // Hide the previously issued code and enable the submit button.
-         $("#codearea").hide()
-         $("#testDate").val("")
-         $("#submit").prop('disabled', false);
-         $("#vercode").text("")
-         $("#expiresAt").text("")
-         $("#codeerror").text("")
-       });
-     });
+      // click on button submit
+      $("#submit").on('click', function(event) {
+        event.preventDefault();
 
- </script>
+        // Disable the submit button so we only issue one code.
+        $("#submit").prop('disabled', true);
+        var data = {};
+        $($("#issueForm").serializeArray()).each(function(index, obj){
+          data[obj.name] = obj.value;
+        });
+        $.ajax({
+          url: '/api/issue',
+          type : "POST",
+          dataType : 'json',
+          contentType: 'application/json',
+          data : JSON.stringify(data),
+          success : function(result) {
+            if (result.error != "") {
+              $("#vercode").text(result.error);
+              $("#codearea").hide();
+              $("#coderror").show();
+            } else {
+              $("#expiresAt").text(result.expiresAt);
+              $("#vercode").text(result.code);
+              $("#codearea").show();
+              $("#coderror").hide();
+            }
+          },
+          error: function(xhr, resp, text) {
+            $("#codeerror").text("error: " + text);
+            $("#codearea").hide();
+            $("#coderror").show();
+            console.log(xhr, resp, text);
+          }
+        });
+      });
 
-<div class="row">
- <div class="py-12 text-left">
-   <div id="codearea"  style="display:none">
-     <p>Share this code with the patient immediately:
-     <div id="vercode" class="display-2 alert alert-info" style="letter-spacing: 0.5em;"></div>
-     <div>Expires At: <strong><span id="expiresAt"></span></strong></div>
-     <button id="startover"class="btn btn-outline-warning">Clear and Issue Another Code</button>
-   </div>
-   <div id ="codeerror" style="display:none"> </div>
- </div>
-</div>
-
-
-
-{{template "bottom" .}}
+      $("#startover").on('click', function() {
+        // Hide the previously issued code and enable the submit button.
+        $("#codearea").hide()
+        $("#testDate").val("")
+        $("#submit").prop('disabled', false);
+        $("#vercode").text("")
+        $("#expiresAt").text("")
+        $("#codeerror").text("")
+      });
+    });
+  </script>
+</body>
+</html>
 {{end}}
