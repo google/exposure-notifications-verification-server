@@ -55,11 +55,11 @@
       'signInOptions': [
         firebase.auth.EmailAuthProvider.PROVIDER_ID
       ],
+
       // tosUrl and privacyPolicyUrl accept either url string or a callback
-      // function.
-      // Terms of service url/callback.
+      // function. You should update these to point to your Terms of Service and
+      // Privacy Policy accordingly.
       'tosUrl': 'http://example.com',
-      // Privacy policy url/callback.
       'privacyPolicyUrl': function() {
         window.location.assign('http://example.com');
       }
