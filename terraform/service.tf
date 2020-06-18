@@ -45,7 +45,7 @@ resource "google_secret_manager_secret_iam_member" "verification-db" {
 }
 
 resource "google_cloud_run_service" "verification" {
-  name     = "verification"
+  name     = "server"
   location = var.region
 
   template {
