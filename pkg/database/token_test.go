@@ -59,9 +59,9 @@ func TestIssueToken(t *testing.T) {
 				Code:      "ABC123-2",
 				Claimed:   false,
 				TestType:  "confirmed",
-				ExpiresAt: time.Now().Add(time.Millisecond * 250),
+				ExpiresAt: time.Now().Add(time.Second),
 			},
-			Delay: 250 * time.Millisecond,
+			Delay: time.Second,
 			Error: ErrVerificationCodeExpired.Error(),
 		},
 	}
@@ -117,5 +117,31 @@ func TestIssueToken(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestPurgeTokens(t *testing.T) {
+	t.Parallel()
+	db := NewTestDatabase(t)
+
+	now := time.Now()
+	testData := []*Token{
+		{TokenID: "111111", TestType: "negative", ExpiresAt: now.Add(time.Second)},
+		{TokenID: "222222", TestType: "negative", ExpiresAt: now.Add(time.Second)},
+		{TokenID: "333333", TestType: "negative", ExpiresAt: now.Add(time.Minute)},
+	}
+	for _, rec := range testData {
+		if err := db.db.Save(rec).Error; err != nil {
+			t.Fatalf("can't save test data: %v", err)
+		}
+	}
+
+	// Need to let some time lapse since we can't back date records through normal channels.
+	time.Sleep(2 * time.Second)
+
+	if count, err := db.PurgeTokens(time.Millisecond * 500); err != nil {
+		t.Fatalf("error doing purge: %v", err)
+	} else if count != 2 {
+		t.Fatalf("purge record count mismatch, want: 2, got: %v", count)
 	}
 }

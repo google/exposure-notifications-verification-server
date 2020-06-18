@@ -16,6 +16,7 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
@@ -65,6 +66,56 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return tx.DropTable("tokens").Error
+			},
+		},
+		{
+			ID: "00005-CreateCleanups",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: creating cleanup status table")
+				if err := tx.AutoMigrate(&CleanupStatus{}).Error; err != nil {
+					return err
+				}
+				// Seed database w/ cleanup record.
+				if err := tx.Create(&CleanupStatus{Type: "cleanup", Generation: 1, NotBefore: time.Now()}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("cleanup_statuses").Error
+			},
+		},
+		{
+			ID: "00006-AddIndexes",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: add users purge index")
+				if err := tx.Model(&User{}).AddIndex("users_purge_index", "disabled", "updated_at").Error; err != nil {
+					return err
+				}
+				logger.Infof("db migrations: add verification code purge index")
+				if err := tx.Model(&VerificationCode{}).AddIndex("ver_code_purge_index", "expires_at").Error; err != nil {
+					return err
+				}
+				logger.Infof("db migrations: add tokens purge index")
+				if err := tx.Model(&VerificationCode{}).AddIndex("token_purge_index", "expires_at").Error; err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: drop users purge index")
+				if err := tx.Model(&User{}).RemoveIndex("users_purge_index").Error; err != nil {
+					return err
+				}
+				logger.Infof("db migrations: drop verification code purge index")
+				if err := tx.Model(&VerificationCode{}).RemoveIndex("ver_code_purge_index").Error; err != nil {
+					return err
+				}
+				logger.Infof("db migrations: drop tokens purge index")
+				if err := tx.Model(&VerificationCode{}).RemoveIndex("token_purge_index").Error; err != nil {
+					return err
+				}
+				return nil
 			},
 		},
 	})

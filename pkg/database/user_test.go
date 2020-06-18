@@ -17,6 +17,7 @@ package database
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -69,5 +70,37 @@ func TestUserNotFound(t *testing.T) {
 		t.Fatalf("expected error, got nil")
 	} else if !strings.Contains(err.Error(), "record not found") {
 		t.Errorf("wrong error, wanted 'record not found', got '%v'", err)
+	}
+}
+
+func TestPurgeUsers(t *testing.T) {
+	t.Parallel()
+	db := NewTestDatabase(t)
+
+	email := "dr@example.com"
+	user := User{
+		Email:    email,
+		Name:     "Dr Example",
+		Admin:    false,
+		Disabled: true,
+	}
+
+	if err := db.SaveUser(&user); err != nil {
+		t.Fatalf("error creating user: %v", err)
+	}
+
+	time.Sleep(time.Millisecond * 2)
+
+	count, err := db.PurgeUsers(time.Millisecond)
+	if err != nil {
+		t.Fatalf("unexpected error purging users: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("wrong row count, want: %v, got: %v", 1, count)
+	}
+
+	_, err = db.FindUser(email)
+	if err == nil {
+		t.Fatalf("expected an error loading nonexistent user.")
 	}
 }

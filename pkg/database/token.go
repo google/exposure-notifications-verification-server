@@ -128,3 +128,16 @@ func (db *Database) FindTokenByID(tokenID string) (*Token, error) {
 	}
 	return &token, nil
 }
+
+// PurgeTokens will delete tokens that have expired since at least the
+// provided maxAge ago.
+// This is a hard delete, not a soft delete.
+func (db *Database) PurgeTokens(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+	// Delete codes that expired before the delete before time.
+	rtn := db.db.Unscoped().Where("expires_at < ?", deleteBefore).Delete(&Token{})
+	return rtn.RowsAffected, rtn.Error
+}

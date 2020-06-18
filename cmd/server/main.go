@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	firebase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
@@ -24,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -77,6 +79,12 @@ func main() {
 	router.GET("/signout", signoutController.Execute)
 	sessionController := session.New(ctx, config, db)
 	router.POST("/session", sessionController.Execute)
+
+	// Cleanup handler doesn't require authentication - does use locking to ensure
+	// database isn't tipped over by cleanup.
+	cleanupCache, _ := cache.New(time.Minute)
+	cleanupController := cleanup.New(ctx, config, cleanupCache, db)
+	router.GET("/cleanup", cleanupController.Execute)
 
 	// User pages, requires auth
 	{

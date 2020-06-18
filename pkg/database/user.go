@@ -46,3 +46,15 @@ func (db *Database) SaveUser(u *User) error {
 	}
 	return db.db.Save(u).Error
 }
+
+// PurgeUsers will remove users records that are disabled and haven't been updated
+// within the provided duration.
+// This is a hard delete, not a soft delete.
+func (db *Database) PurgeUsers(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+	rtn := db.db.Unscoped().Where("disabled = ? and updated_at < ?", true, deleteBefore).Delete(&User{})
+	return rtn.RowsAffected, rtn.Error
+}
