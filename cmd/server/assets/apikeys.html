@@ -29,26 +29,28 @@
     <h2>All API Keys</h2>
 
     {{if .apps}}
-    <table class="table table-bordered table-responsive table-striped">
-      <thead>
-        <tr>
-          <th scope="col">App</th>
-          <th scope="col">API Key</th>
-          <th scope="col">Enabled</th>
-        </tr>
-      </thead>
-      <tbody>
-      {{range .apps}}
-        <tr>
-          <td scope="row">{{.Name}}</td>
-          <td><code>{{.APIKey}}</code></td>
-          <td>{{if .DeletedAt}}<span class="badge badge-pill badge-danger">revoked</span>
-              {{else}}<span class="badge badge-pill badge-success">enabled</span>{{end}}
-          </td>
-        </tr>
-      {{end}}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th scope="col">App</th>
+            <th scope="col">API Key</th>
+            <th scope="col">Enabled</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{range .apps}}
+          <tr>
+            <td scope="row">{{.Name}}</td>
+            <td><code>{{.APIKey}}</code></td>
+            <td>{{if .DeletedAt}}<span class="badge badge-pill badge-danger">revoked</span>
+                {{else}}<span class="badge badge-pill badge-success">enabled</span>{{end}}
+            </td>
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+    </div>
     {{else}}
     <p>There are no API keys. Create one below.</p>
     {{end}}
