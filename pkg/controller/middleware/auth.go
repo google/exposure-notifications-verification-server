@@ -63,7 +63,7 @@ func RequireAdmin(ctx context.Context) gin.HandlerFunc {
 			case gin.MIMEJSON:
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			case gin.MIMEHTML:
-				flash.FromContext(c).Error("unauthorized")
+				flash.FromContext(c).Error("Unauthorized")
 				c.Redirect(http.StatusFound, "/signout")
 			}
 
@@ -140,9 +140,10 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 
 			switch c.NegotiateFormat(gin.MIMEJSON, gin.MIMEHTML) {
 			case gin.MIMEJSON:
+				flash.FromContext(c).Error("Unauthorized")
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			case gin.MIMEHTML:
-				flash.FromContext(c).Error("unauthorized")
+				flash.FromContext(c).Error("Unauthorized")
 				c.Redirect(http.StatusFound, "/signout")
 			}
 

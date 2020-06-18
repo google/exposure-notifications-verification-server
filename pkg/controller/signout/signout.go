@@ -39,9 +39,6 @@ func (soc *signoutController) Execute(c *gin.Context) {
 	c.SetCookie("session", "", -1, "/", "", false, false)
 
 	m := controller.NewTemplateMapFromSession(soc.config, c)
-	if reason := c.Query("reason"); reason != "" {
-		m["reason"] = reason
-	}
 	m["firebase"] = soc.config.Firebase
 	c.HTML(http.StatusOK, "signout", m)
 }

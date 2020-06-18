@@ -12,8 +12,10 @@
 
   <main role="main" class="container">
     <div class="row">
-      <div id="firebaseui-auth-container">
-        <p id="signout">Signing out...</p>
+      <div class="col">
+        <div id="firebaseui-auth-container">
+          <p id="signout">Signing out...</p>
+        </div>
       </div>
     </div>
   </main>
@@ -23,7 +25,7 @@
   <script type="text/javascript">
     window.addEventListener('load', function() {
       firebase.auth().signOut().then(function() {
-        document.getElementById('signout').textContent = 'You have been successfully logged out';
+        document.getElementById('signout').textContent = 'You are logged out.';
       }).catch(function(error) {
         document.getElementById('signout').textContent = 'Error signing out, close browser window.';
       });
