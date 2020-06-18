@@ -34,11 +34,17 @@
                 data: {idToken: idToken, csrfToken: csrfToken},
                 contentType: 'application/x-www-form-urlencoded',
                 success: function(returnData) {
+                  // The user successfully signed in, redirect to home.
                   window.location.assign('/home');
                 },
-                error: function(xhr, status, error) {
-                  console.error(error);
-                  window.location.assign(encodeURI("/signout"));
+                error: function(xhr, status, e) {
+                  // There was an error finding the user. Redirect to the
+                  // signout page to clear the firebase cookie and any session
+                  // data.
+                  //
+                  // The flash data may have more detailed error messages, which
+                  // will be displayed on the signout page.
+                  window.location.assign("/signout");
                 }
               })
             })

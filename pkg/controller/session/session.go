@@ -20,13 +20,13 @@ import (
 	"context"
 	"net/http"
 
+	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
-	firebase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -34,6 +34,7 @@ import (
 type sessionController struct {
 	config *config.Config
 	db     *database.Database
+	client *auth.Client
 	logger *zap.SugaredLogger
 }
 
@@ -45,65 +46,29 @@ type formData struct {
 // New creates a new session controller. The session controller is responsible
 // for accepting the firebase auth cookie information and establishing a server
 // side session.
-func New(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
-	return &sessionController{config, db, logging.FromContext(ctx)}
+func New(ctx context.Context, config *config.Config, client *auth.Client, db *database.Database) controller.Controller {
+	return &sessionController{config, db, client, logging.FromContext(ctx)}
 }
 
-func (ic *sessionController) Execute(c *gin.Context) {
+func (c *sessionController) Execute(g *gin.Context) {
+	ctx := g.Request.Context()
+	flash := flash.FromContext(g)
+
 	var form formData
-	err := c.Bind(&form)
-	if err != nil {
-		// TODO(mikehelmick) - handle this better.
-		ic.logger.Errorf("ERROR: %v", err)
-	}
-
-	// get the firebase admin client.
-	ctx := c.Request.Context()
-	app, err := firebase.NewApp(ctx, ic.config.FirebaseConfig())
-	if err != nil {
-		ic.logger.Errorf("ERROR: %v", err)
-	}
-	client, err := app.Auth(ctx)
-	if err != nil {
-		ic.logger.Errorf("ERROR: %v", err)
-	}
-
-	// Make an online call to the firebase auth to verify the token isn't revoked.
-	token, err := client.VerifyIDTokenAndCheckRevoked(ctx, form.IDToken)
-	if err != nil {
-		ic.logger.Errorf("error verifying ID token: %v\n", err)
-		c.String(http.StatusUnauthorized, "error verifying identity")
+	if err := g.Bind(&form); err != nil {
+		flash.Error("Failed to process login: %v", err)
+		g.JSON(http.StatusBadRequest, nil)
 		return
 	}
 
-	email, ok := token.Claims["email"]
-	if !ok {
-		ic.logger.Errorf("invalid token, no email claim")
-		c.String(http.StatusUnauthorized, "invalid user")
+	ttl := c.config.SessionCookieDuration
+	cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
+	if err != nil {
+		flash.Error("Failed to create session: %v", err)
+		g.JSON(http.StatusUnauthorized, nil)
 		return
 	}
 
-	user, err := ic.db.FindUser(email.(string))
-	// TODO(mikehelmick) - automatically created users in disabled state (non-disabled by config)
-	if err != nil {
-		flash.FromContext(c).Error("Unauthorized")
-		c.Redirect(http.StatusTemporaryRedirect, "/signout")
-		return
-	}
-	if user.Disabled {
-		flash.FromContext(c).Error("Account is disabled")
-		c.Redirect(http.StatusTemporaryRedirect, "/signout")
-		return
-	}
-
-	expiresIn := ic.config.SessionCookieDuration
-	cookie, err := client.SessionCookie(c.Request.Context(), form.IDToken, expiresIn)
-	if err != nil {
-		ic.logger.Errorf("failed to create session cookie: %v", err)
-		flash.FromContext(c).Error("Session has expired")
-		c.Redirect(http.StatusTemporaryRedirect, "/signout")
-		return
-	}
-	c.SetCookie("session", cookie, int(expiresIn.Seconds()), "/", "", false, false)
-	c.String(http.StatusOK, `{"status": "success"}`)
+	g.SetCookie("session", cookie, int(ttl.Seconds()), "/", "", false, false)
+	g.JSON(http.StatusOK, nil)
 }

@@ -75,7 +75,7 @@ func main() {
 	router.GET("/", indexController.Execute)
 	signoutController := signout.New(config, db)
 	router.GET("/signout", signoutController.Execute)
-	sessionController := session.New(ctx, config, db)
+	sessionController := session.New(ctx, config, auth, db)
 	router.POST("/session", sessionController.Execute)
 
 	// User pages, requires auth
