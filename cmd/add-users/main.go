@@ -21,11 +21,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/sethvargo/go-envconfig/pkg/envconfig"
 )
 
 func main() {
@@ -50,12 +49,12 @@ func main() {
 	}
 
 	ctx := context.Background()
-	config, err := config.New(ctx)
-	if err != nil {
+	var config database.Config
+	if err := envconfig.Process(ctx, &config); err != nil {
 		log.Fatalf("config error: %v", err)
 	}
 
-	db, err := config.Database.Open()
+	db, err := config.Open()
 	if err != nil {
 		log.Fatalf("db connection failed: %v", err)
 	}

@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -109,8 +110,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("error establishing API Key cache: %v", err)
 	}
-	verifyAPI := verifyapi.New(ctx, config, db, apiKeyCache, signer)
-	router.POST("/api/verify", verifyAPI.Execute)
+	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
+	if err != nil {
+		log.Fatalf("error establishing Public Key Cache: %v", err)
+	}
+	apiKeyGroup := router.Group("/api", middleware.APIKeyAuth(ctx, db, apiKeyCache))
+	verifyAPI := verifyapi.New(ctx, config, db, signer)
+	apiKeyGroup.POST("/verify", verifyAPI.Execute) // /api/verify
+	certAPI := certapi.New(ctx, config, db, signer, publicKeyCache)
+	apiKeyGroup.POST("/certificate", certAPI.Execute)
 
 	/* TODO(mikehelmick) - change to 2 step code <-> token exchange.
 	verifyAPIController := verify.New(db, signer, signingKey)

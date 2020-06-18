@@ -31,6 +31,8 @@ const (
 var (
 	ErrVerificationCodeExpired = errors.New("verification code expired")
 	ErrVerificationCodeUsed    = errors.New("verification code used")
+	ErrTokenExpired            = errors.New("verification token expired")
+	ErrTokenUsed               = errors.New("verification token used")
 )
 
 // Token represents an issued "long term" from a validated verification code.
@@ -49,6 +51,26 @@ func (t *Token) FormatTestDate() string {
 		return ""
 	}
 	return t.TestDate.Format("2006-01-02")
+}
+
+func (db *Database) ClaimToken(tokenID string) error {
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var tok Token
+		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("token_id = ?", tokenID).First(&tok).Error; err != nil {
+			return err
+		}
+
+		if !tok.ExpiresAt.After(time.Now()) {
+			return ErrTokenExpired
+		}
+
+		if tok.Used {
+			return ErrTokenUsed
+		}
+
+		tok.Used = true
+		return db.db.Save(&tok).Error
+	})
 }
 
 // IssueToken takes a previously issed verification code and exchanges it for a long

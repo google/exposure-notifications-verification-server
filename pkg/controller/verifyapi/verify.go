@@ -35,8 +35,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -44,44 +42,22 @@ import (
 
 // VerifyAPI is a controller for the verification code verification API.
 type VerifyAPI struct {
-	config   *config.Config
-	db       *database.Database
-	logger   *zap.SugaredLogger
-	keyCache *cache.Cache
-	signer   signer.KeyManager
+	config *config.Config
+	db     *database.Database
+	logger *zap.SugaredLogger
+	signer signer.KeyManager
 }
 
-func New(ctx context.Context, config *config.Config, db *database.Database, keyCache *cache.Cache, signer signer.KeyManager) controller.Controller {
-	return &VerifyAPI{config, db, logging.FromContext(ctx), keyCache, signer}
+func New(ctx context.Context, config *config.Config, db *database.Database, signer signer.KeyManager) controller.Controller {
+	return &VerifyAPI{config, db, logging.FromContext(ctx), signer}
 }
 
 func (v *VerifyAPI) Execute(c *gin.Context) {
-	// this is not an authenticated API w/ session cookie. Uses API Key instead.
+	// APIKey should be verified by middleware.
 	var request api.VerifyCodeRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		v.logger.Errorf("failed to bind request: %v", err)
-		c.JSON(http.StatusOK, api.VerifyCodeResponse{Error: fmt.Sprintf("invalid request: %v", err)})
-		return
-	}
-
-	// Load the authorized app by API key using the write thru cache.
-	authAppCache, err := v.keyCache.WriteThruLookup(request.APIKey,
-		func() (interface{}, error) {
-			aa, err := v.db.FindAuthoirizedAppByAPIKey(request.APIKey)
-			if err != nil {
-				return nil, err
-			}
-			return aa, nil
-		})
-	authApp, ok := authAppCache.(*database.AuthorizedApp)
-	if !ok {
-		authApp = nil
-	}
-
-	// Check if the API key is authorized.
-	if err != nil || authApp == nil || authApp.DeletedAt != nil {
-		v.logger.Errorf("unauthorized API Key: %v err: %v", request.APIKey, err)
-		c.JSON(http.StatusUnauthorized, api.VerifyCodeResponse{Error: "unauthorized: API Key invalid"})
+		c.JSON(http.StatusOK, api.ErrorReturn{Error: fmt.Sprintf("invalid request: %v", err)})
 		return
 	}
 
@@ -89,7 +65,7 @@ func (v *VerifyAPI) Execute(c *gin.Context) {
 	signer, err := v.signer.NewSigner(c.Request.Context(), v.config.TokenSigningKey)
 	if err != nil {
 		v.logger.Errorf("unable to get signing key: %v", err)
-		c.JSON(http.StatusInternalServerError, api.VerifyCodeResponse{Error: "internal server error - unable to sign tokens"})
+		c.JSON(http.StatusInternalServerError, api.ErrorReturn{Error: "internal server error - unable to sign tokens"})
 		return
 	}
 
@@ -99,10 +75,10 @@ func (v *VerifyAPI) Execute(c *gin.Context) {
 	if err != nil {
 		v.logger.Errorf("error issuing verification token: %v", err)
 		if errors.Is(err, database.ErrVerificationCodeExpired) || errors.Is(err, database.ErrVerificationCodeUsed) {
-			c.JSON(http.StatusBadRequest, api.VerifyCodeResponse{Error: err.Error()})
+			c.JSON(http.StatusBadRequest, api.ErrorReturn{Error: err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, api.VerifyCodeResponse{Error: "internal serer error"})
+		c.JSON(http.StatusInternalServerError, api.ErrorReturn{Error: "internal serer error"})
 		return
 	}
 
@@ -119,7 +95,7 @@ func (v *VerifyAPI) Execute(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 	signedJWT, err := jwthelper.SignJWT(token, signer)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.VerifyCodeResponse{Error: "error signing token, must obtain new verification code"})
+		c.JSON(http.StatusInternalServerError, api.ErrorReturn{Error: "error signing token, must obtain new verification code"})
 		return
 	}
 

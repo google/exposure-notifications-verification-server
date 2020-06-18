@@ -103,6 +103,18 @@ func TestIssueToken(t *testing.T) {
 				if diff := cmp.Diff(tok, got); diff != "" {
 					t.Fatalf("mismatch (-want, +got):\n%s", diff)
 				}
+
+				if err := db.ClaimToken(got.TokenID); err != nil {
+					t.Fatalf("unexpected error claiming token: %v", err)
+				}
+
+				got, err = db.FindTokenByID(tok.TokenID)
+				if err != nil {
+					t.Fatalf("error reading token from db: %v", err)
+				}
+				if !got.Used {
+					t.Fatalf("claimed token is not marked as used")
+				}
 			}
 		})
 	}

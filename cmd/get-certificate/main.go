@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Exchanges a verification code for a verification token.
+// Exchanges a verification token for a verification certificate (step 2).
 package main
 
 import (
@@ -26,23 +26,25 @@ import (
 )
 
 func main() {
-	codeFlag := flag.String("code", "", "verification code to exchange")
+	tokenFlag := flag.String("token", "", "verification token to claim")
+	hmacFlag := flag.String("hmac", "", "data to certify")
 	apikeyFlag := flag.String("apikey", "", "API Key to use")
 	addrFlag := flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
 	timeoutFlag := flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	flag.Parse()
 
 	// Make the request.
-	url := *addrFlag + "/api/verify"
-	request := api.VerifyCodeRequest{
-		VerificationCode: *codeFlag,
+	url := *addrFlag + "/api/certificate"
+	request := api.VerificationCertificateRequest{
+		VerificationToken: *tokenFlag,
+		ExposureKeyHMAC:   *hmacFlag,
 	}
 	client := &http.Client{
 		Timeout: *timeoutFlag,
 	}
 	log.Printf("Sending: %+v", request)
 
-	var response api.VerifyCodeResponse
+	var response api.VerificationCertificateResponse
 
 	headers := http.Header{}
 	headers.Add("X-API-Key", *apikeyFlag)

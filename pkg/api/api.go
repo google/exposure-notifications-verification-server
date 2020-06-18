@@ -16,6 +16,11 @@
 // well as between mobile devices and the server.
 package api
 
+// ErrorReturn defines the common error type.
+type ErrorReturn struct {
+	Error string `json:"error"`
+}
+
 // IssueCodeRequest defines the parameters to request an new OTP (short term)
 // code. This is called by the Web frontend.
 // API is served at /api/issue
@@ -31,37 +36,39 @@ type IssueCodeResponse struct {
 	Error            string `json:"error"`
 }
 
+// VerifyCodeRequest is the request structure for exchanging a shor term Verification Code
+// (OTP) for a long term token (a JWT) that can later be used to sign TEKs.
+//
+// Requires API key in a HTTP header, X-API-Key: APIKEY
 type VerifyCodeRequest struct {
-	APIKey           string `json:"apikey"`
 	VerificationCode string `json:"code"`
 }
 
+// VerifyCodeResponse either contains an error, or contains the test parameters
+// (type and [optional] date) as well as the verification token. The verification token
+// may be snet back on a valid VerificationCertificateRequest later.
 type VerifyCodeResponse struct {
 	TestType          string `json:"testtype"`
 	TestDate          string `json:"testdate"` // ISO 8601 formatted date, YYYY-MM-DD
 	VerificationToken string `json:"token"`    // JWT - signed, not encrypted.
-	Error             string `json:"error,omitempty"`
+	Error             string `json:"error"`
 }
 
-/*
-type VerifyPINRequest struct {
-	PIN            string `json:"pin"`
-	ExposureKeyMAC string `json:"ekmac"`
+// VerificationCertificateRequest is used to accept a long term token and
+// an HMAC of the TEKs.
+// The details of the HMAC calculation are avialble at:
+// https://github.com/google/exposure-notifications-server/blob/master/docs/design/verification_protocol.md
+//
+// Requires API key in a HTTP header, X-API-Key: APIKEY
+type VerificationCertificateRequest struct {
+	VerificationToken string `json:"token"`
+	ExposureKeyHMAC   string `json:"ekeyhmac"`
 }
 
-type VerifyPINResponse struct {
-	Error        string `json:"error"`
-	Verification string `json:"verification"`
+// VerificationCertificateResponse either contains an error or contains
+// a signed certificate that can be presented to the configured exposure
+// notifications server to publish keys along w/ the certified diagnosis.
+type VerificationCertificateResponse struct {
+	Certificate string `json:"certificate"`
+	Error       string `json:"error"`
 }
-
-type VerificationClaims struct {
-	PHAClaims         map[string]string           `json:"phaclaims"`
-	TransmissionRisks []database.TransmissionRisk `json:"transmissionRisks"`
-	SignedMAC         string                      `json:"signedmac"`
-	jwt.StandardClaims
-}
-
-func NewVerificationClaims() *VerificationClaims {
-	return &VerificationClaims{PHAClaims: make(map[string]string)}
-}
-*/
