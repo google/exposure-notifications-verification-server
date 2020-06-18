@@ -22,15 +22,24 @@ resource "google_kms_key_ring" "verification" {
   ]
 }
 
-resource "google_kms_crypto_key" "claims-signer" {
+resource "google_kms_crypto_key" "certificate-signer" {
   key_ring = google_kms_key_ring.verification.self_link
-  name     = "claims-signer"
+  name     = "certificate-signer"
   purpose  = "ASYMMETRIC_SIGN"
 
   version_template {
     algorithm        = "EC_SIGN_P256_SHA256"
     protection_level = "HSM"
+  }
+}
 
-    # TODO(sethvargo): support automatic rotation
+resource "google_kms_crypto_key" "token-signer" {
+  key_ring = google_kms_key_ring.verification.self_link
+  name     = "token-signer"
+  purpose  = "ASYMMETRIC_SIGN"
+
+  version_template {
+    algorithm        = "EC_SIGN_P256_SHA256"
+    protection_level = "HSM"
   }
 }

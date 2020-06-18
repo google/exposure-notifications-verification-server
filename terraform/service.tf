@@ -88,7 +88,8 @@ resource "google_cloud_run_service" "verification" {
             FIREBASE_STORAGE_BUCKET    = lookup(data.google_firebase_web_app_config.default, "storage_bucket")
 
             # Signing
-            TOKEN_SIGNING_KEY = google_kms_crypto_key.claims-signer.self_link
+            CERTIFICATE_SIGNING_KEY = google_kms_crypto_key.certificate-signer.self_link
+            TOKEN_SIGNING_KEY       = google_kms_crypto_key.token-signer.self_link
           }
 
           content {
