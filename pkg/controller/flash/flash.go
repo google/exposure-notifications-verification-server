@@ -87,8 +87,14 @@ func (f *Flash) LoadFromCookie() error {
 		return nil
 	}
 
+	// Un-url-encode
+	unescaped, err := url.QueryUnescape(val)
+	if err != nil {
+		return fmt.Errorf("failed to unescape value: %w", err)
+	}
+
 	// Decode the string
-	decoded, err := base64.StdEncoding.DecodeString(val)
+	decoded, err := base64.StdEncoding.DecodeString(unescaped)
 	if err != nil {
 		return fmt.Errorf("failed to decode value: %w", err)
 	}
