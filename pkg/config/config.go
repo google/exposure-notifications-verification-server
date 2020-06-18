@@ -17,21 +17,56 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
-
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
-
 	firebase "firebase.google.com/go"
+	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/sethvargo/go-envconfig/pkg/envconfig"
 )
 
 // New returns the environment config for the server. Only needs to be called once
 // per instance, but may be called multiple times.
 func New(ctx context.Context) (*Config, error) {
+	return NewWith(ctx, envconfig.OsLookuper())
+}
+
+// NewWith creates a new config with the given lookuper for parsing config.
+func NewWith(ctx context.Context, l envconfig.Lookuper) (*Config, error) {
+	// Build a list of mutators. This list will grow as we initialize more of the
+	// configuration, such as the secret manager.
+	var mutatorFuncs []envconfig.MutatorFunc
+
+	{
+		// Load the secret manager configuration first - this needs to be loaded first
+		// because other processors may need secrets.
+		var smConfig secrets.Config
+		if err := envconfig.ProcessWith(ctx, &smConfig, l); err != nil {
+			return nil, fmt.Errorf("unable to process secret configuration: %w", err)
+		}
+
+		sm, err := secrets.SecretManagerFor(ctx, smConfig.SecretManagerType)
+		if err != nil {
+			return nil, fmt.Errorf("unable to connect to secret manager: %w", err)
+		}
+
+		// Enable caching, if a TTL was provided.
+		if ttl := smConfig.SecretCacheTTL; ttl > 0 {
+			sm, err = secrets.WrapCacher(ctx, sm, ttl)
+			if err != nil {
+				return nil, fmt.Errorf("unable to create secret manager cache: %w", err)
+			}
+		}
+
+		// Update the mutators to process secrets.
+		mutatorFuncs = append(mutatorFuncs, secrets.Resolver(sm, &smConfig))
+	}
+
+	// Parse the main configuration.
 	var config Config
-	if err := envconfig.Process(ctx, &config); err != nil {
+	if err := envconfig.ProcessWith(ctx, &config, l, mutatorFuncs...); err != nil {
 		return nil, err
 	}
 
