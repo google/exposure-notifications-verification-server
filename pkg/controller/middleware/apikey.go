@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	// APIKeyHeader is the authorization header requred for APIKey protected requests.
+	// APIKeyHeader is the authorization header required for APIKey protected requests.
 	APIKeyHeader = "X-API-Key"
 )
 
