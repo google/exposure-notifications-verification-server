@@ -1,15 +1,35 @@
 {{define "apikeys"}}
-{{template "top" .}}
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
 
-<div class="container">
+<body>
+  {{template "navbar" .}}
 
+  <main role="main" class="container">
+    <h2>Create API Key</h2>
 
- <div class="row">
-  <div class="py-5 text-center">
+    <form method="POST" action="/apikeys/create">
+      <div class="form-group row">
+        <label for="name" class="col-sm-3">App name</label>
+        <div class="col-sm-9">
+          <input type="text" id="name" name="name" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="offset-sm-3 col-sm-9">
+          <button type="submit" class="btn btn-primary" name="Action" value="save">Create API Key</button>
+        </div>
+      </div>
+    </form>
+
     <h2>All API Keys</h2>
 
     {{if .apps}}
-    <table class="table table-striped">
+    <table class="table table-bordered table-responsive table-striped">
       <thead>
         <tr>
           <th scope="col">App</th>
@@ -32,22 +52,9 @@
     {{else}}
     <p>There are no API keys. Create one below.</p>
     {{end}}
-  </div>
- </div>
+  </main>
 
- <div class="row">
-  <div class="py-5">
-    <h2>Create New API Key</h2>
-
-    <form method="POST" action="/apikeys/create">
-      <div class="form-group">
-        <label for="testType">Application Name</label>
-        <input type="text" id="name" name="name" size="50" value="">
-      </div>
-      <button type="submit" class="btn btn-outline-primary" name="Action" value="save">Create API Key</button>
-    </form>
-  </div>
- </div>
-
-{{template "bottom" .}}
+  {{template "scripts" .}}
+</body>
+</html>
 {{end}}
