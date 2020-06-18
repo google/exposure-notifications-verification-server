@@ -23,14 +23,20 @@ import (
 )
 
 // MakeRequest uses an HTTP client to send and receive JSON based on interface{}.
-func MakeRequest(client *http.Client, url string, input interface{}, output interface{}) error {
+func MakeRequest(client *http.Client, url string, headers http.Header, input interface{}, output interface{}) error {
 	data, err := json.Marshal(input)
 	if err != nil {
 		return err
 	}
 
 	buffer := bytes.NewBuffer(data)
-	r, err := client.Post(url, "application/json", buffer)
+
+	req, err := http.NewRequest("POST", url, buffer)
+	if err != nil {
+		return err
+	}
+	req.Header = headers
+	r, err := client.Do(req)
 	if err != nil {
 		return err
 	}

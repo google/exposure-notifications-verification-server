@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -104,18 +105,22 @@ func main() {
 	}
 
 	// Device APIs for exchanging short for long term tokens and signing TEKs with
-	// long term tokens.
-	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
-	if err != nil {
-		log.Fatalf("error establishing API Key cache: %v", err)
+	// long term tokens. The group requires API Key based auth.
+	{
+		apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
+		if err != nil {
+			log.Fatalf("error establishing API Key cache: %v", err)
+		}
+		publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
+		if err != nil {
+			log.Fatalf("error establishing Public Key Cache: %v", err)
+		}
+		apiKeyGroup := router.Group("/", middleware.APIKeyAuth(ctx, db, apiKeyCache))
+		verifyAPI := verifyapi.New(ctx, config, db, signer)
+		apiKeyGroup.POST("/api/verify", verifyAPI.Execute) // /api/verify
+		certAPI := certapi.New(ctx, config, db, signer, publicKeyCache)
+		apiKeyGroup.POST("/api/certificate", certAPI.Execute)
 	}
-	verifyAPI := verifyapi.New(ctx, config, db, apiKeyCache, signer)
-	router.POST("/api/verify", verifyAPI.Execute)
-
-	/* TODO(mikehelmick) - change to 2 step code <-> token exchange.
-	verifyAPIController := verify.New(db, signer, signingKey)
-	router.POST("/api/verify", verifyAPIController.Execute)
-	*/
 
 	router.Run()
 }
