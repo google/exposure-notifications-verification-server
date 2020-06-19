@@ -42,6 +42,8 @@ func GenerateCode(length int) (string, error) {
 	}
 
 	result := digits.String()
+	// Zero padd the leading digit until the OTP is the right length.
+	// Zero was chosen as the random digit, but leading zeros don't appear in .String().
 	for len(result) < length {
 		result = "0" + result
 	}
