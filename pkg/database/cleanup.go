@@ -43,7 +43,7 @@ func (db *Database) CreateCleanup(cType string) (*CleanupStatus, error) {
 	cstat := &CleanupStatus{
 		Type:       cType,
 		Generation: 1,
-		NotBefore:  time.Now(),
+		NotBefore:  time.Now().UTC(),
 	}
 	if err := db.db.Create(cstat).Error; err != nil {
 		return nil, err
