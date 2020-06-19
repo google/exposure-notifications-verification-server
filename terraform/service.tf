@@ -139,3 +139,29 @@ resource "google_cloud_run_service_iam_member" "verification-public" {
 output "url" {
   value = google_cloud_run_service.verification.status.0.url
 }
+
+#
+# Create scheduler job to cleanup handler on a fixed interval.
+#
+
+resource "google_cloud_scheduler_job" "export-worker" {
+  name             = "cleanup-worker"
+  region           = var.cloudscheduler_location
+  schedule         = "* * * * *"
+  time_zone        = "Etc/UTC"
+  attempt_deadline = "600s"
+
+  retry_config {
+    retry_count = 1
+  }
+
+  http_target {
+    http_method = "GET"
+    uri         = "${google_cloud_run_service.export.status.0.url}/cleanup"
+  }
+
+  depends_on = [
+    google_app_engine_application.app,
+    google_project_service.services["cloudscheduler.googleapis.com"],
+  ]
+}
