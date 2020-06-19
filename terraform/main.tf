@@ -34,6 +34,7 @@ resource "google_project_service" "services" {
     "cloudbuild.googleapis.com",
     "cloudkms.googleapis.com",
     "cloudresourcemanager.googleapis.com",
+    "cloudscheduler.googleapis.com",
     "compute.googleapis.com",
     "containerregistry.googleapis.com",
     "firebase.googleapis.com",
@@ -111,6 +112,12 @@ resource "google_project_iam_member" "cloudbuild-deploy" {
   ]
 }
 
+# Cloud Scheduler requires AppEngine projects!
+resource "google_app_engine_application" "app" {
+  project     = data.google_project.project.project_id
+  location_id = var.appengine_location
+}
+
 output "project_id" {
   value = var.project
 }
@@ -121,4 +128,8 @@ output "project_number" {
 
 output "region" {
   value = var.region
+}
+
+output "cloudscheduler_location" {
+  value = var.cloudscheduler_location
 }
