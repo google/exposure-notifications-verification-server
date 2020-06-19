@@ -16,6 +16,7 @@ require (
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/sethvargo/go-envconfig v0.1.1
 	github.com/sethvargo/go-gcpkms v0.0.0-20200507180216-f1fca850aed2
+	github.com/ulule/limiter/v3 v3.5.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/tools v0.0.0-20200513154647-78b527d18275
 	gopkg.in/gormigrate.v1 v1.6.0
