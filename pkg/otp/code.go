@@ -19,6 +19,7 @@ package otp
 import (
 	"context"
 	"crypto/rand"
+	"math/big"
 	"strings"
 	"time"
 
@@ -33,18 +34,19 @@ const (
 
 // GenerateCode creates a new OTP code.
 func GenerateCode(length int) (string, error) {
-	buffer := make([]byte, length)
-	_, err := rand.Read(buffer)
+	limit := big.NewInt(0)
+	limit.Exp(big.NewInt(10), big.NewInt(int64(length)), nil)
+	digits, err := rand.Int(rand.Reader, limit)
 	if err != nil {
 		return "", err
 	}
 
-	// Reassign the value in the buffer to the corresponding charSet entry.
-	for i := 0; i < length; i++ {
-		buffer[i] = charSet[int(buffer[i])%setLength]
+	result := digits.String()
+	for len(result) < length {
+		result = "0" + result
 	}
 
-	return string(buffer), nil
+	return result, nil
 }
 
 // OTPRequest represents the parameters of a verification code request.

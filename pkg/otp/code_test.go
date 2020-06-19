@@ -23,18 +23,21 @@ import (
 )
 
 func TestGenerateCode(t *testing.T) {
-	code, err := GenerateCode(8)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	// Run through a whole bunch of iterations.
+	for j := 0; j < 1000; j++ {
+		code, err := GenerateCode(8)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
-	if got := len(code); got != 8 {
-		t.Fatalf("code is wrong length want 8, got %v", got)
-	}
+		if got := len(code); got != 8 {
+			t.Fatalf("code is wrong length want 8, got %v", got)
+		}
 
-	for i, c := range code {
-		if c < '0' || c > '9' {
-			t.Errorf("code[%v]: %v outside expected range 0-9", i, c)
+		for i, c := range code {
+			if c < '0' || c > '9' {
+				t.Errorf("code[%v]: %v outside expected range 0-9", i, c)
+			}
 		}
 	}
 }
