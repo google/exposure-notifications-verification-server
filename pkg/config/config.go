@@ -92,7 +92,7 @@ type Config struct {
 	ColissionRetryCount int           `env:"COLISSION_RETRY_COUNT,default=6"`
 	AllowedTestAge      time.Duration `env:"ALLOWRD_PAST_TEST_DAYS,default=336h"` // 336h is 14 days.
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
-	RateLimit           int64         `env:"RATE_LIMIT,default=500"`
+	RateLimit           int64         `env:"RATE_LIMIT,default=60"`
 
 	// Verification Token Config
 	VerificationTokenDuration time.Duration `env:"VERIFICATION_TOKEN_DURATION,default=24h"`
