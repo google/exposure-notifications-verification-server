@@ -63,6 +63,8 @@ func (db *Database) CreateUser(email string, name string, admin bool, disabled b
 		Admin:    admin,
 		Disabled: disabled,
 	}
+
+	// TODO(crwilcox): Add validation for entries (similar to cmdline)
 	if err := db.db.Create(&user).Error; err != nil {
 		return nil, fmt.Errorf("unable to save user: %w", err)
 	}
@@ -75,6 +77,11 @@ func (db *Database) SaveUser(u *User) error {
 		return db.db.Create(u).Error
 	}
 	return db.db.Save(u).Error
+}
+
+// DeleteUser removes a user record.
+func (db *Database) DeleteUser(u *User) error {
+	return db.db.Delete(u).Error
 }
 
 // PurgeUsers will remove users records that are disabled and haven't been updated

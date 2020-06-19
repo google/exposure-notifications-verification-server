@@ -127,6 +127,7 @@ func main() {
 		
 		sub.Handle("/users", user.NewListController(ctx, config, db)).Methods("GET")
 		sub.Handle("/users/create", user.NewSaveController(ctx, config, db)).Methods("POST")
+		sub.Handle("/users/delete/:email", user.NewDeleteController(ctx, config, db)).Methods("POST")
 	}
 
 	srv := &http.Server{
