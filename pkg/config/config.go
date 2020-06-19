@@ -73,6 +73,10 @@ func NewWith(ctx context.Context, l envconfig.Lookuper) (*Config, error) {
 	// For the, when inserting into the javascript, gets escaped and becomes unusable.
 	config.Firebase.DatabaseURL = strings.ReplaceAll(config.Firebase.DatabaseURL, "https://", "")
 
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
 	return &config, nil
 }
 
@@ -113,6 +117,40 @@ type Config struct {
 	VerificationTokenMaxAge time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE,default=24h"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
+}
+
+func checkPositiveDuration(d time.Duration, name string) error {
+	if d < 0 {
+		return fmt.Errorf("%v must be a positive duration, got: %v", name, d)
+	}
+	return nil
+}
+
+func (c *Config) Validate() error {
+	fields := []struct {
+		Var  time.Duration
+		Name string
+	}{
+		{c.SessionCookieDuration, "SESSION_DUATION"},
+		{c.RevokeCheckPeriod, "REVOKE_CHECK_DURATION"},
+		{c.CodeDuration, "CODE_DURATION"},
+		{c.AllowedTestAge, "ALLOWED_PAST_TEST_DAYS"},
+		{c.APIKeyCacheDuration, "API_KEY_CACHE_DURATION"},
+		{c.VerificationCodeMaxAge, "VERIFICATION_TOKEN_DURATION"},
+		{c.PublicKeyCacheDuration, "PUBLIC_KEY_CACHE_DURATION"},
+		{c.CleanupPeriod, "CLEANUP_PERIOD"},
+		{c.DisabledUserMaxAge, "DISABLED_USER_MAX_AGE"},
+		{c.VerificationCodeMaxAge, "VERIFICATION_CODE_MAX_AGE"},
+		{c.VerificationTokenMaxAge, "VERIFICATION_TOKEN_MAX_AGE"},
+	}
+
+	for _, f := range fields {
+		if err := checkPositiveDuration(f.Var, f.Name); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // FirebaseConfig represents configuration specific to firebase auth.
