@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package user contains web controllers for listing and adding users.
 package user
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -29,29 +29,36 @@ import (
 	"go.uber.org/zap"
 )
 
-type userListController struct {
+type userDeleteController struct {
 	config *config.Config
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
-// NewListController creates a controller to list users
-func NewListController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
-	return &userListController{config, db, logging.FromContext(ctx)}
+// NewDeleteController creates a controller to Delete users.
+func NewDeleteController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &userDeleteController{config, db, logging.FromContext(ctx)}
 }
 
-func (lc *userListController) Execute(c *gin.Context) {
-	user := c.MustGet("user").(*database.User)
+func (sc *userDeleteController) Execute(c *gin.Context) {
+	// All roads lead to a GET redirect.
+	defer c.Redirect(http.StatusSeeOther, "/users")
+	fmt.Println("delete user: ")
+
 	flash := flash.FromContext(c)
+	email := c.Param("email")
+	fmt.Println("delete user: %q", email)
 
-	m := controller.NewTemplateMapFromSession(lc.config, c)
-	m["user"] = user
-
-	apps, err := lc.db.ListUsers(false)
+	user, err := sc.db.FindUser(email)
 	if err != nil {
-		flash.ErrorNow("Error loading API Keys: %v", err)
+		flash.Error("Failed to find user: %v", err)
 	}
 
-	m["apps"] = apps
-	c.HTML(http.StatusOK, "users", m)
+	if err := sc.db.DeleteUser(user); err != nil {
+		flash.Error("Failed to delete user: %v", err)
+
+		return
+	}
+
+	flash.Alert("Deleted User %q", user)
 }

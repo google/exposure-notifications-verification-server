@@ -1,6 +1,7 @@
 {{define "users"}}
 <!doctype html>
 <html lang="en">
+
 <head>
   {{template "head" .}}
 </head>
@@ -13,31 +14,33 @@
 
     <form method="POST" action="/users/create">
       <div class="form-group row">
-        <label for="email" class="col-sm-3">Email:</label>
+        <label for="email" class="col-sm-2">Email:</label>
         <div class="col-sm-9">
           <input type="text" id="email" name="email" class="form-control">
         </div>
-
-        <label for="name" class="col-sm-3">Name:</label><br>
+      </div>
+      <div class="form-group row">
+        <label for="name" class="col-sm-2">Name:</label><br>
         <div class="col-sm-9">
           <input type="text" id="name" name="name" class="form-control">
         </div>
-
-        <label for="admin" class="col-sm-3">Admin:</label><br>
+      </div>
+      <div class="form-group row">
+        <label for="admin" class="col-sm-2">Admin:</label><br>
         <div class="col-sm-1">
           <input type="checkbox" id="admin" name="admin" class="form-control" value="true">
         </div>
-        <div class="col-sm-8"></div>
-
-        <label for="disabled" class="col-sm-3">Disabled:</label><br>
+      </div>
+      <div class="form-group row">
+        <label for="disabled" class="col-sm-2">Disabled:</label><br>
         <div class="col-sm-1">
           <input type="checkbox" id="disabled" name="disabled" class="form-control" value="true">
         </div>
-        <div class="col-sm-8"></div>
+      </div>
       </div>
 
       <div class="form-group row">
-        <div class="offset-sm-3 col-sm-9">
+        <div class="offset-sm-2 col-sm-9">
           <button type="submit" class="btn btn-primary" name="Action" value="save">Create User</button>
         </div>
       </div>
@@ -54,17 +57,24 @@
             <th scope="col">Name</th>
             <th scope="col">Admin</th>
             <th scope="col">Disabled</th>
+            <th scope="col">Delete?</th>
           </tr>
         </thead>
         <tbody>
-        {{range .apps}}
+          {{range .apps}}
           <tr>
             <td scope="row">{{.Email}}</td>
             <td scope="row">{{.Name}}</td>
             <td scope="row">{{.Admin}}</td>
             <td scope="row">{{.Disabled}}</td>
+            <td scope="row">
+              <!-- <a href="" onclick="deleteUser('{{.Email}}')">Delete</a> -->
+              <form method="POST" action="/users/delete/{{.Email}}">
+                <button type="submit" class="btn btn-primary" name="Action" value="delete">Delete User</button>
+              </form>
+            </td>
           </tr>
-        {{end}}
+          {{end}}
         </tbody>
       </table>
     </div>
@@ -73,7 +83,16 @@
     {{end}}
   </main>
 
+  <script>
+    function deleteUser(email) {
+      $.ajax({
+        url: '/users/delete/' + email,
+        type: 'POST'
+      });
+    }
+  </script>
   {{template "scripts" .}}
 </body>
+
 </html>
 {{end}}

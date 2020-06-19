@@ -109,6 +109,9 @@ func main() {
 
 		userSave := user.NewSaveController(ctx, config, db)
 		router.POST("/users/create", userSave.Execute)
+
+		userDelete := user.NewDeleteController(ctx, config, db)
+		router.POST("/users/delete/:email", userDelete.Execute)
 	}
 
 	// Device APIs for exchanging short for long term tokens and signing TEKs with
