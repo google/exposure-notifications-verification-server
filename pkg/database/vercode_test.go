@@ -119,3 +119,31 @@ func TestVerCodeIsExpired(t *testing.T) {
 		t.Errorf("code says expired, when shouldn't be")
 	}
 }
+
+func TestPurgeVerificationCodes(t *testing.T) {
+	t.Parallel()
+	db := NewTestDatabase(t)
+
+	now := time.Now()
+	maxAge := time.Hour // not important to this test case
+
+	testData := []*VerificationCode{
+		{Code: "111111", TestType: "negative", ExpiresAt: now.Add(time.Second)},
+		{Code: "222222", TestType: "negative", ExpiresAt: now.Add(time.Second)},
+		{Code: "333333", TestType: "negative", ExpiresAt: now.Add(time.Minute)},
+	}
+	for _, rec := range testData {
+		if err := db.SaveVerificationCode(rec, maxAge); err != nil {
+			t.Fatalf("can't save test data: %v", err)
+		}
+	}
+
+	// Need to let some time lapse since we can't back date records through normal channels.
+	time.Sleep(2 * time.Second)
+
+	if count, err := db.PurgeVerificationCodes(time.Millisecond * 500); err != nil {
+		t.Fatalf("error doing purge: %v", err)
+	} else if count != 2 {
+		t.Fatalf("purge record count mismatch, want: 2, got: %v", count)
+	}
+}

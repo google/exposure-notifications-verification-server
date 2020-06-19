@@ -97,6 +97,7 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 }
 
 // SaveVerificationCode created or updates a verification code in the database.
+// Max age represents the maximum age of the test date [optional] in the record.
 func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Duration) error {
 	if err := vc.Validate(maxAge); err != nil {
 		return err
@@ -105,4 +106,17 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 		return db.db.Create(vc).Error
 	}
 	return db.db.Save(vc).Error
+}
+
+// PurgeVerificationCodes will delete verificaitons that have expired since at least the
+// provided maxAge ago.
+// This is a hard delete, not a soft delete.
+func (db *Database) PurgeVerificationCodes(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+	// Delete codes that expired before the delete before time.
+	rtn := db.db.Unscoped().Where("expires_at < ?", deleteBefore).Delete(&VerificationCode{})
+	return rtn.RowsAffected, rtn.Error
 }
