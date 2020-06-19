@@ -73,11 +73,13 @@ func (db *Database) ClaimToken(tokenID string) error {
 	})
 }
 
-// IssueToken takes a previously issed verification code and exchanges it for a long
-// term token.
+// VerifyCodeAndIssueToken takes a previously issed verification code and exchanges
+// it for a long term token. The verification code must not have expired and must
+// not have been previously used. Both acctions are done in a single database
+// transaction.
 //
 // The long term token can be used later to sign keys when they are submitted.
-func (db *Database) IssueToken(verCode string, expireAfter time.Duration) (*Token, error) {
+func (db *Database) VerifyCodeAndIssueToken(verCode string, expireAfter time.Duration) (*Token, error) {
 	buffer := make([]byte, tokenBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
