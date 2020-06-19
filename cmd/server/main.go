@@ -37,7 +37,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
+<<<<<<< HEAD
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+=======
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
+>>>>>>> dccea64... Add user admin page
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
@@ -118,6 +124,9 @@ func main() {
 
 		sub.Handle("", apikey.NewListController(ctx, config, db, renderHTML)).Methods("GET")
 		sub.Handle("/create", apikey.NewSaveController(ctx, config, db)).Methods("POST")
+		
+		sub.Handle("/users", user.NewListController(ctx, config, db)).Methods("GET")
+		sub.Handle("/users/create", user.NewSaveController(ctx, config, db)).Methods("POST")
 	}
 
 	srv := &http.Server{

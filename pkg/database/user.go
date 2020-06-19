@@ -15,6 +15,7 @@
 package database
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -30,11 +31,40 @@ type User struct {
 	LastRevokeCheck time.Time
 }
 
+// ListUsers retrieves all of the configured users.
+// Done without pagination.
+func (db *Database) ListUsers(includeDeleted bool) ([]*User, error) {
+	var users []*User
+
+	scope := db.db
+	if includeDeleted {
+		scope = db.db.Unscoped()
+	}
+	if err := scope.Order("email ASC").Find(&users).Error; err != nil {
+		return nil, fmt.Errorf("query users: %w", err)
+	}
+	return users, nil
+}
+
 // FindUser reads back a User struct by email address.
 func (db *Database) FindUser(email string) (*User, error) {
 	var user User
 	if err := db.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
+	}
+	return &user, nil
+}
+
+// CreateUser creates a user record.
+func (db *Database) CreateUser(email string, name string, admin bool, disabled bool) (*User, error) {
+	user := User{
+		Email:    email,
+		Name:     name,
+		Admin:    admin,
+		Disabled: disabled,
+	}
+	if err := db.db.Create(&user).Error; err != nil {
+		return nil, fmt.Errorf("unable to save user: %w", err)
 	}
 	return &user, nil
 }

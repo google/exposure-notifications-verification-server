@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+package user
 
 import (
 	"context"
@@ -24,39 +24,44 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-type apikeySaveController struct {
+type userSaveController struct {
 	config *config.Config
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
 type formData struct {
-	Name string `form:"name"`
+	Email    string `form:"email"`
+	Name     string `form:"name"`
+	Admin    bool   `form:"admin"`
+	Disabled bool   `form:"disabled"`
 }
 
-func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
-	return &apikeySaveController{config, db, logging.FromContext(ctx)}
+// NewSaveController creates a controller to save users.
+func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &userSaveController{config, db, logging.FromContext(ctx)}
 }
 
-func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (sc *userSaveController) Execute(c *gin.Context) {
 	// All roads lead to a GET redirect.
-	defer http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
-	flash := flash.FromContext(w, r)
+	defer c.Redirect(http.StatusSeeOther, "/users")
+
+	flash := flash.FromContext(c)
 
 	var form formData
-	if err := controller.BindForm(w, r, &form); err != nil {
-		sc.logger.Errorf("invalid apikey create request: %v", err)
+	if err := c.Bind(&form); err != nil {
 		flash.Error("Invalid request.")
 		return
 	}
 
-	if _, err := sc.db.CreateAuthorizedApp(form.Name); err != nil {
-		flash.Error("Failed to create API key: %v", err)
+	if _, err := sc.db.CreateUser(form.Email, form.Name, form.Admin, form.Disabled); err != nil {
+		flash.Error("Failed to create user: %v", err)
 		return
 	}
 
-	flash.Alert("Created API Key for %q", form.Name)
+	flash.Alert("Created User %q", form.Name)
 }

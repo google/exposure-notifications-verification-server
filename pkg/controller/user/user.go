@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+// Package user contains web controllers for listing and adding users.
+package user
 
 import (
 	"context"
@@ -24,39 +25,33 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-type apikeySaveController struct {
+type userListController struct {
 	config *config.Config
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
-type formData struct {
-	Name string `form:"name"`
+// NewListController creates a controller to list users
+func NewListController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &userListController{config, db, logging.FromContext(ctx)}
 }
 
-func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
-	return &apikeySaveController{config, db, logging.FromContext(ctx)}
-}
+func (lc *userListController) Execute(c *gin.Context) {
+	user := c.MustGet("user").(*database.User)
+	flash := flash.FromContext(c)
 
-func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// All roads lead to a GET redirect.
-	defer http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
-	flash := flash.FromContext(w, r)
+	m := controller.NewTemplateMapFromSession(lc.config, c)
+	m["user"] = user
 
-	var form formData
-	if err := controller.BindForm(w, r, &form); err != nil {
-		sc.logger.Errorf("invalid apikey create request: %v", err)
-		flash.Error("Invalid request.")
-		return
+	apps, err := lc.db.ListUsers(true)
+	if err != nil {
+		flash.ErrorNow("Error loading API Keys: %v", err)
 	}
 
-	if _, err := sc.db.CreateAuthorizedApp(form.Name); err != nil {
-		flash.Error("Failed to create API key: %v", err)
-		return
-	}
-
-	flash.Alert("Created API Key for %q", form.Name)
+	m["apps"] = apps
+	c.HTML(http.StatusOK, "users", m)
 }
