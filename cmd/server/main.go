@@ -17,9 +17,13 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	firebase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
+	"github.com/ulule/limiter/v3"
+	limitgin "github.com/ulule/limiter/v3/drivers/middleware/gin"
+	"github.com/ulule/limiter/v3/drivers/store/memory"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
@@ -65,10 +69,19 @@ func main() {
 		log.Fatalf("error creating KeyManager: %v", err)
 	}
 
+	// Setup rate limiter
+	limitInstance := limiter.New(memory.NewStore(), limiter.Rate{
+		Period: 1 * time.Minute,
+		Limit:  config.RateLimit,
+	}, limiter.WithTrustForwardHeader(true))
+	rateLimiter := limitgin.NewMiddleware(limitInstance)
+
 	// Create the main router
 	router := gin.Default()
+	router.ForwardedByClientIP = true
 	router.LoadHTMLGlob(config.AssetsPath + "/*")
 	router.Use(middleware.FlashHandler(ctx))
+	router.Use(rateLimiter)
 
 	// Handlers for landing, signin, signout.
 	indexController := index.New(config)
