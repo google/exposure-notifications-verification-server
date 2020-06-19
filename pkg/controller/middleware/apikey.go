@@ -51,7 +51,7 @@ func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cach
 		// Load the authorized app by API key using the write thru cache.
 		authAppCache, err := keyCache.WriteThruLookup(apiKey,
 			func() (interface{}, error) {
-				aa, err := db.FindAuthoirizedAppByAPIKey(apiKey)
+				aa, err := db.FindAuthorizedAppByAPIKey(apiKey)
 				if err != nil {
 					return nil, err
 				}

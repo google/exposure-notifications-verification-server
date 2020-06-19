@@ -30,6 +30,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 
@@ -102,6 +103,12 @@ func main() {
 
 		apiKeySave := apikey.NewSaveController(ctx, config, db)
 		router.POST("/apikeys/create", apiKeySave.Execute)
+
+		userList := user.NewListController(ctx, config, db)
+		router.GET("/users", userList.Execute)
+
+		userSave := user.NewSaveController(ctx, config, db)
+		router.POST("/users/create", userSave.Execute)
 	}
 
 	// Device APIs for exchanging short for long term tokens and signing TEKs with

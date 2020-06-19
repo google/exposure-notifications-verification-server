@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+package user
 
 import (
 	"context"
@@ -28,23 +28,27 @@ import (
 	"go.uber.org/zap"
 )
 
-type apikeySaveController struct {
+type userSaveController struct {
 	config *config.Config
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
 type formData struct {
-	Name string `form:"name"`
+	Email    string `form:"email"`
+	Name     string `form:"name"`
+	Admin    bool   `form:"admin"`
+	Disabled bool   `form:"disabled"`
 }
 
+// NewSaveController creates a controller to save users.
 func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
-	return &apikeySaveController{config, db, logging.FromContext(ctx)}
+	return &userSaveController{config, db, logging.FromContext(ctx)}
 }
 
-func (sc *apikeySaveController) Execute(c *gin.Context) {
+func (sc *userSaveController) Execute(c *gin.Context) {
 	// All roads lead to a GET redirect.
-	defer c.Redirect(http.StatusSeeOther, "/apikeys")
+	defer c.Redirect(http.StatusSeeOther, "/users")
 
 	flash := flash.FromContext(c)
 
@@ -54,10 +58,10 @@ func (sc *apikeySaveController) Execute(c *gin.Context) {
 		return
 	}
 
-	if _, err := sc.db.CreateAuthorizedApp(form.Name); err != nil {
-		flash.Error("Failed to create API key: %v", err)
+	if _, err := sc.db.CreateUser(form.Email, form.Name, form.Admin, form.Disabled); err != nil {
+		flash.Error("Failed to create user: %v", err)
 		return
 	}
 
-	flash.Alert("Created API Key for %q", form.Name)
+	flash.Alert("Created User %q", form.Name)
 }

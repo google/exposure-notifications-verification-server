@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+// Package user contains web controllers for listing and adding users.
+package user
 
 import (
 	"context"
@@ -28,36 +29,29 @@ import (
 	"go.uber.org/zap"
 )
 
-type apikeySaveController struct {
+type userListController struct {
 	config *config.Config
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
-type formData struct {
-	Name string `form:"name"`
+// NewListController creates a controller to list users
+func NewListController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+	return &userListController{config, db, logging.FromContext(ctx)}
 }
 
-func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
-	return &apikeySaveController{config, db, logging.FromContext(ctx)}
-}
-
-func (sc *apikeySaveController) Execute(c *gin.Context) {
-	// All roads lead to a GET redirect.
-	defer c.Redirect(http.StatusSeeOther, "/apikeys")
-
+func (lc *userListController) Execute(c *gin.Context) {
+	user := c.MustGet("user").(*database.User)
 	flash := flash.FromContext(c)
 
-	var form formData
-	if err := c.Bind(&form); err != nil {
-		flash.Error("Invalid request.")
-		return
+	m := controller.NewTemplateMapFromSession(lc.config, c)
+	m["user"] = user
+
+	apps, err := lc.db.ListUsers(true)
+	if err != nil {
+		flash.ErrorNow("Error loading API Keys: %v", err)
 	}
 
-	if _, err := sc.db.CreateAuthorizedApp(form.Name); err != nil {
-		flash.Error("Failed to create API key: %v", err)
-		return
-	}
-
-	flash.Alert("Created API Key for %q", form.Name)
+	m["apps"] = apps
+	c.HTML(http.StatusOK, "users", m)
 }
