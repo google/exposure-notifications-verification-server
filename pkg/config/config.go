@@ -105,6 +105,12 @@ type Config struct {
 	CertificateAudience    string        `env:"CERTIFICATE_AUDIENCE,default=exposure-notifications-server"`
 	CertificateDuration    time.Duration `env:"CERTIFICATE_DURATION,default=15m"`
 
+	// Cleanup config
+	CleanupPeriod           time.Duration `env:"CLEANUP_PERIOD,default=15m"`
+	DisabledUserMaxAge      time.Duration `env:"DIABLED_USER_MAX_AGE,default=336h"`
+	VerificationCodeMaxAge  time.Duration `env:"VERIFICATION_CODE_MAX_AGE,default=24h"`
+	VerificationTokenMaxAge time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE,default=24h"`
+
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 }
 
