@@ -50,7 +50,7 @@
         <label for="testDate" class="col-sm-3">Test date</label>
         <div class="col-sm-9">
           <div class="datepicker date input-group p-0 shadow-sm">
-            <input type="date" id="testDate" name="testDate" vmin="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+            <input type="date" id="testDate" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
           </div>
           <small class="form-text text-muted">
             Optional, cannot be more than 14 days prior to today
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <div class="row" id="codeerror" style="display:none"></div>
+    <div class="row alert alert-danger" id="codeerror" style="display:none"></div>
   </main>
 
   {{template "scripts" .}}
@@ -107,20 +107,21 @@
           data : JSON.stringify(data),
           success : function(result) {
             if (result.error != "") {
-              $("#vercode").text(result.error);
+              $("#codeerror").text(result.error);
               $("#codearea").hide();
-              $("#coderror").show();
+              $("#codeerror").show();
+              $("#submit").prop('disabled', false);
             } else {
               $("#expiresAt").text(result.expiresAt);
               $("#vercode").text(result.code);
               $("#codearea").show();
-              $("#coderror").hide();
+              $("#codeerror").hide();
             }
           },
           error: function(xhr, resp, text) {
             $("#codeerror").text("error: " + text);
             $("#codearea").hide();
-            $("#coderror").show();
+            $("#codeerror").show();
             console.log(xhr, resp, text);
           }
         });

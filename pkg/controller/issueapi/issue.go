@@ -19,6 +19,7 @@ package issueapi
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -53,12 +54,25 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 		return
 	}
 
+	// Max date is today (local time) and min date is AllowedTestAge ago, truncated.
+	maxDate := time.Now().Local()
+	minDate := maxDate.Add(-1 * ic.config.AllowedTestAge).Truncate(24 * time.Hour)
+
 	var testDate *time.Time
 	if request.TestDate != "" {
 		if parsed, err := time.Parse("2006-01-02", request.TestDate); err != nil {
 			ic.logger.Errorf("time.Parse: %v", err)
 			c.JSON(http.StatusOK, api.Error("invalid test date: %v", err))
+			return
 		} else {
+			parsed = parsed.Local()
+			if minDate.After(parsed) || parsed.After(maxDate) {
+				message := fmt.Sprintf("Invalid test date: %v must be on or after %v and on or before %v.",
+					parsed.Format("2006-01-02"), minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
+				ic.logger.Errorf(message)
+				c.JSON(http.StatusOK, api.Error(message))
+				return
+			}
 			testDate = &parsed
 		}
 	}
