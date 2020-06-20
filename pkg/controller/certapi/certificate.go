@@ -160,7 +160,7 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	claims.StandardClaims.NotBefore = now.Add(-1 * time.Second).Unix()
 
 	certToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	certToken.Header[verifyapi.KeyIDHeader] = ca.config.CertificateKeyID
+	certToken.Header[verifyapi.KeyIDHeader] = ca.config.CertificateSigningKeyID
 	certificate, err := jwthelper.SignJWT(certToken, signer)
 	if err != nil {
 		ca.logger.Errorf("error signing certificate: %v", err)
