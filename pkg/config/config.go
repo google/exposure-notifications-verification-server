@@ -99,16 +99,19 @@ type Config struct {
 	RateLimit           int64         `env:"RATE_LIMIT,default=60"`
 
 	// Verification Token Config
+	// Currently this does not easily support rotation. TODO(mikehelmick) - add support.
 	VerificationTokenDuration time.Duration `env:"VERIFICATION_TOKEN_DURATION,default=24h"`
 	TokenSigningKey           string        `env:"TOKEN_SIGNING_KEY,required"`
+	TokenSigningKeyID         string        `env:"TOKEN_SIGNING_KEY_ID,default=v1"`
 	TokenIssuer               string        `env:"TOKEN_ISSUER,default=diagnosis-verification-example"`
 
 	// Verification certificate config
-	PublicKeyCacheDuration time.Duration `env:"PUBLIC_KEY_CACHE_DURATION,default=15m"`
-	CertificateSigningKey  string        `env:"CERTIFICATE_SIGNING_KEY,required"`
-	CertificateIssuer      string        `env:"CERTIFICATE_ISSUER,default=diagnosis-verification-example"`
-	CertificateAudience    string        `env:"CERTIFICATE_AUDIENCE,default=exposure-notifications-server"`
-	CertificateDuration    time.Duration `env:"CERTIFICATE_DURATION,default=15m"`
+	PublicKeyCacheDuration  time.Duration `env:"PUBLIC_KEY_CACHE_DURATION,default=15m"`
+	CertificateSigningKey   string        `env:"CERTIFICATE_SIGNING_KEY,required"`
+	CertificateSigningKeyID string        `env:"CERTIFICATE_SIGNING_KEY_ID,default=v1"`
+	CertificateIssuer       string        `env:"CERTIFICATE_ISSUER,default=diagnosis-verification-example"`
+	CertificateAudience     string        `env:"CERTIFICATE_AUDIENCE,default=exposure-notifications-server"`
+	CertificateDuration     time.Duration `env:"CERTIFICATE_DURATION,default=15m"`
 
 	// Cleanup config
 	CleanupPeriod           time.Duration `env:"CLEANUP_PERIOD,default=15m"`

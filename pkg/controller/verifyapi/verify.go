@@ -34,6 +34,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
+	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -92,6 +94,7 @@ func (v *VerifyAPI) Execute(c *gin.Context) {
 		Subject:   subject,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token.Header[verifyapi.KeyIDHeader] = v.config.TokenSigningKeyID
 	signedJWT, err := jwthelper.SignJWT(token, signer)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.Error("error signing token, must obtain new verification code"))

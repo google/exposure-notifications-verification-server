@@ -30,7 +30,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
-	"github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
+	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/cache"
 
@@ -74,7 +74,15 @@ func (ca *CertificateAPI) getPublicKey(c *gin.Context, keyID string) (crypto.Pub
 func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.PublicKey) (string, error) {
 	// Parse and validate the verification token.
 	token, err := jwt.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return publicKey, nil
+		kidHeader := token.Header[verifyapi.KeyIDHeader]
+		kid, ok := kidHeader.(string)
+		if !ok {
+			return nil, fmt.Errorf("missing 'kid' header in token")
+		}
+		if kid == ca.config.TokenSigningKeyID {
+			return publicKey, nil
+		}
+		return nil, fmt.Errorf("no public key for pecified 'kid' not found: %v", kid)
 	})
 	if err != nil {
 		ca.logger.Errorf("invalid verification token: %v", err)
@@ -140,7 +148,7 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 
 	// Create the Certificate
 	now := time.Now().UTC()
-	claims := v1alpha1.NewVerificationClaims()
+	claims := verifyapi.NewVerificationClaims()
 	// This server curently does not provide any transmission risk overrides, although that is part
 	// of the diagnosis verification protocol.
 	// TODO(mikehelmick) - determine what, if anything we want in the reference server.
@@ -152,6 +160,7 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	claims.StandardClaims.NotBefore = now.Add(-1 * time.Second).Unix()
 
 	certToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	certToken.Header[verifyapi.KeyIDHeader] = ca.config.CertificateSigningKeyID
 	certificate, err := jwthelper.SignJWT(certToken, signer)
 	if err != nil {
 		ca.logger.Errorf("error signing certificate: %v", err)
