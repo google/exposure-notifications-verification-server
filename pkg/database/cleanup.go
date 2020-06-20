@@ -30,7 +30,7 @@ var CleanupName = "cleanup"
 type CleanupStatus struct {
 	gorm.Model
 	Type       string `gorm:"type:varchar(50);unique_index"`
-	Generation int
+	Generation uint
 	NotBefore  time.Time
 }
 
@@ -39,6 +39,7 @@ func (CleanupStatus) TableName() string {
 	return "cleanup_statuses"
 }
 
+// CreateCleanup is used to create a new 'cleanup' type/row in the database.
 func (db *Database) CreateCleanup(cType string) (*CleanupStatus, error) {
 	cstat := &CleanupStatus{
 		Type:       cType,
@@ -51,6 +52,7 @@ func (db *Database) CreateCleanup(cType string) (*CleanupStatus, error) {
 	return cstat, nil
 }
 
+// FindCleanupStatus looks up the current cleanup state in the database by cleanup type.
 func (db *Database) FindCleanupStatus(cType string) (*CleanupStatus, error) {
 	var cstat CleanupStatus
 	if err := db.db.Where("type = ?", cType).First(&cstat).Error; err != nil {
@@ -59,6 +61,8 @@ func (db *Database) FindCleanupStatus(cType string) (*CleanupStatus, error) {
 	return &cstat, nil
 }
 
+// ClaimCleanup attempts to obtain a lock for the specified `lockTime` so that that type of
+// cleanup can be perofmed exclusively by the owner.
 func (db *Database) ClaimCleanup(current *CleanupStatus, lockTime time.Duration) (*CleanupStatus, error) {
 	var cstat CleanupStatus
 	err := db.db.Transaction(func(tx *gorm.DB) error {

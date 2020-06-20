@@ -92,11 +92,11 @@ type Config struct {
 	// Application Config
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
 	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
-	CodeDigits          int           `env:"CODE_DIGITS,default=8"`
-	ColissionRetryCount int           `env:"COLISSION_RETRY_COUNT,default=6"`
+	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
+	CollisionRetryCount uint          `env:"COLISSION_RETRY_COUNT,default=6"`
 	AllowedTestAge      time.Duration `env:"ALLOWRD_PAST_TEST_DAYS,default=336h"` // 336h is 14 days.
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
-	RateLimit           int64         `env:"RATE_LIMIT,default=60"`
+	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`
 
 	// Verification Token Config
 	// Currently this does not easily support rotation. TODO(mikehelmick) - add support.

@@ -73,7 +73,7 @@ func main() {
 	// Setup rate limiter
 	limitInstance := limiter.New(memory.NewStore(), limiter.Rate{
 		Period: 1 * time.Minute,
-		Limit:  config.RateLimit,
+		Limit:  int64(config.RateLimit),
 	}, limiter.WithTrustForwardHeader(true))
 	rateLimiter := limitgin.NewMiddleware(limitInstance)
 

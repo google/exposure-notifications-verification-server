@@ -26,13 +26,17 @@ type Config struct {
 	Host              string `env:"DB_HOST, default=localhost" json:",omitempty"`
 	Port              string `env:"DB_PORT, default=5432" json:",omitempty"`
 	SSLMode           string `env:"DB_SSLMODE, default=require" json:",omitempty"`
-	ConnectionTimeout int    `env:"DB_CONNECT_TIMEOUT" json:",omitempty"`
+	ConnectionTimeout uint   `env:"DB_CONNECT_TIMEOUT" json:",omitempty"`
 	Password          string `env:"DB_PASSWORD" json:"-"` // ignored by zap's JSON formatter
 	SSLCertPath       string `env:"DB_SSLCERT" json:",omitempty"`
 	SSLKeyPath        string `env:"DB_SSLKEY" json:",omitempty"`
 	SSLRootCertPath   string `env:"DB_SSLROOTCERT" json:",omitempty"`
 }
 
+// ConnectionString returns the postgresql connection string based on this config.
+//
+// While this package could be adapted to different databases easily, this file
+// and method in particular would need to change.
 func (c *Config) ConnectionString() string {
 	vals := dbValues(c)
 	var p []string
@@ -63,7 +67,7 @@ func setIfNotEmpty(m map[string]string, key, val string) {
 	}
 }
 
-func setIfPositive(m map[string]string, key string, val int) {
+func setIfPositive(m map[string]string, key string, val uint) {
 	if val > 0 {
 		m[key] = fmt.Sprintf("%d", val)
 	}

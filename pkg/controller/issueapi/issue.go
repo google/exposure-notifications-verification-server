@@ -89,7 +89,7 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 		MaxTestAge: ic.config.AllowedTestAge,
 	}
 
-	code, err := codeRequest.Issue(c.Request.Context(), ic.config.ColissionRetryCount)
+	code, err := codeRequest.Issue(c.Request.Context(), ic.config.CollisionRetryCount)
 	if err != nil {
 		ic.logger.Errorf("otp.GenerateCode: %v", err)
 		c.JSON(http.StatusOK, api.Error("error generating verification, wait a moment and try again"))
