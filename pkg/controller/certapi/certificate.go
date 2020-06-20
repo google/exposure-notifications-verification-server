@@ -71,7 +71,9 @@ func (ca *CertificateAPI) getPublicKey(c *gin.Context, keyID string) (crypto.Pub
 	return publicKey, nil
 }
 
-func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.PublicKey) (string, error) {
+// Parses and validates the token against the configured keyID and public key.
+// If the token si valid the token id (`tid') and subject (`sub`) claims are returned.
+func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.PublicKey) (string, string, error) {
 	// Parse and validate the verification token.
 	token, err := jwt.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
@@ -86,22 +88,22 @@ func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.Public
 	})
 	if err != nil {
 		ca.logger.Errorf("invalid verification token: %v", err)
-		return "", fmt.Errorf("invalid verification token")
+		return "", "", fmt.Errorf("invalid verification token")
 	}
 	tokenClaims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
 		ca.logger.Errorf("invalid claims in verification token")
-		return "", fmt.Errorf("invalid verification token")
+		return "", "", fmt.Errorf("invalid verification token")
 	}
 	if err := tokenClaims.Valid(); err != nil {
 		ca.logger.Errorf("JWT is invalid: %v", err)
-		return "", fmt.Errorf("verification token expired")
+		return "", "", fmt.Errorf("verification token expired")
 	}
 	if !tokenClaims.VerifyIssuer(ca.config.TokenIssuer, true) || !tokenClaims.VerifyAudience(ca.config.TokenIssuer, true) {
 		ca.logger.Errorf("jwt contains invalid iss/aud: iss %v aud: %v", tokenClaims.Issuer, tokenClaims.Audience)
-		return "", fmt.Errorf("verification token not valid")
+		return "", "", fmt.Errorf("verification token not valid")
 	}
-	return tokenClaims.Id, nil
+	return tokenClaims.Id, tokenClaims.Subject, nil
 }
 
 func (ca *CertificateAPI) Execute(c *gin.Context) {
@@ -121,7 +123,7 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	}
 
 	// Parse and validate the verification token.
-	tokenID, err := ca.validateToken(request.VerificationToken, publicKey)
+	tokenID, subject, err := ca.validateToken(request.VerificationToken, publicKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.Error(err.Error()))
 		return
@@ -169,7 +171,7 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	}
 
 	// To the transactional update to the database last so that if it fails, the client can retry.
-	if err := ca.db.ClaimToken(tokenID); err != nil {
+	if err := ca.db.ClaimToken(tokenID, subject); err != nil {
 		ca.logger.Errorf("error claiming tokenId: %v err: %v", tokenID, err)
 		c.JSON(http.StatusBadRequest, api.Error(err.Error()))
 		return

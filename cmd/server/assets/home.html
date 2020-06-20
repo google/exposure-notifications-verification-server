@@ -53,7 +53,9 @@
             <input type="date" id="testDate" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
           </div>
           <small class="form-text text-muted">
-            Optional, cannot be more than 14 days prior to today
+            Optional, cannot be more than 14 days prior to today. This system is based on
+            <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC</a> dates, you may need to adjust accordingly.
+            The current UTC date is <strong>{{.maxDate}}</strong>.
           </small>
         </div>
       </div>
