@@ -50,7 +50,7 @@ func TestIssue(t *testing.T) {
 	numCodes := 100
 	codes := make([]string, 0, numCodes)
 	for i := 0; i < numCodes; i++ {
-		otp := OTPRequest{
+		otp := Request{
 			DB:        db,
 			Length:    8,
 			ExpiresAt: time.Now().Add(time.Hour),
