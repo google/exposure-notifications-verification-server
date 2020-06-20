@@ -77,7 +77,7 @@ func TestIssueToken(t *testing.T) {
 				time.Sleep(tc.Delay)
 			}
 
-			tok, err := db.IssueToken(tc.Verification.Code, maxAge)
+			tok, err := db.VerifyCodeAndIssueToken(tc.Verification.Code, maxAge)
 			if err != nil {
 				if tc.Error == "" {
 					t.Fatalf("error issuing token: %v", err)
