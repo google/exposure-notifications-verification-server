@@ -23,7 +23,6 @@ package verifyapi
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"time"
 
@@ -95,8 +94,7 @@ func (v *VerifyAPI) Execute(c *gin.Context) {
 		Subject:   subject,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	token.Header[verifyapi.KeyIDHeader] = v.config.TokenKeyID
-	log.Printf("token: %+v", token)
+	token.Header[verifyapi.KeyIDHeader] = v.config.TokenSigningKeyID
 	signedJWT, err := jwthelper.SignJWT(token, signer)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.Error("error signing token, must obtain new verification code"))

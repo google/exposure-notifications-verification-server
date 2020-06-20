@@ -79,7 +79,7 @@ func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.Public
 		if !ok {
 			return nil, fmt.Errorf("missing 'kid' header in token")
 		}
-		if kid == ca.config.TokenKeyID {
+		if kid == ca.config.TokenSigningKeyID {
 			return publicKey, nil
 		}
 		return nil, fmt.Errorf("no public key for pecified 'kid' not found: %v", kid)

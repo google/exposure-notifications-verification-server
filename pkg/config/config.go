@@ -103,7 +103,7 @@ type Config struct {
 	VerificationTokenDuration time.Duration `env:"VERIFICATION_TOKEN_DURATION,default=24h"`
 	TokenSigningKey           string        `env:"TOKEN_SIGNING_KEY,required"`
 	TokenIssuer               string        `env:"TOKEN_ISSUER,default=diagnosis-verification-example"`
-	TokenKeyID                string        `env:"TOKEN_KID,default=v1"`
+	TokenSigningKeyID         string        `env:"TOKEN_SIGNING_KEY_ID,default=v1"`
 
 	// Verification certificate config
 	PublicKeyCacheDuration time.Duration `env:"PUBLIC_KEY_CACHE_DURATION,default=15m"`
