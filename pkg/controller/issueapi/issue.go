@@ -80,7 +80,7 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 	expiryTime := time.Now().Add(ic.config.CodeDuration)
 
 	// Generate verification code
-	codeRequest := otp.OTPRequest{
+	codeRequest := otp.Request{
 		DB:         ic.db,
 		Length:     ic.config.CodeDigits,
 		ExpiresAt:  expiryTime,

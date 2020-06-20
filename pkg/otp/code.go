@@ -13,12 +13,14 @@
 // limitations under the License.
 
 // Package otp contains the implementation of the issuance of verification codes.
-// Codes can be configured by creating an OTPRequest.
+// Codes can be configured by creating an Request.
 package otp
 
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -26,29 +28,24 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 )
 
-const (
-	charSet   = "0123456789"
-	setLength = 10
-)
-
 // GenerateCode creates a new OTP code.
 func GenerateCode(length int) (string, error) {
-	buffer := make([]byte, length)
-	_, err := rand.Read(buffer)
+	limit := big.NewInt(0)
+	limit.Exp(big.NewInt(10), big.NewInt(int64(length)), nil)
+	digits, err := rand.Int(rand.Reader, limit)
 	if err != nil {
 		return "", err
 	}
 
-	// Reassign the value in the buffer to the corresponding charSet entry.
-	for i := 0; i < length; i++ {
-		buffer[i] = charSet[int(buffer[i])%setLength]
-	}
+	// The zero pad format is variable length based on the length of the request code.
+	format := fmt.Sprint("%0", length, "d")
+	result := fmt.Sprintf(format, digits.Int64())
 
-	return string(buffer), nil
+	return result, nil
 }
 
-// OTPRequest represents the parameters of a verification code request.
-type OTPRequest struct {
+// Request represents the parameters of a verification code request.
+type Request struct {
 	DB         *database.Database
 	Length     int
 	ExpiresAt  time.Time
@@ -59,7 +56,7 @@ type OTPRequest struct {
 
 // Issue wiill generate a verification code and save it to the database, based
 // on the paremters provited.
-func (o *OTPRequest) Issue(ctx context.Context, retryCount int) (string, error) {
+func (o *Request) Issue(ctx context.Context, retryCount int) (string, error) {
 	logger := logging.FromContext(ctx)
 	var code string
 	var err error
