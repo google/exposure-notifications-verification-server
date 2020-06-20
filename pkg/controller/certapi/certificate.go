@@ -31,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
 	"github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
+	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/cache"
 
 	"github.com/dgrijalva/jwt-go"
@@ -115,6 +116,17 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	tokenID, err := ca.validateToken(request.VerificationToken, publicKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.Error(err.Error()))
+		return
+	}
+
+	// Validate the HMAC length. SHA 256 HMAC must be 32 bytes in length.
+	hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.Error("ekeyhmac is not a valid base64 encoding: %v", err))
+		return
+	}
+	if len(hmacBytes) != 32 {
+		c.JSON(http.StatusBadRequest, api.Error("ekeyhmac is not the correct length want: 32 got: %v", len(hmacBytes)))
 		return
 	}
 
