@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -33,6 +34,7 @@ var (
 	ErrVerificationCodeUsed    = errors.New("verification code used")
 	ErrTokenExpired            = errors.New("verification token expired")
 	ErrTokenUsed               = errors.New("verification token used")
+	ErrTokenMetadataMismatch   = errors.New("verification token test metadata mismatch")
 )
 
 // Token represents an issued "long term" from a validated verification code.
@@ -53,7 +55,9 @@ func (t *Token) FormatTestDate() string {
 	return t.TestDate.Format("2006-01-02")
 }
 
-func (db *Database) ClaimToken(tokenID string) error {
+// ClaimToken looks up the token by ID, verifies that it is not expired and that
+// the specified subject matches the parameters that were configured when issued.
+func (db *Database) ClaimToken(tokenID, subject string) error {
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		var tok Token
 		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("token_id = ?", tokenID).First(&tok).Error; err != nil {
@@ -66,6 +70,24 @@ func (db *Database) ClaimToken(tokenID string) error {
 
 		if tok.Used {
 			return ErrTokenUsed
+		}
+
+		// The subject is made up of testtype.testdate
+		parts := strings.Split(subject, ".")
+		if length := len(parts); length < 1 || length > 2 {
+			return ErrTokenMetadataMismatch
+		}
+		if tok.TestType != parts[0] {
+			return ErrTokenMetadataMismatch
+		}
+		if len(parts) == 2 {
+			testDate, err := time.Parse("2006-01-02", parts[1])
+			if err != nil {
+				return ErrTokenMetadataMismatch
+			}
+			if tok.TestDate == nil || !tok.TestDate.Equal(testDate) {
+				return ErrTokenMetadataMismatch
+			}
 		}
 
 		tok.Used = true

@@ -61,6 +61,14 @@ func (VerificationCode) TableName() string {
 // TODO(mikehelmick) - Add method to purge verification codes that are > XX hours old
 //   Keeping expired codes prevents a code from being regenerated during that period of time.
 
+// FormatTestDate returns YYYY-MM-DD formatted test date, or "" if nil.
+func (v *VerificationCode) FormatTestDate() string {
+	if v.TestDate == nil {
+		return ""
+	}
+	return v.TestDate.Format("2006-01-02")
+}
+
 // IsExpired returns ture if a verification code has expired.
 func (v *VerificationCode) IsExpired() bool {
 	return !v.ExpiresAt.After(time.Now())

@@ -55,7 +55,7 @@ func (hc *homeController) Execute(c *gin.Context) {
 
 	m := controller.NewTemplateMapFromSession(hc.config, c)
 	// Set test date params
-	now := time.Now()
+	now := time.Now().UTC()
 	m["maxDate"] = now.Format("2006-01-02")
 	m["minDate"] = now.Add(hc.pastDaysDuration).Format("2006-01-02")
 	m["duration"] = hc.config.CodeDuration.String()

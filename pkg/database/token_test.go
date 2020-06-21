@@ -26,50 +26,120 @@ func TestIssueToken(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
-	maxAge := time.Hour
+	codeAge := time.Hour
+	testDate := time.Now().UTC().Truncate(24 * time.Hour)
 
 	cases := []struct {
 		Name         string
 		Verification VerificationCode
 		Error        string
 		Delay        time.Duration
+		TokenAge     time.Duration
+		Subject      string
+		ClaimError   string
 	}{
 		{
 			Name: "normal token issue",
 			Verification: VerificationCode{
 				Code:      "12345678",
 				TestType:  "confirmed",
+				TestDate:  &testDate,
 				ExpiresAt: time.Now().Add(time.Hour),
 			},
-			Error: "",
+			Error:    "",
+			TokenAge: time.Hour,
 		},
 		{
 			Name: "already claimed",
 			Verification: VerificationCode{
-				Code:      "ABC123",
+				Code:      "00000001",
 				Claimed:   true,
 				TestType:  "confirmed",
 				ExpiresAt: time.Now().Add(time.Hour),
 			},
-			Error: ErrVerificationCodeUsed.Error(),
+			Error:    ErrVerificationCodeUsed.Error(),
+			TokenAge: time.Hour,
 		},
 		{
-			Name: "expired",
+			Name: "code expired",
 			Verification: VerificationCode{
-				Code:      "ABC123-2",
+				Code:      "00000002",
 				Claimed:   false,
 				TestType:  "confirmed",
 				ExpiresAt: time.Now().Add(time.Second),
 			},
-			Delay: time.Second,
-			Error: ErrVerificationCodeExpired.Error(),
+			Delay:    time.Second,
+			Error:    ErrVerificationCodeExpired.Error(),
+			TokenAge: time.Hour,
+		},
+		{
+			Name: "token expired",
+			Verification: VerificationCode{
+				Code:      "00000003",
+				Claimed:   false,
+				TestType:  "confirmed",
+				ExpiresAt: time.Now().Add(time.Hour),
+			},
+			Delay:      time.Second,
+			ClaimError: ErrTokenExpired.Error(),
+			TokenAge:   time.Millisecond,
+		},
+		{
+			Name: "invalid subject format",
+			Verification: VerificationCode{
+				Code:      "00000004",
+				Claimed:   false,
+				TestType:  "confirmed",
+				ExpiresAt: time.Now().Add(time.Hour),
+			},
+			ClaimError: ErrTokenMetadataMismatch.Error(),
+			TokenAge:   time.Hour,
+			Subject:    "to.many.parts",
+		},
+		{
+			Name: "wrong test type",
+			Verification: VerificationCode{
+				Code:      "00000005",
+				Claimed:   false,
+				TestType:  "confirmed",
+				ExpiresAt: time.Now().Add(time.Hour),
+			},
+			ClaimError: ErrTokenMetadataMismatch.Error(),
+			TokenAge:   time.Hour,
+			Subject:    "negative.",
+		},
+		{
+			Name: "unparsable test date",
+			Verification: VerificationCode{
+				Code:      "00000006",
+				Claimed:   false,
+				TestType:  "confirmed",
+				TestDate:  &testDate,
+				ExpiresAt: time.Now().Add(time.Hour),
+			},
+			ClaimError: ErrTokenMetadataMismatch.Error(),
+			TokenAge:   time.Hour,
+			Subject:    "confirmed.December 25, 2019",
+		},
+		{
+			Name: "wrong test date",
+			Verification: VerificationCode{
+				Code:      "00000007",
+				Claimed:   false,
+				TestType:  "confirmed",
+				TestDate:  &testDate,
+				ExpiresAt: time.Now().Add(time.Hour),
+			},
+			ClaimError: ErrTokenMetadataMismatch.Error(),
+			TokenAge:   time.Hour,
+			Subject:    "confirmed." + testDate.Add(48*time.Hour).Format("2006-01-02"),
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			if err := db.SaveVerificationCode(&tc.Verification, maxAge); err != nil {
+			if err := db.SaveVerificationCode(&tc.Verification, codeAge); err != nil {
 				t.Fatalf("error creating verification code: %v", err)
 			}
 
@@ -77,7 +147,7 @@ func TestIssueToken(t *testing.T) {
 				time.Sleep(tc.Delay)
 			}
 
-			tok, err := db.VerifyCodeAndIssueToken(tc.Verification.Code, maxAge)
+			tok, err := db.VerifyCodeAndIssueToken(tc.Verification.Code, tc.TokenAge)
 			if err != nil {
 				if tc.Error == "" {
 					t.Fatalf("error issuing token: %v", err)
@@ -92,8 +162,8 @@ func TestIssueToken(t *testing.T) {
 				if tok.TestType != tc.Verification.TestType {
 					t.Errorf("test type missmatch want: %v, got %v", tc.Verification.TestType, tok.TestType)
 				}
-				if tok.TestDate != tc.Verification.TestDate {
-					t.Errorf("test date missmatch want: %v, got %v", tc.Verification.TestType, tok.TestDate)
+				if tok.FormatTestDate() != tc.Verification.FormatTestDate() {
+					t.Errorf("test date missmatch want: %v, got %v", tc.Verification.FormatTestDate(), tok.FormatTestDate())
 				}
 
 				got, err := db.FindTokenByID(tok.TokenID)
@@ -104,16 +174,32 @@ func TestIssueToken(t *testing.T) {
 					t.Fatalf("mismatch (-want, +got):\n%s", diff)
 				}
 
-				if err := db.ClaimToken(got.TokenID); err != nil {
-					t.Fatalf("unexpected error claiming token: %v", err)
+				if tc.Delay > 0 {
+					time.Sleep(tc.Delay)
 				}
 
-				got, err = db.FindTokenByID(tok.TokenID)
-				if err != nil {
-					t.Fatalf("error reading token from db: %v", err)
+				subject := tc.Verification.TestType + "." + tc.Verification.FormatTestDate()
+				if tc.Subject != "" {
+					subject = tc.Subject
 				}
-				if !got.Used {
-					t.Fatalf("claimed token is not marked as used")
+				if err := db.ClaimToken(got.TokenID, subject); err != nil && tc.ClaimError == "" {
+					t.Fatalf("unexpected error claiming token: %v", err)
+				} else if tc.ClaimError != "" {
+					if err == nil {
+						t.Fatalf("wanted error '%v' got: nil", tc.ClaimError)
+					} else if !strings.Contains(err.Error(), tc.ClaimError) {
+						t.Fatalf("wrong error, want: '%v', got '%v'", tc.ClaimError, err)
+					}
+				}
+
+				if tc.ClaimError == "" {
+					got, err = db.FindTokenByID(tok.TokenID)
+					if err != nil {
+						t.Fatalf("error reading token from db: %v", err)
+					}
+					if !got.Used {
+						t.Fatalf("claimed token is not marked as used")
+					}
 				}
 			}
 		})
