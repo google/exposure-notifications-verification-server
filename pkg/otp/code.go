@@ -29,7 +29,7 @@ import (
 )
 
 // GenerateCode creates a new OTP code.
-func GenerateCode(length int) (string, error) {
+func GenerateCode(length uint) (string, error) {
 	limit := big.NewInt(0)
 	limit.Exp(big.NewInt(10), big.NewInt(int64(length)), nil)
 	digits, err := rand.Int(rand.Reader, limit)
@@ -47,7 +47,7 @@ func GenerateCode(length int) (string, error) {
 // Request represents the parameters of a verification code request.
 type Request struct {
 	DB         *database.Database
-	Length     int
+	Length     uint
 	ExpiresAt  time.Time
 	TestType   string
 	TestDate   *time.Time
@@ -56,11 +56,12 @@ type Request struct {
 
 // Issue wiill generate a verification code and save it to the database, based
 // on the paremters provited.
-func (o *Request) Issue(ctx context.Context, retryCount int) (string, error) {
+func (o *Request) Issue(ctx context.Context, retryCount uint) (string, error) {
 	logger := logging.FromContext(ctx)
 	var code string
 	var err error
-	for i := 0; i < retryCount; i++ {
+	var i uint
+	for i = 0; i < retryCount; i++ {
 		code, err = GenerateCode(o.Length)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
