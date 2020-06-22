@@ -59,7 +59,7 @@ func (a *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
 		// Load the authorized app by API key using the write thru cache.
 		authAppCache, err := a.keyCache.WriteThruLookup(apiKey,
 			func() (interface{}, error) {
-				aa, err := db.FindAuthorizedAppByAPIKey(apiKey)
+				aa, err := a.db.FindAuthorizedAppByAPIKey(apiKey)
 				if err != nil {
 					return nil, err
 				}

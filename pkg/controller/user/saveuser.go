@@ -21,10 +21,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -42,26 +42,43 @@ type formData struct {
 }
 
 // NewSaveController creates a controller to save users.
-func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
 	return &userSaveController{config, db, logging.FromContext(ctx)}
 }
 
-func (sc *userSaveController) Execute(c *gin.Context) {
-	// All roads lead to a GET redirect.
-	defer c.Redirect(http.StatusSeeOther, "/users")
+func (usc *userSaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer http.Redirect(w, r, "/users", http.StatusSeeOther)
 
-	flash := flash.FromContext(c)
+	user, err := controller.GetUser(w, r)
+	if err != nil {
+		http.Redirect(w, r, "/signout", http.StatusFound)
+		return
+	}
+	flash := flash.FromContext(w, r)
+
+	usc.logger.Infof("FLASH: %+v", flash)
+
+	m := html.GetTemplateMap(r)
+	m["user"] = user
 
 	var form formData
-	if err := c.Bind(&form); err != nil {
-		flash.Error("Invalid request.")
+	if err := controller.BindForm(w, r, &form); err != nil {
+		usc.logger.Errorf("error parsing form: %v", err)
+		flash.Error("Failed to process form: %v", err)
+		controller.WriteJSON(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	if _, err := sc.db.CreateUser(form.Email, form.Name, form.Admin, form.Disabled); err != nil {
+	user, err = usc.db.CreateUser(form.Email, form.Name, form.Admin, form.Disabled)
+	if err != nil {
 		flash.Error("Failed to create user: %v", err)
 		return
 	}
 
-	flash.Alert("Created User %q", form.Name)
+	flash.Alert("Created User %q", form.Email)
+
+	// m["user"] = user
+	// m["flash"] = flash
+	// m[csrf.TemplateTag] = csrf.TemplateField(r)
+	// usc.html.Render(w, "users", m)
 }

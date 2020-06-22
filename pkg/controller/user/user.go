@@ -22,29 +22,38 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/csrf"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 type userListController struct {
 	config *config.Config
 	db     *database.Database
+	html   *render.HTML
 	logger *zap.SugaredLogger
 }
 
 // NewListController creates a controller to list users
-func NewListController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
-	return &userListController{config, db, logging.FromContext(ctx)}
+func NewListController(ctx context.Context, config *config.Config, db *database.Database, html *render.HTML) http.Handler {
+	return &userListController{config, db, html, logging.FromContext(ctx)}
 }
 
-func (lc *userListController) Execute(c *gin.Context) {
-	user := c.MustGet("user").(*database.User)
-	flash := flash.FromContext(c)
+func (lc *userListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	user, err := controller.GetUser(w, r)
+	if err != nil {
+		http.Redirect(w, r, "/signout", http.StatusFound)
+		return
+	}
+	flash := flash.FromContext(w, r)
 
-	m := controller.NewTemplateMapFromSession(lc.config, c)
+	lc.logger.Infof("FLASH: %+v", flash)
+
+	m := html.GetTemplateMap(r)
 	m["user"] = user
 
 	apps, err := lc.db.ListUsers(false)
@@ -53,5 +62,7 @@ func (lc *userListController) Execute(c *gin.Context) {
 	}
 
 	m["apps"] = apps
-	c.HTML(http.StatusOK, "users", m)
+	m["flash"] = flash
+	m[csrf.TemplateTag] = csrf.TemplateField(r)
+	lc.html.Render(w, "users", m)
 }

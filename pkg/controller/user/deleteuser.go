@@ -16,16 +16,16 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/gorilla/mux"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -36,28 +36,43 @@ type userDeleteController struct {
 }
 
 // NewDeleteController creates a controller to Delete users.
-func NewDeleteController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+func NewDeleteController(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
 	return &userDeleteController{config, db, logging.FromContext(ctx)}
 }
 
-func (sc *userDeleteController) Execute(c *gin.Context) {
-	// All roads lead to a GET redirect.
-	defer c.Redirect(http.StatusSeeOther, "/users")
-	fmt.Println("delete user: ")
+func (udc *userDeleteController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 
-	flash := flash.FromContext(c)
-	email := c.Param("email")
+	user, err := controller.GetUser(w, r)
+	if err != nil {
+		http.Redirect(w, r, "/signout", http.StatusFound)
+		return
+	}
+	flash := flash.FromContext(w, r)
 
-	user, err := sc.db.FindUser(email)
+	udc.logger.Infof("FLASH: %+v", flash)
+
+	m := html.GetTemplateMap(r)
+	m["user"] = user
+
+	vars := mux.Vars(r)
+	email := vars["email"]
+
+	user, err = udc.db.FindUser(email)
 	if err != nil {
 		flash.Error("Failed to find user: %v", err)
 		return
 	}
 
-	if err := sc.db.DeleteUser(user); err != nil {
+	if err := udc.db.DeleteUser(user); err != nil {
 		flash.Error("Failed to delete user: %v", err)
 		return
 	}
 
 	flash.Alert("Deleted User %q", user)
+
+	// m["user"] = user
+	// m["flash"] = flash
+	// m[csrf.TemplateTag] = csrf.TemplateField(r)
+	// udc.html.Render(w, "users", m)
 }
