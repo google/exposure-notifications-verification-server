@@ -55,7 +55,7 @@
 
     <h2>All Users</h2>
 
-    {{if .apps}}
+    {{if .users}}
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
         <thead>
@@ -68,7 +68,7 @@
           </tr>
         </thead>
         <tbody>
-          {{range .apps}}
+          {{range .users}}
           <tr>
             <td scope="row">{{.Email}}</td>
             <td scope="row">{{.Name}}</td>
