@@ -68,6 +68,8 @@ gcloud kms keys describe certificate-signing --keyring=signing --location=us
 Finish setup and run the server.
 
 ```shell
+gcloud auth login && gcloud auth application-default login
+
 # In case you have this set, unset it to rely on gcloud.
 unset GOOGLE_APPLICATION_CREDENTIALS
 
@@ -89,6 +91,12 @@ export FIREBASE_STORAGE_BUCKET="${FIREBASE_PROJECT_ID}.appspot.com"
 export TOKEN_SIGNING_KEY="<Token Key Resource ID from Above>"
 export CERTIFICATE_SIGNING_KEY="<Certificate Key Resource ID from Above>"
 
+
+# D/L SA from Firebase https://firebase.corp.google.com/project/apollo-server-273118/settings/serviceaccounts/adminsdk
+export GOOGLE_APPLICATION_CREDENTIALS=/Users/USERNAME/Documents/project-name-123456-firebase-adminsdk-ab3-4cde56f78g.json
+
+# Configure CSRF_AUTH_KEY. This is a 32 byte string base64 encoded.
+export CSRF_AUTH_KEY=aGVsbG9oZWxsb2hlbGxvaGVsbG9oZWxsb2hlbGxvaGk=
 
 # Migrate DB
 ./scripts/dev dbmigrate
