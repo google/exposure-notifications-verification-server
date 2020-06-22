@@ -16,6 +16,8 @@ package database
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -57,18 +59,39 @@ func (db *Database) FindUser(email string) (*User, error) {
 
 // CreateUser creates a user record.
 func (db *Database) CreateUser(email string, name string, admin bool, disabled bool) (*User, error) {
-	user := User{
-		Email:    email,
-		Name:     name,
-		Admin:    admin,
-		Disabled: disabled,
+	if email == "" {
+		return nil, fmt.Errorf("email cannot be empty")
 	}
 
-	// TODO(crwilcox): Add validation for entries (similar to cmdline)
-	if err := db.db.Create(&user).Error; err != nil {
-		return nil, fmt.Errorf("unable to save user: %w", err)
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("provided email address may not be valid, double check: '%v'", email)
 	}
-	return &user, nil
+
+	if name == "" {
+		name = parts[0]
+	}
+
+	user, err := db.FindUser(email)
+	if err == gorm.ErrRecordNotFound {
+		// New record.
+		user = &User{}
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Update fields
+	user.Email = email
+	user.Name = name
+	user.Admin = admin
+	user.Disabled = disabled
+
+	if err := db.SaveUser(user); err != nil {
+		log.Fatalf("error saving user: %v", err)
+	}
+	log.Printf("saved user: %+v", user)
+
+	return user, nil
 }
 
 // SaveUser creates or updates a user record.
