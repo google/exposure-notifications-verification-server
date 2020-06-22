@@ -131,6 +131,6 @@ func main() {
 		Handler: handlers.CombinedLoggingHandler(os.Stdout, r),
 		Addr:    "127.0.0.1:" + strconv.Itoa(config.Port),
 	}
-	log.Printf("Listening on: 127.0.01:%v", config.Port)
+	log.Printf("Listening on: 127.0.0.1:%v", config.Port)
 	log.Fatal(srv.ListenAndServe())
 }
