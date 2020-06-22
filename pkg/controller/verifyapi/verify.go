@@ -53,6 +53,8 @@ func New(ctx context.Context, config *config.Config, db *database.Database, sign
 }
 
 func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// APIKey should be verified by middleware.
 	var request api.VerifyCodeRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
@@ -62,7 +64,7 @@ func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the signer based on Key configuration.
-	signer, err := v.signer.NewSigner(r.Context(), v.config.TokenSigningKey)
+	signer, err := v.signer.NewSigner(ctx, v.config.TokenSigningKey)
 	if err != nil {
 		v.logger.Errorf("unable to get signing key: %v", err)
 		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal server error - unable to sign tokens"))

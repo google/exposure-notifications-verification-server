@@ -46,6 +46,7 @@ func New(ctx context.Context, config *config.Config, db *database.Database) http
 }
 
 func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var request api.IssueCodeRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
 		ic.logger.Errorf("failed to bind request: %v", err)
@@ -88,7 +89,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxTestAge: ic.config.AllowedTestAge,
 	}
 
-	code, err := codeRequest.Issue(r.Context(), ic.config.CollisionRetryCount)
+	code, err := codeRequest.Issue(ctx, ic.config.CollisionRetryCount)
 	if err != nil {
 		ic.logger.Errorf("otp.GenerateCode: %v", err)
 		controller.WriteJSON(w, http.StatusOK, api.Error("error generating verification, wait a moment and try again"))

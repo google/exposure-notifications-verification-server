@@ -32,7 +32,7 @@ const (
 
 // BindJSON provides a common implementation of JSON unmarshaling with well defined error handling.
 func BindJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
-	if t := r.Header.Get("content-type"); len(t) < 16 || t[:16] != "application/json" {
+	if IsJSONContentType(r) {
 		return fmt.Errorf("content-type is not application/json")
 	}
 

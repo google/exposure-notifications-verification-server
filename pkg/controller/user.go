@@ -24,17 +24,17 @@ import (
 	"github.com/gorilla/context"
 )
 
-func MustGetUser(w http.ResponseWriter, r *http.Request) (*database.User, error) {
+// GetUser gets the current logged in user from the request context. On an Error,
+// a message is added to the context's flash, but no redirect/render decision is made.
+func GetUser(w http.ResponseWriter, r *http.Request) (*database.User, error) {
 	rawUser, ok := context.GetOk(r, "user")
 	if !ok {
 		flash.FromContext(w, r).Error("Unauthorized")
-		http.Redirect(w, r, "/signout", http.StatusFound)
 		return nil, fmt.Errorf("unauthorized")
 	}
 	user, ok := rawUser.(*database.User)
 	if !ok {
 		flash.FromContext(w, r).Error("internal error - you have been logged out.")
-		http.Redirect(w, r, "/signout", http.StatusFound)
 		return nil, fmt.Errorf("internal error")
 	}
 	return user, nil

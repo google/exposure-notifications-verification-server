@@ -86,7 +86,7 @@ type cleanupResult struct {
 func (cc *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := cc.shouldCleanup(); err != nil {
 		cc.logger.Errorf("shouldCleanUp: %v", err)
-		controller.WriteJSON(w, http.StatusOK, cleanupResult{false})
+		controller.WriteJSON(w, http.StatusOK, &cleanupResult{false})
 		return
 	}
 
@@ -108,5 +108,5 @@ func (cc *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cc.logger.Infof("purged %v user records", count)
 	}
 
-	controller.WriteJSON(w, http.StatusOK, cleanupResult{true})
+	controller.WriteJSON(w, http.StatusOK, &cleanupResult{true})
 }

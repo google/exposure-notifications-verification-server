@@ -93,7 +93,9 @@ type Config struct {
 	SessionCookieDuration time.Duration `env:"SESSION_DURATION,default=24h"`
 	RevokeCheckPeriod     time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
 
-	// CSRF Secret Key
+	// CSRF Secret Key. Must be 32-bytes. Can be generated with tools/gen-secret
+	// Use the syntax of secret:// to pull the secret from secret manager.
+	// We assume the secret itself is base64 encoded. Use CSRFKey() to transform to bytes.
 	CSRFAuthKey string `env:"CSRF_AUTH_KEY,required"`
 
 	// Application Config
@@ -128,6 +130,8 @@ type Config struct {
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
+	// If Dev mode is true, cookies aren't required to be sent over secure channels.
+	// This includes CSRF protection base cookie. You want this false in production (the default).
 	DevMode bool `env:"DEV_MODE"`
 }
 

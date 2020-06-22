@@ -47,7 +47,7 @@ func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request
 	flash := flash.FromContext(w, r)
 
 	var form formData
-	if err := controller.MustBindForm(w, r, &form); err != nil {
+	if err := controller.BindForm(w, r, &form); err != nil {
 		sc.logger.Errorf("invalid apikey create request: %v", err)
 		flash.Error("Invalid request.")
 		return
@@ -59,6 +59,5 @@ func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	sc.logger.Infof("created api key %v", form.Name)
 	flash.Alert("Created API Key for %q", form.Name)
 }

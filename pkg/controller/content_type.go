@@ -14,25 +14,11 @@
 
 package controller
 
-import (
-	"net/http"
+import "net/http"
 
-	"github.com/gorilla/schema"
-)
-
-// BindForm parses and binds the HTTP form to the provided data interface
-// using the gorilla schema package.
-func BindForm(w http.ResponseWriter, r *http.Request, data interface{}) error {
-	err := r.ParseForm()
-	if err != nil {
-		return err
-	}
-	decoder := schema.NewDecoder()
-	// Set ignore unknown keys so that things like the action and submit button
-	// don't need to be captured. By default schema decoder is very struct.
-	decoder.IgnoreUnknownKeys(true)
-	if err := decoder.Decode(data, r.PostForm); err != nil {
-		return err
-	}
-	return nil
+// IsJSONContentType returns true if the request's content type is application/json
+// extra specific details, like UTF encoding schema are allowed.
+func IsJSONContentType(r *http.Request) bool {
+	t := r.Header.Get("content-type")
+	return !(len(t) < 16 || t[:16] != "application/json")
 }

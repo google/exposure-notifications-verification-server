@@ -50,11 +50,11 @@ func New(ctx context.Context, config *config.Config, db *database.Database, sign
 	return &CertificateAPI{config, db, logging.FromContext(ctx), signer, pubKeyCache}
 }
 
-func (ca *CertificateAPI) getPublicKey(r *http.Request, keyID string) (crypto.PublicKey, error) {
+func (ca *CertificateAPI) getPublicKey(ctx context.Context, keyID string) (crypto.PublicKey, error) {
 	// Get the public key for the Token Signing Key.
 	keyCache, err := ca.pubKeyCache.WriteThruLookup(keyID,
 		func() (interface{}, error) {
-			signer, err := ca.signer.NewSigner(r.Context(), ca.config.TokenSigningKey)
+			signer, err := ca.signer.NewSigner(ctx, ca.config.TokenSigningKey)
 			if err != nil {
 				return nil, err
 			}
@@ -106,6 +106,8 @@ func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.Public
 }
 
 func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// APIKey should be verified by middleware.
 	var request api.VerificationCertificateRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
@@ -114,7 +116,7 @@ func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	publicKey, err := ca.getPublicKey(r, ca.config.TokenSigningKey)
+	publicKey, err := ca.getPublicKey(ctx, ca.config.TokenSigningKey)
 	if err != nil {
 		ca.logger.Errorf("pubPublicKey: %v", err)
 		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("interal server error"))
@@ -140,7 +142,7 @@ func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the signer based on Key configuration.
-	signer, err := ca.signer.NewSigner(r.Context(), ca.config.CertificateSigningKey)
+	signer, err := ca.signer.NewSigner(ctx, ca.config.CertificateSigningKey)
 	if err != nil {
 		ca.logger.Errorf("unable to get signing key: %v", err)
 		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
@@ -152,7 +154,6 @@ func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	claims := verifyapi.NewVerificationClaims()
 	// This server curently does not provide any transmission risk overrides, although that is part
 	// of the diagnosis verification protocol.
-	// TODO(mikehelmick) - determine what, if anything we want in the reference server.
 	claims.SignedMAC = request.ExposureKeyHMAC
 	claims.StandardClaims.Audience = ca.config.CertificateAudience
 	claims.StandardClaims.Issuer = ca.config.CertificateIssuer

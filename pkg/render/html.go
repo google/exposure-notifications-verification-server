@@ -38,7 +38,7 @@ func LoadHTMLGlob(pattern string) *HTML {
 
 	log.Printf("Loaded %v HTML Templates", len(names))
 	for i, name := range names {
-		names[i] = strings.TrimSuffix(strings.TrimPrefix(name, "\""), "\"")
+		names[i] = strings.Trim(name, "\"")
 		log.Printf("    - %v", names[i])
 	}
 

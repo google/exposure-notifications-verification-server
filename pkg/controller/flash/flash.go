@@ -13,6 +13,7 @@
 // limitations under the License.
 
 // Package flash defines flash session behavior.
+// TODO(mikehelmick||sethvargo): Now that we're on gorilla, we could move to build in session / flash support.
 package flash
 
 import (
@@ -35,6 +36,7 @@ const (
 	errorKey = "error"
 )
 
+// Flash represents a handle to the current request's flash structure.
 type Flash struct {
 	w http.ResponseWriter
 	r *http.Request

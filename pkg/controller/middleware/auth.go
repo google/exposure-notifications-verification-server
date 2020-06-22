@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"firebase.google.com/go/auth"
@@ -70,7 +69,7 @@ func (rah *RequireAdminHandler) Handle(next http.Handler) http.Handler {
 		}(); err != nil {
 			rah.logger.Errorw("RequireAdmin", "error", err)
 
-			if returnJSON(r) {
+			if controller.IsJSONContentType(r) {
 				controller.WriteJSON(w, http.StatusUnauthorized, nil)
 			} else {
 				flash.FromContext(w, r).Error("Unauthorized")
@@ -155,7 +154,7 @@ func (rah *RequreAuthHandler) Handle(next http.Handler) http.Handler {
 		}(); err != nil {
 			rah.logger.Errorw("RequireAuth", "error", err)
 
-			if returnJSON(r) {
+			if controller.IsJSONContentType(r) {
 				controller.WriteJSON(w, http.StatusUnauthorized, nil)
 			} else {
 				flash.FromContext(w, r).Error("Unauthorized")
@@ -165,9 +164,4 @@ func (rah *RequreAuthHandler) Handle(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		}
 	})
-}
-
-func returnJSON(r *http.Request) bool {
-	contentType := r.Header.Get("Content-type")
-	return strings.Contains(contentType, "application/json")
 }

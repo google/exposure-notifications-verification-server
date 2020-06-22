@@ -16,21 +16,30 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
+func writeHeaders(w http.ResponseWriter, status int) {
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+}
+
+// WriteJSON marshals the provided value as JSON and writes it has the HTTP
+// response with the specified status.
 func WriteJSON(w http.ResponseWriter, status int, value interface{}) {
 	if value == nil {
-		w.WriteHeader(status)
+		writeHeaders(w, status)
+		return
 	}
 
 	data, err := json.Marshal(value)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeHeaders(w, http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("{\"error\": \"%v\"}", err.Error())))
 		return
 	}
 
-	w.WriteHeader(status)
-	w.Header().Set("Content-Type", "application/json")
+	writeHeaders(w, status)
 	w.Write(data)
 }

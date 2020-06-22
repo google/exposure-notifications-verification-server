@@ -43,8 +43,9 @@ func NewListController(ctx context.Context, config *config.Config, db *database.
 }
 
 func (lc *apikeyListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user, err := controller.MustGetUser(w, r)
+	user, err := controller.GetUser(w, r)
 	if err != nil {
+		http.Redirect(w, r, "/signout", http.StatusFound)
 		return
 	}
 	flash := flash.FromContext(w, r)

@@ -18,7 +18,6 @@ package csrf
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -33,8 +32,8 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request) {
 	logger := logging.FromContext(r.Context())
 	logger.Errorf("CSRF token validation error")
 
-	if s := r.Header.Get("Content-Type"); strings.Contains(s, "application/json") {
-		controller.WriteJSON(w, http.StatusOK, api.Error("Invalidate state. Refresh this window."))
+	if controller.IsJSONContentType(r) {
+		controller.WriteJSON(w, http.StatusOK, api.Error("Invalid state. Refresh this window."))
 		return
 	}
 	flash := flash.FromContext(w, r)

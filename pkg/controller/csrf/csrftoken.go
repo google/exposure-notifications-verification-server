@@ -21,18 +21,15 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/csrf"
 )
 
-type csrfController struct {
-	html *render.HTML
-}
+type csrfController struct{}
 
 // NewCSRFAPI creates a new controller that can return CSRF tokens to JSON APIs.
-func NewCSRFAPI(html *render.HTML) http.Handler {
-	return &csrfController{html}
+func NewCSRFAPI() http.Handler {
+	return &csrfController{}
 }
 
 func (ic *csrfController) ServeHTTP(w http.ResponseWriter, r *http.Request) {

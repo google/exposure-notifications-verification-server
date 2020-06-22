@@ -28,8 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
-	"github.com/gorilla/schema"
-
 	"go.uber.org/zap"
 )
 
@@ -56,17 +54,9 @@ func (c *sessionController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	flash := flash.FromContext(w, r)
 
 	// Parse and decode form.
-	err := r.ParseForm()
-	if err != nil {
-		c.logger.Errorf("error pasring form: %v", err)
-		flash.Error("Failed to process login: %v", err)
-		controller.WriteJSON(w, http.StatusBadRequest, nil)
-		return
-	}
 	var form formData
-	decoder := schema.NewDecoder()
-	if err := decoder.Decode(&form, r.PostForm); err != nil {
-		c.logger.Errorf("error decoding form: %v", err)
+	if err := controller.BindForm(w, r, &form); err != nil {
+		c.logger.Errorf("error pasring form: %v", err)
 		flash.Error("Failed to process login: %v", err)
 		controller.WriteJSON(w, http.StatusBadRequest, nil)
 		return

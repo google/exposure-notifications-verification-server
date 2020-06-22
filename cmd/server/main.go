@@ -106,7 +106,8 @@ func main() {
 		sub.Handle("/issue", issueapi.New(ctx, config, db)).Methods("POST")
 
 		// API for obtaining a CSRF token before calling /issue
-		sub.Handle("/csrf", csrfctl.NewCSRFAPI(renderHTML)).Methods("GET")
+		// Installed in this context, it requires authentication.
+		sub.Handle("/csrf", csrfctl.NewCSRFAPI()).Methods("GET")
 	}
 
 	// Admin pages, requires admin auth

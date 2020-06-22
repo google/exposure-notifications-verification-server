@@ -68,12 +68,11 @@ func main() {
 			},
 		},
 	}
-	log.Printf("REQ: %+v", req)
 
 	// Call the API to create the secret.
 	result, err := client.CreateSecret(ctx, req)
 	if err != nil {
-		log.Printf("failed to create secret: %v", err)
+		log.Fatalf("failed to create secret: %v", err)
 	}
 	if result != nil {
 		log.Printf("Created secret: %v", result.Name)
