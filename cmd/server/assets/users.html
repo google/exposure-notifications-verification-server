@@ -76,6 +76,7 @@
             <td scope="row">{{.Disabled}}</td>
             <td scope="row">
               <form method="POST" action="/users/delete/{{.Email}}">
+                {{ .csrfField }}
                 <button type="submit" class="btn btn-primary" name="Action" value="delete">Delete User</button>
               </form>
             </td>
@@ -89,14 +90,6 @@
     {{end}}
   </main>
 
-  <script>
-    function deleteUser(email) {
-      $.ajax({
-        url: '/users/delete/' + email,
-        type: 'POST'
-      });
-    }
-  </script>
   {{template "scripts" .}}
 </body>
 
