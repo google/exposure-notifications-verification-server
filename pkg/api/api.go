@@ -28,6 +28,12 @@ func Error(msg string, vars ...interface{}) *ErrorReturn {
 	return &ErrorReturn{Error: fmt.Sprintf(msg, vars...)}
 }
 
+// CSRFResponse is the return type when requesting an AJAX CSRF token.
+type CSRFResponse struct {
+	CSRFToken string `json:"csrftoken"`
+	Error     string `json:"error"`
+}
+
 // IssueCodeRequest defines the parameters to request an new OTP (short term)
 // code. This is called by the Web frontend.
 // API is served at /api/issue

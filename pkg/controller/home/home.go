@@ -23,42 +23,57 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/gin-gonic/gin"
+	httpcontext "github.com/gorilla/context"
 	"go.uber.org/zap"
 )
 
 type homeController struct {
 	config           *config.Config
 	db               *database.Database
+	html             *render.HTML
 	logger           *zap.SugaredLogger
 	pastDaysDuration time.Duration
 }
 
 // New creates a new controller for the home page.
-func New(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+func New(ctx context.Context, config *config.Config, db *database.Database, html *render.HTML) http.Handler {
 	pastDaysDuration := -1 * config.AllowedTestAge
 
 	return &homeController{
 		config:           config,
 		db:               db,
+		html:             html,
 		logger:           logging.FromContext(ctx),
 		pastDaysDuration: pastDaysDuration,
 	}
 }
 
-func (hc *homeController) Execute(c *gin.Context) {
-	user := c.MustGet("user").(*database.User)
+func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	rawUser, ok := httpcontext.GetOk(r, "user")
+	if !ok {
+		flash.FromContext(w, r).Error("Unauthorized")
+		http.Redirect(w, r, "/signout", http.StatusFound)
+		return
+	}
+	user, ok := rawUser.(*database.User)
+	if !ok {
+		flash.FromContext(w, r).Error("internal error - you have been logged out.")
+		http.Redirect(w, r, "/signout", http.StatusFound)
+		return
+	}
 
-	m := controller.NewTemplateMapFromSession(hc.config, c)
+	m := html.GetTemplateMap(r)
 	// Set test date params
 	now := time.Now().UTC()
 	m["maxDate"] = now.Format("2006-01-02")
 	m["minDate"] = now.Add(hc.pastDaysDuration).Format("2006-01-02")
 	m["duration"] = hc.config.CodeDuration.String()
 	m["user"] = user
-	c.HTML(http.StatusOK, "home", m)
+	hc.html.Render(w, "home", m)
 }

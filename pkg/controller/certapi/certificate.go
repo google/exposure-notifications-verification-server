@@ -35,7 +35,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/cache"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -47,15 +46,15 @@ type CertificateAPI struct {
 	pubKeyCache *cache.Cache
 }
 
-func New(ctx context.Context, config *config.Config, db *database.Database, signer signer.KeyManager, pubKeyCache *cache.Cache) controller.Controller {
+func New(ctx context.Context, config *config.Config, db *database.Database, signer signer.KeyManager, pubKeyCache *cache.Cache) http.Handler {
 	return &CertificateAPI{config, db, logging.FromContext(ctx), signer, pubKeyCache}
 }
 
-func (ca *CertificateAPI) getPublicKey(c *gin.Context, keyID string) (crypto.PublicKey, error) {
+func (ca *CertificateAPI) getPublicKey(ctx context.Context, keyID string) (crypto.PublicKey, error) {
 	// Get the public key for the Token Signing Key.
 	keyCache, err := ca.pubKeyCache.WriteThruLookup(keyID,
 		func() (interface{}, error) {
-			signer, err := ca.signer.NewSigner(c.Request.Context(), ca.config.TokenSigningKey)
+			signer, err := ca.signer.NewSigner(ctx, ca.config.TokenSigningKey)
 			if err != nil {
 				return nil, err
 			}
@@ -106,45 +105,47 @@ func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.Public
 	return tokenClaims.Id, tokenClaims.Subject, nil
 }
 
-func (ca *CertificateAPI) Execute(c *gin.Context) {
+func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// APIKey should be verified by middleware.
 	var request api.VerificationCertificateRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
+	if err := controller.BindJSON(w, r, &request); err != nil {
 		ca.logger.Errorf("failed to bind request: %v", err)
-		c.JSON(http.StatusBadRequest, api.Error("invalid request: %v", err))
+		controller.WriteJSON(w, http.StatusBadRequest, api.Error("invalid request: %v", err))
 		return
 	}
 
-	publicKey, err := ca.getPublicKey(c, ca.config.TokenSigningKey)
+	publicKey, err := ca.getPublicKey(ctx, ca.config.TokenSigningKey)
 	if err != nil {
 		ca.logger.Errorf("pubPublicKey: %v", err)
-		c.JSON(http.StatusInternalServerError, api.Error("interal server error"))
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("interal server error"))
 		return
 	}
 
 	// Parse and validate the verification token.
 	tokenID, subject, err := ca.validateToken(request.VerificationToken, publicKey)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, api.Error(err.Error()))
+		controller.WriteJSON(w, http.StatusBadRequest, api.Error(err.Error()))
 		return
 	}
 
 	// Validate the HMAC length. SHA 256 HMAC must be 32 bytes in length.
 	hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, api.Error("ekeyhmac is not a valid base64 encoding: %v", err))
+		controller.WriteJSON(w, http.StatusBadRequest, api.Error("ekeyhmac is not a valid base64 encoding: %v", err))
 		return
 	}
 	if len(hmacBytes) != 32 {
-		c.JSON(http.StatusBadRequest, api.Error("ekeyhmac is not the correct length want: 32 got: %v", len(hmacBytes)))
+		controller.WriteJSON(w, http.StatusBadRequest, api.Error("ekeyhmac is not the correct length want: 32 got: %v", len(hmacBytes)))
 		return
 	}
 
 	// Get the signer based on Key configuration.
-	signer, err := ca.signer.NewSigner(c.Request.Context(), ca.config.CertificateSigningKey)
+	signer, err := ca.signer.NewSigner(ctx, ca.config.CertificateSigningKey)
 	if err != nil {
 		ca.logger.Errorf("unable to get signing key: %v", err)
-		c.JSON(http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
 		return
 	}
 
@@ -153,7 +154,6 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	claims := verifyapi.NewVerificationClaims()
 	// This server curently does not provide any transmission risk overrides, although that is part
 	// of the diagnosis verification protocol.
-	// TODO(mikehelmick) - determine what, if anything we want in the reference server.
 	claims.SignedMAC = request.ExposureKeyHMAC
 	claims.StandardClaims.Audience = ca.config.CertificateAudience
 	claims.StandardClaims.Issuer = ca.config.CertificateIssuer
@@ -166,16 +166,16 @@ func (ca *CertificateAPI) Execute(c *gin.Context) {
 	certificate, err := jwthelper.SignJWT(certToken, signer)
 	if err != nil {
 		ca.logger.Errorf("error signing certificate: %v", err)
-		c.JSON(http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
 		return
 	}
 
 	// To the transactional update to the database last so that if it fails, the client can retry.
 	if err := ca.db.ClaimToken(tokenID, subject); err != nil {
 		ca.logger.Errorf("error claiming tokenId: %v err: %v", tokenID, err)
-		c.JSON(http.StatusBadRequest, api.Error(err.Error()))
+		controller.WriteJSON(w, http.StatusBadRequest, api.Error(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, api.VerificationCertificateResponse{Certificate: certificate})
+	controller.WriteJSON(w, http.StatusOK, api.VerificationCertificateResponse{Certificate: certificate})
 }

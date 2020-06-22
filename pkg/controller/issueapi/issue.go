@@ -30,7 +30,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -42,15 +41,16 @@ type IssueAPI struct {
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
+func New(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
 	return &IssueAPI{config, db, logging.FromContext(ctx)}
 }
 
-func (ic *IssueAPI) Execute(c *gin.Context) {
+func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var request api.IssueCodeRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
+	if err := controller.BindJSON(w, r, &request); err != nil {
 		ic.logger.Errorf("failed to bind request: %v", err)
-		c.JSON(http.StatusOK, api.Error("invalid request: %v", err))
+		controller.WriteJSON(w, http.StatusOK, api.Error("invalid request: %v", err))
 		return
 	}
 
@@ -62,7 +62,7 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 	if request.TestDate != "" {
 		if parsed, err := time.Parse("2006-01-02", request.TestDate); err != nil {
 			ic.logger.Errorf("time.Parse: %v", err)
-			c.JSON(http.StatusOK, api.Error("invalid test date: %v", err))
+			controller.WriteJSON(w, http.StatusOK, api.Error("invalid test date: %v", err))
 			return
 		} else {
 			parsed = parsed.Local()
@@ -70,7 +70,7 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 				message := fmt.Sprintf("Invalid test date: %v must be on or after %v and on or before %v.",
 					parsed.Format("2006-01-02"), minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
 				ic.logger.Errorf(message)
-				c.JSON(http.StatusOK, api.Error(message))
+				controller.WriteJSON(w, http.StatusOK, api.Error(message))
 				return
 			}
 			testDate = &parsed
@@ -89,14 +89,14 @@ func (ic *IssueAPI) Execute(c *gin.Context) {
 		MaxTestAge: ic.config.AllowedTestAge,
 	}
 
-	code, err := codeRequest.Issue(c.Request.Context(), ic.config.CollisionRetryCount)
+	code, err := codeRequest.Issue(ctx, ic.config.CollisionRetryCount)
 	if err != nil {
 		ic.logger.Errorf("otp.GenerateCode: %v", err)
-		c.JSON(http.StatusOK, api.Error("error generating verification, wait a moment and try again"))
+		controller.WriteJSON(w, http.StatusOK, api.Error("error generating verification, wait a moment and try again"))
 		return
 	}
 
-	c.JSON(http.StatusOK,
+	controller.WriteJSON(w, http.StatusOK,
 		&api.IssueCodeResponse{
 			VerificationCode: code,
 			ExpiresAt:        expiryTime.Format(time.RFC1123),

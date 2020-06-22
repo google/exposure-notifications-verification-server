@@ -18,23 +18,28 @@ package index
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
+
+	"github.com/gorilla/csrf"
 )
 
 type indexController struct {
 	config *config.Config
+	html   *render.HTML
 }
 
 // New creates a new index controller. The index controller is thread-safe.
-func New(config *config.Config) controller.Controller {
-	return &indexController{config}
+func New(config *config.Config, html *render.HTML) http.Handler {
+	return &indexController{config, html}
 }
 
-func (ic *indexController) Execute(c *gin.Context) {
-	m := controller.NewTemplateMap(ic.config, c)
+func (ic *indexController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	m := html.GetTemplateMap(r)
 	m["firebase"] = ic.config.Firebase
-	c.HTML(http.StatusOK, "index", m)
+	token := csrf.Token(r)
+	m["csrftoken"] = token
+	w.Header().Add("X-CSRF-Token", token)
+	ic.html.Render(w, "index", m)
 }

@@ -12,5 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package controller defines common utilities used by web and API controllers.
 package controller
+
+import "net/http"
+
+// IsJSONContentType returns true if the request's content type is application/json
+// extra specific details, like UTF encoding schema are allowed.
+func IsJSONContentType(r *http.Request) bool {
+	t := r.Header.Get("content-type")
+	return !(len(t) < 16 || t[:16] != "application/json")
+}

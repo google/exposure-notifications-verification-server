@@ -23,10 +23,14 @@ import (
 	"time"
 
 	"firebase.google.com/go/auth"
-	"github.com/gin-gonic/gin"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+
+	httpcontext "github.com/gorilla/context"
+
+	"go.uber.org/zap"
 )
 
 var (
@@ -34,14 +38,20 @@ var (
 	ErrUserDisabled = errors.New("user disabled")
 )
 
+type RequireAdminHandler struct {
+	logger *zap.SugaredLogger
+}
+
 // RequireAdmin verifies that a user is an admin. It must be used AFTER the
 // RequireAuth middleware.
-func RequireAdmin(ctx context.Context) gin.HandlerFunc {
-	logger := logging.FromContext(ctx)
+func RequireAdmin(ctx context.Context) *RequireAdminHandler {
+	return &RequireAdminHandler{logging.FromContext(ctx)}
+}
 
-	return func(c *gin.Context) {
+func (rah *RequireAdminHandler) Handle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			userRaw, ok := c.Get("user")
+			userRaw, ok := httpcontext.GetOk(r, "user")
 			if !ok {
 				return fmt.Errorf("missing user in session")
 			}
@@ -57,41 +67,47 @@ func RequireAdmin(ctx context.Context) gin.HandlerFunc {
 
 			return nil
 		}(); err != nil {
-			logger.Errorw("RequireAdmin", "error", err)
+			rah.logger.Errorw("RequireAdmin", "error", err)
 
-			switch c.NegotiateFormat(gin.MIMEJSON, gin.MIMEHTML) {
-			case gin.MIMEJSON:
-				c.JSON(http.StatusUnauthorized, nil)
-			case gin.MIMEHTML:
-				flash.FromContext(c).Error("Unauthorized")
-				c.Redirect(http.StatusFound, "/signout")
+			if controller.IsJSONContentType(r) {
+				controller.WriteJSON(w, http.StatusUnauthorized, nil)
+			} else {
+				flash.FromContext(w, r).Error("Unauthorized")
+				http.Redirect(w, r, "/signout", http.StatusFound)
 			}
 
-			c.Abort()
 			return
 		}
+		next.ServeHTTP(w, r)
+	})
+}
 
-		c.Next()
-	}
+type RequreAuthHandler struct {
+	ctx    context.Context
+	client *auth.Client
+	db     *database.Database
+	ttl    time.Duration
+	logger *zap.SugaredLogger
 }
 
 // RequireAuth requires a user is authenticated using firebase auth, that such a
 // user exists in the database, and that said user is not disabled.
-func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, ttl time.Duration) gin.HandlerFunc {
+func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, ttl time.Duration) *RequreAuthHandler {
 	logger := logging.FromContext(ctx)
+	return &RequreAuthHandler{ctx, client, db, ttl, logger}
+}
 
-	return func(c *gin.Context) {
+func (rah *RequreAuthHandler) Handle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			ctx := c.Request.Context()
-
 			// Get the cookie
-			cookie, err := c.Cookie("session")
+			cookie, err := r.Cookie("session")
 			if err != nil {
 				return fmt.Errorf("failed to get cookie: %w", err)
 			}
 
 			// Verify cookie
-			token, err := client.VerifySessionCookie(ctx, cookie)
+			token, err := rah.client.VerifySessionCookie(rah.ctx, cookie.Value)
 			if err != nil {
 				return fmt.Errorf("failed to verify session cookie: %w", err)
 			}
@@ -110,7 +126,7 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 			}
 
 			// Lookup the user by email
-			user, err := db.FindUser(email)
+			user, err := rah.db.FindUser(email)
 			if err != nil || user == nil {
 				return ErrUserNotFound
 			}
@@ -121,35 +137,31 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 			}
 
 			// Check if the session is still valid
-			if time.Now().After(user.LastRevokeCheck.Add(ttl)) {
-				if _, err := client.VerifySessionCookieAndCheckRevoked(ctx, cookie); err != nil {
+			if time.Now().After(user.LastRevokeCheck.Add(rah.ttl)) {
+				if _, err := rah.client.VerifySessionCookieAndCheckRevoked(rah.ctx, cookie.Value); err != nil {
 					return fmt.Errorf("failed to verify session is not revoked: %w", err)
 				}
 
 				user.LastRevokeCheck = time.Now()
-				if err := db.SaveUser(user); err != nil {
+				if err := rah.db.SaveUser(user); err != nil {
 					return fmt.Errorf("failed to update revoke check time: %w", err)
 				}
 			}
 
 			// Save the user on the context - this is how handlers access the user
-			c.Set("user", user)
+			httpcontext.Set(r, "user", user)
 			return nil
 		}(); err != nil {
-			logger.Errorw("RequireAuth", "error", err)
+			rah.logger.Errorw("RequireAuth", "error", err)
 
-			switch c.NegotiateFormat(gin.MIMEJSON, gin.MIMEHTML) {
-			case gin.MIMEJSON:
-				c.JSON(http.StatusUnauthorized, nil)
-			case gin.MIMEHTML:
-				flash.FromContext(c).Error("Unauthorized")
-				c.Redirect(http.StatusFound, "/signout")
+			if controller.IsJSONContentType(r) {
+				controller.WriteJSON(w, http.StatusUnauthorized, nil)
+			} else {
+				flash.FromContext(w, r).Error("Unauthorized")
+				http.Redirect(w, r, "/signout", http.StatusFound)
 			}
-
-			c.Abort()
-			return
+		} else {
+			next.ServeHTTP(w, r)
 		}
-
-		c.Next()
-	}
+	})
 }

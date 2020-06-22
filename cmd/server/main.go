@@ -17,28 +17,31 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	firebase "firebase.google.com/go"
-	"github.com/gin-gonic/gin"
 	"github.com/ulule/limiter/v3"
-	limitgin "github.com/ulule/limiter/v3/drivers/middleware/gin"
+	limithttp "github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
+	csrfctl "github.com/google/exposure-notifications-verification-server/pkg/controller/csrf"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
-	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/gorilla/csrf"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -64,83 +67,63 @@ func main() {
 		log.Fatalf("failed to configure firebase auth: %v", err)
 	}
 
-	// Setup signer
-	signer, err := gcpkms.New(ctx)
-	if err != nil {
-		log.Fatalf("error creating KeyManager: %v", err)
-	}
+	// Create our HTML renderer.
+	renderHTML := render.LoadHTMLGlob(config.AssetsPath + "/*")
+
+	r := mux.NewRouter()
 
 	// Setup rate limiter
 	limitInstance := limiter.New(memory.NewStore(), limiter.Rate{
 		Period: 1 * time.Minute,
 		Limit:  int64(config.RateLimit),
 	}, limiter.WithTrustForwardHeader(true))
-	rateLimiter := limitgin.NewMiddleware(limitInstance)
+	r.Use(limithttp.NewMiddleware(limitInstance).Handler)
+	r.Use(html.New(config).Handle)
+	// install the CSRF protection middleware.
+	csrfAuthKey, err := config.CSRFKey()
+	if err != nil {
+		log.Fatalf("unable to configure CSRF protection: %v", err)
+	}
+	// TODO(mikehelmick) - there are many more configuration options for CSRF protection.
+	r.Use(csrf.Protect(
+		csrfAuthKey,
+		csrf.Secure(!config.DevMode),
+		csrf.SameSite(csrf.SameSiteLaxMode),
+		csrf.ErrorHandler(http.HandlerFunc(csrfctl.ErrorHandler))))
+	r.Use(middleware.FlashHandler)
 
-	// Create the main router
-	router := gin.Default()
-	router.ForwardedByClientIP = true
-	router.LoadHTMLGlob(config.AssetsPath + "/*")
-	router.Use(middleware.FlashHandler(ctx))
-	router.Use(rateLimiter)
+	// Install the handlers that don't require authentication first on the main router.
+	r.Handle("/", index.New(config, renderHTML)).Methods("GET")
+	r.Handle("/signout", signout.New(config, db, renderHTML)).Methods("GET")
+	r.Handle("/session", session.New(ctx, config, auth, db)).Methods("POST")
 
-	// Handlers for landing, signin, signout.
-	indexController := index.New(config)
-	router.GET("/", indexController.Execute)
-	signoutController := signout.New(config, db)
-	router.GET("/signout", signoutController.Execute)
-	sessionController := session.New(ctx, config, auth, db)
-	router.POST("/session", sessionController.Execute)
-
-	// Cleanup handler doesn't require authentication - does use locking to ensure
-	// database isn't tipped over by cleanup.
-	cleanupCache, _ := cache.New(time.Minute)
-	cleanupController := cleanup.New(ctx, config, cleanupCache, db)
-	router.GET("/cleanup", cleanupController.Execute)
-
-	// User pages, requires auth
 	{
-		router := router.Group("/")
-		router.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration))
-
-		homeController := home.New(ctx, config, db)
-		router.GET("/home", homeController.Execute)
+		sub := r.PathPrefix("/home").Subrouter()
+		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
+		sub.Handle("", home.New(ctx, config, db, renderHTML)).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
-		issueAPIController := issueapi.New(ctx, config, db)
-		router.POST("/api/issue", issueAPIController.Execute)
+		sub.Handle("/issue", issueapi.New(ctx, config, db)).Methods("POST")
+
+		// API for obtaining a CSRF token before calling /issue
+		// Installed in this context, it requires authentication.
+		sub.Handle("/csrf", csrfctl.NewCSRFAPI()).Methods("GET")
 	}
 
 	// Admin pages, requires admin auth
 	{
-		router := router.Group("/")
-		router.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration))
-		router.Use(middleware.RequireAdmin(ctx))
+		sub := r.PathPrefix("/apikeys").Subrouter()
+		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
+		sub.Use(middleware.RequireAdmin(ctx).Handle)
 
-		apiKeyList := apikey.NewListController(ctx, config, db)
-		router.GET("/apikeys", apiKeyList.Execute)
-
-		apiKeySave := apikey.NewSaveController(ctx, config, db)
-		router.POST("/apikeys/create", apiKeySave.Execute)
+		sub.Handle("", apikey.NewListController(ctx, config, db, renderHTML)).Methods("GET")
+		sub.Handle("/create", apikey.NewSaveController(ctx, config, db)).Methods("POST")
 	}
 
-	// Device APIs for exchanging short for long term tokens and signing TEKs with
-	// long term tokens. The group requires API Key based auth.
-	{
-		apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
-		if err != nil {
-			log.Fatalf("error establishing API Key cache: %v", err)
-		}
-		publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
-		if err != nil {
-			log.Fatalf("error establishing Public Key Cache: %v", err)
-		}
-		apiKeyGroup := router.Group("/", middleware.APIKeyAuth(ctx, db, apiKeyCache))
-		verifyAPI := verifyapi.New(ctx, config, db, signer)
-		apiKeyGroup.POST("/api/verify", verifyAPI.Execute) // /api/verify
-		certAPI := certapi.New(ctx, config, db, signer, publicKeyCache)
-		apiKeyGroup.POST("/api/certificate", certAPI.Execute)
+	srv := &http.Server{
+		Handler: handlers.CombinedLoggingHandler(os.Stdout, r),
+		Addr:    "127.0.0.1:" + strconv.Itoa(config.Port),
 	}
-
-	router.Run()
+	log.Printf("Listening on: 127.0.01:%v", config.Port)
+	log.Fatal(srv.ListenAndServe())
 }

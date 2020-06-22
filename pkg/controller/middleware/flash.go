@@ -15,29 +15,26 @@
 package middleware
 
 import (
-	"context"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 )
 
-func FlashHandler(ctx context.Context) gin.HandlerFunc {
-	logger := logging.FromContext(ctx)
-
-	return func(c *gin.Context) {
+func FlashHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Always mark the current flash cookie for clearing
-		flash.Clear(c)
+		flash.Clear(w)
 
 		// Start with an empty flash
-		f := flash.FromContext(c)
+		f := flash.FromContext(w, r)
 
 		// Load the cookie value
 		if err := f.LoadFromCookie(); err != nil {
-			logger.Errorf("LoadFromCookie", "error", err)
+			logging.FromContext(r.Context()).Errorf("LoadFromCookie", "error", err)
 		}
 
 		// Call other middlewares and do all the things
-		c.Next()
-	}
+		next.ServeHTTP(w, r)
+	})
 }

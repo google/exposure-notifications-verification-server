@@ -21,12 +21,11 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
-
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -34,24 +33,33 @@ const (
 	APIKeyHeader = "X-API-Key"
 )
 
+type APIKeyMiddleware struct {
+	ctx      context.Context
+	db       *database.Database
+	keyCache *cache.Cache
+}
+
 // APIKeyAuth returns a gin Middleware function that reads the X-API-Key HTTP header
 // and checkes it against the authorized apps. The provided cache is used as a
 // write through cache.
-func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache) gin.HandlerFunc {
-	logger := logging.FromContext(ctx)
-	return func(c *gin.Context) {
-		apiKey := c.Request.Header.Get(APIKeyHeader)
+func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache) *APIKeyMiddleware {
+	return &APIKeyMiddleware{ctx, db, keyCache}
+}
+
+func (a *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := logging.FromContext(a.ctx)
+		apiKey := r.Header.Get(APIKeyHeader)
 		if apiKey == "" {
 			logger.Errorf("missing %s header", APIKeyHeader)
-			c.JSON(http.StatusUnauthorized, api.ErrorReturn{Error: fmt.Sprintf("invalid request: missing %s header", APIKeyHeader)})
-			c.Abort()
+			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: fmt.Sprintf("invalid request: missing %s header", APIKeyHeader)})
 			return
 		}
 
 		// Load the authorized app by API key using the write thru cache.
-		authAppCache, err := keyCache.WriteThruLookup(apiKey,
+		authAppCache, err := a.keyCache.WriteThruLookup(apiKey,
 			func() (interface{}, error) {
-				aa, err := db.FindAuthoirizedAppByAPIKey(apiKey)
+				aa, err := a.db.FindAuthoirizedAppByAPIKey(apiKey)
 				if err != nil {
 					return nil, err
 				}
@@ -59,8 +67,7 @@ func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cach
 			})
 		if err != nil {
 			logger.Errorf("unable to lookup authorized app for apikey: %v", apiKey)
-			c.JSON(http.StatusUnauthorized, api.ErrorReturn{Error: "invalid API Key"})
-			c.Abort()
+			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "invalid API Key"})
 			return
 		}
 		authApp, ok := authAppCache.(*database.AuthorizedApp)
@@ -71,13 +78,10 @@ func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cach
 		// Check if the API key is authorized.
 		if err != nil || authApp == nil || authApp.DeletedAt != nil {
 			logger.Errorf("unauthorized API Key: %v err: %v", apiKey, err)
-			c.JSON(http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized: API Key invalid"})
-			c.Abort()
+			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized: API Key invalid"})
 			return
 		}
 
-		c.Set("authorizedapp", authApp)
-
-		c.Next()
-	}
+		next.ServeHTTP(w, r)
+	})
 }

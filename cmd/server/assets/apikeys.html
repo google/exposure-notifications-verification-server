@@ -12,6 +12,7 @@
     <h2>Create API Key</h2>
 
     <form method="POST" action="/apikeys/create">
+      {{ .csrfField }}
       <div class="form-group row">
         <label for="name" class="col-sm-3">App name</label>
         <div class="col-sm-9">

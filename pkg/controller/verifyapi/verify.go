@@ -37,7 +37,6 @@ import (
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -49,24 +48,26 @@ type VerifyAPI struct {
 	signer signer.KeyManager
 }
 
-func New(ctx context.Context, config *config.Config, db *database.Database, signer signer.KeyManager) controller.Controller {
+func New(ctx context.Context, config *config.Config, db *database.Database, signer signer.KeyManager) http.Handler {
 	return &VerifyAPI{config, db, logging.FromContext(ctx), signer}
 }
 
-func (v *VerifyAPI) Execute(c *gin.Context) {
+func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// APIKey should be verified by middleware.
 	var request api.VerifyCodeRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
+	if err := controller.BindJSON(w, r, &request); err != nil {
 		v.logger.Errorf("failed to bind request: %v", err)
-		c.JSON(http.StatusOK, api.Error("invalid request: %v", err))
+		controller.WriteJSON(w, http.StatusOK, api.Error("invalid request: %v", err))
 		return
 	}
 
 	// Get the signer based on Key configuration.
-	signer, err := v.signer.NewSigner(c.Request.Context(), v.config.TokenSigningKey)
+	signer, err := v.signer.NewSigner(ctx, v.config.TokenSigningKey)
 	if err != nil {
 		v.logger.Errorf("unable to get signing key: %v", err)
-		c.JSON(http.StatusInternalServerError, api.Error("internal server error - unable to sign tokens"))
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal server error - unable to sign tokens"))
 		return
 	}
 
@@ -76,10 +77,10 @@ func (v *VerifyAPI) Execute(c *gin.Context) {
 	if err != nil {
 		v.logger.Errorf("error issuing verification token: %v", err)
 		if errors.Is(err, database.ErrVerificationCodeExpired) || errors.Is(err, database.ErrVerificationCodeUsed) {
-			c.JSON(http.StatusBadRequest, api.Error(err.Error()))
+			controller.WriteJSON(w, http.StatusBadRequest, api.Error(err.Error()))
 			return
 		}
-		c.JSON(http.StatusInternalServerError, api.Error("internal serer error"))
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal serer error"))
 		return
 	}
 
@@ -97,11 +98,11 @@ func (v *VerifyAPI) Execute(c *gin.Context) {
 	token.Header[verifyapi.KeyIDHeader] = v.config.TokenSigningKeyID
 	signedJWT, err := jwthelper.SignJWT(token, signer)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.Error("error signing token, must obtain new verification code"))
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("error signing token, must obtain new verification code"))
 		return
 	}
 
-	c.JSON(http.StatusOK, api.VerifyCodeResponse{
+	controller.WriteJSON(w, http.StatusOK, api.VerifyCodeResponse{
 		TestType:          verificationToken.TestType,
 		TestDate:          verificationToken.FormatTestDate(),
 		VerificationToken: signedJWT,
