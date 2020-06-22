@@ -97,6 +97,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/Users/USERNAME/Documents/project-name-123
 
 # Configure CSRF_AUTH_KEY. This is a 32 byte string base64 encoded.
 export CSRF_AUTH_KEY=aGVsbG9oZWxsb2hlbGxvaGVsbG9oZWxsb2hlbGxvaGk=
+export DEV_MODE=1
 
 # Migrate DB
 ./scripts/dev dbmigrate
