@@ -120,9 +120,11 @@ func main() {
 		sub.Handle("", apikey.NewListController(ctx, config, db, renderHTML)).Methods("GET")
 		sub.Handle("/create", apikey.NewSaveController(ctx, config, db)).Methods("POST")
 
-		sub.Handle("/users", user.NewListController(ctx, config, db, renderHTML)).Methods("GET")
-		sub.Handle("/users/create", user.NewSaveController(ctx, config, db)).Methods("POST")
-		sub.Handle("/users/delete/{email}", user.NewDeleteController(ctx, config, db)).Methods("POST")
+		userSub := r.PathPrefix("/users").Subrouter()
+
+		userSub.Handle("", user.NewListController(ctx, config, db, renderHTML)).Methods("GET")
+		userSub.Handle("/create", user.NewSaveController(ctx, config, db)).Methods("POST")
+		userSub.Handle("/delete/{email}", user.NewDeleteController(ctx, config, db)).Methods("POST")
 	}
 
 	srv := &http.Server{
