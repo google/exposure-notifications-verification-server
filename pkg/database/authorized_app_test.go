@@ -24,14 +24,14 @@ func TestCreateFindAPIKey(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
-	authApp, err := db.CreateAuthoirzedApp("University System Health Org")
+	authApp, err := db.CreateAuthorizedApp("University System Health Org")
 	if err != nil {
 		t.Fatalf("error creating authorized app: %v", err)
 	}
 
 	got, err := db.FindAuthoirizedAppByAPIKey(authApp.APIKey)
 	if err != nil {
-		t.Fatalf("error reading authoirzed app by api key: %v", err)
+		t.Fatalf("error reading Authorized app by api key: %v", err)
 	}
 	if diff := cmp.Diff(authApp, got); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
@@ -45,11 +45,11 @@ func TestListAPIKeys(t *testing.T) {
 	var authApp1, authApp2 *AuthorizedApp
 	var err error
 
-	authApp1, err = db.CreateAuthoirzedApp("App 1")
+	authApp1, err = db.CreateAuthorizedApp("App 1")
 	if err != nil {
 		t.Fatalf("error creating app: %v", err)
 	}
-	authApp2, err = db.CreateAuthoirzedApp("App 2")
+	authApp2, err = db.CreateAuthorizedApp("App 2")
 	if err != nil {
 		t.Fatalf("error creating app: %v", err)
 	}
