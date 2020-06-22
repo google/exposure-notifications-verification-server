@@ -42,8 +42,8 @@ func (AuthorizedApp) TableName() string {
 	return "authorized_apps"
 }
 
-// ListAuthorizedApps retrieves all of the configured authoirzed apps.
-// Done without pagination, as the expeicted number of authoirzed apps
+// ListAuthorizedApps retrieves all of the configured Authorized apps.
+// Done without pagination, as the expected number of Authorized apps
 // is low signal digits.
 func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, error) {
 	var apps []*AuthorizedApp
@@ -58,9 +58,9 @@ func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, e
 	return apps, nil
 }
 
-// CreateAuthoirzedApp generates a new APIKey and assignes it to the specified
+// CreateAuthorizedApp generates a new APIKey and assigns it to the specified
 // name.
-func (db *Database) CreateAuthoirzedApp(name string) (*AuthorizedApp, error) {
+func (db *Database) CreateAuthorizedApp(name string) (*AuthorizedApp, error) {
 	buffer := make([]byte, apiKeyBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -77,8 +77,8 @@ func (db *Database) CreateAuthoirzedApp(name string) (*AuthorizedApp, error) {
 	return &app, nil
 }
 
-// FindAuthoirizedAppByAPIKey located an authorized app based on API key.
-func (db *Database) FindAuthoirizedAppByAPIKey(apiKey string) (*AuthorizedApp, error) {
+// FindAuthorizedAppByAPIKey located an authorized app based on API key.
+func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, error) {
 	var app AuthorizedApp
 	if err := db.db.Where("api_key = ?", apiKey).First(&app).Error; err != nil {
 		return nil, err

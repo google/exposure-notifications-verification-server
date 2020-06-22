@@ -82,7 +82,7 @@ func (rah *RequireAdminHandler) Handle(next http.Handler) http.Handler {
 	})
 }
 
-type RequreAuthHandler struct {
+type RequireAuthHandler struct {
 	ctx    context.Context
 	client *auth.Client
 	db     *database.Database
@@ -92,12 +92,12 @@ type RequreAuthHandler struct {
 
 // RequireAuth requires a user is authenticated using firebase auth, that such a
 // user exists in the database, and that said user is not disabled.
-func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, ttl time.Duration) *RequreAuthHandler {
+func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, ttl time.Duration) *RequireAuthHandler {
 	logger := logging.FromContext(ctx)
-	return &RequreAuthHandler{ctx, client, db, ttl, logger}
+	return &RequireAuthHandler{ctx, client, db, ttl, logger}
 }
 
-func (rah *RequreAuthHandler) Handle(next http.Handler) http.Handler {
+func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			// Get the cookie
