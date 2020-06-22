@@ -55,6 +55,8 @@
 
     <h2>All Users</h2>
 
+    {{$csrf := .csrfField}}
+
     {{if .users}}
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
@@ -76,7 +78,7 @@
             <td scope="row">{{.Disabled}}</td>
             <td scope="row">
               <form method="POST" action="/users/delete/{{.Email}}">
-                {{ .csrfField }}
+                {{ $csrf }}
                 <button type="submit" class="btn btn-primary" name="Action" value="delete">Delete User</button>
               </form>
             </td>
