@@ -121,6 +121,8 @@ func main() {
 		sub.Handle("/create", apikey.NewSaveController(ctx, config, db)).Methods("POST")
 
 		userSub := r.PathPrefix("/users").Subrouter()
+		userSub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
+		userSub.Use(middleware.RequireAdmin(ctx).Handle)
 
 		userSub.Handle("", user.NewListController(ctx, config, db, renderHTML)).Methods("GET")
 		userSub.Handle("/create", user.NewSaveController(ctx, config, db)).Methods("POST")
