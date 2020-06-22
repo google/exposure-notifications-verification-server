@@ -56,12 +56,12 @@ func (lc *userListController) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	m := html.GetTemplateMap(r)
 	m["user"] = user
 
-	apps, err := lc.db.ListUsers(false)
+	users, err := lc.db.ListUsers(false)
 	if err != nil {
 		flash.ErrorNow("Error loading users: %v", err)
 	}
 
-	m["apps"] = apps
+	m["users"] = users
 	m["flash"] = flash
 	m[csrf.TemplateTag] = csrf.TemplateField(r)
 	lc.html.Render(w, "users", m)
