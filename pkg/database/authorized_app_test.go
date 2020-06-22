@@ -29,7 +29,7 @@ func TestCreateFindAPIKey(t *testing.T) {
 		t.Fatalf("error creating authorized app: %v", err)
 	}
 
-	got, err := db.FindAuthoirizedAppByAPIKey(authApp.APIKey)
+	got, err := db.FindAuthorizedAppByAPIKey(authApp.APIKey)
 	if err != nil {
 		t.Fatalf("error reading Authorized app by api key: %v", err)
 	}
