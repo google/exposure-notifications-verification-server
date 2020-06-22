@@ -16,7 +16,6 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -87,9 +86,8 @@ func (db *Database) CreateUser(email string, name string, admin bool, disabled b
 	user.Disabled = disabled
 
 	if err := db.SaveUser(user); err != nil {
-		log.Fatalf("error saving user: %v", err)
+		return nil, err
 	}
-	log.Printf("saved user: %+v", user)
 
 	return user, nil
 }
