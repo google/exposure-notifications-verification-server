@@ -47,16 +47,15 @@ func (sc *userDeleteController) Execute(c *gin.Context) {
 
 	flash := flash.FromContext(c)
 	email := c.Param("email")
-	fmt.Println("delete user: %q", email)
 
 	user, err := sc.db.FindUser(email)
 	if err != nil {
 		flash.Error("Failed to find user: %v", err)
+		return
 	}
 
 	if err := sc.db.DeleteUser(user); err != nil {
 		flash.Error("Failed to delete user: %v", err)
-
 		return
 	}
 

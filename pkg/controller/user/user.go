@@ -49,7 +49,7 @@ func (lc *userListController) Execute(c *gin.Context) {
 
 	apps, err := lc.db.ListUsers(false)
 	if err != nil {
-		flash.ErrorNow("Error loading API Keys: %v", err)
+		flash.ErrorNow("Error loading users: %v", err)
 	}
 
 	m["apps"] = apps
