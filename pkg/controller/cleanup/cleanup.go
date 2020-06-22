@@ -28,7 +28,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -41,7 +40,7 @@ type Controller struct {
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config *config.Config, cache *cache.Cache, db *database.Database) controller.Controller {
+func New(ctx context.Context, config *config.Config, cache *cache.Cache, db *database.Database) http.Handler {
 	return &Controller{config, cache, db, logging.FromContext(ctx)}
 }
 
@@ -80,10 +79,14 @@ func (cc *Controller) shouldCleanup() error {
 	return nil
 }
 
-func (cc *Controller) Execute(c *gin.Context) {
+type cleanupResult struct {
+	Cleanup bool `json:"cleanup"`
+}
+
+func (cc *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := cc.shouldCleanup(); err != nil {
 		cc.logger.Errorf("shouldCleanUp: %v", err)
-		c.JSON(http.StatusOK, gin.H{"cleanup": false})
+		controller.WriteJSON(w, http.StatusOK, cleanupResult{false})
 		return
 	}
 
@@ -105,5 +108,5 @@ func (cc *Controller) Execute(c *gin.Context) {
 		cc.logger.Infof("purged %v user records", count)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"cleanup": true})
+	controller.WriteJSON(w, http.StatusOK, cleanupResult{true})
 }

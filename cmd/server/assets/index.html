@@ -27,11 +27,11 @@
         'signInSuccess': function(user, credential, redirectUrl) {
           user.getIdToken().then(
             idToken => {
-              const csrfToken = getCookie('csrfToken')
               $.ajax({
                 type:'POST',
                 url: "/session",
-                data: {idToken: idToken, csrfToken: csrfToken},
+                data: {idToken: idToken},
+                headers: {"X-CSRF-Token": "{{.csrftoken}}"},
                 contentType: 'application/x-www-form-urlencoded',
                 success: function(returnData) {
                   // The user successfully signed in, redirect to home.

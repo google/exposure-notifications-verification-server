@@ -26,7 +26,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/context"
 )
 
 const (
@@ -36,7 +36,8 @@ const (
 )
 
 type Flash struct {
-	c *gin.Context
+	w http.ResponseWriter
+	r *http.Request
 
 	// now is the current flash (loaded from a cookie in the current context).
 	// next is the upcoming flash to be saved in the next cookie for the next
@@ -46,17 +47,18 @@ type Flash struct {
 }
 
 // new creates a flash with the context.
-func new(c *gin.Context) *Flash {
+func new(w http.ResponseWriter, r *http.Request) *Flash {
 	return &Flash{
-		c:    c,
+		w:    w,
+		r:    r,
 		now:  make(map[string][]string),
 		next: make(map[string][]string),
 	}
 }
 
 // Clear marks the request to delete the existing flash cookie.
-func Clear(c *gin.Context) {
-	http.SetCookie(c.Writer, &http.Cookie{
+func Clear(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
 		Name:    flashKey,
 		MaxAge:  -1,
 		Expires: time.Unix(0, 0),
@@ -65,30 +67,29 @@ func Clear(c *gin.Context) {
 }
 
 // FromContext returns the flash saved on the given context.
-func FromContext(c *gin.Context) *Flash {
-	if f, ok := c.Get(flashKey); ok {
+func FromContext(w http.ResponseWriter, r *http.Request) *Flash {
+	if f, ok := context.GetOk(r, flashKey); ok {
 		if typ, ok := f.(*Flash); ok {
 			return typ
 		}
 	}
 
-	f := new(c)
-	c.Set(flashKey, f)
+	f := new(w, r)
+	context.Set(r, flashKey, f)
 	return f
 }
 
 // LoadFromCookie parses flash data from a cookie.
 func (f *Flash) LoadFromCookie() error {
-	val, err := f.c.Cookie(flashKey)
+	cookie, err := f.r.Cookie(flashKey)
 	if err != nil && !errors.Is(err, http.ErrNoCookie) {
 		return err
 	}
-	if val == "" {
+	if cookie == nil {
 		return nil
 	}
-
 	// Un-url-encode
-	unescaped, err := url.QueryUnescape(val)
+	unescaped, err := url.QueryUnescape(cookie.Value)
 	if err != nil {
 		return fmt.Errorf("failed to unescape value: %w", err)
 	}
@@ -150,7 +151,7 @@ func (f *Flash) Add(key, msg string, vars ...interface{}) {
 	f.next[key] = append(f.next[key], fmt.Sprintf(msg, vars...))
 
 	// Set the cookie on write.
-	http.SetCookie(f.c.Writer, &http.Cookie{
+	http.SetCookie(f.w, &http.Cookie{
 		Name:   flashKey,
 		Value:  f.toCookieValue(f.next),
 		MaxAge: 300,

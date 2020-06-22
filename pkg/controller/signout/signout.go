@@ -18,27 +18,34 @@ package signout
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 type signoutController struct {
 	config *config.Config
 	db     *database.Database
+	html   *render.HTML
 }
 
 // New creates a new signout controller. When run, clears the session cookie.
-func New(config *config.Config, db *database.Database) controller.Controller {
-	return &signoutController{config, db}
+func New(config *config.Config, db *database.Database, html *render.HTML) http.Handler {
+	return &signoutController{config, db, html}
 }
 
-func (soc *signoutController) Execute(c *gin.Context) {
-	c.SetCookie("session", "", -1, "/", "", false, false)
+func (soc *signoutController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Set max age to negative to clear the cookie.
+	http.SetCookie(w, &http.Cookie{
+		Name:   "session",
+		Value:  "",
+		MaxAge: -1,
+	})
 
-	m := controller.NewTemplateMapFromSession(soc.config, c)
+	m := html.GetTemplateMap(r)
 	m["firebase"] = soc.config.Firebase
-	c.HTML(http.StatusOK, "signout", m)
+	m["flash"] = flash.FromContext(w, r)
+	soc.html.Render(w, "signout", m)
 }

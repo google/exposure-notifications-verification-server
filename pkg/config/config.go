@@ -17,13 +17,15 @@ package config
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
 
-	firebase "firebase.google.com/go"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
+	firebase "firebase.google.com/go"
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
 )
 
@@ -85,9 +87,14 @@ type Config struct {
 	Firebase FirebaseConfig
 	Database database.Config
 
+	Port int `env:"PORT,default=8080"`
+
 	// Login Config
 	SessionCookieDuration time.Duration `env:"SESSION_DURATION,default=24h"`
 	RevokeCheckPeriod     time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
+
+	// CSRF Secret Key
+	CSRFAuthKey string `env:"CSRF_AUTH_KEY,required"`
 
 	// Application Config
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
@@ -120,6 +127,19 @@ type Config struct {
 	VerificationTokenMaxAge time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE,default=24h"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
+
+	DevMode bool `env:"DEV_MODE"`
+}
+
+func (c *Config) CSRFKey() ([]byte, error) {
+	key, err := base64.StdEncoding.DecodeString(c.CSRFAuthKey)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding CSRF_AUTH_KEY: %v", err)
+	}
+	if l := len(key); l != 32 {
+		return nil, fmt.Errorf("CSRF_AUTH_KEY is not 32 bytes, got: %v", l)
+	}
+	return key, nil
 }
 
 func checkPositiveDuration(d time.Duration, name string) error {

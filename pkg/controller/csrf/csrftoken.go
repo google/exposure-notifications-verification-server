@@ -12,34 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package index defines the controller for the index/landing page.
-package index
+// Package csrf contains utilities for issuing AJAX csrf tokens and
+// handling errors on validation.
+package csrf
 
 import (
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/csrf"
 )
 
-type indexController struct {
-	config *config.Config
-	html   *render.HTML
+type csrfController struct {
+	html *render.HTML
 }
 
-// New creates a new index controller. The index controller is thread-safe.
-func New(config *config.Config, html *render.HTML) http.Handler {
-	return &indexController{config, html}
+// NewCSRFAPI creates a new controller that can return CSRF tokens to JSON APIs.
+func NewCSRFAPI(html *render.HTML) http.Handler {
+	return &csrfController{html}
 }
 
-func (ic *indexController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	m := html.GetTemplateMap(r)
-	m["firebase"] = ic.config.Firebase
+func (ic *csrfController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token := csrf.Token(r)
-	m["csrftoken"] = token
 	w.Header().Add("X-CSRF-Token", token)
-	ic.html.Render(w, "index", m)
+	controller.WriteJSON(w, http.StatusOK, api.CSRFResponse{CSRFToken: token})
 }

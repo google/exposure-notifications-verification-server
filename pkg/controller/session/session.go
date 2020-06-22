@@ -19,6 +19,7 @@ package session
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -27,7 +28,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/schema"
+
 	"go.uber.org/zap"
 )
 
@@ -39,36 +41,54 @@ type sessionController struct {
 }
 
 type formData struct {
-	IDToken   string `form:"idToken"`
-	CSRFToken string `form:"csrfToken"`
+	IDToken string `schema:"idToken"`
 }
 
 // New creates a new session controller. The session controller is responsible
 // for accepting the firebase auth cookie information and establishing a server
 // side session.
-func New(ctx context.Context, config *config.Config, client *auth.Client, db *database.Database) controller.Controller {
+func New(ctx context.Context, config *config.Config, client *auth.Client, db *database.Database) http.Handler {
 	return &sessionController{config, db, client, logging.FromContext(ctx)}
 }
 
-func (c *sessionController) Execute(g *gin.Context) {
-	ctx := g.Request.Context()
-	flash := flash.FromContext(g)
+func (c *sessionController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	flash := flash.FromContext(w, r)
 
-	var form formData
-	if err := g.Bind(&form); err != nil {
+	// Parse and decode form.
+	err := r.ParseForm()
+	if err != nil {
+		c.logger.Errorf("error pasring form: %v", err)
 		flash.Error("Failed to process login: %v", err)
-		g.JSON(http.StatusBadRequest, nil)
+		controller.WriteJSON(w, http.StatusBadRequest, nil)
+		return
+	}
+	var form formData
+	decoder := schema.NewDecoder()
+	if err := decoder.Decode(&form, r.PostForm); err != nil {
+		c.logger.Errorf("error decoding form: %v", err)
+		flash.Error("Failed to process login: %v", err)
+		controller.WriteJSON(w, http.StatusBadRequest, nil)
 		return
 	}
 
 	ttl := c.config.SessionCookieDuration
 	cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
 	if err != nil {
+		c.logger.Errorf("unable to create client session: %v", err)
 		flash.Error("Failed to create session: %v", err)
-		g.JSON(http.StatusUnauthorized, nil)
+		controller.WriteJSON(w, http.StatusUnauthorized, nil)
 		return
 	}
 
-	g.SetCookie("session", cookie, int(ttl.Seconds()), "/", "", false, false)
-	g.JSON(http.StatusOK, nil)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    cookie,
+		Path:     "/",
+		Expires:  time.Now().Add(ttl),
+		MaxAge:   int(ttl.Seconds()),
+		Secure:   !c.config.DevMode,
+		SameSite: http.SameSiteStrictMode,
+	})
+	controller.WriteJSON(w, http.StatusOK, nil)
 }

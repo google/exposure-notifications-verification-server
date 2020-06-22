@@ -22,28 +22,36 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/csrf"
 	"go.uber.org/zap"
 )
 
 type apikeyListController struct {
 	config *config.Config
 	db     *database.Database
+	html   *render.HTML
 	logger *zap.SugaredLogger
 }
 
-func NewListController(ctx context.Context, config *config.Config, db *database.Database) controller.Controller {
-	return &apikeyListController{config, db, logging.FromContext(ctx)}
+func NewListController(ctx context.Context, config *config.Config, db *database.Database, html *render.HTML) http.Handler {
+	return &apikeyListController{config, db, html, logging.FromContext(ctx)}
 }
 
-func (lc *apikeyListController) Execute(c *gin.Context) {
-	user := c.MustGet("user").(*database.User)
-	flash := flash.FromContext(c)
+func (lc *apikeyListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	user, err := controller.MustGetUser(w, r)
+	if err != nil {
+		return
+	}
+	flash := flash.FromContext(w, r)
 
-	m := controller.NewTemplateMapFromSession(lc.config, c)
+	lc.logger.Infof("FLASH: %+v", flash)
+
+	m := html.GetTemplateMap(r)
 	m["user"] = user
 
 	apps, err := lc.db.ListAuthorizedApps(true)
@@ -52,5 +60,7 @@ func (lc *apikeyListController) Execute(c *gin.Context) {
 	}
 
 	m["apps"] = apps
-	c.HTML(http.StatusOK, "apikeys", m)
+	m["flash"] = flash
+	m[csrf.TemplateTag] = csrf.TemplateField(r)
+	lc.html.Render(w, "apikeys", m)
 }

@@ -12,29 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package middleware
+package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
+	"github.com/gorilla/context"
 )
 
-func FlashHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Always mark the current flash cookie for clearing
-		flash.Clear(w)
-
-		// Start with an empty flash
-		f := flash.FromContext(w, r)
-
-		// Load the cookie value
-		if err := f.LoadFromCookie(); err != nil {
-			logging.FromContext(r.Context()).Errorf("LoadFromCookie", "error", err)
-		}
-
-		// Call other middlewares and do all the things
-		next.ServeHTTP(w, r)
-	})
+func MustGetUser(w http.ResponseWriter, r *http.Request) (*database.User, error) {
+	rawUser, ok := context.GetOk(r, "user")
+	if !ok {
+		flash.FromContext(w, r).Error("Unauthorized")
+		http.Redirect(w, r, "/signout", http.StatusFound)
+		return nil, fmt.Errorf("unauthorized")
+	}
+	user, ok := rawUser.(*database.User)
+	if !ok {
+		flash.FromContext(w, r).Error("internal error - you have been logged out.")
+		http.Redirect(w, r, "/signout", http.StatusFound)
+		return nil, fmt.Errorf("internal error")
+	}
+	return user, nil
 }

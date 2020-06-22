@@ -36,6 +36,7 @@ func MakeRequest(client *http.Client, url string, headers http.Header, input int
 		return err
 	}
 	req.Header = headers
+	req.Header.Add("content-type", "application/json")
 	r, err := client.Do(req)
 	if err != nil {
 		return err

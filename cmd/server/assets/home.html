@@ -90,6 +90,36 @@
   {{template "scripts" .}}
 
  <script type="text/javascript">
+   function getCode(csrfToken, data) {
+     $.ajax({
+       url: '/home/issue',
+       type : "POST",
+       dataType : 'json',
+       contentType: 'application/json',
+       data : JSON.stringify(data),
+       headers: {"X-CSRF-Token": csrfToken},
+       success : function(result) {
+         if (result.error != "") {
+           $("#codeerror").text(result.error);
+           $("#codearea").hide();
+           $("#codeerror").show();
+           $("#submit").prop('disabled', false);
+         } else {
+           $("#expiresAt").text(result.expiresAt);
+           $("#vercode").text(result.code);
+           $("#codearea").show();
+           $("#codeerror").hide();
+         }
+       },
+       error: function(xhr, resp, text) {
+         $("#codeerror").text("error: " + text);
+         $("#codearea").hide();
+         $("#codeerror").show();
+         console.log(xhr, resp, text);
+       }
+     });
+   }
+
    $(document).ready(function(){
       // click on button submit
       $("#submit").on('click', function(event) {
@@ -102,29 +132,19 @@
           data[obj.name] = obj.value;
         });
         $.ajax({
-          url: '/api/issue',
-          type : "POST",
-          dataType : 'json',
+          url: '/home/csrf',
+          type: "GET",
+          dataType: 'json',
           contentType: 'application/json',
-          data : JSON.stringify(data),
-          success : function(result) {
+          success: function(result) {
             if (result.error != "") {
               $("#codeerror").text(result.error);
               $("#codearea").hide();
               $("#codeerror").show();
               $("#submit").prop('disabled', false);
             } else {
-              $("#expiresAt").text(result.expiresAt);
-              $("#vercode").text(result.code);
-              $("#codearea").show();
-              $("#codeerror").hide();
+              getCode(result.csrftoken, data);
             }
-          },
-          error: function(xhr, resp, text) {
-            $("#codeerror").text("error: " + text);
-            $("#codearea").hide();
-            $("#codeerror").show();
-            console.log(xhr, resp, text);
           }
         });
       });
