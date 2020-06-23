@@ -41,7 +41,7 @@ func NewDeleteController(ctx context.Context, config *config.Config, db *databas
 }
 
 func (udc *userDeleteController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+	defer http.Redirect(w, r, "/users", http.StatusSeeOther)
 
 	user, err := controller.GetUser(w, r)
 	if err != nil {
