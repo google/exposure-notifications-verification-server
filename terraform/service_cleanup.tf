@@ -158,7 +158,7 @@ resource "google_cloud_scheduler_job" "cleanup-worker" {
   }
 
   http_target {
-    http_method = "POST"
+    http_method = "GET"
     uri         = "${google_cloud_run_service.cleanup.status.0.url}/"
     oidc_token {
       audience              = google_cloud_run_service.cleanup.status.0.url
