@@ -91,6 +91,7 @@ resource "null_resource" "build" {
     environment = {
       PROJECT_ID = var.project
       REGION     = var.region
+      SERVICES   = "all"
       TAG        = "initial"
     }
 
