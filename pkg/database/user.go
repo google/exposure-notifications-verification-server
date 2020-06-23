@@ -15,6 +15,8 @@
 package database
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -30,6 +32,21 @@ type User struct {
 	LastRevokeCheck time.Time
 }
 
+// ListUsers retrieves all of the configured users.
+// Done without pagination.
+func (db *Database) ListUsers(includeDeleted bool) ([]*User, error) {
+	var users []*User
+
+	scope := db.db
+	if includeDeleted {
+		scope = db.db.Unscoped()
+	}
+	if err := scope.Order("email ASC").Find(&users).Error; err != nil {
+		return nil, fmt.Errorf("query users: %w", err)
+	}
+	return users, nil
+}
+
 // FindUser reads back a User struct by email address.
 func (db *Database) FindUser(email string) (*User, error) {
 	var user User
@@ -39,12 +56,53 @@ func (db *Database) FindUser(email string) (*User, error) {
 	return &user, nil
 }
 
+// CreateUser creates a user record.
+func (db *Database) CreateUser(email string, name string, admin bool, disabled bool) (*User, error) {
+	if email == "" {
+		return nil, fmt.Errorf("email cannot be empty")
+	}
+
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("provided email address may not be valid, double check: '%v'", email)
+	}
+
+	if name == "" {
+		name = parts[0]
+	}
+
+	user, err := db.FindUser(email)
+	if err == gorm.ErrRecordNotFound {
+		// New record.
+		user = &User{}
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Update fields
+	user.Email = email
+	user.Name = name
+	user.Admin = admin
+	user.Disabled = disabled
+
+	if err := db.SaveUser(user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 // SaveUser creates or updates a user record.
 func (db *Database) SaveUser(u *User) error {
 	if u.Model.ID == 0 {
 		return db.db.Create(u).Error
 	}
 	return db.db.Save(u).Error
+}
+
+// DeleteUser removes a user record.
+func (db *Database) DeleteUser(u *User) error {
+	return db.db.Delete(u).Error
 }
 
 // PurgeUsers will remove users records that are disabled and haven't been updated

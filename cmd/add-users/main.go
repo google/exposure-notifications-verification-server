@@ -19,7 +19,6 @@ import (
 	"context"
 	"flag"
 	"log"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -38,16 +37,6 @@ func main() {
 		log.Fatal("--email must be passed and cannot be empty")
 	}
 
-	parts := strings.Split(*emailFlag, "@")
-	if len(parts) != 2 {
-		log.Fatalf("provide email address may not be valid, double check: '%v'", *emailFlag)
-	}
-
-	name := *nameFlag
-	if name == "" {
-		name = parts[0]
-	}
-
 	ctx := context.Background()
 	var config database.Config
 	if err := envconfig.Process(ctx, &config); err != nil {
@@ -60,22 +49,10 @@ func main() {
 	}
 	defer db.Close()
 
-	user, err := db.FindUser(*emailFlag)
+	user, err := db.CreateUser(*emailFlag, *nameFlag, *adminFlag, *disabledFlag)
 	if err == gorm.ErrRecordNotFound {
-		// New record.
-		user = &database.User{}
-	} else if err != nil {
 		log.Fatalf("unexpected error: %v", err)
 	}
 
-	// Update fields
-	user.Email = *emailFlag
-	user.Name = name
-	user.Admin = *adminFlag
-	user.Disabled = *disabledFlag
-
-	if err := db.SaveUser(user); err != nil {
-		log.Fatalf("error saving user: %v", err)
-	}
 	log.Printf("saved user: %+v", user)
 }

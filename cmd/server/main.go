@@ -37,6 +37,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/csrf"
@@ -118,12 +119,20 @@ func main() {
 
 		sub.Handle("", apikey.NewListController(ctx, config, db, renderHTML)).Methods("GET")
 		sub.Handle("/create", apikey.NewSaveController(ctx, config, db)).Methods("POST")
+
+		userSub := r.PathPrefix("/users").Subrouter()
+		userSub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
+		userSub.Use(middleware.RequireAdmin(ctx).Handle)
+
+		userSub.Handle("", user.NewListController(ctx, config, db, renderHTML)).Methods("GET")
+		userSub.Handle("/create", user.NewSaveController(ctx, config, db)).Methods("POST")
+		userSub.Handle("/delete/{email}", user.NewDeleteController(ctx, config, db)).Methods("POST")
 	}
 
 	srv := &http.Server{
 		Handler: handlers.CombinedLoggingHandler(os.Stdout, r),
 		Addr:    "127.0.0.1:" + strconv.Itoa(config.Port),
 	}
-	log.Printf("Listening on: 127.0.01:%v", config.Port)
+	log.Printf("Listening on: 127.0.0.1:%v", config.Port)
 	log.Fatal(srv.ListenAndServe())
 }

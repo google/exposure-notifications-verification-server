@@ -42,8 +42,8 @@ func (AuthorizedApp) TableName() string {
 	return "authorized_apps"
 }
 
-// ListAuthorizedApps retrieves all of the configured Authorized apps.
-// Done without pagination, as the expected number of Authorized apps
+// ListAuthorizedApps retrieves all of the configured authorized apps.
+// Done without pagination, as the expected number of authorized apps
 // is low signal digits.
 func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, error) {
 	var apps []*AuthorizedApp

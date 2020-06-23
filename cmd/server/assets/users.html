@@ -1,0 +1,99 @@
+{{define "users"}}
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    <h2>Create User</h2>
+
+    <form method="POST" action="/users/create">
+      {{ .csrfField }}
+      <div class="form-group row">
+        <label for="email" class="col-sm-2">Email:</label>
+        <div class="col-sm-10">
+          <input type="text" id="email" name="email" class="form-control"/>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label for="name" class="col-sm-2"
+               title="Name in the form 'First Last', 'Given-name Surname'">
+          Name:
+        </label>
+        <br>
+        <div class="col-sm-10">
+          <input type="text" id="name" name="name" class="form-control"/>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label for="admin" class="col-sm-2">Admin:</label><br>
+        <div class="col-sm-1">
+          <input type="checkbox" id="admin" name="admin" class="form-control" value="true"/>
+        </div>
+        <div class="col-sm-9"></div>
+      </div>
+      <div class="form-group row">
+        <label for="disabled" class="col-sm-2">Disabled:</label><br>
+        <div class="col-sm-1">
+          <input type="checkbox" id="disabled" name="disabled" class="form-control" value="true"/>
+        </div>
+        <div class="col-sm-9"></div>
+      </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="offset-sm-2 col-sm-10">
+          <button type="submit" class="btn btn-primary" name="Action" value="save">Create user</button>
+        </div>
+      </div>
+    </form>
+
+    <h2>All Users</h2>
+
+    {{$csrf := .csrfField}}
+
+    {{if .users}}
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th scope="col">Email</th>
+            <th scope="col">Name</th>
+            <th scope="col">Admin</th>
+            <th scope="col">Disabled</th>
+            <th scope="col">Delete?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .users}}
+          <tr>
+            <td scope="row">{{.Email}}</td>
+            <td scope="row">{{.Name}}</td>
+            <td scope="row">{{.Admin}}</td>
+            <td scope="row">{{.Disabled}}</td>
+            <td scope="row">
+              <form method="POST" action="/users/delete/{{.Email}}">
+                {{ $csrf }}
+                <button type="submit" class="btn btn-primary" name="Action" value="delete">Delete User</button>
+              </form>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p>There are no users. Create one above.</p>
+    {{end}}
+  </main>
+
+  {{template "scripts" .}}
+</body>
+
+</html>
+{{end}}

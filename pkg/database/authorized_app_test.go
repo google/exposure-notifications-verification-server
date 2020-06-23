@@ -31,7 +31,7 @@ func TestCreateFindAPIKey(t *testing.T) {
 
 	got, err := db.FindAuthorizedAppByAPIKey(authApp.APIKey)
 	if err != nil {
-		t.Fatalf("error reading Authorized app by api key: %v", err)
+		t.Fatalf("error reading authorized app by api key: %v", err)
 	}
 	if diff := cmp.Diff(authApp, got); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
