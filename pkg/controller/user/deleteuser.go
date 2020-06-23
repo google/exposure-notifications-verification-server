@@ -69,7 +69,7 @@ func (udc *userDeleteController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	flash.Alert("Deleted User %q", user)
+	flash.Alert("Deleted User %v", user.Email)
 
 	// m["user"] = user
 	// m["flash"] = flash
