@@ -14,7 +14,9 @@
 
 package controller
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // IsJSONContentType returns true if the request's content type is application/json
 // extra specific details, like UTF encoding schema are allowed.
