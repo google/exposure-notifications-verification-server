@@ -75,6 +75,8 @@ func (usc *userSaveController) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	_ = user
+
 	flash.Alert("Created User %q", form.Email)
 
 	// m["user"] = user

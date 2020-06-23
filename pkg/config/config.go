@@ -17,11 +17,11 @@ package config
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -136,7 +136,7 @@ type Config struct {
 }
 
 func (c *Config) CSRFKey() ([]byte, error) {
-	key, err := base64.StdEncoding.DecodeString(c.CSRFAuthKey)
+	key, err := base64util.DecodeString(c.CSRFAuthKey)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding CSRF_AUTH_KEY: %v", err)
 	}

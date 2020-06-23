@@ -68,7 +68,7 @@ func main() {
 
 	srv := &http.Server{
 		Handler: handlers.CombinedLoggingHandler(os.Stdout, r),
-		Addr:    "127.0.0.1:" + strconv.Itoa(config.Port),
+		Addr:    "0.0.0.0:" + strconv.Itoa(config.Port),
 	}
 	log.Printf("Listening on: 127.0.0.1:%v", config.Port)
 	log.Fatal(srv.ListenAndServe())
