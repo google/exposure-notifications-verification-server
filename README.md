@@ -92,7 +92,7 @@ export TOKEN_SIGNING_KEY="<Token Key Resource ID from Above>"
 export CERTIFICATE_SIGNING_KEY="<Certificate Key Resource ID from Above>"
 
 
-# D/L SA from Firebase https://firebase.corp.google.com/project/apollo-server-273118/settings/serviceaccounts/adminsdk
+# D/L SA from Firebase https://console.firebase.google.com/project/project-name-123456/settings/serviceaccounts/adminsdk
 export GOOGLE_APPLICATION_CREDENTIALS=/Users/USERNAME/Documents/project-name-123456-firebase-adminsdk-ab3-4cde56f78g.json
 
 # Configure CSRF_AUTH_KEY. This is a 32 byte string base64 encoded.
