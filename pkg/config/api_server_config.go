@@ -48,7 +48,7 @@ type APIServerConfig struct {
 	CertificateDuration     time.Duration `env:"CERTIFICATE_DURATION,default=15m"`
 }
 
-// APIServerConfig returns the environment config for the API server.
+// NewAPIServerConfig returns the environment config for the API server.
 // Only needs to be called once per instance, but may be called multiple times.
 func NewAPIServerConfig(ctx context.Context) (*APIServerConfig, error) {
 	var config APIServerConfig
