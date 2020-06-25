@@ -101,6 +101,6 @@ For local development and testing, you may want to use a less powerful setup:
 ```hcl
 # terraform/terraform.tfvars
 project               = "..."
-cloudsql_tier         = "db-custom-1-3840"
-cloudsql_disk_size_gb = "16"
+database_tier         = "db-custom-1-3840"
+database_disk_size_gb = "16"
 ```
