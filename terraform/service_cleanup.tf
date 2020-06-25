@@ -44,13 +44,6 @@ resource "google_secret_manager_secret_iam_member" "cleanup-db" {
   member    = "serviceAccount:${google_service_account.cleanup.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "cleanup-csrf" {
-  provider  = google-beta
-  secret_id = google_secret_manager_secret.csrf-token.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cleanup.email}"
-}
-
 resource "google_cloud_run_service" "cleanup" {
   name     = "cleanup"
   location = var.region

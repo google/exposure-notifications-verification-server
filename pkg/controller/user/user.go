@@ -32,14 +32,14 @@ import (
 )
 
 type userListController struct {
-	config *config.Config
+	config *config.ServerConfig
 	db     *database.Database
 	html   *render.HTML
 	logger *zap.SugaredLogger
 }
 
 // NewListController creates a controller to list users
-func NewListController(ctx context.Context, config *config.Config, db *database.Database, html *render.HTML) http.Handler {
+func NewListController(ctx context.Context, config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
 	return &userListController{config, db, html, logging.FromContext(ctx)}
 }
 

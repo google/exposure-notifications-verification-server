@@ -42,13 +42,13 @@ import (
 
 // VerifyAPI is a controller for the verification code verification API.
 type VerifyAPI struct {
-	config *config.Config
+	config *config.APIServerConfig
 	db     *database.Database
 	logger *zap.SugaredLogger
 	signer signer.KeyManager
 }
 
-func New(ctx context.Context, config *config.Config, db *database.Database, signer signer.KeyManager) http.Handler {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, signer signer.KeyManager) http.Handler {
 	return &VerifyAPI{config, db, logging.FromContext(ctx), signer}
 }
 

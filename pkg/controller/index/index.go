@@ -26,12 +26,12 @@ import (
 )
 
 type indexController struct {
-	config *config.Config
+	config *config.ServerConfig
 	html   *render.HTML
 }
 
 // New creates a new index controller. The index controller is thread-safe.
-func New(config *config.Config, html *render.HTML) http.Handler {
+func New(config *config.ServerConfig, html *render.HTML) http.Handler {
 	return &indexController{config, html}
 }
 

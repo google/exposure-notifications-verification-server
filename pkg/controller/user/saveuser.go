@@ -29,7 +29,7 @@ import (
 )
 
 type userSaveController struct {
-	config *config.Config
+	config *config.ServerConfig
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
@@ -42,7 +42,7 @@ type formData struct {
 }
 
 // NewSaveController creates a controller to save users.
-func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
+func NewSaveController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
 	return &userSaveController{config, db, logging.FromContext(ctx)}
 }
 
