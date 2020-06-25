@@ -63,7 +63,7 @@ func ProcessWith(ctx context.Context, spec Validatable, l envconfig.Lookuper) er
 	}
 
 	// Parse the main configuration.
-	if err := envconfig.ProcessWith(ctx, &spec, l, mutatorFuncs...); err != nil {
+	if err := envconfig.ProcessWith(ctx, spec, l, mutatorFuncs...); err != nil {
 		return err
 	}
 
