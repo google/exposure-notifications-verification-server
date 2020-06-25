@@ -34,7 +34,7 @@ import (
 )
 
 type homeController struct {
-	config           *config.Config
+	config           *config.ServerConfig
 	db               *database.Database
 	html             *render.HTML
 	logger           *zap.SugaredLogger
@@ -42,7 +42,7 @@ type homeController struct {
 }
 
 // New creates a new controller for the home page.
-func New(ctx context.Context, config *config.Config, db *database.Database, html *render.HTML) http.Handler {
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
 	pastDaysDuration := -1 * config.AllowedTestAge
 
 	return &homeController{

@@ -28,7 +28,7 @@ import (
 )
 
 type apikeySaveController struct {
-	config *config.Config
+	config *config.ServerConfig
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
@@ -37,7 +37,7 @@ type formData struct {
 	Name string `form:"name"`
 }
 
-func NewSaveController(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
+func NewSaveController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
 	return &apikeySaveController{config, db, logging.FromContext(ctx)}
 }
 

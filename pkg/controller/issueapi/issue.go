@@ -35,13 +35,13 @@ import (
 
 // IssueAPI is a controller for the verification code JSON API.
 type IssueAPI struct {
-	config *config.Config
+	config *config.ServerConfig
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
 	return &IssueAPI{config, db, logging.FromContext(ctx)}
 }
 

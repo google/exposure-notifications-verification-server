@@ -30,13 +30,13 @@ import (
 )
 
 type userDeleteController struct {
-	config *config.Config
+	config *config.ServerConfig
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
 // NewDeleteController creates a controller to Delete users.
-func NewDeleteController(ctx context.Context, config *config.Config, db *database.Database) http.Handler {
+func NewDeleteController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
 	return &userDeleteController{config, db, logging.FromContext(ctx)}
 }
 

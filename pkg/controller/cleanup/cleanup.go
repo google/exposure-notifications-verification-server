@@ -33,14 +33,14 @@ import (
 
 // Controller is a controller for the cleanup service.
 type Controller struct {
-	config *config.Config
+	config *config.CleanupConfig
 	cache  *cache.Cache
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config *config.Config, cache *cache.Cache, db *database.Database) http.Handler {
+func New(ctx context.Context, config *config.CleanupConfig, cache *cache.Cache, db *database.Database) http.Handler {
 	return &Controller{config, cache, db, logging.FromContext(ctx)}
 }
 

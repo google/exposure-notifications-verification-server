@@ -32,7 +32,7 @@ import (
 )
 
 type sessionController struct {
-	config *config.Config
+	config *config.ServerConfig
 	db     *database.Database
 	client *auth.Client
 	logger *zap.SugaredLogger
@@ -45,7 +45,7 @@ type formData struct {
 // New creates a new session controller. The session controller is responsible
 // for accepting the firebase auth cookie information and establishing a server
 // side session.
-func New(ctx context.Context, config *config.Config, client *auth.Client, db *database.Database) http.Handler {
+func New(ctx context.Context, config *config.ServerConfig, client *auth.Client, db *database.Database) http.Handler {
 	return &sessionController{config, db, client, logging.FromContext(ctx)}
 }
 
