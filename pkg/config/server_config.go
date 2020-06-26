@@ -48,7 +48,7 @@ type ServerConfig struct {
 	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
 	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
 	CollisionRetryCount uint          `env:"COLISSION_RETRY_COUNT,default=6"`
-	AllowedTestAge      time.Duration `env:"ALLOWRD_PAST_TEST_DAYS,default=336h"` // 336h is 14 days.
+	AllowedTestAge      time.Duration `env:"ALLOWED_PAST_TEST_DAYS,default=336h"` // 336h is 14 days.
 	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
