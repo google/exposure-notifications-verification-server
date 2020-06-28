@@ -21,3 +21,11 @@
 terraform/state.tf
 
 local/
+
+# OSX
+*.DS_Store
+
+# Covid Watch local
+sandbox2-cw-en-vs-firebase-adminsdk-ch6qh-4dc7863e58.json
+verification-server-pp-dev-255397834da7.json
+exports.txt
