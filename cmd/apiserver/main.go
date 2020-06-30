@@ -41,7 +41,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	config, err := config.New(ctx)
+	config, err := config.NewAPIServerConfig(ctx)
 	if err != nil {
 		log.Fatalf("config error: %v", err)
 	}

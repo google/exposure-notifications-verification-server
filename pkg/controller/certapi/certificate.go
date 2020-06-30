@@ -39,14 +39,14 @@ import (
 )
 
 type CertificateAPI struct {
-	config      *config.Config
+	config      *config.APIServerConfig
 	db          *database.Database
 	logger      *zap.SugaredLogger
 	signer      signer.KeyManager
 	pubKeyCache *cache.Cache
 }
 
-func New(ctx context.Context, config *config.Config, db *database.Database, signer signer.KeyManager, pubKeyCache *cache.Cache) http.Handler {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, signer signer.KeyManager, pubKeyCache *cache.Cache) http.Handler {
 	return &CertificateAPI{config, db, logging.FromContext(ctx), signer, pubKeyCache}
 }
 

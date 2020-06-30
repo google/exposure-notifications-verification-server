@@ -48,7 +48,7 @@ continuous deployment.
 1.  Save the project ID as a Terraform variable:
 
     ```text
-    $ echo "project = ${PROJECT_ID}" >> ./terraform.tfvars
+    $ echo "project = \"${PROJECT_ID}\"" >> ./terraform.tfvars
     ```
 
 1.  (Optional, but recommended) Create a Cloud Storage bucket for storing remote
@@ -62,7 +62,7 @@ continuous deployment.
     Configure Terraform to store state in the bucket:
 
     ```text
-    $ cat <<EOF > ./terraform/state.tf
+    $ cat <<EOF > ./state.tf
     terraform {
       backend "gcs" {
         bucket = "${PROJECT_ID}-tf-state"
@@ -101,6 +101,6 @@ For local development and testing, you may want to use a less powerful setup:
 ```hcl
 # terraform/terraform.tfvars
 project               = "..."
-cloudsql_tier         = "db-custom-1-3840"
-cloudsql_disk_size_gb = "16"
+database_tier         = "db-custom-1-3840"
+database_disk_size_gb = "16"
 ```

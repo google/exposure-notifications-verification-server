@@ -32,13 +32,13 @@ import (
 )
 
 type apikeyListController struct {
-	config *config.Config
+	config *config.ServerConfig
 	db     *database.Database
 	html   *render.HTML
 	logger *zap.SugaredLogger
 }
 
-func NewListController(ctx context.Context, config *config.Config, db *database.Database, html *render.HTML) http.Handler {
+func NewListController(ctx context.Context, config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
 	return &apikeyListController{config, db, html, logging.FromContext(ctx)}
 }
 

@@ -26,13 +26,13 @@ import (
 )
 
 type signoutController struct {
-	config *config.Config
+	config *config.ServerConfig
 	db     *database.Database
 	html   *render.HTML
 }
 
 // New creates a new signout controller. When run, clears the session cookie.
-func New(config *config.Config, db *database.Database, html *render.HTML) http.Handler {
+func New(config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
 	return &signoutController{config, db, html}
 }
 

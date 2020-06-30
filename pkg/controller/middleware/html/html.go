@@ -34,10 +34,10 @@ const (
 type TemplateMap map[string]interface{}
 
 type VariableInjector struct {
-	config *config.Config
+	config *config.ServerConfig
 }
 
-func New(config *config.Config) *VariableInjector {
+func New(config *config.ServerConfig) *VariableInjector {
 	return &VariableInjector{config}
 }
 
