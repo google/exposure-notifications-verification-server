@@ -30,9 +30,11 @@ type APIServerConfig struct {
 	Port      int    `env:"PORT,default=8080"`
 	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
 
+	// Verification Code Issuer Config
+	*VerificationCodeIssuerConfigImp
+
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 
-	// Verification Token Config
 	// Currently this does not easily support rotation. TODO(mikehelmick) - add support.
 	VerificationTokenDuration time.Duration `env:"VERIFICATION_TOKEN_DURATION,default=24h"`
 	TokenSigningKey           string        `env:"TOKEN_SIGNING_KEY,required"`
@@ -59,16 +61,32 @@ func NewAPIServerConfig(ctx context.Context) (*APIServerConfig, error) {
 }
 
 func (c *APIServerConfig) Validate() error {
-	fields := []struct {
+	timeFields := []struct {
 		Var  time.Duration
 		Name string
 	}{
 		{c.APIKeyCacheDuration, "API_KEY_CACHE_DURATION"},
 		{c.PublicKeyCacheDuration, "PUBLIC_KEY_CACHE_DURATION"},
+		{c.CodeDuration(), "CODE_DURATION"},
+		{c.AllowedTestAge(), "ALLOWED_PAST_TEST_DAYS"},
 	}
 
-	for _, f := range fields {
+	uintFields := []struct {
+		Var  uint
+		Name string
+	}{
+		{c.CodeDigits(), "CODE_DIGITS"},
+		{c.CollisionRetryCount(), "COLISSION_RETRY_COUNT"},
+	}
+
+	for _, f := range timeFields {
 		if err := checkPositiveDuration(f.Var, f.Name); err != nil {
+			return err
+		}
+	}
+
+	for _, f := range uintFields {
+		if err := checkNonzero(f.Var, f.Name); err != nil {
 			return err
 		}
 	}

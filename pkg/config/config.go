@@ -19,6 +19,8 @@ package config
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/secrets"
@@ -29,6 +31,61 @@ import (
 // Validatable indicates that a type can be validated.
 type Validatable interface {
 	Validate() error
+}
+
+// Helper func for handling env vars
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
+// VerificationCodeIssuerConfig defines required config fields common to a server that issues verification codes
+type VerificationCodeIssuerConfig interface {
+	AllowedTestAge() time.Duration
+	CodeDigits() uint
+	CodeDuration() time.Duration
+	CollisionRetryCount() uint
+}
+
+// VerificationCodeIssuerConfigImp implementation for ease of use
+type VerificationCodeIssuerConfigImp struct{}
+
+// AllowedTestAge with default of 336h (14 days), -1 implies error
+func (c *VerificationCodeIssuerConfigImp) AllowedTestAge() time.Duration {
+	val, err := time.ParseDuration(getEnv("ALLOWED_PAST_TEST_DAYS", "336h"))
+	if err != nil {
+		return -1
+	}
+	return val
+}
+
+// CodeDigits with default of 8, 0 implies error
+func (c *VerificationCodeIssuerConfigImp) CodeDigits() uint {
+	val, err := strconv.ParseUint(getEnv("CODE_DIGITS", "8"), 10, 32)
+	if err != nil {
+		return 0
+	}
+	return uint(val)
+}
+
+// CodeDuration with default of 1h, -1 implies error
+func (c *VerificationCodeIssuerConfigImp) CodeDuration() time.Duration {
+	val, err := time.ParseDuration(getEnv("CODE_DURATION", "1h"))
+	if err != nil {
+		return -1
+	}
+	return val
+}
+
+// CollisionRetryCount with default of 6, 0 implies error
+func (c *VerificationCodeIssuerConfigImp) CollisionRetryCount() uint {
+	val, err := strconv.ParseUint(getEnv("COLISSION_RETRY_COUNT", "6"), 10, 32)
+	if err != nil {
+		return 0
+	}
+	return uint(val)
 }
 
 // ProcessWith creates a new config with the given lookuper for parsing config.
@@ -77,6 +134,13 @@ func ProcessWith(ctx context.Context, spec Validatable, l envconfig.Lookuper) er
 func checkPositiveDuration(d time.Duration, name string) error {
 	if d < 0 {
 		return fmt.Errorf("%v must be a positive duration, got: %v", name, d)
+	}
+	return nil
+}
+
+func checkNonzero(v uint, name string) error {
+	if v == 0 {
+		return fmt.Errorf("%v must be a nonzero unsigned integer, got: %v", name, v)
 	}
 	return nil
 }

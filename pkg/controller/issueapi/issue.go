@@ -35,13 +35,13 @@ import (
 
 // IssueAPI is a controller for the verification code JSON API.
 type IssueAPI struct {
-	config *config.ServerConfig
+	config config.VerificationCodeIssuerConfig
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
+func New(ctx context.Context, config config.VerificationCodeIssuerConfig, db *database.Database) http.Handler {
 	return &IssueAPI{config, db, logging.FromContext(ctx)}
 }
 
@@ -56,7 +56,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Max date is today (local time) and min date is AllowedTestAge ago, truncated.
 	maxDate := time.Now().Local()
-	minDate := maxDate.Add(-1 * ic.config.AllowedTestAge).Truncate(24 * time.Hour)
+	minDate := maxDate.Add(-1 * ic.config.AllowedTestAge()).Truncate(24 * time.Hour)
 
 	var testDate *time.Time
 	if request.TestDate != "" {
@@ -77,19 +77,19 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	expiryTime := time.Now().Add(ic.config.CodeDuration)
+	expiryTime := time.Now().Add(ic.config.CodeDuration())
 
 	// Generate verification code
 	codeRequest := otp.Request{
 		DB:         ic.db,
-		Length:     ic.config.CodeDigits,
+		Length:     ic.config.CodeDigits(),
 		ExpiresAt:  expiryTime,
 		TestType:   request.TestType,
 		TestDate:   testDate,
-		MaxTestAge: ic.config.AllowedTestAge,
+		MaxTestAge: ic.config.AllowedTestAge(),
 	}
 
-	code, err := codeRequest.Issue(ctx, ic.config.CollisionRetryCount)
+	code, err := codeRequest.Issue(ctx, ic.config.CollisionRetryCount())
 	if err != nil {
 		ic.logger.Errorf("otp.GenerateCode: %v", err)
 		controller.WriteJSON(w, http.StatusOK, api.Error("error generating verification, wait a moment and try again"))

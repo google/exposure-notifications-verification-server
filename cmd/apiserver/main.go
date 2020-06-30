@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
@@ -80,6 +81,9 @@ func main() {
 
 	r.Handle("/api/verify", verifyapi.New(ctx, config, db, signer)).Methods("POST")
 	r.Handle("/api/certificate", certapi.New(ctx, config, db, signer, publicKeyCache)).Methods("POST")
+
+	// API for creating new verification codes.
+	r.Handle("/api/issue", issueapi.New(ctx, config, db)).Methods("POST")
 
 	srv := &http.Server{
 		Handler: handlers.CombinedLoggingHandler(os.Stdout, r),

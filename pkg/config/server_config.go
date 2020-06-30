@@ -32,6 +32,9 @@ type ServerConfig struct {
 	Firebase FirebaseConfig
 	Database database.Config
 
+	// Verification Code Issuer Config
+	*VerificationCodeIssuerConfigImp
+
 	Port int `env:"PORT,default=8080"`
 
 	// Login Config
@@ -44,12 +47,9 @@ type ServerConfig struct {
 	CSRFAuthKey string `env:"CSRF_AUTH_KEY,required"`
 
 	// Application Config
-	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
-	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
-	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
-	CollisionRetryCount uint          `env:"COLISSION_RETRY_COUNT,default=6"`
-	AllowedTestAge      time.Duration `env:"ALLOWRD_PAST_TEST_DAYS,default=336h"` // 336h is 14 days.
-	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`
+	ServerName string `env:"SERVER_NAME,default=Diagnosis Verification Server"`
+
+	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
@@ -81,18 +81,32 @@ func (c *ServerConfig) CSRFKey() ([]byte, error) {
 }
 
 func (c *ServerConfig) Validate() error {
-	fields := []struct {
+	timeFields := []struct {
 		Var  time.Duration
 		Name string
 	}{
 		{c.SessionCookieDuration, "SESSION_DUATION"},
 		{c.RevokeCheckPeriod, "REVOKE_CHECK_DURATION"},
-		{c.CodeDuration, "CODE_DURATION"},
-		{c.AllowedTestAge, "ALLOWED_PAST_TEST_DAYS"},
+		{c.CodeDuration(), "CODE_DURATION"},
+		{c.AllowedTestAge(), "ALLOWED_PAST_TEST_DAYS"},
 	}
 
-	for _, f := range fields {
+	uintFields := []struct {
+		Var  uint
+		Name string
+	}{
+		{c.CodeDigits(), "CODE_DIGITS"},
+		{c.CollisionRetryCount(), "COLISSION_RETRY_COUNT"},
+	}
+
+	for _, f := range timeFields {
 		if err := checkPositiveDuration(f.Var, f.Name); err != nil {
+			return err
+		}
+	}
+
+	for _, f := range uintFields {
+		if err := checkNonzero(f.Var, f.Name); err != nil {
 			return err
 		}
 	}
