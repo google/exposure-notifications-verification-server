@@ -48,9 +48,7 @@ type ServerConfig struct {
 
 	// Application Config
 	ServerName string `env:"SERVER_NAME,default=Diagnosis Verification Server"`
-
 	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
-
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
 	// If Dev mode is true, cookies aren't required to be sent over secure channels.
