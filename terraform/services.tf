@@ -40,7 +40,7 @@ locals {
   }
 
   signing_config = {
-    CERTIFICATE_SIGNING_KEY = data.google_kms_crypto_key_version.certificate-signer-version.id
-    TOKEN_SIGNING_KEY       = data.google_kms_crypto_key_version.token-signer-version.id
+    CERTIFICATE_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
+    TOKEN_SIGNING_KEY       = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
   }
 }
