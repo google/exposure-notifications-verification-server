@@ -44,6 +44,12 @@ resource "google_secret_manager_secret_iam_member" "apiserver-db" {
   member    = "serviceAccount:${google_service_account.apiserver.email}"
 }
 
+resource "google_kms_key_ring_iam_member" "kms-signerverifier" {
+  key_ring_id = google_kms_key_ring.verification.self_link
+  role        = "roles/cloudkms.signerVerifier"
+  member      = "serviceAccount:${google_service_account.apiserver.email}"
+}
+
 resource "google_cloud_run_service" "apiserver" {
   name     = "apiserver"
   location = var.region

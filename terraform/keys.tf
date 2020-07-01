@@ -33,6 +33,10 @@ resource "google_kms_crypto_key" "certificate-signer" {
   }
 }
 
+data "google_kms_crypto_key_version" "certificate-signer-version" {
+  crypto_key = google_kms_crypto_key.certificate-signer.self_link
+}
+
 resource "google_kms_crypto_key" "token-signer" {
   key_ring = google_kms_key_ring.verification.self_link
   name     = "token-signer"
@@ -42,4 +46,8 @@ resource "google_kms_crypto_key" "token-signer" {
     algorithm        = "EC_SIGN_P256_SHA256"
     protection_level = "HSM"
   }
+}
+
+data "google_kms_crypto_key_version" "token-signer-version" {
+  crypto_key = google_kms_crypto_key.token-signer.self_link
 }
