@@ -22,9 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/retry"
-
 	"github.com/ory/dockertest"
+	"github.com/sethvargo/go-retry"
 )
 
 // NewTestDatabaseWithConfig creates a new database suitable for use in testing.
@@ -100,8 +99,15 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 
 	// Establish a connection to the database. Use a Fibonacci backoff instead of
 	// exponential so wait times scale appropriately.
+	b, err := retry.NewFibonacci(500 * time.Millisecond)
+	if err != nil {
+		tb.Fatalf("failed to configure backoff: %v", err)
+	}
+	b = retry.WithMaxRetries(10, b)
+	b = retry.WithCappedDuration(10*time.Second, b)
+
 	var db *Database
-	if err := retry.RetryFib(ctx, 500*time.Millisecond, 10, func() error {
+	if err := retry.Do(ctx, b, func(_ context.Context) error {
 		var err error
 		db, err = config.Open()
 		if err != nil {

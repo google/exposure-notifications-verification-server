@@ -24,6 +24,7 @@ require (
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/sethvargo/go-envconfig v0.1.1
 	github.com/sethvargo/go-gcpkms v0.0.0-20200507180216-f1fca850aed2
+	github.com/sethvargo/go-retry v0.1.0
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/ulule/limiter/v3 v3.5.0
