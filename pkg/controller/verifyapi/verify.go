@@ -80,7 +80,7 @@ func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			controller.WriteJSON(w, http.StatusBadRequest, api.Error(err.Error()))
 			return
 		}
-		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal serer error"))
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal server error"))
 		return
 	}
 
