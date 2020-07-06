@@ -18,6 +18,15 @@ package api
 
 import "fmt"
 
+const (
+	// TestTypeConfirmed is the string that represents a confirmed covid-19 test.
+	TestTypeConfirmed = "confirmed"
+	// TestTypeLikely is the string that represents a clinical diagnosis.
+	TestTypeLikely = "likely"
+	// TestTypeNegative is the string that represents a netgative test.
+	TestTypeNegative = "negative"
+)
+
 // ErrorReturn defines the common error type.
 type ErrorReturn struct {
 	Error string `json:"error"`
@@ -70,7 +79,7 @@ type VerifyCodeResponse struct {
 // VerificationCertificateRequest is used to accept a long term token and
 // an HMAC of the TEKs.
 // The details of the HMAC calculation are avialble at:
-// https://github.com/google/exposure-notifications-server/blob/master/docs/design/verification_protocol.md
+// https://github.com/google/exposure-notifications-server/blob/main/docs/design/verification_protocol.md
 //
 // Requires API key in a HTTP header, X-API-Key: APIKEY
 type VerificationCertificateRequest struct {
