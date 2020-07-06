@@ -50,7 +50,7 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 		logger:        logging.FromContext(ctx),
 		validTestType: make(map[string]struct{}),
 	}
-	// Set up the valid test type strings from the API defintion.
+	// Set up the valid test type strings from the API definition.
 	controller.validTestType[api.TestTypeConfirmed] = struct{}{}
 	controller.validTestType[api.TestTypeLikely] = struct{}{}
 	controller.validTestType[api.TestTypeNegative] = struct{}{}
