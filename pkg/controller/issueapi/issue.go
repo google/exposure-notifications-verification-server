@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -35,14 +36,25 @@ import (
 
 // IssueAPI is a controller for the verification code JSON API.
 type IssueAPI struct {
-	config *config.ServerConfig
-	db     *database.Database
-	logger *zap.SugaredLogger
+	config        *config.ServerConfig
+	db            *database.Database
+	logger        *zap.SugaredLogger
+	validTestType map[string]struct{}
 }
 
 // New creates a new IssueAPI controller.
 func New(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
-	return &IssueAPI{config, db, logging.FromContext(ctx)}
+	controller := IssueAPI{
+		config:        config,
+		db:            db,
+		logger:        logging.FromContext(ctx),
+		validTestType: make(map[string]struct{}),
+	}
+	// Set up the valid test type strings from the API definition.
+	controller.validTestType[api.TestTypeConfirmed] = struct{}{}
+	controller.validTestType[api.TestTypeLikely] = struct{}{}
+	controller.validTestType[api.TestTypeNegative] = struct{}{}
+	return &controller
 }
 
 func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +63,14 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := controller.BindJSON(w, r, &request); err != nil {
 		ic.logger.Errorf("failed to bind request: %v", err)
 		controller.WriteJSON(w, http.StatusOK, api.Error("invalid request: %v", err))
+		return
+	}
+
+	// Verify the test type
+	request.TestType = strings.ToLower(request.TestType)
+	if _, ok := ic.validTestType[request.TestType]; !ok {
+		ic.logger.Errorf("invalid test type: %v", request.TestType)
+		controller.WriteJSON(w, http.StatusOK, api.Error("invalid test type: %v", request.TestType))
 		return
 	}
 
