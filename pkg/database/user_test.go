@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestUserLifecycle(t *testing.T) {
@@ -43,7 +44,8 @@ func TestUserLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading user from db: %v", err)
 	}
-	if diff := cmp.Diff(user, *got); diff != "" {
+
+	if diff := cmp.Diff(user, *got, cmp.Options{cmpopts.EquateApproxTime(time.Second)}); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 
@@ -56,7 +58,8 @@ func TestUserLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading user from db: %v", err)
 	}
-	if diff := cmp.Diff(user, *got); diff != "" {
+
+	if diff := cmp.Diff(user, *got, cmp.Options{cmpopts.EquateApproxTime(time.Second)}); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }

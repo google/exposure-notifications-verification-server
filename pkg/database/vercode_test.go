@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestSaveVerCode(t *testing.T) {
@@ -40,7 +41,7 @@ func TestSaveVerCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading code from db: %v", err)
 	}
-	if diff := cmp.Diff(code, *got); diff != "" {
+	if diff := cmp.Diff(code, *got, cmp.Options{cmpopts.EquateApproxTime(time.Second)}); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 
@@ -53,7 +54,7 @@ func TestSaveVerCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading code from db: %v", err)
 	}
-	if diff := cmp.Diff(code, *got); diff != "" {
+	if diff := cmp.Diff(code, *got, cmp.Options{cmpopts.EquateApproxTime(time.Second)}); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
