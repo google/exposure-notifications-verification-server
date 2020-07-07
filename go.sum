@@ -1081,6 +1081,8 @@ github.com/sethvargo/go-envconfig v0.1.1/go.mod h1:XZ2JRR7vhlBEO5zMmOpLgUhgYltqY
 github.com/sethvargo/go-gcpkms v0.0.0-20200417004547-e50d0c7083d9/go.mod h1:C7JiMBZbJnohGWYmx0vi6mQNGgLxhQX/SWxe0wYxf18=
 github.com/sethvargo/go-gcpkms v0.0.0-20200507180216-f1fca850aed2 h1:2k5gIF3m1pmIuIwRPbfw+dgmf3wmb+sr2Ej76N/JjPg=
 github.com/sethvargo/go-gcpkms v0.0.0-20200507180216-f1fca850aed2/go.mod h1:C7JiMBZbJnohGWYmx0vi6mQNGgLxhQX/SWxe0wYxf18=
+github.com/sethvargo/go-retry v0.1.0 h1:8sPqlWannzcReEcYjHSNw9becsiYudcwTD7CasGjQaI=
+github.com/sethvargo/go-retry v0.1.0/go.mod h1:JzIOdZqQDNpPkQDmcqgtteAcxFLtYpNF/zJCM1ysDg8=
 github.com/shirou/gopsutil v0.0.0-20190901111213-e4ec7b275ada/go.mod h1:WWnYX4lzhCH5h/3YBfyVA3VbLYjlMZZAQcW9ojMexNc=
 github.com/shirou/gopsutil v2.19.9+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
 github.com/shirou/gopsutil v2.20.4+incompatible h1:cMT4rxS55zx9NVUnCkrmXCsEB/RNfG9SwHY9evtX8Ng=
