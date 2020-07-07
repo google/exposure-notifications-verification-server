@@ -50,6 +50,19 @@ resource "google_kms_key_ring_iam_member" "kms-signerverifier" {
   member      = "serviceAccount:${google_service_account.apiserver.email}"
 }
 
+resource "google_project_iam_member" "apiserver-observability" {
+  for_each = toset([
+    "roles/cloudtrace.agent",
+    "roles/logging.logWriter",
+    "roles/monitoring.metricWriter",
+    "roles/stackdriver.resourceMetadata.writer",
+  ])
+
+  project = var.project
+  role    = each.key
+  member  = "serviceAccount:${google_service_account.apiserver.email}"
+}
+
 resource "google_cloud_run_service" "apiserver" {
   name     = "apiserver"
   location = var.region

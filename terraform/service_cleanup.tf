@@ -44,6 +44,19 @@ resource "google_secret_manager_secret_iam_member" "cleanup-db" {
   member    = "serviceAccount:${google_service_account.cleanup.email}"
 }
 
+resource "google_project_iam_member" "cleanup-observability" {
+  for_each = toset([
+    "roles/cloudtrace.agent",
+    "roles/logging.logWriter",
+    "roles/monitoring.metricWriter",
+    "roles/stackdriver.resourceMetadata.writer",
+  ])
+
+  project = var.project
+  role    = each.key
+  member  = "serviceAccount:${google_service_account.cleanup.email}"
+}
+
 resource "google_cloud_run_service" "cleanup" {
   name     = "cleanup"
   location = var.region
@@ -158,7 +171,7 @@ resource "google_cloud_scheduler_job" "cleanup-worker" {
   name             = "cleanup-worker"
   region           = var.cloudscheduler_location
   schedule         = "0 * * * *"
-  time_zone        = "Etc/UTC"
+  time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
   retry_config {
