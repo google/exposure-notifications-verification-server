@@ -76,6 +76,14 @@ resource "google_cloud_run_service" "server" {
         }
 
         dynamic "env" {
+          for_each = local.gcp_config
+          content {
+            name  = env.key
+            value = env.value
+          }
+        }
+
+        dynamic "env" {
           for_each = {
             # Assets - these are built into the container
             ASSETS_PATH = "/assets"

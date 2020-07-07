@@ -63,6 +63,14 @@ resource "google_cloud_run_service" "cleanup" {
         }
 
         dynamic "env" {
+          for_each = local.gcp_config
+          content {
+            name  = env.key
+            value = env.value
+          }
+        }
+
+        dynamic "env" {
           for_each = local.csrf_config
           content {
             name  = env.key

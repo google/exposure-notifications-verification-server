@@ -13,6 +13,10 @@
 # limitations under the License.
 
 locals {
+  gcp_config = {
+    PROJECT_ID = var.project
+  }
+
   csrf_config = {
     CSRF_AUTH_KEY = "secret://${google_secret_manager_secret_version.csrf-token-version.id}"
   }
