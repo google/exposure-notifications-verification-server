@@ -43,6 +43,7 @@ func (c *Config) ConnectionString() string {
 	for k, v := range vals {
 		p = append(p, fmt.Sprintf("%s=%s", k, v))
 	}
+
 	return strings.Join(p, " ")
 }
 
