@@ -72,7 +72,7 @@ func (ca *CertificateAPI) getPublicKey(ctx context.Context, keyID string) (crypt
 
 // Parses and validates the token against the configured keyID and public key.
 // If the token si valid the token id (`tid') and subject (`sub`) claims are returned.
-func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.PublicKey) (string, string, error) {
+func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.PublicKey) (string, *database.Subject, error) {
 	// Parse and validate the verification token.
 	token, err := jwt.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
@@ -87,22 +87,26 @@ func (ca *CertificateAPI) validateToken(verToken string, publicKey crypto.Public
 	})
 	if err != nil {
 		ca.logger.Errorf("invalid verification token: %v", err)
-		return "", "", fmt.Errorf("invalid verification token")
+		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	tokenClaims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
 		ca.logger.Errorf("invalid claims in verification token")
-		return "", "", fmt.Errorf("invalid verification token")
+		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	if err := tokenClaims.Valid(); err != nil {
 		ca.logger.Errorf("JWT is invalid: %v", err)
-		return "", "", fmt.Errorf("verification token expired")
+		return "", nil, fmt.Errorf("verification token expired")
 	}
 	if !tokenClaims.VerifyIssuer(ca.config.TokenIssuer, true) || !tokenClaims.VerifyAudience(ca.config.TokenIssuer, true) {
 		ca.logger.Errorf("jwt contains invalid iss/aud: iss %v aud: %v", tokenClaims.Issuer, tokenClaims.Audience)
-		return "", "", fmt.Errorf("verification token not valid")
+		return "", nil, fmt.Errorf("verification token not valid")
 	}
-	return tokenClaims.Id, tokenClaims.Subject, nil
+	subject, err := database.ParseSubject(tokenClaims.Subject)
+	if err != nil {
+		return "", nil, fmt.Errorf("invalid subject: %w", err)
+	}
+	return tokenClaims.Id, subject, nil
 }
 
 func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -152,8 +156,13 @@ func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create the Certificate
 	now := time.Now().UTC()
 	claims := verifyapi.NewVerificationClaims()
-	// This server curently does not provide any transmission risk overrides, although that is part
-	// of the diagnosis verification protocol.
+	// Assign the report type.
+	claims.ReportType = subject.TestType
+	if subject.SymptomDate != nil {
+		claims.SymptomOnsetInterval = subject.SymptomInterval()
+	}
+
+	// TODO(mikehelmick): Assign transmission risk overrides. Algorithm not set yet.
 	claims.SignedMAC = request.ExposureKeyHMAC
 	claims.StandardClaims.Audience = ca.config.CertificateAudience
 	claims.StandardClaims.Issuer = ca.config.CertificateIssuer

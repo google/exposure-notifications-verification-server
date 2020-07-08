@@ -45,11 +45,11 @@ var (
 // VerificationCode represnts a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
-	Code      string `gorm:"type:varchar(20);unique_index"`
-	Claimed   bool   `gorm:"default:false"`
-	TestType  string `gorm:"type:varchar(20)"`
-	TestDate  *time.Time
-	ExpiresAt time.Time
+	Code        string `gorm:"type:varchar(20);unique_index"`
+	Claimed     bool   `gorm:"default:false"`
+	TestType    string `gorm:"type:varchar(20)"`
+	SymptomDate *time.Time
+	ExpiresAt   time.Time
 }
 
 // TableName sets the VerificationCode table name
@@ -61,12 +61,12 @@ func (VerificationCode) TableName() string {
 // TODO(mikehelmick) - Add method to purge verification codes that are > XX hours old
 //   Keeping expired codes prevents a code from being regenerated during that period of time.
 
-// FormatTestDate returns YYYY-MM-DD formatted test date, or "" if nil.
-func (v *VerificationCode) FormatTestDate() string {
-	if v.TestDate == nil {
+// FormatSymptomDate returns YYYY-MM-DD formatted test date, or "" if nil.
+func (v *VerificationCode) FormatSymptomDate() string {
+	if v.SymptomDate == nil {
 		return ""
 	}
-	return v.TestDate.Format("2006-01-02")
+	return v.SymptomDate.Format("2006-01-02")
 }
 
 // IsExpired returns ture if a verification code has expired.
@@ -83,9 +83,9 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	if _, ok := ValidTestTypes[v.TestType]; !ok {
 		return ErrInvalidTestType
 	}
-	if v.TestDate != nil {
-		minTestDate := time.Now().Add(-1 * maxAge).Truncate(oneDay)
-		if minTestDate.After(*v.TestDate) {
+	if v.SymptomDate != nil {
+		minSymptomDate := time.Now().Add(-1 * maxAge).Truncate(oneDay)
+		if minSymptomDate.After(*v.SymptomDate) {
 			return ErrTestTooOld
 		}
 	}

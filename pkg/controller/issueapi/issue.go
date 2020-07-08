@@ -78,22 +78,22 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	maxDate := time.Now().Local()
 	minDate := maxDate.Add(-1 * ic.config.AllowedTestAge).Truncate(24 * time.Hour)
 
-	var testDate *time.Time
-	if request.TestDate != "" {
-		if parsed, err := time.Parse("2006-01-02", request.TestDate); err != nil {
+	var symptomDate *time.Time
+	if request.SymptomDate != "" {
+		if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
 			ic.logger.Errorf("time.Parse: %v", err)
 			controller.WriteJSON(w, http.StatusOK, api.Error("invalid test date: %v", err))
 			return
 		} else {
 			parsed = parsed.Local()
 			if minDate.After(parsed) || parsed.After(maxDate) {
-				message := fmt.Sprintf("Invalid test date: %v must be on or after %v and on or before %v.",
+				message := fmt.Sprintf("Invalid symptom onset date: %v must be on or after %v and on or before %v.",
 					parsed.Format("2006-01-02"), minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
 				ic.logger.Errorf(message)
 				controller.WriteJSON(w, http.StatusOK, api.Error(message))
 				return
 			}
-			testDate = &parsed
+			symptomDate = &parsed
 		}
 	}
 
@@ -101,12 +101,12 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Generate verification code
 	codeRequest := otp.Request{
-		DB:         ic.db,
-		Length:     ic.config.CodeDigits,
-		ExpiresAt:  expiryTime,
-		TestType:   request.TestType,
-		TestDate:   testDate,
-		MaxTestAge: ic.config.AllowedTestAge,
+		DB:          ic.db,
+		Length:      ic.config.CodeDigits,
+		ExpiresAt:   expiryTime,
+		TestType:    request.TestType,
+		SymptomDate: symptomDate,
+		MaxTestAge:  ic.config.AllowedTestAge,
 	}
 
 	code, err := codeRequest.Issue(ctx, ic.config.CollisionRetryCount)

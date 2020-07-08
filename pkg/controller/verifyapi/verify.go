@@ -84,7 +84,7 @@ func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	subject := verificationToken.TestType + "." + verificationToken.FormatTestDate()
+	subject := verificationToken.Subject()
 	now := time.Now().UTC()
 	claims := &jwt.StandardClaims{
 		Audience:  v.config.TokenIssuer,
@@ -92,7 +92,7 @@ func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Id:        verificationToken.TokenID,
 		IssuedAt:  now.Unix(),
 		Issuer:    v.config.TokenIssuer,
-		Subject:   subject,
+		Subject:   subject.String(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 	token.Header[verifyapi.KeyIDHeader] = v.config.TokenSigningKeyID
@@ -104,7 +104,7 @@ func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	controller.WriteJSON(w, http.StatusOK, api.VerifyCodeResponse{
 		TestType:          verificationToken.TestType,
-		TestDate:          verificationToken.FormatTestDate(),
+		SymptomDate:       verificationToken.FormatSymptomDate(),
 		VerificationToken: signedJWT,
 	})
 }
