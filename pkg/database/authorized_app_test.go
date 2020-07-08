@@ -16,10 +16,8 @@ package database
 
 import (
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestCreateFindAPIKey(t *testing.T) {
@@ -35,7 +33,7 @@ func TestCreateFindAPIKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading authorized app by api key: %v", err)
 	}
-	if diff := cmp.Diff(authApp, got, cmp.Options{cmpopts.EquateApproxTime(time.Second)}); diff != "" {
+	if diff := cmp.Diff(authApp, got, approxTime); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -63,7 +61,7 @@ func TestListAPIKeys(t *testing.T) {
 		t.Fatalf("error listing apps: %v", err)
 	}
 
-	if diff := cmp.Diff(want, got, cmp.Options{cmpopts.EquateApproxTime(time.Second)}); diff != "" {
+	if diff := cmp.Diff(want, got, approxTime); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }

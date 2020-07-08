@@ -21,8 +21,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/ory/dockertest"
 	"github.com/sethvargo/go-retry"
+)
+
+var (
+	approxTime = cmp.Options{cmpopts.EquateApproxTime(time.Second)}
 )
 
 // NewTestDatabaseWithConfig creates a new database suitable for use in testing.
