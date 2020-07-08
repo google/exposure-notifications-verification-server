@@ -20,14 +20,66 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
+
+func TestSubject(t *testing.T) {
+	testDay, err := time.Parse("2006-01-02", "2020-07-07")
+	if err != nil {
+		t.Fatalf("test setup error: %v", err)
+	}
+
+	cases := []struct {
+		Name  string
+		Sub   string
+		Want  *Subject
+		Error string
+	}{
+		{
+			Name: "normal parse",
+			Sub:  "confirmed.2020-07-07",
+			Want: &Subject{
+				TestType:    "confirmed",
+				SymptomDate: &testDay,
+			},
+		},
+		{
+			Name: "no date",
+			Sub:  "confirmed.",
+			Want: &Subject{
+				TestType:    "confirmed",
+				SymptomDate: nil,
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			got, err := ParseSubject(tc.Sub)
+			if err != nil {
+				if tc.Error == "" {
+					t.Fatalf("unexpected error: %v", err)
+				} else if !strings.Contains(err.Error(), tc.Error) {
+					t.Fatalf("wrong error, want: %v got: %v", tc.Error, err.Error())
+				}
+			} else if tc.Error != "" {
+				t.Fatalf("wanted error: %v got: nil", tc.Error)
+			}
+
+			if diff := cmp.Diff(tc.Want, got, cmp.Options{cmpopts.EquateApproxTime(time.Second)}); diff != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", diff)
+			}
+		})
+	}
+}
 
 func TestIssueToken(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
 	codeAge := time.Hour
-	testDate := time.Now().UTC().Truncate(24 * time.Hour)
+	symptomDate := time.Now().UTC().Truncate(24 * time.Hour)
+	wrongSymptomDate := symptomDate.Add(-48 * time.Hour)
 
 	cases := []struct {
 		Name         string
@@ -35,16 +87,16 @@ func TestIssueToken(t *testing.T) {
 		Error        string
 		Delay        time.Duration
 		TokenAge     time.Duration
-		Subject      string
+		Subject      *Subject
 		ClaimError   string
 	}{
 		{
 			Name: "normal token issue",
 			Verification: VerificationCode{
-				Code:      "12345678",
-				TestType:  "confirmed",
-				TestDate:  &testDate,
-				ExpiresAt: time.Now().Add(time.Hour),
+				Code:        "12345678",
+				TestType:    "confirmed",
+				SymptomDate: &symptomDate,
+				ExpiresAt:   time.Now().Add(time.Hour),
 			},
 			Error:    "",
 			TokenAge: time.Hour,
@@ -85,18 +137,6 @@ func TestIssueToken(t *testing.T) {
 			TokenAge:   time.Millisecond,
 		},
 		{
-			Name: "invalid subject format",
-			Verification: VerificationCode{
-				Code:      "00000004",
-				Claimed:   false,
-				TestType:  "confirmed",
-				ExpiresAt: time.Now().Add(time.Hour),
-			},
-			ClaimError: ErrTokenMetadataMismatch.Error(),
-			TokenAge:   time.Hour,
-			Subject:    "to.many.parts",
-		},
-		{
 			Name: "wrong test type",
 			Verification: VerificationCode{
 				Code:      "00000005",
@@ -106,33 +146,20 @@ func TestIssueToken(t *testing.T) {
 			},
 			ClaimError: ErrTokenMetadataMismatch.Error(),
 			TokenAge:   time.Hour,
-			Subject:    "negative.",
-		},
-		{
-			Name: "unparsable test date",
-			Verification: VerificationCode{
-				Code:      "00000006",
-				Claimed:   false,
-				TestType:  "confirmed",
-				TestDate:  &testDate,
-				ExpiresAt: time.Now().Add(time.Hour),
-			},
-			ClaimError: ErrTokenMetadataMismatch.Error(),
-			TokenAge:   time.Hour,
-			Subject:    "confirmed.December 25, 2019",
+			Subject:    &Subject{"negative", nil},
 		},
 		{
 			Name: "wrong test date",
 			Verification: VerificationCode{
-				Code:      "00000007",
-				Claimed:   false,
-				TestType:  "confirmed",
-				TestDate:  &testDate,
-				ExpiresAt: time.Now().Add(time.Hour),
+				Code:        "00000007",
+				Claimed:     false,
+				TestType:    "confirmed",
+				SymptomDate: &symptomDate,
+				ExpiresAt:   time.Now().Add(time.Hour),
 			},
 			ClaimError: ErrTokenMetadataMismatch.Error(),
 			TokenAge:   time.Hour,
-			Subject:    "confirmed." + testDate.Add(48*time.Hour).Format("2006-01-02"),
+			Subject:    &Subject{"confirmed", &wrongSymptomDate},
 		},
 	}
 
@@ -162,8 +189,8 @@ func TestIssueToken(t *testing.T) {
 				if tok.TestType != tc.Verification.TestType {
 					t.Errorf("test type missmatch want: %v, got %v", tc.Verification.TestType, tok.TestType)
 				}
-				if tok.FormatTestDate() != tc.Verification.FormatTestDate() {
-					t.Errorf("test date missmatch want: %v, got %v", tc.Verification.FormatTestDate(), tok.FormatTestDate())
+				if tok.FormatSymptomDate() != tc.Verification.FormatSymptomDate() {
+					t.Errorf("test date missmatch want: %v, got %v", tc.Verification.FormatSymptomDate(), tok.FormatSymptomDate())
 				}
 
 				got, err := db.FindTokenByID(tok.TokenID)
@@ -179,9 +206,12 @@ func TestIssueToken(t *testing.T) {
 					time.Sleep(tc.Delay)
 				}
 
-				subject := tc.Verification.TestType + "." + tc.Verification.FormatTestDate()
-				if tc.Subject != "" {
+				subject := &Subject{TestType: tc.Verification.TestType, SymptomDate: tc.Verification.SymptomDate}
+				if tc.Subject != nil {
 					subject = tc.Subject
+				}
+				if err != nil {
+					t.Fatalf("unable to parse subject: %v", err)
 				}
 				if err := db.ClaimToken(got.TokenID, subject); err != nil && tc.ClaimError == "" {
 					t.Fatalf("unexpected error claiming token: %v", err)

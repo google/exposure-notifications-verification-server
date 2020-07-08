@@ -47,13 +47,13 @@
       </div>
 
       <div class="row form-group">
-        <label for="testDate" class="col-sm-3">Test date</label>
+        <label for="symptomDate" class="col-sm-3">Symptom Onset Date</label>
         <div class="col-sm-9">
           <div class="datepicker date input-group p-0 shadow-sm">
-            <input type="date" id="testDate" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+            <input type="date" id="symptomDate" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
           </div>
           <small class="form-text text-muted">
-            Optional, cannot be more than 14 days prior to today. This system is based on
+            <strong>Recommended</strong>: cannot be more than {{.maxSymptomDays}} days prior to today. This system is based on
             <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC</a> dates, you may need to adjust accordingly.
             The current UTC date is <strong>{{.maxDate}}</strong>.
           </small>
@@ -152,7 +152,7 @@
       $("#startover").on('click', function() {
         // Hide the previously issued code and enable the submit button.
         $("#codearea").hide()
-        $("#testDate").val("")
+        $("#symptomDate").val("")
         $("#submit").prop('disabled', false);
         $("#vercode").text("")
         $("#expiresAt").text("")

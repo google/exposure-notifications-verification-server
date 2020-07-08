@@ -118,6 +118,43 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				return nil
 			},
 		},
+		{
+			ID: "00007-AddSymptomOnset",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Info("db migrations: rename test_date to symptom_date")
+				// AutoMigrate will add missing fields.
+				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
+					return err
+				}
+				// If not upgrading from an old version, this column will have never been created.
+				if tx.NewScope(&VerificationCode{}).HasColumn("test_date") {
+					if err := tx.Model(&VerificationCode{}).DropColumn("test_date").Error; err != nil {
+						return err
+					}
+				}
+
+				if err := tx.AutoMigrate(&Token{}).Error; err != nil {
+					return err
+				}
+				// If not upgrading from an old version, this column will have never been created.
+				if tx.NewScope(&Token{}).HasColumn("test_date") {
+					if err := tx.Model(&Token{}).DropColumn("test_date").Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				logger.Info("db migrations: rename symptom_date to test_date")
+				if err := tx.Model(&VerificationCode{}).DropColumn("symptom_date").Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&Token{}).DropColumn("symptom_date").Error; err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	})
 
 	logger.Infof("database migrations complete")

@@ -26,7 +26,8 @@ import (
 )
 
 const (
-	tokenBytes = 96
+	tokenBytes     = 96
+	intervalLength = 10 * time.Minute
 )
 
 var (
@@ -40,24 +41,71 @@ var (
 // Token represents an issued "long term" from a validated verification code.
 type Token struct {
 	gorm.Model
-	TokenID   string `gorm:"type:varchar(200); unique_index"`
-	TestType  string `gorm:"type:varchar(20)"`
-	TestDate  *time.Time
-	Used      bool `gorm:"default:false"`
-	ExpiresAt time.Time
+	TokenID     string `gorm:"type:varchar(200); unique_index"`
+	TestType    string `gorm:"type:varchar(20)"`
+	SymptomDate *time.Time
+	Used        bool `gorm:"default:false"`
+	ExpiresAt   time.Time
 }
 
-// FormatTestDate returns YYYY-MM-DD formatted test date, or "" if nil.
-func (t *Token) FormatTestDate() string {
-	if t.TestDate == nil {
+// Subject represents the data that is used in the 'sub' field of the token JWT.
+type Subject struct {
+	TestType    string
+	SymptomDate *time.Time
+}
+
+func (s *Subject) String() string {
+	datePortion := ""
+	if s.SymptomDate != nil {
+		datePortion = s.SymptomDate.Format("2006-01-02")
+	}
+	return s.TestType + "." + datePortion
+}
+
+func (s *Subject) SymptomInterval() uint32 {
+	if s.SymptomDate == nil {
+		return 0
+	}
+	return uint32(s.SymptomDate.UTC().Truncate(oneDay).Unix() / int64(intervalLength.Seconds()))
+}
+
+func ParseSubject(sub string) (*Subject, error) {
+	parts := strings.Split(sub, ".")
+	if length := len(parts); length < 1 || length > 2 {
+		return nil, fmt.Errorf("subject must contain 2 parts, got: %v", length)
+	}
+	var symptomDate *time.Time
+	if parts[1] != "" {
+		parsedDate, err := time.Parse("2006-01-02", parts[1])
+		if err != nil {
+			return nil, fmt.Errorf("subject contains invalid symptom date: %w", err)
+		}
+		symptomDate = &parsedDate
+	}
+	return &Subject{
+		TestType:    parts[0],
+		SymptomDate: symptomDate,
+	}, nil
+}
+
+// FormatSymptomDate returns YYYY-MM-DD formatted test date, or "" if nil.
+func (t *Token) FormatSymptomDate() string {
+	if t.SymptomDate == nil {
 		return ""
 	}
-	return t.TestDate.Format("2006-01-02")
+	return t.SymptomDate.Format("2006-01-02")
+}
+
+func (t *Token) Subject() *Subject {
+	return &Subject{
+		TestType:    t.TestType,
+		SymptomDate: t.SymptomDate,
+	}
 }
 
 // ClaimToken looks up the token by ID, verifies that it is not expired and that
 // the specified subject matches the parameters that were configured when issued.
-func (db *Database) ClaimToken(tokenID, subject string) error {
+func (db *Database) ClaimToken(tokenID string, subject *Subject) error {
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		var tok Token
 		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("token_id = ?", tokenID).First(&tok).Error; err != nil {
@@ -72,22 +120,14 @@ func (db *Database) ClaimToken(tokenID, subject string) error {
 			return ErrTokenUsed
 		}
 
-		// The subject is made up of testtype.testdate
-		parts := strings.Split(subject, ".")
-		if length := len(parts); length < 1 || length > 2 {
+		// The subject is made up of testtype.symptomDate
+		if tok.TestType != subject.TestType {
 			return ErrTokenMetadataMismatch
 		}
-		if tok.TestType != parts[0] {
+		if (tok.SymptomDate == nil && subject.SymptomDate != nil) ||
+			(tok.SymptomDate != nil && subject.SymptomDate == nil) ||
+			(tok.SymptomDate != nil && !tok.SymptomDate.Equal(*subject.SymptomDate)) {
 			return ErrTokenMetadataMismatch
-		}
-		if len(parts) == 2 {
-			testDate, err := time.Parse("2006-01-02", parts[1])
-			if err != nil {
-				return ErrTokenMetadataMismatch
-			}
-			if tok.TestDate == nil || !tok.TestDate.Equal(testDate) {
-				return ErrTokenMetadataMismatch
-			}
 		}
 
 		tok.Used = true
@@ -133,11 +173,11 @@ func (db *Database) VerifyCodeAndIssueToken(verCode string, expireAfter time.Dur
 
 		// Issue the token. Take the generated value and create a new long term token.
 		tok = &Token{
-			TokenID:   tokenID,
-			TestType:  vc.TestType,
-			TestDate:  vc.TestDate,
-			Used:      false,
-			ExpiresAt: time.Now().UTC().Add(expireAfter),
+			TokenID:     tokenID,
+			TestType:    vc.TestType,
+			SymptomDate: vc.SymptomDate,
+			Used:        false,
+			ExpiresAt:   time.Now().UTC().Add(expireAfter),
 		}
 
 		return db.db.Create(tok).Error
