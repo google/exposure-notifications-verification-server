@@ -46,12 +46,12 @@ func GenerateCode(length uint) (string, error) {
 
 // Request represents the parameters of a verification code request.
 type Request struct {
-	DB          *database.Database
-	Length      uint
-	ExpiresAt   time.Time
-	TestType    string
-	SymptomDate *time.Time
-	MaxTestAge  time.Duration
+	DB            *database.Database
+	Length        uint
+	ExpiresAt     time.Time
+	TestType      string
+	SymptomDate   *time.Time
+	MaxSymptomAge time.Duration
 }
 
 // Issue wiill generate a verification code and save it to the database, based
@@ -74,7 +74,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, error) {
 			ExpiresAt:   o.ExpiresAt,
 		}
 		// If a verification code already exists, it will fail to save, and we retry.
-		if err := o.DB.SaveVerificationCode(&verificationCode, o.MaxTestAge); err != nil {
+		if err := o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {
 			logger.Warnf("duplicate OTP found: %v", err)
 			continue
 		} else {

@@ -19,6 +19,7 @@ package home
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -43,7 +44,7 @@ type homeController struct {
 
 // New creates a new controller for the home page.
 func New(ctx context.Context, config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
-	pastDaysDuration := -1 * config.AllowedTestAge
+	pastDaysDuration := -1 * config.AllowedSymptomAge
 
 	return &homeController{
 		config:           config,
@@ -73,6 +74,7 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
 	m["maxDate"] = now.Format("2006-01-02")
 	m["minDate"] = now.Add(hc.pastDaysDuration).Format("2006-01-02")
+	m["maxSymptomDays"] = fmt.Sprintf("%.1f", hc.pastDaysDuration.Hours()/24.0)
 	m["duration"] = hc.config.CodeDuration.String()
 	m["user"] = user
 	hc.html.Render(w, "home", m)

@@ -76,7 +76,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Max date is today (local time) and min date is AllowedTestAge ago, truncated.
 	maxDate := time.Now().Local()
-	minDate := maxDate.Add(-1 * ic.config.AllowedTestAge).Truncate(24 * time.Hour)
+	minDate := maxDate.Add(-1 * ic.config.AllowedSymptomAge).Truncate(24 * time.Hour)
 
 	var symptomDate *time.Time
 	if request.SymptomDate != "" {
@@ -101,12 +101,12 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Generate verification code
 	codeRequest := otp.Request{
-		DB:          ic.db,
-		Length:      ic.config.CodeDigits,
-		ExpiresAt:   expiryTime,
-		TestType:    request.TestType,
-		SymptomDate: symptomDate,
-		MaxTestAge:  ic.config.AllowedTestAge,
+		DB:            ic.db,
+		Length:        ic.config.CodeDigits,
+		ExpiresAt:     expiryTime,
+		TestType:      request.TestType,
+		SymptomDate:   symptomDate,
+		MaxSymptomAge: ic.config.AllowedSymptomAge,
 	}
 
 	code, err := codeRequest.Issue(ctx, ic.config.CollisionRetryCount)

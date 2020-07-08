@@ -122,7 +122,7 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 			ID: "00007-AddSymptomOnset",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Info("db migrations: rename test_date to symptom_date")
-				// AutoMigate will add missing fields.
+				// AutoMigrate will add missing fields.
 				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
 					return err
 				}

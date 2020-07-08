@@ -48,7 +48,7 @@ type ServerConfig struct {
 	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
 	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
 	CollisionRetryCount uint          `env:"COLISSION_RETRY_COUNT,default=6"`
-	AllowedTestAge      time.Duration `env:"ALLOWED_PAST_TEST_DAYS,default=336h"` // 336h is 14 days.
+	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
 	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
@@ -88,7 +88,7 @@ func (c *ServerConfig) Validate() error {
 		{c.SessionCookieDuration, "SESSION_DUATION"},
 		{c.RevokeCheckPeriod, "REVOKE_CHECK_DURATION"},
 		{c.CodeDuration, "CODE_DURATION"},
-		{c.AllowedTestAge, "ALLOWED_PAST_TEST_DAYS"},
+		{c.AllowedSymptomAge, "ALLOWED_PAST_SYMPTOM_DAYS"},
 	}
 
 	for _, f := range fields {
