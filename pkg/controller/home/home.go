@@ -35,11 +35,12 @@ import (
 )
 
 type homeController struct {
-	config           *config.ServerConfig
-	db               *database.Database
-	html             *render.HTML
-	logger           *zap.SugaredLogger
-	pastDaysDuration time.Duration
+	config             *config.ServerConfig
+	db                 *database.Database
+	html               *render.HTML
+	logger             *zap.SugaredLogger
+	pastDaysDuration   time.Duration
+	displayAllowedDays string
 }
 
 // New creates a new controller for the home page.
@@ -47,11 +48,12 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 	pastDaysDuration := -1 * config.AllowedSymptomAge
 
 	return &homeController{
-		config:           config,
-		db:               db,
-		html:             html,
-		logger:           logging.FromContext(ctx),
-		pastDaysDuration: pastDaysDuration,
+		config:             config,
+		db:                 db,
+		html:               html,
+		logger:             logging.FromContext(ctx),
+		pastDaysDuration:   pastDaysDuration,
+		displayAllowedDays: fmt.Sprintf("%.0f", config.AllowedSymptomAge.Hours()/24.0),
 	}
 }
 
@@ -74,7 +76,7 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
 	m["maxDate"] = now.Format("2006-01-02")
 	m["minDate"] = now.Add(hc.pastDaysDuration).Format("2006-01-02")
-	m["maxSymptomDays"] = fmt.Sprintf("%.1f", hc.pastDaysDuration.Hours()/24.0)
+	m["maxSymptomDays"] = hc.displayAllowedDays
 	m["duration"] = hc.config.CodeDuration.String()
 	m["user"] = user
 	hc.html.Render(w, "home", m)
