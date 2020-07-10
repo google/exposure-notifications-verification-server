@@ -23,9 +23,6 @@ import (
 	"time"
 
 	firebase "firebase.google.com/go"
-	"github.com/ulule/limiter/v3"
-	limithttp "github.com/ulule/limiter/v3/drivers/middleware/stdlib"
-	"github.com/ulule/limiter/v3/drivers/store/memory"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
@@ -39,6 +36,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/sethvargo/go-limiter/httplimit"
+	"github.com/sethvargo/go-limiter/memorystore"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
@@ -74,11 +73,21 @@ func main() {
 	r := mux.NewRouter()
 
 	// Setup rate limiter
-	limitInstance := limiter.New(memory.NewStore(), limiter.Rate{
-		Period: 1 * time.Minute,
-		Limit:  int64(config.RateLimit),
-	}, limiter.WithTrustForwardHeader(true))
-	r.Use(limithttp.NewMiddleware(limitInstance).Handler)
+	store, err := memorystore.New(&memorystore.Config{
+		Tokens:   config.RateLimit,
+		Interval: 1 * time.Minute,
+	})
+	if err != nil {
+		log.Fatalf("failed to create limiter: %v", err)
+	}
+	defer store.Stop()
+
+	httplimiter, err := httplimit.NewMiddleware(store, httplimit.IPKeyFunc("X-Forwarded-For"))
+	if err != nil {
+		log.Fatalf("failed to create limiter middleware: %v", err)
+	}
+	r.Use(httplimiter.Handle)
+
 	r.Use(html.New(config).Handle)
 	// install the CSRF protection middleware.
 	csrfAuthKey, err := config.CSRFKey()
