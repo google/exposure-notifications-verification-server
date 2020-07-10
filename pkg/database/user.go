@@ -30,6 +30,7 @@ type User struct {
 	Admin           bool   `gorm:"default:false"`
 	Disabled        bool
 	LastRevokeCheck time.Time
+	Realms          []*Realm `gorm:"many2many:user_realms"`
 }
 
 // ListUsers retrieves all of the configured users.

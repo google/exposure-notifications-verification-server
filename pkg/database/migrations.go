@@ -31,11 +31,21 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 		{
 			ID: "00001-CreateUsers",
 			Migrate: func(tx *gorm.DB) error {
+				// This is "out of order" as it were, but is needed to bootstrap fresh systems.
+				// Also in migration 8
+				logger.Infof("db migrations: creating realms table")
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
+
 				logger.Infof("db migrations: creating users table")
 				return tx.AutoMigrate(&User{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("users").Error
+				if err := tx.DropTable("users").Error; err != nil {
+					return err
+				}
+				return tx.DropTable("realms").Error
 			},
 		},
 		{
@@ -192,6 +202,84 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return tx.DropTable("sms_configs").Error
+			},
+		},
+		{
+			ID: "00008-AddRealms",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Info("db migrations: create realms table")
+				// Add the realms table.
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
+				logger.Info("Create the DEFAULT realm")
+				// Create the default realm.
+				defaultRealm := Realm{
+					Name:                   "Default",
+					KeyIDPrefix:            "v_",
+					PublishVerificationKey: true,
+				}
+				if err := tx.Create(&defaultRealm).Error; err != nil {
+					return err
+				}
+
+				// Add realm relations to the rest of the tables.
+				logger.Info("Add RealmID to Users.")
+				if err := tx.AutoMigrate(&User{}).Error; err != nil {
+					return err
+				}
+				logger.Info("Join Users to Default Realm")
+				var users []*User
+				if err := tx.Unscoped().Find(&users).Error; err != nil {
+					return err
+				}
+				for _, u := range users {
+					logger.Infof("added user: %v to default realm", u.ID)
+					defaultRealm.AddUser(u)
+					if u.Admin {
+						defaultRealm.AddAdminUser(u)
+					}
+				}
+
+				logger.Info("Add RealmID to AuthorizedApps.")
+				if err := tx.AutoMigrate(&AuthorizedApp{}).Error; err != nil {
+					return err
+				}
+				var authApps []*AuthorizedApp
+				if err := tx.Unscoped().Find(&authApps).Error; err != nil {
+					return err
+				}
+				for _, a := range authApps {
+					logger.Infof("added auth app: %v to default realm", a.Name)
+					defaultRealm.AddAuthorizedApp(a)
+				}
+
+				if err := tx.Save(&defaultRealm).Error; err != nil {
+					return err
+				}
+
+				logger.Info("Add RealmID to VerificationCodes.")
+				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
+					return err
+				}
+				logger.Info("Join existing VerificationCodes to default realm")
+				if err := tx.Exec("UPDATE verification_codes SET realm_id=?", defaultRealm.ID).Error; err != nil {
+					return err
+				}
+
+				logger.Info("Add RealmID to Tokens.")
+				if err := tx.AutoMigrate(&Token{}).Error; err != nil {
+					return err
+				}
+				logger.Info("Join existing tokens to default realm")
+				if err := tx.Exec("UPDATE tokens SET realm_id=?", defaultRealm.ID).Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
 			},
 		},
 	})

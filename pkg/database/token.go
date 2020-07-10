@@ -46,6 +46,9 @@ type Token struct {
 	SymptomDate *time.Time
 	Used        bool `gorm:"default:false"`
 	ExpiresAt   time.Time
+
+	// Tokens belong to one realm.
+	RealmID uint
 }
 
 // Subject represents the data that is used in the 'sub' field of the token JWT.

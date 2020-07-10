@@ -42,6 +42,9 @@ type AuthorizedApp struct {
 	Name       string      `gorm:"type:varchar(100);unique_index"`
 	APIKey     string      `gorm:"type:varchar(100);unique_index"`
 	APIKeyType APIUserType `gorm:"default:0"`
+
+	// AuthorizedApps belong to exactly one realm.
+	RealmID uint
 }
 
 func (a *AuthorizedApp) IsAdminType() bool {

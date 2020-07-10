@@ -36,7 +36,7 @@ var (
 		"negative":  {},
 	}
 
-	ErrInvalidTestType    = errors.New("invalid test tyupe, must be confirmed, likely, or negative")
+	ErrInvalidTestType    = errors.New("invalid test type, must be confirmed, likely, or negative")
 	ErrCodeAlreadyExpired = errors.New("code already expired")
 	ErrCodeTooShort       = errors.New("verification code must be at least 6 digits")
 	ErrTestTooOld         = errors.New("test date is more than 14 day ago")
@@ -52,6 +52,8 @@ type VerificationCode struct {
 	ExpiresAt   time.Time
 	IssuingUser *User
 	IssuingApp  *AuthorizedApp
+	// VerificationCodes belong to exactly one realm when issued.
+	RealmID uint
 }
 
 // TableName sets the VerificationCode table name
