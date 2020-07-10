@@ -82,7 +82,7 @@ func (c *CoverAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// don't immediatly return.
+	// Don't immediately return.
 	// TODO(mikehelmick) - this should be heursitically valid based on traffic.
 	c.randomDelay()
 
