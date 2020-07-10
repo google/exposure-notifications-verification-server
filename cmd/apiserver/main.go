@@ -18,6 +18,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -29,14 +31,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
+	"github.com/sethvargo/go-limiter/httplimit"
+	"github.com/sethvargo/go-limiter/memorystore"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/ulule/limiter/v3"
-	limithttp "github.com/ulule/limiter/v3/drivers/middleware/stdlib"
-	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
 func main() {
@@ -59,18 +60,28 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	// Setup rate limiter
-	limitInstance := limiter.New(memory.NewStore(), limiter.Rate{
-		Period: 1 * time.Minute,
-		Limit:  int64(config.RateLimit),
-	}, limiter.WithTrustForwardHeader(true))
-	r.Use(limithttp.NewMiddleware(limitInstance).Handler)
 
+	// Setup rate limiter
+	store, err := memorystore.New(&memorystore.Config{
+		Tokens:   config.RateLimit,
+		Interval: 1 * time.Minute,
+	})
+	if err != nil {
+		log.Fatalf("failed to create limiter: %v", err)
+	}
+	defer store.Stop()
+
+	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc())
+	if err != nil {
+		log.Fatalf("failed to create limiter middleware: %v", err)
+	}
+	r.Use(httplimiter.Handle)
+
+	// Setup API auth
 	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
 	if err != nil {
 		log.Fatalf("error establishing API Key cache: %v", err)
 	}
-	// Install the APIKey Auth Middleware
 	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache).Handle)
 
 	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
@@ -87,4 +98,19 @@ func main() {
 	}
 	log.Printf("Listening on: 127.0.0.1:%v", config.Port)
 	log.Fatal(srv.ListenAndServe())
+}
+
+func apiKeyFunc() httplimit.KeyFunc {
+	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
+
+	return func(r *http.Request) (string, error) {
+		v := r.Header.Get("X-API-Key")
+		if v != "" {
+			dig := sha1.Sum([]byte(v))
+			return fmt.Sprintf("%x", dig), nil
+		}
+
+		// If no API key was provided, default to limiting by IP.
+		return ipKeyFunc(r)
+	}
 }
