@@ -99,11 +99,11 @@ type VerificationCertificateResponse struct {
 // This is used to obscure which devices represent someone verifying a diagnosis
 // code or exchanging a certificate.
 type CoverRequest struct {
-	Data string `json:"data"` // random base64 encoded data to obscure packet size.
+	Data string `json:"data"` // random data to obscure packet size (never read by server)
 }
 
 // CoverResponse is the response to CoverRequest requests.
 type CoverResponse struct {
-	Data  string `json:"data"`  // random base64 encoded data to obscure packet size.
+	Data  string `json:"data"` // random base64 encoded data to obscure packet size.
 	Error string `string:"error"`
 }
