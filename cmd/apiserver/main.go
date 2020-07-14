@@ -24,15 +24,14 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/sethvargo/go-limiter/httplimit"
-	"github.com/sethvargo/go-limiter/memorystore"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 
@@ -62,14 +61,11 @@ func main() {
 	r := mux.NewRouter()
 
 	// Setup rate limiter
-	store, err := memorystore.New(&memorystore.Config{
-		Tokens:   config.RateLimit,
-		Interval: 1 * time.Minute,
-	})
+	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
 		log.Fatalf("failed to create limiter: %v", err)
 	}
-	defer store.Stop()
+	defer store.Close()
 
 	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc())
 	if err != nil {

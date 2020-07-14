@@ -115,6 +115,14 @@ resource "google_cloud_run_service" "apiserver" {
         }
 
         dynamic "env" {
+          for_each = local.redis_config
+          content {
+            name  = env.key
+            value = env.value
+          }
+        }
+
+        dynamic "env" {
           for_each = local.signing_config
           content {
             name  = env.key
