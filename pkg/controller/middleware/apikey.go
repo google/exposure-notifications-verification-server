@@ -34,17 +34,21 @@ const (
 )
 
 type APIKeyMiddleware struct {
-	ctx      context.Context
-	db       *database.Database
-	keyCache *cache.Cache
-	adminKey bool
+	ctx          context.Context
+	db           *database.Database
+	keyCache     *cache.Cache
+	allowedTypes map[int]struct{}
 }
 
 // APIKeyAuth returns a gin Middleware function that reads the X-API-Key HTTP header
 // and checkes it against the authorized apps. The provided cache is used as a
 // write through cache.
-func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache, adminKey bool) *APIKeyMiddleware {
-	return &APIKeyMiddleware{ctx, db, keyCache, adminKey}
+func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache, allowedTypes ...int) *APIKeyMiddleware {
+	cfg := APIKeyMiddleware{ctx, db, keyCache, make(map[int]struct{})}
+	for _, t := range allowedTypes {
+		cfg.allowedTypes[t] = struct{}{}
+	}
+	return &cfg
 }
 
 func (a *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
@@ -82,8 +86,8 @@ func (a *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
 			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized: API Key invalid"})
 			return
 		}
-		if authApp.AdminKey != a.adminKey {
-			logger.Errorf("authorized API key is making wrong type of request: admin request: %v admin key: %v", a.adminKey, authApp.AdminKey)
+		if _, ok := a.allowedTypes[authApp.APIKeyType]; !ok {
+			logger.Errorf("authorized API key is making wrong type of request: allowed: %v got: %v", a.allowedTypes, authApp.APIKeyType)
 			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized"})
 			return
 		}

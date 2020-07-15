@@ -24,6 +24,9 @@ import (
 
 const (
 	apiKeyBytes = 64 // 64 bytes is 86 chararacters in non-padded base64.
+
+	APIUserTypeDevice = 0
+	APIUserTypeAdmin  = 1
 )
 
 // AuthorizedApp represents an application that is authorized to verify
@@ -34,9 +37,17 @@ const (
 // the verification protocol.
 type AuthorizedApp struct {
 	gorm.Model
-	Name     string `gorm:"type:varchar(100);unique_index"`
-	APIKey   string `gorm:"type:varchar(100);unique_index"`
-	AdminKey bool   `gorm:"default:false"`
+	Name       string `gorm:"type:varchar(100);unique_index"`
+	APIKey     string `gorm:"type:varchar(100);unique_index"`
+	APIKeyType int    `gorm:"default:0"`
+}
+
+func (a *AuthorizedApp) IsAdminType() bool {
+	return a.APIKeyType == APIUserTypeAdmin
+}
+
+func (a *AuthorizedApp) IsDeviceType() bool {
+	return a.APIKeyType == APIUserTypeDevice
 }
 
 // TODO(mikehelmick): Implement revoke API key functionality.
@@ -64,7 +75,11 @@ func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, e
 
 // CreateAuthorizedApp generates a new APIKey and assigns it to the specified
 // name.
-func (db *Database) CreateAuthorizedApp(name string, admin bool) (*AuthorizedApp, error) {
+func (db *Database) CreateAuthorizedApp(name string, apiUserType int) (*AuthorizedApp, error) {
+	if !(apiUserType == APIUserTypeAdmin || apiUserType == APIUserTypeDevice) {
+		return nil, fmt.Errorf("invalid API Key user type requested: %v", apiUserType)
+	}
+
 	buffer := make([]byte, apiKeyBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -72,9 +87,9 @@ func (db *Database) CreateAuthorizedApp(name string, admin bool) (*AuthorizedApp
 	}
 
 	app := AuthorizedApp{
-		Name:     name,
-		APIKey:   base64.RawStdEncoding.EncodeToString(buffer),
-		AdminKey: admin,
+		Name:       name,
+		APIKey:     base64.RawStdEncoding.EncodeToString(buffer),
+		APIKeyType: apiUserType,
 	}
 	if err := db.db.Create(&app).Error; err != nil {
 		return nil, fmt.Errorf("unable to save authorized app: %w", err)

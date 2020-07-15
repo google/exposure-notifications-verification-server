@@ -31,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/cover"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-limiter/memorystore"
@@ -84,7 +85,7 @@ func main() {
 		log.Fatalf("error establishing API Key cache: %v", err)
 	}
 	// Install the APIKey Auth Middleware
-	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, false /* device keys */).Handle)
+	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, database.APIUserTypeDevice).Handle)
 
 	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
 	if err != nil {

@@ -20,11 +20,11 @@
         </div>
       </div>
       <div class="form-group row">
-        <label for="admin" class="col-sm-3">Admin:</label>
+        <label for="type" class="col-sm-3">API Key Type:</label>
         <div class="col-sm-9">
-          <select class="form-control" name="admin" id="admin">
-            <option value="false">Device Access [Verify Codes]</option>
-            <option value="true">Admin Access [Issue Codes]</option>
+          <select class="form-control" name="type" id="type">
+            <option value="{{.typeDevice}}">Device Access [Verify Codes]</option>
+            <option value="{{.typeAdmin}}">Admin Access [Issue Codes]</option>
           </select>
         </div>
       </div>
@@ -54,8 +54,8 @@
           <tr>
             <td scope="row">{{.Name}}</td>
             <td><code>{{.APIKey}}</code></td>
-            <td>{{if .AdminKey}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" data-placement="top" title="Can be used to issue verification codes">Admin</span>
-                {{else}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" data-placement="top" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
+            <td>{{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" data-placement="top" title="Can be used to issue verification codes">Admin</span>{{end}}
+                {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" data-placement="top" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
             </td>
             <td>{{if .DeletedAt}}<span class="badge badge-pill badge-danger">revoked</span>
                 {{else}}<span class="badge badge-pill badge-success">enabled</span>{{end}}

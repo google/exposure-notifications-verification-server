@@ -62,6 +62,8 @@ func (lc *apikeyListController) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	m["apps"] = apps
 	m["flash"] = flash
+	m["typeAdmin"] = database.APIUserTypeAdmin
+	m["typeDevice"] = database.APIUserTypeDevice
 	m[csrf.TemplateTag] = csrf.TemplateField(r)
 	lc.html.Render(w, "apikeys", m)
 }
