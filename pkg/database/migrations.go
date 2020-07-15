@@ -155,6 +155,19 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				return nil
 			},
 		},
+		{
+			ID: "00008-AddKeyTypes",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: upgrading authorized_apps table.")
+				return tx.AutoMigrate(&AuthorizedApp{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Model(&AuthorizedApp{}).DropColumn("admin_key").Error; err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	})
 
 	logger.Infof("database migrations complete")

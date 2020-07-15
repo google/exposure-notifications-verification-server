@@ -22,17 +22,34 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+type APIUserType int
+
 const (
 	apiKeyBytes = 64 // 64 bytes is 86 chararacters in non-padded base64.
+
+	APIUserTypeDevice APIUserType = 0
+	APIUserTypeAdmin  APIUserType = 1
 )
 
 // AuthorizedApp represents an application that is authorized to verify
 // verification codes and perform token exchanges.
 // This is controlled via a generated API key.
+//
+// Admin Keys are able to issue diagnosis keys and are not able to perticipate
+// the verification protocol.
 type AuthorizedApp struct {
 	gorm.Model
-	Name   string `gorm:"type:varchar(100);unique_index"`
-	APIKey string `gorm:"type:varchar(100);unique_index"`
+	Name       string      `gorm:"type:varchar(100);unique_index"`
+	APIKey     string      `gorm:"type:varchar(100);unique_index"`
+	APIKeyType APIUserType `gorm:"default:0"`
+}
+
+func (a *AuthorizedApp) IsAdminType() bool {
+	return a.APIKeyType == APIUserTypeAdmin
+}
+
+func (a *AuthorizedApp) IsDeviceType() bool {
+	return a.APIKeyType == APIUserTypeDevice
 }
 
 // TODO(mikehelmick): Implement revoke API key functionality.
@@ -60,7 +77,11 @@ func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, e
 
 // CreateAuthorizedApp generates a new APIKey and assigns it to the specified
 // name.
-func (db *Database) CreateAuthorizedApp(name string) (*AuthorizedApp, error) {
+func (db *Database) CreateAuthorizedApp(name string, apiUserType APIUserType) (*AuthorizedApp, error) {
+	if !(apiUserType == APIUserTypeAdmin || apiUserType == APIUserTypeDevice) {
+		return nil, fmt.Errorf("invalid API Key user type requested: %v", apiUserType)
+	}
+
 	buffer := make([]byte, apiKeyBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -68,8 +89,9 @@ func (db *Database) CreateAuthorizedApp(name string) (*AuthorizedApp, error) {
 	}
 
 	app := AuthorizedApp{
-		Name:   name,
-		APIKey: base64.RawStdEncoding.EncodeToString(buffer),
+		Name:       name,
+		APIKey:     base64.RawStdEncoding.EncodeToString(buffer),
+		APIKeyType: apiUserType,
 	}
 	if err := db.db.Create(&app).Error; err != nil {
 		return nil, fmt.Errorf("unable to save authorized app: %w", err)
