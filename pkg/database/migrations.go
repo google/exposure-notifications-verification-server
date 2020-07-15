@@ -174,6 +174,9 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				if err := tx.Model(&Token{}).DropColumn("issuance_against_quota").Error; err != nil {
 					return err
 				}
+				if err := tx.Model(&Token{}).DropColumn("verification_codes_issued").Error; err != nil {
+					return err
+				}
 				return nil
 			},
 		},

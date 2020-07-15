@@ -217,21 +217,24 @@ func (rah *QuotaKeyIssuanceHandler) Handle(next http.Handler) http.Handler {
 				return ErrUserNotFound
 			}
 
-			// Check if a user has exhausted their quota
-
+			// Check if a quota window has lapsed and reset if necessary.
 			if time.Now().After(user.LastQuotaReset.Add(rah.quotaTTL)) {
 				user.LastQuotaReset = time.Now()
 				user.IssuancesAgainstQuota = 0
 			}
 
 			user.IssuancesAgainstQuota++
+			user.VerificationCodesIssued++
 
-			if user.IssuancesAgainstQuota > rah.requestsPerTTL {
-				return fmt.Errorf("No remaining Quota. to update user for quota: %w", err)
-			}
-
+			// Save before checking quota so we have a record of attempted
+			// creations by a user account.
 			if err := rah.db.SaveUser(user); err != nil {
 				return fmt.Errorf("Failed to update user for quota: %w", err)
+			}
+
+			// Check if a user has exhausted their quota
+			if user.IssuancesAgainstQuota > rah.requestsPerTTL {
+				return fmt.Errorf("No remaining quota for current user")
 			}
 
 			return nil
