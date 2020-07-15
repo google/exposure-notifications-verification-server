@@ -83,7 +83,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("error establishing API Key cache: %v", err)
 	}
-	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache).Handle)
+	// Install the APIKey Auth Middleware
+	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, false /* device keys */).Handle)
 
 	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
 	if err != nil {

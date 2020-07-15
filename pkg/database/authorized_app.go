@@ -29,10 +29,14 @@ const (
 // AuthorizedApp represents an application that is authorized to verify
 // verification codes and perform token exchanges.
 // This is controlled via a generated API key.
+//
+// Admin Keys are able to issue diagnosis keys and are not able to perticipate
+// the verification protocol.
 type AuthorizedApp struct {
 	gorm.Model
-	Name   string `gorm:"type:varchar(100);unique_index"`
-	APIKey string `gorm:"type:varchar(100);unique_index"`
+	Name     string `gorm:"type:varchar(100);unique_index"`
+	APIKey   string `gorm:"type:varchar(100);unique_index"`
+	AdminKey bool   `gorm:"default:false"`
 }
 
 // TODO(mikehelmick): Implement revoke API key functionality.
@@ -60,7 +64,7 @@ func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, e
 
 // CreateAuthorizedApp generates a new APIKey and assigns it to the specified
 // name.
-func (db *Database) CreateAuthorizedApp(name string) (*AuthorizedApp, error) {
+func (db *Database) CreateAuthorizedApp(name string, admin bool) (*AuthorizedApp, error) {
 	buffer := make([]byte, apiKeyBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -68,8 +72,9 @@ func (db *Database) CreateAuthorizedApp(name string) (*AuthorizedApp, error) {
 	}
 
 	app := AuthorizedApp{
-		Name:   name,
-		APIKey: base64.RawStdEncoding.EncodeToString(buffer),
+		Name:     name,
+		APIKey:   base64.RawStdEncoding.EncodeToString(buffer),
+		AdminKey: admin,
 	}
 	if err := db.db.Create(&app).Error; err != nil {
 		return nil, fmt.Errorf("unable to save authorized app: %w", err)
