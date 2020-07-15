@@ -155,6 +155,28 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				return nil
 			},
 		},
+		{
+			ID: "00008-AddUserIssuanceQuota",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Info("db migrations: add quota to users")
+				// AutoMigrate will add missing fields.
+				if err := tx.AutoMigrate(&User{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				logger.Info("db migrations: add quota to users")
+
+				if err := tx.Model(&User{}).DropColumn("last_quota_reset").Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&Token{}).DropColumn("issuance_against_quota").Error; err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	})
 
 	logger.Infof("database migrations complete")

@@ -165,3 +165,87 @@ func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 		}
 	})
 }
+
+type QuotaKeyIssuanceHandler struct {
+	ctx            context.Context
+	client         *auth.Client
+	db             *database.Database
+	quotaTTL       time.Duration // frequency of quota reset
+	requestsPerTTL int           // count of requests over the ttl window.
+	logger         *zap.SugaredLogger
+}
+
+// QuotaKeyIssuance requires a user is authenticated using firebase auth, that such
+// a user exists in the database, and that said user has not made too many
+// requests
+func QuotaKeyIssuance(ctx context.Context, client *auth.Client, db *database.Database, ttl time.Duration, requestsPerTTL int) *QuotaKeyIssuanceHandler {
+	logger := logging.FromContext(ctx)
+	return &QuotaKeyIssuanceHandler{ctx, client, db, ttl, requestsPerTTL, logger}
+}
+
+func (rah *QuotaKeyIssuanceHandler) Handle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			// Get the cookie
+			cookie, err := r.Cookie("session")
+			if err != nil {
+				return fmt.Errorf("failed to get cookie: %w", err)
+			}
+
+			// Verify cookie
+			token, err := rah.client.VerifySessionCookie(rah.ctx, cookie.Value)
+			if err != nil {
+				return fmt.Errorf("failed to verify session cookie: %w", err)
+			}
+
+			// Get the email
+			emailRaw, ok := token.Claims["email"]
+			if !ok {
+				// s.DestroySession(c) // TODO
+				return fmt.Errorf("session is missing email")
+			}
+
+			// Convert to string
+			email, ok := emailRaw.(string)
+			if !ok {
+				return fmt.Errorf("email is not a string")
+			}
+
+			// Lookup the user by email
+			user, err := rah.db.FindUser(email)
+			if err != nil || user == nil {
+				return ErrUserNotFound
+			}
+
+			// Check if a user has exhausted their quota
+
+			if time.Now().After(user.LastQuotaReset.Add(rah.quotaTTL)) {
+				user.LastQuotaReset = time.Now()
+				user.IssuancesAgainstQuota = 0
+			}
+
+			user.IssuancesAgainstQuota++
+
+			if user.IssuancesAgainstQuota > rah.requestsPerTTL {
+				return fmt.Errorf("No remaining Quota. to update user for quota: %w", err)
+			}
+
+			if err := rah.db.SaveUser(user); err != nil {
+				return fmt.Errorf("Failed to update user for quota: %w", err)
+			}
+
+			return nil
+		}(); err != nil {
+			rah.logger.Errorw("QuotaKeyIssuance", "error", err)
+
+			if controller.IsJSONContentType(r) {
+				controller.WriteJSON(w, http.StatusTooManyRequests, nil)
+			} else {
+				flash.FromContext(w, r).Error("Quota Exceeded or Unauthorized")
+				http.Redirect(w, r, "/signout", http.StatusFound)
+			}
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
+}

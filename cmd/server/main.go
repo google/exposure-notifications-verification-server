@@ -112,12 +112,18 @@ func main() {
 		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
 		sub.Handle("", home.New(ctx, config, db, renderHTML)).Methods("GET")
 
-		// API for creating new verification codes. Called via AJAX.
-		sub.Handle("/issue", issueapi.New(ctx, config, db)).Methods("POST")
-
 		// API for obtaining a CSRF token before calling /issue
 		// Installed in this context, it requires authentication.
 		sub.Handle("/csrf", csrfctl.NewCSRFAPI()).Methods("GET")
+
+		issueSub := sub.PathPrefix("/issue").Subrouter()
+		// TODO(crwilcox): add these to the config.
+		quotaTTL := 60 * time.Second
+		issuancesPerTTL := 1
+		issueSub.Use(middleware.QuotaKeyIssuance(ctx, auth, db, quotaTTL, issuancesPerTTL).Handle)
+
+		// API for creating new verification codes. Called via AJAX.
+		issueSub.Handle("", issueapi.New(ctx, config, db)).Methods("POST")
 	}
 
 	// Admin pages, requires admin auth
