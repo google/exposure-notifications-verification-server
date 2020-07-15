@@ -43,6 +43,16 @@ locals {
     FIREBASE_STORAGE_BUCKET    = lookup(data.google_firebase_web_app_config.default, "storage_bucket")
   }
 
+  redis_config = {
+    RATE_LIMIT_TYPE     = "REDIS"
+    RATE_LIMIT_TOKENS   = "60"
+    RATE_LIMIT_INTERVAL = "1m"
+    REDIS_HOST          = google_redis_instance.cache.host
+    REDIS_PORT          = google_redis_instance.cache.port
+    REDIS_MIN_POOL      = 32
+    REDIS_MAX_POOL      = 128
+  }
+
   signing_config = {
     CERTIFICATE_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
     TOKEN_SIGNING_KEY       = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")

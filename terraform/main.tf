@@ -39,6 +39,7 @@ resource "google_project_service" "services" {
     "containerregistry.googleapis.com",
     "firebase.googleapis.com",
     "iam.googleapis.com",
+    "redis.googleapis.com",
     "run.googleapis.com",
     "secretmanager.googleapis.com",
     "servicenetworking.googleapis.com",
@@ -74,11 +75,11 @@ resource "google_service_networking_connection" "private_vpc_connection" {
 }
 
 resource "google_vpc_access_connector" "connector" {
-  project       = var.project
-  name          = "serverless-vpc-connector"
-  region        = var.region
-  network       = "default"
-  ip_cidr_range = "10.8.0.0/28"
+  project        = var.project
+  name           = "serverless-vpc-connector"
+  region         = var.region
+  network        = "default"
+  ip_cidr_range  = "10.8.0.0/28"
   max_throughput = var.vpc_access_connector_max_throughput
 
   depends_on = [
