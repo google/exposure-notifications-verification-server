@@ -37,14 +37,14 @@ type APIKeyMiddleware struct {
 	ctx          context.Context
 	db           *database.Database
 	keyCache     *cache.Cache
-	allowedTypes map[int]struct{}
+	allowedTypes map[database.APIUserType]struct{}
 }
 
 // APIKeyAuth returns a gin Middleware function that reads the X-API-Key HTTP header
 // and checkes it against the authorized apps. The provided cache is used as a
 // write through cache.
-func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache, allowedTypes ...int) *APIKeyMiddleware {
-	cfg := APIKeyMiddleware{ctx, db, keyCache, make(map[int]struct{})}
+func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache, allowedTypes ...database.APIUserType) *APIKeyMiddleware {
+	cfg := APIKeyMiddleware{ctx, db, keyCache, make(map[database.APIUserType]struct{})}
 	for _, t := range allowedTypes {
 		cfg.allowedTypes[t] = struct{}{}
 	}

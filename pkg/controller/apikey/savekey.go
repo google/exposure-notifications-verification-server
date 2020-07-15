@@ -34,8 +34,8 @@ type apikeySaveController struct {
 }
 
 type formData struct {
-	Name string `form:"name"`
-	Type int    `form:"type"`
+	Name string               `form:"name"`
+	Type database.APIUserType `form:"type"`
 }
 
 func NewSaveController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
