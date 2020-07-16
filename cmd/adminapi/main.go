@@ -27,12 +27,10 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/cover"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-limiter/memorystore"
 
@@ -44,7 +42,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	config, err := config.NewAPIServerConfig(ctx)
+	config, err := config.NewAdminAPIServerConfig(ctx)
 	if err != nil {
 		log.Fatalf("config error: %v", err)
 	}
@@ -54,12 +52,6 @@ func main() {
 		log.Fatalf("db connection failed: %v", err)
 	}
 	defer db.Close()
-
-	// Setup signer
-	signer, err := gcpkms.New(ctx)
-	if err != nil {
-		log.Fatalf("error creating KeyManager: %v", err)
-	}
 
 	r := mux.NewRouter()
 
@@ -85,15 +77,9 @@ func main() {
 		log.Fatalf("error establishing API Key cache: %v", err)
 	}
 	// Install the APIKey Auth Middleware
-	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, database.APIUserTypeDevice).Handle)
+	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, database.APIUserTypeAdmin).Handle)
 
-	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
-	if err != nil {
-		log.Fatalf("error establishing Public Key Cache: %v", err)
-	}
-
-	r.Handle("/api/verify", verifyapi.New(ctx, config, db, signer)).Methods("POST")
-	r.Handle("/api/certificate", certapi.New(ctx, config, db, signer, publicKeyCache)).Methods("POST")
+	r.Handle("/api/issue", issueapi.New(ctx, config, db)).Methods("POST")
 	r.Handle("/api/cover", cover.New(ctx)).Methods("POST")
 
 	srv := &http.Server{

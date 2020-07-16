@@ -48,7 +48,7 @@ type CSRFResponse struct {
 // API is served at /api/issue
 type IssueCodeRequest struct {
 	TestType    string `json:"testType"`
-	SymptomDate string `json:"symptomDate"`
+	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
