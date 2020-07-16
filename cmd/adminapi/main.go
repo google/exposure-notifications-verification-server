@@ -63,7 +63,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create limiter: %v", err)
 	}
-	defer store.Stop()
+	defer store.Close()
 
 	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc())
 	if err != nil {
