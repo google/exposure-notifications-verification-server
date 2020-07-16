@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
@@ -41,13 +40,12 @@ const (
 
 // CoverAPI is an http.Handler for servering CoverRequest API calls.
 type CoverAPI struct {
-	config *config.APIServerConfig
 	logger *zap.SugaredLogger
 }
 
 // New creates a new CoverAPI.
-func New(ctx context.Context, config *config.APIServerConfig) http.Handler {
-	return &CoverAPI{config, logging.FromContext(ctx)}
+func New(ctx context.Context) http.Handler {
+	return &CoverAPI{logging.FromContext(ctx)}
 }
 
 func (c *CoverAPI) randomDelay() {

@@ -28,6 +28,8 @@ import (
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
 )
 
+var _ IssueAPIConfig = (*ServerConfig)(nil)
+
 // ServerConfig represents the environment based config for the server.
 type ServerConfig struct {
 	Firebase FirebaseConfig
@@ -101,6 +103,22 @@ func (c *ServerConfig) Validate() error {
 	}
 
 	return nil
+}
+
+func (c *ServerConfig) GetColissionRetryCount() uint {
+	return c.CollisionRetryCount
+}
+
+func (c *ServerConfig) GetAllowedSymptomAge() time.Duration {
+	return c.AllowedSymptomAge
+}
+
+func (c *ServerConfig) GetVerificationCodeDuration() time.Duration {
+	return c.CodeDuration
+}
+
+func (c *ServerConfig) GetVerficationCodeDigits() uint {
+	return c.CodeDigits
 }
 
 // FirebaseConfig represents configuration specific to firebase auth.
