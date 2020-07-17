@@ -22,10 +22,13 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	firebase "firebase.google.com/go"
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
 )
+
+var _ IssueAPIConfig = (*ServerConfig)(nil)
 
 // ServerConfig represents the environment based config for the server.
 type ServerConfig struct {
@@ -49,13 +52,15 @@ type ServerConfig struct {
 	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
 	CollisionRetryCount uint          `env:"COLISSION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
-	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
 	// If Dev mode is true, cookies aren't required to be sent over secure channels.
 	// This includes CSRF protection base cookie. You want this false in production (the default).
 	DevMode bool `env:"DEV_MODE"`
+
+	// Rate limiting configuration
+	RateLimit ratelimit.Config
 }
 
 // NewServerConfig initializes and validates a ServerConfig struct.
@@ -98,6 +103,22 @@ func (c *ServerConfig) Validate() error {
 	}
 
 	return nil
+}
+
+func (c *ServerConfig) GetColissionRetryCount() uint {
+	return c.CollisionRetryCount
+}
+
+func (c *ServerConfig) GetAllowedSymptomAge() time.Duration {
+	return c.AllowedSymptomAge
+}
+
+func (c *ServerConfig) GetVerificationCodeDuration() time.Duration {
+	return c.CodeDuration
+}
+
+func (c *ServerConfig) GetVerficationCodeDigits() uint {
+	return c.CodeDigits
 }
 
 // FirebaseConfig represents configuration specific to firebase auth.

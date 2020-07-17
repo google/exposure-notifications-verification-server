@@ -48,7 +48,7 @@ type CSRFResponse struct {
 // API is served at /api/issue
 type IssueCodeRequest struct {
 	TestType    string `json:"testType"`
-	SymptomDate string `json:"symptomDate"`
+	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
@@ -93,4 +93,17 @@ type VerificationCertificateRequest struct {
 type VerificationCertificateResponse struct {
 	Certificate string `json:"certificate"`
 	Error       string `json:"error"`
+}
+
+// CoverRequest is a client->server request for simulating traffic to the server.
+// This is used to obscure which devices represent someone verifying a diagnosis
+// code or exchanging a certificate.
+type CoverRequest struct {
+	Data string `json:"data"` // random data to obscure packet size (never read by server)
+}
+
+// CoverResponse is the response to CoverRequest requests.
+type CoverResponse struct {
+	Data  string `json:"data"` // random base64 encoded data to obscure packet size.
+	Error string `string:"error"`
 }

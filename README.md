@@ -30,21 +30,27 @@ for the verification system, this server:
 	 * Please see the documentation for the [HMAC Calculation](https://developers.google.com/android/exposure-notifications/verification-system#hmac-calc)
 	 * The Verification Certificate is also a JWT
 
+![Verification Flow](https://developers.google.com/android/exposure-notifications/images/verification-certificate-hmac-flow-diagram.png)
+
 Architecture details
 
-* Single server (located in `cmd/server`) that provides all functionality
-  * The server is stateless and suitable for autoscaled serverless container
-	  environments.
+* 4 services combine to make this application. All servers are intended to be
+  deployed in an autoscaled serverless environment.
+  * `cmd/server` - Web UI for creating verification codes
+  * `cmd/apiserver` - Server for mobile device applications to do verification
+  * `cmd/adminapi` - Server for connecting existing PHA applications to the
+     verification system. [Optional component]
+  * `cmd/cleanup` - Server for cleaning up old data. Required in order to
+    recycle and reuse verification codes over a longer period of time.
 * PostgreSQL database for shared state
   * This codebase utilizes [GORM](https://gorm.io/), so it is possible to
 	  easily switch to another supported SQL database.
+* Redis cache used for distributed rate limiting.
 * Relies on Firebase Authentication for handling of identity / login
  * As is, this project is configured to use username/password based login, but
    can easily be configured to use any firebase supported identity provider.
 
-
 ## Configuring your Development Environment for Running Locally
-
 
 ```shell
 gcloud auth login && gcloud auth application-default login
@@ -108,16 +114,120 @@ go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin 
 go run ./cmd/server
 ```
 
-## Other Tools
+## API Access
 
-From the UI, you can issue and `API KEY` for making API requests.
+Access to the [APIs](https://github.com/google/exposure-notifications-verification-server/blob/main/pkg/api/api.go)
+is controlled through API keys. Users with Admin access are able to issue API
+keys and API keys have one of two levels of access: `DEVICE` or `ADMIN`.
 
-There are two tools for testing the end to end flow.
+* `DEVICE` - Intended for a mobile application to call the `cmd/apiserver` to
+  to the two step verification protocol to exchange verification codes for
+  verification tokens, and verification tokens for verification certificates.
 
-1. `go run ./cmd/get-token` to exchange the verification code for a verification
-token.
-2. `go run ./cmd/get-certificate` to exchange the verification token for a
-verification certificate.
+* `ADMIN` - Intended for public health authority internal applications to
+  integrate with this server. _Additional protection is recommended, i.e.
+  service mesh or external authentication._
+
+### API Guide for App Developers
+
+For application developers, there are three APIs that are homed in the
+`cmd/apiserver` that need to be utilized. All APIs are JSON over HTTP, only use
+`POST`, and require that the API key be passed in the HTTP header `X-API-Key`.
+The APIs are as follows.
+
+1. `/api/verify` - Exchange a verification code for a long term verification
+  token.
+  * VerifyCodeRequest:
+  ```json
+  {
+    "code": "<the code>"
+  }
+  ```
+  * VerifyCodeResponse:
+  ```json
+  {
+    "TestType": "<test type string>",
+    "SymptomDate": "YYYY-MM-DD",
+    "VerificationToken": "<JWT verification token>",
+    "Error": ""
+  }
+  ```
+2. `/api/certificate` - Exchange a verification token for a verification certificate (for key server)
+  * VerificationCertificateRequest:
+  ```json
+  {
+    "VerificationToken": "token from verifyCodeResponse",
+    "ekeyhmac": "hmac of exposure keys"
+  }
+  ```
+  * VerificationCertificateResponse:
+  ```json
+  {
+    "Certificate": "<JWT verification certificate>",
+    "Error": ""
+  }
+  ```
+3. `/api/cover` - Send request from the device to the PHA server to "cover" the traffic. All devices in a region should connect to the
+server multiple times per day to simulate token exchange.
+  * CoverRequest:
+  ```json
+  {
+    "Data": "<random string data>"
+  }
+  ```
+  * CoverResponse:
+  ```json
+  {
+    "Data": "random base64 encoded data",
+    "Error": ""
+  }
+  ```
+
+
+### Test Utilities
+
+Using an Admin API key, one can request verification codes using
+`cmd/get-token`.
+
+```shell
+go run ./cmd/get-code --type="confirmed" --onset="2020-07-14" --apikey="<ADMIN API KEY>"
+```
+
+From there, there are two tools that can be used to complete the code->token->certificate
+exchange. To exchange the verification code for the verification token.
+
+```shell
+go run ./cmd/get-token --apikey="<DEVICE API KEY>" --code="<verificationCode>"
+```
+
+And to exchange the token for a verification certificate.
+
+```shell
+go run ./cmd/get-certificate --apikey="<DEVICE API KEY>" --token="<TOKEN FROM ABOVE>" --hmac="<HMAC TEKs to Certify>"
+```
+
+A complete end to end example:
+
+```shell
+exposure-notifications-verification-server on 🌱 readme [$!] via 🐹 v1.14.2
+❯ go run ./cmd/get-code --apikey="BXlIlWxg3zgwDRPIVKF9QVshUbibOHI4cVsmXzxtJVx5FsBsr4/BNVSqzdaHXhEyAGf0X+xRp3rah9qipPB2kg" --type="likely" --onset="2020-07-10"
+2020/07/16 13:56:51 Sending: {TestType:likely SymptomDate:2020-07-10}
+2020/07/16 13:56:51 Result:
+{VerificationCode:14404755 ExpiresAt:Thu, 16 Jul 2020 14:56:51 PDT Error:}
+
+exposure-notifications-verification-server on 🌱 readme [$!] via 🐹 v1.14.2
+❯ go run ./cmd/get-token --apikey="i9UhDG3kYj3eW0CslXMXujPJfbzJ0mJlLDN8zdFYiiDR6hrOrTm0UFSE6JSbW5qb9Af3/B+U+3nkmIxeopoMXA" --code="14404755"
+2020/07/16 13:57:40 Sending: {VerificationCode:14404755}
+2020/07/16 13:57:41 Result:
+{TestType:likely SymptomDate:2020-07-10 VerificationToken:eyJhbGciOiJFUzI1NiIsImtpZCI6InYxIiwidHlwIjoiSldUIn0.eyJhdWQiOiJkaWFnbm9zaXMtdmVyaWZpY2F0aW9uLWV4YW1wbGUiLCJleHAiOjE1OTUwMTk0NjEsImp0aSI6Im5BbVdJKzVnZDRuSG0wcnJiOGRGWUVwUExDdFpaK2dMOXZ5YjVCcDJIdmVHTndmeHV5ZS9rU2x2Q2NhSGovWEwrelh5K1U1L3JpdFh1SGt1eGtvc3dLam13ZlJ0ZUpRQWpqeEdYazV5cFpPeENySGM2Z1ZVZTdxdVVNZFVkRkpBIiwiaWF0IjoxNTk0OTMzMDYxLCJpc3MiOiJkaWFnbm9zaXMtdmVyaWZpY2F0aW9uLWV4YW1wbGUiLCJzdWIiOiJsaWtlbHkuMjAyMC0wNy0xMCJ9.mxMsCwRUc6AtHNNjf_xjlxT4xJrwK2b1OkOvyWDmSKxJunaOBO_j9s4SCG_b3TbZn2eAPeqG8zNSu_YUzS5GYw Error:}
+
+exposure-notifications-verification-server on 🌱 readme [$!] via 🐹 v1.14.2
+❯ go run ./cmd/get-certificate --apikey="i9UhDG3kYj3eW0CslXMXujPJfbzJ0mJlLDN8zdFYiiDR6hrOrTm0UFSE6JSbW5qb9Af3/B+U+3nkmIxeopoMXA" --token="eyJhbGciOiJFUzI1NiIsImtpZCI6InYxIiwidHlwIjoiSldUIn0.eyJhdWQiOiJkaWFnbm9zaXMtdmVyaWZpY2F0aW9uLWV4YW1wbGUiLCJleHAiOjE1OTUwMTk0NjEsImp0aSI6Im5BbVdJKzVnZDRuSG0wcnJiOGRGWUVwUExDdFpaK2dMOXZ5YjVCcDJIdmVHTndmeHV5ZS9rU2x2Q2NhSGovWEwrelh5K1U1L3JpdFh1SGt1eGtvc3dLam13ZlJ0ZUpRQWpqeEdYazV5cFpPeENySGM2Z1ZVZTdxdVVNZFVkRkpBIiwiaWF0IjoxNTk0OTMzMDYxLCJpc3MiOiJkaWFnbm9zaXMtdmVyaWZpY2F0aW9uLWV4YW1wbGUiLCJzdWIiOiJsaWtlbHkuMjAyMC0wNy0xMCJ9.mxMsCwRUc6AtHNNjf_xjlxT4xJrwK2b1OkOvyWDmSKxJunaOBO_j9s4SCG_b3TbZn2eAPeqG8zNSu_YUzS5GYw" --hmac="2u1nHt5WWurJytFLF3xitNzM99oNrad2y4YGOL53AeY="
+2020/07/16 13:59:24 Sending: {VerificationToken:eyJhbGciOiJFUzI1NiIsImtpZCI6InYxIiwidHlwIjoiSldUIn0.eyJhdWQiOiJkaWFnbm9zaXMtdmVyaWZpY2F0aW9uLWV4YW1wbGUiLCJleHAiOjE1OTUwMTk0NjEsImp0aSI6Im5BbVdJKzVnZDRuSG0wcnJiOGRGWUVwUExDdFpaK2dMOXZ5YjVCcDJIdmVHTndmeHV5ZS9rU2x2Q2NhSGovWEwrelh5K1U1L3JpdFh1SGt1eGtvc3dLam13ZlJ0ZUpRQWpqeEdYazV5cFpPeENySGM2Z1ZVZTdxdVVNZFVkRkpBIiwiaWF0IjoxNTk0OTMzMDYxLCJpc3MiOiJkaWFnbm9zaXMtdmVyaWZpY2F0aW9uLWV4YW1wbGUiLCJzdWIiOiJsaWtlbHkuMjAyMC0wNy0xMCJ9.mxMsCwRUc6AtHNNjf_xjlxT4xJrwK2b1OkOvyWDmSKxJunaOBO_j9s4SCG_b3TbZn2eAPeqG8zNSu_YUzS5GYw ExposureKeyHMAC:2u1nHt5WWurJytFLF3xitNzM99oNrad2y4YGOL53AeY=}
+2020/07/16 13:59:24 Result:
+{Certificate:eyJhbGciOiJFUzI1NiIsImtpZCI6InYxIiwidHlwIjoiSldUIn0.eyJyZXBvcnRUeXBlIjoibGlrZWx5Iiwic3ltcHRvbU9uc2V0SW50ZXJ2YWwiOjI2NTcyMzIsInRyaXNrIjpbXSwidGVrbWFjIjoiMnUxbkh0NVdXdXJKeXRGTEYzeGl0TnpNOTlvTnJhZDJ5NFlHT0w1M0FlWT0iLCJhdWQiOiJleHBvc3VyZS1ub3RpZmljYXRpb25zLXNlcnZlciIsImV4cCI6MTU5NDkzNDA2NCwiaWF0IjoxNTk0OTMzMTY0LCJpc3MiOiJkaWFnbm9zaXMtdmVyaWZpY2F0aW9uLWV4YW1wbGUiLCJuYmYiOjE1OTQ5MzMxNjN9.gmIzjVUNLtmGHCEybx7NXw8NjTCKDBszUHeE3hnY9u15HISjtjpH2zE_5ZXk2nlRQT9OFQnIkogO8Bz4zLbf_A Error:}
+```
+
 
 ## A Walkthrough of the Service
 ![Login](./docs/images/getting-started/0_login.png)

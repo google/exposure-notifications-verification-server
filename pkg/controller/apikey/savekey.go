@@ -34,7 +34,8 @@ type apikeySaveController struct {
 }
 
 type formData struct {
-	Name string `form:"name"`
+	Name string               `form:"name"`
+	Type database.APIUserType `form:"type"`
 }
 
 func NewSaveController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
@@ -53,7 +54,7 @@ func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if _, err := sc.db.CreateAuthorizedApp(form.Name); err != nil {
+	if _, err := sc.db.CreateAuthorizedApp(form.Name, form.Type); err != nil {
 		sc.logger.Errorf("error creating authorized app: %v", err)
 		flash.Error("Failed to create API key: %v", err)
 		return

@@ -26,8 +26,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
-	"github.com/sethvargo/go-limiter/httplimit"
-	"github.com/sethvargo/go-limiter/memorystore"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 
@@ -49,22 +47,6 @@ func main() {
 	defer db.Close()
 
 	r := mux.NewRouter()
-
-	// Setup rate limiter
-	store, err := memorystore.New(&memorystore.Config{
-		Tokens:   config.RateLimit,
-		Interval: 1 * time.Minute,
-	})
-	if err != nil {
-		log.Fatalf("failed to create limiter: %v", err)
-	}
-	defer store.Stop()
-
-	httplimiter, err := httplimit.NewMiddleware(store, httplimit.IPKeyFunc("X-Forwarded-For"))
-	if err != nil {
-		log.Fatalf("failed to create limiter middleware: %v", err)
-	}
-	r.Use(httplimiter.Handle)
 
 	// Cleanup handler doesn't require authentication - does use locking to ensure
 	// database isn't tipped over by cleanup.

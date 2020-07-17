@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	firebase "firebase.google.com/go"
 
@@ -35,9 +34,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-limiter/httplimit"
-	"github.com/sethvargo/go-limiter/memorystore"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
@@ -73,14 +72,11 @@ func main() {
 	r := mux.NewRouter()
 
 	// Setup rate limiter
-	store, err := memorystore.New(&memorystore.Config{
-		Tokens:   config.RateLimit,
-		Interval: 1 * time.Minute,
-	})
+	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
 		log.Fatalf("failed to create limiter: %v", err)
 	}
-	defer store.Stop()
+	defer store.Close()
 
 	httplimiter, err := httplimit.NewMiddleware(store, httplimit.IPKeyFunc("X-Forwarded-For"))
 	if err != nil {

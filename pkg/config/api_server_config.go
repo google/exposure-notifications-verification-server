@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
 )
@@ -27,8 +28,7 @@ import (
 type APIServerConfig struct {
 	Database database.Config
 
-	Port      int    `env:"PORT,default=8080"`
-	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
+	Port int `env:"PORT,default=8080"`
 
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 
@@ -46,6 +46,9 @@ type APIServerConfig struct {
 	CertificateIssuer       string        `env:"CERTIFICATE_ISSUER,default=diagnosis-verification-example"`
 	CertificateAudience     string        `env:"CERTIFICATE_AUDIENCE,default=exposure-notifications-server"`
 	CertificateDuration     time.Duration `env:"CERTIFICATE_DURATION,default=15m"`
+
+	// Rate limiting configuration
+	RateLimit ratelimit.Config
 }
 
 // NewAPIServerConfig returns the environment config for the API server.

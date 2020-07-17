@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "google_service_account" "server" {
+resource "google_service_account" "adminapi" {
   project      = var.project
-  account_id   = "en-verification-server-sa"
-  display_name = "Verification server"
+  account_id   = "en-verification-adminapi-sa"
+  display_name = "Verification Admin apiserver"
 }
 
-resource "google_service_account_iam_member" "cloudbuild-deploy-server" {
-  service_account_id = google_service_account.server.id
+resource "google_service_account_iam_member" "cloudbuild-deploy-adminapi" {
+  service_account_id = google_service_account.adminapi.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
 
@@ -29,7 +29,7 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-server" {
   ]
 }
 
-resource "google_secret_manager_secret_iam_member" "server-db" {
+resource "google_secret_manager_secret_iam_member" "adminapi-db" {
   provider = google-beta
 
   for_each = toset([
@@ -41,23 +41,10 @@ resource "google_secret_manager_secret_iam_member" "server-db" {
 
   secret_id = google_secret_manager_secret.db-secret[each.key].id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.server.email}"
+  member    = "serviceAccount:${google_service_account.adminapi.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "server-csrf" {
-  provider  = google-beta
-  secret_id = google_secret_manager_secret.csrf-token.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.server.email}"
-}
-
-resource "google_project_iam_member" "firebase-admin" {
-  project = var.project
-  role    = "roles/firebaseauth.admin"
-  member  = "serviceAccount:${google_service_account.server.email}"
-}
-
-resource "google_project_iam_member" "server-observability" {
+resource "google_project_iam_member" "adminapi-observability" {
   for_each = toset([
     "roles/cloudtrace.agent",
     "roles/logging.logWriter",
@@ -67,19 +54,19 @@ resource "google_project_iam_member" "server-observability" {
 
   project = var.project
   role    = each.key
-  member  = "serviceAccount:${google_service_account.server.email}"
+  member  = "serviceAccount:${google_service_account.adminapi.email}"
 }
 
-resource "google_cloud_run_service" "server" {
-  name     = "server"
+resource "google_cloud_run_service" "adminapi" {
+  name     = "adminapi"
   location = var.region
 
   template {
     spec {
-      service_account_name = google_service_account.server.email
+      service_account_name = google_service_account.adminapi.email
 
       containers {
-        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cmd/server:initial"
+        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:initial"
 
         resources {
           limits = {
@@ -97,35 +84,7 @@ resource "google_cloud_run_service" "server" {
         }
 
         dynamic "env" {
-          for_each = {
-            # Assets - these are built into the container
-            ASSETS_PATH = "/assets"
-          }
-
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = local.csrf_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
           for_each = local.database_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = local.firebase_config
           content {
             name  = env.key
             value = env.value
@@ -141,15 +100,7 @@ resource "google_cloud_run_service" "server" {
         }
 
         dynamic "env" {
-          for_each = local.signing_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = lookup(var.service_environment, "server", {})
+          for_each = lookup(var.service_environment, "adminapi", {})
           content {
             name  = env.key
             value = env.value
@@ -167,7 +118,7 @@ resource "google_cloud_run_service" "server" {
 
   depends_on = [
     google_project_service.services["run.googleapis.com"],
-    google_secret_manager_secret_iam_member.server-db,
+    google_secret_manager_secret_iam_member.adminapi-db,
     null_resource.build,
   ]
 
@@ -178,14 +129,14 @@ resource "google_cloud_run_service" "server" {
   }
 }
 
-resource "google_cloud_run_service_iam_member" "server-public" {
-  location = google_cloud_run_service.server.location
-  project  = google_cloud_run_service.server.project
-  service  = google_cloud_run_service.server.name
+resource "google_cloud_run_service_iam_member" "adminapi-public" {
+  location = google_cloud_run_service.adminapi.location
+  project  = google_cloud_run_service.adminapi.project
+  service  = google_cloud_run_service.adminapi.name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
 
-output "server_url" {
-  value = google_cloud_run_service.server.status.0.url
+output "adminapi_url" {
+  value = google_cloud_run_service.adminapi.status.0.url
 }

@@ -72,6 +72,13 @@ variable "vpc_access_connector_max_throughput" {
   description = "Maximum provisioned traffic throughput in Mbps"
 }
 
+variable "redis_cache_size" {
+  type    = number
+  default = 8
+
+  description = "Size of the Redis instance in GB."
+}
+
 terraform {
   required_providers {
     google      = "~> 3.24"
