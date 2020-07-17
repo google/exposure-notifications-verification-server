@@ -151,17 +151,12 @@ func userEmailKeyFunc() httplimit.KeyFunc {
 		ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
 
 		rawUser, ok := httpcontext.GetOk(r, "user")
-		if !ok {
-			return "", fmt.Errorf("unauthorized")
-		}
-		user, ok := rawUser.(*database.User)
-		if !ok {
-			return "", fmt.Errorf("internal error")
-		}
-
-		if user.Email != "" {
-			dig := sha1.Sum([]byte(user.Email))
-			return fmt.Sprintf("%x", dig), nil
+		if ok {
+			user, ok := rawUser.(*database.User)
+			if ok && user.Email != "" {
+				dig := sha1.Sum([]byte(user.Email))
+				return fmt.Sprintf("%x", dig), nil
+			}
 		}
 
 		// If no API key was provided, default to limiting by IP.
