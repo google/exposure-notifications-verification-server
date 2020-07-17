@@ -113,11 +113,7 @@ func main() {
 		sub.Handle("/csrf", csrfctl.NewCSRFAPI()).Methods("GET")
 
 		issueSub := sub.PathPrefix("/issue").Subrouter()
-		// TODO(crwilcox): add these to the config.
-		quotaTTL := 60 * time.Second
-		issuancesPerTTL := 1
-		issueSub.Use(middleware.QuotaKeyIssuance(ctx, auth, db, quotaTTL, issuancesPerTTL).Handle)
-
+		issueSub.Use(middleware.UserRequestLimiter(ctx, store).Handle)
 		// API for creating new verification codes. Called via AJAX.
 		issueSub.Handle("", issueapi.New(ctx, config, db)).Methods("POST")
 	}
