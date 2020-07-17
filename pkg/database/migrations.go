@@ -175,10 +175,10 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				return tx.AutoMigrate(&VerificationCode{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Model(&AuthorizedApp{}).DropColumn("issuing_user_id").Error; err != nil {
+				if err := tx.Model(&AuthorizedApp{}).DropColumn("issuing_user").Error; err != nil {
 					return err
 				}
-				if err := tx.Model(&AuthorizedApp{}).DropColumn("issuing_authorized_app_id").Error; err != nil {
+				if err := tx.Model(&AuthorizedApp{}).DropColumn("issuing_app").Error; err != nil {
 					return err
 				}
 				return nil
