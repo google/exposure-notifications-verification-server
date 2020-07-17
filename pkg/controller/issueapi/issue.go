@@ -101,11 +101,11 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	expiryTime := time.Now().Add(ic.config.GetVerificationCodeDuration())
 
-	authApp, user := ic.getAuthorizationFromContext(r)
-	if authApp == nil && user == nil {
-		errStr := "unable to identify authorized requestor"
-		ic.logger.Errorf(errStr)
-		controller.WriteJSON(w, http.StatusOK, api.Error(errStr))
+	authApp, user, err := ic.getAuthorizationFromContext(r)
+	if err != nil {
+		ic.logger.Errorf("failed to get authorization: %v", err)
+		controller.WriteJSON(w, http.StatusOK, api.Error("invalid request: %v", err))
+		return
 	}
 
 	// Generate verification code
@@ -134,26 +134,26 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 }
 
-func (ic *IssueAPI) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User) {
+func (ic *IssueAPI) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User, error) {
 	// Attempt to find the authorized app.
 	rawAuthorizedApp, ok := httpcontext.GetOk(r, "authorizedApp")
 	if ok {
 		authApp, ok := rawAuthorizedApp.(*database.AuthorizedApp)
 		if !ok {
-			return nil, nil
+			return nil, nil, fmt.Errorf("unable to identify authorized requestor")
 		}
-		return authApp, nil
+		return authApp, nil, nil
 	}
 
 	// Attempt to get user:
 	rawUser, ok := httpcontext.GetOk(r, "user")
 	if !ok {
-		return nil, nil
+		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
 	}
 	user, ok := rawUser.(*database.User)
 	if !ok {
-		return nil, nil
+		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
 	}
-	return nil, user
+	return nil, user, nil
 
 }
