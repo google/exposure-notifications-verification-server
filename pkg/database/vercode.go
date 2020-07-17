@@ -45,11 +45,13 @@ var (
 // VerificationCode represnts a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
-	Code        string `gorm:"type:varchar(20);unique_index"`
-	Claimed     bool   `gorm:"default:false"`
-	TestType    string `gorm:"type:varchar(20)"`
-	SymptomDate *time.Time
-	ExpiresAt   time.Time
+	Code                   string `gorm:"type:varchar(20);unique_index"`
+	Claimed                bool   `gorm:"default:false"`
+	TestType               string `gorm:"type:varchar(20)"`
+	SymptomDate            *time.Time
+	ExpiresAt              time.Time
+	IssuingUserID          uint
+	IssuingAuthorizedAppID uint
 }
 
 // TableName sets the VerificationCode table name
@@ -116,7 +118,7 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 	return db.db.Save(vc).Error
 }
 
-// PurgeVerificationCodes will delete verificaitons that have expired since at least the
+// PurgeVerificationCodes will delete verifications that have expired since at least the
 // provided maxAge ago.
 // This is a hard delete, not a soft delete.
 func (db *Database) PurgeVerificationCodes(maxAge time.Duration) (int64, error) {

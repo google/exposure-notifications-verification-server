@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	httpcontext "github.com/gorilla/context"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 )
@@ -41,7 +42,7 @@ type APIKeyMiddleware struct {
 }
 
 // APIKeyAuth returns a gin Middleware function that reads the X-API-Key HTTP header
-// and checkes it against the authorized apps. The provided cache is used as a
+// and checks it against the authorized apps. The provided cache is used as a
 // write through cache.
 func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache, allowedTypes ...database.APIUserType) *APIKeyMiddleware {
 	cfg := APIKeyMiddleware{ctx, db, keyCache, make(map[database.APIUserType]struct{})}
@@ -91,6 +92,8 @@ func (a *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
 			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized"})
 			return
 		}
+
+		httpcontext.Set(r, "authorizedApp", authApp)
 
 		next.ServeHTTP(w, r)
 	})

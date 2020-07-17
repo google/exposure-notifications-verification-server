@@ -31,6 +31,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 
+	httpcontext "github.com/gorilla/context"
+
 	"go.uber.org/zap"
 )
 
@@ -99,14 +101,58 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	expiryTime := time.Now().Add(ic.config.GetVerificationCodeDuration())
 
+	var issuingUserID uint
+	var issuingAuthorizedAppID uint
+
+	// Attempt to find the authorized app.
+	rawAuthorizedApp, ok := httpcontext.GetOk(r, "authorizedApp")
+	if ok {
+		authApp, ok := rawAuthorizedApp.(*database.AuthorizedApp)
+		if !ok {
+			ic.logger.Errorf("error reading authorized app from request context")
+			controller.WriteJSON(w, http.StatusOK, api.Error("error reading authorized app from request context"))
+			return
+		}
+		got, err := ic.db.FindAuthorizedAppByAPIKey(authApp.APIKey)
+		if err != nil {
+			ic.logger.Errorf("error reading authorized app from db: %v", err)
+			controller.WriteJSON(w, http.StatusOK, api.Error("error reading authorized app from db"))
+			return
+		}
+		issuingAuthorizedAppID = got.ID
+	} else {
+		// Attempt to get user:
+		rawUser, ok := httpcontext.GetOk(r, "user")
+		if !ok {
+			ic.logger.Errorf("error reading user from request context")
+			controller.WriteJSON(w, http.StatusOK, api.Error("error reading user from request context"))
+			return
+		}
+		user, ok := rawUser.(*database.User)
+		if !ok {
+			ic.logger.Errorf("error reading user from request context")
+			controller.WriteJSON(w, http.StatusOK, api.Error("error reading user from request context"))
+			return
+		}
+		got, err := ic.db.FindUser(user.Email)
+		if err != nil {
+			ic.logger.Errorf("error reading user from db: %v", err)
+			controller.WriteJSON(w, http.StatusOK, api.Error("error reading user from db"))
+			return
+		}
+		issuingUserID = got.ID
+	}
+
 	// Generate verification code
 	codeRequest := otp.Request{
-		DB:            ic.db,
-		Length:        ic.config.GetVerficationCodeDigits(),
-		ExpiresAt:     expiryTime,
-		TestType:      request.TestType,
-		SymptomDate:   symptomDate,
-		MaxSymptomAge: ic.config.GetAllowedSymptomAge(),
+		DB:                     ic.db,
+		Length:                 ic.config.GetVerficationCodeDigits(),
+		ExpiresAt:              expiryTime,
+		TestType:               request.TestType,
+		SymptomDate:            symptomDate,
+		MaxSymptomAge:          ic.config.GetAllowedSymptomAge(),
+		IssuingUserID:          issuingUserID,
+		IssuingAuthorizedAppID: issuingAuthorizedAppID,
 	}
 
 	code, err := codeRequest.Issue(ctx, ic.config.GetColissionRetryCount())

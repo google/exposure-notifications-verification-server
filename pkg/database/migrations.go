@@ -168,6 +168,22 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				return nil
 			},
 		},
+		{
+			ID: "00009-AddIssuerColumns",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: adding issuer columns to issued codes")
+				return tx.AutoMigrate(&VerificationCode{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Model(&AuthorizedApp{}).DropColumn("issuing_user_id").Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&AuthorizedApp{}).DropColumn("issuing_authorized_app_id").Error; err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	})
 
 	logger.Infof("database migrations complete")
