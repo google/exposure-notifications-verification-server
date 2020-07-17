@@ -25,14 +25,11 @@ import (
 // User represents a user of the system
 type User struct {
 	gorm.Model
-	Email                   string `gorm:"type:varchar(250);unique_index"`
-	Name                    string `gorm:"type:varchar(100)"`
-	Admin                   bool   `gorm:"default:false"`
-	Disabled                bool
-	LastRevokeCheck         time.Time
-	VerificationCodesIssued int
-	LastQuotaReset          time.Time
-	IssuancesAgainstQuota   int
+	Email           string `gorm:"type:varchar(250);unique_index"`
+	Name            string `gorm:"type:varchar(100)"`
+	Admin           bool   `gorm:"default:false"`
+	Disabled        bool
+	LastRevokeCheck time.Time
 }
 
 // ListUsers retrieves all of the configured users.

@@ -183,14 +183,10 @@ func userIdKeyFunc() httplimit.KeyFunc {
 	return func(r *http.Request) (string, error) {
 		rawUser, ok := httpcontext.GetOk(r, "user")
 		if !ok {
-			// flash.FromContext(w, r).Error("Unauthorized")
-			// http.Redirect(w, r, "/signout", http.StatusFound)
 			return "", fmt.Errorf("unauthorized")
 		}
 		user, ok := rawUser.(*database.User)
 		if !ok {
-			// flash.FromContext(w, r).Error("internal error - you have been logged out.")
-			// http.Redirect(w, r, "/signout", http.StatusFound)
 			return "", fmt.Errorf("internal error")
 		}
 		return user.Email, nil
