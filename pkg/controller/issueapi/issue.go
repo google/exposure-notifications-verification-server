@@ -101,15 +101,8 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	expiryTime := time.Now().Add(ic.config.GetVerificationCodeDuration())
 
-	var issuingUserID uint
-	var issuingAuthorizedAppID uint
-
 	authApp, user := ic.getAuthorizationFromContext(r)
-	if authApp != nil {
-		issuingAuthorizedAppID = authApp.ID
-	} else if user != nil {
-		issuingUserID = user.ID
-	} else {
+	if authApp == nil && user == nil {
 		errStr := "unable to identify authorized requestor"
 		ic.logger.Errorf(errStr)
 		controller.WriteJSON(w, http.StatusOK, api.Error(errStr))
@@ -117,14 +110,14 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Generate verification code
 	codeRequest := otp.Request{
-		DB:                     ic.db,
-		Length:                 ic.config.GetVerficationCodeDigits(),
-		ExpiresAt:              expiryTime,
-		TestType:               request.TestType,
-		SymptomDate:            symptomDate,
-		MaxSymptomAge:          ic.config.GetAllowedSymptomAge(),
-		IssuingUserID:          issuingUserID,
-		IssuingAuthorizedAppID: issuingAuthorizedAppID,
+		DB:            ic.db,
+		Length:        ic.config.GetVerficationCodeDigits(),
+		ExpiresAt:     expiryTime,
+		TestType:      request.TestType,
+		SymptomDate:   symptomDate,
+		MaxSymptomAge: ic.config.GetAllowedSymptomAge(),
+		IssuingUser:   user,
+		IssuingApp:    authApp,
 	}
 
 	code, err := codeRequest.Issue(ctx, ic.config.GetColissionRetryCount())
