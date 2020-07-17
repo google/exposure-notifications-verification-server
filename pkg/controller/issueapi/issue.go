@@ -104,43 +104,15 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var issuingUserID uint
 	var issuingAuthorizedAppID uint
 
-	// Attempt to find the authorized app.
-	rawAuthorizedApp, ok := httpcontext.GetOk(r, "authorizedApp")
-	if ok {
-		authApp, ok := rawAuthorizedApp.(*database.AuthorizedApp)
-		if !ok {
-			ic.logger.Errorf("error reading authorized app from request context")
-			controller.WriteJSON(w, http.StatusOK, api.Error("error reading authorized app from request context"))
-			return
-		}
-		got, err := ic.db.FindAuthorizedAppByAPIKey(authApp.APIKey)
-		if err != nil {
-			ic.logger.Errorf("error reading authorized app from db: %v", err)
-			controller.WriteJSON(w, http.StatusOK, api.Error("error reading authorized app from db"))
-			return
-		}
-		issuingAuthorizedAppID = got.ID
+	authApp, user := ic.getAuthorizationFromContext(r)
+	if authApp != nil {
+		issuingAuthorizedAppID = authApp.ID
+	} else if user != nil {
+		issuingUserID = user.ID
 	} else {
-		// Attempt to get user:
-		rawUser, ok := httpcontext.GetOk(r, "user")
-		if !ok {
-			ic.logger.Errorf("error reading user from request context")
-			controller.WriteJSON(w, http.StatusOK, api.Error("error reading user from request context"))
-			return
-		}
-		user, ok := rawUser.(*database.User)
-		if !ok {
-			ic.logger.Errorf("error reading user from request context")
-			controller.WriteJSON(w, http.StatusOK, api.Error("error reading user from request context"))
-			return
-		}
-		got, err := ic.db.FindUser(user.Email)
-		if err != nil {
-			ic.logger.Errorf("error reading user from db: %v", err)
-			controller.WriteJSON(w, http.StatusOK, api.Error("error reading user from db"))
-			return
-		}
-		issuingUserID = got.ID
+		errStr := "unable to identify authorized requestor"
+		ic.logger.Errorf(errStr)
+		controller.WriteJSON(w, http.StatusOK, api.Error(errStr))
 	}
 
 	// Generate verification code
@@ -167,4 +139,28 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			VerificationCode: code,
 			ExpiresAt:        expiryTime.Format(time.RFC1123),
 		})
+}
+
+func (ic *IssueAPI) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User) {
+	// Attempt to find the authorized app.
+	rawAuthorizedApp, ok := httpcontext.GetOk(r, "authorizedApp")
+	if ok {
+		authApp, ok := rawAuthorizedApp.(*database.AuthorizedApp)
+		if !ok {
+			return nil, nil
+		}
+		return authApp, nil
+	}
+
+	// Attempt to get user:
+	rawUser, ok := httpcontext.GetOk(r, "user")
+	if !ok {
+		return nil, nil
+	}
+	user, ok := rawUser.(*database.User)
+	if !ok {
+		return nil, nil
+	}
+	return nil, user
+
 }
