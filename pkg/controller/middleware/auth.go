@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -28,8 +27,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	"github.com/sethvargo/go-limiter"
-	"github.com/sethvargo/go-limiter/httplimit"
 
 	httpcontext "github.com/gorilla/context"
 
@@ -167,29 +164,4 @@ func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		}
 	})
-}
-
-// UserRequestLimiter requires a user is authenticated using firebase auth,
-// and that said user has not made too many requests
-func UserRequestLimiter(ctx context.Context, store limiter.Store) *httplimit.Middleware {
-	httplimiter, err := httplimit.NewMiddleware(store, userIdKeyFunc())
-	if err != nil {
-		log.Fatalf("failed to create limiter middleware: %v", err)
-	}
-	return httplimiter
-}
-
-func userIdKeyFunc() httplimit.KeyFunc {
-	return func(r *http.Request) (string, error) {
-		rawUser, ok := httpcontext.GetOk(r, "user")
-		if !ok {
-			return "", fmt.Errorf("unauthorized")
-		}
-		user, ok := rawUser.(*database.User)
-		if !ok {
-			return "", fmt.Errorf("internal error")
-		}
-		return user.Email, nil
-
-	}
 }
