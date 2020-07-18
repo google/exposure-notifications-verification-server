@@ -32,9 +32,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 
 	"github.com/dgrijalva/jwt-go"
 	"go.uber.org/zap"
@@ -45,10 +45,10 @@ type VerifyAPI struct {
 	config *config.APIServerConfig
 	db     *database.Database
 	logger *zap.SugaredLogger
-	signer signer.KeyManager
+	signer keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, signer signer.KeyManager) http.Handler {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, signer keys.KeyManager) http.Handler {
 	return &VerifyAPI{config, db, logging.FromContext(ctx), signer}
 }
 

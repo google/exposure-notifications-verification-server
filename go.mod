@@ -23,7 +23,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/sethvargo/go-envconfig v0.1.1
-	github.com/sethvargo/go-gcpkms v0.0.0-20200507180216-f1fca850aed2
+	github.com/sethvargo/go-gcpkms v0.0.0-20200507180216-f1fca850aed2 // indirect
 	github.com/sethvargo/go-limiter v0.2.2
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sirupsen/logrus v1.6.0 // indirect

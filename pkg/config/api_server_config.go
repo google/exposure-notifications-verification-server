@@ -21,6 +21,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
+
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
 )
 
@@ -31,6 +33,9 @@ type APIServerConfig struct {
 	Port int `env:"PORT,default=8080"`
 
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
+
+	// General key management
+	KeyManagerType keys.KeyManagerType `env:"KEY_MANAGER,default=GOOGLE_CLOUD_KMS"`
 
 	// Verification Token Config
 	// Currently this does not easily support rotation. TODO(mikehelmick) - add support.

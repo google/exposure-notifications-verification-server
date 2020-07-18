@@ -28,11 +28,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 
 	"github.com/dgrijalva/jwt-go"
 	"go.uber.org/zap"
@@ -42,11 +42,11 @@ type CertificateAPI struct {
 	config      *config.APIServerConfig
 	db          *database.Database
 	logger      *zap.SugaredLogger
-	signer      signer.KeyManager
+	signer      keys.KeyManager
 	pubKeyCache *cache.Cache
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, signer signer.KeyManager, pubKeyCache *cache.Cache) http.Handler {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, signer keys.KeyManager, pubKeyCache *cache.Cache) http.Handler {
 	return &CertificateAPI{config, db, logging.FromContext(ctx), signer, pubKeyCache}
 }
 

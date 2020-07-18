@@ -31,11 +31,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/sethvargo/go-limiter/httplimit"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -55,7 +55,7 @@ func main() {
 	defer db.Close()
 
 	// Setup signer
-	signer, err := gcpkms.New(ctx)
+	signer, err := keys.KeyManagerFor(ctx, config.KeyManagerType)
 	if err != nil {
 		log.Fatalf("error creating KeyManager: %v", err)
 	}
