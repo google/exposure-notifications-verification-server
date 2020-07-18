@@ -17,30 +17,43 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, done := signalcontext.OnInterrupt()
+
+	err := realMain(ctx)
+	done()
+
+	logger := logging.FromContext(ctx)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	logger.Info("migrations complete")
+}
+
+func realMain(ctx context.Context) error {
 	var config database.Config
 	if err := envconfig.Process(ctx, &config); err != nil {
-		log.Fatalf("config error: %v", err)
+		return fmt.Errorf("failed to process config: %w", err)
 	}
 
 	db, err := config.Open()
 	if err != nil {
-		log.Fatalf("db connection failed: %v", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
 
-	err = db.RunMigrations(ctx)
-	if err == nil {
-		log.Printf("database migrations completed successfully")
-	} else {
-		log.Fatalf("migration error %v", err)
+	if err := db.RunMigrations(ctx); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
+
+	return nil
 }

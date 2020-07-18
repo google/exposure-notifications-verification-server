@@ -17,11 +17,12 @@ package main
 import (
 	"context"
 	"crypto/sha1"
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	firebase "firebase.google.com/go"
 
@@ -37,9 +38,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-limiter/httplimit"
+	"github.com/sethvargo/go-signalcontext"
 
 	httpcontext "github.com/gorilla/context"
 	"github.com/gorilla/csrf"
@@ -48,51 +51,67 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, done := signalcontext.OnInterrupt()
+
+	err := realMain(ctx)
+	done()
+
+	logger := logging.FromContext(ctx)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	logger.Info("successful shutdown")
+}
+
+func realMain(ctx context.Context) error {
+	logger := logging.FromContext(ctx)
+
 	config, err := config.NewServerConfig(ctx)
 	if err != nil {
-		log.Fatalf("config error: %v", err)
+		return fmt.Errorf("failed to process config: %w", err)
 	}
+
 	// Setup database
 	db, err := config.Database.Open()
 	if err != nil {
-		log.Fatalf("db connection failed: %v", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
 
 	// Setup firebase
 	app, err := firebase.NewApp(ctx, config.FirebaseConfig())
 	if err != nil {
-		log.Fatalf("failed to setup firebase: %v", err)
+		return fmt.Errorf("failed to setup firebase: %w", err)
 	}
 	auth, err := app.Auth(ctx)
 	if err != nil {
-		log.Fatalf("failed to configure firebase auth: %v", err)
+		return fmt.Errorf("failed to configure firebase: %w", err)
 	}
 
-	// Create our HTML renderer.
-	renderHTML := render.LoadHTMLGlob(config.AssetsPath + "/*")
-
+	// Create the router
 	r := mux.NewRouter()
 
-	// Setup rate limiter
+	// Create our HTML renderer
+	renderHTML := render.LoadHTMLGlob(config.AssetsPath + "/*")
+	r.Use(html.New(config).Handle)
+
+	// Setup rate limiting
 	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
-		log.Fatalf("failed to create limiter: %v", err)
+		return fmt.Errorf("failed to create limiter: %w", err)
 	}
 	defer store.Close()
 
 	httplimiter, err := httplimit.NewMiddleware(store, userEmailKeyFunc())
 	if err != nil {
-		log.Fatalf("failed to create limiter middleware: %v", err)
+		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
 	r.Use(httplimiter.Handle)
 
-	r.Use(html.New(config).Handle)
-	// install the CSRF protection middleware.
+	// Install the CSRF protection middleware.
 	csrfAuthKey, err := config.CSRFKey()
 	if err != nil {
-		log.Fatalf("unable to configure CSRF protection: %v", err)
+		return fmt.Errorf("failed to configure CSRF: %w", err)
 	}
 	// TODO(mikehelmick) - there are many more configuration options for CSRF protection.
 	r.Use(csrf.Protect(
@@ -142,8 +161,32 @@ func main() {
 		Handler: handlers.CombinedLoggingHandler(os.Stdout, r),
 		Addr:    "0.0.0.0:" + strconv.Itoa(config.Port),
 	}
-	log.Printf("Listening on :%v", config.Port)
-	log.Fatal(srv.ListenAndServe())
+
+	errCh := make(chan error, 1)
+	go func() {
+		logger.Infow("server listening", "port", config.Port)
+
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			select {
+			case errCh <- err:
+			default:
+			}
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case <-errCh:
+		return fmt.Errorf("server error: %w", err)
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("failed to shutdown server")
+	}
+
+	return nil
 }
 
 func userEmailKeyFunc() httplimit.KeyFunc {
