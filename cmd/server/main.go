@@ -16,6 +16,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -34,10 +36,12 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-limiter/httplimit"
 
+	httpcontext "github.com/gorilla/context"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -78,7 +82,7 @@ func main() {
 	}
 	defer store.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(store, httplimit.IPKeyFunc("X-Forwarded-For"))
+	httplimiter, err := httplimit.NewMiddleware(store, userEmailKeyFunc())
 	if err != nil {
 		log.Fatalf("failed to create limiter middleware: %v", err)
 	}
@@ -140,4 +144,22 @@ func main() {
 	}
 	log.Printf("Listening on :%v", config.Port)
 	log.Fatal(srv.ListenAndServe())
+}
+
+func userEmailKeyFunc() httplimit.KeyFunc {
+	return func(r *http.Request) (string, error) {
+		ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
+
+		rawUser, ok := httpcontext.GetOk(r, "user")
+		if ok {
+			user, ok := rawUser.(*database.User)
+			if ok && user.Email != "" {
+				dig := sha1.Sum([]byte(user.Email))
+				return fmt.Sprintf("%x", dig), nil
+			}
+		}
+
+		// If no API key was provided, default to limiting by IP.
+		return ipKeyFunc(r)
+	}
 }
