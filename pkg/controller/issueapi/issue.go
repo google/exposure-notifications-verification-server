@@ -31,6 +31,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 
+	httpcontext "github.com/gorilla/context"
+
 	"go.uber.org/zap"
 )
 
@@ -99,6 +101,13 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	expiryTime := time.Now().Add(ic.config.GetVerificationCodeDuration())
 
+	authApp, user, err := ic.getAuthorizationFromContext(r)
+	if err != nil {
+		ic.logger.Errorf("failed to get authorization: %v", err)
+		controller.WriteJSON(w, http.StatusOK, api.Error("invalid request: %v", err))
+		return
+	}
+
 	// Generate verification code
 	codeRequest := otp.Request{
 		DB:            ic.db,
@@ -107,6 +116,8 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		TestType:      request.TestType,
 		SymptomDate:   symptomDate,
 		MaxSymptomAge: ic.config.GetAllowedSymptomAge(),
+		IssuingUser:   user,
+		IssuingApp:    authApp,
 	}
 
 	code, err := codeRequest.Issue(ctx, ic.config.GetColissionRetryCount())
@@ -121,4 +132,28 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			VerificationCode: code,
 			ExpiresAt:        expiryTime.Format(time.RFC1123),
 		})
+}
+
+func (ic *IssueAPI) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User, error) {
+	// Attempt to find the authorized app.
+	rawAuthorizedApp, ok := httpcontext.GetOk(r, "authorizedApp")
+	if ok {
+		authApp, ok := rawAuthorizedApp.(*database.AuthorizedApp)
+		if !ok {
+			return nil, nil, fmt.Errorf("unable to identify authorized requestor")
+		}
+		return authApp, nil, nil
+	}
+
+	// Attempt to get user:
+	rawUser, ok := httpcontext.GetOk(r, "user")
+	if !ok {
+		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
+	}
+	user, ok := rawUser.(*database.User)
+	if !ok {
+		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
+	}
+	return nil, user, nil
+
 }

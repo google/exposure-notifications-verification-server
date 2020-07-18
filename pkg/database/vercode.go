@@ -50,6 +50,8 @@ type VerificationCode struct {
 	TestType    string `gorm:"type:varchar(20)"`
 	SymptomDate *time.Time
 	ExpiresAt   time.Time
+	IssuingUser *User
+	IssuingApp  *AuthorizedApp
 }
 
 // TableName sets the VerificationCode table name
@@ -116,7 +118,7 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 	return db.db.Save(vc).Error
 }
 
-// PurgeVerificationCodes will delete verificaitons that have expired since at least the
+// PurgeVerificationCodes will delete verifications that have expired since at least the
 // provided maxAge ago.
 // This is a hard delete, not a soft delete.
 func (db *Database) PurgeVerificationCodes(maxAge time.Duration) (int64, error) {
