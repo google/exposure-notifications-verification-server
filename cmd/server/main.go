@@ -190,9 +190,9 @@ func realMain(ctx context.Context) error {
 }
 
 func userEmailKeyFunc() httplimit.KeyFunc {
-	return func(r *http.Request) (string, error) {
-		ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
+	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
 
+	return func(r *http.Request) (string, error) {
 		rawUser, ok := httpcontext.GetOk(r, "user")
 		if ok {
 			user, ok := rawUser.(*database.User)
