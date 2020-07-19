@@ -35,6 +35,13 @@ variable "database_disk_size_gb" {
   description = "Size of the Cloud SQL disk, in GB."
 }
 
+variable "database_max_connections" {
+  type    = number
+  default = 100000
+
+  description = "Maximum number of allowed connections. If you change to a smaller instance size, you must lower this number."
+}
+
 variable "database_name" {
   type    = string
   default = "en-verification"
