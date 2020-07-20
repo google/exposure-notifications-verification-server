@@ -17,8 +17,8 @@ resource "google_redis_instance" "cache" {
   tier           = "STANDARD_HA"
   memory_size_gb = var.redis_cache_size
 
-  location_id             = "${var.region}-a"
-  alternative_location_id = "${var.region}-c"
+  location_id             = var.redis_location
+  alternative_location_id = var.redis_alternative_location
 
   authorized_network = google_service_networking_connection.private_vpc_connection.network
   connect_mode       = "PRIVATE_SERVICE_ACCESS"

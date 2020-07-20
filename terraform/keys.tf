@@ -15,7 +15,7 @@
 resource "google_kms_key_ring" "verification" {
   project  = var.project
   name     = "verification"
-  location = var.region
+  location = var.kms_location
 
   depends_on = [
     google_project_service.services["cloudkms.googleapis.com"],

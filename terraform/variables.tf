@@ -65,6 +65,23 @@ variable "cloudscheduler_location" {
   default = "us-central1"
 }
 
+variable "kms_location" {
+  type    = string
+  default = "us-central1"
+
+  description = "Location in which to create KMS keys"
+}
+
+variable "redis_location" {
+  type    = string
+  default = "us-central1-a"
+}
+
+variable "redis_alternative_location" {
+  type    = string
+  default = "us-central1-c"
+}
+
 variable "service_environment" {
   type    = map(map(string))
   default = {}
