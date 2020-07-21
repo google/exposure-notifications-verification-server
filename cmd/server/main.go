@@ -17,14 +17,8 @@ package main
 import (
 	"context"
 	"crypto/sha1"
-	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
-	"time"
-
-	firebase "firebase.google.com/go"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
@@ -41,13 +35,15 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/sethvargo/go-limiter/httplimit"
-	"github.com/sethvargo/go-signalcontext"
 
+	"github.com/google/exposure-notifications-server/pkg/server"
+
+	firebase "firebase.google.com/go"
 	httpcontext "github.com/gorilla/context"
 	"github.com/gorilla/csrf"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/sethvargo/go-limiter/httplimit"
+	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
@@ -157,36 +153,12 @@ func realMain(ctx context.Context) error {
 		userSub.Handle("/delete/{email}", user.NewDeleteController(ctx, config, db)).Methods("POST")
 	}
 
-	srv := &http.Server{
-		Handler: handlers.CombinedLoggingHandler(os.Stdout, r),
-		Addr:    "0.0.0.0:" + strconv.Itoa(config.Port),
+	srv, err := server.New(config.Port)
+	if err != nil {
+		return fmt.Errorf("failed to create server: %w", err)
 	}
-
-	errCh := make(chan error, 1)
-	go func() {
-		logger.Infow("server listening", "port", config.Port)
-
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			select {
-			case errCh <- err:
-			default:
-			}
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-	case <-errCh:
-		return fmt.Errorf("server error: %w", err)
-	}
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(shutdownCtx); err != nil {
-		return fmt.Errorf("failed to shutdown server")
-	}
-
-	return nil
+	logger.Infow("server listening", "port", config.Port)
+	return srv.ServeHTTPHandler(ctx, r)
 }
 
 func userEmailKeyFunc() httplimit.KeyFunc {

@@ -28,7 +28,7 @@ import (
 type APIServerConfig struct {
 	Database database.Config
 
-	Port int `env:"PORT,default=8080"`
+	Port string `env:"PORT,default=8080"`
 
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 

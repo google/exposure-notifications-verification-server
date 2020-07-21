@@ -27,7 +27,7 @@ import (
 type CleanupConfig struct {
 	Database database.Config
 
-	Port int `env:"PORT,default=8080"`
+	Port string `env:"PORT,default=8080"`
 
 	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
 
