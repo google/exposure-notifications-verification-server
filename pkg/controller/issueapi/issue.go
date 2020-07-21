@@ -87,7 +87,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	request.TestType = strings.ToLower(request.TestType)
 	if _, ok := ic.validTestType[request.TestType]; !ok {
 		ic.logger.Errorf("invalid test type: %v", request.TestType)
-		controller.WriteJSON(w, http.StatusOK, api.Error("invalid test type: %v", request.TestType))
+		controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("invalid test type: %v", request.TestType))
 		return
 	}
 
@@ -99,7 +99,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if request.SymptomDate != "" {
 		if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
 			ic.logger.Errorf("time.Parse: %v", err)
-			controller.WriteJSON(w, http.StatusOK, api.Error("invalid test date: %v", err))
+			controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("invalid test date: %v", err))
 			return
 		} else {
 			parsed = parsed.Local()
@@ -107,7 +107,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				message := fmt.Sprintf("Invalid symptom onset date: %v must be on or after %v and on or before %v.",
 					parsed.Format("2006-01-02"), minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
 				ic.logger.Errorf(message)
-				controller.WriteJSON(w, http.StatusOK, api.Error(message))
+				controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error(message))
 				return
 			}
 			symptomDate = &parsed
@@ -120,7 +120,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	authApp, user, err := ic.getAuthorizationFromContext(r)
 	if err != nil {
 		ic.logger.Errorf("failed to get authorization: %v", err)
-		controller.WriteJSON(w, http.StatusOK, api.Error("invalid request: %v", err))
+		controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("invalid request: %v", err))
 		return
 	}
 
@@ -139,7 +139,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	code, err := codeRequest.Issue(ctx, ic.config.GetColissionRetryCount())
 	if err != nil {
 		ic.logger.Errorf("otp.GenerateCode: %v", err)
-		controller.WriteJSON(w, http.StatusOK, api.Error("error generating verification, wait a moment and try again"))
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("error generating verification, wait a moment and try again"))
 		return
 	}
 
