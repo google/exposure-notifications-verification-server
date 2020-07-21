@@ -20,21 +20,44 @@ import (
 	"io"
 	"log"
 	"strings"
+	"sync"
 )
 
 type HTML struct {
-	root *template.Template
+	root     *template.Template
+	rootLock sync.Mutex
+
+	pattern string
+	dev     bool
 }
 
 func (h *HTML) Render(wr io.Writer, name string, data interface{}) error {
+	if h.dev {
+		h.loadHTMLTemplates()
+	}
+
 	return h.root.ExecuteTemplate(wr, name, data)
 }
 
-func LoadHTMLGlob(pattern string) *HTML {
-	tmpl := template.Must(template.ParseGlob(pattern))
+func (h *HTML) loadHTMLTemplates() []string {
+	h.rootLock.Lock()
+	defer h.rootLock.Unlock()
+
+	tmpl := template.Must(template.ParseGlob(h.pattern))
 
 	definedTemplates := strings.Replace(tmpl.DefinedTemplates(), "; defined templates are: ", "", 1)
 	names := strings.Split(definedTemplates, ", ")
+	h.root = tmpl
+
+	return names
+}
+
+func LoadHTMLGlob(pattern string, dev bool) *HTML {
+	h := &HTML{
+		pattern: pattern,
+		dev:     dev,
+	}
+	names := h.loadHTMLTemplates()
 
 	log.Printf("Loaded %v HTML Templates", len(names))
 	for i, name := range names {
@@ -42,5 +65,5 @@ func LoadHTMLGlob(pattern string) *HTML {
 		log.Printf("    - %v", names[i])
 	}
 
-	return &HTML{tmpl}
+	return h
 }

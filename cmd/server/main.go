@@ -88,7 +88,7 @@ func realMain(ctx context.Context) error {
 	r := mux.NewRouter()
 
 	// Create our HTML renderer
-	renderHTML := render.LoadHTMLGlob(config.AssetsPath + "/*")
+	renderHTML := render.LoadHTMLGlob(config.AssetsPath+"/*", config.DevMode)
 	r.Use(html.New(config).Handle)
 
 	// Setup rate limiting
