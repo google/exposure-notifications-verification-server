@@ -49,6 +49,7 @@ type CSRFResponse struct {
 type IssueCodeRequest struct {
 	TestType    string `json:"testType"`
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
+	Phone       string `json:"phone"`
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.

@@ -60,6 +60,21 @@
         </div>
       </div>
 
+      {{ if .smsEnabled }}
+      <div class="row form-group">
+        <label for="symptomDate" class="col-sm-3">Patient phone</label>
+        <div class="col-sm-9">
+          <div class="datepicker date input-group p-0 shadow-sm">
+            <input type="tel" id="phone" name="phone" class="form-control" data-inputmask="'mask': '+33 9 99 99 99 99'" />
+          </div>
+          <small class="form-text text-muted">
+            This must be a phone number capable of receiving SMS text messages.
+            The number should be formatted with the country code.
+          </small>
+        </div>
+      </div>
+      {{ end }}
+
       <div class="row form-group">
         <div class="offset-sm-3 col-sm-9">
           <button id="submit" class="btn btn-primary">Generate code</button>

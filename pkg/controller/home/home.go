@@ -71,6 +71,8 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	smsProvider, _ := hc.db.GetSMSProvider("") // TODO(sethvargo): support realms
+
 	m := html.GetTemplateMap(r)
 	// Set test date params
 	now := time.Now().UTC()
@@ -78,6 +80,7 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m["minDate"] = now.Add(hc.pastDaysDuration).Format("2006-01-02")
 	m["maxSymptomDays"] = hc.displayAllowedDays
 	m["duration"] = hc.config.CodeDuration.String()
+	m["smsEnabled"] = smsProvider != nil
 	m["user"] = user
 	hc.html.Render(w, "home", m)
 }

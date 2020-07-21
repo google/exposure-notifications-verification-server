@@ -68,6 +68,21 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Verify SMS configuration
+	smsProvider, err := ic.db.GetSMSProvider("") // TODO(sethvargo): pass in realm
+	if err != nil {
+		ic.logger.Errorf("otp.GetSMSProvider: %v", err)
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("failed to get sms provider"))
+		return
+	}
+
+	// Phone number is required if SMS is configured
+	if smsProvider != nil && request.Phone == "" {
+		ic.logger.Errorf("missing phone")
+		controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("missing phone"))
+		return
+	}
+
 	// Verify the test type
 	request.TestType = strings.ToLower(request.TestType)
 	if _, ok := ic.validTestType[request.TestType]; !ok {
@@ -99,7 +114,8 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	expiryTime := time.Now().UTC().Add(ic.config.GetVerificationCodeDuration())
+	expiration := ic.config.GetVerificationCodeDuration()
+	expiryTime := time.Now().UTC().Add(expiration)
 
 	authApp, user, err := ic.getAuthorizationFromContext(r)
 	if err != nil {
@@ -125,6 +141,15 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ic.logger.Errorf("otp.GenerateCode: %v", err)
 		controller.WriteJSON(w, http.StatusOK, api.Error("error generating verification, wait a moment and try again"))
 		return
+	}
+
+	if smsProvider != nil {
+		message := fmt.Sprintf(smsTemplate, code, int(expiration.Minutes()))
+		if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
+			ic.logger.Errorf("otp.SendSMS: %v", err)
+			controller.WriteJSON(w, http.StatusInternalServerError, api.Error("failed to send sms: %v", err))
+			return
+		}
 	}
 
 	controller.WriteJSON(w, http.StatusOK,
@@ -156,5 +181,8 @@ func (ic *IssueAPI) getAuthorizationFromContext(r *http.Request) (*database.Auth
 		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
 	}
 	return nil, user, nil
-
 }
+
+const smsTemplate = `Your exposure notifications verification code is %s. ` +
+	`Enter this code into your exposure notifications app. Do NOT share this ` +
+	`code with anyone. This code expires in %d minutes.`
