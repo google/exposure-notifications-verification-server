@@ -66,6 +66,10 @@ func (db *Database) GetSMSProvider(realm string) (sms.Provider, error) {
 		return nil, err
 	}
 
+	if val == nil {
+		return nil, nil
+	}
+
 	return val.(sms.Provider), nil
 }
 
