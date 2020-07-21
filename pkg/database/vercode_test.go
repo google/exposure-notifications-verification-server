@@ -15,10 +15,12 @@
 package database
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/jinzhu/gorm"
 )
 
 func TestSaveVerCode(t *testing.T) {
@@ -117,6 +119,31 @@ func TestVerCodeIsExpired(t *testing.T) {
 
 	if got := code.IsExpired(); got {
 		t.Errorf("code says expired, when shouldn't be")
+	}
+}
+
+func TestDeleteVerificationCode(t *testing.T) {
+	t.Parallel()
+	db := NewTestDatabase(t)
+
+	maxAge := time.Hour
+	code := VerificationCode{
+		Code:      "12345678",
+		TestType:  "confirmed",
+		ExpiresAt: time.Now().Add(time.Hour),
+	}
+
+	if err := db.SaveVerificationCode(&code, maxAge); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.DeleteVerificationCode("12345678"); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := db.FindVerificationCode("12345678")
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatal(err)
 	}
 }
 

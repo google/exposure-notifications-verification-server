@@ -118,6 +118,11 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 	return db.db.Save(vc).Error
 }
 
+// DeleteVerificationCode deletes the code if it exists. This is a hard delete.
+func (db *Database) DeleteVerificationCode(code string) error {
+	return db.db.Unscoped().Where("code = ?", code).Delete(&VerificationCode{}).Error
+}
+
 // PurgeVerificationCodes will delete verifications that have expired since at least the
 // provided maxAge ago.
 // This is a hard delete, not a soft delete.

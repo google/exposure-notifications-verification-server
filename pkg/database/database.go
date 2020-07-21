@@ -17,8 +17,11 @@ package database
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/jinzhu/gorm"
+
 	// ensure the postgres dialiect is compiled in.
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -28,15 +31,27 @@ import (
 type Database struct {
 	db     *gorm.DB
 	config *Config
+
+	// cacher is an internal write-through cache for frequent lookups.
+	cacher *cache.Cache
 }
 
 // Open created a DB connection through gorm.
 func (c *Config) Open() (*Database, error) {
+	cacher, err := cache.New(5 * time.Minute)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cache: %w", err)
+	}
+
 	db, err := gorm.Open("postgres", c.ConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("database gorm.Open: %w", err)
 	}
-	return &Database{db, c}, nil
+	return &Database{
+		db:     db,
+		config: c,
+		cacher: cacher,
+	}, nil
 }
 
 // Close will close the database connection. Should be deferred right after Open.

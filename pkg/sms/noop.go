@@ -29,6 +29,6 @@ func NewNoop(_ context.Context) (Provider, error) {
 }
 
 // SendSMS does nothing.
-func (p *Noop) SendSMS(_ context.Context, _, _, _ string) error {
+func (p *Noop) SendSMS(_ context.Context, _, _ string) error {
 	return nil
 }

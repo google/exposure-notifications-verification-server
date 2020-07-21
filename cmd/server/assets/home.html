@@ -47,7 +47,7 @@
       </div>
 
       <div class="row form-group">
-        <label for="symptomDate" class="col-sm-3">Symptom Onset Date</label>
+        <label for="symptomDate" class="col-sm-3">Symptoms onset</label>
         <div class="col-sm-9">
           <div class="datepicker date input-group p-0 shadow-sm">
             <input type="date" id="symptomDate" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
@@ -59,6 +59,22 @@
           </small>
         </div>
       </div>
+
+      {{ if .smsEnabled }}
+      <div class="row form-group">
+        <label for="symptomDate" class="col-sm-3">Patient phone</label>
+        <div class="col-sm-9">
+          <div class="input-group">
+            <input type="tel" id="phone" name="phone" class="form-control" />
+          </div>
+          <small class="form-text text-muted">
+            If provided, the system will send text containing the code to the
+            patient. This must be a phone number capable of receiving SMS text
+            messages.
+          </small>
+        </div>
+      </div>
+      {{ end }}
 
       <div class="row form-group">
         <div class="offset-sm-3 col-sm-9">
@@ -95,6 +111,7 @@
        url: '/home/issue',
        type : "POST",
        dataType : 'json',
+       cache: false,
        contentType: 'application/json',
        data : JSON.stringify(data),
        headers: {"X-CSRF-Token": csrfToken},
@@ -112,10 +129,14 @@
          }
        },
        error: function(xhr, resp, text) {
-         $("#codeerror").text("error: " + text);
+         var message = resp;
+         if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+           message = message + ": " + xhr.responseJSON.error;
+         }
+         $("#codeerror").text(message);
          $("#codearea").hide();
          $("#codeerror").show();
-         console.log(xhr, resp, text);
+         $("#submit").prop('disabled', false);
        }
      });
    }
@@ -135,6 +156,7 @@
           url: '/home/csrf',
           type: "GET",
           dataType: 'json',
+          cache: false,
           contentType: 'application/json',
           success: function(result) {
             if (result.error != "") {
