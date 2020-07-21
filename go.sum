@@ -1093,8 +1093,8 @@ github.com/sethvargo/go-limiter v0.2.2 h1:9MsQb01jSwXyuuU4v2KIVtTisvzIQgUpHUEyVo
 github.com/sethvargo/go-limiter v0.2.2/go.mod h1:C0kbSFbiriE5k2FFOe18M1YZbAR2Fiwf72uGu0CXCcU=
 github.com/sethvargo/go-retry v0.1.0 h1:8sPqlWannzcReEcYjHSNw9becsiYudcwTD7CasGjQaI=
 github.com/sethvargo/go-retry v0.1.0/go.mod h1:JzIOdZqQDNpPkQDmcqgtteAcxFLtYpNF/zJCM1ysDg8=
-github.com/sethvargo/go-signalcontext v0.0.0-20200717124333-74520d456356 h1:Poma+F9hLo3cYepsi8OzOsq/ks6MBU4/L7yDvnRnv5A=
-github.com/sethvargo/go-signalcontext v0.0.0-20200717124333-74520d456356/go.mod h1:PXu9UmR2f7mmp8kEwgkKmaDbxq/PbqixkiC66WIkkWE=
+github.com/sethvargo/go-signalcontext v0.1.0 h1:3IU7HOlmRXF0PSDf85C4nJ/zjYDjF+DS+LufcKfLvyk=
+github.com/sethvargo/go-signalcontext v0.1.0/go.mod h1:PXu9UmR2f7mmp8kEwgkKmaDbxq/PbqixkiC66WIkkWE=
 github.com/shirou/gopsutil v0.0.0-20190901111213-e4ec7b275ada/go.mod h1:WWnYX4lzhCH5h/3YBfyVA3VbLYjlMZZAQcW9ojMexNc=
 github.com/shirou/gopsutil v2.19.9+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
 github.com/shirou/gopsutil v2.20.4+incompatible h1:cMT4rxS55zx9NVUnCkrmXCsEB/RNfG9SwHY9evtX8Ng=
