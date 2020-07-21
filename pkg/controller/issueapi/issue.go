@@ -102,7 +102,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if request.SymptomDate != "" {
 		if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
 			ic.logger.Errorf("time.Parse: %v", err)
-			controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("invalid test date: %v", err))
+			controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("invalid symptom onset date: %v", err))
 			return
 		} else {
 			parsed = parsed.Local()
