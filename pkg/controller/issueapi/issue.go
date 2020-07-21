@@ -30,6 +30,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
 	httpcontext "github.com/gorilla/context"
 
@@ -68,19 +69,21 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify SMS configuration
-	smsProvider, err := ic.db.GetSMSProvider("") // TODO(sethvargo): pass in realm
-	if err != nil {
-		ic.logger.Errorf("otp.GetSMSProvider: %v", err)
-		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("failed to get sms provider"))
-		return
-	}
-
-	// Phone number is required if SMS is configured
-	if smsProvider != nil && request.Phone == "" {
-		ic.logger.Errorf("missing phone")
-		controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("missing phone"))
-		return
+	// Verify SMS configuration if phone was provided
+	var smsProvider sms.Provider
+	if request.Phone != "" {
+		var err error
+		smsProvider, err = ic.db.GetSMSProvider("") // TODO(sethvargo): pass in realm
+		if err != nil {
+			ic.logger.Errorf("otp.GetSMSProvider: %v", err)
+			controller.WriteJSON(w, http.StatusInternalServerError, api.Error("failed to get sms provider"))
+			return
+		}
+		if smsProvider == nil {
+			err := fmt.Errorf("phone provided, but no SMS provider is configured")
+			ic.logger.Errorf("otp.GetSMSProvider: %v", err)
+			controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("%v", err))
+		}
 	}
 
 	// Verify the test type
