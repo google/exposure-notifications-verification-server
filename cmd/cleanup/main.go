@@ -18,11 +18,7 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -31,8 +27,8 @@ import (
 	"github.com/sethvargo/go-signalcontext"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/server"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -75,34 +71,10 @@ func realMain(ctx context.Context) error {
 	}
 	r.Handle("/", cleanup.New(ctx, config, cleanupCache, db)).Methods("GET")
 
-	srv := &http.Server{
-		Handler: handlers.CombinedLoggingHandler(os.Stdout, r),
-		Addr:    "0.0.0.0:" + strconv.Itoa(config.Port),
+	srv, err := server.New(config.Port)
+	if err != nil {
+		return fmt.Errorf("failed to create server: %w", err)
 	}
-
-	errCh := make(chan error, 1)
-	go func() {
-		logger.Infow("server listening", "port", config.Port)
-
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			select {
-			case errCh <- err:
-			default:
-			}
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-	case <-errCh:
-		return fmt.Errorf("server error: %w", err)
-	}
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(shutdownCtx); err != nil {
-		return fmt.Errorf("failed to shutdown server")
-	}
-
-	return nil
+	logger.Infow("server listening", "port", config.Port)
+	return srv.ServeHTTPHandler(ctx, r)
 }

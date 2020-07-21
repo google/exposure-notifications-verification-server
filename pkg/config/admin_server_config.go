@@ -28,7 +28,7 @@ var _ IssueAPIConfig = (*AdminAPIServerConfig)(nil)
 type AdminAPIServerConfig struct {
 	Database database.Config
 
-	Port                int           `env:"PORT,default=8080"`
+	Port                string        `env:"PORT,default=8080"`
 	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 
