@@ -110,6 +110,7 @@
        url: '/home/issue',
        type : "POST",
        dataType : 'json',
+       cache: false,
        contentType: 'application/json',
        data : JSON.stringify(data),
        headers: {"X-CSRF-Token": csrfToken},
