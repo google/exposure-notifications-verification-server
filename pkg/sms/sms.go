@@ -45,7 +45,7 @@ type Config struct {
 type Provider interface {
 	// SendSMS sends an SMS text message from the given number to the given number
 	// with the provided message.
-	SendSMS(ctx context.Context, from, to, message string) error
+	SendSMS(ctx context.Context, to, message string) error
 }
 
 func ProviderFor(ctx context.Context, c *Config) (Provider, error) {
@@ -53,7 +53,7 @@ func ProviderFor(ctx context.Context, c *Config) (Provider, error) {
 	case ProviderTypeNoop:
 		return NewNoop(ctx)
 	case ProviderTypeTwilio:
-		return NewTwilio(ctx, c.TwilioAccountSid, c.TwilioAuthToken)
+		return NewTwilio(ctx, c.TwilioAccountSid, c.TwilioAuthToken, c.TwilioFromNumber)
 	default:
 		return nil, fmt.Errorf("unknown sms provider type: %v", typ)
 	}

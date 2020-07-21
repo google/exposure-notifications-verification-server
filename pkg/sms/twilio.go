@@ -16,6 +16,7 @@ package sms
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -29,10 +30,11 @@ var _ Provider = (*Twilio)(nil)
 // Twilio sends messages via the Twilio API.
 type Twilio struct {
 	client *http.Client
+	from   string
 }
 
 // NewTwilio creates a new Twilio SMS sender with the given auth.
-func NewTwilio(ctx context.Context, accountSid, authToken string) (Provider, error) {
+func NewTwilio(ctx context.Context, accountSid, authToken, from string) (Provider, error) {
 	client := &http.Client{
 		Timeout:   5 * time.Second,
 		Transport: &twilioAuthRoundTripper{accountSid, authToken},
@@ -40,14 +42,15 @@ func NewTwilio(ctx context.Context, accountSid, authToken string) (Provider, err
 
 	return &Twilio{
 		client: client,
+		from:   from,
 	}, nil
 }
 
 // SendSMS sends a message using the Twilio API.
-func (p *Twilio) SendSMS(ctx context.Context, from, to, message string) error {
+func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 	params := url.Values{}
 	params.Set("To", to)
-	params.Set("From", from)
+	params.Set("From", p.from)
 	params.Set("Body", message)
 	body := strings.NewReader(params.Encode())
 
@@ -62,12 +65,17 @@ func (p *Twilio) SendSMS(ctx context.Context, from, to, message string) error {
 	}
 	defer resp.Body.Close()
 
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
 	if code := resp.StatusCode; code < 200 || code > 299 {
-		respBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("twilio error %d, but failed to read body: %w", code, err)
+		var terr TwilioError
+		if err := json.Unmarshal(respBody, &terr); err != nil {
+			return fmt.Errorf("twilio error %d: %s", code, respBody)
 		}
-		return fmt.Errorf("twilio error %d: %s", code, respBody)
+		return &terr
 	}
 
 	return nil
@@ -92,4 +100,14 @@ func (rt *twilioAuthRoundTripper) RoundTrip(r *http.Request) (*http.Response, er
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	return http.DefaultTransport.RoundTrip(r)
+}
+
+// TwilioError represents an error returned from the Twilio API.
+type TwilioError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e *TwilioError) Error() string {
+	return e.Message
 }
