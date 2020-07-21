@@ -184,6 +184,16 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				return nil
 			},
 		},
+		{
+			ID: "00010-AddSMSConfig",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: adding sms_configs table")
+				return tx.AutoMigrate(&SMSConfig{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("sms_configs").Error
+			},
+		},
 	})
 
 	logger.Infof("database migrations complete")
