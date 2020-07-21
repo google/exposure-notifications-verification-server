@@ -17,6 +17,7 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
@@ -36,26 +37,36 @@ type SMSConfig struct {
 	TwilioFromNumber string `gorm:"type:varchar(16)"`
 }
 
+// GetSMSProvider gets the SMS provider for the given realm. The values are
+// cached.
 func (db *Database) GetSMSProvider(realm string) (sms.Provider, error) {
-	smsConfig, err := db.FindSMSConfig(realm)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+	key := fmt.Sprintf("GetSMSProvider/%s", realm)
+	val, err := db.cacher.WriteThruLookup(key, func() (interface{}, error) {
+		smsConfig, err := db.FindSMSConfig(realm)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, nil
+			}
+			return nil, err
 		}
-		return nil, err
-	}
 
-	ctx := context.Background()
-	provider, err := sms.ProviderFor(ctx, &sms.Config{
-		ProviderType:     smsConfig.ProviderType,
-		TwilioAccountSid: smsConfig.TwilioAccountSid,
-		TwilioAuthToken:  smsConfig.TwilioAuthToken,
-		TwilioFromNumber: smsConfig.TwilioFromNumber,
+		ctx := context.Background()
+		provider, err := sms.ProviderFor(ctx, &sms.Config{
+			ProviderType:     smsConfig.ProviderType,
+			TwilioAccountSid: smsConfig.TwilioAccountSid,
+			TwilioAuthToken:  smsConfig.TwilioAuthToken,
+			TwilioFromNumber: smsConfig.TwilioFromNumber,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return provider, nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return provider, nil
+
+	return val.(sms.Provider), nil
 }
 
 // FindSMSConfig gets the SMS configuration for the given realm.
