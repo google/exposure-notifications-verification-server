@@ -42,7 +42,7 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(smsConfig, *got); diff != "" {
+	if diff := cmp.Diff(smsConfig, *got, approxTime); diff != "" {
 		t.Errorf("mismatch (-want, +got):\n%s", diff)
 	}
 
@@ -56,7 +56,7 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(smsConfig, *got); diff != "" {
+	if diff := cmp.Diff(smsConfig, *got, approxTime); diff != "" {
 		t.Errorf("mismatch (-want, +got):\n%s", diff)
 	}
 }
