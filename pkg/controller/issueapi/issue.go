@@ -99,7 +99,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	expiryTime := time.Now().Add(ic.config.GetVerificationCodeDuration())
+	expiryTime := time.Now().UTC().Add(ic.config.GetVerificationCodeDuration())
 
 	authApp, user, err := ic.getAuthorizationFromContext(r)
 	if err != nil {
@@ -129,8 +129,9 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	controller.WriteJSON(w, http.StatusOK,
 		&api.IssueCodeResponse{
-			VerificationCode: code,
-			ExpiresAt:        expiryTime.Format(time.RFC1123),
+			VerificationCode:   code,
+			ExpiresAt:          expiryTime.Format(time.RFC1123),
+			ExpiresAtTimestamp: expiryTime.Unix(),
 		})
 }
 

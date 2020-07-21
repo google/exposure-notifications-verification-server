@@ -53,9 +53,10 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	VerificationCode string `json:"code"`
-	ExpiresAt        string `json:"expiresAt"`
-	Error            string `json:"error"`
+	VerificationCode   string `json:"code"`
+	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
+	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
+	Error              string `json:"error"`
 }
 
 // VerifyCodeRequest is the request structure for exchanging a shor term Verification Code
