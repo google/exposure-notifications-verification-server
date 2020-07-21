@@ -16,7 +16,9 @@ package database
 
 import (
 	"testing"
+	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/google/go-cmp/cmp"
 )
@@ -84,6 +86,19 @@ func TestGetSMSProvider(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Ensure nil is cached
+	provider, err = db.GetSMSProvider("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if provider != nil {
+		t.Errorf("expected %v to be %v", provider, nil)
+	}
+
+	// Reset cache
+	db.cacher, _ = cache.New(5 * time.Minute)
+
+	// Ensure new value is present
 	provider, err = db.GetSMSProvider("")
 	if err != nil {
 		t.Fatal(err)
@@ -91,7 +106,6 @@ func TestGetSMSProvider(t *testing.T) {
 	if provider == nil {
 		t.Fatal("expected provider")
 	}
-
 	if _, ok := provider.(*sms.Twilio); !ok {
 		t.Fatal("expected provider to be twilio")
 	}
