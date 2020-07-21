@@ -146,7 +146,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if smsProvider != nil {
+	if request.Phone != "" && smsProvider != nil {
 		message := fmt.Sprintf(smsTemplate, code, int(expiration.Minutes()))
 		if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 			// Delete the token
