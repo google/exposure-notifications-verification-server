@@ -149,6 +149,12 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if smsProvider != nil {
 		message := fmt.Sprintf(smsTemplate, code, int(expiration.Minutes()))
 		if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
+			// Delete the token
+			if err := ic.db.DeleteVerificationCode(code); err != nil {
+				ic.logger.Errorf("failed to delete verification code: %v")
+				// fallthrough to the error
+			}
+
 			ic.logger.Errorf("otp.SendSMS: %v", err)
 			controller.WriteJSON(w, http.StatusInternalServerError, api.Error("failed to send sms: %v", err))
 			return
