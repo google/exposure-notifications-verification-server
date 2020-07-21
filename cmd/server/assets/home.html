@@ -128,10 +128,13 @@
          }
        },
        error: function(xhr, resp, text) {
-         $("#codeerror").text("error: " + text);
+         var message = resp;
+         if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+           message = message + ": " + xhr.responseJSON.error;
+         }
+         $("#codeerror").text(message);
          $("#codearea").hide();
          $("#codeerror").show();
-         console.log(xhr, resp, text);
        }
      });
    }
