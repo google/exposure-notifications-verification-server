@@ -62,6 +62,7 @@ func realMain(ctx context.Context) error {
 	// if *realm == "" {
 	// 	return fmt.Errorf("--realm is required")
 	// }
+	_ = *realm
 
 	if *accountSid == "" {
 		return fmt.Errorf("--twilio-account-sid is required")
