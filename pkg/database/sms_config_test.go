@@ -15,60 +15,74 @@
 package database
 
 import (
+	"context"
+	"errors"
 	"testing"
-	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestSMSConfig_Lifecycle(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
 	db := NewTestDatabase(t)
+
+	// Create a secret manager.
+	sm := InMemorySecretManager(map[string]string{
+		"my-secret-ref": "def456",
+	})
+	db.secretManager = sm
 
 	smsConfig := SMSConfig{
 		ProviderType:     sms.ProviderType("TWILIO"),
 		TwilioAccountSid: "abc123",
-		TwilioAuthToken:  "def456",
+		TwilioAuthToken:  "totally-not-valid", // invalid ref, test error propagation
 		TwilioFromNumber: "+11234567890",
 	}
-
 	if err := db.SaveSMSConfig(&smsConfig); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := db.FindSMSConfig("")
-	if err != nil {
+	// Lookup config, this should fail because the secret is invalid.
+	_, err := db.FindSMSConfig(ctx, "")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !errors.Is(err, ErrSecretNotExist) {
+		t.Errorf("expected %v to be %v", err, ErrSecretNotExist)
+	}
+
+	// Delete config.
+	if err := db.DeleteSMSConfig(&smsConfig); err != nil {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(smsConfig, *got, approxTime); diff != "" {
-		t.Errorf("mismatch (-want, +got):\n%s", diff)
-	}
-
-	smsConfig.TwilioFromNumber = "+10987654321"
+	// Create valid config.
+	smsConfig.TwilioAuthToken = "my-secret-ref"
 	if err := db.SaveSMSConfig(&smsConfig); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err = db.FindSMSConfig("")
+	// Lookup config.
+	result, err := db.FindSMSConfig(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(smsConfig, *got, approxTime); diff != "" {
-		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	// Secret was resolved.
+	if got, want := result.TwilioAuthToken, "def456"; got != want {
+		t.Errorf("expected %v to be %v", got, want)
 	}
 }
 
 func TestGetSMSProvider(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
 	db := NewTestDatabase(t)
 
-	provider, err := db.GetSMSProvider("")
+	provider, err := db.GetSMSProvider(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,34 +93,19 @@ func TestGetSMSProvider(t *testing.T) {
 	smsConfig := SMSConfig{
 		ProviderType:     sms.ProviderType("TWILIO"),
 		TwilioAccountSid: "abc123",
-		TwilioAuthToken:  "def456",
+		TwilioAuthToken:  "my-secret-ref",
 		TwilioFromNumber: "+11234567890",
 	}
 	if err := db.SaveSMSConfig(&smsConfig); err != nil {
 		t.Fatal(err)
 	}
 
-	// Ensure nil is cached
-	provider, err = db.GetSMSProvider("")
+	// Ensure nil was cached
+	provider, err = db.GetSMSProvider(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if provider != nil {
 		t.Errorf("expected %v to be %v", provider, nil)
-	}
-
-	// Reset cache
-	db.cacher, _ = cache.New(5 * time.Minute)
-
-	// Ensure new value is present
-	provider, err = db.GetSMSProvider("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if provider == nil {
-		t.Fatal("expected provider")
-	}
-	if _, ok := provider.(*sms.Twilio); !ok {
-		t.Fatal("expected provider to be twilio")
 	}
 }

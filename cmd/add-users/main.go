@@ -43,7 +43,7 @@ func main() {
 		log.Fatalf("config error: %v", err)
 	}
 
-	db, err := config.Open()
+	db, err := config.Open(ctx)
 	if err != nil {
 		log.Fatalf("db connection failed: %v", err)
 	}

@@ -58,6 +58,8 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 }
 
 func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	rawUser, ok := httpcontext.GetOk(r, "user")
 	if !ok {
 		flash.FromContext(w, r).Error("Unauthorized")
@@ -71,7 +73,7 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	smsProvider, _ := hc.db.GetSMSProvider("") // TODO(sethvargo): support realms
+	smsProvider, _ := hc.db.GetSMSProvider(ctx, "") // TODO(sethvargo): support realms
 
 	m := html.GetTemplateMap(r)
 	// Set test date params
