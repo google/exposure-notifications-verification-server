@@ -17,6 +17,7 @@ package database
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Config represents the env var based configuration for database connections.
@@ -31,6 +32,10 @@ type Config struct {
 	SSLCertPath       string `env:"DB_SSLCERT" json:",omitempty"`
 	SSLKeyPath        string `env:"DB_SSLKEY" json:",omitempty"`
 	SSLRootCertPath   string `env:"DB_SSLROOTCERT" json:",omitempty"`
+
+	// CacheTTL is the amount of time to cache values. This is enabled on a
+	// per-query basis. Not all query results are cached.
+	CacheTTL time.Duration `env:"DB_CACHE_TTL, default=5m" json:",omitempty"`
 }
 
 // ConnectionString returns the postgresql connection string based on this config.
