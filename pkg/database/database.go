@@ -37,8 +37,8 @@ type Database struct {
 }
 
 // Open created a DB connection through gorm.
-func (c *Config) Open() (*Database, error) {
 	cacher, err := cache.New(5 * time.Minute)
+func (c *Config) Open(ctx context.Context) (*Database, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cache: %w", err)
 	}

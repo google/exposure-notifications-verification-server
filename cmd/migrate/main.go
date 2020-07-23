@@ -45,7 +45,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
-	db, err := config.Open()
+	db, err := config.Open(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}

@@ -62,6 +62,7 @@ func New(ctx context.Context, config config.IssueAPIConfig, db *database.Databas
 
 func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
 	var request api.IssueCodeRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
 		ic.logger.Errorf("failed to bind request: %v", err)
@@ -73,7 +74,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var smsProvider sms.Provider
 	if request.Phone != "" {
 		var err error
-		smsProvider, err = ic.db.GetSMSProvider("") // TODO(sethvargo): pass in realm
+		smsProvider, err = ic.db.GetSMSProvider(ctx, "") // TODO(sethvargo): pass in realm
 		if err != nil {
 			ic.logger.Errorf("otp.GetSMSProvider: %v", err)
 			controller.WriteJSON(w, http.StatusInternalServerError, api.Error("failed to get sms provider"))

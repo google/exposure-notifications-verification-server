@@ -54,7 +54,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Setup database
-	db, err := config.Database.Open()
+	db, err := config.Database.Open(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
