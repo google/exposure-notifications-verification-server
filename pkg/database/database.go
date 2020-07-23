@@ -16,10 +16,11 @@
 package database
 
 import (
+	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/jinzhu/gorm"
 
 	// ensure the postgres dialiect is compiled in.
@@ -34,6 +35,9 @@ type Database struct {
 
 	// cacher is an internal write-through cache for frequent lookups.
 	cacher *cache.Cache
+
+	// secretManager is used to resolve secrets.
+	secretManager secrets.SecretManager
 }
 
 // Open created a DB connection through gorm.
@@ -44,14 +48,22 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 		return nil, fmt.Errorf("failed to create cache: %w", err)
 	}
 
+	// Create the secret manager.
+	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create secret manager: %w", err)
+	}
+
+	// Connect to the database.
 	db, err := gorm.Open("postgres", c.ConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("database gorm.Open: %w", err)
 	}
 	return &Database{
-		db:     db,
-		config: c,
-		cacher: cacher,
+		db:            db,
+		config:        c,
+		cacher:        cacher,
+		secretManager: secretManager,
 	}, nil
 }
 

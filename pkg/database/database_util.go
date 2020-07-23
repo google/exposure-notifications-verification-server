@@ -16,11 +16,13 @@ package database
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/ory/dockertest"
@@ -87,12 +89,16 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 
 	// build database config.
 	config := Config{
+		CacheTTL: 30 * time.Second,
 		User:     username,
 		Port:     port,
 		Host:     host,
 		Name:     dbname,
 		Password: password,
 		SSLMode:  "disable",
+		Secrets: secrets.Config{
+			SecretManagerType: secrets.SecretManagerTypeNoop,
+		},
 	}
 
 	// Wait for the container to start - we'll retry connections in a loop below,
@@ -111,7 +117,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	var db *Database
 	if err := retry.Do(ctx, b, func(_ context.Context) error {
 		var err error
-		db, err = config.Open()
+		db, err = config.Open(ctx)
 		if err != nil {
 			tb.Logf("retrying error: %v", err)
 			return retry.RetryableError(err)
@@ -138,4 +144,18 @@ func NewTestDatabase(tb testing.TB) *Database {
 
 	db, _ := NewTestDatabaseWithConfig(tb)
 	return db
+}
+
+var ErrSecretNotExist = errors.New("secret does not exist")
+
+// InMemorySecretManager is a secret manager that returns the value at the given
+// key or an error if it does not exist.
+type InMemorySecretManager map[string]string
+
+// GetSecretValue implements secrets.
+func (s InMemorySecretManager) GetSecretValue(_ context.Context, v string) (string, error) {
+	if v, ok := s[v]; ok {
+		return v, nil
+	}
+	return "", ErrSecretNotExist
 }

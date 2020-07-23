@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 )
 
 // Config represents the env var based configuration for database connections.
@@ -36,6 +38,12 @@ type Config struct {
 	// CacheTTL is the amount of time to cache values. This is enabled on a
 	// per-query basis. Not all query results are cached.
 	CacheTTL time.Duration `env:"DB_CACHE_TTL, default=5m" json:",omitempty"`
+
+	// Secrets is the secret configuration. This is used to resolve values that
+	// are actually pointers to secrets before returning them to the caller. The
+	// table implementation is the source of truth for which values are secrets
+	// and which are plaintext.
+	Secrets secrets.Config
 }
 
 // ConnectionString returns the postgresql connection string based on this config.
