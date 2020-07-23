@@ -31,6 +31,7 @@ require (
 	go.uber.org/zap v1.15.0
 	golang.org/x/tools v0.0.0-20200715235423-130c9f19d3fe
 	google.golang.org/genproto v0.0.0-20200715011427-11fb19a81f2c
+	google.golang.org/grpc v1.30.0
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.4

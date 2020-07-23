@@ -33,16 +33,17 @@ type SMSConfig struct {
 
 	// Twilio configuration options.
 	TwilioAccountSid string `gorm:"type:varchar(250)"`
-	TwilioAuthToken  string `gorm:"type:varchar(250)"`
+	TwilioAuthToken  string `gorm:"type:varchar(250)"` // secret reference
 	TwilioFromNumber string `gorm:"type:varchar(16)"`
 }
 
 // GetSMSProvider gets the SMS provider for the given realm. The values are
 // cached.
-func (db *Database) GetSMSProvider(realm string) (sms.Provider, error) {
+func (db *Database) GetSMSProvider(ctx context.Context, realm string) (sms.Provider, error) {
 	key := fmt.Sprintf("GetSMSProvider/%s", realm)
 	val, err := db.cacher.WriteThruLookup(key, func() (interface{}, error) {
-		smsConfig, err := db.FindSMSConfig(realm)
+		// Get the configuration, if it exists.
+		smsConfig, err := db.FindSMSConfig(ctx, realm)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, nil
@@ -50,7 +51,6 @@ func (db *Database) GetSMSProvider(realm string) (sms.Provider, error) {
 			return nil, err
 		}
 
-		ctx := context.Background()
 		provider, err := sms.ProviderFor(ctx, &sms.Config{
 			ProviderType:     smsConfig.ProviderType,
 			TwilioAccountSid: smsConfig.TwilioAccountSid,
@@ -73,14 +73,30 @@ func (db *Database) GetSMSProvider(realm string) (sms.Provider, error) {
 	return val.(sms.Provider), nil
 }
 
-// FindSMSConfig gets the SMS configuration for the given realm.
-func (db *Database) FindSMSConfig(realm string) (*SMSConfig, error) {
+// FindSMSConfig gets the SMS configuration for the given realm. It resolves any
+// secrets to their plaintext values.
+func (db *Database) FindSMSConfig(ctx context.Context, realm string) (*SMSConfig, error) {
 	var smsConfig SMSConfig
 
 	// TODO(sethvargo): support realms and lookup SMS configuration by realm.
 	if err := db.db.First(&smsConfig).Error; err != nil {
 		return nil, err
 	}
+
+	// Get the actual auth token from the secret manager.
+	//
+	// TODO(sethvargo): this is a double switch, since ProviderFor is also a
+	// switch. Maybe we should push this logic down lower? We only want to
+	// resolve secrets for the provider that's configured.
+	switch smsConfig.ProviderType {
+	case sms.ProviderTypeTwilio:
+		authToken, err := db.secretManager.GetSecretValue(ctx, smsConfig.TwilioAuthToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve twilio auth token secret: %w", err)
+		}
+		smsConfig.TwilioAuthToken = authToken
+	}
+
 	return &smsConfig, nil
 }
 
@@ -94,5 +110,5 @@ func (db *Database) SaveSMSConfig(s *SMSConfig) error {
 
 // DeleteSMSConfig removes an SMS configuration record.
 func (db *Database) DeleteSMSConfig(s *SMSConfig) error {
-	return db.db.Delete(s).Error
+	return db.db.Unscoped().Delete(s).Error
 }
