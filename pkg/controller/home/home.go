@@ -73,7 +73,11 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	smsProvider, _ := hc.db.GetSMSProvider(ctx, "") // TODO(sethvargo): support realms
+	smsProvider, err := hc.db.GetSMSProvider(ctx, "") // TODO(sethvargo): support realms
+	if err != nil {
+		hc.logger.Errorw("failed to load sms configuration", "error", err)
+		flash.FromContext(w, r).Error("internal error - failed to load SMS configuration")
+	}
 
 	m := html.GetTemplateMap(r)
 	// Set test date params

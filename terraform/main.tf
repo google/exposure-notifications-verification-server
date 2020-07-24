@@ -136,3 +136,9 @@ output "region" {
 output "cloudscheduler_location" {
   value = var.cloudscheduler_location
 }
+
+output "next_steps" {
+  value = {
+    "enable_authentication_providers" = "https://console.firebase.google.com/project/${var.project}/authentication/providers"
+  }
+}
