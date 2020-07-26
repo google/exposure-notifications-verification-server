@@ -44,6 +44,18 @@ resource "google_secret_manager_secret_iam_member" "server-db" {
   member    = "serviceAccount:${google_service_account.server.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "server-twilio" {
+  provider = google-beta
+
+  for_each = toset([
+    "twilio-auth-token",
+  ])
+
+  secret_id = google_secret_manager_secret.twilio[each.key].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.server.email}"
+}
+
 resource "google_secret_manager_secret_iam_member" "server-csrf" {
   provider  = google-beta
   secret_id = google_secret_manager_secret.csrf-token.id
