@@ -130,58 +130,58 @@ keys and API keys have one of two levels of access: `DEVICE` or `ADMIN`.
 
 ### API Guide for App Developers
 
-For application developers, there are three APIs that are homed in the
-`cmd/apiserver` that need to be utilized. All APIs are JSON over HTTP, only use
-`POST`, and require that the API key be passed in the HTTP header `X-API-Key`.
-The APIs are as follows.
+The following APIs exist for the API server (`cmd/apiserver`). All APIs are JSON
+over HTTPS, only use `POST`, and require that the API key be passed in the HTTP
+header `X-API-Key`.
 
-1. `/api/verify` - Exchange a verification code for a long term verification
-  token.
-  * VerifyCodeRequest:
-  ```json
-  {
-    "code": "<the code>"
-  }
-  ```
-  * VerifyCodeResponse:
-  ```json
-  {
-    "TestType": "<test type string>",
-    "SymptomDate": "YYYY-MM-DD",
-    "VerificationToken": "<JWT verification token>",
-    "Error": ""
-  }
-  ```
-2. `/api/certificate` - Exchange a verification token for a verification certificate (for key server)
-  * VerificationCertificateRequest:
-  ```json
-  {
-    "VerificationToken": "token from verifyCodeResponse",
-    "ekeyhmac": "hmac of exposure keys"
-  }
-  ```
-  * VerificationCertificateResponse:
-  ```json
-  {
-    "Certificate": "<JWT verification certificate>",
-    "Error": ""
-  }
-  ```
-3. `/api/cover` - Send request from the device to the PHA server to "cover" the traffic. All devices in a region should connect to the
-server multiple times per day to simulate token exchange.
-  * CoverRequest:
-  ```json
-  {
-    "Data": "<random string data>"
-  }
-  ```
-  * CoverResponse:
-  ```json
-  {
-    "Data": "random base64 encoded data",
-    "Error": ""
-  }
-  ```
+In addition to "real" requests, the server also accept chaff (fake) requests.
+These can be used to obfuscate real traffic from a network observer or server
+operator. To initiate a chaff request, set the `X-Chaff` header on your request.
+The client should still send a real request with a real request body (the body
+will not be processed). The server will respond with a fake response that your
+client **MUST NOT** process. Client's should sporadically issue chaff requests.
+
+1.  `/api/verify` - Exchange a verification code for a long term verification
+    token.
+
+    **VerifyCodeRequest:**
+
+    ```json
+    {
+      "code": "<the code>"
+    }
+    ```
+
+    **VerifyCodeResponse:**
+
+    ```json
+    {
+      "TestType": "<test type string>",
+      "SymptomDate": "YYYY-MM-DD",
+      "VerificationToken": "<JWT verification token>",
+      "Error": ""
+    }
+    ```
+
+1.  `/api/certificate` - Exchange a verification token for a verification certificate (for key server)
+
+    **VerificationCertificateRequest:**
+
+    ```json
+    {
+      "VerificationToken": "token from verifyCodeResponse",
+      "ekeyhmac": "hmac of exposure keys"
+    }
+    ```
+
+    **VerificationCertificateResponse:**
+
+    ```json
+    {
+      "Certificate": "<JWT verification certificate>",
+      "Error": ""
+    }
+    ```
 
 
 ### Test Utilities

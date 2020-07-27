@@ -24,13 +24,13 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/cover"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/mikehelmick/go-chaff"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
 
@@ -103,9 +103,15 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create publickey cache: %w", err)
 	}
 
-	r.Handle("/api/verify", verifyapi.New(ctx, config, db, signer)).Methods("POST")
-	r.Handle("/api/certificate", certapi.New(ctx, config, db, signer, publicKeyCache)).Methods("POST")
-	r.Handle("/api/cover", cover.New(ctx)).Methods("POST")
+	// POST /api/verify
+	verifyChaff := chaff.New()
+	defer verifyChaff.Close()
+	r.Handle("/api/verify", handleChaff(verifyChaff, verifyapi.New(ctx, config, db, signer))).Methods("POST")
+
+	// POST /api/certificate
+	certChaff := chaff.New()
+	defer certChaff.Close()
+	r.Handle("/api/certificate", handleChaff(certChaff, certapi.New(ctx, config, db, signer, publicKeyCache))).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {
@@ -128,4 +134,8 @@ func apiKeyFunc() httplimit.KeyFunc {
 		// If no API key was provided, default to limiting by IP.
 		return ipKeyFunc(r)
 	}
+}
+
+func handleChaff(tracker *chaff.Tracker, next http.Handler) http.Handler {
+	return tracker.HandleTrack(chaff.HeaderDetector("X-Chaff"), next)
 }

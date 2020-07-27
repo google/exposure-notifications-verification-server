@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/cover"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -95,7 +94,6 @@ func realMain(ctx context.Context) error {
 	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, database.APIUserTypeAdmin).Handle)
 
 	r.Handle("/api/issue", issueapi.New(ctx, config, db)).Methods("POST")
-	r.Handle("/api/cover", cover.New(ctx)).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {
