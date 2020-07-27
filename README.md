@@ -130,10 +130,15 @@ keys and API keys have one of two levels of access: `DEVICE` or `ADMIN`.
 
 ### API Guide for App Developers
 
-For application developers, there are three APIs that are homed in the
-`cmd/apiserver` that need to be utilized. All APIs are JSON over HTTP, only use
-`POST`, and require that the API key be passed in the HTTP header `X-API-Key`.
-The APIs are as follows.
+The following APIs exist for the API server (`cmd/apiserver`). All APIs are JSON
+over HTTPS, only use `POST`, and require that the API key be passed in the HTTP
+header `X-API-Key`.
+
+In addition to "real" requests, the server also accept chaff (fake) requests.
+These can be used to obfuscate real traffic from a network observer or server
+operator. To initiate a chaff request, set the `X-Chaff` header on your request.
+The server will respond with a fake response that your client **MUST NOT**
+process. Client's should sporadically issue chaff requests.
 
 1.  `/api/verify` - Exchange a verification code for a long term verification
     token.
