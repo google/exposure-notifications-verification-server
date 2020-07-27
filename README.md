@@ -135,53 +135,47 @@ For application developers, there are three APIs that are homed in the
 `POST`, and require that the API key be passed in the HTTP header `X-API-Key`.
 The APIs are as follows.
 
-1. `/api/verify` - Exchange a verification code for a long term verification
-  token.
-  * VerifyCodeRequest:
-  ```json
-  {
-    "code": "<the code>"
-  }
-  ```
-  * VerifyCodeResponse:
-  ```json
-  {
-    "TestType": "<test type string>",
-    "SymptomDate": "YYYY-MM-DD",
-    "VerificationToken": "<JWT verification token>",
-    "Error": ""
-  }
-  ```
-2. `/api/certificate` - Exchange a verification token for a verification certificate (for key server)
-  * VerificationCertificateRequest:
-  ```json
-  {
-    "VerificationToken": "token from verifyCodeResponse",
-    "ekeyhmac": "hmac of exposure keys"
-  }
-  ```
-  * VerificationCertificateResponse:
-  ```json
-  {
-    "Certificate": "<JWT verification certificate>",
-    "Error": ""
-  }
-  ```
-3. `/api/cover` - Send request from the device to the PHA server to "cover" the traffic. All devices in a region should connect to the
-server multiple times per day to simulate token exchange.
-  * CoverRequest:
-  ```json
-  {
-    "Data": "<random string data>"
-  }
-  ```
-  * CoverResponse:
-  ```json
-  {
-    "Data": "random base64 encoded data",
-    "Error": ""
-  }
-  ```
+1.  `/api/verify` - Exchange a verification code for a long term verification
+    token.
+
+    **VerifyCodeRequest:**
+
+    ```json
+    {
+      "code": "<the code>"
+    }
+    ```
+
+    **VerifyCodeResponse:**
+
+    ```json
+    {
+      "TestType": "<test type string>",
+      "SymptomDate": "YYYY-MM-DD",
+      "VerificationToken": "<JWT verification token>",
+      "Error": ""
+    }
+    ```
+
+1.  `/api/certificate` - Exchange a verification token for a verification certificate (for key server)
+
+    **VerificationCertificateRequest:**
+
+    ```json
+    {
+      "VerificationToken": "token from verifyCodeResponse",
+      "ekeyhmac": "hmac of exposure keys"
+    }
+    ```
+
+    **VerificationCertificateResponse:**
+
+    ```json
+    {
+      "Certificate": "<JWT verification certificate>",
+      "Error": ""
+    }
+    ```
 
 
 ### Test Utilities

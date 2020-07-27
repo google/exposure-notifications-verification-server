@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/cover"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -34,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/gorilla/mux"
+	"github.com/mikehelmick/go-chaff"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-signalcontext"
@@ -70,6 +70,11 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
+	// Setup chaff request handling
+	tracker := chaff.New()
+	defer tracker.Close()
+	r.Use(tracker.Track)
+
 	// Setup rate limiter
 	store, err := memorystore.New(&memorystore.Config{
 		Tokens:   config.RateLimit,
@@ -94,8 +99,7 @@ func realMain(ctx context.Context) error {
 	// Install the APIKey Auth Middleware
 	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, database.APIUserTypeAdmin).Handle)
 
-	r.Handle("/api/issue", issueapi.New(ctx, config, db)).Methods("POST")
-	r.Handle("/api/cover", cover.New(ctx)).Methods("POST")
+	r.Handle("/api/issue", handleChaff(tracker, issueapi.New(ctx, config, db))).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {
@@ -118,4 +122,15 @@ func apiKeyFunc() httplimit.KeyFunc {
 		// If no API key was provided, default to limiting by IP.
 		return ipKeyFunc(r)
 	}
+}
+
+func handleChaff(onchaff http.Handler, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-Chaff") != "" {
+			onchaff.ServeHTTP(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

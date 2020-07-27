@@ -24,13 +24,13 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/cover"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/mikehelmick/go-chaff"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
 
@@ -77,6 +77,11 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
+	// Setup chaff request handling
+	tracker := chaff.New()
+	defer tracker.Close()
+	r.Use(tracker.Track)
+
 	// Setup rate limiter
 	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
@@ -103,9 +108,8 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create publickey cache: %w", err)
 	}
 
-	r.Handle("/api/verify", verifyapi.New(ctx, config, db, signer)).Methods("POST")
-	r.Handle("/api/certificate", certapi.New(ctx, config, db, signer, publicKeyCache)).Methods("POST")
-	r.Handle("/api/cover", cover.New(ctx)).Methods("POST")
+	r.Handle("/api/verify", handleChaff(tracker, verifyapi.New(ctx, config, db, signer))).Methods("POST")
+	r.Handle("/api/certificate", handleChaff(tracker, certapi.New(ctx, config, db, signer, publicKeyCache))).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {
@@ -128,4 +132,15 @@ func apiKeyFunc() httplimit.KeyFunc {
 		// If no API key was provided, default to limiting by IP.
 		return ipKeyFunc(r)
 	}
+}
+
+func handleChaff(onchaff http.Handler, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-Chaff") != "" {
+			onchaff.ServeHTTP(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

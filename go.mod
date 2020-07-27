@@ -19,6 +19,7 @@ require (
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jinzhu/gorm v1.9.12
+	github.com/mikehelmick/go-chaff v0.2.1
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/sethvargo/go-envconfig v0.1.1
