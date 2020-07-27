@@ -137,8 +137,9 @@ header `X-API-Key`.
 In addition to "real" requests, the server also accept chaff (fake) requests.
 These can be used to obfuscate real traffic from a network observer or server
 operator. To initiate a chaff request, set the `X-Chaff` header on your request.
-The server will respond with a fake response that your client **MUST NOT**
-process. Client's should sporadically issue chaff requests.
+The client should still send a real request with a real request body (the body
+will not be processed). The server will respond with a fake response that your
+client **MUST NOT** process. Client's should sporadically issue chaff requests.
 
 1.  `/api/verify` - Exchange a verification code for a long term verification
     token.
