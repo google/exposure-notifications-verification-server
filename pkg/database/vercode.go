@@ -54,6 +54,7 @@ type VerificationCode struct {
 	IssuingApp  *AuthorizedApp
 	// VerificationCodes belong to exactly one realm when issued.
 	RealmID uint
+	Realm   Realm
 }
 
 // TableName sets the VerificationCode table name

@@ -67,6 +67,13 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	realm := controller.RealmFromContext(ctx)
+	if realm == nil {
+		flash.FromContext(w, r).Error("Select realm to continue.")
+		http.Redirect(w, r, "/realm", http.StatusSeeOther)
+		return
+	}
+
 	smsProvider, err := hc.db.GetSMSProvider(ctx, "") // TODO(sethvargo): support realms
 	if err != nil {
 		hc.logger.Errorw("failed to load sms configuration", "error", err)
@@ -82,5 +89,7 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m["duration"] = hc.config.CodeDuration.String()
 	m["smsEnabled"] = smsProvider != nil
 	m["user"] = user
+	m["flash"] = flash.FromContext(w, r)
+	m["realm"] = realm
 	hc.html.Render(w, "home", m)
 }

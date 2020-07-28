@@ -16,6 +16,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
@@ -24,10 +25,22 @@ import (
 	"gopkg.in/gormigrate.v1"
 )
 
-// RunMigrations will apply sequential, transactional migrations to the database
-func (db *Database) RunMigrations(ctx context.Context) error {
+const initState = "00000-Init"
+
+func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 	logger := logging.FromContext(ctx)
-	m := gormigrate.New(db.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+	options := gormigrate.DefaultOptions
+	options.UseTransaction = true
+	return gormigrate.New(db.db, options, []*gormigrate.Migration{
+		{
+			ID: initState,
+			Migrate: func(tx *gorm.DB) error {
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 		{
 			ID: "00001-CreateUsers",
 			Migrate: func(tx *gorm.DB) error {
@@ -205,7 +218,7 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 			},
 		},
 		{
-			ID: "00008-AddRealms",
+			ID: "00011-AddRealms",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Info("db migrations: create realms table")
 				// Add the realms table.
@@ -215,9 +228,7 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 				logger.Info("Create the DEFAULT realm")
 				// Create the default realm.
 				defaultRealm := Realm{
-					Name:                   "Default",
-					KeyIDPrefix:            "v_",
-					PublishVerificationKey: true,
+					Name: "Default",
 				}
 				if err := tx.Create(&defaultRealm).Error; err != nil {
 					return err
@@ -276,15 +287,76 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 					return err
 				}
 
+				logger.Info("Add RealmID to SMSConfig.")
+				if err := tx.AutoMigrate(&SMSConfig{}).Error; err != nil {
+					return err
+				}
+				logger.Info("Join existing SMS config to default realm")
+				if err := tx.Exec("UPDATE sms_configs SET realm_id=?", defaultRealm.ID).Error; err != nil {
+					return err
+				}
+
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
+				ddl := []string{
+					"ALTER TABLE sms_configs DROP COLUMN realm_id",
+					"ALTER TABLE tokens DROP COUMN realm_id",
+					"ALTER TABLE verification_codes DROP COLUMN realm_id",
+					"ALTER TABLE authorized_apps DROP COLUMN realm_id",
+					"DROP TABLE admin_realms",
+					"DROP TABLE user_realms",
+					"DROP TABLE realms",
+				}
+				for _, stmt := range ddl {
+					if err := tx.Exec(stmt).Error; err != nil {
+						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
+					}
+				}
 				return nil
 			},
 		},
 	})
+}
 
-	logger.Infof("database migrations complete")
+// MigrateTo migrates the database to a specific target migration ID.
+func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool) error {
+	logger := logging.FromContext(ctx)
+	m := db.getMigrations(ctx)
+	logger.Infof("database migrations started")
 
-	return m.Migrate()
+	var err error
+	if target == "" {
+		if rollback {
+			err = m.RollbackTo(initState)
+		} else {
+			err = m.Migrate() // run all remaining migrations.
+		}
+	} else {
+		if rollback {
+			err = m.RollbackTo(target)
+		} else {
+			err = m.MigrateTo(target)
+		}
+	}
+
+	if err != nil {
+		logger.Errorf("database migrations failed: %v", err)
+		return nil
+	}
+	logger.Infof("database migrations completed")
+	return nil
+}
+
+// RunMigrations will apply sequential, transactional migrations to the database
+func (db *Database) RunMigrations(ctx context.Context) error {
+	logger := logging.FromContext(ctx)
+	m := db.getMigrations(ctx)
+	logger.Infof("database migrations started")
+	if err := m.Migrate(); err != nil {
+		logger.Errorf("migrations failed: %v", err)
+		return err
+	}
+	logger.Infof("database migrations completed")
+	return nil
 }

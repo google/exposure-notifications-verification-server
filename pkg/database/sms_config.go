@@ -35,6 +35,10 @@ type SMSConfig struct {
 	TwilioAccountSid string `gorm:"type:varchar(250)"`
 	TwilioAuthToken  string `gorm:"type:varchar(250)"` // secret reference
 	TwilioFromNumber string `gorm:"type:varchar(16)"`
+
+	// SMS Config belongs to exactly one realm.
+	RealmID uint
+	Realm   Realm
 }
 
 // GetSMSProvider gets the SMS provider for the given realm. The values are

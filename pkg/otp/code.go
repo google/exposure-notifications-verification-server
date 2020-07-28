@@ -54,6 +54,7 @@ type Request struct {
 	MaxSymptomAge time.Duration
 	IssuingUser   *database.User
 	IssuingApp    *database.AuthorizedApp
+	RealmID       uint
 }
 
 // Issue wiill generate a verification code and save it to the database, based
@@ -76,6 +77,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, error) {
 			ExpiresAt:   o.ExpiresAt,
 			IssuingUser: o.IssuingUser,
 			IssuingApp:  o.IssuingApp,
+			RealmID:     o.RealmID,
 		}
 		// If a verification code already exists, it will fail to save, and we retry.
 		if err := o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {

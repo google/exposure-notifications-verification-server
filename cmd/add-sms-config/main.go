@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	realm      = flag.String("realm", "", "realm for which to add config")
+	realmID    = flag.Int64("realm", -1, "realm ID for which to add config")
 	accountSid = flag.String("twilio-account-sid", "", "account sid")
 	authToken  = flag.String("twilio-auth-token", "", "auth token, will be stored in secret manager")
 
@@ -58,12 +58,6 @@ func main() {
 func realMain(ctx context.Context) error {
 	flag.Parse()
 
-	// TODO(sethvargo): support realms
-	// if *realm == "" {
-	// 	return fmt.Errorf("--realm is required")
-	// }
-	_ = *realm
-
 	if *accountSid == "" {
 		return fmt.Errorf("--twilio-account-sid is required")
 	}
@@ -84,10 +78,8 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("--from is required")
 	}
 
-	// Create the secret
-	pointer, err := createSecret(ctx, *project, *secretName, *authToken)
-	if err != nil {
-		return err
+	if *realmID < 0 {
+		return fmt.Errorf("--realm is required")
 	}
 
 	var config database.Config
@@ -101,11 +93,23 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	realm, err := db.GetRealm(*realmID)
+	if err != nil {
+		return fmt.Errorf("failed to read realmID: %v, %v", *realmID, err)
+	}
+
+	// Create the secret
+	pointer, err := createSecret(ctx, *project, *secretName, *authToken)
+	if err != nil {
+		return err
+	}
+
 	smsConfig := &database.SMSConfig{
 		ProviderType:     sms.ProviderType("TWILIO"),
 		TwilioAccountSid: *accountSid,
 		TwilioAuthToken:  pointer,
 		TwilioFromNumber: *from,
+		RealmID:          realm.ID,
 	}
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		return fmt.Errorf("failed to create sms entry: %w", err)

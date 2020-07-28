@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
@@ -46,7 +47,24 @@ func NewSaveController(ctx context.Context, config *config.ServerConfig, db *dat
 }
 
 func (usc *userSaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	flash := flash.FromContext(w, r)
+
+	user := controller.UserFromContext(ctx)
+	if user == nil {
+		flash.Error("Unauthorized")
+		http.Redirect(w, r, "/signout", http.StatusSeeOther)
+		return
+	}
+	realm := controller.RealmFromContext(ctx)
+	if realm == nil {
+		flash.Error("Select realm to continue.")
+		http.Redirect(w, r, "/realm", http.StatusSeeOther)
+		return
+	}
+
+	m := html.GetTemplateMap(r)
+	m["user"] = user
 
 	var form formData
 	if err := controller.BindForm(w, r, &form); err != nil {
@@ -55,19 +73,28 @@ func (usc *userSaveController) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	user, err := usc.db.CreateUser(form.Email, form.Name, form.Admin, form.Disabled)
+	newUser, err := usc.db.FindUser(form.Email)
 	if err != nil {
+		// User doesn't exist, create.
+		newUser, err = usc.db.CreateUser(form.Email, form.Name, false, false)
+		if err != nil {
+			flash.Error("Failed to create user: %v", err)
+			http.Redirect(w, r, "/users", http.StatusSeeOther)
+			return
+		}
+	}
+
+	realm.AddUser(newUser)
+	if form.Admin {
+		realm.AddAdminUser(newUser)
+	}
+
+	if err := usc.db.SaveRealm(realm); err != nil {
 		flash.Error("Failed to create user: %v", err)
 		http.Redirect(w, r, "/users", http.StatusSeeOther)
 		return
 	}
 
-	flash.Alert("Successfully created user %q", user.Email)
+	flash.Alert("Created User %v", form.Email)
 	http.Redirect(w, r, "/users", http.StatusSeeOther)
-
-	// m := html.GetTemplateMap(r)
-	// m["user"] = user
-	// m["flash"] = flash
-	// m[csrf.TemplateTag] = csrf.TemplateField(r)
-	// usc.html.Render(w, "users", m)
 }

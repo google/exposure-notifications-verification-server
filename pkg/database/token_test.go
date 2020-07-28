@@ -15,6 +15,7 @@
 package database
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -166,6 +167,12 @@ func TestIssueToken(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 
+			realm, err := db.CreateRealm(fmt.Sprintf("test realm - %s", tc.Name))
+			if err != nil {
+				t.Fatalf("unable to create test realm")
+			}
+
+			tc.Verification.RealmID = realm.ID
 			if err := db.SaveVerificationCode(&tc.Verification, codeAge); err != nil {
 				t.Fatalf("error creating verification code: %v", err)
 			}
@@ -174,7 +181,7 @@ func TestIssueToken(t *testing.T) {
 				time.Sleep(tc.Delay)
 			}
 
-			tok, err := db.VerifyCodeAndIssueToken(tc.Verification.Code, tc.TokenAge)
+			tok, err := db.VerifyCodeAndIssueToken(tc.Verification.Code, realm.ID, tc.TokenAge)
 			if err != nil {
 				if tc.Error == "" {
 					t.Fatalf("error issuing token: %v", err)
@@ -213,7 +220,7 @@ func TestIssueToken(t *testing.T) {
 				if err != nil {
 					t.Fatalf("unable to parse subject: %v", err)
 				}
-				if err := db.ClaimToken(got.TokenID, subject); err != nil && tc.ClaimError == "" {
+				if err := db.ClaimToken(got.TokenID, realm.ID, subject); err != nil && tc.ClaimError == "" {
 					t.Fatalf("unexpected error claiming token: %v", err)
 				} else if tc.ClaimError != "" {
 					if err == nil {

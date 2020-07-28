@@ -56,6 +56,13 @@ func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// APIKey should be verified by middleware.
+	authApp := controller.AuthorizedAppFromContext(ctx)
+	if authApp == nil {
+		v.logger.Errorf("no authorized app in context")
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal error unable to verify code"))
+		return
+	}
+
 	var request api.VerifyCodeRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
 		v.logger.Errorf("failed to bind request: %v", err)
@@ -73,7 +80,7 @@ func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Exchange the short term verification code for a long term verification token.
 	// The token can be used to sign TEKs later.
-	verificationToken, err := v.db.VerifyCodeAndIssueToken(request.VerificationCode, v.config.VerificationTokenDuration)
+	verificationToken, err := v.db.VerifyCodeAndIssueToken(request.VerificationCode, authApp.RealmID, v.config.VerificationTokenDuration)
 	if err != nil {
 		v.logger.Errorf("error issuing verification token: %v", err)
 		if errors.Is(err, database.ErrVerificationCodeExpired) || errors.Is(err, database.ErrVerificationCodeUsed) {

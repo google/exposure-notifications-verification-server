@@ -28,13 +28,20 @@
             <li class="nav-item">
               <a class="nav-link" href="/home">Issue Code</a>
             </li>
-            {{if .user.Admin}}
+            {{if .user.MultipleRealms}}
             <li class="nav-item">
-              <a class="nav-link" href="/apikeys">API Keys</a>
+              <a class="nav-link" href="/realm">Select Realm</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/users">Users</a>
-            </li>
+            {{end}}
+            {{if .realm}}
+              {{if .user.CanAdminRealm .realm.ID}}
+              <li class="nav-item">
+                <a class="nav-link" href="/apikeys">API Keys</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/users">Users</a>
+              </li>
+            {{end}}
             {{end}}
           </ul>
           <span class="navbar-text">
@@ -66,6 +73,14 @@
   </div>
   {{end}}
 </div>
+
+{{if .realm}}
+<div class="container">
+  <div class="alert alert-secondary">
+    <h1>{{.realm.Name}}</h1>
+  </div>
+</div>
+{{end}}
 {{end}}
 
 {{define "scripts"}}

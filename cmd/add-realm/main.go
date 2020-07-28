@@ -12,52 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// A binary for running database migrations
+// Adds a new realm.
 package main
 
 import (
 	"context"
 	"flag"
-	"fmt"
+	"log"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
-	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
-	target := flag.String("id", "", "migration ID to move to")
-	rollback := flag.Bool("rollback", false, "if true, will run a rollback migration towards the target")
+	name := flag.String("name", "", "name of the realm to add")
 	flag.Parse()
-	ctx, done := signalcontext.OnInterrupt()
 
-	err := realMain(ctx, *target, *rollback)
-	done()
-
-	logger := logging.FromContext(ctx)
-	if err != nil {
-		logger.Fatal(err)
+	if *name == "" {
+		log.Fatalf("--name must be passed and cannot be empty")
 	}
-	logger.Info("migrations complete")
-}
 
-func realMain(ctx context.Context, target string, rollback bool) error {
+	ctx := context.Background()
 	var config database.Config
 	if err := envconfig.Process(ctx, &config); err != nil {
-		return fmt.Errorf("failed to process config: %w", err)
+		log.Fatalf("config error: %v", err)
 	}
 
 	db, err := config.Open(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		log.Fatalf("db connection failed: %v", err)
 	}
 	defer db.Close()
 
-	if err := db.MigrateTo(ctx, target, rollback); err != nil {
-		return fmt.Errorf("failed to run migrations: %w", err)
+	realm := database.Realm{
+		Name: *name,
 	}
-
-	return nil
+	if err := db.SaveRealm(&realm); err != nil {
+		log.Fatalf("unable to create realm: %v", err)
+	}
+	log.Printf("created new realm: %v (%v)", realm.Name, realm.ID)
 }

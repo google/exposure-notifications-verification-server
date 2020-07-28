@@ -44,22 +44,36 @@ func NewListController(ctx context.Context, config *config.ServerConfig, db *dat
 }
 
 func (lc *userListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user := controller.UserFromContext(r.Context())
+	ctx := r.Context()
+	user := controller.UserFromContext(ctx)
 	if user == nil {
 		http.Redirect(w, r, "/signout", http.StatusSeeOther)
 		return
 	}
 
 	flash := flash.FromContext(w, r)
-
-	users, err := lc.db.ListUsers(false)
-	if err != nil {
-		flash.ErrorNow("Error loading users: %v", err)
+	realm := controller.RealmFromContext(ctx)
+	if realm == nil {
+		flash.Error("Select realm to continue.")
+		http.Redirect(w, r, "/realm", http.StatusSeeOther)
+		return
 	}
 
 	m := html.GetTemplateMap(r)
 	m["user"] = user
-	m["users"] = users
+	m["realm"] = realm
+
+	if err := realm.LoadRealmUsers(lc.db, false); err != nil {
+		flash.ErrorNow("Error loading users: %v", err)
+	}
+
+	admins := make(map[uint]bool)
+	for _, au := range realm.RealmAdmins {
+		admins[au.ID] = true
+	}
+
+	m["admins"] = admins
+	m["users"] = realm.RealmUsers
 	m["flash"] = flash
 	m[csrf.TemplateTag] = csrf.TemplateField(r)
 	lc.html.Render(w, "users", m)

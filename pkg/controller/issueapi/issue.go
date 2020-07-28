@@ -125,6 +125,18 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("invalid request: %v", err))
 		return
 	}
+	var realmID uint
+	if authApp != nil {
+		realmID = authApp.RealmID
+	} else {
+		// if it's a user logged in, we can pull realm from the context.
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("no realm selected"))
+			return
+		}
+		realmID = realm.ID
+	}
 
 	// Generate verification code
 	codeRequest := otp.Request{
@@ -136,6 +148,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxSymptomAge: ic.config.GetAllowedSymptomAge(),
 		IssuingUser:   user,
 		IssuingApp:    authApp,
+		RealmID:       realmID,
 	}
 
 	code, err := codeRequest.Issue(ctx, ic.config.GetColissionRetryCount())

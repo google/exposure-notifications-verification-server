@@ -24,7 +24,12 @@ func TestCreateFindAPIKey(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
-	authApp, err := db.CreateAuthorizedApp("University System Health Org", APIUserTypeAdmin)
+	realm, err := db.CreateRealm("foo")
+	if err != nil {
+		t.Fatalf("error creating realm: %v", err)
+	}
+
+	authApp, err := db.CreateAuthorizedApp("University System Health Org", APIUserTypeAdmin, realm)
 	if err != nil {
 		t.Fatalf("error creating authorized app: %v", err)
 	}
@@ -45,11 +50,16 @@ func TestListAPIKeys(t *testing.T) {
 	var authApp1, authApp2 *AuthorizedApp
 	var err error
 
-	authApp1, err = db.CreateAuthorizedApp("App 1", APIUserTypeAdmin)
+	realm, err := db.CreateRealm("bar")
+	if err != nil {
+		t.Fatalf("error creating realm: %v", err)
+	}
+
+	authApp1, err = db.CreateAuthorizedApp("App 1", APIUserTypeAdmin, realm)
 	if err != nil {
 		t.Fatalf("error creating app: %v", err)
 	}
-	authApp2, err = db.CreateAuthorizedApp("App 2", APIUserTypeDevice)
+	authApp2, err = db.CreateAuthorizedApp("App 2", APIUserTypeDevice, realm)
 	if err != nil {
 		t.Fatalf("error creating app: %v", err)
 	}

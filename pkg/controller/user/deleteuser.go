@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
@@ -41,27 +42,29 @@ func NewDeleteController(ctx context.Context, config *config.ServerConfig, db *d
 func (udc *userDeleteController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer http.Redirect(w, r, "/users", http.StatusSeeOther)
 
+	ctx := r.Context()
 	flash := flash.FromContext(w, r)
+	realm := controller.RealmFromContext(ctx)
+	if realm == nil {
+		flash.Error("Select realm to continue.")
+		http.Redirect(w, r, "/realm", http.StatusSeeOther)
+		return
+	}
 
 	vars := mux.Vars(r)
 	email := vars["email"]
 
-	user, err := udc.db.FindUser(email)
+	delUser, err := udc.db.FindUser(email)
 	if err != nil {
 		flash.Error("Failed to find user: %v", err)
 		return
 	}
 
-	if err := udc.db.DeleteUser(user); err != nil {
+	if err := realm.DeleteUserFromRealm(udc.db, delUser); err != nil {
 		flash.Error("Failed to delete user: %v", err)
 		return
 	}
 
-	flash.Alert("Deleted User %v", user.Email)
-
-	// m := html.GetTemplateMap(r)
-	// m["user"] = user
-	// m["flash"] = flash
-	// m[csrf.TemplateTag] = csrf.TemplateField(r)
-	// udc.html.Render(w, "users", m)
+	flash.Alert("Deleted User %v", delUser.Email)
+	http.Redirect(w, r, "/users", http.StatusSeeOther)
 }

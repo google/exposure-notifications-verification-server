@@ -49,6 +49,7 @@ type Token struct {
 
 	// Tokens belong to one realm.
 	RealmID uint
+	Realm   Realm
 }
 
 // Subject represents the data that is used in the 'sub' field of the token JWT.
@@ -108,10 +109,10 @@ func (t *Token) Subject() *Subject {
 
 // ClaimToken looks up the token by ID, verifies that it is not expired and that
 // the specified subject matches the parameters that were configured when issued.
-func (db *Database) ClaimToken(tokenID string, subject *Subject) error {
+func (db *Database) ClaimToken(tokenID string, realmID uint, subject *Subject) error {
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		var tok Token
-		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("token_id = ?", tokenID).First(&tok).Error; err != nil {
+		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("token_id = ? and realm_id = ?", tokenID, realmID).First(&tok).Error; err != nil {
 			return err
 		}
 
@@ -144,7 +145,7 @@ func (db *Database) ClaimToken(tokenID string, subject *Subject) error {
 // transaction.
 //
 // The long term token can be used later to sign keys when they are submitted.
-func (db *Database) VerifyCodeAndIssueToken(verCode string, expireAfter time.Duration) (*Token, error) {
+func (db *Database) VerifyCodeAndIssueToken(verCode string, realmID uint, expireAfter time.Duration) (*Token, error) {
 	buffer := make([]byte, tokenBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -157,7 +158,7 @@ func (db *Database) VerifyCodeAndIssueToken(verCode string, expireAfter time.Dur
 		// Load the verification code - do quick expiry and claim checks.
 		// Also lock the row for update.
 		var vc VerificationCode
-		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("code = ?", verCode).First(&vc).Error; err != nil {
+		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("code = ? and realm_id = ?", verCode, realmID).First(&vc).Error; err != nil {
 			return err
 		}
 		if vc.IsExpired() {
