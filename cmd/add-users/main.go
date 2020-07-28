@@ -32,7 +32,7 @@ func main() {
 	adminFlag := flag.Bool("admin", false, "true if user is admin user")
 	disabledFlag := flag.Bool("disabled", false, "true if user should be disabled")
 	realmID := flag.Int64("realm", -1, "realm to add the user to")
-	realmAdminID := flag.Int64("realm", -1, "realm to add the user to")
+	realmAdminID := flag.Int64("admin-realm", -1, "realm to add the user to")
 	flag.Parse()
 
 	if *emailFlag == "" {
