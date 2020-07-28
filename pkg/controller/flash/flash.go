@@ -76,12 +76,14 @@ func Clear(w http.ResponseWriter) {
 
 // FromContext returns the flash saved on the given context.
 func FromContext(w http.ResponseWriter, r *http.Request) *Flash {
-	f, ok := r.Context().Value(contextKeyFlash).(*Flash)
-	if ok {
-		return f
+	fRaw := r.Context().Value(contextKeyFlash)
+	if fRaw != nil {
+		if f, ok := fRaw.(*Flash); ok {
+			return f
+		}
 	}
 
-	f = new(w, r)
+	f := new(w, r)
 	*r = *r.WithContext(context.WithValue(r.Context(), contextKeyFlash, f))
 	return f
 }
