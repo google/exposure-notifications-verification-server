@@ -43,14 +43,13 @@ func NewListController(ctx context.Context, config *config.ServerConfig, db *dat
 }
 
 func (lc *apikeyListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user, err := controller.GetUser(w, r)
-	if err != nil {
-		http.Redirect(w, r, "/signout", http.StatusFound)
+	user := controller.UserFromContext(r.Context())
+	if user == nil {
+		http.Redirect(w, r, "/signout", http.StatusSeeOther)
 		return
 	}
-	flash := flash.FromContext(w, r)
 
-	lc.logger.Infof("FLASH: %+v", flash)
+	flash := flash.FromContext(w, r)
 
 	m := html.GetTemplateMap(r)
 	m["user"] = user

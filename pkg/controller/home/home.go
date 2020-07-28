@@ -24,13 +24,13 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	httpcontext "github.com/gorilla/context"
 	"go.uber.org/zap"
 )
 
@@ -60,16 +60,10 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	rawUser, ok := httpcontext.GetOk(r, "user")
-	if !ok {
+	user := controller.UserFromContext(ctx)
+	if user == nil {
 		flash.FromContext(w, r).Error("Unauthorized")
-		http.Redirect(w, r, "/signout", http.StatusFound)
-		return
-	}
-	user, ok := rawUser.(*database.User)
-	if !ok {
-		flash.FromContext(w, r).Error("internal error - you have been logged out.")
-		http.Redirect(w, r, "/signout", http.StatusFound)
+		http.Redirect(w, r, "/signout", http.StatusSeeOther)
 		return
 	}
 

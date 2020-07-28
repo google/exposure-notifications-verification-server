@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	csrfctl "github.com/google/exposure-notifications-verification-server/pkg/controller/csrf"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
@@ -31,7 +32,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -39,7 +39,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	firebase "firebase.google.com/go"
-	httpcontext "github.com/gorilla/context"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-limiter/httplimit"
@@ -165,13 +164,10 @@ func userEmailKeyFunc() httplimit.KeyFunc {
 	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
 
 	return func(r *http.Request) (string, error) {
-		rawUser, ok := httpcontext.GetOk(r, "user")
-		if ok {
-			user, ok := rawUser.(*database.User)
-			if ok && user.Email != "" {
-				dig := sha1.Sum([]byte(user.Email))
-				return fmt.Sprintf("%x", dig), nil
-			}
+		user := controller.UserFromContext(r.Context())
+		if user != nil && user.Email != "" {
+			dig := sha1.Sum([]byte(user.Email))
+			return fmt.Sprintf("%x", dig), nil
 		}
 
 		// If no API key was provided, default to limiting by IP.

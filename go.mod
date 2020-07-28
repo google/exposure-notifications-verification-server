@@ -13,7 +13,6 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/google/exposure-notifications-server v0.0.0-20200721004027-a0c5e04181cb
 	github.com/google/go-cmp v0.5.0
-	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/schema v1.1.0
