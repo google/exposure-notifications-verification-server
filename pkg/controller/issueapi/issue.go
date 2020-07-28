@@ -32,8 +32,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
-	httpcontext "github.com/gorilla/context"
-
 	"go.uber.org/zap"
 )
 
@@ -171,26 +169,21 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ic *IssueAPI) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User, error) {
+	ctx := r.Context()
+
 	// Attempt to find the authorized app.
-	rawAuthorizedApp, ok := httpcontext.GetOk(r, "authorizedApp")
-	if ok {
-		authApp, ok := rawAuthorizedApp.(*database.AuthorizedApp)
-		if !ok {
-			return nil, nil, fmt.Errorf("unable to identify authorized requestor")
-		}
-		return authApp, nil, nil
+	authorizedApp := controller.AuthorizedAppFromContext(ctx)
+	if authorizedApp != nil {
+		return authorizedApp, nil, nil
 	}
 
-	// Attempt to get user:
-	rawUser, ok := httpcontext.GetOk(r, "user")
-	if !ok {
-		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
+	// Attempt to get user.
+	user := controller.UserFromContext(ctx)
+	if user != nil {
+		return nil, user, nil
 	}
-	user, ok := rawUser.(*database.User)
-	if !ok {
-		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
-	}
-	return nil, user, nil
+
+	return nil, nil, fmt.Errorf("unable to identify authorized requestor")
 }
 
 const smsTemplate = `Your exposure notifications verification code is %s. ` +

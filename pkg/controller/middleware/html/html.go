@@ -18,17 +18,38 @@
 package html
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-
-	"github.com/gorilla/context"
 )
 
-const (
-	Variables = "variables"
-)
+// contextKey is a unique type to avoid clashing with other packages that use
+// context's to pass data.
+type contextKey struct{}
+
+// contextKeyTemplateMap is a context key used for the user.
+var contextKeyTemplateMap = &contextKey{}
+
+// WithTemplateMap sets the user in the context.
+func WithTemplateMap(ctx context.Context, m TemplateMap) context.Context {
+	return context.WithValue(ctx, contextKeyTemplateMap, m)
+}
+
+// TemplateMapFromContext gets the template map on the context. If no map
+// exists, it returns nil.
+func TemplateMapFromContext(ctx context.Context) TemplateMap {
+	v := ctx.Value(contextKeyTemplateMap)
+	if v == nil {
+		return nil
+	}
+
+	m, ok := v.(TemplateMap)
+	if !ok {
+		return nil
+	}
+	return m
+}
 
 // TemplateMap is a typemap for the HTML templates.
 type TemplateMap map[string]interface{}
@@ -41,30 +62,30 @@ func New(config *config.ServerConfig) *VariableInjector {
 	return &VariableInjector{config}
 }
 
+// GetTemplateMap gets the TemplateMap on the request's context. If the map does
+// not exist, a new one is created and persisted on the request's context.
 func GetTemplateMap(r *http.Request) TemplateMap {
-	m := context.Get(r, Variables)
-	if m == nil {
-		newMap := TemplateMap{}
-		context.Set(r, Variables, newMap)
-		return newMap
+	m := TemplateMapFromContext(r.Context())
+	if m != nil {
+		return m
 	}
 
-	typed, ok := m.(TemplateMap)
-	if ok {
-		return typed
-	}
-	logging.FromContext(r.Context()).Errorf("request context item '%v' is of the wrong type", Variables)
-	newMap := TemplateMap{}
-	context.Set(r, Variables, newMap)
-	return newMap
+	m = make(TemplateMap)
+	*r = *r.WithContext(WithTemplateMap(r.Context(), m))
+	return m
 }
 
 func (vi *VariableInjector) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m := TemplateMap{}
-		m["server"] = vi.config.ServerName
-		m["title"] = vi.config.ServerName
-		context.Set(r, Variables, m)
+		m := GetTemplateMap(r)
+		if _, ok := m["server"]; !ok {
+			m["server"] = vi.config.ServerName
+		}
+		if _, ok := m["title"]; !ok {
+			m["title"] = vi.config.ServerName
+		}
+
+		r = r.WithContext(WithTemplateMap(r.Context(), m))
 		next.ServeHTTP(w, r)
 	})
 }

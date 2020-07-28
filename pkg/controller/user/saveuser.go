@@ -21,7 +21,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
@@ -47,38 +46,26 @@ func NewSaveController(ctx context.Context, config *config.ServerConfig, db *dat
 }
 
 func (usc *userSaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer http.Redirect(w, r, "/users", http.StatusSeeOther)
-
-	user, err := controller.GetUser(w, r)
-	if err != nil {
-		http.Redirect(w, r, "/signout", http.StatusFound)
-		return
-	}
 	flash := flash.FromContext(w, r)
-
-	usc.logger.Infof("FLASH: %+v", flash)
-
-	m := html.GetTemplateMap(r)
-	m["user"] = user
 
 	var form formData
 	if err := controller.BindForm(w, r, &form); err != nil {
-		usc.logger.Errorf("error parsing form: %v", err)
 		flash.Error("Failed to process form: %v", err)
-		controller.WriteJSON(w, http.StatusBadRequest, nil)
+		http.Redirect(w, r, "/users", http.StatusSeeOther)
 		return
 	}
 
-	user, err = usc.db.CreateUser(form.Email, form.Name, form.Admin, form.Disabled)
+	user, err := usc.db.CreateUser(form.Email, form.Name, form.Admin, form.Disabled)
 	if err != nil {
 		flash.Error("Failed to create user: %v", err)
+		http.Redirect(w, r, "/users", http.StatusSeeOther)
 		return
 	}
 
-	_ = user
+	flash.Alert("Successfully created user %q", user.Email)
+	http.Redirect(w, r, "/users", http.StatusSeeOther)
 
-	flash.Alert("Created User %q", form.Email)
-
+	// m := html.GetTemplateMap(r)
 	// m["user"] = user
 	// m["flash"] = flash
 	// m[csrf.TemplateTag] = csrf.TemplateField(r)

@@ -15,27 +15,61 @@
 package controller
 
 import (
-	"fmt"
-	"net/http"
+	"context"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-
-	"github.com/gorilla/context"
 )
 
-// GetUser gets the current logged in user from the request context. On an Error,
-// a message is added to the context's flash, but no redirect/render decision is made.
-func GetUser(w http.ResponseWriter, r *http.Request) (*database.User, error) {
-	rawUser, ok := context.GetOk(r, "user")
-	if !ok {
-		flash.FromContext(w, r).Error("Unauthorized")
-		return nil, fmt.Errorf("unauthorized")
+// contextKey is a unique type to avoid clashing with other packages that use
+// context's to pass data.
+type contextKey struct{}
+
+var (
+	// contextKeyAuthorizedApp is a context key used for the authorized app.
+	contextKeyAuthorizedApp = &contextKey{}
+
+	// contextKeyUser is a context key used for the user.
+	contextKeyUser = &contextKey{}
+)
+
+// WithAuthorizedApp sets the AuthorizedApp in the context.
+func WithAuthorizedApp(ctx context.Context, u *database.AuthorizedApp) context.Context {
+	return context.WithValue(ctx, contextKeyAuthorizedApp, u)
+}
+
+// AuthorizedAppFromContext gets the currently logged in AuthorizedApp from the request context.
+// If no AuthorizedApp exists on the request context, or if the value in the request is
+// not a AuthorizedApp object, the result will be nil.
+func AuthorizedAppFromContext(ctx context.Context) *database.AuthorizedApp {
+	v := ctx.Value(contextKeyAuthorizedApp)
+	if v == nil {
+		return nil
 	}
-	user, ok := rawUser.(*database.User)
+
+	authorizedApp, ok := v.(*database.AuthorizedApp)
 	if !ok {
-		flash.FromContext(w, r).Error("internal error - you have been logged out.")
-		return nil, fmt.Errorf("internal error")
+		return nil
 	}
-	return user, nil
+	return authorizedApp
+}
+
+// WithUser sets the user in the context.
+func WithUser(ctx context.Context, u *database.User) context.Context {
+	return context.WithValue(ctx, contextKeyUser, u)
+}
+
+// UserFromContext gets the currently logged in user from the request context.
+// If no user exists on the request context, or if the value in the request is
+// not a user object, the result will be nil.
+func UserFromContext(ctx context.Context) *database.User {
+	v := ctx.Value(contextKeyUser)
+	if v == nil {
+		return nil
+	}
+
+	user, ok := v.(*database.User)
+	if !ok {
+		return nil
+	}
+	return user
 }

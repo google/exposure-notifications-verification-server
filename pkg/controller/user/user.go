@@ -44,23 +44,21 @@ func NewListController(ctx context.Context, config *config.ServerConfig, db *dat
 }
 
 func (lc *userListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user, err := controller.GetUser(w, r)
-	if err != nil {
-		http.Redirect(w, r, "/signout", http.StatusFound)
+	user := controller.UserFromContext(r.Context())
+	if user == nil {
+		http.Redirect(w, r, "/signout", http.StatusSeeOther)
 		return
 	}
+
 	flash := flash.FromContext(w, r)
-
-	lc.logger.Infof("FLASH: %+v", flash)
-
-	m := html.GetTemplateMap(r)
-	m["user"] = user
 
 	users, err := lc.db.ListUsers(false)
 	if err != nil {
 		flash.ErrorNow("Error loading users: %v", err)
 	}
 
+	m := html.GetTemplateMap(r)
+	m["user"] = user
 	m["users"] = users
 	m["flash"] = flash
 	m[csrf.TemplateTag] = csrf.TemplateField(r)

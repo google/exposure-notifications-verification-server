@@ -28,8 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 
-	httpcontext "github.com/gorilla/context"
-
 	"go.uber.org/zap"
 )
 
@@ -51,14 +49,9 @@ func RequireAdmin(ctx context.Context) *RequireAdminHandler {
 func (rah *RequireAdminHandler) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			userRaw, ok := httpcontext.GetOk(r, "user")
-			if !ok {
-				return fmt.Errorf("missing user in session")
-			}
-
-			user, ok := userRaw.(*database.User)
-			if !ok {
-				return fmt.Errorf("user is not a database.User")
+			user := controller.UserFromContext(r.Context())
+			if user == nil {
+				return fmt.Errorf("missing user")
 			}
 
 			if !user.Admin {
@@ -148,8 +141,9 @@ func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 				}
 			}
 
-			// Save the user on the context - this is how handlers access the user
-			httpcontext.Set(r, "user", user)
+			// Save the user on the request context - this is how other handlers and
+			// controllers access the user.
+			r = r.WithContext(controller.WithUser(r.Context(), user))
 			return nil
 		}(); err != nil {
 			rah.logger.Errorw("RequireAuth", "error", err)

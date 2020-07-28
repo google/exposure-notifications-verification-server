@@ -24,7 +24,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	httpcontext "github.com/gorilla/context"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 )
@@ -93,7 +92,8 @@ func (a *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
 			return
 		}
 
-		httpcontext.Set(r, "authorizedApp", authApp)
+		// Save the authorized app on the context.
+		r = r.WithContext(controller.WithAuthorizedApp(r.Context(), authApp))
 
 		next.ServeHTTP(w, r)
 	})

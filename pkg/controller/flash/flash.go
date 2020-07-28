@@ -17,6 +17,7 @@
 package flash
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -26,8 +27,6 @@ import (
 	"net/url"
 	"sync"
 	"time"
-
-	"github.com/gorilla/context"
 )
 
 const (
@@ -35,6 +34,13 @@ const (
 	alertKey = "alert"
 	errorKey = "error"
 )
+
+// contextKey is a unique type to avoid clashing with other packages that use
+// context's to pass data.
+type contextKey struct{}
+
+// contextKeyFlash is a context key used for flash.
+var contextKeyFlash = &contextKey{}
 
 // Flash represents a handle to the current request's flash structure.
 type Flash struct {
@@ -70,14 +76,15 @@ func Clear(w http.ResponseWriter) {
 
 // FromContext returns the flash saved on the given context.
 func FromContext(w http.ResponseWriter, r *http.Request) *Flash {
-	if f, ok := context.GetOk(r, flashKey); ok {
-		if typ, ok := f.(*Flash); ok {
-			return typ
+	fRaw := r.Context().Value(contextKeyFlash)
+	if fRaw != nil {
+		if f, ok := fRaw.(*Flash); ok {
+			return f
 		}
 	}
 
 	f := new(w, r)
-	context.Set(r, flashKey, f)
+	*r = *r.WithContext(context.WithValue(r.Context(), contextKeyFlash, f))
 	return f
 }
 

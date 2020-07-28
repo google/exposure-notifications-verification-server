@@ -19,9 +19,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/gorilla/mux"
@@ -43,22 +41,12 @@ func NewDeleteController(ctx context.Context, config *config.ServerConfig, db *d
 func (udc *userDeleteController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer http.Redirect(w, r, "/users", http.StatusSeeOther)
 
-	user, err := controller.GetUser(w, r)
-	if err != nil {
-		http.Redirect(w, r, "/signout", http.StatusFound)
-		return
-	}
 	flash := flash.FromContext(w, r)
-
-	udc.logger.Infof("FLASH: %+v", flash)
-
-	m := html.GetTemplateMap(r)
-	m["user"] = user
 
 	vars := mux.Vars(r)
 	email := vars["email"]
 
-	user, err = udc.db.FindUser(email)
+	user, err := udc.db.FindUser(email)
 	if err != nil {
 		flash.Error("Failed to find user: %v", err)
 		return
@@ -71,6 +59,7 @@ func (udc *userDeleteController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	flash.Alert("Deleted User %v", user.Email)
 
+	// m := html.GetTemplateMap(r)
 	// m["user"] = user
 	// m["flash"] = flash
 	// m[csrf.TemplateTag] = csrf.TemplateField(r)
