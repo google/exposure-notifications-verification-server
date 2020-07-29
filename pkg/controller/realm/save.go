@@ -52,7 +52,6 @@ func (rsc *realmSaveController) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	rsc.logger.Infof("FORM: %+v", form)
 	realm, err := rsc.db.GetRealm(int64(form.Realm))
 	if err != nil {
 		rsc.logger.Errorf("error selecting realm: %v", err)
@@ -75,6 +74,7 @@ func (rsc *realmSaveController) ServeHTTP(w http.ResponseWriter, r *http.Request
 		http.Redirect(w, r, "/home", http.StatusSeeOther)
 		return
 	}
+
 	// Not allowed to see the realm selected.
 	flash.Error("Invalid realm selection.")
 	http.Redirect(w, r, "/home/realm", http.StatusSeeOther)

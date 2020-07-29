@@ -67,7 +67,7 @@ func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if _, err := sc.db.CreateAuthorizedApp(form.Name, form.Type, realm); err != nil {
+	if _, err := sc.db.CreateAuthorizedApp(realm.ID, form.Name, form.Type); err != nil {
 		sc.logger.Errorf("error creating authorized app: %v", err)
 		flash.Error("Failed to create API key: %v", err)
 		return

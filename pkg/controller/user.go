@@ -32,7 +32,7 @@ var (
 	contextKeyUser = &contextKey{}
 
 	// ContextKeyRealm is a context key for the realm.
-	ContextKeyRealm = &contextKey{}
+	contextKeyRealm = &contextKey{}
 )
 
 // WithAuthorizedApp sets the AuthorizedApp in the context.
@@ -79,13 +79,13 @@ func UserFromContext(ctx context.Context) *database.User {
 
 // WithRealm sets the realm in the cotnext.
 func WithRealm(ctx context.Context, r *database.Realm) context.Context {
-	return context.WithValue(ctx, ContextKeyRealm, r)
+	return context.WithValue(ctx, contextKeyRealm, r)
 }
 
 // RealmFromContext gets the currently selected realm for the current user session.
 // If none is selected, nil is returned.
 func RealmFromContext(ctx context.Context) *database.Realm {
-	v := ctx.Value(ContextKeyRealm)
+	v := ctx.Value(contextKeyRealm)
 	if v == nil {
 		return nil
 	}

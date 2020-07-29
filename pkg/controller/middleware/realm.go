@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	ErrNoRealmSelected = errors.New("no realm selected")
+	ErrMissingRealm = errors.New("missing realm")
 )
 
 type RequireRealmHandler struct {
@@ -48,12 +48,12 @@ func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 		if err := func() error {
 			cookie, err := r.Cookie("realm")
 			if err != nil {
-				return ErrNoRealmSelected
+				return ErrMissingRealm
 			}
 
 			realmID, err := strconv.ParseInt(cookie.Value, 10, 64)
 			if err != nil {
-				return ErrNoRealmSelected
+				return ErrMissingRealm
 			}
 
 			// Get user from the session
@@ -79,7 +79,8 @@ func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 		}(); err != nil {
 			h.logger.Errorw("RequireRealm", "error", err)
 
-			if errors.Is(err, ErrNoRealmSelected) {
+			if errors.Is(err, ErrMissingRealm) {
+				h.logger.Warnf("Unexpected missing realm: %v", err)
 				flash.FromContext(w, r).Error("Select a realm")
 				http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
 			} else {

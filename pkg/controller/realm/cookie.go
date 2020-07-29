@@ -21,6 +21,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 )
 
+// setRealmCookie sets the realm cookie. This must be called before any body data
+// is written for the request.
 func setRealmCookie(w http.ResponseWriter, c *config.ServerConfig, realmID uint) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "realm",

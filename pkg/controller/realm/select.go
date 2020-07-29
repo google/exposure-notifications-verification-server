@@ -69,5 +69,5 @@ func (rsc *realmSelectController) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	m["user"] = user
 	m["realms"] = userRealms
 	m[csrf.TemplateTag] = csrf.TemplateField(r)
-	rsc.html.Render(w, "selectrealm", m)
+	rsc.html.Render(w, "select-realm", m)
 }

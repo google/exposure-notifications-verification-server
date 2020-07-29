@@ -45,6 +45,7 @@ var (
 // VerificationCode represnts a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
+	RealmID     uint   // VerificationCodes belong to exactly one realm when issued.
 	Code        string `gorm:"type:varchar(20);unique_index"`
 	Claimed     bool   `gorm:"default:false"`
 	TestType    string `gorm:"type:varchar(20)"`
@@ -52,9 +53,6 @@ type VerificationCode struct {
 	ExpiresAt   time.Time
 	IssuingUser *User
 	IssuingApp  *AuthorizedApp
-	// VerificationCodes belong to exactly one realm when issued.
-	RealmID uint
-	Realm   Realm
 }
 
 // TableName sets the VerificationCode table name

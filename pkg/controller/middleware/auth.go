@@ -34,11 +34,7 @@ import (
 var (
 	ErrUserNotFound  = errors.New("user not found")
 	ErrUserDisabled  = errors.New("user disabled")
-	ErrNotRealmAdmin = errors.New("not realm reamin")
-)
-
-const (
-	ContextRealm = "realm"
+	ErrNotRealmAdmin = errors.New("not realm admin")
 )
 
 type RequireRealmAdminHandler struct {
@@ -75,7 +71,7 @@ func (rra *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
 			rra.logger.Errorw("RequireRealmAdmin", "error", err)
 
 			if errors.Is(err, ErrNotRealmAdmin) {
-				flash.FromContext(w, r).Error("You are not authorized to admin the selected realm. Choose another.")
+				flash.FromContext(w, r).Error("You are not authorized to admin that realm.")
 				http.Redirect(w, r, "/realm", http.StatusFound)
 				return
 			}
@@ -137,7 +133,6 @@ type RequireAuthHandler struct {
 
 // RequireAuth requires a user is authenticated using firebase auth, that such a
 // user exists in the database, and that said user is not disabled.
-// This middleware also write the currently selected realm to the context.
 func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, ttl time.Duration) *RequireAuthHandler {
 	logger := logging.FromContext(ctx)
 	return &RequireAuthHandler{ctx, client, db, ttl, logger}

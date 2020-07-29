@@ -187,7 +187,7 @@ func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// To the transactional update to the database last so that if it fails, the client can retry.
-	if err := ca.db.ClaimToken(tokenID, authApp.RealmID, subject); err != nil {
+	if err := ca.db.ClaimToken(authApp.RealmID, tokenID, subject); err != nil {
 		ca.logger.Errorf("error claiming tokenId: %v err: %v", tokenID, err)
 		controller.WriteJSON(w, http.StatusBadRequest, api.Error(err.Error()))
 		return

@@ -29,10 +29,12 @@ func TestUserLifecycle(t *testing.T) {
 
 	email := "dr@example.com"
 	user := User{
-		Email:    email,
-		Name:     "Dr Example",
-		Admin:    false,
-		Disabled: false,
+		Email:       email,
+		Name:        "Dr Example",
+		Admin:       false,
+		Disabled:    false,
+		Realms:      []*Realm{},
+		AdminRealms: []*Realm{},
 	}
 
 	if err := db.SaveUser(&user); err != nil {

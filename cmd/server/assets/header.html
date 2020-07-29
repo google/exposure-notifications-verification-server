@@ -58,6 +58,14 @@
   </nav>
 </header>
 
+{{if .realm}}
+<div class="container">
+  <div class="alert alert-secondary">
+    <h1>{{.realm.Name}}</h1>
+  </div>
+</div>
+{{end}}
+
 <div class="container">
   {{range $msg := .flash.Errors}}
   <div class="alert alert-danger" role="alert">
@@ -74,13 +82,6 @@
   {{end}}
 </div>
 
-{{if .realm}}
-<div class="container">
-  <div class="alert alert-secondary">
-    <h1>{{.realm.Name}}</h1>
-  </div>
-</div>
-{{end}}
 {{end}}
 
 {{define "scripts"}}

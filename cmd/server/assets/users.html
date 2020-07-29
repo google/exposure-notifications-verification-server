@@ -67,7 +67,7 @@
           <tr>
             <td scope="row">{{.Email}}</td>
             <td scope="row">{{.Name}}</td>
-            <td scope="row">{{if index $admins .ID}}True{{else}}False{{end}}</td>            
+            <td scope="row">{{if index $admins .ID}}&#x2714;{{end}}</td>            
             <td scope="row">
               <form method="POST" action="/users/delete/{{.Email}}">
                 {{ $csrf }}

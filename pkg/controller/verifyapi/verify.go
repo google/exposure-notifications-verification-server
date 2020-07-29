@@ -80,7 +80,7 @@ func (v *VerifyAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Exchange the short term verification code for a long term verification token.
 	// The token can be used to sign TEKs later.
-	verificationToken, err := v.db.VerifyCodeAndIssueToken(request.VerificationCode, authApp.RealmID, v.config.VerificationTokenDuration)
+	verificationToken, err := v.db.VerifyCodeAndIssueToken(authApp.RealmID, request.VerificationCode, v.config.VerificationTokenDuration)
 	if err != nil {
 		v.logger.Errorf("error issuing verification token: %v", err)
 		if errors.Is(err, database.ErrVerificationCodeExpired) || errors.Is(err, database.ErrVerificationCodeUsed) {

@@ -30,8 +30,8 @@ type User struct {
 	Admin           bool   `gorm:"default:false"`
 	Disabled        bool
 	LastRevokeCheck time.Time
-	Realms          []*Realm `gorm:"many2many:user_realms"`
-	AdminRealms     []*Realm `gorm:"many2many:admin_realms"`
+	Realms          []*Realm `gorm:"many2many:user_realms,PRELOAD:true"`
+	AdminRealms     []*Realm `gorm:"many2many:admin_realms,PRELOAD:true"`
 }
 
 func (u *User) MultipleRealms() bool {

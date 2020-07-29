@@ -19,6 +19,7 @@ package home
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -74,10 +75,14 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	smsProvider, err := hc.db.GetSMSProvider(ctx, "") // TODO(sethvargo): support realms
+	smsProvider, err := realm.GetSMSProvider(ctx, hc.db)
 	if err != nil {
-		hc.logger.Errorw("failed to load sms configuration", "error", err)
-		flash.FromContext(w, r).Error("internal error - failed to load SMS configuration")
+		if errors.Is(err, database.ErrNoSMSConfig) {
+			smsProvider = nil
+		} else {
+			hc.logger.Errorw("failed to load sms configuration", "error", err)
+			flash.FromContext(w, r).Error("internal error - failed to load SMS configuration")
+		}
 	}
 
 	m := html.GetTemplateMap(r)

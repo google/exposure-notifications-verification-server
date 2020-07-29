@@ -45,7 +45,7 @@ type AuthorizedApp struct {
 
 	// AuthorizedApps belong to exactly one realm.
 	RealmID uint
-	Realm   Realm
+	Realm   *Realm
 }
 
 func (a *AuthorizedApp) IsAdminType() bool {
@@ -54,6 +54,20 @@ func (a *AuthorizedApp) IsAdminType() bool {
 
 func (a *AuthorizedApp) IsDeviceType() bool {
 	return a.APIKeyType == APIUserTypeDevice
+}
+
+// GetRealm does a lazy load read of the realm associated with this
+// authorized app.
+func (a *AuthorizedApp) GetRealm(db *Database) (*Realm, error) {
+	if a.Realm != nil {
+		return a.Realm, nil
+	}
+	var realm Realm
+	if err := db.db.Model(a).Related(&realm).Error; err != nil {
+		return nil, err
+	}
+	a.Realm = &realm
+	return a.Realm, nil
 }
 
 // TODO(mikehelmick): Implement revoke API key functionality.
@@ -73,7 +87,7 @@ func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, e
 	if includeDeleted {
 		scope = db.db.Unscoped()
 	}
-	if err := scope.Order("name ASC").Find(&apps).Error; err != nil {
+	if err := scope.Preload("Realm").Order("name ASC").Find(&apps).Error; err != nil {
 		return nil, fmt.Errorf("query authorized apps: %w", err)
 	}
 	return apps, nil
@@ -81,7 +95,7 @@ func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, e
 
 // CreateAuthorizedApp generates a new APIKey and assigns it to the specified
 // name.
-func (db *Database) CreateAuthorizedApp(name string, apiUserType APIUserType, realm *Realm) (*AuthorizedApp, error) {
+func (db *Database) CreateAuthorizedApp(realmID uint, name string, apiUserType APIUserType) (*AuthorizedApp, error) {
 	if !(apiUserType == APIUserTypeAdmin || apiUserType == APIUserTypeDevice) {
 		return nil, fmt.Errorf("invalid API Key user type requested: %v", apiUserType)
 	}
@@ -96,7 +110,7 @@ func (db *Database) CreateAuthorizedApp(name string, apiUserType APIUserType, re
 		Name:       name,
 		APIKey:     base64.RawStdEncoding.EncodeToString(buffer),
 		APIKeyType: apiUserType,
-		RealmID:    realm.ID,
+		RealmID:    realmID,
 	}
 	if err := db.db.Create(&app).Error; err != nil {
 		return nil, fmt.Errorf("unable to save authorized app: %w", err)

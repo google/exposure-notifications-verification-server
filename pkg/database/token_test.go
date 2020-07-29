@@ -119,9 +119,9 @@ func TestIssueToken(t *testing.T) {
 				Code:      "00000002",
 				Claimed:   false,
 				TestType:  "confirmed",
-				ExpiresAt: time.Now().Add(time.Second),
+				ExpiresAt: time.Now().Add(2 * time.Second),
 			},
-			Delay:    time.Second,
+			Delay:    2 * time.Second,
 			Error:    ErrVerificationCodeExpired.Error(),
 			TokenAge: time.Hour,
 		},
@@ -172,7 +172,7 @@ func TestIssueToken(t *testing.T) {
 				t.Fatalf("unable to create test realm")
 			}
 
-			tc.Verification.RealmID = realm.ID
+			tc.Verification.Realm = realm
 			if err := db.SaveVerificationCode(&tc.Verification, codeAge); err != nil {
 				t.Fatalf("error creating verification code: %v", err)
 			}
@@ -181,7 +181,7 @@ func TestIssueToken(t *testing.T) {
 				time.Sleep(tc.Delay)
 			}
 
-			tok, err := db.VerifyCodeAndIssueToken(tc.Verification.Code, realm.ID, tc.TokenAge)
+			tok, err := db.VerifyCodeAndIssueToken(realm.ID, tc.Verification.Code, tc.TokenAge)
 			if err != nil {
 				if tc.Error == "" {
 					t.Fatalf("error issuing token: %v", err)
@@ -220,7 +220,7 @@ func TestIssueToken(t *testing.T) {
 				if err != nil {
 					t.Fatalf("unable to parse subject: %v", err)
 				}
-				if err := db.ClaimToken(got.TokenID, realm.ID, subject); err != nil && tc.ClaimError == "" {
+				if err := db.ClaimToken(realm.ID, got.TokenID, subject); err != nil && tc.ClaimError == "" {
 					t.Fatalf("unexpected error claiming token: %v", err)
 				} else if tc.ClaimError != "" {
 					if err == nil {

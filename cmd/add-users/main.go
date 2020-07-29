@@ -60,6 +60,10 @@ func main() {
 		log.Fatalf("unable to find specified Admin realmID: %v reason: %v", *realmID, err)
 	}
 
+	if userRealm == nil && adminRealm == nil && !*adminFlag {
+		log.Fatalf("Cannot create a non system admin user that is also not in any realms")
+	}
+
 	user, err := db.CreateUser(*emailFlag, *nameFlag, *adminFlag, *disabledFlag)
 	if err == gorm.ErrRecordNotFound {
 		log.Fatalf("unexpected error: %v", err)

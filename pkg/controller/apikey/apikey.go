@@ -61,11 +61,10 @@ func (lc *apikeyListController) ServeHTTP(w http.ResponseWriter, r *http.Request
 	m := html.GetTemplateMap(r)
 	m["user"] = user
 	m["realm"] = realm
-
-	if err := realm.LoadAuthorizedApps(lc.db, true); err != nil {
+	// Perform the lazy load on authorized apps for the realm.
+	if _, err := realm.GetAuthorizedApps(lc.db, true); err != nil {
 		flash.ErrorNow("Error loading API Keys: %v", err)
 	}
-
 	m["apps"] = realm.AuthorizedApps
 	m["flash"] = flash
 	m["typeAdmin"] = database.APIUserTypeAdmin

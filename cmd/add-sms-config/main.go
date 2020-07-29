@@ -19,6 +19,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -78,10 +79,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("--from is required")
 	}
 
-	if *realmID < 0 {
-		return fmt.Errorf("--realm is required")
-	}
-
 	var config database.Config
 	if err := envconfig.Process(ctx, &config); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
@@ -95,8 +92,9 @@ func realMain(ctx context.Context) error {
 
 	realm, err := db.GetRealm(*realmID)
 	if err != nil {
-		return fmt.Errorf("failed to read realmID: %v, %v", *realmID, err)
+		return fmt.Errorf("invalid --realm ID passed: %v, %v", *realmID, err)
 	}
+	log.Printf("Updating SMS config for realm: %v", realm.Name)
 
 	// Create the secret
 	pointer, err := createSecret(ctx, *project, *secretName, *authToken)
@@ -104,14 +102,17 @@ func realMain(ctx context.Context) error {
 		return err
 	}
 
-	smsConfig := &database.SMSConfig{
-		ProviderType:     sms.ProviderType("TWILIO"),
-		TwilioAccountSid: *accountSid,
-		TwilioAuthToken:  pointer,
-		TwilioFromNumber: *from,
-		RealmID:          realm.ID,
+	// Read the existing SMS config for the realm if there is on.
+	if smsConfig, err := realm.GetSMSConfig(ctx, db); err != nil {
+		return fmt.Errorf("unable to read existing SMS config for realm: %w", err)
+	} else if smsConfig == nil {
+		realm.SMSConfig = &database.SMSConfig{}
 	}
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
+	realm.SMSConfig.ProviderType = sms.ProviderType("TWILIO")
+	realm.SMSConfig.TwilioAccountSid = *accountSid
+	realm.SMSConfig.TwilioAuthToken = pointer
+	realm.SMSConfig.TwilioFromNumber = *from
+	if err := db.SaveRealm(realm); err != nil {
 		return fmt.Errorf("failed to create sms entry: %w", err)
 	}
 
