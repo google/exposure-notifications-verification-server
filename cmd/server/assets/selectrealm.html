@@ -23,7 +23,7 @@
                 <div class="col-sm-9">
                   <select class="form-control" name="realm" id="realm">
                     {{range .realms}}
-                        <option value="{{.ID}}">{{.Name}}</option>
+                        <option value="{{.ID}}" {{if eq .ID $.selectedRealmID}}selected{{end}}>{{.Name}}</option>
                     {{end}}
                   </select>
                 </div>
