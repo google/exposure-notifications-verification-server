@@ -1,0 +1,34 @@
+{{define "realm"}}
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    <h2>Settings for {{.realm.Name}}</h2>
+
+    <form method="POST" action="/settings/save">
+      {{ .csrfField }}
+      <div class="form-group row">
+        <label for="name" class="col-sm-3">Realm Name</label>
+        <div class="col-sm-9">
+          <input type="text" id="name" name="name" class="form-control" value="{{.realm.Name}}" />
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="offset-sm-3 col-sm-9">
+          <button type="submit" class="btn btn-primary" name="Action" value="save">Update Realm Settings</button>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}
