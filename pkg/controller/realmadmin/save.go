@@ -58,7 +58,7 @@ func (ras *realmAdminSave) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// All roads lead to a GET redirect.
-	defer http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	defer http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 
 	var form formData
 	if err := controller.BindForm(w, r, &form); err != nil {

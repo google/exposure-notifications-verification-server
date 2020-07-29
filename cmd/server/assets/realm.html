@@ -11,7 +11,7 @@
   <main role="main" class="container">
     <h2>Settings for {{.realm.Name}}</h2>
 
-    <form method="POST" action="/settings/save">
+    <form method="POST" action="/realm/settings/save">
       {{ .csrfField }}
       <div class="form-group row">
         <label for="name" class="col-sm-3">Realm Name</label>

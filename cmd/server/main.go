@@ -167,7 +167,7 @@ func realMain(ctx context.Context) error {
 		userSub.Handle("/create", user.NewSaveController(ctx, config, db)).Methods("POST")
 		userSub.Handle("/delete/{email}", user.NewDeleteController(ctx, config, db)).Methods("POST")
 
-		realmSub := r.PathPrefix("/settings").Subrouter()
+		realmSub := r.PathPrefix("/realm/settings").Subrouter()
 		realmSub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
 		realmSub.Use(middleware.RequireRealm(ctx).Handle)
 		realmSub.Use(middleware.RequireRealmAdmin(ctx).Handle)
