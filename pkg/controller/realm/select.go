@@ -18,6 +18,7 @@ package realm
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -64,10 +65,21 @@ func (rsc *realmSelectController) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Process the realm cookie if one is present, this will highlight the currently selected realm.
+	var previousRealmID int64
+	cookie, err := r.Cookie("realm")
+	if err == nil {
+		realmID, err := strconv.ParseInt(cookie.Value, 10, 64)
+		if err == nil {
+			previousRealmID = realmID
+		}
+	}
+
 	// User must select their realm.
 	m := html.GetTemplateMap(r)
 	m["user"] = user
 	m["realms"] = userRealms
+	m["selectedRealmID"] = previousRealmID
 	m[csrf.TemplateTag] = csrf.TemplateField(r)
 	rsc.html.Render(w, "select-realm", m)
 }
