@@ -108,8 +108,14 @@ export DEV_MODE=1
 # Migrate DB
 ./scripts/dev dbmigrate
 
+
+# create a realm and note the return number
+# successfully created realm default (1)
+go run ./cmd/add-realm --name "default"
+
+
 # create a user for whatever email address you want to use
-go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin true
+go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin --realm 1 --admin-realm 1
 
 go run ./cmd/server
 ```

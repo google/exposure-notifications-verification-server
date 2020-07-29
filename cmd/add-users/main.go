@@ -33,7 +33,12 @@ func main() {
 	disabledFlag := flag.Bool("disabled", false, "true if user should be disabled")
 	realmID := flag.Int64("realm", -1, "realm to add the user to")
 	realmAdminID := flag.Int64("admin-realm", -1, "realm to add the user to")
+
 	flag.Parse()
+
+	if len(flag.Args()) > 0 {
+		log.Fatal("Received unexpected arguments:", flag.Args())
+	}
 
 	if *emailFlag == "" {
 		log.Fatal("--email must be passed and cannot be empty")
