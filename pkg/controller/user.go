@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 )
 
 // contextKey is a unique type to avoid clashing with other packages that use
@@ -67,7 +66,6 @@ func WithUser(ctx context.Context, u *database.User) context.Context {
 // not a user object, the result will be nil.
 func UserFromContext(ctx context.Context) *database.User {
 	v := ctx.Value(contextKeyUser)
-	logging.FromContext(ctx).Infof("GETTING USER FROM CONTEXT, %+v", v)
 	if v == nil {
 		return nil
 	}

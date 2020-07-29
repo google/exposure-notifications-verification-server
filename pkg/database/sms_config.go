@@ -38,6 +38,8 @@ type SMSConfig struct {
 	TwilioAuthToken  string `gorm:"type:varchar(250)"` // secret reference
 	TwilioFromNumber string `gorm:"type:varchar(16)"`
 
+	// This field contains the resolved secret, used for testing secrets were
+	// actually resolved properly.
 	twilioAuthSecret string
 }
 

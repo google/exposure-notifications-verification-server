@@ -18,29 +18,44 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-signalcontext"
+)
+
+var (
+	name = flag.String("name", "", "name of the realm to add")
 )
 
 func main() {
-	name := flag.String("name", "", "name of the realm to add")
+	ctx, done := signalcontext.OnInterrupt()
+	err := realMain(ctx)
+	done()
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+}
+
+func realMain(ctx context.Context) error {
 	flag.Parse()
 
 	if *name == "" {
-		log.Fatalf("--name must be passed and cannot be empty")
+		return fmt.Errorf("--name must be passed and cannot be empty")
 	}
 
-	ctx := context.Background()
 	var config database.Config
 	if err := envconfig.Process(ctx, &config); err != nil {
-		log.Fatalf("config error: %v", err)
+		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
 	db, err := config.Open(ctx)
 	if err != nil {
-		log.Fatalf("db connection failed: %v", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
 
@@ -48,7 +63,9 @@ func main() {
 		Name: *name,
 	}
 	if err := db.SaveRealm(&realm); err != nil {
-		log.Fatalf("unable to create realm: %v", err)
+		return fmt.Errorf("failed to create realm: %w", err)
 	}
-	log.Printf("created new realm: %v (%v)", realm.Name, realm.ID)
+
+	fmt.Printf("successfully created realm %v (%v)\n", realm.Name, realm.ID)
+	return nil
 }
