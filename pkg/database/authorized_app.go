@@ -39,13 +39,12 @@ const (
 // the verification protocol.
 type AuthorizedApp struct {
 	gorm.Model
-	Name       string      `gorm:"type:varchar(100);unique_index"`
+	// AuthorizedApps belong to exactly one realm.
+	RealmID    uint        `gorm:"unique_index:realm_apikey_name"`
+	Realm      *Realm      // for loading the owning realm.
+	Name       string      `gorm:"type:varchar(100);unique_index:realm_apikey_name"`
 	APIKey     string      `gorm:"type:varchar(100);unique_index"`
 	APIKeyType APIUserType `gorm:"default:0"`
-
-	// AuthorizedApps belong to exactly one realm.
-	RealmID uint
-	Realm   *Realm
 }
 
 func (a *AuthorizedApp) IsAdminType() bool {
