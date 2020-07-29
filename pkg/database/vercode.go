@@ -36,7 +36,7 @@ var (
 		"negative":  {},
 	}
 
-	ErrInvalidTestType    = errors.New("invalid test tyupe, must be confirmed, likely, or negative")
+	ErrInvalidTestType    = errors.New("invalid test type, must be confirmed, likely, or negative")
 	ErrCodeAlreadyExpired = errors.New("code already expired")
 	ErrCodeTooShort       = errors.New("verification code must be at least 6 digits")
 	ErrTestTooOld         = errors.New("test date is more than 14 day ago")
@@ -45,6 +45,7 @@ var (
 // VerificationCode represnts a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
+	RealmID     uint   // VerificationCodes belong to exactly one realm when issued.
 	Code        string `gorm:"type:varchar(20);unique_index"`
 	Claimed     bool   `gorm:"default:false"`
 	TestType    string `gorm:"type:varchar(20)"`

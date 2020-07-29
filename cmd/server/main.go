@@ -19,6 +19,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -29,6 +30,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
@@ -40,6 +42,7 @@ import (
 
 	firebase "firebase.google.com/go"
 	"github.com/gorilla/csrf"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
@@ -122,8 +125,18 @@ func realMain(ctx context.Context) error {
 	r.Handle("/session", session.New(ctx, config, auth, db)).Methods("POST")
 
 	{
+		sub := r.PathPrefix("/realm").Subrouter()
+		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
+
+		// Realms - list and select.
+		sub.Handle("", realm.NewSelectController(ctx, config, db, renderHTML)).Methods("GET")
+		sub.Handle("/select", realm.NewSaveController(ctx, config, db)).Methods("POST")
+	}
+
+	{
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
+		sub.Use(middleware.RequireRealm(ctx).Handle)
 		sub.Handle("", home.New(ctx, config, db, renderHTML)).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
@@ -138,14 +151,16 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
 		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
-		sub.Use(middleware.RequireAdmin(ctx).Handle)
+		sub.Use(middleware.RequireRealm(ctx).Handle)
+		sub.Use(middleware.RequireRealmAdmin(ctx).Handle)
 
 		sub.Handle("", apikey.NewListController(ctx, config, db, renderHTML)).Methods("GET")
 		sub.Handle("/create", apikey.NewSaveController(ctx, config, db)).Methods("POST")
 
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
-		userSub.Use(middleware.RequireAdmin(ctx).Handle)
+		userSub.Use(middleware.RequireRealm(ctx).Handle)
+		userSub.Use(middleware.RequireRealmAdmin(ctx).Handle)
 
 		userSub.Handle("", user.NewListController(ctx, config, db, renderHTML)).Methods("GET")
 		userSub.Handle("/create", user.NewSaveController(ctx, config, db)).Methods("POST")
@@ -157,7 +172,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 	logger.Infow("server listening", "port", config.Port)
-	return srv.ServeHTTPHandler(ctx, r)
+	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
 func userEmailKeyFunc() httplimit.KeyFunc {

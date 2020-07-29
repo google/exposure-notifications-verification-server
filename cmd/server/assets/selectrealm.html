@@ -1,0 +1,42 @@
+{{define "select-realm"}}
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+    {{template "navbar" .}}
+
+    <main role="main" class="container">
+        <div class="row">
+            <h1>Select realm to use</h1>
+        </div>
+        <div>
+            <p>You can always switch to a different realm later.</p>
+        </div>
+
+        <form method="POST" action="/realm/select">
+            {{ .csrfField }}
+            <div class="form-group row">
+                <label for="type" class="col-sm-3">Select Realm:</label>
+                <div class="col-sm-9">
+                  <select class="form-control" name="realm" id="realm">
+                    {{range .realms}}
+                        <option value="{{.ID}}">{{.Name}}</option>
+                    {{end}}
+                  </select>
+                </div>
+              </div>
+        
+              <div class="form-group row">
+                <div class="offset-sm-3 col-sm-9">
+                  <button type="submit" class="btn btn-primary" name="Action" value="save">Change Realm</button>
+                </div>
+              </div>
+        
+        </form>
+    </main>
+</body>
+</html>
+{{end}}

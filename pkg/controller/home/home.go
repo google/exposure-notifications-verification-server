@@ -19,6 +19,7 @@ package home
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -58,19 +59,29 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 }
 
 func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 
-	user := controller.UserFromContext(ctx)
+	user := controller.UserFromContext(r.Context())
 	if user == nil {
 		flash.FromContext(w, r).Error("Unauthorized")
 		http.Redirect(w, r, "/signout", http.StatusSeeOther)
 		return
 	}
 
-	smsProvider, err := hc.db.GetSMSProvider(ctx, "") // TODO(sethvargo): support realms
+	realm := controller.RealmFromContext(r.Context())
+	if realm == nil {
+		flash.FromContext(w, r).Error("Select realm to continue.")
+		http.Redirect(w, r, "/realm", http.StatusSeeOther)
+		return
+	}
+
+	smsProvider, err := realm.GetSMSProvider(r.Context(), hc.db)
 	if err != nil {
-		hc.logger.Errorw("failed to load sms configuration", "error", err)
-		flash.FromContext(w, r).Error("internal error - failed to load SMS configuration")
+		if errors.Is(err, database.ErrNoSMSConfig) {
+			smsProvider = nil
+		} else {
+			hc.logger.Errorw("failed to load sms configuration", "error", err)
+			flash.FromContext(w, r).Error("internal error - failed to load SMS configuration")
+		}
 	}
 
 	m := html.GetTemplateMap(r)
@@ -82,5 +93,7 @@ func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m["duration"] = hc.config.CodeDuration.String()
 	m["smsEnabled"] = smsProvider != nil
 	m["user"] = user
+	m["flash"] = flash.FromContext(w, r)
+	m["realm"] = realm
 	hc.html.Render(w, "home", m)
 }

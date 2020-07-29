@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+// Package realm contains web controllers for selecting the effective realm.
+package realm
 
 import (
 	"context"
@@ -21,57 +22,52 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/csrf"
 	"go.uber.org/zap"
 )
 
-type apikeySaveController struct {
+type realmSelectController struct {
 	config *config.ServerConfig
 	db     *database.Database
+	html   *render.HTML
 	logger *zap.SugaredLogger
 }
 
-type formData struct {
-	Name string               `form:"name"`
-	Type database.APIUserType `form:"type"`
+func NewSelectController(ctx context.Context, config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
+	return &realmSelectController{config, db, html, logging.FromContext(ctx)}
 }
 
-func NewSaveController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
-	return &apikeySaveController{config, db, logging.FromContext(ctx)}
-}
-
-func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (rsc *realmSelectController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	// All roads lead to a GET redirect.
-	defer http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 	flash := flash.FromContext(w, r)
-
 	user := controller.UserFromContext(ctx)
 	if user == nil {
+		flash.Error("Internal error, you have been logged out.")
 		http.Redirect(w, r, "/signout", http.StatusFound)
 		return
 	}
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		flash.Error("Select realm to continue.")
-		http.Redirect(w, r, "/realm", http.StatusSeeOther)
+
+	userRealms := user.Realms
+	if len(userRealms) == 0 {
+		flash.Error("No realms enabled. Contact your administrator.")
+		http.Redirect(w, r, "/signout", http.StatusFound)
+		return
+	}
+	if len(userRealms) == 1 {
+		flash.Alert("Logged into verification system for '%v", userRealms[0].Name)
+		setRealmCookie(w, rsc.config, userRealms[0].ID)
+		http.Redirect(w, r, "/home", http.StatusFound)
 		return
 	}
 
-	var form formData
-	if err := controller.BindForm(w, r, &form); err != nil {
-		sc.logger.Errorf("invalid apikey create request: %v", err)
-		flash.Error("Invalid request.")
-		return
-	}
-
-	if _, err := sc.db.CreateAuthorizedApp(realm.ID, form.Name, form.Type); err != nil {
-		sc.logger.Errorf("error creating authorized app: %v", err)
-		flash.Error("Failed to create API key: %v", err)
-		return
-	}
-
-	flash.Alert("Created API Key for %q", form.Name)
+	// User must select their realm.
+	m := html.GetTemplateMap(r)
+	m["user"] = user
+	m["realms"] = userRealms
+	m[csrf.TemplateTag] = csrf.TemplateField(r)
+	rsc.html.Render(w, "select-realm", m)
 }

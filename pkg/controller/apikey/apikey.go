@@ -43,23 +43,29 @@ func NewListController(ctx context.Context, config *config.ServerConfig, db *dat
 }
 
 func (lc *apikeyListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user := controller.UserFromContext(r.Context())
+	ctx := r.Context()
+	user := controller.UserFromContext(ctx)
 	if user == nil {
 		http.Redirect(w, r, "/signout", http.StatusSeeOther)
 		return
 	}
 
 	flash := flash.FromContext(w, r)
+	realm := controller.RealmFromContext(ctx)
+	if realm == nil {
+		flash.Error("Select realm to continue.")
+		http.Redirect(w, r, "/realm", http.StatusSeeOther)
+		return
+	}
 
 	m := html.GetTemplateMap(r)
 	m["user"] = user
-
-	apps, err := lc.db.ListAuthorizedApps(true)
-	if err != nil {
+	m["realm"] = realm
+	// Perform the lazy load on authorized apps for the realm.
+	if _, err := realm.GetAuthorizedApps(lc.db, true); err != nil {
 		flash.ErrorNow("Error loading API Keys: %v", err)
 	}
-
-	m["apps"] = apps
+	m["apps"] = realm.AuthorizedApps
 	m["flash"] = flash
 	m["typeAdmin"] = database.APIUserTypeAdmin
 	m["typeDevice"] = database.APIUserTypeDevice

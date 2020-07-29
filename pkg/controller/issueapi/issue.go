@@ -68,13 +68,34 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authApp, user, err := ic.getAuthorizationFromContext(r)
+	if err != nil {
+		ic.logger.Errorf("failed to get authorization: %v", err)
+		controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("invalid request: %v", err))
+		return
+	}
+	var realm *database.Realm
+	if authApp != nil {
+		realm, err = authApp.GetRealm(ic.db)
+		if err != nil {
+			controller.WriteJSON(w, http.StatusUnauthorized, api.Error(http.StatusText(http.StatusUnauthorized)))
+			return
+		}
+	} else {
+		// if it's a user logged in, we can pull realm from the context.
+		realm = controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("no realm selected"))
+			return
+		}
+	}
+
 	// Verify SMS configuration if phone was provided
 	var smsProvider sms.Provider
 	if request.Phone != "" {
-		var err error
-		smsProvider, err = ic.db.GetSMSProvider(ctx, "") // TODO(sethvargo): pass in realm
+		smsProvider, err = realm.GetSMSProvider(ctx, ic.db)
 		if err != nil {
-			ic.logger.Errorf("otp.GetSMSProvider: %v", err)
+			ic.logger.Errorf("GetSMSProvider: %v", err)
 			controller.WriteJSON(w, http.StatusInternalServerError, api.Error("failed to get sms provider"))
 			return
 		}
@@ -119,13 +140,6 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	expiration := ic.config.GetVerificationCodeDuration()
 	expiryTime := time.Now().UTC().Add(expiration)
 
-	authApp, user, err := ic.getAuthorizationFromContext(r)
-	if err != nil {
-		ic.logger.Errorf("failed to get authorization: %v", err)
-		controller.WriteJSON(w, http.StatusUnprocessableEntity, api.Error("invalid request: %v", err))
-		return
-	}
-
 	// Generate verification code
 	codeRequest := otp.Request{
 		DB:            ic.db,
@@ -136,6 +150,7 @@ func (ic *IssueAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxSymptomAge: ic.config.GetAllowedSymptomAge(),
 		IssuingUser:   user,
 		IssuingApp:    authApp,
+		RealmID:       realm.ID,
 	}
 
 	code, err := codeRequest.Issue(ctx, ic.config.GetColissionRetryCount())

@@ -18,18 +18,22 @@ import (
 	"context"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 )
 
 // contextKey is a unique type to avoid clashing with other packages that use
 // context's to pass data.
-type contextKey struct{}
+type contextKey string
 
 var (
 	// contextKeyAuthorizedApp is a context key used for the authorized app.
-	contextKeyAuthorizedApp = &contextKey{}
+	contextKeyAuthorizedApp = contextKey("authapp")
 
 	// contextKeyUser is a context key used for the user.
-	contextKeyUser = &contextKey{}
+	contextKeyUser = contextKey("user")
+
+	// ContextKeyRealm is a context key for the realm.
+	contextKeyRealm = contextKey("realm")
 )
 
 // WithAuthorizedApp sets the AuthorizedApp in the context.
@@ -63,6 +67,7 @@ func WithUser(ctx context.Context, u *database.User) context.Context {
 // not a user object, the result will be nil.
 func UserFromContext(ctx context.Context) *database.User {
 	v := ctx.Value(contextKeyUser)
+	logging.FromContext(ctx).Infof("GETTING USER FROM CONTEXT, %+v", v)
 	if v == nil {
 		return nil
 	}
@@ -72,4 +77,24 @@ func UserFromContext(ctx context.Context) *database.User {
 		return nil
 	}
 	return user
+}
+
+// WithRealm sets the realm in the cotnext.
+func WithRealm(ctx context.Context, r *database.Realm) context.Context {
+	return context.WithValue(ctx, contextKeyRealm, r)
+}
+
+// RealmFromContext gets the currently selected realm for the current user session.
+// If none is selected, nil is returned.
+func RealmFromContext(ctx context.Context) *database.Realm {
+	v := ctx.Value(contextKeyRealm)
+	if v == nil {
+		return nil
+	}
+
+	realm, ok := v.(*database.Realm)
+	if !ok {
+		return nil
+	}
+	return realm
 }

@@ -18,13 +18,19 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestCreateFindAPIKey(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
-	authApp, err := db.CreateAuthorizedApp("University System Health Org", APIUserTypeAdmin)
+	realm, err := db.CreateRealm("foo")
+	if err != nil {
+		t.Fatalf("error creating realm: %v", err)
+	}
+
+	authApp, err := db.CreateAuthorizedApp(realm.ID, "University System Health Org", APIUserTypeAdmin)
 	if err != nil {
 		t.Fatalf("error creating authorized app: %v", err)
 	}
@@ -33,7 +39,8 @@ func TestCreateFindAPIKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading authorized app by api key: %v", err)
 	}
-	if diff := cmp.Diff(authApp, got, approxTime); diff != "" {
+	// Ignore the preloaded realm on the got AuthorizedApp
+	if diff := cmp.Diff(authApp, got, approxTime, cmpopts.IgnoreFields(AuthorizedApp{}, "Realm")); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -45,11 +52,16 @@ func TestListAPIKeys(t *testing.T) {
 	var authApp1, authApp2 *AuthorizedApp
 	var err error
 
-	authApp1, err = db.CreateAuthorizedApp("App 1", APIUserTypeAdmin)
+	realm, err := db.CreateRealm("bar")
+	if err != nil {
+		t.Fatalf("error creating realm: %v", err)
+	}
+
+	authApp1, err = db.CreateAuthorizedApp(realm.ID, "App 1", APIUserTypeAdmin)
 	if err != nil {
 		t.Fatalf("error creating app: %v", err)
 	}
-	authApp2, err = db.CreateAuthorizedApp("App 2", APIUserTypeDevice)
+	authApp2, err = db.CreateAuthorizedApp(realm.ID, "App 2", APIUserTypeDevice)
 	if err != nil {
 		t.Fatalf("error creating app: %v", err)
 	}
@@ -61,7 +73,8 @@ func TestListAPIKeys(t *testing.T) {
 		t.Fatalf("error listing apps: %v", err)
 	}
 
-	if diff := cmp.Diff(want, got, approxTime); diff != "" {
+	// Ignore the preloaded realm on the got AuthorizedApp
+	if diff := cmp.Diff(want, got, approxTime, cmpopts.IgnoreFields(AuthorizedApp{}, "Realm")); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }

@@ -47,6 +47,7 @@ func GenerateCode(length uint) (string, error) {
 // Request represents the parameters of a verification code request.
 type Request struct {
 	DB            *database.Database
+	RealmID       uint
 	Length        uint
 	ExpiresAt     time.Time
 	TestType      string
@@ -70,6 +71,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, error) {
 			continue
 		}
 		verificationCode := database.VerificationCode{
+			RealmID:     o.RealmID,
 			Code:        code,
 			TestType:    strings.ToLower(o.TestType),
 			SymptomDate: o.SymptomDate,

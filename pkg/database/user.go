@@ -30,10 +30,44 @@ type User struct {
 	Admin           bool   `gorm:"default:false"`
 	Disabled        bool
 	LastRevokeCheck time.Time
+	Realms          []*Realm `gorm:"many2many:user_realms;PRELOAD:true"`
+	AdminRealms     []*Realm `gorm:"many2many:admin_realms;PRELOAD:true"`
+}
+
+func (u *User) MultipleRealms() bool {
+	return len(u.Realms) > 1
+}
+
+func (u *User) GetRealm(realmID uint) *Realm {
+	for _, r := range u.Realms {
+		if r.ID == realmID {
+			return r
+		}
+	}
+	return nil
+}
+
+func (u *User) CanViewRealm(realmID uint) bool {
+	for _, r := range u.Realms {
+		if r.ID == realmID {
+			return true
+		}
+	}
+	return false
+}
+
+func (u *User) CanAdminRealm(realmID uint) bool {
+	for _, r := range u.AdminRealms {
+		if r.ID == realmID {
+			return true
+		}
+	}
+	return false
 }
 
 // ListUsers retrieves all of the configured users.
 // Done without pagination.
+// This is not scoped to realms.
 func (db *Database) ListUsers(includeDeleted bool) ([]*User, error) {
 	var users []*User
 
@@ -47,10 +81,19 @@ func (db *Database) ListUsers(includeDeleted bool) ([]*User, error) {
 	return users, nil
 }
 
+// GetUser reads back a User struct by email address.
+func (db *Database) GetUser(id uint) (*User, error) {
+	var user User
+	if err := db.db.Preload("Realms").Preload("AdminRealms").Where("id = ?", id).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 // FindUser reads back a User struct by email address.
 func (db *Database) FindUser(email string) (*User, error) {
 	var user User
-	if err := db.db.Where("email = ?", email).First(&user).Error; err != nil {
+	if err := db.db.Preload("Realms").Preload("AdminRealms").Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil

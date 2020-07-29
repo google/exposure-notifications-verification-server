@@ -42,6 +42,10 @@ type AuthorizedApp struct {
 	Name       string      `gorm:"type:varchar(100);unique_index"`
 	APIKey     string      `gorm:"type:varchar(100);unique_index"`
 	APIKeyType APIUserType `gorm:"default:0"`
+
+	// AuthorizedApps belong to exactly one realm.
+	RealmID uint
+	Realm   *Realm
 }
 
 func (a *AuthorizedApp) IsAdminType() bool {
@@ -50,6 +54,20 @@ func (a *AuthorizedApp) IsAdminType() bool {
 
 func (a *AuthorizedApp) IsDeviceType() bool {
 	return a.APIKeyType == APIUserTypeDevice
+}
+
+// GetRealm does a lazy load read of the realm associated with this
+// authorized app.
+func (a *AuthorizedApp) GetRealm(db *Database) (*Realm, error) {
+	if a.Realm != nil {
+		return a.Realm, nil
+	}
+	var realm Realm
+	if err := db.db.Model(a).Related(&realm).Error; err != nil {
+		return nil, err
+	}
+	a.Realm = &realm
+	return a.Realm, nil
 }
 
 // TODO(mikehelmick): Implement revoke API key functionality.
@@ -69,7 +87,7 @@ func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, e
 	if includeDeleted {
 		scope = db.db.Unscoped()
 	}
-	if err := scope.Order("name ASC").Find(&apps).Error; err != nil {
+	if err := scope.Preload("Realm").Order("name ASC").Find(&apps).Error; err != nil {
 		return nil, fmt.Errorf("query authorized apps: %w", err)
 	}
 	return apps, nil
@@ -77,7 +95,7 @@ func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, e
 
 // CreateAuthorizedApp generates a new APIKey and assigns it to the specified
 // name.
-func (db *Database) CreateAuthorizedApp(name string, apiUserType APIUserType) (*AuthorizedApp, error) {
+func (db *Database) CreateAuthorizedApp(realmID uint, name string, apiUserType APIUserType) (*AuthorizedApp, error) {
 	if !(apiUserType == APIUserTypeAdmin || apiUserType == APIUserTypeDevice) {
 		return nil, fmt.Errorf("invalid API Key user type requested: %v", apiUserType)
 	}
@@ -92,6 +110,7 @@ func (db *Database) CreateAuthorizedApp(name string, apiUserType APIUserType) (*
 		Name:       name,
 		APIKey:     base64.RawStdEncoding.EncodeToString(buffer),
 		APIKeyType: apiUserType,
+		RealmID:    realmID,
 	}
 	if err := db.db.Create(&app).Error; err != nil {
 		return nil, fmt.Errorf("unable to save authorized app: %w", err)
@@ -102,7 +121,7 @@ func (db *Database) CreateAuthorizedApp(name string, apiUserType APIUserType) (*
 // FindAuthorizedAppByAPIKey located an authorized app based on API key.
 func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, error) {
 	var app AuthorizedApp
-	if err := db.db.Where("api_key = ?", apiKey).First(&app).Error; err != nil {
+	if err := db.db.Preload("Realm").Where("api_key = ?", apiKey).First(&app).Error; err != nil {
 		return nil, err
 	}
 	return &app, nil

@@ -41,6 +41,8 @@ var (
 // Token represents an issued "long term" from a validated verification code.
 type Token struct {
 	gorm.Model
+	// Tokens belong to one realm.
+	RealmID     uint
 	TokenID     string `gorm:"type:varchar(200); unique_index"`
 	TestType    string `gorm:"type:varchar(20)"`
 	SymptomDate *time.Time
@@ -105,10 +107,10 @@ func (t *Token) Subject() *Subject {
 
 // ClaimToken looks up the token by ID, verifies that it is not expired and that
 // the specified subject matches the parameters that were configured when issued.
-func (db *Database) ClaimToken(tokenID string, subject *Subject) error {
+func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) error {
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		var tok Token
-		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("token_id = ?", tokenID).First(&tok).Error; err != nil {
+		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("token_id = ? and realm_id = ?", tokenID, realmID).First(&tok).Error; err != nil {
 			return err
 		}
 
@@ -141,7 +143,7 @@ func (db *Database) ClaimToken(tokenID string, subject *Subject) error {
 // transaction.
 //
 // The long term token can be used later to sign keys when they are submitted.
-func (db *Database) VerifyCodeAndIssueToken(verCode string, expireAfter time.Duration) (*Token, error) {
+func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, expireAfter time.Duration) (*Token, error) {
 	buffer := make([]byte, tokenBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -154,7 +156,7 @@ func (db *Database) VerifyCodeAndIssueToken(verCode string, expireAfter time.Dur
 		// Load the verification code - do quick expiry and claim checks.
 		// Also lock the row for update.
 		var vc VerificationCode
-		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("code = ?", verCode).First(&vc).Error; err != nil {
+		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("code = ? and realm_id = ?", verCode, realmID).First(&vc).Error; err != nil {
 			return err
 		}
 		if vc.IsExpired() {
@@ -178,6 +180,7 @@ func (db *Database) VerifyCodeAndIssueToken(verCode string, expireAfter time.Dur
 			SymptomDate: vc.SymptomDate,
 			Used:        false,
 			ExpiresAt:   time.Now().UTC().Add(expireAfter),
+			RealmID:     realmID,
 		}
 
 		return db.db.Create(tok).Error

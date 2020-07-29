@@ -31,19 +31,12 @@
         </div>
       </div>
       <div class="form-group row">
-        <label for="admin" class="col-sm-2">Admin:</label><br>
+        <label for="admin" class="col-sm-2">Realm Admin:</label><br>
         <div class="col-sm-1">
           <input type="checkbox" id="admin" name="admin" class="form-control" value="true"/>
         </div>
         <div class="col-sm-9"></div>
-      </div>
-      <div class="form-group row">
-        <label for="disabled" class="col-sm-2">Disabled:</label><br>
-        <div class="col-sm-1">
-          <input type="checkbox" id="disabled" name="disabled" class="form-control" value="true"/>
-        </div>
-        <div class="col-sm-9"></div>
-      </div>
+      </div>      
       </div>
 
       <div class="form-group row">
@@ -53,9 +46,10 @@
       </div>
     </form>
 
-    <h2>All Users</h2>
+    <h2>{{.realm.Name}} Users</h2>
 
     {{$csrf := .csrfField}}
+    {{$admins := .admins}}
 
     {{if .users}}
     <div class="table-responsive">
@@ -64,8 +58,7 @@
           <tr>
             <th scope="col">Email</th>
             <th scope="col">Name</th>
-            <th scope="col">Admin</th>
-            <th scope="col">Disabled</th>
+            <th scope="col">Realm Admin</th>
             <th scope="col">Delete?</th>
           </tr>
         </thead>
@@ -74,8 +67,7 @@
           <tr>
             <td scope="row">{{.Email}}</td>
             <td scope="row">{{.Name}}</td>
-            <td scope="row">{{.Admin}}</td>
-            <td scope="row">{{.Disabled}}</td>
+            <td scope="row">{{if index $admins .ID}}&#x2714;{{end}}</td>            
             <td scope="row">
               <form method="POST" action="/users/delete/{{.Email}}">
                 {{ $csrf }}

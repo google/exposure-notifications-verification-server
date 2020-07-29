@@ -32,16 +32,64 @@ import (
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
-	ErrUserDisabled = errors.New("user disabled")
+	ErrUserNotFound  = errors.New("user not found")
+	ErrUserDisabled  = errors.New("user disabled")
+	ErrNotRealmAdmin = errors.New("not realm admin")
 )
+
+type RequireRealmAdminHandler struct {
+	logger *zap.SugaredLogger
+}
+
+// RequireRealmAdmin verifies that a user is an admin in the selected realm.
+// It must be used AFTER the RequireAuth and RequireRealm middlewares.
+func RequireRealmAdmin(ctx context.Context) *RequireRealmAdminHandler {
+	return &RequireRealmAdminHandler{logging.FromContext(ctx)}
+}
+
+func (rra *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			// Get user from context.
+			user := controller.UserFromContext(r.Context())
+			if user == nil {
+				return fmt.Errorf("missing user in session")
+			}
+
+			// Get realm from context.
+			realm := controller.RealmFromContext(r.Context())
+			if realm == nil {
+				return fmt.Errorf("missing realm in session")
+			}
+
+			if !user.CanAdminRealm(realm.ID) {
+				return ErrNotRealmAdmin
+			}
+
+			return nil
+		}(); err != nil {
+			rra.logger.Errorw("RequireRealmAdmin", "error", err)
+
+			if errors.Is(err, ErrNotRealmAdmin) {
+				flash.FromContext(w, r).Error("You are not authorized to admin that realm.")
+				http.Redirect(w, r, "/realm", http.StatusFound)
+				return
+			}
+
+			flash.FromContext(w, r).Error("Unauthorized")
+			http.Redirect(w, r, "/signout", http.StatusFound)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 type RequireAdminHandler struct {
 	logger *zap.SugaredLogger
 }
 
-// RequireAdmin verifies that a user is an admin. It must be used AFTER the
-// RequireAuth middleware.
+// RequireAdmin verifies that a user is a system admin.
+// It must be used AFTER the RequireAuth middleware.
 func RequireAdmin(ctx context.Context) *RequireAdminHandler {
 	return &RequireAdminHandler{logging.FromContext(ctx)}
 }

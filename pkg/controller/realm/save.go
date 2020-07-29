@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+package realm
 
 import (
 	"context"
@@ -23,55 +23,59 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-
 	"go.uber.org/zap"
 )
 
-type apikeySaveController struct {
+type realmSaveController struct {
 	config *config.ServerConfig
 	db     *database.Database
 	logger *zap.SugaredLogger
 }
 
 type formData struct {
-	Name string               `form:"name"`
-	Type database.APIUserType `form:"type"`
+	Realm int `form:"realm"`
 }
 
 func NewSaveController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
-	return &apikeySaveController{config, db, logging.FromContext(ctx)}
+	return &realmSaveController{config, db, logging.FromContext(ctx)}
 }
 
-func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (rsc *realmSaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	// All roads lead to a GET redirect.
-	defer http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 	flash := flash.FromContext(w, r)
-
-	user := controller.UserFromContext(ctx)
-	if user == nil {
-		http.Redirect(w, r, "/signout", http.StatusFound)
-		return
-	}
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		flash.Error("Select realm to continue.")
-		http.Redirect(w, r, "/realm", http.StatusSeeOther)
-		return
-	}
 
 	var form formData
 	if err := controller.BindForm(w, r, &form); err != nil {
-		sc.logger.Errorf("invalid apikey create request: %v", err)
-		flash.Error("Invalid request.")
+		rsc.logger.Errorf("invalid realm select rquest: %v", err)
+		flash.Error("Invalid realm selection.")
+		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
 		return
 	}
 
-	if _, err := sc.db.CreateAuthorizedApp(realm.ID, form.Name, form.Type); err != nil {
-		sc.logger.Errorf("error creating authorized app: %v", err)
-		flash.Error("Failed to create API key: %v", err)
+	realm, err := rsc.db.GetRealm(int64(form.Realm))
+	if err != nil {
+		rsc.logger.Errorf("error selecting realm: %v", err)
+		flash.Error("Invalid realm selection.")
+		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
 		return
 	}
 
-	flash.Alert("Created API Key for %q", form.Name)
+	user := controller.UserFromContext(ctx)
+	if user == nil {
+		flash.Error("Internal error, you have been logged out.")
+		http.Redirect(w, r, "/signout", http.StatusSeeOther)
+		return
+	}
+
+	// Verify that the user has access to the realm.
+	if user.CanViewRealm(realm.ID) {
+		setRealmCookie(w, rsc.config, realm.ID)
+		flash.Alert("Selected realm '%v'", realm.Name)
+		http.Redirect(w, r, "/home", http.StatusSeeOther)
+		return
+	}
+
+	// Not allowed to see the realm selected.
+	flash.Error("Invalid realm selection.")
+	http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
 }

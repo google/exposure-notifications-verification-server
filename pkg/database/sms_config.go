@@ -16,7 +16,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
@@ -27,6 +26,9 @@ import (
 type SMSConfig struct {
 	gorm.Model
 
+	// SMS Config belongs to exactly one realm.
+	RealmID uint `gorm:"unique_index"`
+
 	// ProviderType is the SMS provider type - it's used to determine the
 	// underlying configuration.
 	ProviderType sms.ProviderType `gorm:"type:varchar(100)"`
@@ -35,26 +37,34 @@ type SMSConfig struct {
 	TwilioAccountSid string `gorm:"type:varchar(250)"`
 	TwilioAuthToken  string `gorm:"type:varchar(250)"` // secret reference
 	TwilioFromNumber string `gorm:"type:varchar(16)"`
+
+	twilioAuthSecret string
 }
 
 // GetSMSProvider gets the SMS provider for the given realm. The values are
 // cached.
-func (db *Database) GetSMSProvider(ctx context.Context, realm string) (sms.Provider, error) {
-	key := fmt.Sprintf("GetSMSProvider/%s", realm)
+func (smsConfig *SMSConfig) GetSMSProvider(ctx context.Context, db *Database) (sms.Provider, error) {
+	// The provider itself is cached, not the SMSConfig entity.
+	key := fmt.Sprintf("GetSMSProvider/%v", smsConfig.ID)
 	val, err := db.cacher.WriteThruLookup(key, func() (interface{}, error) {
-		// Get the configuration, if it exists.
-		smsConfig, err := db.FindSMSConfig(ctx, realm)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, nil
+		// Get the actual auth token from the secret manager.
+		//
+		// TODO(sethvargo): this is a double switch, since ProviderFor is also a
+		// switch. Maybe we should push this logic down lower? We only want to
+		// resolve secrets for the provider that's configured.
+		switch smsConfig.ProviderType {
+		case sms.ProviderTypeTwilio:
+			authToken, err := db.secretManager.GetSecretValue(ctx, smsConfig.TwilioAuthToken)
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve twilio auth token secret: %w", err)
 			}
-			return nil, err
+			smsConfig.twilioAuthSecret = authToken
 		}
 
 		provider, err := sms.ProviderFor(ctx, &sms.Config{
 			ProviderType:     smsConfig.ProviderType,
 			TwilioAccountSid: smsConfig.TwilioAccountSid,
-			TwilioAuthToken:  smsConfig.TwilioAuthToken,
+			TwilioAuthToken:  smsConfig.twilioAuthSecret,
 			TwilioFromNumber: smsConfig.TwilioFromNumber,
 		})
 		if err != nil {
@@ -71,33 +81,6 @@ func (db *Database) GetSMSProvider(ctx context.Context, realm string) (sms.Provi
 	}
 
 	return val.(sms.Provider), nil
-}
-
-// FindSMSConfig gets the SMS configuration for the given realm. It resolves any
-// secrets to their plaintext values.
-func (db *Database) FindSMSConfig(ctx context.Context, realm string) (*SMSConfig, error) {
-	var smsConfig SMSConfig
-
-	// TODO(sethvargo): support realms and lookup SMS configuration by realm.
-	if err := db.db.First(&smsConfig).Error; err != nil {
-		return nil, err
-	}
-
-	// Get the actual auth token from the secret manager.
-	//
-	// TODO(sethvargo): this is a double switch, since ProviderFor is also a
-	// switch. Maybe we should push this logic down lower? We only want to
-	// resolve secrets for the provider that's configured.
-	switch smsConfig.ProviderType {
-	case sms.ProviderTypeTwilio:
-		authToken, err := db.secretManager.GetSecretValue(ctx, smsConfig.TwilioAuthToken)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve twilio auth token secret: %w", err)
-		}
-		smsConfig.TwilioAuthToken = authToken
-	}
-
-	return &smsConfig, nil
 }
 
 // SaveSMSConfig creates or updates an SMS configuration record.

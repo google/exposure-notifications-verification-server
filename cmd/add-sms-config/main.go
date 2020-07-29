@@ -19,6 +19,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -33,7 +34,7 @@ import (
 )
 
 var (
-	realm      = flag.String("realm", "", "realm for which to add config")
+	realmID    = flag.Int64("realm", -1, "realm ID for which to add config")
 	accountSid = flag.String("twilio-account-sid", "", "account sid")
 	authToken  = flag.String("twilio-auth-token", "", "auth token, will be stored in secret manager")
 
@@ -58,12 +59,6 @@ func main() {
 func realMain(ctx context.Context) error {
 	flag.Parse()
 
-	// TODO(sethvargo): support realms
-	// if *realm == "" {
-	// 	return fmt.Errorf("--realm is required")
-	// }
-	_ = *realm
-
 	if *accountSid == "" {
 		return fmt.Errorf("--twilio-account-sid is required")
 	}
@@ -84,12 +79,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("--from is required")
 	}
 
-	// Create the secret
-	pointer, err := createSecret(ctx, *project, *secretName, *authToken)
-	if err != nil {
-		return err
-	}
-
 	var config database.Config
 	if err := envconfig.Process(ctx, &config); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
@@ -101,13 +90,29 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	smsConfig := &database.SMSConfig{
-		ProviderType:     sms.ProviderType("TWILIO"),
-		TwilioAccountSid: *accountSid,
-		TwilioAuthToken:  pointer,
-		TwilioFromNumber: *from,
+	realm, err := db.GetRealm(*realmID)
+	if err != nil {
+		return fmt.Errorf("invalid --realm ID passed: %v, %v", *realmID, err)
 	}
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
+	log.Printf("Updating SMS config for realm: %v", realm.Name)
+
+	// Create the secret
+	pointer, err := createSecret(ctx, *project, *secretName, *authToken)
+	if err != nil {
+		return err
+	}
+
+	// Read the existing SMS config for the realm if there is on.
+	if smsConfig, err := realm.GetSMSConfig(ctx, db); err != nil {
+		return fmt.Errorf("unable to read existing SMS config for realm: %w", err)
+	} else if smsConfig == nil {
+		realm.SMSConfig = &database.SMSConfig{}
+	}
+	realm.SMSConfig.ProviderType = sms.ProviderType("TWILIO")
+	realm.SMSConfig.TwilioAccountSid = *accountSid
+	realm.SMSConfig.TwilioAuthToken = pointer
+	realm.SMSConfig.TwilioFromNumber = *from
+	if err := db.SaveRealm(realm); err != nil {
 		return fmt.Errorf("failed to create sms entry: %w", err)
 	}
 

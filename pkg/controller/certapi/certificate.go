@@ -113,6 +113,13 @@ func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// APIKey should be verified by middleware.
+	authApp := controller.AuthorizedAppFromContext(ctx)
+	if authApp == nil {
+		ca.logger.Errorf("no authorized app in context")
+		controller.WriteJSON(w, http.StatusInternalServerError, api.Error("internal error unable to verify code"))
+		return
+	}
+
 	var request api.VerificationCertificateRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
 		ca.logger.Errorf("failed to bind request: %v", err)
@@ -180,7 +187,7 @@ func (ca *CertificateAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// To the transactional update to the database last so that if it fails, the client can retry.
-	if err := ca.db.ClaimToken(tokenID, subject); err != nil {
+	if err := ca.db.ClaimToken(authApp.RealmID, tokenID, subject); err != nil {
 		ca.logger.Errorf("error claiming tokenId: %v err: %v", tokenID, err)
 		controller.WriteJSON(w, http.StatusBadRequest, api.Error(err.Error()))
 		return
