@@ -30,7 +30,6 @@ const initState = "00000-Init"
 func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 	logger := logging.FromContext(ctx)
 	options := gormigrate.DefaultOptions
-	options.UseTransaction = true
 	return gormigrate.New(db.db, options, []*gormigrate.Migration{
 		{
 			ID: initState,
@@ -313,6 +312,32 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
 					}
 				}
+				return nil
+			},
+		},
+		{
+			ID: "00012-DropAuthorizedAppUniqueNameIndex",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Info("dropping authorized apps unique name index")
+				if err := tx.Model(&AuthorizedApp{}).RemoveIndex("uix_authorized_apps_name").Error; err != nil {
+					logger.Warnf("error dropping index, that may not exists: %v", err)
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00013-AddCompositeIndexOnAuthorizedApp",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Info("adding authorized apps realm/name composite index")
+				if err := tx.AutoMigrate(&AuthorizedApp{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
 				return nil
 			},
 		},
