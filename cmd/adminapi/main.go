@@ -21,6 +21,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -32,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-limiter/memorystore"
@@ -100,7 +102,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 	logger.Infow("server listening", "port", config.Port)
-	return srv.ServeHTTPHandler(ctx, r)
+	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
 func apiKeyFunc() httplimit.KeyFunc {
