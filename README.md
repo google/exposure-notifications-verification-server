@@ -109,9 +109,9 @@ export DEV_MODE=1
 ./scripts/dev dbmigrate
 
 
-# create a realm and note the return number
-# successfully created realm default (1)
-go run ./cmd/add-realm --name "default"
+# OPTIONAL: You can create a realm (one should be created as part of migration)
+# and note the return number in the output.
+go run ./cmd/add-realm --name "my-custom-realm"
 
 
 # create a user for whatever email address you want to use
