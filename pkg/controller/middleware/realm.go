@@ -23,9 +23,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	httpcontext "github.com/gorilla/context"
 	"go.uber.org/zap"
 )
 
@@ -57,13 +55,8 @@ func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 			}
 
 			// Get user from the session
-			userRaw, ok := httpcontext.GetOk(r, "user")
-			if !ok {
-				return fmt.Errorf("missing user in session")
-			}
-
-			user, ok := userRaw.(*database.User)
-			if !ok {
+			user := controller.UserFromContext(r.Context())
+			if user == nil {
 				return fmt.Errorf("user is not a database.User")
 			}
 
@@ -74,7 +67,6 @@ func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 			}
 
 			r = r.WithContext(controller.WithRealm(r.Context(), realm))
-			httpcontext.Set(r, "realm", realm)
 			return nil
 		}(); err != nil {
 			h.logger.Errorw("RequireRealm", "error", err)

@@ -59,23 +59,22 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 }
 
 func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 
-	user := controller.UserFromContext(ctx)
+	user := controller.UserFromContext(r.Context())
 	if user == nil {
 		flash.FromContext(w, r).Error("Unauthorized")
 		http.Redirect(w, r, "/signout", http.StatusSeeOther)
 		return
 	}
 
-	realm := controller.RealmFromContext(ctx)
+	realm := controller.RealmFromContext(r.Context())
 	if realm == nil {
 		flash.FromContext(w, r).Error("Select realm to continue.")
 		http.Redirect(w, r, "/realm", http.StatusSeeOther)
 		return
 	}
 
-	smsProvider, err := realm.GetSMSProvider(ctx, hc.db)
+	smsProvider, err := realm.GetSMSProvider(r.Context(), hc.db)
 	if err != nil {
 		if errors.Is(err, database.ErrNoSMSConfig) {
 			smsProvider = nil
