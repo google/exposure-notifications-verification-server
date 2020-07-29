@@ -172,7 +172,7 @@ func TestIssueToken(t *testing.T) {
 				t.Fatalf("unable to create test realm")
 			}
 
-			tc.Verification.Realm = realm
+			tc.Verification.RealmID = realm.ID
 			if err := db.SaveVerificationCode(&tc.Verification, codeAge); err != nil {
 				t.Fatalf("error creating verification code: %v", err)
 			}
