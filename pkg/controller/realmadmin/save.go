@@ -15,64 +15,52 @@
 package realmadmin
 
 import (
-	"context"
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-
-	"go.uber.org/zap"
 )
 
-type realmAdminSave struct {
-	config *config.ServerConfig
-	db     *database.Database
-	logger *zap.SugaredLogger
-}
-
-type formData struct {
-	Name string `form:"name"`
-}
-
-func NewSaveController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
-	return &realmAdminSave{config, db, logging.FromContext(ctx)}
-}
-
-func (ras *realmAdminSave) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	flash := flash.FromContext(w, r)
-
-	user := controller.UserFromContext(ctx)
-	if user == nil {
-		http.Redirect(w, r, "/signout", http.StatusFound)
-		return
-	}
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		flash.Error("Select realm to continue.")
-		http.Redirect(w, r, "/realm", http.StatusSeeOther)
-		return
+func (c *Controller) HandleSave() http.Handler {
+	type FormData struct {
+		Name string `form:"name,required"`
 	}
 
-	// All roads lead to a GET redirect.
-	defer http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		flash := flash.FromContext(w, r)
 
-	var form formData
-	if err := controller.BindForm(w, r, &form); err != nil {
-		ras.logger.Errorf("invalid realm save request: %v", err)
-		flash.Error("Invalid request.")
-		return
-	}
+		user := controller.UserFromContext(ctx)
+		if user == nil {
+			flash.Error("Unauthorized.")
+			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			return
+		}
 
-	realm.Name = form.Name
-	if err := ras.db.SaveRealm(realm); err != nil {
-		ras.logger.Errorf("unable save realm settings: %v", err)
-		flash.Error("Error updating realm: %v", err)
-		return
-	}
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			flash.Error("Select a realm to continue.")
+			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			return
+		}
 
-	flash.Alert("Updated realm settings!")
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			c.logger.Errorf("invalid realm save request: %v", err)
+			flash.Error("Invalid request.")
+			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+			return
+		}
+
+		realm.Name = form.Name
+		if err := c.db.SaveRealm(realm); err != nil {
+			c.logger.Errorf("unable save realm settings: %v", err)
+			flash.Error("Error updating realm: %v", err)
+			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+			return
+		}
+
+		flash.Alert("Updated realm settings!")
+		http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+	})
 }

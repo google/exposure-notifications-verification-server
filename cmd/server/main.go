@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -33,7 +34,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
@@ -91,7 +91,14 @@ func realMain(ctx context.Context) error {
 	r := mux.NewRouter()
 
 	// Create our HTML renderer
-	renderHTML := render.LoadHTMLGlob(config.AssetsPath+"/*", config.DevMode)
+	glob := filepath.Join(config.AssetsPath, "*")
+	h, err := render.New(ctx, glob, config.DevMode)
+	if err != nil {
+		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
+	// Inject template middleware
+	// TODO(sethvargo): clean this up
 	r.Use(html.New(config).Handle)
 
 	// Setup rate limiting
@@ -121,24 +128,31 @@ func realMain(ctx context.Context) error {
 	r.Use(middleware.FlashHandler)
 
 	// Install the handlers that don't require authentication first on the main router.
-	r.Handle("/", index.New(config, renderHTML)).Methods("GET")
-	r.Handle("/signout", signout.New(config, db, renderHTML)).Methods("GET")
-	r.Handle("/session", session.New(ctx, config, auth, db)).Methods("POST")
+	indexController := index.New(ctx, config, h)
+	r.Handle("/", indexController.HandleIndex()).Methods("GET")
+
+	// Session handling
+	sessionController := session.New(ctx, auth, config, db, h)
+	r.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
+	r.Handle("/session", sessionController.HandleCreate()).Methods("POST")
 
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
 		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
 
 		// Realms - list and select.
-		sub.Handle("", realm.NewSelectController(ctx, config, db, renderHTML)).Methods("GET")
-		sub.Handle("/select", realm.NewSaveController(ctx, config, db)).Methods("POST")
+		realmController := realm.New(ctx, config, db, h)
+		sub.Handle("", realmController.HandleIndex()).Methods("GET")
+		sub.Handle("/select", realmController.HandleSelect()).Methods("POST")
 	}
 
 	{
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
 		sub.Use(middleware.RequireRealm(ctx).Handle)
-		sub.Handle("", home.New(ctx, config, db, renderHTML)).Methods("GET")
+
+		homeController := home.New(ctx, config, db, h)
+		sub.Handle("", homeController.HandleHome()).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
 		sub.Handle("/issue", issueapi.New(ctx, config, db)).Methods("POST")
@@ -155,24 +169,28 @@ func realMain(ctx context.Context) error {
 		sub.Use(middleware.RequireRealm(ctx).Handle)
 		sub.Use(middleware.RequireRealmAdmin(ctx).Handle)
 
-		sub.Handle("", apikey.NewListController(ctx, config, db, renderHTML)).Methods("GET")
-		sub.Handle("/create", apikey.NewSaveController(ctx, config, db)).Methods("POST")
+		apikeyController := apikey.New(ctx, config, db, h)
+		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
+		sub.Handle("/create", apikeyController.HandleCreate()).Methods("POST")
 
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
 		userSub.Use(middleware.RequireRealm(ctx).Handle)
 		userSub.Use(middleware.RequireRealmAdmin(ctx).Handle)
 
-		userSub.Handle("", user.NewListController(ctx, config, db, renderHTML)).Methods("GET")
-		userSub.Handle("/create", user.NewSaveController(ctx, config, db)).Methods("POST")
-		userSub.Handle("/delete/{email}", user.NewDeleteController(ctx, config, db)).Methods("POST")
+		userController := user.New(ctx, config, db, h)
+		userSub.Handle("", userController.HandleIndex()).Methods("GET")
+		userSub.Handle("/create", userController.HandleCreate()).Methods("POST")
+		userSub.Handle("/delete/{email}", userController.HandleDelete()).Methods("POST")
 
 		realmSub := r.PathPrefix("/realm/settings").Subrouter()
 		realmSub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
 		realmSub.Use(middleware.RequireRealm(ctx).Handle)
 		realmSub.Use(middleware.RequireRealmAdmin(ctx).Handle)
-		realmSub.Handle("", realmadmin.NewViewController(ctx, config, db, renderHTML)).Methods("GET")
-		realmSub.Handle("/save", realmadmin.NewSaveController(ctx, config, db)).Methods("POST")
+
+		realmadminController := realmadmin.New(ctx, config, db, h)
+		realmSub.Handle("", realmadminController.HandleIndex()).Methods("GET")
+		realmSub.Handle("/save", realmadminController.HandleSave()).Methods("POST")
 	}
 
 	srv, err := server.New(config.Port)

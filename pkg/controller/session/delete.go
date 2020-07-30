@@ -12,40 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package signout hold the controller for signing out a user / destroying their session.
-package signout
+package session
 
 import (
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-type signoutController struct {
-	config *config.ServerConfig
-	db     *database.Database
-	html   *render.HTML
-}
+func (c *Controller) HandleDelete() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set max age to negative to clear the cookie.
+		http.SetCookie(w, &http.Cookie{
+			Name:   "session",
+			Value:  "",
+			MaxAge: -1,
+		})
 
-// New creates a new signout controller. When run, clears the session cookie.
-func New(config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
-	return &signoutController{config, db, html}
-}
-
-func (soc *signoutController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Set max age to negative to clear the cookie.
-	http.SetCookie(w, &http.Cookie{
-		Name:   "session",
-		Value:  "",
-		MaxAge: -1,
+		m := html.GetTemplateMap(r)
+		m["firebase"] = c.config.Firebase
+		m["flash"] = flash.FromContext(w, r)
+		c.h.RenderHTML(w, "signout", m)
 	})
-
-	m := html.GetTemplateMap(r)
-	m["firebase"] = soc.config.Firebase
-	m["flash"] = flash.FromContext(w, r)
-	soc.html.Render(w, "signout", m)
 }

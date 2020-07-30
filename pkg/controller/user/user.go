@@ -17,64 +17,31 @@ package user
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/csrf"
 
 	"go.uber.org/zap"
 )
 
-type userListController struct {
+// Controller manages users
+type Controller struct {
 	config *config.ServerConfig
 	db     *database.Database
-	html   *render.HTML
+	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-// NewListController creates a controller to list users
-func NewListController(ctx context.Context, config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
-	return &userListController{config, db, html, logging.FromContext(ctx)}
-}
+// New creates a new controller for managing users.
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+	logger := logging.FromContext(ctx)
 
-func (lc *userListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	user := controller.UserFromContext(ctx)
-	if user == nil {
-		http.Redirect(w, r, "/signout", http.StatusSeeOther)
-		return
+	return &Controller{
+		config: config,
+		db:     db,
+		h:      h,
+		logger: logger,
 	}
-
-	flash := flash.FromContext(w, r)
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		flash.Error("Select realm to continue.")
-		http.Redirect(w, r, "/realm", http.StatusSeeOther)
-		return
-	}
-
-	m := html.GetTemplateMap(r)
-	m["user"] = user
-	m["realm"] = realm
-
-	if err := realm.LoadRealmUsers(lc.db, false); err != nil {
-		flash.ErrorNow("Error loading users: %v", err)
-	}
-
-	admins := make(map[uint]bool)
-	for _, au := range realm.RealmAdmins {
-		admins[au.ID] = true
-	}
-
-	m["admins"] = admins
-	m["users"] = realm.RealmUsers
-	m["flash"] = flash
-	m[csrf.TemplateTag] = csrf.TemplateField(r)
-	lc.html.Render(w, "users", m)
 }

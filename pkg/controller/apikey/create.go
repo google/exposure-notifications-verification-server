@@ -15,63 +15,53 @@
 package apikey
 
 import (
-	"context"
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-
-	"go.uber.org/zap"
 )
 
-type apikeySaveController struct {
-	config *config.ServerConfig
-	db     *database.Database
-	logger *zap.SugaredLogger
-}
-
-type formData struct {
-	Name string               `form:"name"`
-	Type database.APIUserType `form:"type"`
-}
-
-func NewSaveController(ctx context.Context, config *config.ServerConfig, db *database.Database) http.Handler {
-	return &apikeySaveController{config, db, logging.FromContext(ctx)}
-}
-
-func (sc *apikeySaveController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	// All roads lead to a GET redirect.
-	defer http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
-	flash := flash.FromContext(w, r)
-
-	user := controller.UserFromContext(ctx)
-	if user == nil {
-		http.Redirect(w, r, "/signout", http.StatusFound)
-		return
-	}
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		flash.Error("Select realm to continue.")
-		http.Redirect(w, r, "/realm", http.StatusSeeOther)
-		return
+func (c *Controller) HandleCreate() http.Handler {
+	type FormData struct {
+		Name string               `form:"name,required"`
+		Type database.APIUserType `form:"type,required"`
 	}
 
-	var form formData
-	if err := controller.BindForm(w, r, &form); err != nil {
-		sc.logger.Errorf("invalid apikey create request: %v", err)
-		flash.Error("Invalid request.")
-		return
-	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		flash := flash.FromContext(w, r)
 
-	if _, err := sc.db.CreateAuthorizedApp(realm.ID, form.Name, form.Type); err != nil {
-		sc.logger.Errorf("error creating authorized app: %v", err)
-		flash.Error("Failed to create API key: %v", err)
-		return
-	}
+		user := controller.UserFromContext(ctx)
+		if user == nil {
+			flash.Error("Unauthorized.")
+			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			return
+		}
 
-	flash.Alert("Created API Key for %q", form.Name)
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			flash.Error("Select a realm to continue.")
+			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			return
+		}
+
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			c.logger.Errorf("invalid apikey create request: %v", err)
+			flash.Error("Invalid request.")
+			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+			return
+		}
+
+		if _, err := c.db.CreateAuthorizedApp(realm.ID, form.Name, form.Type); err != nil {
+			c.logger.Errorf("error creating authorized app: %v", err)
+			flash.Error("Failed to create API key: %v", err)
+			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+			return
+		}
+
+		flash.Alert("Created API Key for %q", form.Name)
+		http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+	})
 }

@@ -19,10 +19,11 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/gorilla/mux"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
+	"github.com/gorilla/csrf"
 )
 
-func (c *Controller) HandleDelete() http.Handler {
+func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
@@ -41,25 +42,21 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		// TODO(sethvargo): switch to a form post parameter instead - this leaks
-		// emails in request logs.
-		vars := mux.Vars(r)
-		email := vars["email"]
-
-		user, err := c.db.FindUser(email)
-		if err != nil {
-			flash.Error("Failed to find user: %v", err)
-			http.Redirect(w, r, "/users", http.StatusSeeOther)
-			return
+		if err := realm.LoadRealmUsers(c.db, false); err != nil {
+			flash.ErrorNow("Error loading users: %v", err)
+		}
+		admins := make(map[uint]bool)
+		for _, au := range realm.RealmAdmins {
+			admins[au.ID] = true
 		}
 
-		if err := realm.DeleteUserFromRealm(c.db, user); err != nil {
-			flash.Error("Failed to delete user: %v", err)
-			http.Redirect(w, r, "/users", http.StatusSeeOther)
-			return
-		}
-
-		flash.Alert("Deleted User %v", user.Email)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		m := html.GetTemplateMap(r)
+		m["user"] = user
+		m["realm"] = realm
+		m["admins"] = admins
+		m["users"] = realm.RealmUsers
+		m["flash"] = flash
+		m[csrf.TemplateTag] = csrf.TemplateField(r)
+		c.h.RenderHTML(w, "users", m)
 	})
 }

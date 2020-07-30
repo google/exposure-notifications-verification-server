@@ -35,65 +35,74 @@ import (
 	"go.uber.org/zap"
 )
 
-type homeController struct {
-	config             *config.ServerConfig
-	db                 *database.Database
-	html               *render.HTML
-	logger             *zap.SugaredLogger
+type Controller struct {
+	config *config.ServerConfig
+	db     *database.Database
+	h      *render.Renderer
+	logger *zap.SugaredLogger
+
 	pastDaysDuration   time.Duration
 	displayAllowedDays string
 }
 
 // New creates a new controller for the home page.
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
-	pastDaysDuration := -1 * config.AllowedSymptomAge
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+	logger := logging.FromContext(ctx)
 
-	return &homeController{
-		config:             config,
-		db:                 db,
-		html:               html,
-		logger:             logging.FromContext(ctx),
+	pastDaysDuration := -1 * config.AllowedSymptomAge
+	displayAllowedDays := fmt.Sprintf("%.0f", config.AllowedSymptomAge.Hours()/24.0)
+
+	return &Controller{
+		config: config,
+		db:     db,
+		h:      h,
+		logger: logger,
+
 		pastDaysDuration:   pastDaysDuration,
-		displayAllowedDays: fmt.Sprintf("%.0f", config.AllowedSymptomAge.Hours()/24.0),
+		displayAllowedDays: displayAllowedDays,
 	}
 }
 
-func (hc *homeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) HandleHome() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		flash := flash.FromContext(w, r)
 
-	user := controller.UserFromContext(r.Context())
-	if user == nil {
-		flash.FromContext(w, r).Error("Unauthorized")
-		http.Redirect(w, r, "/signout", http.StatusSeeOther)
-		return
-	}
-
-	realm := controller.RealmFromContext(r.Context())
-	if realm == nil {
-		flash.FromContext(w, r).Error("Select realm to continue.")
-		http.Redirect(w, r, "/realm", http.StatusSeeOther)
-		return
-	}
-
-	smsProvider, err := realm.GetSMSProvider(r.Context(), hc.db)
-	if err != nil {
-		if errors.Is(err, database.ErrNoSMSConfig) {
-			smsProvider = nil
-		} else {
-			hc.logger.Errorw("failed to load sms configuration", "error", err)
-			flash.FromContext(w, r).Error("internal error - failed to load SMS configuration")
+		user := controller.UserFromContext(ctx)
+		if user == nil {
+			flash.Error("Unauthorized.")
+			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			return
 		}
-	}
 
-	m := html.GetTemplateMap(r)
-	// Set test date params
-	now := time.Now().UTC()
-	m["maxDate"] = now.Format("2006-01-02")
-	m["minDate"] = now.Add(hc.pastDaysDuration).Format("2006-01-02")
-	m["maxSymptomDays"] = hc.displayAllowedDays
-	m["duration"] = hc.config.CodeDuration.String()
-	m["smsEnabled"] = smsProvider != nil
-	m["user"] = user
-	m["flash"] = flash.FromContext(w, r)
-	m["realm"] = realm
-	hc.html.Render(w, "home", m)
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			flash.Error("Select a realm to continue.")
+			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			return
+		}
+
+		smsProvider, err := realm.GetSMSProvider(r.Context(), c.db)
+		if err != nil {
+			if errors.Is(err, database.ErrNoSMSConfig) {
+				smsProvider = nil
+			} else {
+				c.logger.Errorw("failed to load sms configuration", "error", err)
+				flash.Error("internal error - failed to load SMS configuration")
+			}
+		}
+
+		m := html.GetTemplateMap(r)
+		// Set test date params
+		now := time.Now().UTC()
+		m["maxDate"] = now.Format("2006-01-02")
+		m["minDate"] = now.Add(c.pastDaysDuration).Format("2006-01-02")
+		m["maxSymptomDays"] = c.displayAllowedDays
+		m["duration"] = c.config.CodeDuration.String()
+		m["smsEnabled"] = smsProvider != nil
+		m["user"] = user
+		m["flash"] = flash
+		m["realm"] = realm
+		c.h.RenderHTML(w, "home", m)
+	})
 }

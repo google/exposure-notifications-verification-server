@@ -12,57 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package session
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
-func (c *Controller) HandleSelect() http.Handler {
+func (c *Controller) HandleCreate() http.Handler {
+
 	type FormData struct {
-		Realm int `form:"realm,required"`
+		IDToken string `form:"idToken,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
 
+		// Parse and decode form.
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			c.logger.Errorf("invalid realm select rquest: %v", err)
-			flash.Error("Invalid realm selection.")
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+			c.logger.Errorf("error parsing form: %v", err)
+			flash.Error("Failed to process login: %v", err)
+			controller.WriteJSON(w, http.StatusBadRequest, nil)
 			return
 		}
 
-		realm, err := c.db.GetRealm(int64(form.Realm))
+		ttl := c.config.SessionCookieDuration
+		cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
 		if err != nil {
-			c.logger.Errorf("error selecting realm: %v", err)
-			flash.Error("Invalid realm selection.")
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+			c.logger.Errorf("unable to create client session: %v", err)
+			flash.Error("Failed to create session: %v", err)
+			controller.WriteJSON(w, http.StatusUnauthorized, nil)
 			return
 		}
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
-			flash.Error("Internal error, you have been logged out.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
-			return
-		}
-
-		// Verify that the user has access to the realm.
-		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
-			flash.Alert("Selected realm '%v'", realm.Name)
-			http.Redirect(w, r, "/home", http.StatusSeeOther)
-			return
-		}
-
-		// Not allowed to see the realm selected.
-		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session",
+			Value:    cookie,
+			Path:     "/",
+			Expires:  time.Now().Add(ttl),
+			MaxAge:   int(ttl.Seconds()),
+			Secure:   !c.config.DevMode,
+			SameSite: http.SameSiteStrictMode,
+		})
+		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }
