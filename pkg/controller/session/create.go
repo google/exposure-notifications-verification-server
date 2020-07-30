@@ -23,7 +23,6 @@ import (
 )
 
 func (c *Controller) HandleCreate() http.Handler {
-
 	type FormData struct {
 		IDToken string `form:"idToken,required"`
 	}

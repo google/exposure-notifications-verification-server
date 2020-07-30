@@ -92,7 +92,7 @@ const htmlErrTmpl = `
 
   <body>
     <h1>Internal server error</h1>
-		<p>%s</p>
+    <p>%s</p>
   </body>
 </html>
 `
