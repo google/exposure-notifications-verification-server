@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package user
 
 import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleSelect() http.Handler {
-	type FormData struct {
-		Realm int `form:"realm,required"`
-	}
-
+func (c *Controller) HandleDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
@@ -44,23 +41,25 @@ func (c *Controller) HandleSelect() http.Handler {
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		// TODO(sethvargo): switch to a form post parameter instead - this leaks
+		// emails in request logs.
+		vars := mux.Vars(r)
+		email := vars["email"]
+
+		user, err := c.db.FindUser(email)
+		if err != nil {
+			flash.Error("Failed to find user: %v", err)
+			http.Redirect(w, r, "/users", http.StatusSeeOther)
 			return
 		}
 
-		// Verify that the user has access to the realm.
-		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
-			flash.Alert("Selected realm '%v'", realm.Name)
-			http.Redirect(w, r, "/home", http.StatusSeeOther)
+		if err := realm.DeleteUserFromRealm(c.db, user); err != nil {
+			flash.Error("Failed to delete user: %v", err)
+			http.Redirect(w, r, "/users", http.StatusSeeOther)
 			return
 		}
 
-		// Not allowed to see the realm selected.
-		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		flash.Alert("Deleted User %v", user.Email)
+		http.Redirect(w, r, "/users", http.StatusSeeOther)
 	})
 }

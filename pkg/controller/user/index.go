@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package user
 
 import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/gorilla/csrf"
 )
 
-func (c *Controller) HandleSelect() http.Handler {
-	type FormData struct {
-		Realm int `form:"realm,required"`
-	}
-
+func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
@@ -44,23 +41,21 @@ func (c *Controller) HandleSelect() http.Handler {
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
-			return
+		if err := realm.LoadRealmUsers(c.db, false); err != nil {
+			flash.ErrorNow("Failed to load users: %v", err)
+		}
+		admins := make(map[uint]bool)
+		for _, au := range realm.RealmAdmins {
+			admins[au.ID] = true
 		}
 
-		// Verify that the user has access to the realm.
-		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
-			flash.Alert("Selected realm '%v'", realm.Name)
-			http.Redirect(w, r, "/home", http.StatusSeeOther)
-			return
-		}
-
-		// Not allowed to see the realm selected.
-		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		m := controller.TemplateMapFromContext(ctx)
+		m["user"] = user
+		m["realm"] = realm
+		m["admins"] = admins
+		m["users"] = realm.RealmUsers
+		m["flash"] = flash
+		m[csrf.TemplateTag] = csrf.TemplateField(r)
+		c.h.RenderHTML(w, "users", m)
 	})
 }

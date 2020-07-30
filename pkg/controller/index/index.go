@@ -16,30 +16,45 @@
 package index
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.uber.org/zap"
 
 	"github.com/gorilla/csrf"
 )
 
-type indexController struct {
+type Controller struct {
 	config *config.ServerConfig
-	html   *render.HTML
+	h      *render.Renderer
+	logger *zap.SugaredLogger
 }
 
 // New creates a new index controller. The index controller is thread-safe.
-func New(config *config.ServerConfig, html *render.HTML) http.Handler {
-	return &indexController{config, html}
+func New(ctx context.Context, config *config.ServerConfig, h *render.Renderer) *Controller {
+	logger := logging.FromContext(ctx)
+
+	return &Controller{
+		config: config,
+		h:      h,
+		logger: logger,
+	}
 }
 
-func (ic *indexController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	m := html.GetTemplateMap(r)
-	m["firebase"] = ic.config.Firebase
-	token := csrf.Token(r)
-	m["csrftoken"] = token
-	w.Header().Add("X-CSRF-Token", token)
-	ic.html.Render(w, "index", m)
+func (c *Controller) HandleIndex() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		token := csrf.Token(r)
+
+		m := controller.TemplateMapFromContext(ctx)
+		m["firebase"] = c.config.Firebase
+		m["csrftoken"] = token
+
+		w.Header().Add("X-CSRF-Token", token)
+		c.h.RenderHTML(w, "index", m)
+	})
 }

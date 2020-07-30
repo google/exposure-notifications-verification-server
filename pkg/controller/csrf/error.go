@@ -22,21 +22,20 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 )
 
-// ErrorHandler is an http.HandlerFunc that can be installed inthe gorilla
-// csrf protect middleware. It will respond w/ a JSON object containing error:
-// on API requests and a signout redirect to other requests.
-func ErrorHandler(w http.ResponseWriter, r *http.Request) {
-	logger := logging.FromContext(r.Context())
-	logger.Errorf("CSRF token validation error")
+// HandleError is an http.HandlerFunc that can be installed inthe gorilla csrf
+// protect middleware. It will respond w/ a JSON object containing error: on API
+// requests and a signout redirect to other requests.
+func (c *Controller) HandleError() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if controller.IsJSONContentType(r) {
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid csrf token"))
+			return
+		}
 
-	if controller.IsJSONContentType(r) {
-		controller.WriteJSON(w, http.StatusOK, api.Error("Invalid state. Refresh this window."))
-		return
-	}
-	flash := flash.FromContext(w, r)
-	flash.Error("CSRF token validation error, you have been signed out.")
-	http.Redirect(w, r, "/signout", http.StatusFound)
+		flash := flash.FromContext(w, r)
+		flash.Error("CSRF token validation error, you have been signed out.")
+		http.Redirect(w, r, "/signout", http.StatusFound)
+	})
 }

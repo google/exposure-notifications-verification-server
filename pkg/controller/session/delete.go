@@ -12,28 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package csrf contains utilities for issuing AJAX csrf tokens and
-// handling errors on validation.
-package csrf
+package session
 
 import (
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-
-	"github.com/gorilla/csrf"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
-type csrfController struct{}
+func (c *Controller) HandleDelete() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 
-// NewCSRFAPI creates a new controller that can return CSRF tokens to JSON APIs.
-func NewCSRFAPI() http.Handler {
-	return &csrfController{}
-}
+		// Set max age to negative to clear the cookie.
+		http.SetCookie(w, &http.Cookie{
+			Name:   "session",
+			Value:  "",
+			MaxAge: -1,
+		})
 
-func (ic *csrfController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	token := csrf.Token(r)
-	w.Header().Add("X-CSRF-Token", token)
-	controller.WriteJSON(w, http.StatusOK, api.CSRFResponse{CSRFToken: token})
+		m := controller.TemplateMapFromContext(ctx)
+		m["firebase"] = c.config.Firebase
+		m["flash"] = flash.FromContext(w, r)
+		c.h.RenderHTML(w, "signout", m)
+	})
 }

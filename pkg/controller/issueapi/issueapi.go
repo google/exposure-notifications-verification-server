@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package session contains the controller that exchanges firebase auth tokens
-// for server side session tokens.
-package session
+// Package issueapi implements the API handler for taking a code requst, assigning
+// an OTP, saving it to the database and returning the result.
+// This is invoked over AJAX from the Web frontend.
+package issueapi
 
 import (
 	"context"
 
-	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
@@ -29,22 +30,25 @@ import (
 )
 
 type Controller struct {
-	client *auth.Client
-	config *config.ServerConfig
+	config config.IssueAPIConfig
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
+
+	validTestType map[string]struct{}
 }
 
-// New creates a new session controller.
-func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-
+// New creates a new IssueAPI controller.
+func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
-		client: client,
 		config: config,
 		db:     db,
 		h:      h,
-		logger: logger,
+		logger: logging.FromContext(ctx),
+		validTestType: map[string]struct{}{
+			api.TestTypeConfirmed: {},
+			api.TestTypeLikely:    {},
+			api.TestTypeNegative:  {},
+		},
 	}
 }

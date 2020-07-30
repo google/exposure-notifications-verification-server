@@ -32,9 +32,18 @@ type ErrorReturn struct {
 	Error string `json:"error"`
 }
 
-// Error creates an ErrorReturn w/ the formateed message.
-func Error(msg string, vars ...interface{}) *ErrorReturn {
+// Errorf creates an ErrorReturn w/ the formateed message.
+func Errorf(msg string, vars ...interface{}) *ErrorReturn {
 	return &ErrorReturn{Error: fmt.Sprintf(msg, vars...)}
+}
+
+// Error wraps the error into an API error.
+func Error(err error) *ErrorReturn {
+	if err == nil {
+		return nil
+	}
+
+	return &ErrorReturn{Error: err.Error()}
 }
 
 // CSRFResponse is the return type when requesting an AJAX CSRF token.

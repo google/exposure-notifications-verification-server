@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 
@@ -36,18 +36,26 @@ type Controller struct {
 	config *config.CleanupConfig
 	cache  *cache.Cache
 	db     *database.Database
+	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-// New creates a new IssueAPI controller.
-func New(ctx context.Context, config *config.CleanupConfig, cache *cache.Cache, db *database.Database) http.Handler {
-	return &Controller{config, cache, db, logging.FromContext(ctx)}
+// New creates a new cleanup controller.
+func New(ctx context.Context, config *config.CleanupConfig, cache *cache.Cache, db *database.Database, h *render.Renderer) *Controller {
+	logger := logging.FromContext(ctx)
+	return &Controller{
+		config: config,
+		cache:  cache,
+		db:     db,
+		h:      h,
+		logger: logger,
+	}
 }
 
-func (cc *Controller) shouldCleanup() error {
-	cStatCache, err := cc.cache.WriteThruLookup(database.CleanupName,
+func (c *Controller) shouldCleanup() error {
+	cStatCache, err := c.cache.WriteThruLookup(database.CleanupName,
 		func() (interface{}, error) {
-			cState, err := cc.db.FindCleanupStatus(database.CleanupName)
+			cState, err := c.db.FindCleanupStatus(database.CleanupName)
 			if err != nil {
 				return nil, err
 			}
@@ -55,7 +63,7 @@ func (cc *Controller) shouldCleanup() error {
 		})
 	if err != nil {
 		// in case this was not found, create a new record.
-		cStatCache, err = cc.db.CreateCleanup(database.CleanupName)
+		cStatCache, err = c.db.CreateCleanup(database.CleanupName)
 		if err != nil {
 			return fmt.Errorf("error attempting to backfil cleanup config: %v", err)
 		}
@@ -71,42 +79,46 @@ func (cc *Controller) shouldCleanup() error {
 	}
 
 	// Attempt to advance the generation.
-	cStat, err = cc.db.ClaimCleanup(cStat, cc.config.CleanupPeriod)
+	cStat, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod)
 	if err != nil {
 		return fmt.Errorf("unable to lock cleanup: %v", err)
 	}
-	cc.cache.Set(database.CleanupName, cStat)
+	if err := c.cache.Set(database.CleanupName, cStat); err != nil {
+		return fmt.Errorf("failed to set cache: %w", err)
+	}
 	return nil
 }
 
-type cleanupResult struct {
-	Cleanup bool `json:"cleanup"`
-}
-
-func (cc *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := cc.shouldCleanup(); err != nil {
-		cc.logger.Errorf("shouldCleanUp: %v", err)
-		controller.WriteJSON(w, http.StatusOK, &cleanupResult{false})
-		return
+func (c *Controller) HandleCleanup() http.Handler {
+	type CleanupResult struct {
+		Cleanup bool `json:"cleanup"`
 	}
 
-	if count, err := cc.db.PurgeVerificationCodes(cc.config.VerificationCodeMaxAge); err != nil {
-		cc.logger.Errorf("db.PurgeVerificationCodes: %v", err)
-	} else {
-		cc.logger.Infof("purged %v verification codes", count)
-	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := c.shouldCleanup(); err != nil {
+			c.logger.Errorf("shouldCleanUp: %v", err)
+			c.h.RenderJSON(w, http.StatusOK, &CleanupResult{false})
+			return
+		}
 
-	if count, err := cc.db.PurgeTokens(cc.config.VerificationTokenMaxAge); err != nil {
-		cc.logger.Errorf("db.PurgeTokens: %v", err)
-	} else {
-		cc.logger.Infof("purged %v verification tokens", count)
-	}
+		if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
+			c.logger.Errorf("db.PurgeVerificationCodes: %v", err)
+		} else {
+			c.logger.Infof("purged %v verification codes", count)
+		}
 
-	if count, err := cc.db.PurgeUsers(cc.config.DisabledUserMaxAge); err != nil {
-		cc.logger.Errorf("db.PurgeUsers: %v", err)
-	} else {
-		cc.logger.Infof("purged %v user records", count)
-	}
+		if count, err := c.db.PurgeTokens(c.config.VerificationTokenMaxAge); err != nil {
+			c.logger.Errorf("db.PurgeTokens: %v", err)
+		} else {
+			c.logger.Infof("purged %v verification tokens", count)
+		}
 
-	controller.WriteJSON(w, http.StatusOK, &cleanupResult{true})
+		if count, err := c.db.PurgeUsers(c.config.DisabledUserMaxAge); err != nil {
+			c.logger.Errorf("db.PurgeUsers: %v", err)
+		} else {
+			c.logger.Infof("purged %v user records", count)
+		}
+
+		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{true})
+	})
 }

@@ -29,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -87,15 +88,22 @@ func realMain(ctx context.Context) error {
 	}
 	r.Use(httplimiter.Handle)
 
+	// Create the renderer
+	h, err := render.New(ctx, "", config.DevMode)
+	if err != nil {
+		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
 	// Setup API auth
 	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
 	if err != nil {
 		return fmt.Errorf("failed to create apikey cache: %w", err)
 	}
 	// Install the APIKey Auth Middleware
-	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, database.APIUserTypeAdmin).Handle)
+	r.Use(middleware.APIKeyAuth(ctx, db, h, apiKeyCache, database.APIUserTypeAdmin).Handle)
 
-	r.Handle("/api/issue", issueapi.New(ctx, config, db)).Methods("POST")
+	issueapiController := issueapi.New(ctx, config, db, h)
+	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {

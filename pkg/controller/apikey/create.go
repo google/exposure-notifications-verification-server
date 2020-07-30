@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package apikey
 
 import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func (c *Controller) HandleSelect() http.Handler {
+func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Realm int `form:"realm,required"`
+		Name string               `form:"name,required"`
+		Type database.APIUserType `form:"type,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -47,20 +49,17 @@ func (c *Controller) HandleSelect() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 			return
 		}
 
-		// Verify that the user has access to the realm.
-		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
-			flash.Alert("Selected realm '%v'", realm.Name)
-			http.Redirect(w, r, "/home", http.StatusSeeOther)
+		if _, err := c.db.CreateAuthorizedApp(realm.ID, form.Name, form.Type); err != nil {
+			flash.Error("Failed to create API key: %v", err)
+			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 			return
 		}
 
-		// Not allowed to see the realm selected.
-		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		flash.Alert("Created API Key for %q", form.Name)
+		http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 	})
 }

@@ -27,6 +27,10 @@ import (
 type CleanupConfig struct {
 	Database database.Config
 
+	// DevMode produces additional debugging information. Do not enable in
+	// production environments.
+	DevMode bool `env:"DEV_MODE"`
+
 	Port string `env:"PORT,default=8080"`
 
 	RateLimit uint64 `env:"RATE_LIMIT,default=60"`

@@ -12,55 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package session
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
-func (c *Controller) HandleSelect() http.Handler {
+func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Realm int `form:"realm,required"`
+		IDToken string `form:"idToken,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
-			flash.Error("Unauthorized.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
-			return
-		}
-
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			flash.Error("Select a realm to continue.")
-			http.Redirect(w, r, "/realm", http.StatusSeeOther)
-			return
-		}
-
+		// Parse and decode form.
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
-		// Verify that the user has access to the realm.
-		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
-			flash.Alert("Selected realm '%v'", realm.Name)
-			http.Redirect(w, r, "/home", http.StatusSeeOther)
+		ttl := c.config.SessionCookieDuration
+		cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
+		if err != nil {
+			flash.Error("Failed to create session: %v", err)
+			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
 
-		// Not allowed to see the realm selected.
-		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session",
+			Value:    cookie,
+			Path:     "/",
+			Expires:  time.Now().Add(ttl),
+			MaxAge:   int(ttl.Seconds()),
+			Secure:   !c.config.DevMode,
+			SameSite: http.SameSiteStrictMode,
+		})
+		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }
