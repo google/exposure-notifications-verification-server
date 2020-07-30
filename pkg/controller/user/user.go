@@ -72,8 +72,19 @@ func (lc *userListController) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		admins[au.ID] = true
 	}
 
+	creationCounts := make(map[uint]int64)
+	for _, user := range realm.RealmUsers {
+		count, err := lc.db.CountVerificationCodesByUser(user.ID)
+		if err != nil {
+			flash.Error("Error loading user code creation counts: %v", err)
+		}
+
+		creationCounts[user.ID] = count
+	}
+
 	m["admins"] = admins
 	m["users"] = realm.RealmUsers
+	m["codesGenerated"] = creationCounts
 	m["flash"] = flash
 	m[csrf.TemplateTag] = csrf.TemplateField(r)
 	lc.html.Render(w, "users", m)

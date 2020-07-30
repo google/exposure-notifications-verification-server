@@ -197,10 +197,10 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.AutoMigrate(&VerificationCode{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Model(&AuthorizedApp{}).DropColumn("issuing_user").Error; err != nil {
+				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_user").Error; err != nil {
 					return err
 				}
-				if err := tx.Model(&AuthorizedApp{}).DropColumn("issuing_app").Error; err != nil {
+				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_app").Error; err != nil {
 					return err
 				}
 				return nil
@@ -338,6 +338,23 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00014-AddIssuerIDColumns",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: adding issuer id columns to verification codes")
+
+				return tx.AutoMigrate(&VerificationCode{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_user_id").Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_app_id").Error; err != nil {
+					return err
+				}
 				return nil
 			},
 		},

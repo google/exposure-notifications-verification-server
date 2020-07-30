@@ -65,7 +65,19 @@ func (lc *apikeyListController) ServeHTTP(w http.ResponseWriter, r *http.Request
 	if _, err := realm.GetAuthorizedApps(lc.db, true); err != nil {
 		flash.ErrorNow("Error loading API Keys: %v", err)
 	}
+
+	creationCounts := make(map[uint]int64)
+	for _, app := range realm.AuthorizedApps {
+		count, err := lc.db.CountVerificationCodesByAuthorizedApp(app.ID)
+		if err != nil {
+			flash.Error("Error loading app code creation counts: %v", err)
+		}
+
+		creationCounts[app.ID] = count
+	}
+
 	m["apps"] = realm.AuthorizedApps
+	m["codesGenerated"] = creationCounts
 	m["flash"] = flash
 	m["typeAdmin"] = database.APIUserTypeAdmin
 	m["typeDevice"] = database.APIUserTypeDevice

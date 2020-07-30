@@ -45,14 +45,16 @@ var (
 // VerificationCode represnts a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
-	RealmID     uint   // VerificationCodes belong to exactly one realm when issued.
-	Code        string `gorm:"type:varchar(20);unique_index"`
-	Claimed     bool   `gorm:"default:false"`
-	TestType    string `gorm:"type:varchar(20)"`
-	SymptomDate *time.Time
-	ExpiresAt   time.Time
-	IssuingUser *User
-	IssuingApp  *AuthorizedApp
+	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
+	Code          string `gorm:"type:varchar(20);unique_index"`
+	Claimed       bool   `gorm:"default:false"`
+	TestType      string `gorm:"type:varchar(20)"`
+	SymptomDate   *time.Time
+	ExpiresAt     time.Time
+	IssuingUserID int
+	IssuingUser   *User
+	IssuingAppID  int
+	IssuingApp    *AuthorizedApp
 }
 
 // TableName sets the VerificationCode table name
@@ -117,6 +119,30 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 		return db.db.Create(vc).Error
 	}
 	return db.db.Save(vc).Error
+}
+
+func (db *Database) CountVerificationCodesByUser(user uint) (int64, error) {
+	if user <= 0 {
+		return 0, nil
+	}
+
+	var count int64
+	if err := db.db.Preload("User").Model(&VerificationCode{}).Where("issuing_user_id = ?", user).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (db *Database) CountVerificationCodesByAuthorizedApp(appID uint) (int64, error) {
+	if appID <= 0 {
+		return 0, nil
+	}
+
+	var count int64
+	if err := db.db.Preload("AuthorizedApp").Model(&VerificationCode{}).Where("issuing_app_id = ?", appID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // DeleteVerificationCode deletes the code if it exists. This is a hard delete.
