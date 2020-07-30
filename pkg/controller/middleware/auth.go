@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 
 	"go.uber.org/zap"
 )
@@ -39,32 +40,36 @@ var (
 )
 
 type RequireRealmAdminHandler struct {
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	h        *render.Renderer
+	logger   *zap.SugaredLogger
+	sessions sessions.Store
 }
 
 // RequireRealmAdmin verifies that a user is an admin in the selected realm.
 // It must be used AFTER the RequireAuth and RequireRealm middlewares.
-func RequireRealmAdmin(ctx context.Context, h *render.Renderer) *RequireRealmAdminHandler {
+func RequireRealmAdmin(ctx context.Context, h *render.Renderer, sessions sessions.Store) *RequireRealmAdminHandler {
 	logger := logging.FromContext(ctx)
 
 	return &RequireRealmAdminHandler{
-		h:      h,
-		logger: logger,
+		h:        h,
+		logger:   logger,
+		sessions: sessions,
 	}
 }
 
 func (h *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		if err := func() error {
 			// Get user from context.
-			user := controller.UserFromContext(r.Context())
+			user := controller.UserFromContext(ctx)
 			if user == nil {
 				return fmt.Errorf("missing user in session")
 			}
 
 			// Get realm from context.
-			realm := controller.RealmFromContext(r.Context())
+			realm := controller.RealmFromContext(ctx)
 			if realm == nil {
 				return fmt.Errorf("missing realm in session")
 			}
@@ -77,9 +82,8 @@ func (h *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
 		}(); err != nil {
 			h.logger.Errorw("RequireRealmAdmin", "error", err)
 
-			if errors.Is(err, ErrNotRealmAdmin) {
-				flash.FromContext(w, r).Error("You are not authorized to admin that realm.")
-				http.Redirect(w, r, "/realm", http.StatusFound)
+			if controller.IsJSONContentType(r) {
+				h.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				return
 			}
 
@@ -87,74 +91,32 @@ func (h *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/signout", http.StatusFound)
 			return
 		}
-		next.ServeHTTP(w, r)
-	})
-}
 
-type RequireAdminHandler struct {
-	h      *render.Renderer
-	logger *zap.SugaredLogger
-}
-
-// RequireAdmin verifies that a user is a system admin.
-// It must be used AFTER the RequireAuth middleware.
-func RequireAdmin(ctx context.Context, h *render.Renderer) *RequireAdminHandler {
-	logger := logging.FromContext(ctx)
-
-	return &RequireAdminHandler{
-		h:      h,
-		logger: logger,
-	}
-}
-
-func (h *RequireAdminHandler) Handle(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := func() error {
-			user := controller.UserFromContext(r.Context())
-			if user == nil {
-				return fmt.Errorf("missing user")
-			}
-
-			if !user.Admin {
-				return fmt.Errorf("user is not an admin")
-			}
-
-			return nil
-		}(); err != nil {
-			h.logger.Errorw("RequireAdmin", "error", err)
-
-			if controller.IsJSONContentType(r) {
-				h.h.RenderJSON(w, http.StatusUnauthorized, nil)
-			} else {
-				flash.FromContext(w, r).Error("Unauthorized")
-				http.Redirect(w, r, "/signout", http.StatusFound)
-			}
-
-			return
-		}
 		next.ServeHTTP(w, r)
 	})
 }
 
 type RequireAuthHandler struct {
-	client *auth.Client
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	client   *auth.Client
+	db       *database.Database
+	h        *render.Renderer
+	logger   *zap.SugaredLogger
+	sessions sessions.Store
 
 	ttl time.Duration
 }
 
 // RequireAuth requires a user is authenticated using firebase auth, that such a
 // user exists in the database, and that said user is not disabled.
-func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) *RequireAuthHandler {
+func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, sessions sessions.Store, ttl time.Duration) *RequireAuthHandler {
 	logger := logging.FromContext(ctx)
 
 	return &RequireAuthHandler{
-		client: client,
-		db:     db,
-		h:      h,
-		logger: logger,
+		client:   client,
+		db:       db,
+		h:        h,
+		logger:   logger,
+		sessions: sessions,
 
 		ttl: ttl,
 	}
@@ -165,14 +127,25 @@ func (h *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 		ctx := r.Context()
 
 		if err := func() error {
-			// Get the cookie
-			cookie, err := r.Cookie("session")
+			// Get the session
+			session, err := h.sessions.Get(r, "session")
 			if err != nil {
-				return fmt.Errorf("failed to get cookie: %w", err)
+				return fmt.Errorf("failed to get session: %w", err)
+			}
+
+			// Verify firebase cookie value is present
+			if session.Values == nil || session.Values["firebaseCookie"] == nil {
+				return fmt.Errorf("missing firebase cookie")
+			}
+
+			// Get cookie
+			firebaseCookie, ok := session.Values["firebaseCookie"].(string)
+			if !ok {
+				return fmt.Errorf("firebase cookie is not a string")
 			}
 
 			// Verify cookie
-			token, err := h.client.VerifySessionCookie(ctx, cookie.Value)
+			token, err := h.client.VerifySessionCookie(ctx, firebaseCookie)
 			if err != nil {
 				return fmt.Errorf("failed to verify session cookie: %w", err)
 			}
@@ -180,7 +153,6 @@ func (h *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 			// Get the email
 			emailRaw, ok := token.Claims["email"]
 			if !ok {
-				// s.DestroySession(c) // TODO
 				return fmt.Errorf("session is missing email")
 			}
 
@@ -203,7 +175,7 @@ func (h *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 
 			// Check if the session is still valid
 			if time.Now().After(user.LastRevokeCheck.Add(h.ttl)) {
-				if _, err := h.client.VerifySessionCookieAndCheckRevoked(ctx, cookie.Value); err != nil {
+				if _, err := h.client.VerifySessionCookieAndCheckRevoked(ctx, firebaseCookie); err != nil {
 					return fmt.Errorf("failed to verify session is not revoked: %w", err)
 				}
 
@@ -215,19 +187,21 @@ func (h *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 
 			// Save the user on the request context - this is how other handlers and
 			// controllers access the user.
-			r = r.WithContext(controller.WithUser(r.Context(), user))
+			r = r.WithContext(controller.WithUser(ctx, user))
 			return nil
 		}(); err != nil {
 			h.logger.Errorw("RequireAuth", "error", err)
 
 			if controller.IsJSONContentType(r) {
 				h.h.RenderJSON(w, http.StatusUnauthorized, nil)
-			} else {
-				flash.FromContext(w, r).Error("Unauthorized")
-				http.Redirect(w, r, "/signout", http.StatusFound)
+				return
 			}
-		} else {
-			next.ServeHTTP(w, r)
+
+			flash.FromContext(w, r).Error("Unauthorized")
+			http.Redirect(w, r, "/signout", http.StatusFound)
+			return
 		}
+
+		next.ServeHTTP(w, r)
 	})
 }

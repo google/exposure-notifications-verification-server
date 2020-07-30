@@ -16,7 +16,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -41,10 +40,14 @@ type ServerConfig struct {
 	SessionCookieDuration time.Duration `env:"SESSION_DURATION,default=24h"`
 	RevokeCheckPeriod     time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
 
-	// CSRF Secret Key. Must be 32-bytes. Can be generated with tools/gen-secret
-	// Use the syntax of secret:// to pull the secret from secret manager.
-	// We assume the secret itself is base64 encoded. Use CSRFKey() to transform to bytes.
-	CSRFAuthKey string `env:"CSRF_AUTH_KEY,required"`
+	// CookieKeys is a slice of bytes. The odd values are hash keys to HMAC the
+	// cookies. The even values are block keys to encrypt the cookie. Both keys
+	// should be 64 bytes. The value's should be specified as base64 encoded.
+	CookieKeys Base64ByteSlice `env:"COOKIE_KEYS,required"`
+
+	// CSRFAuthKey is the authentication key. It must be 32-bytes and can be
+	// generated with tools/gen-secret. The value's should be base64 encoded.
+	CSRFAuthKey Base64Bytes `env:"CSRF_AUTH_KEY,required"`
 
 	// Application Config
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
@@ -72,17 +75,6 @@ func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
 	// For the, when inserting into the javascript, gets escaped and becomes unusable.
 	config.Firebase.DatabaseURL = strings.ReplaceAll(config.Firebase.DatabaseURL, "https://", "")
 	return &config, nil
-}
-
-func (c *ServerConfig) CSRFKey() ([]byte, error) {
-	key, err := base64util.DecodeString(c.CSRFAuthKey)
-	if err != nil {
-		return nil, fmt.Errorf("error decoding CSRF_AUTH_KEY: %v", err)
-	}
-	if l := len(key); l != 32 {
-		return nil, fmt.Errorf("CSRF_AUTH_KEY is not 32 bytes, got: %v", l)
-	}
-	return key, nil
 }
 
 func (c *ServerConfig) Validate() error {
@@ -140,4 +132,28 @@ func (c *ServerConfig) FirebaseConfig() *firebase.Config {
 		ProjectID:     c.Firebase.ProjectID,
 		StorageBucket: c.Firebase.StorageBucket,
 	}
+}
+
+// Base64ByteSlice is a slice of base64-encoded strings that we want to convert
+// to bytes.
+type Base64ByteSlice []Base64Bytes
+
+// AsBytes returns the value as a slice of bytes instead of its main type.
+func (c Base64ByteSlice) AsBytes() [][]byte {
+	s := make([][]byte, len(c))
+	for i, v := range c {
+		s[i] = []byte(v)
+	}
+	return s
+}
+
+// Base64Bytes is a type that parses a base64-encoded string into a []byte.
+type Base64Bytes []byte
+
+// EnvDecode implements envconfig.Decoder to decode a base64 value into a
+// []byte. If an error occurs, it is returned.
+func (b *Base64Bytes) EnvDecode(val string) error {
+	var err error
+	*b, err = base64util.DecodeString(val)
+	return err
 }

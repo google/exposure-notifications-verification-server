@@ -24,17 +24,33 @@ import (
 func (c *Controller) HandleDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		flash := flash.FromContext(w, r)
 
-		// Set max age to negative to clear the cookie.
-		http.SetCookie(w, &http.Cookie{
-			Name:   "session",
-			Value:  "",
-			MaxAge: -1,
-		})
+		// Get the session
+		session, err := c.sessions.Get(r, "session")
+		if err != nil {
+			// TODO(sethvargo): have a 500 page we can render
+			c.logger.Errorw("failed to get session", "error", err)
+			flash.Error("internal server error")
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+
+		// Set MaxAge to -1 to expire the session
+		session.Options.MaxAge = -1
+
+		// Save the session
+		if err := session.Save(r, w); err != nil {
+			// TODO(sethvargo): have a 500 page we can render
+			c.logger.Errorw("failed to save session", "error", err)
+			flash.Error("internal server error")
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		m["flash"] = flash.FromContext(w, r)
+		m["flash"] = flash
 		c.h.RenderHTML(w, "signout", m)
 	})
 }

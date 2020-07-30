@@ -16,7 +16,6 @@ package session
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -32,6 +31,14 @@ func (c *Controller) HandleCreate() http.Handler {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
 
+		// Get the session
+		session, err := c.sessions.Get(r, "session")
+		if err != nil {
+			c.logger.Errorw("failed to get session", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
+			return
+		}
+
 		// Parse and decode form.
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
@@ -40,6 +47,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
+		// Get the session cookie from firebase.
 		ttl := c.config.SessionCookieDuration
 		cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
 		if err != nil {
@@ -48,15 +56,16 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     "session",
-			Value:    cookie,
-			Path:     "/",
-			Expires:  time.Now().Add(ttl),
-			MaxAge:   int(ttl.Seconds()),
-			Secure:   !c.config.DevMode,
-			SameSite: http.SameSiteStrictMode,
-		})
+		// Set the firebase cookie value in our session.
+		session.Values["firebaseCookie"] = cookie
+
+		// Save the session
+		if err := session.Save(r, w); err != nil {
+			c.logger.Errorw("failed to save session", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
+			return
+		}
+
 		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }

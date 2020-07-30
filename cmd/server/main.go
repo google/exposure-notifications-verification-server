@@ -44,6 +44,7 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
 )
@@ -68,6 +69,14 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
+
+	// Setup sessions
+	sessions := sessions.NewCookieStore(config.CookieKeys.AsBytes()...)
+	sessions.Options.Path = "/"
+	sessions.Options.Domain = "" // TODO: make configurable
+	sessions.Options.MaxAge = int(config.SessionCookieDuration.Seconds())
+	sessions.Options.Secure = !config.DevMode
+	sessions.Options.SameSite = http.SameSiteStrictMode
 
 	// Setup database
 	db, err := config.Database.Open(ctx)
@@ -113,42 +122,46 @@ func realMain(ctx context.Context) error {
 	r.Use(httplimiter.Handle)
 
 	// Install the CSRF protection middleware.
-	csrfAuthKey, err := config.CSRFKey()
-	if err != nil {
-		return fmt.Errorf("failed to configure CSRF: %w", err)
-	}
 	csrfController := csrfctl.New(ctx, h)
 	// TODO(mikehelmick) - there are many more configuration options for CSRF protection.
-	r.Use(csrf.Protect(csrfAuthKey,
+	r.Use(csrf.Protect(config.CSRFAuthKey,
 		csrf.Secure(!config.DevMode),
 		csrf.SameSite(csrf.SameSiteLaxMode),
 		csrf.ErrorHandler(csrfController.HandleError()),
 	))
+
+	// Flash
+	// TODO(sethvargo): remove
 	r.Use(middleware.FlashHandler)
+
+	// Create common middleware
+	requireAuth := middleware.RequireAuth(ctx, auth, db, h, sessions, config.SessionCookieDuration)
+	requireAdmin := middleware.RequireRealmAdmin(ctx, h, sessions)
+	requireRealm := middleware.RequireRealm(ctx, h, sessions)
 
 	// Install the handlers that don't require authentication first on the main router.
 	indexController := index.New(ctx, config, h)
 	r.Handle("/", indexController.HandleIndex()).Methods("GET")
 
 	// Session handling
-	sessionController := session.New(ctx, auth, config, db, h)
+	sessionController := session.New(ctx, auth, config, db, h, sessions)
 	r.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
 	r.Handle("/session", sessionController.HandleCreate()).Methods("POST")
 
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
-		sub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
+		sub.Use(requireAuth.Handle)
 
 		// Realms - list and select.
-		realmController := realm.New(ctx, config, db, h)
+		realmController := realm.New(ctx, config, db, h, sessions)
 		sub.Handle("", realmController.HandleIndex()).Methods("GET")
 		sub.Handle("/select", realmController.HandleSelect()).Methods("POST")
 	}
 
 	{
 		sub := r.PathPrefix("/home").Subrouter()
-		sub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
-		sub.Use(middleware.RequireRealm(ctx, h).Handle)
+		sub.Use(requireAuth.Handle)
+		sub.Use(requireRealm.Handle)
 
 		homeController := home.New(ctx, config, db, h)
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
@@ -162,31 +175,37 @@ func realMain(ctx context.Context) error {
 		sub.Handle("/csrf", csrfController.HandleIssue()).Methods("GET")
 	}
 
-	// Realm Admin pages, requires realm admin.
+	// apikeys
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
-		sub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
-		sub.Use(middleware.RequireRealm(ctx, h).Handle)
-		sub.Use(middleware.RequireRealmAdmin(ctx, h).Handle)
+		sub.Use(requireAuth.Handle)
+		sub.Use(requireRealm.Handle)
+		sub.Use(requireAdmin.Handle)
 
 		apikeyController := apikey.New(ctx, config, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
 		sub.Handle("/create", apikeyController.HandleCreate()).Methods("POST")
+	}
 
+	// userrs
+	{
 		userSub := r.PathPrefix("/users").Subrouter()
-		userSub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
-		userSub.Use(middleware.RequireRealm(ctx, h).Handle)
-		userSub.Use(middleware.RequireRealmAdmin(ctx, h).Handle)
+		userSub.Use(requireAuth.Handle)
+		userSub.Use(requireRealm.Handle)
+		userSub.Use(requireAdmin.Handle)
 
 		userController := user.New(ctx, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("/create", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/delete/{email}", userController.HandleDelete()).Methods("POST")
+	}
 
+	// realms
+	{
 		realmSub := r.PathPrefix("/realm/settings").Subrouter()
-		realmSub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
-		realmSub.Use(middleware.RequireRealm(ctx, h).Handle)
-		realmSub.Use(middleware.RequireRealmAdmin(ctx, h).Handle)
+		realmSub.Use(requireAuth.Handle)
+		realmSub.Use(requireRealm.Handle)
+		realmSub.Use(requireAdmin.Handle)
 
 		realmadminController := realmadmin.New(ctx, config, db, h)
 		realmSub.Handle("", realmadminController.HandleIndex()).Methods("GET")

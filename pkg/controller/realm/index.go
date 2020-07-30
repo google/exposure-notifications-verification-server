@@ -28,22 +28,40 @@ func (c *Controller) HandleIndex() http.Handler {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
 
+		session, err := c.sessions.Get(r, "session")
+		if err != nil {
+			c.logger.Errorw("failed to get session", "error", err)
+			flash.Error("Internal error, you have been logged out.")
+			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			return
+		}
+
 		user := controller.UserFromContext(ctx)
 		if user == nil {
 			flash.Error("Internal error, you have been logged out.")
-			http.Redirect(w, r, "/signout", http.StatusFound)
+			http.Redirect(w, r, "/signout", http.StatusSeeOther)
 			return
 		}
 
 		userRealms := user.Realms
 		if len(userRealms) == 0 {
 			flash.Error("No realms enabled. Contact your administrator.")
-			http.Redirect(w, r, "/signout", http.StatusFound)
+			http.Redirect(w, r, "/signout", http.StatusSeeOther)
 			return
 		}
+
+		// If the user is only a member of one realm, set that and bypass selection.
 		if len(userRealms) == 1 {
+			session.Values["realm"] = userRealms[0].ID
+
+			if err := session.Save(r, w); err != nil {
+				c.logger.Errorw("failed to save session", "error", err)
+				flash.Error("Internal error, you have been logged out.")
+				http.Redirect(w, r, "/signout", http.StatusSeeOther)
+				return
+			}
+
 			flash.Alert("Logged into verification system for '%v", userRealms[0].Name)
-			setRealmCookie(w, c.config, userRealms[0].ID)
 			http.Redirect(w, r, "/home", http.StatusFound)
 			return
 		}
@@ -60,6 +78,7 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		// User must select their realm.
 		m := controller.TemplateMapFromContext(ctx)
+		m["flash"] = flash
 		m["user"] = user
 		m["realms"] = userRealms
 		m["selectedRealmID"] = previousRealmID
