@@ -34,48 +34,49 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// APIKey should be verified by middleware.
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
-			c.logger.Errorf("no authorized app in context")
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("internal error unable to verify code"))
-			return
-		}
-
-		var request api.VerificationCertificateRequest
-		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.logger.Errorf("failed to bind request: %v", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error("invalid request: %v", err))
+			c.logger.Errorf("failed to find authorized app in context")
+			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
 			return
 		}
 
 		publicKey, err := c.getPublicKey(ctx, c.config.TokenSigningKey)
 		if err != nil {
-			c.logger.Errorf("pubPublicKey: %v", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("interal server error"))
-			return
-		}
-
-		// Parse and validate the verification token.
-		tokenID, subject, err := c.validateToken(request.VerificationToken, publicKey)
-		if err != nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err.Error()))
-			return
-		}
-
-		// Validate the HMAC length. SHA 256 HMAC must be 32 bytes in length.
-		hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
-		if err != nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error("ekeyhmac is not a valid base64 encoding: %v", err))
-			return
-		}
-		if len(hmacBytes) != 32 {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error("ekeyhmac is not the correct length want: 32 got: %v", len(hmacBytes)))
+			c.logger.Errorw("failed to get public key", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
 			return
 		}
 
 		// Get the signer based on Key configuration.
 		signer, err := c.signer.NewSigner(ctx, c.config.CertificateSigningKey)
 		if err != nil {
-			c.logger.Errorf("unable to get signing key: %v", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
+			c.logger.Errorw("failed to get signer", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		var request api.VerificationCertificateRequest
+		if err := controller.BindJSON(w, r, &request); err != nil {
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			return
+		}
+
+		// Parse and validate the verification token.
+		tokenID, subject, err := c.validateToken(request.VerificationToken, publicKey)
+		if err != nil {
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			return
+		}
+
+		// Validate the HMAC length. SHA 256 HMAC must be 32 bytes in length.
+		hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
+		if err != nil {
+			c.h.RenderJSON(w, http.StatusBadRequest,
+				api.Errorf("exposure key HMAC is not a valid base64: %v", err))
+			return
+		}
+		if len(hmacBytes) != 32 {
+			c.h.RenderJSON(w, http.StatusBadRequest,
+				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", len(hmacBytes)))
 			return
 		}
 
@@ -100,18 +101,21 @@ func (c *Controller) HandleCertificate() http.Handler {
 		certToken.Header[verifyapi.KeyIDHeader] = c.config.CertificateSigningKeyID
 		certificate, err := jwthelper.SignJWT(certToken, signer)
 		if err != nil {
-			c.logger.Errorf("error signing certificate: %v", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("internal server error - unable to sign certificate"))
+			c.logger.Errorw("failed to sign certificate", "error", err)
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
-		// To the transactional update to the database last so that if it fails, the client can retry.
+		// Do the transactional update to the database last so that if it fails, the
+		// client can retry.
 		if err := c.db.ClaimToken(authApp.RealmID, tokenID, subject); err != nil {
-			c.logger.Errorf("error claiming tokenId: %v err: %v", tokenID, err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err.Error()))
+			c.logger.Errorw("failed to claim token", "tokenID", tokenID, "error", err)
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
-		c.h.RenderJSON(w, http.StatusOK, api.VerificationCertificateResponse{Certificate: certificate})
+		c.h.RenderJSON(w, http.StatusOK, &api.VerificationCertificateResponse{
+			Certificate: certificate,
+		})
 	})
 }

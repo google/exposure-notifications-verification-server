@@ -69,23 +69,22 @@ func (c *Controller) HandleVerify() http.Handler {
 		// APIKey should be verified by middleware.
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
-			c.logger.Errorf("no authorized app in context")
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("internal error unable to verify code"))
+			c.logger.Errorf("failed to find authorized app in context")
+			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
 			return
 		}
 
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.logger.Errorf("failed to bind request: %v", err)
-			c.h.RenderJSON(w, http.StatusOK, api.Error("invalid request: %v", err))
+			c.h.RenderJSON(w, http.StatusOK, api.Error(err))
 			return
 		}
 
 		// Get the signer based on Key configuration.
 		signer, err := c.signer.NewSigner(ctx, c.config.TokenSigningKey)
 		if err != nil {
-			c.logger.Errorf("unable to get signing key: %v", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("internal server error - unable to sign tokens"))
+			c.logger.Errorw("failed to get signer", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
 			return
 		}
 
@@ -93,12 +92,13 @@ func (c *Controller) HandleVerify() http.Handler {
 		// The token can be used to sign TEKs later.
 		verificationToken, err := c.db.VerifyCodeAndIssueToken(authApp.RealmID, request.VerificationCode, c.config.VerificationTokenDuration)
 		if err != nil {
-			c.logger.Errorf("error issuing verification token: %v", err)
+			c.logger.Errorw("failed to issue verification token", "error", err)
 			if errors.Is(err, database.ErrVerificationCodeExpired) || errors.Is(err, database.ErrVerificationCodeUsed) {
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err.Error()))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 				return
 			}
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("internal server error"))
+
+			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
 			return
 		}
 
@@ -116,7 +116,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigningKeyID
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("error signing token, must obtain new verification code"))
+			c.logger.Errorw("failed to sign token", "error", err)
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 

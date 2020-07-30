@@ -44,7 +44,7 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		// Perform the lazy load on authorized apps for the realm.
 		if _, err := realm.GetAuthorizedApps(c.db, true); err != nil {
-			flash.ErrorNow("Error loading API Keys: %v", err)
+			flash.ErrorNow("Failed to load API Keys: %v", err)
 		}
 
 		m := controller.TemplateMapFromContext(ctx)

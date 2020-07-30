@@ -46,8 +46,7 @@ func (c *Controller) HandleSave() http.Handler {
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			c.logger.Errorf("invalid realm save request: %v", err)
-			flash.Error("Invalid request.")
+			flash.Error("Failed to process form: %v", err)
 			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 			return
 		}

@@ -48,14 +48,12 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			c.logger.Errorf("invalid apikey create request: %v", err)
-			flash.Error("Invalid request.")
+			flash.Error("Failed to process form: %v", err)
 			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 			return
 		}
 
 		if _, err := c.db.CreateAuthorizedApp(realm.ID, form.Name, form.Type); err != nil {
-			c.logger.Errorf("error creating authorized app: %v", err)
 			flash.Error("Failed to create API key: %v", err)
 			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 			return

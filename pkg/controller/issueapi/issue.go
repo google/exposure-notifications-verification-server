@@ -33,29 +33,28 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.logger.Errorf("failed to bind request: %v", err)
-			c.h.RenderJSON(w, http.StatusOK, api.Error("invalid request: %v", err))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
-			c.logger.Errorf("failed to get authorization: %v", err)
-			c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error("invalid request: %v", err))
+			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
+
 		var realm *database.Realm
 		if authApp != nil {
 			realm, err = authApp.GetRealm(c.db)
 			if err != nil {
-				c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(http.StatusText(http.StatusUnauthorized)))
+				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				return
 			}
 		} else {
 			// if it's a user logged in, we can pull realm from the context.
 			realm = controller.RealmFromContext(ctx)
 			if realm == nil {
-				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error("no realm selected"))
+				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Errorf("missing realm"))
 				return
 			}
 		}
@@ -65,22 +64,20 @@ func (c *Controller) HandleIssue() http.Handler {
 		if request.Phone != "" {
 			smsProvider, err = realm.GetSMSProvider(ctx, c.db)
 			if err != nil {
-				c.logger.Errorf("GetSMSProvider: %v", err)
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("failed to get sms provider"))
+				c.logger.Errorw("failed to get sms provider", "error", err)
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
 				return
 			}
 			if smsProvider == nil {
-				err := fmt.Errorf("phone provided, but no SMS provider is configured")
-				c.logger.Errorf("otp.GetSMSProvider: %v", err)
-				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error("%v", err))
+				err := fmt.Errorf("phone provided, but no sms provider is configured")
+				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error(err))
 			}
 		}
 
 		// Verify the test type
 		request.TestType = strings.ToLower(request.TestType)
 		if _, ok := c.validTestType[request.TestType]; !ok {
-			c.logger.Errorf("invalid test type: %v", request.TestType)
-			c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error("invalid test type: %v", request.TestType))
+			c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Errorf("invalid test type"))
 			return
 		}
 
@@ -91,16 +88,15 @@ func (c *Controller) HandleIssue() http.Handler {
 		var symptomDate *time.Time
 		if request.SymptomDate != "" {
 			if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
-				c.logger.Errorf("time.Parse: %v", err)
-				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error("invalid symptom onset date: %v", err))
+				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Errorf("failed to process symptom onset date: %v", err))
 				return
 			} else {
 				parsed = parsed.Local()
 				if minDate.After(parsed) || parsed.After(maxDate) {
-					message := fmt.Sprintf("Invalid symptom onset date: %v must be on or after %v and on or before %v.",
-						parsed.Format("2006-01-02"), minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
-					c.logger.Errorf(message)
-					c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error(message))
+					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v",
+						minDate.Format("2006-01-02"),
+						maxDate.Format("2006-01-02"))
+					c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error(err))
 					return
 				}
 				symptomDate = &parsed
@@ -125,8 +121,8 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		code, err := codeRequest.Issue(ctx, c.config.GetColissionRetryCount())
 		if err != nil {
-			c.logger.Errorf("otp.GenerateCode: %v", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("error generating verification, wait a moment and try again"))
+			c.logger.Errorw("failed to generate otp code", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			return
 		}
 
@@ -135,12 +131,12 @@ func (c *Controller) HandleIssue() http.Handler {
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token
 				if err := c.db.DeleteVerificationCode(code); err != nil {
-					c.logger.Errorf("failed to delete verification code: %v")
+					c.logger.Errorw("failed to delete verification code", "error", err)
 					// fallthrough to the error
 				}
 
-				c.logger.Errorf("otp.SendSMS: %v", err)
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.Error("failed to send sms: %v", err))
+				c.logger.Errorw("failed to send sms", "error", err)
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 				return
 			}
 		}

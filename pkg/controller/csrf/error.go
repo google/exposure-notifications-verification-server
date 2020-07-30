@@ -30,7 +30,7 @@ import (
 func (c *Controller) HandleError() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if controller.IsJSONContentType(r) {
-			c.h.RenderJSON(w, http.StatusOK, api.Error("Invalid state. Refresh this window."))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid csrf token"))
 			return
 		}
 

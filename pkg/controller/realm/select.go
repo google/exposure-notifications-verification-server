@@ -30,26 +30,24 @@ func (c *Controller) HandleSelect() http.Handler {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			c.logger.Errorf("invalid realm select rquest: %v", err)
-			flash.Error("Invalid realm selection.")
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
-			return
-		}
-
-		realm, err := c.db.GetRealm(int64(form.Realm))
-		if err != nil {
-			c.logger.Errorf("error selecting realm: %v", err)
-			flash.Error("Invalid realm selection.")
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
-			return
-		}
-
 		user := controller.UserFromContext(ctx)
 		if user == nil {
-			flash.Error("Internal error, you have been logged out.")
+			flash.Error("Unauthorized.")
 			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			return
+		}
+
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			flash.Error("Select a realm to continue.")
+			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			return
+		}
+
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			flash.Error("Failed to process form: %v", err)
+			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
 			return
 		}
 

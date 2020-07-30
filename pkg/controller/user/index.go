@@ -42,7 +42,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		if err := realm.LoadRealmUsers(c.db, false); err != nil {
-			flash.ErrorNow("Error loading users: %v", err)
+			flash.ErrorNow("Failed to load users: %v", err)
 		}
 		admins := make(map[uint]bool)
 		for _, au := range realm.RealmAdmins {

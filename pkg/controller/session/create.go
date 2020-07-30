@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
@@ -34,18 +35,16 @@ func (c *Controller) HandleCreate() http.Handler {
 		// Parse and decode form.
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			c.logger.Errorf("error parsing form: %v", err)
-			flash.Error("Failed to process login: %v", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, nil)
+			flash.Error("Failed to process form: %v", err)
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
 		ttl := c.config.SessionCookieDuration
 		cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
 		if err != nil {
-			c.logger.Errorf("unable to create client session: %v", err)
 			flash.Error("Failed to create session: %v", err)
-			c.h.RenderJSON(w, http.StatusUnauthorized, nil)
+			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
 

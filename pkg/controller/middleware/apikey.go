@@ -17,10 +17,8 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
@@ -69,8 +67,7 @@ func (h *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apiKey := r.Header.Get(APIKeyHeader)
 		if apiKey == "" {
-			h.logger.Errorf("missing %s header", APIKeyHeader)
-			h.h.RenderJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: fmt.Sprintf("invalid request: missing %s header", APIKeyHeader)})
+			h.h.RenderJSON(w, http.StatusUnauthorized, nil)
 			return
 		}
 
@@ -84,24 +81,23 @@ func (h *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
 				return aa, nil
 			})
 		if err != nil {
-			h.logger.Errorf("unable to lookup authorized app for apikey: %v", apiKey)
-			h.h.RenderJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "invalid API Key"})
+			h.logger.Errorw("failed to lookup authorized app", "error", err)
+			h.h.RenderJSON(w, http.StatusUnauthorized, nil)
 			return
 		}
+
 		authApp, ok := authAppCache.(*database.AuthorizedApp)
 		if !ok {
 			authApp = nil
 		}
-
-		// Check if the API key is authorized.
-		if err != nil || authApp == nil || authApp.DeletedAt != nil {
-			h.logger.Errorf("unauthorized API Key: %v err: %v", apiKey, err)
-			h.h.RenderJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized: API Key invalid"})
-			return
+		if authApp == nil || authApp.DeletedAt != nil {
+			h.logger.Errorf("authorized app is deleted or does not exist")
+			h.h.RenderJSON(w, http.StatusUnauthorized, nil)
 		}
+
 		if _, ok := h.allowedTypes[authApp.APIKeyType]; !ok {
-			h.logger.Errorf("authorized API key is making wrong type of request: allowed: %v got: %v", h.allowedTypes, authApp.APIKeyType)
-			h.h.RenderJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized"})
+			h.logger.Errorw("wrong request type, got %v, allowed %v", authApp.APIKeyType, h.allowedTypes)
+			h.h.RenderJSON(w, http.StatusUnauthorized, nil)
 			return
 		}
 
