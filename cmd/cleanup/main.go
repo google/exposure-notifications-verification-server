@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-signalcontext"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
@@ -60,6 +61,12 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	// Create the renderer
+	h, err := render.New(ctx, "", config.DevMode)
+	if err != nil {
+		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
 	// Create the router
 	r := mux.NewRouter()
 
@@ -69,7 +76,9 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cache: %w", err)
 	}
-	r.Handle("/", cleanup.New(ctx, config, cleanupCache, db)).Methods("GET")
+
+	cleanupController := cleanup.New(ctx, config, cleanupCache, db, h)
+	r.Handle("/", cleanupController.HandleCleanup()).Methods("GET")
 
 	srv, err := server.New(config.Port)
 	if err != nil {

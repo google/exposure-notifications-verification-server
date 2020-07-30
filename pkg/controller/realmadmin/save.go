@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package realmadmin
 
 import (
 	"net/http"
@@ -21,9 +21,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
-func (c *Controller) HandleSelect() http.Handler {
+func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
-		Realm int `form:"realm,required"`
+		Name string `form:"name,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -47,20 +47,19 @@ func (c *Controller) HandleSelect() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 			return
 		}
 
-		// Verify that the user has access to the realm.
-		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
-			flash.Alert("Selected realm '%v'", realm.Name)
-			http.Redirect(w, r, "/home", http.StatusSeeOther)
+		realm.Name = form.Name
+		if err := c.db.SaveRealm(realm); err != nil {
+			c.logger.Errorf("unable save realm settings: %v", err)
+			flash.Error("Error updating realm: %v", err)
+			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 			return
 		}
 
-		// Not allowed to see the realm selected.
-		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		flash.Alert("Updated realm settings!")
+		http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 	})
 }

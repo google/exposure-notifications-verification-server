@@ -12,30 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package csrf contains utilities for issuing AJAX csrf tokens and
-// handling errors on validation.
-package csrf
+package realmadmin
 
 import (
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/gorilla/csrf"
 )
 
-// HandleError is an http.HandlerFunc that can be installed inthe gorilla csrf
-// protect middleware. It will respond w/ a JSON object containing error: on API
-// requests and a signout redirect to other requests.
-func (c *Controller) HandleError() http.Handler {
+func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if controller.IsJSONContentType(r) {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid csrf token"))
+		ctx := r.Context()
+		flash := flash.FromContext(w, r)
+
+		user := controller.UserFromContext(ctx)
+		if user == nil {
+			flash.Error("Unauthorized.")
+			http.Redirect(w, r, "/signout", http.StatusSeeOther)
 			return
 		}
 
-		flash := flash.FromContext(w, r)
-		flash.Error("CSRF token validation error, you have been signed out.")
-		http.Redirect(w, r, "/signout", http.StatusFound)
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			flash.Error("Select a realm to continue.")
+			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			return
+		}
+
+		m := controller.TemplateMapFromContext(ctx)
+		m["user"] = user
+		m["realm"] = realm
+		m["flash"] = flash
+		m[csrf.TemplateTag] = csrf.TemplateField(r)
+		c.h.RenderHTML(w, "realm", m)
 	})
 }

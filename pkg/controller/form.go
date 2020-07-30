@@ -20,17 +20,20 @@ import (
 	"github.com/gorilla/schema"
 )
 
-// BindForm parses and binds the HTTP form to the provided data interface
-// using the gorilla schema package.
+// BindForm parses and binds the HTTP form to the provided data interface using
+// the gorilla schema package.
 func BindForm(w http.ResponseWriter, r *http.Request, data interface{}) error {
-	err := r.ParseForm()
-	if err != nil {
+	if err := r.ParseForm(); err != nil {
 		return err
 	}
+
 	decoder := schema.NewDecoder()
+	decoder.SetAliasTag("form")
+
 	// Set ignore unknown keys so that things like the action and submit button
 	// don't need to be captured. By default schema decoder is very struct.
 	decoder.IgnoreUnknownKeys(true)
+
 	if err := decoder.Decode(data, r.PostForm); err != nil {
 		return err
 	}

@@ -12,39 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package session contains the controller that exchanges firebase auth tokens
-// for server side session tokens.
-package session
+package middleware
 
 import (
 	"context"
+	"net/http"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
 	"go.uber.org/zap"
 )
 
-type Controller struct {
-	client *auth.Client
+type TemplateMiddleware struct {
 	config *config.ServerConfig
-	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-// New creates a new session controller.
-func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig, h *render.Renderer) *TemplateMiddleware {
 	logger := logging.FromContext(ctx)
 
-	return &Controller{
-		client: client,
+	return &TemplateMiddleware{
 		config: config,
-		db:     db,
 		h:      h,
 		logger: logger,
 	}
+}
+
+func (h *TemplateMiddleware) Handle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		m := controller.TemplateMapFromContext(ctx)
+		if m == nil {
+			m = make(controller.TemplateMap)
+		}
+
+		if _, ok := m["server"]; !ok {
+			m["server"] = h.config.ServerName
+		}
+		if _, ok := m["title"]; !ok {
+			m["title"] = h.config.ServerName
+		}
+
+		r = r.WithContext(controller.WithTemplateMap(ctx, m))
+		next.ServeHTTP(w, r)
+	})
 }

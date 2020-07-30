@@ -21,12 +21,16 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-envconfig"
 )
 
 // APIServerConfig represnets the environment based configuration for the API server.
 type APIServerConfig struct {
 	Database database.Config
+
+	// DevMode produces additional debugging information. Do not enable in
+	// production environments.
+	DevMode bool `env:"DEV_MODE"`
 
 	Port string `env:"PORT,default=8080"`
 

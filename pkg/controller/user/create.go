@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package user
 
 import (
 	"net/http"
@@ -21,9 +21,12 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
-func (c *Controller) HandleSelect() http.Handler {
+func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Realm int `form:"realm,required"`
+		Email    string `form:"email,required"`
+		Name     string `form:"name,required"`
+		Admin    bool   `form:"admin"`
+		Disabled bool   `form:"disabled"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -47,20 +50,36 @@ func (c *Controller) HandleSelect() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+			http.Redirect(w, r, "/users", http.StatusSeeOther)
 			return
 		}
 
-		// Verify that the user has access to the realm.
-		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
-			flash.Alert("Selected realm '%v'", realm.Name)
-			http.Redirect(w, r, "/home", http.StatusSeeOther)
+		m := controller.TemplateMapFromContext(ctx)
+		m["user"] = user
+
+		newUser, err := c.db.FindUser(form.Email)
+		if err != nil {
+			// User doesn't exist, create.
+			newUser, err = c.db.CreateUser(form.Email, form.Name, false, false)
+			if err != nil {
+				flash.Error("Failed to create user: %v", err)
+				http.Redirect(w, r, "/users", http.StatusSeeOther)
+				return
+			}
+		}
+
+		realm.AddUser(newUser)
+		if form.Admin {
+			realm.AddAdminUser(newUser)
+		}
+
+		if err := c.db.SaveRealm(realm); err != nil {
+			flash.Error("Failed to create user: %v", err)
+			http.Redirect(w, r, "/users", http.StatusSeeOther)
 			return
 		}
 
-		// Not allowed to see the realm selected.
-		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		flash.Alert("Created User %v", form.Email)
+		http.Redirect(w, r, "/users", http.StatusSeeOther)
 	})
 }

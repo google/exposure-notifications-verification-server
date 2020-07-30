@@ -22,7 +22,7 @@ import (
 	"os"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
 )
 

@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package session contains the controller that exchanges firebase auth tokens
-// for server side session tokens.
-package session
+// Package realmadmin contains web controllers for changing realm settings.
+package realmadmin
 
 import (
 	"context"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
@@ -29,19 +27,16 @@ import (
 )
 
 type Controller struct {
-	client *auth.Client
 	config *config.ServerConfig
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-// New creates a new session controller.
-func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
-		client: client,
 		config: config,
 		db:     db,
 		h:      h,

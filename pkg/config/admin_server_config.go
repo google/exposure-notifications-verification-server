@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-envconfig"
 )
 
 var _ IssueAPIConfig = (*AdminAPIServerConfig)(nil)
@@ -27,6 +27,10 @@ var _ IssueAPIConfig = (*AdminAPIServerConfig)(nil)
 // AdminAPIServerConfig represents the environment based config for the Admin API Server.
 type AdminAPIServerConfig struct {
 	Database database.Config
+
+	// DevMode produces additional debugging information. Do not enable in
+	// production environments.
+	DevMode bool `env:"DEV_MODE"`
 
 	Port                string        `env:"PORT,default=8080"`
 	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`

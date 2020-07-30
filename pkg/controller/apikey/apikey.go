@@ -17,70 +17,29 @@ package apikey
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/gorilla/csrf"
 	"go.uber.org/zap"
 )
 
-type apikeyListController struct {
+type Controller struct {
 	config *config.ServerConfig
 	db     *database.Database
-	html   *render.HTML
+	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-func NewListController(ctx context.Context, config *config.ServerConfig, db *database.Database, html *render.HTML) http.Handler {
-	return &apikeyListController{config, db, html, logging.FromContext(ctx)}
-}
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+	logger := logging.FromContext(ctx)
 
-func (lc *apikeyListController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	user := controller.UserFromContext(ctx)
-	if user == nil {
-		http.Redirect(w, r, "/signout", http.StatusSeeOther)
-		return
+	return &Controller{
+		config: config,
+		db:     db,
+		h:      h,
+		logger: logger,
 	}
-
-	flash := flash.FromContext(w, r)
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		flash.Error("Select realm to continue.")
-		http.Redirect(w, r, "/realm", http.StatusSeeOther)
-		return
-	}
-
-	m := html.GetTemplateMap(r)
-	m["user"] = user
-	m["realm"] = realm
-	// Perform the lazy load on authorized apps for the realm.
-	if _, err := realm.GetAuthorizedApps(lc.db, true); err != nil {
-		flash.ErrorNow("Error loading API Keys: %v", err)
-	}
-
-	creationCounts := make(map[uint]int64)
-	for _, app := range realm.AuthorizedApps {
-		count, err := lc.db.CountVerificationCodesByAuthorizedApp(app.ID)
-		if err != nil {
-			flash.Error("Error loading app code creation counts: %v", err)
-		}
-
-		creationCounts[app.ID] = count
-	}
-
-	m["apps"] = realm.AuthorizedApps
-	m["codesGenerated"] = creationCounts
-	m["flash"] = flash
-	m["typeAdmin"] = database.APIUserTypeAdmin
-	m["typeDevice"] = database.APIUserTypeDevice
-	m[csrf.TemplateTag] = csrf.TemplateField(r)
-	lc.html.Render(w, "apikeys", m)
 }
