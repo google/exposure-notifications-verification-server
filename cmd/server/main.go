@@ -30,7 +30,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
@@ -98,8 +97,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Inject template middleware
-	// TODO(sethvargo): clean this up
-	r.Use(html.New(config).Handle)
+	r.Use(middleware.PopulateTemplateVariables(ctx, config, h).Handle)
 
 	// Setup rate limiting
 	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)

@@ -19,7 +19,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/gorilla/csrf"
 )
 
@@ -42,7 +41,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		m := html.GetTemplateMap(r)
+		m := controller.TemplateMapFromContext(ctx)
 		m["user"] = user
 		m["realm"] = realm
 		m["flash"] = flash

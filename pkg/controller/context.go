@@ -28,11 +28,14 @@ var (
 	// contextKeyAuthorizedApp is a context key used for the authorized app.
 	contextKeyAuthorizedApp = contextKey("authapp")
 
+	// contextKeyRealm is a context key for the realm.
+	contextKeyRealm = contextKey("realm")
+
+	// contextKeyTemplate is a context key for the template.
+	contextKeyTemplate = contextKey("template")
+
 	// contextKeyUser is a context key used for the user.
 	contextKeyUser = contextKey("user")
-
-	// ContextKeyRealm is a context key for the realm.
-	contextKeyRealm = contextKey("realm")
 )
 
 // WithAuthorizedApp sets the AuthorizedApp in the context.
@@ -56,6 +59,49 @@ func AuthorizedAppFromContext(ctx context.Context) *database.AuthorizedApp {
 	return authorizedApp
 }
 
+// WithRealm sets the realm in the cotnext.
+func WithRealm(ctx context.Context, r *database.Realm) context.Context {
+	return context.WithValue(ctx, contextKeyRealm, r)
+}
+
+// RealmFromContext gets the currently selected realm for the current user session.
+// If none is selected, nil is returned.
+func RealmFromContext(ctx context.Context) *database.Realm {
+	v := ctx.Value(contextKeyRealm)
+	if v == nil {
+		return nil
+	}
+
+	realm, ok := v.(*database.Realm)
+	if !ok {
+		return nil
+	}
+	return realm
+}
+
+// TemplateMap is a typemap for the HTML templates.
+type TemplateMap map[string]interface{}
+
+// WithTemplateMap sets the user in the context.
+func WithTemplateMap(ctx context.Context, m TemplateMap) context.Context {
+	return context.WithValue(ctx, contextKeyTemplate, m)
+}
+
+// TemplateMapFromContext gets the template map on the context. If no map
+// exists, it returns an empty map.
+func TemplateMapFromContext(ctx context.Context) TemplateMap {
+	v := ctx.Value(contextKeyTemplate)
+	if v == nil {
+		return make(TemplateMap)
+	}
+
+	m, ok := v.(TemplateMap)
+	if !ok {
+		return make(TemplateMap)
+	}
+	return m
+}
+
 // WithUser sets the user in the context.
 func WithUser(ctx context.Context, u *database.User) context.Context {
 	return context.WithValue(ctx, contextKeyUser, u)
@@ -75,24 +121,4 @@ func UserFromContext(ctx context.Context) *database.User {
 		return nil
 	}
 	return user
-}
-
-// WithRealm sets the realm in the cotnext.
-func WithRealm(ctx context.Context, r *database.Realm) context.Context {
-	return context.WithValue(ctx, contextKeyRealm, r)
-}
-
-// RealmFromContext gets the currently selected realm for the current user session.
-// If none is selected, nil is returned.
-func RealmFromContext(ctx context.Context) *database.Realm {
-	v := ctx.Value(contextKeyRealm)
-	if v == nil {
-		return nil
-	}
-
-	realm, ok := v.(*database.Realm)
-	if !ok {
-		return nil
-	}
-	return realm
 }

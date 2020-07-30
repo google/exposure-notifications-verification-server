@@ -17,12 +17,14 @@ package session
 import (
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 )
 
 func (c *Controller) HandleDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		// Set max age to negative to clear the cookie.
 		http.SetCookie(w, &http.Cookie{
 			Name:   "session",
@@ -30,7 +32,7 @@ func (c *Controller) HandleDelete() http.Handler {
 			MaxAge: -1,
 		})
 
-		m := html.GetTemplateMap(r)
+		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
 		m["flash"] = flash.FromContext(w, r)
 		c.h.RenderHTML(w, "signout", m)

@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"go.uber.org/zap"
@@ -47,9 +47,10 @@ func New(ctx context.Context, config *config.ServerConfig, h *render.Renderer) *
 
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		token := csrf.Token(r)
 
-		m := html.GetTemplateMap(r)
+		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
 		m["csrftoken"] = token
 

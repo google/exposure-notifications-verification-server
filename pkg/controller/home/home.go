@@ -27,7 +27,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -92,7 +91,7 @@ func (c *Controller) HandleHome() http.Handler {
 			}
 		}
 
-		m := html.GetTemplateMap(r)
+		m := controller.TemplateMapFromContext(ctx)
 		// Set test date params
 		now := time.Now().UTC()
 		m["maxDate"] = now.Format("2006-01-02")

@@ -20,7 +20,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/gorilla/csrf"
 )
 
@@ -60,7 +59,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		// User must select their realm.
-		m := html.GetTemplateMap(r)
+		m := controller.TemplateMapFromContext(ctx)
 		m["user"] = user
 		m["realms"] = userRealms
 		m["selectedRealmID"] = previousRealmID

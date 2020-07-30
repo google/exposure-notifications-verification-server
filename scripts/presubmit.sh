@@ -22,7 +22,6 @@ ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
 # https://github.com/GoogleCloudPlatform/oss-test-infra/tree/master/prow/prowjobs/google/exposure-notifications-server.
 echo "🌳 Set up environment variables"
 export GOMAXPROCS=7
-# TODO(sethvargo): configure more
 
 
 echo "📚 Fetch dependencies"

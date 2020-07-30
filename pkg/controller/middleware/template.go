@@ -12,80 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package html provides a gorilla middleware that injects the HTML template
-// map into the context.
-// This is application specific in that it sets up common things based on config.
-package html
+package middleware
 
 import (
 	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.uber.org/zap"
 )
 
-// contextKey is a unique type to avoid clashing with other packages that use
-// context's to pass data.
-type contextKey struct{}
-
-// contextKeyTemplateMap is a context key used for the user.
-var contextKeyTemplateMap = &contextKey{}
-
-// WithTemplateMap sets the user in the context.
-func WithTemplateMap(ctx context.Context, m TemplateMap) context.Context {
-	return context.WithValue(ctx, contextKeyTemplateMap, m)
-}
-
-// TemplateMapFromContext gets the template map on the context. If no map
-// exists, it returns nil.
-func TemplateMapFromContext(ctx context.Context) TemplateMap {
-	v := ctx.Value(contextKeyTemplateMap)
-	if v == nil {
-		return nil
-	}
-
-	m, ok := v.(TemplateMap)
-	if !ok {
-		return nil
-	}
-	return m
-}
-
-// TemplateMap is a typemap for the HTML templates.
-type TemplateMap map[string]interface{}
-
-type VariableInjector struct {
+type TemplateMiddleware struct {
 	config *config.ServerConfig
+	h      *render.Renderer
+	logger *zap.SugaredLogger
 }
 
-func New(config *config.ServerConfig) *VariableInjector {
-	return &VariableInjector{config}
-}
+func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig, h *render.Renderer) *TemplateMiddleware {
+	logger := logging.FromContext(ctx)
 
-// GetTemplateMap gets the TemplateMap on the request's context. If the map does
-// not exist, a new one is created and persisted on the request's context.
-func GetTemplateMap(r *http.Request) TemplateMap {
-	m := TemplateMapFromContext(r.Context())
-	if m != nil {
-		return m
+	return &TemplateMiddleware{
+		config: config,
+		h:      h,
+		logger: logger,
 	}
-
-	m = make(TemplateMap)
-	*r = *r.WithContext(WithTemplateMap(r.Context(), m))
-	return m
 }
 
-func (vi *VariableInjector) Handle(next http.Handler) http.Handler {
+func (h *TemplateMiddleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m := GetTemplateMap(r)
+		ctx := r.Context()
+
+		m := controller.TemplateMapFromContext(ctx)
+		if m == nil {
+			m = make(controller.TemplateMap)
+		}
+
 		if _, ok := m["server"]; !ok {
-			m["server"] = vi.config.ServerName
+			m["server"] = h.config.ServerName
 		}
 		if _, ok := m["title"]; !ok {
-			m["title"] = vi.config.ServerName
+			m["title"] = h.config.ServerName
 		}
 
-		r = r.WithContext(WithTemplateMap(r.Context(), m))
+		r = r.WithContext(controller.WithTemplateMap(ctx, m))
 		next.ServeHTTP(w, r)
 	})
 }

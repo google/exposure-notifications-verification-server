@@ -19,7 +19,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -55,7 +54,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		m := html.GetTemplateMap(r)
+		m := controller.TemplateMapFromContext(ctx)
 		m["user"] = user
 
 		newUser, err := c.db.FindUser(form.Email)
