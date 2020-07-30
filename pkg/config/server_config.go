@@ -25,7 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	firebase "firebase.google.com/go"
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-envconfig"
 )
 
 var _ IssueAPIConfig = (*ServerConfig)(nil)
