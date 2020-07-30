@@ -31,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware/html"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/signout"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
@@ -147,7 +148,7 @@ func realMain(ctx context.Context) error {
 		sub.Handle("/csrf", csrfctl.NewCSRFAPI()).Methods("GET")
 	}
 
-	// Admin pages, requires admin auth
+	// Realm Admin pages, requires realm admin.
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
 		sub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
@@ -165,6 +166,13 @@ func realMain(ctx context.Context) error {
 		userSub.Handle("", user.NewListController(ctx, config, db, renderHTML)).Methods("GET")
 		userSub.Handle("/create", user.NewSaveController(ctx, config, db)).Methods("POST")
 		userSub.Handle("/delete/{email}", user.NewDeleteController(ctx, config, db)).Methods("POST")
+
+		realmSub := r.PathPrefix("/realm/settings").Subrouter()
+		realmSub.Use(middleware.RequireAuth(ctx, auth, db, config.SessionCookieDuration).Handle)
+		realmSub.Use(middleware.RequireRealm(ctx).Handle)
+		realmSub.Use(middleware.RequireRealmAdmin(ctx).Handle)
+		realmSub.Handle("", realmadmin.NewViewController(ctx, config, db, renderHTML)).Methods("GET")
+		realmSub.Handle("/save", realmadmin.NewSaveController(ctx, config, db)).Methods("POST")
 	}
 
 	srv, err := server.New(config.Port)
