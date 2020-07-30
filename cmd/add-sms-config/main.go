@@ -26,7 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	grpccodes "google.golang.org/grpc/codes"

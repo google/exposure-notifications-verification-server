@@ -23,7 +23,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-envconfig"
 )
 
 // Validatable indicates that a type can be validated.

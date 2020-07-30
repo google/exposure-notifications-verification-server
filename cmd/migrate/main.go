@@ -23,7 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
 )
 

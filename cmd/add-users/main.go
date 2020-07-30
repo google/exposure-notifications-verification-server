@@ -23,7 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/jinzhu/gorm"
-	"github.com/sethvargo/go-envconfig/pkg/envconfig"
+	"github.com/sethvargo/go-envconfig"
 )
 
 func main() {
