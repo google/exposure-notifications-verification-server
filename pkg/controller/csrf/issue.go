@@ -12,29 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package csrf contains utilities for issuing AJAX csrf tokens and
-// handling errors on validation.
 package csrf
 
 import (
-	"context"
+	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.uber.org/zap"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/gorilla/csrf"
 )
 
-type Controller struct {
-	h      *render.Renderer
-	logger *zap.SugaredLogger
-}
-
-// New creates a new controller that can return CSRF tokens to JSON APIs.
-func New(ctx context.Context, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-
-	return &Controller{
-		h:      h,
-		logger: logger,
-	}
+func (c *Controller) HandleIssue() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := csrf.Token(r)
+		w.Header().Add("X-CSRF-Token", token)
+		c.h.RenderJSON(w, http.StatusOK, &api.CSRFResponse{CSRFToken: token})
+	})
 }

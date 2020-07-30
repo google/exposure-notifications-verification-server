@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"go.uber.org/zap"
 )
 
@@ -32,17 +33,25 @@ var (
 )
 
 type RequireRealmHandler struct {
+	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
 // RequireRealm requires that a user is logged in and that a realm
 // is selectted. This middleware must be run after RequireAuth.
-func RequireRealm(ctx context.Context) *RequireRealmHandler {
-	return &RequireRealmHandler{logging.FromContext(ctx)}
+func RequireRealm(ctx context.Context, h *render.Renderer) *RequireRealmHandler {
+	logger := logging.FromContext(ctx)
+
+	return &RequireRealmHandler{
+		h:      h,
+		logger: logger,
+	}
 }
 
 func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		if err := func() error {
 			cookie, err := r.Cookie("realm")
 			if err != nil {
@@ -55,7 +64,7 @@ func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 			}
 
 			// Get user from the session
-			user := controller.UserFromContext(r.Context())
+			user := controller.UserFromContext(ctx)
 			if user == nil {
 				return fmt.Errorf("user is not a database.User")
 			}
@@ -66,7 +75,7 @@ func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 				return fmt.Errorf("not authorized to use realm")
 			}
 
-			r = r.WithContext(controller.WithRealm(r.Context(), realm))
+			r = r.WithContext(controller.WithRealm(ctx, realm))
 			return nil
 		}(); err != nil {
 			h.logger.Errorw("RequireRealm", "error", err)

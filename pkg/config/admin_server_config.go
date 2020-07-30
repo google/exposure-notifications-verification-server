@@ -28,6 +28,10 @@ var _ IssueAPIConfig = (*AdminAPIServerConfig)(nil)
 type AdminAPIServerConfig struct {
 	Database database.Config
 
+	// DevMode produces additional debugging information. Do not enable in
+	// production environments.
+	DevMode bool `env:"DEV_MODE"`
+
 	Port                string        `env:"PORT,default=8080"`
 	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`

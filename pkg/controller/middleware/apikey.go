@@ -24,6 +24,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.uber.org/zap"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 )
@@ -34,45 +36,56 @@ const (
 )
 
 type APIKeyMiddleware struct {
-	ctx          context.Context
-	db           *database.Database
-	keyCache     *cache.Cache
+	db       *database.Database
+	h        *render.Renderer
+	keyCache *cache.Cache
+	logger   *zap.SugaredLogger
+
 	allowedTypes map[database.APIUserType]struct{}
 }
 
-// APIKeyAuth returns a gin Middleware function that reads the X-API-Key HTTP header
-// and checks it against the authorized apps. The provided cache is used as a
-// write through cache.
-func APIKeyAuth(ctx context.Context, db *database.Database, keyCache *cache.Cache, allowedTypes ...database.APIUserType) *APIKeyMiddleware {
-	cfg := APIKeyMiddleware{ctx, db, keyCache, make(map[database.APIUserType]struct{})}
+// APIKeyAuth returns a gin Middleware function that reads the X-API-Key HTTP
+// header and checks it against the authorized apps. The provided cache is used
+// as a write through cache.
+func APIKeyAuth(ctx context.Context, db *database.Database, h *render.Renderer, keyCache *cache.Cache, allowedTypes ...database.APIUserType) *APIKeyMiddleware {
+	logger := logging.FromContext(ctx)
+
+	cfg := APIKeyMiddleware{
+		db:       db,
+		h:        h,
+		keyCache: keyCache,
+		logger:   logger,
+
+		allowedTypes: make(map[database.APIUserType]struct{}),
+	}
+
 	for _, t := range allowedTypes {
 		cfg.allowedTypes[t] = struct{}{}
 	}
 	return &cfg
 }
 
-func (a *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
+func (h *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := logging.FromContext(a.ctx)
 		apiKey := r.Header.Get(APIKeyHeader)
 		if apiKey == "" {
-			logger.Errorf("missing %s header", APIKeyHeader)
-			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: fmt.Sprintf("invalid request: missing %s header", APIKeyHeader)})
+			h.logger.Errorf("missing %s header", APIKeyHeader)
+			h.h.RenderJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: fmt.Sprintf("invalid request: missing %s header", APIKeyHeader)})
 			return
 		}
 
 		// Load the authorized app by API key using the write thru cache.
-		authAppCache, err := a.keyCache.WriteThruLookup(apiKey,
+		authAppCache, err := h.keyCache.WriteThruLookup(apiKey,
 			func() (interface{}, error) {
-				aa, err := a.db.FindAuthorizedAppByAPIKey(apiKey)
+				aa, err := h.db.FindAuthorizedAppByAPIKey(apiKey)
 				if err != nil {
 					return nil, err
 				}
 				return aa, nil
 			})
 		if err != nil {
-			logger.Errorf("unable to lookup authorized app for apikey: %v", apiKey)
-			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "invalid API Key"})
+			h.logger.Errorf("unable to lookup authorized app for apikey: %v", apiKey)
+			h.h.RenderJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "invalid API Key"})
 			return
 		}
 		authApp, ok := authAppCache.(*database.AuthorizedApp)
@@ -82,13 +95,13 @@ func (a *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
 
 		// Check if the API key is authorized.
 		if err != nil || authApp == nil || authApp.DeletedAt != nil {
-			logger.Errorf("unauthorized API Key: %v err: %v", apiKey, err)
-			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized: API Key invalid"})
+			h.logger.Errorf("unauthorized API Key: %v err: %v", apiKey, err)
+			h.h.RenderJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized: API Key invalid"})
 			return
 		}
-		if _, ok := a.allowedTypes[authApp.APIKeyType]; !ok {
-			logger.Errorf("authorized API key is making wrong type of request: allowed: %v got: %v", a.allowedTypes, authApp.APIKeyType)
-			controller.WriteJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized"})
+		if _, ok := h.allowedTypes[authApp.APIKeyType]; !ok {
+			h.logger.Errorf("authorized API key is making wrong type of request: allowed: %v got: %v", h.allowedTypes, authApp.APIKeyType)
+			h.h.RenderJSON(w, http.StatusUnauthorized, api.ErrorReturn{Error: "unauthorized"})
 			return
 		}
 

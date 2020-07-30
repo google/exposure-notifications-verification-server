@@ -27,6 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"go.uber.org/zap"
 )
@@ -38,16 +39,22 @@ var (
 )
 
 type RequireRealmAdminHandler struct {
+	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
 // RequireRealmAdmin verifies that a user is an admin in the selected realm.
 // It must be used AFTER the RequireAuth and RequireRealm middlewares.
-func RequireRealmAdmin(ctx context.Context) *RequireRealmAdminHandler {
-	return &RequireRealmAdminHandler{logging.FromContext(ctx)}
+func RequireRealmAdmin(ctx context.Context, h *render.Renderer) *RequireRealmAdminHandler {
+	logger := logging.FromContext(ctx)
+
+	return &RequireRealmAdminHandler{
+		h:      h,
+		logger: logger,
+	}
 }
 
-func (rra *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
+func (h *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			// Get user from context.
@@ -68,7 +75,7 @@ func (rra *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
 
 			return nil
 		}(); err != nil {
-			rra.logger.Errorw("RequireRealmAdmin", "error", err)
+			h.logger.Errorw("RequireRealmAdmin", "error", err)
 
 			if errors.Is(err, ErrNotRealmAdmin) {
 				flash.FromContext(w, r).Error("You are not authorized to admin that realm.")
@@ -85,16 +92,22 @@ func (rra *RequireRealmAdminHandler) Handle(next http.Handler) http.Handler {
 }
 
 type RequireAdminHandler struct {
+	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
 // RequireAdmin verifies that a user is a system admin.
 // It must be used AFTER the RequireAuth middleware.
-func RequireAdmin(ctx context.Context) *RequireAdminHandler {
-	return &RequireAdminHandler{logging.FromContext(ctx)}
+func RequireAdmin(ctx context.Context, h *render.Renderer) *RequireAdminHandler {
+	logger := logging.FromContext(ctx)
+
+	return &RequireAdminHandler{
+		h:      h,
+		logger: logger,
+	}
 }
 
-func (rah *RequireAdminHandler) Handle(next http.Handler) http.Handler {
+func (h *RequireAdminHandler) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			user := controller.UserFromContext(r.Context())
@@ -108,10 +121,10 @@ func (rah *RequireAdminHandler) Handle(next http.Handler) http.Handler {
 
 			return nil
 		}(); err != nil {
-			rah.logger.Errorw("RequireAdmin", "error", err)
+			h.logger.Errorw("RequireAdmin", "error", err)
 
 			if controller.IsJSONContentType(r) {
-				controller.WriteJSON(w, http.StatusUnauthorized, nil)
+				h.h.RenderJSON(w, http.StatusUnauthorized, nil)
 			} else {
 				flash.FromContext(w, r).Error("Unauthorized")
 				http.Redirect(w, r, "/signout", http.StatusFound)
@@ -124,22 +137,33 @@ func (rah *RequireAdminHandler) Handle(next http.Handler) http.Handler {
 }
 
 type RequireAuthHandler struct {
-	ctx    context.Context
 	client *auth.Client
 	db     *database.Database
-	ttl    time.Duration
+	h      *render.Renderer
 	logger *zap.SugaredLogger
+
+	ttl time.Duration
 }
 
 // RequireAuth requires a user is authenticated using firebase auth, that such a
 // user exists in the database, and that said user is not disabled.
-func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, ttl time.Duration) *RequireAuthHandler {
+func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) *RequireAuthHandler {
 	logger := logging.FromContext(ctx)
-	return &RequireAuthHandler{ctx, client, db, ttl, logger}
+
+	return &RequireAuthHandler{
+		client: client,
+		db:     db,
+		h:      h,
+		logger: logger,
+
+		ttl: ttl,
+	}
 }
 
-func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
+func (h *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		if err := func() error {
 			// Get the cookie
 			cookie, err := r.Cookie("session")
@@ -148,7 +172,7 @@ func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 			}
 
 			// Verify cookie
-			token, err := rah.client.VerifySessionCookie(rah.ctx, cookie.Value)
+			token, err := h.client.VerifySessionCookie(ctx, cookie.Value)
 			if err != nil {
 				return fmt.Errorf("failed to verify session cookie: %w", err)
 			}
@@ -167,7 +191,7 @@ func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 			}
 
 			// Lookup the user by email
-			user, err := rah.db.FindUser(email)
+			user, err := h.db.FindUser(email)
 			if err != nil || user == nil {
 				return ErrUserNotFound
 			}
@@ -178,13 +202,13 @@ func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 			}
 
 			// Check if the session is still valid
-			if time.Now().After(user.LastRevokeCheck.Add(rah.ttl)) {
-				if _, err := rah.client.VerifySessionCookieAndCheckRevoked(rah.ctx, cookie.Value); err != nil {
+			if time.Now().After(user.LastRevokeCheck.Add(h.ttl)) {
+				if _, err := h.client.VerifySessionCookieAndCheckRevoked(ctx, cookie.Value); err != nil {
 					return fmt.Errorf("failed to verify session is not revoked: %w", err)
 				}
 
 				user.LastRevokeCheck = time.Now()
-				if err := rah.db.SaveUser(user); err != nil {
+				if err := h.db.SaveUser(user); err != nil {
 					return fmt.Errorf("failed to update revoke check time: %w", err)
 				}
 			}
@@ -194,10 +218,10 @@ func (rah *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 			r = r.WithContext(controller.WithUser(r.Context(), user))
 			return nil
 		}(); err != nil {
-			rah.logger.Errorw("RequireAuth", "error", err)
+			h.logger.Errorw("RequireAuth", "error", err)
 
 			if controller.IsJSONContentType(r) {
-				controller.WriteJSON(w, http.StatusUnauthorized, nil)
+				h.h.RenderJSON(w, http.StatusUnauthorized, nil)
 			} else {
 				flash.FromContext(w, r).Error("Unauthorized")
 				http.Redirect(w, r, "/signout", http.StatusFound)

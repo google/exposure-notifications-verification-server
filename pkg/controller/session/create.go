@@ -37,7 +37,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		if err := controller.BindForm(w, r, &form); err != nil {
 			c.logger.Errorf("error parsing form: %v", err)
 			flash.Error("Failed to process login: %v", err)
-			controller.WriteJSON(w, http.StatusBadRequest, nil)
+			c.h.RenderJSON(w, http.StatusBadRequest, nil)
 			return
 		}
 
@@ -46,7 +46,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		if err != nil {
 			c.logger.Errorf("unable to create client session: %v", err)
 			flash.Error("Failed to create session: %v", err)
-			controller.WriteJSON(w, http.StatusUnauthorized, nil)
+			c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 			return
 		}
 

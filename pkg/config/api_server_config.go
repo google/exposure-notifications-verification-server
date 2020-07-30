@@ -28,6 +28,10 @@ import (
 type APIServerConfig struct {
 	Database database.Config
 
+	// DevMode produces additional debugging information. Do not enable in
+	// production environments.
+	DevMode bool `env:"DEV_MODE"`
+
 	Port string `env:"PORT,default=8080"`
 
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`

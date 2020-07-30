@@ -31,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/mikehelmick/go-chaff"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
@@ -92,13 +93,19 @@ func realMain(ctx context.Context) error {
 	}
 	r.Use(httplimiter.Handle)
 
+	// Create the renderer
+	h, err := render.New(ctx, "", config.DevMode)
+	if err != nil {
+		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
 	// Setup API auth
 	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
 	if err != nil {
 		return fmt.Errorf("failed to create apikey cache: %w", err)
 	}
 	// Install the APIKey Auth Middleware
-	r.Use(middleware.APIKeyAuth(ctx, db, apiKeyCache, database.APIUserTypeDevice).Handle)
+	r.Use(middleware.APIKeyAuth(ctx, db, h, apiKeyCache, database.APIUserTypeDevice).Handle)
 
 	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
 	if err != nil {
@@ -108,12 +115,14 @@ func realMain(ctx context.Context) error {
 	// POST /api/verify
 	verifyChaff := chaff.New()
 	defer verifyChaff.Close()
-	r.Handle("/api/verify", handleChaff(verifyChaff, verifyapi.New(ctx, config, db, signer))).Methods("POST")
+	verifyapiController := verifyapi.New(ctx, config, db, h, signer)
+	r.Handle("/api/verify", handleChaff(verifyChaff, verifyapiController.HandleVerify())).Methods("POST")
 
 	// POST /api/certificate
 	certChaff := chaff.New()
 	defer certChaff.Close()
-	r.Handle("/api/certificate", handleChaff(certChaff, certapi.New(ctx, config, db, signer, publicKeyCache))).Methods("POST")
+	certapiController := certapi.New(ctx, config, db, h, signer, publicKeyCache)
+	r.Handle("/api/certificate", handleChaff(certChaff, certapiController.HandleCertificate())).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {
