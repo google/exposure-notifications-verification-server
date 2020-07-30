@@ -38,7 +38,7 @@ import (
 // The buffers are fetched via a sync.Pool to reduce allocations and improve
 // performance.
 func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{}) {
-	// Avoid marshalling nil data.
+	// Avoid marshaling nil data.
 	if data == nil {
 		w.WriteHeader(code)
 		w.Header().Set("Content-Type", "application/json")
