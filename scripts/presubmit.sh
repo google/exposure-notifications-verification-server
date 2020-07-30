@@ -25,12 +25,11 @@ export GOMAXPROCS=7
 
 
 echo "📚 Fetch dependencies"
-OUT="$(go get -t ./... 2>&1)"
-if [ $? -ne 0 ]; then
+OUT="$(go get -t ./... 2>&1)" || {
   echo "✋ Error fetching dependencies"
   echo "\n\n${OUT}\n\n"
   exit 1
-fi
+}
 
 
 echo "🧹 Verify formatting"
@@ -59,12 +58,11 @@ go build ./...
 
 
 echo "🌌 Verify and tidy module"
-OUT="$(go mod verify 2>&1 && go mod tidy 2>&1)"
-if [ $? -ne 0 ]; then
+OUT="$(go mod verify 2>&1 && go mod tidy 2>&1)" || {
   echo "✋ Error validating module"
   echo "\n\n${OUT}\n\n"
   exit 1
-fi
+}
 OUT="$(git diff go.mod)"
 if [ -n "${OUT}" ]; then
   echo "✋ go.mod is out of sync - run 'go mod tidy'."
