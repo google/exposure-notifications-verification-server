@@ -51,7 +51,7 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		creationCounts := make(map[uint]int64)
 		for _, app := range realm.AuthorizedApps {
-			count, err := lc.db.CountVerificationCodesByAuthorizedApp(app.ID)
+			count, err := c.db.CountVerificationCodesByAuthorizedApp(app.ID)
 			if err != nil {
 				flash.Error("Error loading app code creation counts: %v", err)
 			}
