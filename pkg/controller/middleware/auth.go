@@ -205,3 +205,53 @@ func (h *RequireAuthHandler) Handle(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+type RequireAdminHandler struct {
+	h        *render.Renderer
+	logger   *zap.SugaredLogger
+	sessions sessions.Store
+}
+
+// RequireAdmin verifies that a user is a system admin. It must be used AFTER
+// the RequireAuth middleware.
+func RequireAdmin(ctx context.Context, h *render.Renderer, sessions sessions.Store) *RequireAdminHandler {
+	logger := logging.FromContext(ctx)
+
+	return &RequireAdminHandler{
+		h:        h,
+		logger:   logger,
+		sessions: sessions,
+	}
+}
+
+func (h *RequireAdminHandler) Handle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if err := func() error {
+			user := controller.UserFromContext(ctx)
+			if user == nil {
+				return fmt.Errorf("missing user")
+			}
+
+			if !user.Admin {
+				return fmt.Errorf("user is not an admin")
+			}
+
+			return nil
+		}(); err != nil {
+			h.logger.Errorw("RequireAdmin", "error", err)
+
+			if controller.IsJSONContentType(r) {
+				h.h.RenderJSON(w, http.StatusUnauthorized, nil)
+				return
+			}
+
+			flash.FromContext(w, r).Error("Unauthorized")
+			http.Redirect(w, r, "/signout", http.StatusFound)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
