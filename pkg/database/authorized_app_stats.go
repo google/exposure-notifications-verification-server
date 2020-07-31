@@ -25,7 +25,7 @@ import (
 type AuthorizedAppStats struct {
 	gorm.Model
 	Date            time.Time `gorm:"unique_index:idx_date_app_realm"`
-	AuthorizedAppId int64     `gorm:"unique_index:idx_date_app_realm"`
+	AuthorizedAppID int64     `gorm:"unique_index:idx_date_app_realm"`
 	AuthorizedApp   AuthorizedApp
 	RealmID         int64 `gorm:"unique_index:idx_date_app_realm"`
 	Realm           Realm
