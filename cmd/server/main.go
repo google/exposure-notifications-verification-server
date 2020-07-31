@@ -187,7 +187,7 @@ func realMain(ctx context.Context) error {
 		sub.Handle("/create", apikeyController.HandleCreate()).Methods("POST")
 	}
 
-	// userrs
+	// users
 	{
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(requireAuth.Handle)
