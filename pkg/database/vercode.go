@@ -121,30 +121,6 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 	return db.db.Save(vc).Error
 }
 
-func (db *Database) CountVerificationCodesByUser(user uint) (int64, error) {
-	if user <= 0 {
-		return 0, nil
-	}
-
-	var count int64
-	if err := db.db.Preload("User").Model(&VerificationCode{}).Where("issuing_user_id = ?", user).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-func (db *Database) CountVerificationCodesByAuthorizedApp(appID uint) (int64, error) {
-	if appID <= 0 {
-		return 0, nil
-	}
-
-	var count int64
-	if err := db.db.Preload("AuthorizedApp").Model(&VerificationCode{}).Where("issuing_app_id = ?", appID).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
 // DeleteVerificationCode deletes the code if it exists. This is a hard delete.
 func (db *Database) DeleteVerificationCode(code string) error {
 	return db.db.Unscoped().Where("code = ?", code).Delete(&VerificationCode{}).Error

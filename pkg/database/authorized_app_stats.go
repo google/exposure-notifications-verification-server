@@ -113,7 +113,7 @@ func (db *Database) UpdateAuthorizedAppStats(t time.Time) error {
 		}
 
 		for _, app := range apps {
-			codesIssued, err := db.countVerificationCodesByAuthorizedApp(app.ID, roundedTime)
+			codesIssued, err := db.countVerificationCodesByAuthorizedApp(realm.ID, app.ID, roundedTime)
 			if err != nil {
 				return err
 			}
@@ -152,7 +152,7 @@ func (db *Database) UpdateAuthorizedAppStats(t time.Time) error {
 	return nil
 }
 
-func (db *Database) countVerificationCodesByAuthorizedApp(appID uint, t time.Time) (uint64, error) {
+func (db *Database) countVerificationCodesByAuthorizedApp(realmID uint, appID uint, t time.Time) (uint64, error) {
 	if appID <= 0 {
 		return 0, nil
 	}
@@ -160,6 +160,7 @@ func (db *Database) countVerificationCodesByAuthorizedApp(appID uint, t time.Tim
 	// TODO: count operations require a table lock. Can this be done without?
 	var count uint64
 	if err := db.db.Preload("AuthorizedApp").Model(&VerificationCode{}).
+		Where("realm_id = ?", realmID).
 		Where("issuing_app_id = ?", appID).
 		Where("date_trunc('day', date(created_at)) = ?", t).
 		Count(&count).Error; err != nil {
