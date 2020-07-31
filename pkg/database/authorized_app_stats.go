@@ -98,6 +98,7 @@ func (db *Database) GetAuthorizedAppStats(a *AuthorizedApp, r *Realm, t time.Tim
 
 func (db *Database) UpdateAuthorizedAppStats(t time.Time) error {
 	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	fmt.Printf("update authorized apps: %+v", t)
 
 	// For each realm, and each user in the realm, gather and store stats
 	realms, err := db.GetRealms()
@@ -106,10 +107,13 @@ func (db *Database) UpdateAuthorizedAppStats(t time.Time) error {
 	}
 
 	for _, realm := range realms {
-		if err := realm.LoadRealmUsers(db, false); err != nil {
+		apps, err := realm.GetAuthorizedApps(db, false)
+		if err != nil {
 			return err
 		}
-		for _, app := range realm.AuthorizedApps {
+
+		for _, app := range apps {
+			fmt.Printf("iterating authorized apps: %+v", app)
 			codesIssued, err := db.countVerificationCodesByAuthorizedApp(app.ID, roundedTime)
 			if err != nil {
 				return err
