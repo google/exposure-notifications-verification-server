@@ -118,7 +118,7 @@ func (db *Database) UpdateUserStats() error {
 		if err != nil {
 			return err
 		}
-		curDay.AddDate(0, 0, 1)
+		curDay = curDay.AddDate(0, 0, 1)
 	}
 
 }
