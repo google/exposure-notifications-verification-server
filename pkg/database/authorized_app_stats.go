@@ -96,9 +96,35 @@ func (db *Database) GetAuthorizedAppStats(a *AuthorizedApp, r *Realm, t time.Tim
 	return &AuthorizedAppStats, nil
 }
 
-func (db *Database) UpdateAuthorizedAppStats(t time.Time) error {
+func (db *Database) UpdateAuthorizedAppStats() error {
+	var appStats AuthorizedAppStats
+	err := db.db.Preload("AuthorizedApp").Preload("Realm").Order("date DESC").First(&appStats).Error
+
+	if err != nil {
+		return err
+	}
+
+	// Start from last day in authorized app table.
+	curDay := appStats.Date
+	t := time.Now().UTC()
+	now := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+
+	for {
+		if curDay.After(now) {
+			return nil
+		}
+
+		err := db.updateAuthorizedAppStatsDay(curDay)
+		if err != nil {
+			return err
+		}
+		curDay.AddDate(0, 0, 1)
+	}
+
+}
+
+func (db *Database) updateAuthorizedAppStatsDay(t time.Time) error {
 	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
-	fmt.Printf("update authorized apps: %+v", t)
 
 	// For each realm, and each user in the realm, gather and store stats
 	realms, err := db.GetRealms()

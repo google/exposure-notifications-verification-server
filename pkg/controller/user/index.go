@@ -16,7 +16,6 @@ package user
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
@@ -29,7 +28,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		flash := flash.FromContext(w, r)
 
 		// TODO(crwilcox): this should be moved to a cron run.
-		c.db.UpdateUserStats(time.Now().UTC())
+		c.db.UpdateUserStats()
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {

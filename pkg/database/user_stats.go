@@ -96,7 +96,34 @@ func (db *Database) GetUserStats(u *User, r *Realm, t time.Time) (*UserStats, er
 	return &userStats, nil
 }
 
-func (db *Database) UpdateUserStats(t time.Time) error {
+func (db *Database) UpdateUserStats() error {
+	var userStats UserStats
+	err := db.db.Preload("User").Preload("Realm").Order("date DESC").First(&userStats).Error
+
+	if err != nil {
+		return err
+	}
+
+	// Start from last day in authorized app table.
+	curDay := userStats.Date
+	t := time.Now().UTC()
+	now := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+
+	for {
+		if curDay.After(now) {
+			return nil
+		}
+
+		err := db.updateUserStatsDay(curDay)
+		if err != nil {
+			return err
+		}
+		curDay.AddDate(0, 0, 1)
+	}
+
+}
+
+func (db *Database) updateUserStatsDay(t time.Time) error {
 	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 
 	// For each realm, and each user in the realm, gather and store stats
