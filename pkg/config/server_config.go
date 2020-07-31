@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	firebase "firebase.google.com/go"
+	"github.com/opencensus-integrations/redigo/redis"
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -61,6 +62,14 @@ type ServerConfig struct {
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
+
+	// Redis configuration
+	RedisHost         string `env:"REDIS_HOST,default=127.0.0.1"`
+	RedisPort         string `env:"REDIS_PORT,default=6379"`
+	RedisPassword     string `env:"REDIS_PASSWORD"`
+	RedisDatabaseName string `env:"REDIS_DATABASENAME"`
+
+	RedisPool *redis.Pool
 }
 
 // NewServerConfig initializes and validates a ServerConfig struct.
@@ -69,6 +78,24 @@ func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
 	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
 		return nil, err
 	}
+
+	// Setup the Redis cache if necessary.
+	if !config.DevMode {
+		redisPool := &redis.Pool{
+			Dial: func() (redis.Conn, error) {
+				return redis.Dial("tcp", config.RedisDatabaseName, redis.DialPassword(config.RedisPassword))
+			},
+			TestOnBorrow: func(conn redis.Conn, at time.Time) error {
+				if time.Since(at) < 5*time.Minute {
+					return nil
+				}
+				_, err := conn.Do("PING")
+				return err
+			},
+		}
+		config.RedisPool = redisPool
+	}
+
 	// For the, when inserting into the javascript, gets escaped and becomes unusable.
 	config.Firebase.DatabaseURL = strings.ReplaceAll(config.Firebase.DatabaseURL, "https://", "")
 	return &config, nil

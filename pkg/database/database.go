@@ -18,13 +18,16 @@ package database
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/jinzhu/gorm"
 
-	// ensure the postgres dialiect is compiled in.
+	// ensure the postgres dialect is compiled in.
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+
+	"github.com/opencensus-integrations/redigo/redis"
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -38,6 +41,10 @@ type Database struct {
 
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
+
+	// Redis configuration.
+	redisMu   sync.RWMutex
+	redisPool *redis.Pool
 }
 
 // Open created a DB connection through gorm.
@@ -65,6 +72,12 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 		cacher:        cacher,
 		secretManager: secretManager,
 	}, nil
+}
+
+func (db *Database) SetRedisPool(redisPool *redis.Pool) {
+	db.redisMu.Lock()
+	db.redisPool = redisPool
+	db.redisMu.Unlock()
 }
 
 // Close will close the database connection. Should be deferred right after Open.

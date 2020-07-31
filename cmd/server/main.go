@@ -76,6 +76,8 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	db.SetRedisPool(config.RedisPool)
+
 	// Setup firebase
 	app, err := firebase.NewApp(ctx, config.FirebaseConfig())
 	if err != nil {

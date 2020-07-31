@@ -15,11 +15,15 @@
 package database
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/opencensus-integrations/redigo/redis"
 )
 
 // User represents a user of the system
@@ -83,6 +87,10 @@ func (db *Database) ListUsers(includeDeleted bool) ([]*User, error) {
 
 // GetUser reads back a User struct by email address.
 func (db *Database) GetUser(id uint) (*User, error) {
+	if cachedUser, err := db.fetchCachedUserByID(context.Background(), id); err == nil && cachedUser != nil {
+		return cachedUser, nil
+	}
+
 	var user User
 	if err := db.db.Preload("Realms").Preload("AdminRealms").Where("id = ?", id).First(&user).Error; err != nil {
 		return nil, err
@@ -92,6 +100,10 @@ func (db *Database) GetUser(id uint) (*User, error) {
 
 // FindUser reads back a User struct by email address.
 func (db *Database) FindUser(email string) (*User, error) {
+	if cachedUser, err := db.fetchCachedUserByEmail(context.Background(), email); err == nil && cachedUser != nil {
+		return cachedUser, nil
+	}
+
 	var user User
 	if err := db.db.Preload("Realms").Preload("AdminRealms").Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
@@ -132,11 +144,19 @@ func (db *Database) CreateUser(email string, name string, admin bool, disabled b
 		return nil, err
 	}
 
+	// After saving the user, now cache it.
+
 	return user, nil
 }
 
 // SaveUser creates or updates a user record.
-func (db *Database) SaveUser(u *User) error {
+func (db *Database) SaveUser(u *User) (err error) {
+	defer func() {
+		if err == nil {
+			db.cacheUser(context.Background(), u)
+		}
+	}()
+
 	if u.Model.ID == 0 {
 		return db.db.Create(u).Error
 	}
@@ -145,6 +165,9 @@ func (db *Database) SaveUser(u *User) error {
 
 // DeleteUser removes a user record.
 func (db *Database) DeleteUser(u *User) error {
+	// Ensure we remove any vestiges of that User from the cache.
+	defer db.purgeUsersFromCache(context.Background(), u)
+
 	return db.db.Delete(u).Error
 }
 
@@ -156,6 +179,115 @@ func (db *Database) PurgeUsers(maxAge time.Duration) (int64, error) {
 		maxAge = -1 * maxAge
 	}
 	deleteBefore := time.Now().UTC().Add(maxAge)
-	rtn := db.db.Unscoped().Where("disabled = ? and updated_at < ?", true, deleteBefore).Delete(&User{})
+	var recvUsers []*User
+	scope := db.db.Unscoped()
+	whereClause := "disabled = ? and updated_at < ?"
+	if err := scope.Where(whereClause, true, deleteBefore).Find(&recvUsers).Error; err == nil {
+		// Also clear our Redis caches of the respective records.
+		defer db.purgeUsersFromCache(context.Background(), recvUsers...)
+	}
+	rtn := scope.Where(whereClause, true, deleteBefore).Delete(&User{})
 	return rtn.RowsAffected, rtn.Error
+}
+
+// This TTL is set to 1 day so that in the worst case, if a deletion happens but
+// doesn't clear the cache, it'll eventually expire, which ensures eventual "deletion".
+const _CACHE_PURGE_TTL_1DAY = 24 * time.Hour
+
+func (db *Database) cacheUser(ctx context.Context, user *User) error {
+	conn, err := db.getRedisConn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	jsonBlob, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+
+	conn.SendContext(ctx, "MULTI")
+	conn.SendContext(ctx, "SET", _USERS_TABLE_BY_EMAIL, user.Email, jsonBlob)
+	conn.SendContext(ctx, "EXPIRE", _USERS_TABLE_BY_EMAIL, user.Email, _CACHE_PURGE_TTL_1DAY.Seconds())
+	conn.SendContext(ctx, "SET", _USERS_TABLE_BY_ID, user.ID, jsonBlob)
+	conn.SendContext(ctx, "EXPIRE", _USERS_TABLE_BY_ID, user.ID, _CACHE_PURGE_TTL_1DAY.Seconds())
+	// Use a Time to live (TTL) of 1days so that for example if succeeded but clearing it from the
+	// Redis cache failed, the cached information will at least be purged if not used within within 1day.
+	_, err = conn.DoContext(ctx, "EXEC")
+	return err
+}
+
+const (
+	_USERS_TABLE_BY_EMAIL = "USERS_email"
+	_USERS_TABLE_BY_ID    = "USERS_id"
+)
+
+func (db *Database) purgeUsersFromCache(ctx context.Context, users ...*User) error {
+	if len(users) == 0 {
+		return nil
+	}
+
+	conn, err := db.getRedisConn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	conn.SendContext(ctx, "MULTI")
+	for _, user := range users {
+		conn.SendContext(ctx, "DEL", _USERS_TABLE_BY_EMAIL, user.Email)
+		conn.SendContext(ctx, "DEL", _USERS_TABLE_BY_ID, user.ID)
+	}
+	_, err = conn.DoContext(ctx, "EXEC")
+	return err
+}
+
+func (db *Database) fetchCachedUserByID(ctx context.Context, id uint) (*User, error) {
+	return db.fetchCachedUser(ctx, _USERS_TABLE_BY_ID, id)
+}
+
+func (db *Database) fetchCachedUserByEmail(ctx context.Context, email string) (*User, error) {
+	return db.fetchCachedUser(ctx, _USERS_TABLE_BY_EMAIL, email)
+}
+
+func (db *Database) fetchCachedUser(ctx context.Context, tableName string, key interface{}) (*User, error) {
+	conn, err := db.getRedisConn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	jsonBlob, err := redis.Bytes(conn.DoContext(ctx, "GET", tableName, key))
+	if err != nil {
+		return nil, err
+	}
+	if len(jsonBlob) == 0 {
+		return nil, errNoUser
+	}
+	recv := new(User)
+	if err := json.Unmarshal(jsonBlob, recv); err != nil {
+		return nil, err
+	}
+	return recv, nil
+}
+
+var (
+	errRedisDisabled = errors.New("database: redis is disabled")
+	errNoUser        = errors.New("database: no user found in redis cache")
+)
+
+func (db *Database) getRedisConn(ctx context.Context) (redis.ConnWithContext, error) {
+	db.redisMu.RLock()
+	defer db.redisMu.RUnlock()
+
+	redisPool := db.redisPool
+	if redisPool == nil {
+		return nil, errRedisDisabled
+	}
+
+	conn, err := redisPool.Dial()
+	if err != nil {
+		return nil, err
+	}
+	return conn.(redis.ConnWithContext), nil
 }

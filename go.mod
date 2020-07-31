@@ -31,6 +31,7 @@ require (
 	github.com/mikehelmick/go-chaff v0.3.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/prometheus/client_golang v1.7.1 // indirect
 	github.com/prometheus/statsd_exporter v0.17.0 // indirect
