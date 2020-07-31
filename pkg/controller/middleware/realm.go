@@ -19,12 +19,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
 )
 
@@ -33,18 +33,20 @@ var (
 )
 
 type RequireRealmHandler struct {
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	h        *render.Renderer
+	logger   *zap.SugaredLogger
+	sessions sessions.Store
 }
 
 // RequireRealm requires that a user is logged in and that a realm
 // is selectted. This middleware must be run after RequireAuth.
-func RequireRealm(ctx context.Context, h *render.Renderer) *RequireRealmHandler {
+func RequireRealm(ctx context.Context, h *render.Renderer, sessions sessions.Store) *RequireRealmHandler {
 	logger := logging.FromContext(ctx)
 
 	return &RequireRealmHandler{
-		h:      h,
-		logger: logger,
+		h:        h,
+		logger:   logger,
+		sessions: sessions,
 	}
 }
 
@@ -53,24 +55,31 @@ func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 		ctx := r.Context()
 
 		if err := func() error {
-			cookie, err := r.Cookie("realm")
-			if err != nil {
-				return ErrMissingRealm
-			}
-
-			realmID, err := strconv.ParseInt(cookie.Value, 10, 64)
-			if err != nil {
-				return ErrMissingRealm
-			}
-
-			// Get user from the session
+			// Get user from the context
 			user := controller.UserFromContext(ctx)
 			if user == nil {
 				return fmt.Errorf("user is not a database.User")
 			}
 
+			// Get the session
+			session, err := h.sessions.Get(r, "session")
+			if err != nil {
+				return fmt.Errorf("failed to get session: %w", err)
+			}
+
+			// Verify realm is set on session
+			if session.Values == nil || session.Values["realm"] == nil {
+				return ErrMissingRealm
+			}
+
+			// Get active realm ID
+			realmID, ok := session.Values["realm"].(uint)
+			if !ok {
+				return fmt.Errorf("realm is not a uint")
+			}
+
 			// Make sure the user can see this realm.
-			realm := user.GetRealm(uint(realmID))
+			realm := user.GetRealm(realmID)
 			if realm == nil {
 				return fmt.Errorf("not authorized to use realm")
 			}
@@ -81,15 +90,16 @@ func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
 			h.logger.Errorw("RequireRealm", "error", err)
 
 			if errors.Is(err, ErrMissingRealm) {
-				h.logger.Warnf("Unexpected missing realm: %v", err)
-				flash.FromContext(w, r).Error("Select a realm")
-				http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
-			} else {
-				flash.FromContext(w, r).Error("Internal error, you have been logged out.")
-				http.Redirect(w, r, "/signout", http.StatusFound)
+				flash.FromContext(w, r).Error("Select a realm to continue")
+				http.Redirect(w, r, "/realm", http.StatusSeeOther)
+				return
 			}
-		} else {
-			next.ServeHTTP(w, r)
+
+			flash.FromContext(w, r).Error("Internal error, you have been logged out.")
+			http.Redirect(w, r, "/signout", http.StatusFound)
+			return
 		}
+
+		next.ServeHTTP(w, r)
 	})
 }

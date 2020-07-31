@@ -23,12 +23,20 @@ import (
 
 func (c *Controller) HandleSelect() http.Handler {
 	type FormData struct {
-		Realm int `form:"realm,required"`
+		RealmID uint `form:"realm,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
+
+		session, err := c.sessions.Get(r, "session")
+		if err != nil {
+			c.logger.Errorw("failed to get session", "error", err)
+			flash.Error("Internal error, you have been logged out.")
+			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			return
+		}
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
@@ -37,23 +45,31 @@ func (c *Controller) HandleSelect() http.Handler {
 			return
 		}
 
-		realm := controller.RealmFromContext(ctx)
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			flash.Error("Failed to process form: %v", err)
+			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			return
+		}
+
+		realm := user.GetRealm(form.RealmID)
 		if realm == nil {
 			flash.Error("Select a realm to continue.")
 			http.Redirect(w, r, "/realm", http.StatusSeeOther)
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
-			return
-		}
-
 		// Verify that the user has access to the realm.
 		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
+			session.Values["realm"] = realm.ID
+
+			if err := session.Save(r, w); err != nil {
+				c.logger.Errorw("failed to save session", "error", err)
+				flash.Error("Internal error, you have been logged out.")
+				http.Redirect(w, r, "/signout", http.StatusSeeOther)
+				return
+			}
+
 			flash.Alert("Selected realm '%v'", realm.Name)
 			http.Redirect(w, r, "/home", http.StatusSeeOther)
 			return
@@ -61,6 +77,6 @@ func (c *Controller) HandleSelect() http.Handler {
 
 		// Not allowed to see the realm selected.
 		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm", http.StatusSeeOther)
 	})
 }
