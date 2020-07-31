@@ -16,7 +16,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"os"
 	"strconv"
 	"testing"
@@ -144,18 +143,4 @@ func NewTestDatabase(tb testing.TB) *Database {
 
 	db, _ := NewTestDatabaseWithConfig(tb)
 	return db
-}
-
-var ErrSecretNotExist = errors.New("secret does not exist")
-
-// InMemorySecretManager is a secret manager that returns the value at the given
-// key or an error if it does not exist.
-type InMemorySecretManager map[string]string
-
-// GetSecretValue implements secrets.
-func (s InMemorySecretManager) GetSecretValue(_ context.Context, v string) (string, error) {
-	if v, ok := s[v]; ok {
-		return v, nil
-	}
-	return "", ErrSecretNotExist
 }
