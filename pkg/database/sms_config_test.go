@@ -138,6 +138,15 @@ func TestGetSMSProvider(t *testing.T) {
 	ctx := context.Background()
 	db := NewTestDatabase(t)
 
+	// Create a secret manager.
+	sm, err := secrets.NewInMemoryFromMap(ctx, map[string]string{
+		"my-secret-ref": "def456",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.secretManager = sm
+
 	realm, err := db.CreateRealm("test-sms-realm-1")
 	if err != nil {
 		t.Fatalf("realm create failed: %v", err)
