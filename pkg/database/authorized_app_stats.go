@@ -113,7 +113,6 @@ func (db *Database) UpdateAuthorizedAppStats(t time.Time) error {
 		}
 
 		for _, app := range apps {
-			fmt.Printf("iterating authorized apps: %+v", app)
 			codesIssued, err := db.countVerificationCodesByAuthorizedApp(app.ID, roundedTime)
 			if err != nil {
 				return err
