@@ -64,10 +64,9 @@ type ServerConfig struct {
 	RateLimit ratelimit.Config
 
 	// Redis configuration
-	RedisHost         string `env:"REDIS_HOST,default=127.0.0.1"`
-	RedisPort         string `env:"REDIS_PORT,default=6379"`
-	RedisPassword     string `env:"REDIS_PASSWORD"`
-	RedisDatabaseName string `env:"REDIS_DATABASENAME"`
+	RedisHost     string `env:"REDIS_HOST,default=127.0.0.1"`
+	RedisPort     string `env:"REDIS_PORT,default=6379"`
+	RedisPassword string `env:"REDIS_PASSWORD"`
 
 	RedisPool *redis.Pool
 }
@@ -83,7 +82,8 @@ func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
 	if !config.DevMode {
 		redisPool := &redis.Pool{
 			Dial: func() (redis.Conn, error) {
-				return redis.Dial("tcp", config.RedisDatabaseName, redis.DialPassword(config.RedisPassword))
+				hostPort := config.RedisHost + ":" + config.RedisPort
+				return redis.Dial("tcp", hostPort, redis.DialPassword(config.RedisPassword))
 			},
 			TestOnBorrow: func(conn redis.Conn, at time.Time) error {
 				if time.Since(at) < 5*time.Minute {
