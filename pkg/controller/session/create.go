@@ -48,7 +48,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		// Get the session cookie from firebase.
-		ttl := c.config.SessionCookieDuration
+		ttl := c.config.SessionDuration
 		cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
 		if err != nil {
 			flash.Error("Failed to create session: %v", err)

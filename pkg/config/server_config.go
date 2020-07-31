@@ -37,13 +37,16 @@ type ServerConfig struct {
 	Port string `env:"PORT,default=8080"`
 
 	// Login Config
-	SessionCookieDuration time.Duration `env:"SESSION_DURATION,default=24h"`
-	RevokeCheckPeriod     time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
+	SessionDuration   time.Duration `env:"SESSION_DURATION,default=24h"`
+	RevokeCheckPeriod time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
 
 	// CookieKeys is a slice of bytes. The odd values are hash keys to HMAC the
 	// cookies. The even values are block keys to encrypt the cookie. Both keys
 	// should be 64 bytes. The value's should be specified as base64 encoded.
 	CookieKeys Base64ByteSlice `env:"COOKIE_KEYS,required"`
+
+	// CookieDomain is the domain for which cookie should be valid.
+	CookieDomain string `env:"COOKIE_DOMAIN"`
 
 	// CSRFAuthKey is the authentication key. It must be 32-bytes and can be
 	// generated with tools/gen-secret. The value's should be base64 encoded.
@@ -82,7 +85,7 @@ func (c *ServerConfig) Validate() error {
 		Var  time.Duration
 		Name string
 	}{
-		{c.SessionCookieDuration, "SESSION_DUATION"},
+		{c.SessionDuration, "SESSION_DUATION"},
 		{c.RevokeCheckPeriod, "REVOKE_CHECK_DURATION"},
 		{c.CodeDuration, "CODE_DURATION"},
 		{c.AllowedSymptomAge, "ALLOWED_PAST_SYMPTOM_DAYS"},

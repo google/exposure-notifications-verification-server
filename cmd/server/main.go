@@ -73,8 +73,8 @@ func realMain(ctx context.Context) error {
 	// Setup sessions
 	sessions := sessions.NewCookieStore(config.CookieKeys.AsBytes()...)
 	sessions.Options.Path = "/"
-	sessions.Options.Domain = "" // TODO: make configurable
-	sessions.Options.MaxAge = int(config.SessionCookieDuration.Seconds())
+	sessions.Options.Domain = config.CookieDomain
+	sessions.Options.MaxAge = int(config.SessionDuration.Seconds())
 	sessions.Options.Secure = !config.DevMode
 	sessions.Options.SameSite = http.SameSiteStrictMode
 
@@ -135,7 +135,7 @@ func realMain(ctx context.Context) error {
 	r.Use(middleware.FlashHandler)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, auth, db, h, sessions, config.SessionCookieDuration)
+	requireAuth := middleware.RequireAuth(ctx, auth, db, h, sessions, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h, sessions)
 	requireRealm := middleware.RequireRealm(ctx, h, sessions)
 
