@@ -40,7 +40,7 @@ type UserStatsSummary struct {
 	CodesIssued30d uint64
 }
 
-// TableName sets the VerificationCode table name
+// TableName sets the UserStats table name
 func (UserStats) TableName() string {
 	return "user_stats"
 }
@@ -80,7 +80,6 @@ func (db *Database) GetUserStatsSummary(u *User, r *Realm) (*UserStatsSummary, e
 
 	// create 24h, 7d, 30d counts
 	return summary, nil
-
 }
 
 func (db *Database) GetUserStats(u *User, r *Realm, t time.Time) (*UserStats, error) {

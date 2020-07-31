@@ -40,7 +40,7 @@ type AuthorizedAppStatsSummary struct {
 	CodesIssued30d uint64
 }
 
-// TableName sets the VerificationCode table name
+// TableName sets the AuthorizedAppStats table name
 func (AuthorizedAppStats) TableName() string {
 	return "authorized_app_stats"
 }
@@ -80,7 +80,6 @@ func (db *Database) GetAuthorizedAppStatsSummary(a *AuthorizedApp, r *Realm) (*A
 
 	// create 24h, 7d, 30d counts
 	return summary, nil
-
 }
 
 func (db *Database) GetAuthorizedAppStats(a *AuthorizedApp, r *Realm, t time.Time) (*AuthorizedAppStats, error) {
