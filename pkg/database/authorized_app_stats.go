@@ -15,7 +15,6 @@
 package database
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -76,7 +75,6 @@ func (db *Database) GetAuthorizedAppStatsSummary(a *AuthorizedApp, r *Realm) (*A
 
 		}
 	}
-	fmt.Printf("daily stats: %+v \n", dailyStats)
 
 	// create 24h, 7d, 30d counts
 	return summary, nil
@@ -183,14 +181,13 @@ func (db *Database) countVerificationCodesByAuthorizedApp(realmID uint, appID ui
 		return 0, nil
 	}
 
-	// TODO: count operations require a table lock. Can this be done without?
-	var count uint64
-	if err := db.db.Preload("AuthorizedApp").Model(&VerificationCode{}).
+	var rows []*VerificationCode
+	if err := db.db.Model(&VerificationCode{}).
 		Where("realm_id = ?", realmID).
 		Where("issuing_app_id = ?", appID).
 		Where("date_trunc('day', date(created_at)) = ?", t).
-		Count(&count).Error; err != nil {
+		Find(&rows).Error; err != nil {
 		return 0, err
 	}
-	return count, nil
+	return uint64(len(rows)), nil
 }
