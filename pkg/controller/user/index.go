@@ -16,6 +16,7 @@ package user
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
@@ -26,6 +27,9 @@ func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
+
+		// TODO(crwilcox): this should be moved to a cron run.
+		c.db.UpdateUserStats(time.Now().UTC())
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
@@ -49,14 +53,17 @@ func (c *Controller) HandleIndex() http.Handler {
 			admins[au.ID] = true
 		}
 
-		creationCounts := make(map[uint]int64)
+		creationCounts1d := make(map[uint]uint64)
+		creationCounts7d := make(map[uint]uint64)
+		creationCounts30d := make(map[uint]uint64)
 		for _, user := range realm.RealmUsers {
-			count, err := c.db.CountVerificationCodesByUser(user.ID)
+			userStatsSummary, err := c.db.GetUserStatsSummary(user, realm)
 			if err != nil {
-				flash.Error("Error loading user code creation counts: %v", err)
+				flash.ErrorNow("Error loading user stats summary: %v", err)
 			}
-
-			creationCounts[user.ID] = count
+			creationCounts1d[user.ID] = userStatsSummary.CodesIssued1d
+			creationCounts7d[user.ID] = userStatsSummary.CodesIssued7d
+			creationCounts30d[user.ID] = userStatsSummary.CodesIssued30d
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
@@ -64,7 +71,9 @@ func (c *Controller) HandleIndex() http.Handler {
 		m["realm"] = realm
 		m["admins"] = admins
 		m["users"] = realm.RealmUsers
-		m["codesGenerated"] = creationCounts
+		m["codesGenerated1d"] = creationCounts1d
+		m["codesGenerated7d"] = creationCounts7d
+		m["codesGenerated30d"] = creationCounts30d
 		m["flash"] = flash
 		m[csrf.TemplateTag] = csrf.TemplateField(r)
 		c.h.RenderHTML(w, "users", m)

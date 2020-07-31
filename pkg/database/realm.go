@@ -187,6 +187,14 @@ func (db *Database) GetRealm(realmID int64) (*Realm, error) {
 	return &realm, nil
 }
 
+func (db *Database) GetRealms() ([]*Realm, error) {
+	var realms []*Realm
+	if err := db.db.Find(&realms).Error; err != nil {
+		return nil, err
+	}
+	return realms, nil
+}
+
 func (db *Database) SaveRealm(r *Realm) error {
 	if r.Model.ID == 0 {
 		return db.db.Create(r).Error

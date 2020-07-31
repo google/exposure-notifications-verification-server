@@ -49,7 +49,9 @@
 
     {{$csrf := .csrfField}}
     {{$admins := .admins}}
-    {{$codesGenerated := .codesGenerated}}
+    {{$codesGenerated1d := .codesGenerated1d}}
+    {{$codesGenerated7d := .codesGenerated7d}}
+    {{$codesGenerated30d := .codesGenerated30d}}
 
     {{if .users}}
     <div class="table-responsive">
@@ -60,7 +62,9 @@
             <th scope="col">Name</th>
             <th scope="col">Realm Admin</th>
             <th scope="col">Delete?</th>
-            <th scope="col">Codes Generated</th>
+            <th scope="col">Issued (1d)</th>
+            <th scope="col">Issued (7d)</th>
+            <th scope="col">Issued (30d)</th>
           </tr>
         </thead>
         <tbody>
@@ -76,7 +80,13 @@
               </form>
             </td>
             <td scope="row">
-              {{index $codesGenerated .ID}}
+              {{index $codesGenerated1d .ID}}
+            </td>
+            <td scope="row">
+              {{index $codesGenerated7d .ID}}
+            </td>
+            <td scope="row">
+              {{index $codesGenerated30d .ID}}
             </td>
           </tr>
           {{end}}
