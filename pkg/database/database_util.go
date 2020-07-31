@@ -97,7 +97,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		Password: password,
 		SSLMode:  "disable",
 		Secrets: secrets.Config{
-			SecretManagerType: secrets.SecretManagerTypeNoop,
+			SecretManagerType: secrets.SecretManagerTypeInMemory,
 		},
 	}
 

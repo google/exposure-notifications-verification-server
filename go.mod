@@ -3,7 +3,7 @@ module github.com/google/exposure-notifications-verification-server
 go 1.14
 
 require (
-	cloud.google.com/go v0.61.0
+	cloud.google.com/go v0.62.0
 	cloud.google.com/go/firestore v1.2.0 // indirect
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Azure/azure-sdk-for-go v44.2.0+incompatible // indirect
@@ -18,7 +18,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.0.0-20200620013148-b91950f658ec // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/google/exposure-notifications-server v0.0.0-20200730172613-d4d486ddcc90
+	github.com/google/exposure-notifications-server v0.0.0-20200731131313-50e217523863
 	github.com/google/go-cmp v0.5.1
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/handlers v1.4.2
@@ -46,10 +46,10 @@ require (
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
-	golang.org/x/tools v0.0.0-20200730183239-644d416712ac
-	google.golang.org/genproto v0.0.0-20200730144737-007c33dbd381
+	golang.org/x/tools v0.0.0-20200731060945-b5fad4ed8dd6
+	google.golang.org/genproto v0.0.0-20200731012542-8145dea6a485
 	google.golang.org/grpc v1.31.0
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
-	honnef.co/go/tools v0.0.1-2020.1.4
+	honnef.co/go/tools v0.0.1-2020.1.5
 )
