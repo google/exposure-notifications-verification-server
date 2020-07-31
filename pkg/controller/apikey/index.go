@@ -16,6 +16,7 @@ package apikey
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
@@ -27,6 +28,9 @@ func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
+
+		// TODO(crwilcox): this should be moved to a cron run.
+		c.db.UpdateAuthorizedAppStats(time.Now().UTC())
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
@@ -49,20 +53,25 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 
-		creationCounts := make(map[uint]int64)
+		creationCounts1d := make(map[uint]uint64)
+		creationCounts7d := make(map[uint]uint64)
+		creationCounts30d := make(map[uint]uint64)
 		for _, app := range realm.AuthorizedApps {
-			count, err := c.db.CountVerificationCodesByAuthorizedApp(app.ID)
+			appStatsSummary, err := c.db.GetAuthorizedAppStatsSummary(app, realm)
 			if err != nil {
-				flash.Error("Error loading app code creation counts: %v", err)
+				flash.ErrorNow("Error loading app stats summary: %v", err)
 			}
-
-			creationCounts[app.ID] = count
+			creationCounts1d[app.ID] = appStatsSummary.CodesIssued1d
+			creationCounts7d[app.ID] = appStatsSummary.CodesIssued7d
+			creationCounts30d[app.ID] = appStatsSummary.CodesIssued30d
 		}
 
 		m["user"] = user
 		m["realm"] = realm
 		m["apps"] = realm.AuthorizedApps
-		m["codesGenerated"] = creationCounts
+		m["codesGenerated1d"] = creationCounts1d
+		m["codesGenerated7d"] = creationCounts7d
+		m["codesGenerated30d"] = creationCounts30d
 		m["flash"] = flash
 		m["typeAdmin"] = database.APIUserTypeAdmin
 		m["typeDevice"] = database.APIUserTypeDevice

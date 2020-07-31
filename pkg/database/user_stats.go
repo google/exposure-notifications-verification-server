@@ -165,15 +165,3 @@ func (db *Database) countVerificationCodesByUser(user uint, t time.Time) (uint64
 	}
 	return count, nil
 }
-
-// func (db *Database) countVerificationCodesByAuthorizedApp(appID uint) (int64, error) {
-// 	if appID <= 0 {
-// 		return 0, nil
-// 	}
-
-// 	var count int64
-// 	if err := db.db.Preload("AuthorizedApp").Model(&VerificationCode{}).Where("issuing_app_id = ?", appID).Count(&count).Error; err != nil {
-// 		return 0, err
-// 	}
-// 	return count, nil
-// }

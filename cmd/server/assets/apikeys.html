@@ -39,9 +39,11 @@
 
     <h2>All API Keys</h2>
 
-    {{if .apps}}
+    {{$codesGenerated1d = .codesGenerated1d}}
+    {{$codesGenerated7d = .codesGenerated7d}}
+    {{$codesGenerated30d = .codesGenerated30d}}
 
-    {{$codesGenerated = .codesGenerated}}
+    {{if .apps}}
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
         <thead>
@@ -50,7 +52,9 @@
             <th scope="col">API Key</th>
             <th scope="col">Access Type</th>
             <th scope="col">Enabled</th>
-            <th scope="col">Codes Generated</th>
+            <th scope="col">Issued (1d)</th>
+            <th scope="col">Issued (7d)</th>
+            <th scope="col">Issued (30d)</th>
           </tr>
         </thead>
         <tbody>
@@ -68,7 +72,13 @@
               {{else}}<span class="badge badge-pill badge-success">enabled</span>{{end}}
             </td>
             <td scope="row">
-              {{index $codesGenerated .ID}}
+              {{index $codesGenerated1d .ID}}
+            </td>
+            <td scope="row">
+              {{index $codesGenerated7d .ID}}
+            </td>
+            <td scope="row">
+              {{index $codesGenerated30d .ID}}
             </td>
           </tr>
           {{end}}
