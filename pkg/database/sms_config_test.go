@@ -16,9 +16,10 @@ package database
 
 import (
 	"context"
-	"errors"
+	"strings"
 	"testing"
 
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -39,9 +40,12 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 		}
 
 		// Create a secret manager.
-		sm := InMemorySecretManager(map[string]string{
+		sm, err := secrets.NewInMemoryFromMap(ctx, map[string]string{
 			"my-secret-ref": "def456",
 		})
+		if err != nil {
+			t.Fatal(err)
+		}
 		db.secretManager = sm
 
 		realm.SMSConfig = &SMSConfig{
@@ -77,8 +81,8 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 		if err == nil {
 			t.Fatalf("expected error")
 		}
-		if !errors.Is(err, ErrSecretNotExist) {
-			t.Errorf("expected %v to be %v", err, ErrSecretNotExist)
+		if !strings.Contains(err.Error(), "does not exist") {
+			t.Errorf("expected %v to be %v", err, "does not exist")
 		}
 
 		// Delete config.
@@ -133,6 +137,15 @@ func TestGetSMSProvider(t *testing.T) {
 
 	ctx := context.Background()
 	db := NewTestDatabase(t)
+
+	// Create a secret manager.
+	sm, err := secrets.NewInMemoryFromMap(ctx, map[string]string{
+		"my-secret-ref": "def456",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.secretManager = sm
 
 	realm, err := db.CreateRealm("test-sms-realm-1")
 	if err != nil {
