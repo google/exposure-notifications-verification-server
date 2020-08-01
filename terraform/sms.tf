@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "random_id" "csrf-token" {
-  byte_length = 32
-}
+resource "google_secret_manager_secret" "twilio" {
+  for_each = toset([
+    "twilio-auth-token",
+  ])
 
-resource "google_secret_manager_secret" "csrf-token" {
-  secret_id = "csrf-token"
+  secret_id = each.key
 
   replication {
     automatic = true
@@ -26,9 +26,4 @@ resource "google_secret_manager_secret" "csrf-token" {
   depends_on = [
     google_project_service.services["secretmanager.googleapis.com"],
   ]
-}
-
-resource "google_secret_manager_secret_version" "csrf-token-version" {
-  secret      = google_secret_manager_secret.csrf-token.id
-  secret_data = random_id.csrf-token.b64_std
 }

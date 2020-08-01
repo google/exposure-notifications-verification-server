@@ -17,7 +17,6 @@ resource "random_id" "cookie-hmac-key" {
 }
 
 resource "google_secret_manager_secret" "cookie-hmac-key" {
-  provider  = google-beta
   secret_id = "cookie-hmac-key"
 
   replication {
@@ -30,7 +29,6 @@ resource "google_secret_manager_secret" "cookie-hmac-key" {
 }
 
 resource "google_secret_manager_secret_version" "cookie-hmac-key-version" {
-  provider    = google-beta
   secret      = google_secret_manager_secret.cookie-hmac-key.id
   secret_data = random_id.cookie-hmac-key.b64_std
 }
@@ -40,7 +38,6 @@ resource "random_id" "cookie-encryption-key" {
 }
 
 resource "google_secret_manager_secret" "cookie-encryption-key" {
-  provider  = google-beta
   secret_id = "cookie-encryption-key"
 
   replication {
@@ -53,7 +50,6 @@ resource "google_secret_manager_secret" "cookie-encryption-key" {
 }
 
 resource "google_secret_manager_secret_version" "cookie-encryption-key-version" {
-  provider    = google-beta
   secret      = google_secret_manager_secret.cookie-encryption-key.id
   secret_data = random_id.cookie-encryption-key.b64_std
 }

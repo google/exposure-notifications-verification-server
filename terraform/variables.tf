@@ -105,9 +105,9 @@ variable "redis_cache_size" {
 
 terraform {
   required_providers {
-    google      = "~> 3.24"
-    google-beta = "~> 3.24"
+    google      = "~> 3.32"
+    google-beta = "~> 3.32"
     null        = "~> 2.1"
-    random      = "~> 2.2"
+    random      = "~> 2.3"
   }
 }

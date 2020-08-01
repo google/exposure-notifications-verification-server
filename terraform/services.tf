@@ -63,6 +63,6 @@ locals {
   }
 }
 
-output "COOKIE_KEYS" {
-  value = local.session_config
+output "cookie_keys" {
+  value = local.session_config["COOKIE_KEYS"]
 }
