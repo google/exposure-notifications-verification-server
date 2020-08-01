@@ -44,21 +44,23 @@ resource "google_secret_manager_secret_iam_member" "server-db" {
   member    = "serviceAccount:${google_service_account.server.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "server-twilio" {
-  provider = google-beta
-
-  for_each = toset([
-    "twilio-auth-token",
-  ])
-
-  secret_id = google_secret_manager_secret.twilio[each.key].id
+resource "google_secret_manager_secret_iam_member" "server-csrf" {
+  provider  = google-beta
+  secret_id = google_secret_manager_secret.csrf-token.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.server.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "server-csrf" {
+resource "google_secret_manager_secret_iam_member" "server-cookie-hmac-key" {
   provider  = google-beta
-  secret_id = google_secret_manager_secret.csrf-token.id
+  secret_id = google_secret_manager_secret.cookie-hmac-key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.server.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "server-cookie-encryption-key" {
+  provider  = google-beta
+  secret_id = google_secret_manager_secret.cookie-encryption-key.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.server.email}"
 }
@@ -122,6 +124,14 @@ resource "google_cloud_run_service" "server" {
 
         dynamic "env" {
           for_each = local.csrf_config
+          content {
+            name  = env.key
+            value = env.value
+          }
+        }
+
+        dynamic "env" {
+          for_each = local.session_config
           content {
             name  = env.key
             value = env.value
