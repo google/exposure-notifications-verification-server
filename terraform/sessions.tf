@@ -13,7 +13,7 @@
 # limitations under the License.
 
 resource "random_id" "cookie-key-even" {
-  byte_length = 64
+  byte_length = 32
 }
 
 resource "google_secret_manager_secret" "cookie-key-even" {
@@ -36,7 +36,7 @@ resource "google_secret_manager_secret_version" "cookie-key-even-version" {
 }
 
 resource "random_id" "cookie-key-odd" {
-  byte_length = 64
+  byte_length = 32
 }
 
 resource "google_secret_manager_secret" "cookie-key-odd" {

@@ -44,18 +44,6 @@ resource "google_secret_manager_secret_iam_member" "apiserver-db" {
   member    = "serviceAccount:${google_service_account.apiserver.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "apiserver-twilio" {
-  provider = google-beta
-
-  for_each = toset([
-    "twilio-auth-token",
-  ])
-
-  secret_id = google_secret_manager_secret.twilio[each.key].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.apiserver.email}"
-}
-
 resource "google_kms_key_ring_iam_member" "kms-signerverifier" {
   key_ring_id = google_kms_key_ring.verification.self_link
   role        = "roles/cloudkms.signerVerifier"
