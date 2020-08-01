@@ -240,14 +240,15 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 				logger.Info("Join Users to Default Realm")
 				var users []*User
-				if err := tx.Unscoped().Find(&users).Error; err != nil {
+				if err := tx.Find(&users).Error; err != nil {
 					return err
 				}
 				for _, u := range users {
 					logger.Infof("added user: %v to default realm", u.ID)
-					defaultRealm.AddUser(u)
 					if u.Admin {
 						defaultRealm.AddAdminUser(u)
+					} else {
+						defaultRealm.AddUser(u)
 					}
 				}
 
@@ -300,7 +301,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Rollback: func(tx *gorm.DB) error {
 				ddl := []string{
 					"ALTER TABLE sms_configs DROP COLUMN realm_id",
-					"ALTER TABLE tokens DROP COUMN realm_id",
+					"ALTER TABLE tokens DROP COLUMN realm_id",
 					"ALTER TABLE verification_codes DROP COLUMN realm_id",
 					"ALTER TABLE authorized_apps DROP COLUMN realm_id",
 					"DROP TABLE admin_realms",
