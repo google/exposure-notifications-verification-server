@@ -115,6 +115,21 @@ resource "google_cloud_run_service" "adminapi" {
   }
 }
 
+resource "google_cloud_run_domain_mapping" "adminapi" {
+  count    = var.adminapi_custom_domain != "" ? 1 : 0
+  location = var.cloudrun_location
+  name     = var.adminapi_custom_domain
+
+  metadata {
+    namespace = var.project
+  }
+
+  spec {
+    route_name     = google_cloud_run_service.adminapi.name
+    force_override = true
+  }
+}
+
 resource "google_cloud_run_service_iam_member" "adminapi-public" {
   location = google_cloud_run_service.adminapi.location
   project  = google_cloud_run_service.adminapi.project

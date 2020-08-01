@@ -123,6 +123,21 @@ resource "google_cloud_run_service" "apiserver" {
   }
 }
 
+resource "google_cloud_run_domain_mapping" "apiserver" {
+  count    = var.apiserver_custom_domain != "" ? 1 : 0
+  location = var.cloudrun_location
+  name     = var.apiserver_custom_domain
+
+  metadata {
+    namespace = var.project
+  }
+
+  spec {
+    route_name     = google_cloud_run_service.apiserver.name
+    force_override = true
+  }
+}
+
 resource "google_cloud_run_service_iam_member" "apiserver-public" {
   location = google_cloud_run_service.apiserver.location
   project  = google_cloud_run_service.apiserver.project
