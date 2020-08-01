@@ -81,23 +81,6 @@ resource "google_cloud_run_service" "apiserver" {
           }
         }
 
-
-        # dynamic "env" {
-        #   for_each = toset([for k, v in merge(
-        #     local.csrf_config,
-        #     local.database_config,
-        #     local.firebase_config,
-        #     local.gcp_config,
-        #     local.redis_config,
-        #     local.signing_config,
-
-        #     // This MUST come last to allow overrides!
-        #     lookup(var.service_environment, "apiserver", {}),
-        #     ) : {
-        #     name  = k,
-        #     value = v,
-        #   }])
-
         dynamic "env" {
           for_each = merge(
             local.csrf_config,
