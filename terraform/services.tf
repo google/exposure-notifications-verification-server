@@ -22,7 +22,7 @@ locals {
   }
 
   session_config = {
-    COOKIE_KEYS = "secret://${google_secret_manager_secret_version.cookie-key-odd-version.id},secret://${google_secret_manager_secret_version.cookie-key-even-version.id}"
+    COOKIE_KEYS = "secret://${google_secret_manager_secret_version.cookie-encryption-key-version.id},secret://${google_secret_manager_secret_version.cookie-hmac-key-version.id}"
   }
 
   database_config = {

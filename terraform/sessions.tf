@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "random_id" "cookie-key-even" {
+resource "random_id" "cookie-hmac-key" {
   byte_length = 32
 }
 
-resource "google_secret_manager_secret" "cookie-key-even" {
+resource "google_secret_manager_secret" "cookie-hmac-key" {
   provider  = google-beta
-  secret_id = "cookie-key-even"
+  secret_id = "cookie-hmac-key"
 
   replication {
     automatic = true
@@ -29,19 +29,19 @@ resource "google_secret_manager_secret" "cookie-key-even" {
   ]
 }
 
-resource "google_secret_manager_secret_version" "cookie-key-even-version" {
+resource "google_secret_manager_secret_version" "cookie-hmac-key-version" {
   provider    = google-beta
-  secret      = google_secret_manager_secret.cookie-key-even.id
-  secret_data = random_id.cookie-key-even.b64_std
+  secret      = google_secret_manager_secret.cookie-hmac-key.id
+  secret_data = random_id.cookie-hmac-key.b64_std
 }
 
-resource "random_id" "cookie-key-odd" {
+resource "random_id" "cookie-encryption-key" {
   byte_length = 32
 }
 
-resource "google_secret_manager_secret" "cookie-key-odd" {
+resource "google_secret_manager_secret" "cookie-encryption-key" {
   provider  = google-beta
-  secret_id = "cookie-key-odd"
+  secret_id = "cookie-encryption-key"
 
   replication {
     automatic = true
@@ -52,8 +52,8 @@ resource "google_secret_manager_secret" "cookie-key-odd" {
   ]
 }
 
-resource "google_secret_manager_secret_version" "cookie-key-odd-version" {
+resource "google_secret_manager_secret_version" "cookie-encryption-key-version" {
   provider    = google-beta
-  secret      = google_secret_manager_secret.cookie-key-odd.id
-  secret_data = random_id.cookie-key-odd.b64_std
+  secret      = google_secret_manager_secret.cookie-encryption-key.id
+  secret_data = random_id.cookie-encryption-key.b64_std
 }

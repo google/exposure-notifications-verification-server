@@ -51,16 +51,16 @@ resource "google_secret_manager_secret_iam_member" "server-csrf" {
   member    = "serviceAccount:${google_service_account.server.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "server-cookie-key-odd" {
+resource "google_secret_manager_secret_iam_member" "server-cookie-hmac-key" {
   provider  = google-beta
-  secret_id = google_secret_manager_secret.cookie-key-odd.id
+  secret_id = google_secret_manager_secret.cookie-hmac-key.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.server.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "server-cookie-key-even" {
+resource "google_secret_manager_secret_iam_member" "server-cookie-encryption-key" {
   provider  = google-beta
-  secret_id = google_secret_manager_secret.cookie-key-even.id
+  secret_id = google_secret_manager_secret.cookie-encryption-key.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.server.email}"
 }
