@@ -63,6 +63,20 @@ resource "google_secret_manager_secret_iam_member" "server-csrf" {
   member    = "serviceAccount:${google_service_account.server.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "server-cookie-key-odd" {
+  provider  = google-beta
+  secret_id = google_secret_manager_secret.cookie-key-odd.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.server.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "server-cookie-key-even" {
+  provider  = google-beta
+  secret_id = google_secret_manager_secret.cookie-key-even.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.server.email}"
+}
+
 resource "google_project_iam_member" "firebase-admin" {
   project = var.project
   role    = "roles/firebaseauth.admin"
@@ -122,6 +136,14 @@ resource "google_cloud_run_service" "server" {
 
         dynamic "env" {
           for_each = local.csrf_config
+          content {
+            name  = env.key
+            value = env.value
+          }
+        }
+
+        dynamic "env" {
+          for_each = local.session_config
           content {
             name  = env.key
             value = env.value
