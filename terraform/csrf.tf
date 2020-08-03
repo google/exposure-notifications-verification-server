@@ -17,7 +17,6 @@ resource "random_id" "csrf-token" {
 }
 
 resource "google_secret_manager_secret" "csrf-token" {
-  provider  = google-beta
   secret_id = "csrf-token"
 
   replication {
@@ -30,7 +29,6 @@ resource "google_secret_manager_secret" "csrf-token" {
 }
 
 resource "google_secret_manager_secret_version" "csrf-token-version" {
-  provider    = google-beta
   secret      = google_secret_manager_secret.csrf-token.id
   secret_data = random_id.csrf-token.b64_std
 }
