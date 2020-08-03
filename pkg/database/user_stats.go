@@ -24,10 +24,8 @@ import (
 type UserStats struct {
 	gorm.Model
 	Date        time.Time `gorm:"unique_index:idx_date_user_realm"`
-	UserID      int64     `gorm:"unique_index:idx_date_user_realm"`
-	User        User
-	RealmID     int64 `gorm:"unique_index:idx_date_user_realm"`
-	Realm       Realm
+	UserID      uint      `gorm:"unique_index:idx_date_user_realm"`
+	RealmID     uint      `gorm:"unique_index:idx_date_user_realm"`
 	CodesIssued uint64
 }
 
@@ -155,8 +153,8 @@ func (db *Database) updateUserStatsDay(t time.Time) error {
 			}
 
 			us.Date = roundedTime
-			us.Realm = *realm
-			us.User = *user
+			us.RealmID = realm.ID
+			us.UserID = user.ID
 			us.CodesIssued = codesIssued
 
 			if us.Model.ID == 0 {

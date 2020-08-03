@@ -24,10 +24,8 @@ import (
 type AuthorizedAppStats struct {
 	gorm.Model
 	Date            time.Time `gorm:"unique_index:idx_date_app_realm"`
-	AuthorizedAppID int64     `gorm:"unique_index:idx_date_app_realm"`
-	AuthorizedApp   AuthorizedApp
-	RealmID         int64 `gorm:"unique_index:idx_date_app_realm"`
-	Realm           Realm
+	AuthorizedAppID uint      `gorm:"unique_index:idx_date_app_realm"`
+	RealmID         uint      `gorm:"unique_index:idx_date_app_realm"`
 	CodesIssued     uint64
 }
 
@@ -157,8 +155,8 @@ func (db *Database) updateAuthorizedAppStatsDay(t time.Time) error {
 			}
 
 			appStats.Date = roundedTime
-			appStats.Realm = *realm
-			appStats.AuthorizedApp = *app
+			appStats.RealmID = realm.ID
+			appStats.AuthorizedAppID = app.ID
 			appStats.CodesIssued = codesIssued
 
 			if appStats.Model.ID == 0 {
