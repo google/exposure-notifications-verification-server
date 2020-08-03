@@ -144,6 +144,21 @@ resource "google_cloud_run_service" "server" {
   }
 }
 
+resource "google_cloud_run_domain_mapping" "server" {
+  count    = var.server_custom_domain != "" ? 1 : 0
+  location = var.cloudrun_location
+  name     = var.server_custom_domain
+
+  metadata {
+    namespace = var.project
+  }
+
+  spec {
+    route_name     = google_cloud_run_service.server.name
+    force_override = true
+  }
+}
+
 resource "google_cloud_run_service_iam_member" "server-public" {
   location = google_cloud_run_service.server.location
   project  = google_cloud_run_service.server.project
