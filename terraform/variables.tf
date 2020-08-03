@@ -107,21 +107,21 @@ variable "adminapi_custom_domain" {
   type    = string
   default = ""
 
-  description = "Custom domain to map for adminapi. This domain must already be verified by Google. If not provided, no domain mapping is created."
+  description = "Custom domain to map for adminapi. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
 }
 
 variable "apiserver_custom_domain" {
   type    = string
   default = ""
 
-  description = "Custom domain to map for apiserver. This domain must already be verified by Google. If not provided, no domain mapping is created."
+  description = "Custom domain to map for apiserver. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
 }
 
 variable "server_custom_domain" {
   type    = string
   default = ""
 
-  description = "Custom domain to map for server. This domain must already be verified by Google. If not provided, no domain mapping is created."
+  description = "Custom domain to map for server. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
 }
 
 terraform {
