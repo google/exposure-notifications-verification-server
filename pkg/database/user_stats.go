@@ -46,13 +46,13 @@ func (UserStats) TableName() string {
 
 func (db *Database) GetUserStatsSummary(u *User, r *Realm) (*UserStatsSummary, error) {
 	t := time.Now().UTC()
-	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	roundedTime := t.Truncate(24 * time.Hour)
 
 	var summary = &UserStatsSummary{}
 	var dailyStats []*UserStats
 
 	// get the last 30 days of dates and counts for a given user in a realm.
-	if err := db.db.Preload("User").Preload("Realm").
+	if err := db.db.
 		Where("user_id = ?", u.ID).
 		Where("realm_id = ?", r.ID).
 		Where("date BETWEEN ? AND ?", roundedTime.AddDate(0, 0, -30), roundedTime).
@@ -82,9 +82,9 @@ func (db *Database) GetUserStatsSummary(u *User, r *Realm) (*UserStatsSummary, e
 
 func (db *Database) GetUserStats(u *User, r *Realm, t time.Time) (*UserStats, error) {
 	var userStats UserStats
-	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	roundedTime := t.Truncate(24 * time.Hour)
 
-	if err := db.db.Preload("User").Preload("Realm").
+	if err := db.db.
 		Where("user_id = ?", u.ID).
 		Where("realm_id = ?", r.ID).
 		Where("date = ?", roundedTime).
@@ -96,7 +96,7 @@ func (db *Database) GetUserStats(u *User, r *Realm, t time.Time) (*UserStats, er
 
 func (db *Database) UpdateUserStats() error {
 	var userStats UserStats
-	err := db.db.Preload("User").Preload("Realm").Order("date DESC").First(&userStats).Error
+	err := db.db.Order("date DESC").First(&userStats).Error
 
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (db *Database) UpdateUserStats() error {
 }
 
 func (db *Database) updateUserStatsDay(t time.Time) error {
-	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	roundedTime := t.Truncate(24 * time.Hour)
 
 	// For each realm, and each user in the realm, gather and store stats
 	realms, err := db.GetRealms()
@@ -141,7 +141,7 @@ func (db *Database) updateUserStatsDay(t time.Time) error {
 			}
 
 			var us UserStats
-			err = db.db.Preload("User").Preload("Realm").
+			err = db.db.
 				Where("user_id = ?", user.ID).
 				Where("realm_id = ?", realm.ID).
 				Where("date = ?", roundedTime).

@@ -46,13 +46,13 @@ func (AuthorizedAppStats) TableName() string {
 
 func (db *Database) GetAuthorizedAppStatsSummary(a *AuthorizedApp, r *Realm) (*AuthorizedAppStatsSummary, error) {
 	t := time.Now().UTC()
-	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	roundedTime := t.Truncate(24 * time.Hour)
 
 	var summary = &AuthorizedAppStatsSummary{}
 	var dailyStats []*AuthorizedAppStats
 
 	// get the last 30 days of dates and counts for a given user in a realm.
-	if err := db.db.Preload("AuthorizedApp").Preload("Realm").
+	if err := db.db.
 		Where("authorized_app_id = ?", a.ID).
 		Where("realm_id = ?", r.ID).
 		Where("date BETWEEN ? AND ?", roundedTime.AddDate(0, 0, -30), roundedTime).
@@ -82,9 +82,9 @@ func (db *Database) GetAuthorizedAppStatsSummary(a *AuthorizedApp, r *Realm) (*A
 
 func (db *Database) GetAuthorizedAppStats(a *AuthorizedApp, r *Realm, t time.Time) (*AuthorizedAppStats, error) {
 	var AuthorizedAppStats AuthorizedAppStats
-	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	roundedTime := t.Truncate(24 * time.Hour)
 
-	if err := db.db.Preload("AuthorizedApp").Preload("Realm").
+	if err := db.db.
 		Where("authorized_app_id = ?", a.ID).
 		Where("realm_id = ?", r.ID).
 		Where("date = ?", roundedTime).
@@ -96,7 +96,7 @@ func (db *Database) GetAuthorizedAppStats(a *AuthorizedApp, r *Realm, t time.Tim
 
 func (db *Database) UpdateAuthorizedAppStats() error {
 	var appStats AuthorizedAppStats
-	err := db.db.Preload("AuthorizedApp").Preload("Realm").Order("date DESC").First(&appStats).Error
+	err := db.db.Order("date DESC").First(&appStats).Error
 
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (db *Database) UpdateAuthorizedAppStats() error {
 }
 
 func (db *Database) updateAuthorizedAppStatsDay(t time.Time) error {
-	roundedTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	roundedTime := t.Truncate(24 * time.Hour)
 
 	// For each realm, and each user in the realm, gather and store stats
 	realms, err := db.GetRealms()
@@ -143,7 +143,7 @@ func (db *Database) updateAuthorizedAppStatsDay(t time.Time) error {
 			}
 
 			var appStats AuthorizedAppStats
-			err = db.db.Preload("AuthorizedApp").Preload("Realm").
+			err = db.db.
 				Where("authorized_app_id = ?", app.ID).
 				Where("realm_id = ?", realm.ID).
 				Where("date = ?", roundedTime).
