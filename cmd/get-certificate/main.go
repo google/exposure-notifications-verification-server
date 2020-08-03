@@ -18,11 +18,9 @@ package main
 import (
 	"flag"
 	"log"
-	"net/http"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
+	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 )
 
 func main() {
@@ -33,23 +31,9 @@ func main() {
 	timeoutFlag := flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	flag.Parse()
 
-	// Make the request.
-	url := *addrFlag + "/api/certificate"
-	request := api.VerificationCertificateRequest{
-		VerificationToken: *tokenFlag,
-		ExposureKeyHMAC:   *hmacFlag,
-	}
-	client := &http.Client{
-		Timeout: *timeoutFlag,
-	}
-	log.Printf("Sending: %+v", request)
-
-	var response api.VerificationCertificateResponse
-
-	headers := http.Header{}
-	headers.Add("X-API-Key", *apikeyFlag)
-
-	if err := jsonclient.MakeRequest(client, url, headers, request, &response); err != nil {
+	request, response, err := clients.GetCertificate(*addrFlag, *apikeyFlag, *tokenFlag, *hmacFlag, *timeoutFlag)
+	if err != nil {
+		log.Printf("Send request: %+v", request)
 		log.Fatalf("error making API call: %v", err)
 	}
 	log.Printf("Result: \n%+v", response)
