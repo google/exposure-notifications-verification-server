@@ -77,7 +77,7 @@ func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 	var config Config
 	if err := envconfig.ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
-		return fmt.Errorf("Unable to process environment: %w", err)
+		return fmt.Errorf("unable to process environment: %w", err)
 	}
 
 	doRevision := flag.Bool("revise", false, "--revise means to do a likely diagnosis and then revise to confirmed. one new key is added in between.")
@@ -112,9 +112,9 @@ func realMain(ctx context.Context) error {
 		log.Printf("Issuing verification code")
 		codeRequest, code, err := clients.IssueCode(config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, reportType, symptomDate, timeout)
 		if err != nil {
-			return fmt.Errorf("Error issuing verification code: %w", err)
+			return fmt.Errorf("error issuing verification code: %w", err)
 		} else if code.Error != "" {
-			return fmt.Errorf("API Error: %+v", code)
+			return fmt.Errorf("issue API Error: %+v", code)
 		}
 		if *verbose {
 			logger.Infof("Code Request: %+v", codeRequest)
@@ -125,9 +125,9 @@ func realMain(ctx context.Context) error {
 		log.Printf("Verifying code and getting token")
 		tokenRequest, token, err := clients.GetToken(config.VerificationAPIServer, config.VerificationAPIServerKey, code.VerificationCode, timeout)
 		if err != nil {
-			return fmt.Errorf("Error verifying code: %w", err)
+			return fmt.Errorf("error verifying code: %w", err)
 		} else if token.Error != "" {
-			return fmt.Errorf("API Error %+v", token)
+			return fmt.Errorf("verification API Error %+v", token)
 		}
 		if *verbose {
 			logger.Infof("Token Request: %+v", tokenRequest)
@@ -139,14 +139,14 @@ func realMain(ctx context.Context) error {
 		hmacSecret := make([]byte, 32)
 		hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
 		if err != nil {
-			return fmt.Errorf("Error calculating tek HMAC: %w", err)
+			return fmt.Errorf("error calculating tek HMAC: %w", err)
 		}
 		hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
 		certRequest, certificate, err := clients.GetCertificate(config.VerificationAPIServer, config.VerificationAPIServerKey, token.VerificationToken, hmacB64, timeout)
 		if err != nil {
-			return fmt.Errorf("Error getting verification certificate: %w", err)
+			return fmt.Errorf("error getting verification certificate: %w", err)
 		} else if certificate.Error != "" {
-			return fmt.Errorf("API Error: %+v", certificate)
+			return fmt.Errorf("certificate API Error: %+v", certificate)
 		}
 		if *verbose {
 			logger.Infof("Certificate Request: %+v", certRequest)
@@ -173,9 +173,9 @@ func realMain(ctx context.Context) error {
 			logger.Infof("Publish request: %+v", publish)
 		}
 		if err := jsonclient.MakeRequest(client, config.KeyServer, http.Header{}, &publish, &response); err != nil {
-			return fmt.Errorf("Error publishing teks: %w", err)
+			return fmt.Errorf("error publishing teks: %w", err)
 		} else if response.Error != "" {
-			return fmt.Errorf("Publish API error: %+v", response)
+			return fmt.Errorf("publish API error: %+v", response)
 		}
 		logger.Infof("Inserted %v exposures", response.InsertedExposures)
 		if *verbose {
