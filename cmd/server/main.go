@@ -230,7 +230,6 @@ func userEmailKeyFunc() httplimit.KeyFunc {
 			return fmt.Sprintf("%x", dig), nil
 		}
 
-		// If no API key was provided, default to limiting by IP.
 		return ipKeyFunc(r)
 	}
 }
