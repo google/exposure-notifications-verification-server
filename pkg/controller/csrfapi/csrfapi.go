@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package csrf contains utilities for issuing AJAX csrf tokens and
-// handling errors on validation.
-package csrf
+// Package csrfapi contains utilities for issuing AJAX csrf tokens and handling
+// errors on validation.
+package csrfapi
 
 import (
 	"context"

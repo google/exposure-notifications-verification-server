@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/csrfapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -167,6 +168,7 @@ func realMain(ctx context.Context) error {
 
 		// API for obtaining a CSRF token before calling /issue
 		// Installed in this context, it requires authentication.
+		csrfController := csrfapi.New(ctx, h)
 		sub.Handle("/csrf", csrfController.HandleIssue()).Methods("GET")
 	}
 
