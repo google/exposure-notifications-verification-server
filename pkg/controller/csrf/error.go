@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 // HandleError is an http.HandlerFunc that can be installed inthe gorilla csrf
@@ -29,12 +28,20 @@ import (
 // requests and a signout redirect to other requests.
 func (c *Controller) HandleError() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		if controller.IsJSONContentType(r) {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid csrf token"))
 			return
 		}
 
-		flash := flash.FromContext(w, r)
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
+		flash := controller.Flash(session)
 		flash.Error("CSRF token validation error, you have been signed out.")
 		http.Redirect(w, r, "/signout", http.StatusFound)
 	})

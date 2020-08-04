@@ -19,7 +19,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -29,15 +28,13 @@ func (c *Controller) HandleCreate() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
 
-		// Get the session
-		session, err := c.sessions.Get(r, "session")
-		if err != nil {
-			c.logger.Errorw("failed to get session", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
 
 		// Parse and decode form.
 		var form FormData
@@ -57,14 +54,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		// Set the firebase cookie value in our session.
-		session.Values["firebaseCookie"] = cookie
-
-		// Save the session
-		if err := session.Save(r, w); err != nil {
-			c.logger.Errorw("failed to save session", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
-			return
-		}
+		controller.StoreSessionFirebaseCookie(session, cookie)
 
 		c.h.RenderJSON(w, http.StatusOK, nil)
 	})

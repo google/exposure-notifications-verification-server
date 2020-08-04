@@ -16,29 +16,24 @@ package realm
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
 
-		session, err := c.sessions.Get(r, "session")
-		if err != nil {
-			c.logger.Errorw("failed to get session", "error", err)
-			flash.Error("Internal error, you have been logged out.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
-			flash.Error("Internal error, you have been logged out.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			controller.MissingUser(w, r, c.h)
 			return
 		}
 
@@ -51,35 +46,17 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		// If the user is only a member of one realm, set that and bypass selection.
 		if len(userRealms) == 1 {
-			session.Values["realm"] = userRealms[0].ID
+			realm := userRealms[0]
 
-			if err := session.Save(r, w); err != nil {
-				c.logger.Errorw("failed to save session", "error", err)
-				flash.Error("Internal error, you have been logged out.")
-				http.Redirect(w, r, "/signout", http.StatusSeeOther)
-				return
-			}
-
-			flash.Alert("Logged into verification system for '%v", userRealms[0].Name)
+			controller.StoreSessionRealm(session, realm)
+			flash.Alert("Logged into verification system for '%v", realm.Name)
 			http.Redirect(w, r, "/home", http.StatusFound)
 			return
 		}
 
-		// Process the realm cookie if one is present, this will highlight the currently selected realm.
-		var previousRealmID int64
-		cookie, err := r.Cookie("realm")
-		if err == nil {
-			realmID, err := strconv.ParseInt(cookie.Value, 10, 64)
-			if err == nil {
-				previousRealmID = realmID
-			}
-		}
-
 		// User must select their realm.
 		m := controller.TemplateMapFromContext(ctx)
-		m["user"] = user
 		m["realms"] = userRealms
-		m["selectedRealmID"] = previousRealmID
 		c.h.RenderHTML(w, "select-realm", m)
 	})
 }

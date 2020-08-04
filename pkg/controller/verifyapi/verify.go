@@ -66,11 +66,9 @@ func (c *Controller) HandleVerify() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// APIKey should be verified by middleware.
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
-			c.logger.Errorf("failed to find authorized app in context")
-			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
+			controller.MissingAuthorizedApp(w, r, c.h)
 			return
 		}
 

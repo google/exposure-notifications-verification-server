@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleSelect() http.Handler {
@@ -28,20 +27,17 @@ func (c *Controller) HandleSelect() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
 
-		session, err := c.sessions.Get(r, "session")
-		if err != nil {
-			c.logger.Errorw("failed to get session", "error", err)
-			flash.Error("Internal error, you have been logged out.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
-			flash.Error("Unauthorized.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			controller.MissingUser(w, r, c.h)
 			return
 		}
 
@@ -61,16 +57,8 @@ func (c *Controller) HandleSelect() http.Handler {
 
 		// Verify that the user has access to the realm.
 		if user.CanViewRealm(realm.ID) {
-			session.Values["realm"] = realm.ID
-
-			if err := session.Save(r, w); err != nil {
-				c.logger.Errorw("failed to save session", "error", err)
-				flash.Error("Internal error, you have been logged out.")
-				http.Redirect(w, r, "/signout", http.StatusSeeOther)
-				return
-			}
-
-			flash.Alert("Selected realm '%v'", realm.Name)
+			controller.StoreSessionRealm(session, realm)
+			flash.Alert("Successfully selected realm %v", realm.Name)
 			http.Redirect(w, r, "/home", http.StatusSeeOther)
 			return
 		}

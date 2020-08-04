@@ -153,19 +153,14 @@ func (c *Controller) HandleIssue() http.Handler {
 func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User, error) {
 	ctx := r.Context()
 
-	// Attempt to find the authorized app.
 	authorizedApp := controller.AuthorizedAppFromContext(ctx)
-	if authorizedApp != nil {
-		return authorizedApp, nil, nil
-	}
-
-	// Attempt to get user.
 	user := controller.UserFromContext(ctx)
-	if user != nil {
-		return nil, user, nil
+
+	if authorizedApp == nil && user == nil {
+		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
 	}
 
-	return nil, nil, fmt.Errorf("unable to identify authorized requestor")
+	return authorizedApp, user, nil
 }
 
 const smsTemplate = `Your exposure notifications verification code is %s. ` +
