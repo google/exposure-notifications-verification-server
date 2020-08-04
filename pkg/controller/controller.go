@@ -46,6 +46,7 @@ func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, e
 	logger.Errorw("internal error", "error", err)
 
 	accept := strings.Split(r.Header.Get("Accept"), ",")
+	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
@@ -60,6 +61,7 @@ func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, e
 // Unauthorized returns an error indicating the request was unauthorized.
 func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
+	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
@@ -77,6 +79,7 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 // selection, but one was not present.
 func MissingRealm(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
+	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
