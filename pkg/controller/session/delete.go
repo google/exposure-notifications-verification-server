@@ -50,7 +50,6 @@ func (c *Controller) HandleDelete() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		m["flash"] = flash
 		c.h.RenderHTML(w, "signout", m)
 	})
 }

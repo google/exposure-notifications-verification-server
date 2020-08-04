@@ -53,7 +53,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		m["realm"] = realm
 		m["admins"] = admins
 		m["users"] = realm.RealmUsers
-		m["flash"] = flash
 		c.h.RenderHTML(w, "users", m)
 	})
 }

@@ -43,7 +43,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		m["user"] = user
 		m["realm"] = realm
-		m["flash"] = flash
 		c.h.RenderHTML(w, "realm", m)
 	})
 }

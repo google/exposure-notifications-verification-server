@@ -50,7 +50,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		m["user"] = user
 		m["realm"] = realm
 		m["apps"] = realm.AuthorizedApps
-		m["flash"] = flash
 		m["typeAdmin"] = database.APIUserTypeAdmin
 		m["typeDevice"] = database.APIUserTypeDevice
 		c.h.RenderHTML(w, "apikeys", m)

@@ -77,7 +77,6 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		// User must select their realm.
 		m := controller.TemplateMapFromContext(ctx)
-		m["flash"] = flash
 		m["user"] = user
 		m["realms"] = userRealms
 		m["selectedRealmID"] = previousRealmID
