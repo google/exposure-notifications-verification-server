@@ -54,8 +54,8 @@ func AuthorizedAppFromContext(ctx context.Context) *database.AuthorizedApp {
 }
 
 // WithRealm stores the current realm on the context.
-func WithRealm(ctx context.Context, app *database.Realm) context.Context {
-	return context.WithValue(ctx, contextKeyRealm, app)
+func WithRealm(ctx context.Context, r *database.Realm) context.Context {
+	return context.WithValue(ctx, contextKeyRealm, r)
 }
 
 // RealmFromContext retrieves the realm from the context. If no
@@ -120,8 +120,8 @@ func TemplateMapFromContext(ctx context.Context) TemplateMap {
 }
 
 // WithUser stores the current user on the context.
-func WithUser(ctx context.Context, app *database.User) context.Context {
-	return context.WithValue(ctx, contextKeyUser, app)
+func WithUser(ctx context.Context, u *database.User) context.Context {
+	return context.WithValue(ctx, contextKeyUser, u)
 }
 
 // UserFromContext retrieves the user from the context. If no value exists, it
