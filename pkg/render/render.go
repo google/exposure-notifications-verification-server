@@ -19,8 +19,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"sync"
-	"text/template"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"go.uber.org/zap"
