@@ -20,7 +20,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/gorilla/csrf"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -54,7 +53,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		m["flash"] = flash
 		m["typeAdmin"] = database.APIUserTypeAdmin
 		m["typeDevice"] = database.APIUserTypeDevice
-		m[csrf.TemplateTag] = csrf.TemplateField(r)
 		c.h.RenderHTML(w, "apikeys", m)
 	})
 }
