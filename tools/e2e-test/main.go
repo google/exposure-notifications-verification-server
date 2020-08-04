@@ -23,7 +23,6 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -109,8 +108,8 @@ func realMain(ctx context.Context) error {
 
 	for i := 0; i < iterations; i++ {
 		// Issue the verification code.
-		log.Printf("Issuing verification code")
-		codeRequest, code, err := clients.IssueCode(config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, reportType, symptomDate, timeout)
+		logger.Infof("Issuing verification code")
+		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, reportType, symptomDate, timeout)
 		if err != nil {
 			return fmt.Errorf("error issuing verification code: %w", err)
 		} else if code.Error != "" {
@@ -122,8 +121,8 @@ func realMain(ctx context.Context) error {
 		}
 
 		// Get the verification token
-		log.Printf("Verifying code and getting token")
-		tokenRequest, token, err := clients.GetToken(config.VerificationAPIServer, config.VerificationAPIServerKey, code.VerificationCode, timeout)
+		logger.Infof("Verifying code and getting token")
+		tokenRequest, token, err := clients.GetToken(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, code.VerificationCode, timeout)
 		if err != nil {
 			return fmt.Errorf("error verifying code: %w", err)
 		} else if token.Error != "" {
@@ -142,7 +141,7 @@ func realMain(ctx context.Context) error {
 			return fmt.Errorf("error calculating tek HMAC: %w", err)
 		}
 		hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
-		certRequest, certificate, err := clients.GetCertificate(config.VerificationAPIServer, config.VerificationAPIServerKey, token.VerificationToken, hmacB64, timeout)
+		certRequest, certificate, err := clients.GetCertificate(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, token.VerificationToken, hmacB64, timeout)
 		if err != nil {
 			return fmt.Errorf("error getting verification certificate: %w", err)
 		} else if certificate.Error != "" {
@@ -172,7 +171,7 @@ func realMain(ctx context.Context) error {
 		if *verbose {
 			logger.Infof("Publish request: %+v", publish)
 		}
-		if err := jsonclient.MakeRequest(client, config.KeyServer, http.Header{}, &publish, &response); err != nil {
+		if err := jsonclient.MakeRequest(ctx, client, config.KeyServer, http.Header{}, &publish, &response); err != nil {
 			return fmt.Errorf("error publishing teks: %w", err)
 		} else if response.Error != "" {
 			return fmt.Errorf("publish API error: %+v", response)
