@@ -17,13 +17,18 @@ package jsonclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 )
 
 // MakeRequest uses an HTTP client to send and receive JSON based on interface{}.
-func MakeRequest(client *http.Client, url string, headers http.Header, input interface{}, output interface{}) error {
+func MakeRequest(ctx context.Context, client *http.Client, url string, headers http.Header, input interface{}, output interface{}) error {
+	logger := logging.FromContext(ctx)
 	data, err := json.Marshal(input)
 	if err != nil {
 		return err
@@ -31,15 +36,15 @@ func MakeRequest(client *http.Client, url string, headers http.Header, input int
 
 	buffer := bytes.NewBuffer(data)
 
-	req, err := http.NewRequest("POST", url, buffer)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buffer)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating request: %w", err)
 	}
 	req.Header = headers
 	req.Header.Add("content-type", "application/json")
 	r, err := client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("sending request: %w", err)
 	}
 	defer r.Body.Close()
 
@@ -48,5 +53,9 @@ func MakeRequest(client *http.Client, url string, headers http.Header, input int
 		return err
 	}
 
-	return json.Unmarshal(body, output)
+	if err := json.Unmarshal(body, output); err != nil {
+		logger.Debugf("could not unmarshal %q", body)
+		return fmt.Errorf("unmarshal json: %w", err)
+	}
+	return nil
 }

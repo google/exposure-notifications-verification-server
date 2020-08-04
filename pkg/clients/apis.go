@@ -16,6 +16,7 @@
 package clients
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -25,7 +26,7 @@ import (
 
 // IssueCode uses the ADMIN API to issue a verification code.
 // Currently does not accept the SMS param.
-func IssueCode(hostname string, apiKey, reportType, symptomDate string, timeout time.Duration) (*api.IssueCodeRequest, *api.IssueCodeResponse, error) {
+func IssueCode(ctx context.Context, hostname string, apiKey, reportType, symptomDate string, timeout time.Duration) (*api.IssueCodeRequest, *api.IssueCodeResponse, error) {
 	url := hostname + "/api/issue"
 	request := api.IssueCodeRequest{
 		TestType:    reportType,
@@ -40,14 +41,14 @@ func IssueCode(hostname string, apiKey, reportType, symptomDate string, timeout 
 	headers := http.Header{}
 	headers.Add("X-API-Key", apiKey)
 
-	if err := jsonclient.MakeRequest(client, url, headers, request, &response); err != nil {
+	if err := jsonclient.MakeRequest(ctx, client, url, headers, request, &response); err != nil {
 		return &request, nil, err
 	}
 	return &request, &response, nil
 }
 
 // GetToken makes the API call to exchang a code for a token.
-func GetToken(hostname, apikey, code string, timeout time.Duration) (*api.VerifyCodeRequest, *api.VerifyCodeResponse, error) {
+func GetToken(ctx context.Context, hostname, apikey, code string, timeout time.Duration) (*api.VerifyCodeRequest, *api.VerifyCodeResponse, error) {
 	url := hostname + "/api/verify"
 	request := api.VerifyCodeRequest{
 		VerificationCode: code,
@@ -61,14 +62,14 @@ func GetToken(hostname, apikey, code string, timeout time.Duration) (*api.Verify
 	headers := http.Header{}
 	headers.Add("X-API-Key", apikey)
 
-	if err := jsonclient.MakeRequest(client, url, headers, request, &response); err != nil {
+	if err := jsonclient.MakeRequest(ctx, client, url, headers, request, &response); err != nil {
 		return &request, nil, err
 	}
 	return &request, &response, nil
 }
 
 // GetCertificate exchanges a verification token + HMAC for a verification certificate.
-func GetCertificate(hostname, apikey, token, hmac string, timeout time.Duration) (*api.VerificationCertificateRequest, *api.VerificationCertificateResponse, error) {
+func GetCertificate(ctx context.Context, hostname, apikey, token, hmac string, timeout time.Duration) (*api.VerificationCertificateRequest, *api.VerificationCertificateResponse, error) {
 	url := hostname + "/api/certificate"
 	request := api.VerificationCertificateRequest{
 		VerificationToken: token,
@@ -83,7 +84,7 @@ func GetCertificate(hostname, apikey, token, hmac string, timeout time.Duration)
 	headers := http.Header{}
 	headers.Add("X-API-Key", apikey)
 
-	if err := jsonclient.MakeRequest(client, url, headers, request, &response); err != nil {
+	if err := jsonclient.MakeRequest(ctx, client, url, headers, request, &response); err != nil {
 		return &request, nil, err
 	}
 	return &request, &response, nil
