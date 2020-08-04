@@ -58,7 +58,7 @@ func (c *Controller) HandleSelect() http.Handler {
 		// Verify that the user has access to the realm.
 		if user.CanViewRealm(realm.ID) {
 			controller.StoreSessionRealm(session, realm)
-			flash.Alert("Successfully selected realm %v", realm.Name)
+			flash.Alert("Successfully selected realm '%s'", realm.Name)
 			http.Redirect(w, r, "/home", http.StatusSeeOther)
 			return
 		}

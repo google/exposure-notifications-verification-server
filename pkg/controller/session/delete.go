@@ -30,9 +30,6 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		flash := controller.Flash(session)
-		flash.Alert("You have been logged out.")
-
 		// Set MaxAge to -1 to expire the session.
 		session.Options.MaxAge = -1
 
