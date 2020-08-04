@@ -84,6 +84,24 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 	}
 }
 
+// JSON500 renders the given error as JSON. In production mode, this always
+// renders a generic "server error" message. In debug, it returns the actual
+// error from the caller.
+func (r *Renderer) JSON500(w http.ResponseWriter, err error) {
+	code := http.StatusInternalServerError
+
+	if r.debug {
+		r.RenderJSON(w, code, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	r.RenderJSON(w, code, map[string]string{
+		"error": http.StatusText(code),
+	})
+}
+
 // escapeJSON does primitive JSON escaping.
 func escapeJSON(s string) string {
 	return strings.Replace(s, `"`, `\"`, -1)
