@@ -28,7 +28,6 @@ type User struct {
 	Email           string `gorm:"type:varchar(250);unique_index"`
 	Name            string `gorm:"type:varchar(100)"`
 	Admin           bool   `gorm:"default:false"`
-	Disabled        bool
 	LastRevokeCheck time.Time
 	Realms          []*Realm `gorm:"many2many:user_realms;PRELOAD:true"`
 	AdminRealms     []*Realm `gorm:"many2many:admin_realms;PRELOAD:true"`
@@ -100,7 +99,7 @@ func (db *Database) FindUser(email string) (*User, error) {
 }
 
 // CreateUser creates a user record.
-func (db *Database) CreateUser(email string, name string, admin bool, disabled bool) (*User, error) {
+func (db *Database) CreateUser(email string, name string, admin bool) (*User, error) {
 	if email == "" {
 		return nil, fmt.Errorf("email cannot be empty")
 	}
@@ -126,7 +125,6 @@ func (db *Database) CreateUser(email string, name string, admin bool, disabled b
 	user.Email = email
 	user.Name = name
 	user.Admin = admin
-	user.Disabled = disabled
 
 	if err := db.SaveUser(user); err != nil {
 		return nil, err
@@ -146,16 +144,4 @@ func (db *Database) SaveUser(u *User) error {
 // DeleteUser removes a user record.
 func (db *Database) DeleteUser(u *User) error {
 	return db.db.Delete(u).Error
-}
-
-// PurgeUsers will remove users records that are disabled and haven't been updated
-// within the provided duration.
-// This is a hard delete, not a soft delete.
-func (db *Database) PurgeUsers(maxAge time.Duration) (int64, error) {
-	if maxAge > 0 {
-		maxAge = -1 * maxAge
-	}
-	deleteBefore := time.Now().UTC().Add(maxAge)
-	rtn := db.db.Unscoped().Where("disabled = ? and updated_at < ?", true, deleteBefore).Delete(&User{})
-	return rtn.RowsAffected, rtn.Error
 }

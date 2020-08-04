@@ -37,7 +37,6 @@ type CleanupConfig struct {
 
 	// Cleanup config
 	CleanupPeriod           time.Duration `env:"CLEANUP_PERIOD,default=15m"`
-	DisabledUserMaxAge      time.Duration `env:"DIABLED_USER_MAX_AGE,default=336h"`
 	VerificationCodeMaxAge  time.Duration `env:"VERIFICATION_CODE_MAX_AGE,default=24h"`
 	VerificationTokenMaxAge time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE,default=24h"`
 }
@@ -59,7 +58,6 @@ func (c *CleanupConfig) Validate() error {
 	}{
 		{c.VerificationCodeMaxAge, "VERIFICATION_TOKEN_DURATION"},
 		{c.CleanupPeriod, "CLEANUP_PERIOD"},
-		{c.DisabledUserMaxAge, "DISABLED_USER_MAX_AGE"},
 		{c.VerificationCodeMaxAge, "VERIFICATION_CODE_MAX_AGE"},
 		{c.VerificationTokenMaxAge, "VERIFICATION_TOKEN_MAX_AGE"},
 	}

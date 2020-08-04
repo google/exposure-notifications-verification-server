@@ -342,6 +342,17 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00014-DropUserDisabled",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: dropping user disabled column")
+				return tx.Model(&User{}).DropColumn("disabled").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sql := "ALTER TABLE users ADD COLUMN disabled bool NOT NULL DEFAULT true"
+				return tx.Exec(sql).Error
+			},
+		},
 	})
 }
 

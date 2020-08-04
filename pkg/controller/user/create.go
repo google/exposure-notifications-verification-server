@@ -22,10 +22,9 @@ import (
 
 func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Email    string `form:"email,required"`
-		Name     string `form:"name,required"`
-		Admin    bool   `form:"admin"`
-		Disabled bool   `form:"disabled"`
+		Email string `form:"email,required"`
+		Name  string `form:"name,required"`
+		Admin bool   `form:"admin"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +62,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		newUser, err := c.db.FindUser(form.Email)
 		if err != nil {
 			// User doesn't exist, create.
-			newUser, err = c.db.CreateUser(form.Email, form.Name, false, false)
+			newUser, err = c.db.CreateUser(form.Email, form.Name, false)
 			if err != nil {
 				flash.Error("Failed to create user: %v", err)
 				http.Redirect(w, r, "/users", http.StatusSeeOther)

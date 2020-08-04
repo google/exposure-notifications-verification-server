@@ -98,8 +98,8 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 				return
 			}
 
-			if user == nil || user.Disabled {
-				logger.Debugw("user does not exist or is not enabled")
+			if user == nil {
+				logger.Debugw("user does not exist")
 				controller.Unauthorized(w, r, h)
 				return
 			}
