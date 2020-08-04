@@ -36,7 +36,7 @@ func init() {
 }
 
 // Flash is a collection of data that is discarded on read. It's designed to be
-// compatiable with sessions.Values.
+// compatible with sessions.Values.
 type Flash struct {
 	values map[interface{}]interface{}
 }
