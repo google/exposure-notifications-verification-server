@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	realmID    = flag.Int64("realm", -1, "realm ID for which to add config")
+	realmID    = flag.Uint("realm", 0, "realm ID for which to add config")
 	accountSid = flag.String("twilio-account-sid", "", "account sid")
 	authToken  = flag.String("twilio-auth-token", "", "auth token, will be stored in secret manager")
 

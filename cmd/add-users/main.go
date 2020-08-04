@@ -31,8 +31,8 @@ func main() {
 	nameFlag := flag.String("name", "", "name of the user to add")
 	adminFlag := flag.Bool("admin", false, "true if user is admin user")
 	disabledFlag := flag.Bool("disabled", false, "true if user should be disabled")
-	realmID := flag.Int64("realm", -1, "realm to add the user to")
-	realmAdminID := flag.Int64("admin-realm", -1, "realm to add the user to")
+	realmID := flag.Uint("realm", 0, "realm to add the user to")
+	realmAdminID := flag.Uint("admin-realm", 0, "realm to add the user to")
 
 	flag.Parse()
 
@@ -89,8 +89,8 @@ func main() {
 	}
 }
 
-func findRealm(db *database.Database, id int64) (*database.Realm, error) {
-	if id < 0 {
+func findRealm(db *database.Database, id uint) (*database.Realm, error) {
+	if id == 0 {
 		return nil, nil
 	}
 	return db.GetRealm(id)
