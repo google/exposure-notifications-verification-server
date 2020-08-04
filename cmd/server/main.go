@@ -25,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
-	csrfctl "github.com/google/exposure-notifications-verification-server/pkg/controller/csrf"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -41,7 +40,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	firebase "firebase.google.com/go"
-	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -124,13 +122,8 @@ func realMain(ctx context.Context) error {
 	r.Use(httplimiter.Handle)
 
 	// Install the CSRF protection middleware.
-	csrfController := csrfctl.New(ctx, h)
-	// TODO(mikehelmick) - there are many more configuration options for CSRF protection.
-	r.Use(middleware.ConfigureCSRF(ctx, config.CSRFAuthKey,
-		csrf.Secure(!config.DevMode),
-		csrf.SameSite(csrf.SameSiteLaxMode),
-		csrf.ErrorHandler(csrfController.HandleError()),
-	))
+	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
+	r.Use(configureCSRF)
 
 	// Sessions
 	requireSession := middleware.RequireSession(ctx, sessions, h)

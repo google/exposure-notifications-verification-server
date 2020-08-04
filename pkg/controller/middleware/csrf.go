@@ -18,18 +18,25 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 )
 
 // ConfigureCSRF injects the CSRF handling and populates the global template map
 // with the csrfToken and csrfTemplate.
-func ConfigureCSRF(ctx context.Context, authKey []byte, options ...csrf.Option) mux.MiddlewareFunc {
+func ConfigureCSRF(ctx context.Context, config *config.ServerConfig, h *render.Renderer) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.ConfigureCSRF")
 
-	protect := csrf.Protect(authKey, options...)
+	// TODO(mikehelmick) - there are more configuration options for CSRF
+	// protection.
+	protect := csrf.Protect(config.CSRFAuthKey,
+		csrf.Secure(!config.DevMode),
+		csrf.ErrorHandler(handleCSRFError(ctx, h)),
+	)
 
 	return func(next http.Handler) http.Handler {
 		return protect(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,4 +59,18 @@ func ConfigureCSRF(ctx context.Context, authKey []byte, options ...csrf.Option) 
 			next.ServeHTTP(w, r)
 		}))
 	}
+}
+
+// handleCSRFError is an http.HandlerFunc that can be installed inthe gorilla csrf
+// protect middleware. It will respond w/ a JSON object containing error: on API
+// requests and a signout redirect to other requests.
+func handleCSRFError(ctx context.Context, h *render.Renderer) http.Handler {
+	logger := logging.FromContext(ctx).Named("middleware.handleCSRFError")
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reason := csrf.FailureReason(r)
+		logger.Debugw("invalid csrf", "reason", reason)
+
+		controller.Unauthorized(w, r, h)
+	})
 }
