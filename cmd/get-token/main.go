@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"time"
@@ -30,7 +31,9 @@ func main() {
 	timeoutFlag := flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	flag.Parse()
 
-	request, response, err := clients.GetToken(*addrFlag, *apikeyFlag, *codeFlag, *timeoutFlag)
+	ctx := context.Background()
+
+	request, response, err := clients.GetToken(ctx, *addrFlag, *apikeyFlag, *codeFlag, *timeoutFlag)
 	if err != nil {
 		log.Printf("Send request: %+v", request)
 		log.Fatalf("error making API call: %v", err)
