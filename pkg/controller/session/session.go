@@ -24,30 +24,27 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/sessions"
 
 	"go.uber.org/zap"
 )
 
 type Controller struct {
-	client   *auth.Client
-	config   *config.ServerConfig
-	db       *database.Database
-	h        *render.Renderer
-	logger   *zap.SugaredLogger
-	sessions sessions.Store
+	client *auth.Client
+	config *config.ServerConfig
+	db     *database.Database
+	h      *render.Renderer
+	logger *zap.SugaredLogger
 }
 
 // New creates a new session controller.
-func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer, sessions sessions.Store) *Controller {
+func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
-		client:   client,
-		config:   config,
-		db:       db,
-		h:        h,
-		logger:   logger,
-		sessions: sessions,
+		client: client,
+		config: config,
+		db:     db,
+		h:      h,
+		logger: logger,
 	}
 }

@@ -9,13 +9,13 @@
   {{template "navbar" .}}
 
   <main role="main" class="container">
-    <div class="row">
-      <h1>Choose your realm</h1>
-      <p>
-        You are a member of multiple realms - please select one to continue. You
-        can switch to another realm at any time.
-      </p>
-    </div>
+    {{template "flash" .}}
+
+    <h1>Choose your realm</h1>
+    <p>
+      You are a member of multiple realms - please select one to continue. You
+      can switch to another realm at any time.
+    </p>
 
     <form method="POST" action="/realm/select">
       {{ .csrfField }}
@@ -38,6 +38,8 @@
       </div>
     </form>
   </main>
+
+  {{template "scripts" .}}
 </body>
 </html>
 {{end}}

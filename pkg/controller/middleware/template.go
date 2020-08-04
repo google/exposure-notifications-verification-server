@@ -21,43 +21,35 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.uber.org/zap"
+	"github.com/gorilla/mux"
 )
 
-type TemplateMiddleware struct {
-	config *config.ServerConfig
-	h      *render.Renderer
-	logger *zap.SugaredLogger
-}
+// PopulateTemplateVariables populates the template variables with common
+// information and bootstraps the map for more values to be set by other
+// middlewares.
+func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig) mux.MiddlewareFunc {
+	logger := logging.FromContext(ctx).Named("middleware.PopulateTemplateVariables")
 
-func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig, h *render.Renderer) *TemplateMiddleware {
-	logger := logging.FromContext(ctx)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
 
-	return &TemplateMiddleware{
-		config: config,
-		h:      h,
-		logger: logger,
+			m := controller.TemplateMapFromContext(ctx)
+
+			// Set initial variables if they are not set.
+			if _, ok := m["server"]; !ok {
+				m["server"] = config.ServerName
+			}
+			if _, ok := m["title"]; !ok {
+				m["title"] = config.ServerName
+			}
+
+			// Save the template map on the context.
+			ctx = controller.WithTemplateMap(ctx, m)
+			*r = *r.WithContext(ctx)
+
+			logger.Debugw("done")
+			next.ServeHTTP(w, r)
+		})
 	}
-}
-
-func (h *TemplateMiddleware) Handle(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		m := controller.TemplateMapFromContext(ctx)
-		if m == nil {
-			m = make(controller.TemplateMap)
-		}
-
-		if _, ok := m["server"]; !ok {
-			m["server"] = h.config.ServerName
-		}
-		if _, ok := m["title"]; !ok {
-			m["title"] = h.config.ServerName
-		}
-
-		r = r.WithContext(controller.WithTemplateMap(ctx, m))
-		next.ServeHTTP(w, r)
-	})
 }

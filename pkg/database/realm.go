@@ -179,7 +179,7 @@ func (db *Database) GetRealmByName(name string) (*Realm, error) {
 	return &realm, nil
 }
 
-func (db *Database) GetRealm(realmID int64) (*Realm, error) {
+func (db *Database) GetRealm(realmID uint) (*Realm, error) {
 	var realm Realm
 	if err := db.db.Where("id = ?", realmID).First(&realm).Error; err != nil {
 		return nil, err

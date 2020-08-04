@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -31,19 +30,23 @@ func (c *Controller) HandleCreate() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
-			flash.Error("Unauthorized.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			controller.MissingUser(w, r, c.h)
 			return
 		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
-			flash.Error("Select a realm to continue.")
-			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			controller.MissingRealm(w, r, c.h)
 			return
 		}
 

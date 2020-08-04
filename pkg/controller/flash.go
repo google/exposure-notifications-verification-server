@@ -15,17 +15,11 @@
 package controller
 
 import (
-	"net/http"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/gorilla/sessions"
 )
 
-const (
-	ContentTypeJSON = "application/json"
-	ContentTypeHTML = "text/html"
-)
-
-// IsJSONContentType returns true if the request's content type is application/json
-// extra specific details, like UTF encoding schema are allowed.
-func IsJSONContentType(r *http.Request) bool {
-	t := r.Header.Get("content-type")
-	return !(len(t) < 16 || t[:16] != "application/json")
+// Flash gets or creates the flash data for the provided session.
+func Flash(session *sessions.Session) *flash.Flash {
+	return flash.New(session.Values)
 }

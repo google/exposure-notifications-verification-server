@@ -11,11 +11,9 @@
   {{template "navbar" .}}
 
   <main role="main" class="container">
-    <div class="row">
-      <div class="col">
-        <div id="firebaseui-auth-container"></div>
-      </div>
-    </div>
+    {{template "flash" .}}
+
+    <div id="firebaseui-auth-container"></div>
   </main>
 
   {{template "scripts" .}}
@@ -31,7 +29,7 @@
                 type:'POST',
                 url: "/session",
                 data: {idToken: idToken},
-                headers: {"X-CSRF-Token": "{{.csrftoken}}"},
+                headers: {"X-CSRF-Token": "{{.csrfToken}}"},
                 contentType: 'application/x-www-form-urlencoded',
                 success: function(returnData) {
                   // The user successfully signed in, redirect to realm selection.

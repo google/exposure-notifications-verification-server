@@ -18,44 +18,26 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
-	"github.com/gorilla/csrf"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
-
-		user := controller.UserFromContext(ctx)
-		if user == nil {
-			flash.Error("Unauthorized.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
-			return
-		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
-			flash.Error("Select a realm to continue.")
-			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			controller.MissingRealm(w, r, c.h)
 			return
 		}
 
+		// Lazy load users
 		if err := realm.LoadRealmUsers(c.db, false); err != nil {
-			flash.ErrorNow("Failed to load users: %v", err)
-		}
-		admins := make(map[uint]bool)
-		for _, au := range realm.RealmAdmins {
-			admins[au.ID] = true
+			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
-		m["user"] = user
-		m["realm"] = realm
-		m["admins"] = admins
-		m["users"] = realm.RealmUsers
-		m["flash"] = flash
-		m[csrf.TemplateTag] = csrf.TemplateField(r)
+		m["realmUsers"] = realm.RealmUsers
 		c.h.RenderHTML(w, "users", m)
 	})
 }

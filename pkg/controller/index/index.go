@@ -24,8 +24,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"go.uber.org/zap"
-
-	"github.com/gorilla/csrf"
 )
 
 type Controller struct {
@@ -48,13 +46,9 @@ func New(ctx context.Context, config *config.ServerConfig, h *render.Renderer) *
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		token := csrf.Token(r)
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		m["csrftoken"] = token
-
-		w.Header().Add("X-CSRF-Token", token)
 		c.h.RenderHTML(w, "index", m)
 	})
 }

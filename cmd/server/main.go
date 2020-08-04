@@ -25,7 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
-	csrfctl "github.com/google/exposure-notifications-verification-server/pkg/controller/csrf"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/csrfapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -41,7 +41,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	firebase "firebase.google.com/go"
-	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -98,15 +97,17 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
+	// Inject template middleware - this needs to be first because other
+	// middlewares may add data to the template map.
+	populateTemplateVariables := middleware.PopulateTemplateVariables(ctx, config)
+	r.Use(populateTemplateVariables)
+
 	// Create the renderer
 	glob := filepath.Join(config.AssetsPath, "*")
 	h, err := render.New(ctx, glob, config.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
-
-	// Inject template middleware
-	r.Use(middleware.PopulateTemplateVariables(ctx, config, h).Handle)
 
 	// Setup rate limiting
 	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
@@ -122,46 +123,41 @@ func realMain(ctx context.Context) error {
 	r.Use(httplimiter.Handle)
 
 	// Install the CSRF protection middleware.
-	csrfController := csrfctl.New(ctx, h)
-	// TODO(mikehelmick) - there are many more configuration options for CSRF protection.
-	r.Use(csrf.Protect(config.CSRFAuthKey,
-		csrf.Secure(!config.DevMode),
-		csrf.SameSite(csrf.SameSiteLaxMode),
-		csrf.ErrorHandler(csrfController.HandleError()),
-	))
+	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
+	r.Use(configureCSRF)
 
-	// Flash
-	// TODO(sethvargo): remove
-	r.Use(middleware.FlashHandler)
+	// Sessions
+	requireSession := middleware.RequireSession(ctx, sessions, h)
+	r.Use(requireSession)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, auth, db, h, sessions, config.SessionDuration)
-	requireAdmin := middleware.RequireRealmAdmin(ctx, h, sessions)
-	requireRealm := middleware.RequireRealm(ctx, h, sessions)
+	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
+	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
+	requireRealm := middleware.RequireRealm(ctx, db, h)
 
 	// Install the handlers that don't require authentication first on the main router.
 	indexController := index.New(ctx, config, h)
 	r.Handle("/", indexController.HandleIndex()).Methods("GET")
 
 	// Session handling
-	sessionController := session.New(ctx, auth, config, db, h, sessions)
+	sessionController := session.New(ctx, auth, config, db, h)
 	r.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
 	r.Handle("/session", sessionController.HandleCreate()).Methods("POST")
 
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
-		sub.Use(requireAuth.Handle)
+		sub.Use(requireAuth)
 
 		// Realms - list and select.
-		realmController := realm.New(ctx, config, db, h, sessions)
+		realmController := realm.New(ctx, config, db, h)
 		sub.Handle("", realmController.HandleIndex()).Methods("GET")
 		sub.Handle("/select", realmController.HandleSelect()).Methods("POST")
 	}
 
 	{
 		sub := r.PathPrefix("/home").Subrouter()
-		sub.Use(requireAuth.Handle)
-		sub.Use(requireRealm.Handle)
+		sub.Use(requireAuth)
+		sub.Use(requireRealm)
 
 		homeController := home.New(ctx, config, db, h)
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
@@ -172,15 +168,16 @@ func realMain(ctx context.Context) error {
 
 		// API for obtaining a CSRF token before calling /issue
 		// Installed in this context, it requires authentication.
+		csrfController := csrfapi.New(ctx, h)
 		sub.Handle("/csrf", csrfController.HandleIssue()).Methods("GET")
 	}
 
 	// apikeys
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
-		sub.Use(requireAuth.Handle)
-		sub.Use(requireRealm.Handle)
-		sub.Use(requireAdmin.Handle)
+		sub.Use(requireAuth)
+		sub.Use(requireRealm)
+		sub.Use(requireAdmin)
 
 		apikeyController := apikey.New(ctx, config, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
@@ -190,9 +187,9 @@ func realMain(ctx context.Context) error {
 	// users
 	{
 		userSub := r.PathPrefix("/users").Subrouter()
-		userSub.Use(requireAuth.Handle)
-		userSub.Use(requireRealm.Handle)
-		userSub.Use(requireAdmin.Handle)
+		userSub.Use(requireAuth)
+		userSub.Use(requireRealm)
+		userSub.Use(requireAdmin)
 
 		userController := user.New(ctx, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
@@ -203,9 +200,9 @@ func realMain(ctx context.Context) error {
 	// realms
 	{
 		realmSub := r.PathPrefix("/realm/settings").Subrouter()
-		realmSub.Use(requireAuth.Handle)
-		realmSub.Use(requireRealm.Handle)
-		realmSub.Use(requireAdmin.Handle)
+		realmSub.Use(requireAuth)
+		realmSub.Use(requireRealm)
+		realmSub.Use(requireAdmin)
 
 		realmadminController := realmadmin.New(ctx, config, db, h)
 		realmSub.Handle("", realmadminController.HandleIndex()).Methods("GET")
@@ -230,7 +227,6 @@ func userEmailKeyFunc() httplimit.KeyFunc {
 			return fmt.Sprintf("%x", dig), nil
 		}
 
-		// If no API key was provided, default to limiting by IP.
 		return ipKeyFunc(r)
 	}
 }

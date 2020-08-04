@@ -81,6 +81,24 @@ func (r *Renderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string
 	}
 }
 
+// HTML500 renders the given error as HTML. In production mode, this always
+// renders a generic "server error" message. In debug, it returns the actual
+// error from the caller.
+func (r *Renderer) HTML500(w http.ResponseWriter, err error) {
+	code := http.StatusInternalServerError
+
+	if r.debug {
+		r.RenderHTMLStatus(w, code, "500", map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	r.RenderHTMLStatus(w, code, "500", map[string]string{
+		"error": http.StatusText(code),
+	})
+}
+
 // htmlErrTmpl is the template to use when returning an HTML error. It is
 // rendered using Printf, not html/template, so values must be escaped by the
 // caller.

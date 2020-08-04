@@ -9,7 +9,9 @@
   {{template "navbar" .}}
 
   <main role="main" class="container">
-    <h2>Create API Key</h2>
+    {{template "flash" .}}
+
+    <h1>Create API Key</h1>
 
     <form method="POST" action="/apikeys/create">
       {{ .csrfField }}
@@ -23,6 +25,7 @@
         <label for="type" class="col-sm-3">API Key Type:</label>
         <div class="col-sm-9">
           <select class="form-control" name="type" id="type">
+            <option disabled selected>Select...</option>
             <option value="{{.typeDevice}}">Device Access [Verify Codes]</option>
             <option value="{{.typeAdmin}}">Admin Access [Issue Codes]</option>
           </select>

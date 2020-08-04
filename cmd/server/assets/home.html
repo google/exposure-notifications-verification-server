@@ -9,14 +9,14 @@
   {{template "navbar" .}}
 
   <main role="main" class="container">
-    <div class="row">
-      <h1>Issue Diagnosis Verification Code</h1>
-      <p>
-        Complete the following form to issue a single-use token to verify a
-        patient. <strong>Do not submit this form until you are prepared to relay
-        the code to the patient.</strong>
-      </p>
-    </div>
+    {{template "flash" .}}
+
+    <h1>Issue Diagnosis Verification Code</h1>
+    <p>
+      Complete the following form to issue a single-use token to verify a
+      patient. <strong>Do not submit this form until you are prepared to relay
+      the code to the patient.</strong>
+    </p>
 
     <form id="issueForm" action="#">
       <div class="form-group row">

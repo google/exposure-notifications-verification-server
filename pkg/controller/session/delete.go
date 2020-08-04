@@ -18,39 +18,26 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
 
-		// Get the session
-		session, err := c.sessions.Get(r, "session")
-		if err != nil {
-			// TODO(sethvargo): have a 500 page we can render
-			c.logger.Errorw("failed to get session", "error", err)
-			flash.Error("internal server error")
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
 			return
 		}
 
-		// Set MaxAge to -1 to expire the session
+		flash := controller.Flash(session)
+		flash.Alert("You have been logged out.")
+
+		// Set MaxAge to -1 to expire the session.
 		session.Options.MaxAge = -1
-
-		// Save the session
-		if err := session.Save(r, w); err != nil {
-			// TODO(sethvargo): have a 500 page we can render
-			c.logger.Errorw("failed to save session", "error", err)
-			flash.Error("internal server error")
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		m["flash"] = flash
 		c.h.RenderHTML(w, "signout", m)
 	})
 }

@@ -17,13 +17,14 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.uber.org/zap"
+	"github.com/gorilla/mux"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 )
@@ -33,77 +34,78 @@ const (
 	APIKeyHeader = "X-API-Key"
 )
 
-type APIKeyMiddleware struct {
-	db       *database.Database
-	h        *render.Renderer
-	keyCache *cache.Cache
-	logger   *zap.SugaredLogger
+// RequireAPIKey reads the X-API-Key header and validates it is a real
+// authorized app. It also ensures currentAuthorizedApp is set in the template
+// map.
+func RequireAPIKey(ctx context.Context, cache *cache.Cache, db *database.Database, h *render.Renderer, allowedTypes []database.APIUserType) mux.MiddlewareFunc {
+	logger := logging.FromContext(ctx).Named("middleware.RequireAPIKey")
 
-	allowedTypes map[database.APIUserType]struct{}
-}
-
-// APIKeyAuth returns a gin Middleware function that reads the X-API-Key HTTP
-// header and checks it against the authorized apps. The provided cache is used
-// as a write through cache.
-func APIKeyAuth(ctx context.Context, db *database.Database, h *render.Renderer, keyCache *cache.Cache, allowedTypes ...database.APIUserType) *APIKeyMiddleware {
-	logger := logging.FromContext(ctx)
-
-	cfg := APIKeyMiddleware{
-		db:       db,
-		h:        h,
-		keyCache: keyCache,
-		logger:   logger,
-
-		allowedTypes: make(map[database.APIUserType]struct{}),
-	}
-
+	allowedTypesMap := make(map[database.APIUserType]struct{}, len(allowedTypes))
 	for _, t := range allowedTypes {
-		cfg.allowedTypes[t] = struct{}{}
+		allowedTypesMap[t] = struct{}{}
 	}
-	return &cfg
-}
 
-func (h *APIKeyMiddleware) Handle(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		apiKey := r.Header.Get(APIKeyHeader)
-		if apiKey == "" {
-			h.h.RenderJSON(w, http.StatusUnauthorized, nil)
-			return
-		}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
 
-		// Load the authorized app by API key using the write thru cache.
-		authAppCache, err := h.keyCache.WriteThruLookup(apiKey,
-			func() (interface{}, error) {
-				aa, err := h.db.FindAuthorizedAppByAPIKey(apiKey)
+			apiKey := r.Header.Get(APIKeyHeader)
+			if apiKey == "" {
+				logger.Debugw("missing API key in request")
+				controller.Unauthorized(w, r, h)
+				return
+			}
+
+			// Load the authorized app by API key using the write thru cache.
+			authAppCached, err := cache.WriteThruLookup(apiKey, func() (interface{}, error) {
+				aa, err := db.FindAuthorizedAppByAPIKey(apiKey)
 				if err != nil {
 					return nil, err
 				}
 				return aa, nil
 			})
-		if err != nil {
-			h.logger.Errorw("failed to lookup authorized app", "error", err)
-			h.h.RenderJSON(w, http.StatusUnauthorized, nil)
-			return
-		}
+			if err != nil {
+				logger.Errorw("failed to lookup authorized app", "error", err)
+				controller.InternalError(w, r, h, err)
+				return
+			}
 
-		authApp, ok := authAppCache.(*database.AuthorizedApp)
-		if !ok {
-			authApp = nil
-		}
-		if authApp == nil || authApp.DeletedAt != nil {
-			h.logger.Errorf("authorized app is deleted or does not exist")
-			h.h.RenderJSON(w, http.StatusUnauthorized, nil)
-		}
+			if authAppCached == nil {
+				logger.Debugw("authorized app does not exist")
+				controller.Unauthorized(w, r, h)
+				return
+			}
 
-		if _, ok := h.allowedTypes[authApp.APIKeyType]; !ok {
-			h.logger.Errorw("wrong request type, got %v, allowed %v", authApp.APIKeyType, h.allowedTypes)
-			h.h.RenderJSON(w, http.StatusUnauthorized, nil)
-			return
-		}
+			authApp, ok := authAppCached.(*database.AuthorizedApp)
+			if !ok {
+				err := fmt.Errorf("expected %T to be *database.AuthorizedApp", authApp)
+				logger.Errorw("failed to get authorized app from cache", "error", err)
+				controller.InternalError(w, r, h, err)
+				return
+			}
 
-		// Save the authorized app on the context.
-		r = r.WithContext(controller.WithAuthorizedApp(r.Context(), authApp))
+			if authApp.DeletedAt != nil {
+				logger.Debugw("authorized app is deleted")
+				controller.Unauthorized(w, r, h)
+				return
+			}
 
-		next.ServeHTTP(w, r)
-	})
+			if _, ok := allowedTypesMap[authApp.APIKeyType]; !ok {
+				logger.Debugw("wrong request type, got %v, allowed %v", authApp.APIKeyType, allowedTypes)
+				controller.Unauthorized(w, r, h)
+				return
+			}
+
+			// Save the authorizedapp in the template map.
+			m := controller.TemplateMapFromContext(ctx)
+			m["currentAuthorizedApp"] = authApp
+
+			// Save the authorized app on the context.
+			ctx = controller.WithAuthorizedApp(ctx, authApp)
+			*r = *r.WithContext(ctx)
+
+			logger.Debugw("done")
+			next.ServeHTTP(w, r)
+		})
+	}
 }

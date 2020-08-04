@@ -18,65 +18,81 @@ import (
 	"context"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/gorilla/sessions"
 )
 
 // contextKey is a unique type to avoid clashing with other packages that use
 // context's to pass data.
 type contextKey string
 
-var (
-	// contextKeyAuthorizedApp is a context key used for the authorized app.
-	contextKeyAuthorizedApp = contextKey("authapp")
-
-	// contextKeyRealm is a context key for the realm.
-	contextKeyRealm = contextKey("realm")
-
-	// contextKeyTemplate is a context key for the template.
-	contextKeyTemplate = contextKey("template")
-
-	// contextKeyUser is a context key used for the user.
-	contextKeyUser = contextKey("user")
+const (
+	contextKeyAuthorizedApp = contextKey("authorizedApp")
+	contextKeyRealm         = contextKey("realm")
+	contextKeySession       = contextKey("session")
+	contextKeyTemplate      = contextKey("template")
+	contextKeyUser          = contextKey("user")
 )
 
-// WithAuthorizedApp sets the AuthorizedApp in the context.
-func WithAuthorizedApp(ctx context.Context, u *database.AuthorizedApp) context.Context {
-	return context.WithValue(ctx, contextKeyAuthorizedApp, u)
+// WithAuthorizedApp stores the authorized app on the context.
+func WithAuthorizedApp(ctx context.Context, app *database.AuthorizedApp) context.Context {
+	return context.WithValue(ctx, contextKeyAuthorizedApp, app)
 }
 
-// AuthorizedAppFromContext gets the currently logged in AuthorizedApp from the request context.
-// If no AuthorizedApp exists on the request context, or if the value in the request is
-// not a AuthorizedApp object, the result will be nil.
+// AuthorizedAppFromContext retrieves the authorized app from the context. If no
+// value exists, it returns nil.
 func AuthorizedAppFromContext(ctx context.Context) *database.AuthorizedApp {
 	v := ctx.Value(contextKeyAuthorizedApp)
 	if v == nil {
 		return nil
 	}
 
-	authorizedApp, ok := v.(*database.AuthorizedApp)
+	t, ok := v.(*database.AuthorizedApp)
 	if !ok {
 		return nil
 	}
-	return authorizedApp
+	return t
 }
 
-// WithRealm sets the realm in the cotnext.
+// WithRealm stores the current realm on the context.
 func WithRealm(ctx context.Context, r *database.Realm) context.Context {
 	return context.WithValue(ctx, contextKeyRealm, r)
 }
 
-// RealmFromContext gets the currently selected realm for the current user session.
-// If none is selected, nil is returned.
+// RealmFromContext retrieves the realm from the context. If no
+// value exists, it returns nil.
 func RealmFromContext(ctx context.Context) *database.Realm {
 	v := ctx.Value(contextKeyRealm)
 	if v == nil {
 		return nil
 	}
 
-	realm, ok := v.(*database.Realm)
+	t, ok := v.(*database.Realm)
 	if !ok {
 		return nil
 	}
-	return realm
+	return t
+}
+
+// WithSession stores the session on the request's context for retrieval later.
+// Use Session(r) to retrieve the session.
+func WithSession(ctx context.Context, session *sessions.Session) context.Context {
+	return context.WithValue(ctx, contextKeySession, session)
+}
+
+// SessionFromContext retrieves the session on the provided context. If no
+// session exists, or if the value in the context is not of the correct type, it
+// returns nil.
+func SessionFromContext(ctx context.Context) *sessions.Session {
+	v := ctx.Value(contextKeySession)
+	if v == nil {
+		return nil
+	}
+
+	t, ok := v.(*sessions.Session)
+	if !ok {
+		return nil
+	}
+	return t
 }
 
 // TemplateMap is a typemap for the HTML templates.
@@ -99,26 +115,26 @@ func TemplateMapFromContext(ctx context.Context) TemplateMap {
 	if !ok {
 		return make(TemplateMap)
 	}
+
 	return m
 }
 
-// WithUser sets the user in the context.
+// WithUser stores the current user on the context.
 func WithUser(ctx context.Context, u *database.User) context.Context {
 	return context.WithValue(ctx, contextKeyUser, u)
 }
 
-// UserFromContext gets the currently logged in user from the request context.
-// If no user exists on the request context, or if the value in the request is
-// not a user object, the result will be nil.
+// UserFromContext retrieves the user from the context. If no value exists, it
+// returns nil.
 func UserFromContext(ctx context.Context) *database.User {
 	v := ctx.Value(contextKeyUser)
 	if v == nil {
 		return nil
 	}
 
-	user, ok := v.(*database.User)
+	t, ok := v.(*database.User)
 	if !ok {
 		return nil
 	}
-	return user
+	return t
 }

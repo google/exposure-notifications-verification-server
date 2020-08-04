@@ -1,0 +1,21 @@
+{{define "500"}}
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Internal server error</h1>
+    <p>
+      {{.error}}
+    </p>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}
