@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	"github.com/sethvargo/go-envconfig"
@@ -26,7 +27,8 @@ import (
 
 // APIServerConfig represnets the environment based configuration for the API server.
 type APIServerConfig struct {
-	Database database.Config
+	Database      database.Config
+	Observability observability.Config
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.

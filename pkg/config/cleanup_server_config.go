@@ -19,13 +19,15 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"github.com/sethvargo/go-envconfig"
 )
 
 // CleanupConfig represents the environment based configuration for the Cleanup server.
 type CleanupConfig struct {
-	Database database.Config
+	Database      database.Config
+	Observability observability.Config
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
