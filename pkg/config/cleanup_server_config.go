@@ -72,3 +72,7 @@ func (c *CleanupConfig) Validate() error {
 
 	return nil
 }
+
+func (c *CleanupConfig) ObservabilityExporterConfig() *observability.Config {
+	return &c.Observability
+}

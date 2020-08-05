@@ -84,3 +84,7 @@ func (c *APIServerConfig) Validate() error {
 
 	return nil
 }
+
+func (c *APIServerConfig) ObservabilityExporterConfig() *observability.Config {
+	return &c.Observability
+}

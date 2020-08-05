@@ -88,3 +88,7 @@ func (c *AdminAPIServerConfig) GetVerificationCodeDuration() time.Duration {
 func (c *AdminAPIServerConfig) GetVerficationCodeDigits() uint {
 	return c.CodeDigits
 }
+
+func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
+	return &c.Observability
+}
