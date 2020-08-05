@@ -24,7 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 
-	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
+	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 )
 
 func (c *Controller) HandleCertificate() http.Handler {
@@ -93,7 +93,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 			claims.SymptomOnsetInterval = subject.SymptomInterval()
 		}
 
-		// TODO(mikehelmick): Assign transmission risk overrides. Algorithm not set yet.
 		claims.SignedMAC = request.ExposureKeyHMAC
 		claims.StandardClaims.Audience = c.config.CertificateAudience
 		claims.StandardClaims.Issuer = c.config.CertificateIssuer

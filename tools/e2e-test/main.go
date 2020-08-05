@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/api/v1alpha1"
+	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/util"
 	"github.com/google/exposure-notifications-server/pkg/verification"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
@@ -96,7 +96,7 @@ func realMain(ctx context.Context) error {
 	curDayInterval := timeToInterval(now)
 	nextInterval := curDayInterval
 
-	teks := make([]v1alpha1.ExposureKey, 14)
+	teks := make([]verifyapi.ExposureKey, 14)
 	for i := 0; i < len(teks); i++ {
 		key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
 		if err != nil {
@@ -153,10 +153,9 @@ func realMain(ctx context.Context) error {
 		}
 
 		// Upload the TEKs
-		publish := v1alpha1.Publish{
+		publish := verifyapi.Publish{
 			Keys:                teks,
-			Regions:             []string{config.Region},
-			AppPackageName:      config.HealthAuthorityCode,
+			HealthAuthorityID:   config.HealthAuthorityCode,
 			VerificationPayload: certificate.Certificate,
 			HMACKey:             base64.StdEncoding.EncodeToString(hmacSecret),
 			RevisionToken:       revisionToken,
@@ -164,7 +163,7 @@ func realMain(ctx context.Context) error {
 
 		// Make the publish request.
 		logger.Infof("Publish TEKs to the key server")
-		var response v1alpha1.PublishResponse
+		var response verifyapi.PublishResponse
 		client := &http.Client{
 			Timeout: timeout,
 		}
@@ -173,7 +172,7 @@ func realMain(ctx context.Context) error {
 		}
 		if err := jsonclient.MakeRequest(ctx, client, config.KeyServer, http.Header{}, &publish, &response); err != nil {
 			return fmt.Errorf("error publishing teks: %w", err)
-		} else if response.Error != "" {
+		} else if response.ErrorMessage != "" {
 			return fmt.Errorf("publish API error: %+v", response)
 		}
 		logger.Infof("Inserted %v exposures", response.InsertedExposures)
