@@ -54,6 +54,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		m["codesGenerated1d"] = creationCounts1d
 		m["codesGenerated7d"] = creationCounts7d
 		m["codesGenerated30d"] = creationCounts30d
+		m["realmUsers"] = realm.RealmUsers
 
 		c.h.RenderHTML(w, "users", m)
 	})
