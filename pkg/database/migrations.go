@@ -111,7 +111,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00006-AddIndexes",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Infof("db migrations: add users purge index")
-				if err := tx.Model(&User{}).AddIndex("users_purge_index", "disabled", "updated_at").Error; err != nil {
+				if err := tx.Model(&User{}).AddIndex("users_purge_index", "updated_at").Error; err != nil {
 					return err
 				}
 				logger.Infof("db migrations: add verification code purge index")
@@ -340,6 +340,29 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
+			},
+		},
+		{
+			ID: "00014-DropUserPurgeIndex",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: dropping user purge index=")
+				sql := "DROP INDEX IF EXISTS users_purge_index"
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Model(&User{}).AddIndex("users_purge_index", "updated_at").Error
+			},
+		},
+		{
+			ID: "00015-DropUserDisabled",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: dropping user disabled column")
+				sql := "ALTER TABLE users DROP COLUMN IF EXISTS disabled"
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sql := "ALTER TABLE users ADD COLUMN disabled bool NOT NULL DEFAULT true"
+				return tx.Exec(sql).Error
 			},
 		},
 	})
