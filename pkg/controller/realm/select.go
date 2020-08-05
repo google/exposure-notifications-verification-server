@@ -18,49 +18,53 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleSelect() http.Handler {
 	type FormData struct {
-		Realm int `form:"realm,required"`
+		RealmID uint `form:"realm,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
-			flash.Error("Unauthorized.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
-			return
-		}
-
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			flash.Error("Select a realm to continue.")
-			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			controller.MissingUser(w, r, c.h)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			return
+		}
+
+		realm := user.GetRealm(form.RealmID)
+		if realm == nil {
+			flash.Error("Select a realm to continue.")
+			http.Redirect(w, r, "/realm", http.StatusSeeOther)
 			return
 		}
 
 		// Verify that the user has access to the realm.
 		if user.CanViewRealm(realm.ID) {
-			setRealmCookie(w, c.config, realm.ID)
-			flash.Alert("Selected realm '%v'", realm.Name)
+			controller.StoreSessionRealm(session, realm)
+			flash.Alert("Successfully selected realm %v", realm.Name)
 			http.Redirect(w, r, "/home", http.StatusSeeOther)
 			return
 		}
 
 		// Not allowed to see the realm selected.
 		flash.Error("Invalid realm selection.")
-		http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm", http.StatusSeeOther)
 	})
 }

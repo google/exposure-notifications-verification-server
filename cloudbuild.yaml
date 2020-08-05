@@ -1,0 +1,47 @@
+steps:
+- id: 'apiserver'
+  name: 'docker'
+  args: [
+    'build',
+    '--tag',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
+    '--build-arg',
+    'SERVICE=apiserver',
+    '.',
+  ]
+- id: 'cleanup'
+  name: 'docker'
+  args: [
+    'build',
+    '--tag',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${COMMIT_SHA}',
+    '--build-arg',
+    'SERVICE=cleanup',
+    '.',
+  ]
+- id: 'server'
+  name: 'docker'
+  args: [
+    'build',
+    '--tag',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
+    '--build-arg',
+    'SERVICE=server',
+    '.',
+  ]
+- id: 'adminapi'
+  name: 'docker'
+  args: [
+    'build',
+    '--tag',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${COMMIT_SHA}',
+    '--build-arg',
+    'SERVICE=adminapi',
+    '.',
+  ]
+images: [
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${COMMIT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${COMMIT_SHA}',
+]

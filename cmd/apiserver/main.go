@@ -104,8 +104,12 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create apikey cache: %w", err)
 	}
+	requireAPIKey := middleware.RequireAPIKey(ctx, apiKeyCache, db, h, []database.APIUserType{
+		database.APIUserTypeDevice,
+	})
+
 	// Install the APIKey Auth Middleware
-	r.Use(middleware.APIKeyAuth(ctx, db, h, apiKeyCache, database.APIUserTypeDevice).Handle)
+	r.Use(requireAPIKey)
 
 	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
 	if err != nil {

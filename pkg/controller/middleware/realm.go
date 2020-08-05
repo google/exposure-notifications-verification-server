@@ -16,80 +16,109 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.uber.org/zap"
+	"github.com/gorilla/mux"
 )
 
-var (
-	ErrMissingRealm = errors.New("missing realm")
-)
+// RequireRealm requires a realm to exist in the session. It also ensures the
+// realm is set as currentRealm in the template map. It must come after
+// RequireAuth so that a user is set on the context.
+func RequireRealm(ctx context.Context, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
+	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
 
-type RequireRealmHandler struct {
-	h      *render.Renderer
-	logger *zap.SugaredLogger
-}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
 
-// RequireRealm requires that a user is logged in and that a realm
-// is selectted. This middleware must be run after RequireAuth.
-func RequireRealm(ctx context.Context, h *render.Renderer) *RequireRealmHandler {
-	logger := logging.FromContext(ctx)
+			user := controller.UserFromContext(ctx)
+			if user == nil {
+				controller.MissingUser(w, r, h)
+				return
+			}
 
-	return &RequireRealmHandler{
-		h:      h,
-		logger: logger,
+			session := controller.SessionFromContext(ctx)
+			if session == nil {
+				err := fmt.Errorf("session does not exist in context")
+				logger.Errorw("failed to get session", "error", err)
+				controller.InternalError(w, r, h, err)
+				return
+			}
+
+			realmID := controller.RealmIDFromSession(session)
+			if realmID == 0 {
+				logger.Debugw("realm does not exist in session")
+				controller.MissingRealm(w, r, h)
+				return
+			}
+
+			// Lookup the realm to ensure it exists (and to cache it later).
+			realm, err := db.GetRealm(realmID)
+			if err != nil {
+				logger.Errorw("failed to get realm", "error", err)
+				controller.InternalError(w, r, h, err)
+				return
+			}
+
+			if !user.CanViewRealm(realm.ID) {
+				logger.Debugw("user cannot view realm")
+				// Technically this is unauthorized, but we don't want to leak the
+				// existence of a realm by returning a different error.
+				controller.MissingRealm(w, r, h)
+				return
+			}
+
+			// Save the realm in the template map.
+			m := controller.TemplateMapFromContext(ctx)
+			m["currentRealm"] = realm
+
+			// Save the realm on the context.
+			ctx = controller.WithRealm(ctx, realm)
+			*r = *r.WithContext(ctx)
+
+			logger.Debugw("done")
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 
-func (h *RequireRealmHandler) Handle(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+// RequireRealmAdmin verifies the user is an admin of the current realm.  It
+// must come after RequireAuth and RequireRealm so that a user and realm are set
+// on the context.
+func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
+	logger := logging.FromContext(ctx).Named("middleware.RequireRealmAdmin")
 
-		if err := func() error {
-			cookie, err := r.Cookie("realm")
-			if err != nil {
-				return ErrMissingRealm
-			}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
 
-			realmID, err := strconv.ParseInt(cookie.Value, 10, 64)
-			if err != nil {
-				return ErrMissingRealm
-			}
-
-			// Get user from the session
 			user := controller.UserFromContext(ctx)
 			if user == nil {
-				return fmt.Errorf("user is not a database.User")
+				controller.MissingUser(w, r, h)
+				return
 			}
 
-			// Make sure the user can see this realm.
-			realm := user.GetRealm(uint(realmID))
+			realm := controller.RealmFromContext(ctx)
 			if realm == nil {
-				return fmt.Errorf("not authorized to use realm")
+				controller.MissingRealm(w, r, h)
+				return
 			}
 
-			r = r.WithContext(controller.WithRealm(ctx, realm))
-			return nil
-		}(); err != nil {
-			h.logger.Errorw("RequireRealm", "error", err)
-
-			if errors.Is(err, ErrMissingRealm) {
-				h.logger.Warnf("Unexpected missing realm: %v", err)
-				flash.FromContext(w, r).Error("Select a realm")
-				http.Redirect(w, r, "/home/realm", http.StatusSeeOther)
-			} else {
-				flash.FromContext(w, r).Error("Internal error, you have been logged out.")
-				http.Redirect(w, r, "/signout", http.StatusFound)
+			if !user.CanAdminRealm(realm.ID) {
+				logger.Debugw("user cannot manage realm")
+				// Technically this is unauthorized, but we don't want to leak the
+				// existence of a realm by returning a different error.
+				controller.MissingRealm(w, r, h)
+				return
 			}
-		} else {
+
+			logger.Debugw("done")
 			next.ServeHTTP(w, r)
-		}
-	})
+		})
+	}
 }

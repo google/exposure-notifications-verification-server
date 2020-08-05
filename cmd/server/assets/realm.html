@@ -9,12 +9,17 @@
   {{template "navbar" .}}
 
   <main role="main" class="container">
-    <h2>Settings for {{.realm.Name}}</h2>
+    {{template "flash" .}}
+
+    <h1>Realm settings</h1>
+    <p>
+      Find or edit the settings for <strong>{{.realm.Name}}</strong> below.
+    </p>
 
     <form method="POST" action="/realm/settings/save">
       {{ .csrfField }}
       <div class="form-group row">
-        <label for="name" class="col-sm-3">Realm Name</label>
+        <label for="name" class="col-sm-3">Name</label>
         <div class="col-sm-9">
           <input type="text" id="name" name="name" class="form-control" value="{{.realm.Name}}" />
         </div>

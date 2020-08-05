@@ -11,12 +11,10 @@
   {{template "navbar" .}}
 
   <main role="main" class="container">
-    <div class="row">
-      <div class="col">
-        <div id="firebaseui-auth-container">
-          <p id="signout">Signing out...</p>
-        </div>
-      </div>
+    {{template "flash" .}}
+
+    <div id="firebaseui-auth-container">
+      <p id="signout">Signing out...</p>
     </div>
   </main>
 

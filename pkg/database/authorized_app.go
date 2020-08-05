@@ -17,6 +17,7 @@ package database
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"github.com/jinzhu/gorm"
@@ -117,10 +118,14 @@ func (db *Database) CreateAuthorizedApp(realmID uint, name string, apiUserType A
 	return &app, nil
 }
 
-// FindAuthorizedAppByAPIKey located an authorized app based on API key.
+// FindAuthorizedAppByAPIKey located an authorized app based on API key. If no
+// app exists for the given API key, it returns nil.
 func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, error) {
 	var app AuthorizedApp
 	if err := db.db.Preload("Realm").Where("api_key = ?", apiKey).First(&app).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &app, nil

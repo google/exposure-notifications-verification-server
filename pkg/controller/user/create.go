@@ -18,32 +18,34 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Email    string `form:"email,required"`
-		Name     string `form:"name,required"`
-		Admin    bool   `form:"admin"`
-		Disabled bool   `form:"disabled"`
+		Email string `form:"email,required"`
+		Name  string `form:"name,required"`
+		Admin bool   `form:"admin"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
-			flash.Error("Unauthorized.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
+			controller.MissingUser(w, r, c.h)
 			return
 		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
-			flash.Error("Select a realm to continue.")
-			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			controller.MissingRealm(w, r, c.h)
 			return
 		}
 
@@ -60,7 +62,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		newUser, err := c.db.FindUser(form.Email)
 		if err != nil {
 			// User doesn't exist, create.
-			newUser, err = c.db.CreateUser(form.Email, form.Name, false, false)
+			newUser, err = c.db.CreateUser(form.Email, form.Name, false)
 			if err != nil {
 				flash.Error("Failed to create user: %v", err)
 				http.Redirect(w, r, "/users", http.StatusSeeOther)

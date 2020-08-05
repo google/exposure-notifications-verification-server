@@ -99,8 +99,12 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create apikey cache: %w", err)
 	}
+	requireAPIKey := middleware.RequireAPIKey(ctx, apiKeyCache, db, h, []database.APIUserType{
+		database.APIUserTypeAdmin,
+	})
+
 	// Install the APIKey Auth Middleware
-	r.Use(middleware.APIKeyAuth(ctx, db, h, apiKeyCache, database.APIUserTypeAdmin).Handle)
+	r.Use(requireAPIKey)
 
 	issueapiController := issueapi.New(ctx, config, db, h)
 	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")

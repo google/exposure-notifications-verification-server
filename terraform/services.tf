@@ -21,6 +21,10 @@ locals {
     CSRF_AUTH_KEY = "secret://${google_secret_manager_secret_version.csrf-token-version.id}"
   }
 
+  session_config = {
+    COOKIE_KEYS = "secret://${google_secret_manager_secret_version.cookie-hmac-key-version.id},secret://${google_secret_manager_secret_version.cookie-encryption-key-version.id}"
+  }
+
   database_config = {
     DB_HOST        = google_sql_database_instance.db-inst.private_ip_address
     DB_NAME        = google_sql_database.db.name
@@ -57,4 +61,8 @@ locals {
     CERTIFICATE_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
     TOKEN_SIGNING_KEY       = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
   }
+}
+
+output "cookie_keys" {
+  value = local.session_config["COOKIE_KEYS"]
 }

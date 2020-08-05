@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csrf
+package controller
 
 import (
-	"net/http"
-
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/gorilla/csrf"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/gorilla/sessions"
 )
 
-func (c *Controller) HandleIssue() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := csrf.Token(r)
-		w.Header().Add("X-CSRF-Token", token)
-		c.h.RenderJSON(w, http.StatusOK, &api.CSRFResponse{CSRFToken: token})
-	})
+// Flash gets or creates the flash data for the provided session.
+func Flash(session *sessions.Session) *flash.Flash {
+	return flash.New(session.Values)
 }

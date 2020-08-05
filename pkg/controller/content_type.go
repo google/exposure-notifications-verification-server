@@ -18,6 +18,11 @@ import (
 	"net/http"
 )
 
+const (
+	ContentTypeJSON = "application/json"
+	ContentTypeHTML = "text/html"
+)
+
 // IsJSONContentType returns true if the request's content type is application/json
 // extra specific details, like UTF encoding schema are allowed.
 func IsJSONContentType(r *http.Request) bool {

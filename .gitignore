@@ -20,4 +20,6 @@
 *.tfvars
 terraform/state.tf
 
+# Testing things
 local/
+.env

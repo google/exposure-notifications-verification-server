@@ -30,8 +30,6 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-adminapi" {
 }
 
 resource "google_secret_manager_secret_iam_member" "adminapi-db" {
-  provider = google-beta
-
   for_each = toset([
     "sslcert",
     "sslkey",
@@ -61,6 +59,8 @@ resource "google_cloud_run_service" "adminapi" {
   name     = "adminapi"
   location = var.region
 
+  autogenerate_revision_name = true
+
   template {
     spec {
       service_account_name = google_service_account.adminapi.email
@@ -75,32 +75,17 @@ resource "google_cloud_run_service" "adminapi" {
           }
         }
 
-        dynamic "env" {
-          for_each = local.gcp_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
 
         dynamic "env" {
-          for_each = local.database_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
+          for_each = merge(
+            local.database_config,
+            local.gcp_config,
+            local.redis_config,
 
-        dynamic "env" {
-          for_each = local.redis_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
+            // This MUST come last to allow overrides!
+            lookup(var.service_environment, "adminapi", {}),
+          )
 
-        dynamic "env" {
-          for_each = lookup(var.service_environment, "adminapi", {})
           content {
             name  = env.key
             value = env.value
@@ -124,8 +109,24 @@ resource "google_cloud_run_service" "adminapi" {
 
   lifecycle {
     ignore_changes = [
-      template,
+      template[0].metadata[0].annotations,
+      template[0].spec[0].containers[0].image,
     ]
+  }
+}
+
+resource "google_cloud_run_domain_mapping" "adminapi" {
+  count    = var.adminapi_custom_domain != "" ? 1 : 0
+  location = var.cloudrun_location
+  name     = var.adminapi_custom_domain
+
+  metadata {
+    namespace = var.project
+  }
+
+  spec {
+    route_name     = google_cloud_run_service.adminapi.name
+    force_override = true
   }
 }
 

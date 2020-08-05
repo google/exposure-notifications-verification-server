@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package middleware
+// Package csrfapi contains utilities for issuing AJAX csrf tokens and handling
+// errors on validation.
+package csrfapi
 
 import (
-	"net/http"
+	"context"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.uber.org/zap"
 )
 
-func FlashHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Always mark the current flash cookie for clearing
-		flash.Clear(w)
+type Controller struct {
+	h      *render.Renderer
+	logger *zap.SugaredLogger
+}
 
-		// Start with an empty flash
-		f := flash.FromContext(w, r)
+// New creates a new controller that can return CSRF tokens to JSON APIs.
+func New(ctx context.Context, h *render.Renderer) *Controller {
+	logger := logging.FromContext(ctx)
 
-		// Load the cookie value
-		if err := f.LoadFromCookie(); err != nil {
-			logging.FromContext(r.Context()).Errorf("LoadFromCookie", "error", err)
-		}
-
-		// Call other middlewares and do all the things
-		next.ServeHTTP(w, r)
-	})
+	return &Controller{
+		h:      h,
+		logger: logger,
+	}
 }

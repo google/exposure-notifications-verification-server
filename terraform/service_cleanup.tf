@@ -30,8 +30,6 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-cleanup" {
 }
 
 resource "google_secret_manager_secret_iam_member" "cleanup-db" {
-  provider = google-beta
-
   for_each = toset([
     "sslcert",
     "sslkey",
@@ -61,6 +59,8 @@ resource "google_cloud_run_service" "cleanup" {
   name     = "cleanup"
   location = var.region
 
+  autogenerate_revision_name = true
+
   template {
     spec {
       service_account_name = google_service_account.cleanup.email
@@ -75,48 +75,19 @@ resource "google_cloud_run_service" "cleanup" {
           }
         }
 
-        dynamic "env" {
-          for_each = local.gcp_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
 
         dynamic "env" {
-          for_each = local.csrf_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
+          for_each = merge(
+            local.csrf_config,
+            local.database_config,
+            local.firebase_config,
+            local.gcp_config,
+            local.signing_config,
 
-        dynamic "env" {
-          for_each = local.database_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
+            // This MUST come last to allow overrides!
+            lookup(var.service_environment, "cleanup", {}),
+          )
 
-        dynamic "env" {
-          for_each = local.firebase_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = local.signing_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = lookup(var.service_environment, "cleanup", {})
           content {
             name  = env.key
             value = env.value
@@ -140,7 +111,8 @@ resource "google_cloud_run_service" "cleanup" {
 
   lifecycle {
     ignore_changes = [
-      template,
+      template[0].metadata[0].annotations,
+      template[0].spec[0].containers[0].image,
     ]
   }
 }

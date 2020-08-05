@@ -57,6 +57,11 @@ variable "appengine_location" {
   default = "us-central"
 }
 
+variable "cloudrun_location" {
+  type    = string
+  default = "us-central1"
+}
+
 # The cloudscheduler_location MUST use the same region as appengine_location but
 # it must include the region number even if this is omitted from the
 # appengine_location (as in the default values).
@@ -103,11 +108,32 @@ variable "redis_cache_size" {
   description = "Size of the Redis instance in GB."
 }
 
+variable "adminapi_custom_domain" {
+  type    = string
+  default = ""
+
+  description = "Custom domain to map for adminapi. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+}
+
+variable "apiserver_custom_domain" {
+  type    = string
+  default = ""
+
+  description = "Custom domain to map for apiserver. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+}
+
+variable "server_custom_domain" {
+  type    = string
+  default = ""
+
+  description = "Custom domain to map for server. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+}
+
 terraform {
   required_providers {
-    google      = "~> 3.24"
-    google-beta = "~> 3.24"
+    google      = "~> 3.32"
+    google-beta = "~> 3.32"
     null        = "~> 2.1"
-    random      = "~> 2.2"
+    random      = "~> 2.3"
   }
 }

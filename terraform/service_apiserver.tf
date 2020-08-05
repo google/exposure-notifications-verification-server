@@ -30,8 +30,6 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-apiserver" {
 }
 
 resource "google_secret_manager_secret_iam_member" "apiserver-db" {
-  provider = google-beta
-
   for_each = toset([
     "sslcert",
     "sslkey",
@@ -40,18 +38,6 @@ resource "google_secret_manager_secret_iam_member" "apiserver-db" {
   ])
 
   secret_id = google_secret_manager_secret.db-secret[each.key].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.apiserver.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "apiserver-twilio" {
-  provider = google-beta
-
-  for_each = toset([
-    "twilio-auth-token",
-  ])
-
-  secret_id = google_secret_manager_secret.twilio[each.key].id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.apiserver.email}"
 }
@@ -79,6 +65,8 @@ resource "google_cloud_run_service" "apiserver" {
   name     = "apiserver"
   location = var.region
 
+  autogenerate_revision_name = true
+
   template {
     spec {
       service_account_name = google_service_account.apiserver.email
@@ -94,56 +82,18 @@ resource "google_cloud_run_service" "apiserver" {
         }
 
         dynamic "env" {
-          for_each = local.gcp_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
+          for_each = merge(
+            local.csrf_config,
+            local.database_config,
+            local.firebase_config,
+            local.gcp_config,
+            local.redis_config,
+            local.signing_config,
 
+            // This MUST come last to allow overrides!
+            lookup(var.service_environment, "apiserver", {}),
+          )
 
-        dynamic "env" {
-          for_each = local.csrf_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = local.database_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = local.firebase_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = local.redis_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = local.signing_config
-          content {
-            name  = env.key
-            value = env.value
-          }
-        }
-
-        dynamic "env" {
-          for_each = lookup(var.service_environment, "apiserver", {})
           content {
             name  = env.key
             value = env.value
@@ -167,8 +117,24 @@ resource "google_cloud_run_service" "apiserver" {
 
   lifecycle {
     ignore_changes = [
-      template,
+      template[0].metadata[0].annotations,
+      template[0].spec[0].containers[0].image,
     ]
+  }
+}
+
+resource "google_cloud_run_domain_mapping" "apiserver" {
+  count    = var.apiserver_custom_domain != "" ? 1 : 0
+  location = var.cloudrun_location
+  name     = var.apiserver_custom_domain
+
+  metadata {
+    namespace = var.project
+  }
+
+  spec {
+    route_name     = google_cloud_run_service.apiserver.name
+    force_override = true
   }
 }
 

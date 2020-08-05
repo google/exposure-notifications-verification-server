@@ -26,7 +26,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -65,30 +64,17 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 func (c *Controller) HandleHome() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
-
-		user := controller.UserFromContext(ctx)
-		if user == nil {
-			flash.Error("Unauthorized.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
-			return
-		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
-			flash.Error("Select a realm to continue.")
-			http.Redirect(w, r, "/realm", http.StatusSeeOther)
+			controller.MissingRealm(w, r, c.h)
 			return
 		}
 
-		smsProvider, err := realm.GetSMSProvider(r.Context(), c.db)
-		if err != nil {
-			if errors.Is(err, database.ErrNoSMSConfig) {
-				smsProvider = nil
-			} else {
-				c.logger.Errorw("failed to load sms configuration", "error", err)
-				flash.Error("internal error - failed to load SMS configuration")
-			}
+		smsProvider, err := realm.GetSMSProvider(ctx, c.db)
+		if err != nil && !errors.Is(err, database.ErrNoSMSConfig) {
+			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
@@ -99,9 +85,6 @@ func (c *Controller) HandleHome() http.Handler {
 		m["maxSymptomDays"] = c.displayAllowedDays
 		m["duration"] = c.config.CodeDuration.String()
 		m["smsEnabled"] = smsProvider != nil
-		m["user"] = user
-		m["flash"] = flash
-		m["realm"] = realm
 		c.h.RenderHTML(w, "home", m)
 	})
 }

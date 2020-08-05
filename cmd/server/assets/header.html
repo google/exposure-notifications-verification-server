@@ -22,33 +22,33 @@
       </button>
 
       <div class="collapse navbar-collapse" id="navbar">
-        <a class="navbar-brand" href="#">V</a>
-        {{if .user}}
+        <a class="navbar-brand" href="#">{{if .currentRealm}}{{.currentRealm.Name}}{{else}}V{{end}}</a>
+        {{if .currentUser}}
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="/home">Issue Code</a>
-            </li>
-            {{if .user.MultipleRealms}}
+            {{if .currentUser.MultipleRealms}}
             <li class="nav-item">
               <a class="nav-link" href="/realm">Select Realm</a>
             </li>
             {{end}}
-            {{if .realm}}
-              {{if .user.CanAdminRealm .realm.ID}}
+            {{if .currentRealm}}
               <li class="nav-item">
-                <a class="nav-link" href="/apikeys">API Keys</a>
+                <a class="nav-link" href="/home">Issue Code</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/users">Users</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/realm/settings">Settings</a>
-              </li>
-            {{end}}
+              {{if .currentUser.CanAdminRealm .currentRealm.ID}}
+                <li class="nav-item">
+                  <a class="nav-link" href="/apikeys">API Keys</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="/users">Users</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="/realm/settings">Settings</a>
+                </li>
+              {{end}}
             {{end}}
           </ul>
           <span class="navbar-text">
-            {{.user.Name}} | <a href="/signout">Sign Out</a>
+            {{.currentUser.Name}} | <a href="/signout">Sign Out</a>
           </span>
         {{else}}
           <ul class="navbar-nav mr-auto"></ul>
@@ -60,16 +60,9 @@
     </div>
   </nav>
 </header>
-
-{{if .realm}}
-<div class="container">
-  <div class="alert alert-secondary">
-    <h1>{{.realm.Name}}</h1>
-  </div>
-</div>
 {{end}}
 
-<div class="container">
+{{define "flash"}}
   {{range $msg := .flash.Errors}}
   <div class="alert alert-danger" role="alert">
     {{$msg}}
@@ -83,8 +76,6 @@
     </button>
   </div>
   {{end}}
-</div>
-
 {{end}}
 
 {{define "scripts"}}

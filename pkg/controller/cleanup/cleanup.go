@@ -112,13 +112,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 			c.logger.Errorf("db.PurgeTokens: %v", err)
 		} else {
 			c.logger.Infof("purged %v verification tokens", count)
-		}
-
-		if count, err := c.db.PurgeUsers(c.config.DisabledUserMaxAge); err != nil {
-			c.logger.Errorf("db.PurgeUsers: %v", err)
-		} else {
-			c.logger.Infof("purged %v user records", count)
-		}
+		}	
 
 		// Gather usage statistics
 		if count, err := c.db.UpdateUserStats(); err != nil {

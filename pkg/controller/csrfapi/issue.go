@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package csrfapi
 
 import (
-	"fmt"
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/gorilla/csrf"
 )
 
-// setRealmCookie sets the realm cookie. This must be called before any body data
-// is written for the request.
-func setRealmCookie(w http.ResponseWriter, c *config.ServerConfig, realmID uint) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "realm",
-		Value:    fmt.Sprintf("%v", realmID),
-		Path:     "/",
-		Secure:   !c.DevMode,
-		SameSite: http.SameSiteStrictMode,
+func (c *Controller) HandleIssue() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := csrf.Token(r)
+		w.Header().Add("X-CSRF-Token", token)
+		c.h.RenderJSON(w, http.StatusOK, &api.CSRFResponse{CSRFToken: token})
 	})
 }

@@ -16,11 +16,9 @@ package session
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -30,7 +28,13 @@ func (c *Controller) HandleCreate() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		flash := flash.FromContext(w, r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		// Parse and decode form.
 		var form FormData
@@ -40,7 +44,8 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		ttl := c.config.SessionCookieDuration
+		// Get the session cookie from firebase.
+		ttl := c.config.SessionDuration
 		cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
 		if err != nil {
 			flash.Error("Failed to create session: %v", err)
@@ -48,15 +53,9 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     "session",
-			Value:    cookie,
-			Path:     "/",
-			Expires:  time.Now().Add(ttl),
-			MaxAge:   int(ttl.Seconds()),
-			Secure:   !c.config.DevMode,
-			SameSite: http.SameSiteStrictMode,
-		})
+		// Set the firebase cookie value in our session.
+		controller.StoreSessionFirebaseCookie(session, cookie)
+
 		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }

@@ -1,4 +1,8 @@
 {{define "users"}}
+{{$csrfField := .csrfField}}
+{{$currentUser := .currentUser}}
+{{$currentRealm := .currentRealm}}
+
 <!doctype html>
 <html lang="en">
 
@@ -10,10 +14,12 @@
   {{template "navbar" .}}
 
   <main role="main" class="container">
-    <h2>Create User</h2>
+    {{template "flash" .}}
+
+    <h1>Create User</h1>
 
     <form method="POST" action="/users/create">
-      {{ .csrfField }}
+      {{$csrfField}}
       <div class="form-group row">
         <label for="email" class="col-sm-2">Email:</label>
         <div class="col-sm-10">
@@ -45,15 +51,13 @@
       </div>
     </form>
 
-    <h2>{{.realm.Name}} Users</h2>
+    <h2>{{$currentRealm.Name}} Users</h2>
 
-    {{$csrf := .csrfField}}
-    {{$admins := .admins}}
     {{$codesGenerated1d := .codesGenerated1d}}
     {{$codesGenerated7d := .codesGenerated7d}}
     {{$codesGenerated30d := .codesGenerated30d}}
 
-    {{if .users}}
+    {{if .realmUsers}}
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
         <thead>
@@ -68,14 +72,15 @@
           </tr>
         </thead>
         <tbody>
-          {{range .users}}
+          {{range .realmUsers}}
           <tr>
             <td scope="row">{{.Email}}</td>
             <td scope="row">{{.Name}}</td>
-            <td scope="row">{{if index $admins .ID}}&#x2714;{{end}}</td>
+
+            <td scope="row">{{if .CanAdminRealm $currentRealm.ID}}&#x2714;{{end}}</td>
             <td scope="row">
               <form method="POST" action="/users/delete/{{.Email}}">
-                {{ $csrf }}
+                {{$csrfField}}
                 <button type="submit" class="btn btn-primary" name="Action" value="delete">Delete User</button>
               </form>
             </td>
@@ -100,6 +105,5 @@
 
   {{template "scripts" .}}
 </body>
-
 </html>
 {{end}}

@@ -18,23 +18,26 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
 func (c *Controller) HandleDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// Set max age to negative to clear the cookie.
-		http.SetCookie(w, &http.Cookie{
-			Name:   "session",
-			Value:  "",
-			MaxAge: -1,
-		})
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
+		flash := controller.Flash(session)
+		flash.Alert("You have been logged out.")
+
+		// Set MaxAge to -1 to expire the session.
+		session.Options.MaxAge = -1
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		m["flash"] = flash.FromContext(w, r)
 		c.h.RenderHTML(w, "signout", m)
 	})
 }

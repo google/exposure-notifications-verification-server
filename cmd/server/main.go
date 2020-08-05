@@ -25,7 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
-	csrfctl "github.com/google/exposure-notifications-verification-server/pkg/controller/csrf"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/csrfapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -41,9 +41,9 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	firebase "firebase.google.com/go"
-	"github.com/gorilla/csrf"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
 )
@@ -69,6 +69,14 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
+	// Setup sessions
+	sessions := sessions.NewCookieStore(config.CookieKeys.AsBytes()...)
+	sessions.Options.Path = "/"
+	sessions.Options.Domain = config.CookieDomain
+	sessions.Options.MaxAge = int(config.SessionDuration.Seconds())
+	sessions.Options.Secure = !config.DevMode
+	sessions.Options.SameSite = http.SameSiteStrictMode
+
 	// Setup database
 	db, err := config.Database.Open(ctx)
 	if err != nil {
@@ -89,15 +97,17 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
+	// Inject template middleware - this needs to be first because other
+	// middlewares may add data to the template map.
+	populateTemplateVariables := middleware.PopulateTemplateVariables(ctx, config)
+	r.Use(populateTemplateVariables)
+
 	// Create the renderer
 	glob := filepath.Join(config.AssetsPath, "*")
 	h, err := render.New(ctx, glob, config.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
-
-	// Inject template middleware
-	r.Use(middleware.PopulateTemplateVariables(ctx, config, h).Handle)
 
 	// Setup rate limiting
 	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
@@ -113,18 +123,17 @@ func realMain(ctx context.Context) error {
 	r.Use(httplimiter.Handle)
 
 	// Install the CSRF protection middleware.
-	csrfAuthKey, err := config.CSRFKey()
-	if err != nil {
-		return fmt.Errorf("failed to configure CSRF: %w", err)
-	}
-	csrfController := csrfctl.New(ctx, h)
-	// TODO(mikehelmick) - there are many more configuration options for CSRF protection.
-	r.Use(csrf.Protect(csrfAuthKey,
-		csrf.Secure(!config.DevMode),
-		csrf.SameSite(csrf.SameSiteLaxMode),
-		csrf.ErrorHandler(csrfController.HandleError()),
-	))
-	r.Use(middleware.FlashHandler)
+	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
+	r.Use(configureCSRF)
+
+	// Sessions
+	requireSession := middleware.RequireSession(ctx, sessions, h)
+	r.Use(requireSession)
+
+	// Create common middleware
+	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
+	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
+	requireRealm := middleware.RequireRealm(ctx, db, h)
 
 	// Install the handlers that don't require authentication first on the main router.
 	indexController := index.New(ctx, config, h)
@@ -137,7 +146,7 @@ func realMain(ctx context.Context) error {
 
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
-		sub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
+		sub.Use(requireAuth)
 
 		// Realms - list and select.
 		realmController := realm.New(ctx, config, db, h)
@@ -147,8 +156,8 @@ func realMain(ctx context.Context) error {
 
 	{
 		sub := r.PathPrefix("/home").Subrouter()
-		sub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
-		sub.Use(middleware.RequireRealm(ctx, h).Handle)
+		sub.Use(requireAuth)
+		sub.Use(requireRealm)
 
 		homeController := home.New(ctx, config, db, h)
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
@@ -159,34 +168,41 @@ func realMain(ctx context.Context) error {
 
 		// API for obtaining a CSRF token before calling /issue
 		// Installed in this context, it requires authentication.
+		csrfController := csrfapi.New(ctx, h)
 		sub.Handle("/csrf", csrfController.HandleIssue()).Methods("GET")
 	}
 
-	// Realm Admin pages, requires realm admin.
+	// apikeys
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
-		sub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
-		sub.Use(middleware.RequireRealm(ctx, h).Handle)
-		sub.Use(middleware.RequireRealmAdmin(ctx, h).Handle)
+		sub.Use(requireAuth)
+		sub.Use(requireRealm)
+		sub.Use(requireAdmin)
 
 		apikeyController := apikey.New(ctx, config, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
 		sub.Handle("/create", apikeyController.HandleCreate()).Methods("POST")
+	}
 
+	// users
+	{
 		userSub := r.PathPrefix("/users").Subrouter()
-		userSub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
-		userSub.Use(middleware.RequireRealm(ctx, h).Handle)
-		userSub.Use(middleware.RequireRealmAdmin(ctx, h).Handle)
+		userSub.Use(requireAuth)
+		userSub.Use(requireRealm)
+		userSub.Use(requireAdmin)
 
 		userController := user.New(ctx, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("/create", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/delete/{email}", userController.HandleDelete()).Methods("POST")
+	}
 
+	// realms
+	{
 		realmSub := r.PathPrefix("/realm/settings").Subrouter()
-		realmSub.Use(middleware.RequireAuth(ctx, auth, db, h, config.SessionCookieDuration).Handle)
-		realmSub.Use(middleware.RequireRealm(ctx, h).Handle)
-		realmSub.Use(middleware.RequireRealmAdmin(ctx, h).Handle)
+		realmSub.Use(requireAuth)
+		realmSub.Use(requireRealm)
+		realmSub.Use(requireAdmin)
 
 		realmadminController := realmadmin.New(ctx, config, db, h)
 		realmSub.Handle("", realmadminController.HandleIndex()).Methods("GET")
@@ -211,7 +227,6 @@ func userEmailKeyFunc() httplimit.KeyFunc {
 			return fmt.Sprintf("%x", dig), nil
 		}
 
-		// If no API key was provided, default to limiting by IP.
 		return ipKeyFunc(r)
 	}
 }
