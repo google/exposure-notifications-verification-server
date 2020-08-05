@@ -27,9 +27,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		ctx := r.Context()
 		flash := flash.FromContext(w, r)
 
-		// TODO(crwilcox): this should be moved to a cron run.
-		c.db.UpdateUserStats()
-
 		user := controller.UserFromContext(ctx)
 		if user == nil {
 			flash.Error("Unauthorized.")

@@ -101,6 +101,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 			return
 		}
 
+		// Cleanup tasks
 		if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
 			c.logger.Errorf("db.PurgeVerificationCodes: %v", err)
 		} else {
@@ -117,6 +118,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 			c.logger.Errorf("db.PurgeUsers: %v", err)
 		} else {
 			c.logger.Infof("purged %v user records", count)
+		}
+
+		// Gather usage statistics
+		if count, err := c.db.UpdateUserStats(); err != nil {
+			c.logger.Errorf("db.UpdateUserStats: %v", err)
+		} else {
+			c.logger.Info("updated statistics for user records")
+		}
+
+		if count, err := c.db.UpdateAuthorizedAppStats(); err != nil {
+			c.logger.Errorf("db.UpdateAuthorizedAppStats: %v", err)
+		} else {
+			c.logger.Info("updated statistics for authorized app records")
 		}
 
 		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{true})
