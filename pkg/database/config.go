@@ -37,7 +37,7 @@ type Config struct {
 
 	// Debug is a boolean that indicates whether the database should log SQL
 	// commands.
-	Debug bool `env:"DB_DEBUG,default=$DEV_MODE"`
+	Debug bool `env:"DB_DEBUG,default=false"`
 
 	// CacheTTL is the amount of time to cache values. This is enabled on a
 	// per-query basis. Not all query results are cached.
