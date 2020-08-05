@@ -18,6 +18,7 @@ package observability
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"contrib.go.opencensus.io/exporter/ocagent"
 	"contrib.go.opencensus.io/exporter/stackdriver"
@@ -44,7 +45,8 @@ func NewFromEnv(ctx context.Context, config *Config) (Exporter, error) {
 			return nil, fmt.Errorf("configuration PROJECT_ID is required to use the Stackdriver observability exporter")
 		}
 		sde, err := stackdriver.NewExporter(stackdriver.Options{
-			ProjectID: config.StackdriverConfig.ProjectID,
+			ProjectID:         config.StackdriverConfig.ProjectID,
+			ReportingInterval: time.Minute,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Stackdriver observability exporter: %v", err)
