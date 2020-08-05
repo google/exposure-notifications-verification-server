@@ -343,7 +343,18 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 		},
 		{
-			ID: "00014-DropUserDisabled",
+			ID: "00014-DropUserPurgeIndex",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: dropping user purge index=")
+				sql := "DROP INDEX IF EXISTS users_purge_index"
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Model(&User{}).AddIndex("users_purge_index", "updated_at").Error
+			},
+		},
+		{
+			ID: "00015-DropUserDisabled",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Infof("db migrations: dropping user disabled column")
 				sql := "ALTER TABLE users DROP COLUMN IF EXISTS disabled"
