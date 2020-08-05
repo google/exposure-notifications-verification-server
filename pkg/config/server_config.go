@@ -118,6 +118,10 @@ func (c *ServerConfig) GetVerficationCodeDigits() uint {
 	return c.CodeDigits
 }
 
+func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
+	return &c.Observability
+}
+
 // FirebaseConfig represents configuration specific to firebase auth.
 type FirebaseConfig struct {
 	APIKey          string `env:"FIREBASE_API_KEY,required"`

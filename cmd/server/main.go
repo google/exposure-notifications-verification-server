@@ -70,21 +70,17 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Setup monitoring
-	if provider, ok := config.(ObservabilityExporterConfigProvider); ok {
-		logger.Info("configuring observability exporter")
-		oeConfig := provider.ObservabilityExporterConfig()
-		oe, err := observability.NewFromEnv(ctx, oeConfig)
-		if err != nil {
-			return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
-		}
-		if err := oe.InitExportOnce(); err != nil {
-			return fmt.Errorf("error initializing observability exporter: %w", err)
-		}
-
-		serverEnvOpts = append(serverEnvOpts, serverenv.WithObservabilityExporter(oe))
-
-		logger.Infow("observability exporter", "config", oeConfig)
+	logger.Info("configuring observability exporter")
+	oeConfig := config.ObservabilityExporterConfig()
+	oe, err := observability.NewFromEnv(ctx, oeConfig)
+	if err != nil {
+		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
+	if err := oe.InitExportOnce(); err != nil {
+		return fmt.Errorf("error initializing observability exporter: %w", err)
+	}
+
+	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup sessions
 	sessions := sessions.NewCookieStore(config.CookieKeys.AsBytes()...)
