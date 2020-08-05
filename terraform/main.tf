@@ -111,6 +111,8 @@ resource "google_project_iam_member" "cloudbuild-deploy" {
 }
 
 # Cloud Scheduler requires AppEngine projects!
+#
+# If your project already has GAE enabled, run `terraform import google_app_engine_application.app $PROJECT_ID`
 resource "google_app_engine_application" "app" {
   project     = data.google_project.project.project_id
   location_id = var.appengine_location
