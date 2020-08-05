@@ -103,7 +103,7 @@ func (db *Database) UpdateUserStats() error {
 	// Start from last day in authorized app table.
 	curDay := userStats.Date
 	t := time.Now().UTC()
-	now := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	now := t.Truncate(24 * time.Hour)
 
 	for {
 		if curDay.After(now) {
