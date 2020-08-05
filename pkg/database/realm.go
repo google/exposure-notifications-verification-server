@@ -113,10 +113,10 @@ func (r *Realm) LoadRealmUsers(db *Database, includeDeleted bool) error {
 	if includeDeleted {
 		scope = db.db.Unscoped()
 	}
-	if err := scope.Model(r).Related(&r.RealmUsers, "RealmUsers").Error; err != nil {
+	if err := scope.Model(r).Preload("Realms").Preload("AdminRealms").Order("email").Related(&r.RealmUsers, "RealmUsers").Error; err != nil {
 		return fmt.Errorf("unable to load realm users: %w", err)
 	}
-	if err := scope.Model(r).Related(&r.RealmAdmins, "RealmAdmins").Error; err != nil {
+	if err := scope.Model(r).Preload("Realms").Preload("AdminRealms").Order("email").Related(&r.RealmAdmins, "RealmAdmins").Error; err != nil {
 		return fmt.Errorf("unable to load realm admins: %w", err)
 	}
 

@@ -3,6 +3,19 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+
+  <style>
+    #vercode {
+      flex-shrink: 10;
+      line-height: 2.3em;
+      max-width: 480px;
+    }
+
+    #vercode span {
+      flex: 1;
+      margin: 0 0.1em;
+    }
+  </style>
 </head>
 
 <body>
@@ -11,7 +24,7 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Issue Diagnosis Verification Code</h1>
+    <h1>Issue diagnosis verification code</h1>
     <p>
       Complete the following form to issue a single-use token to verify a
       patient. <strong>Do not submit this form until you are prepared to relay
@@ -78,109 +91,119 @@
 
       <div class="row form-group">
         <div class="offset-sm-3 col-sm-9">
-          <button id="submit" class="btn btn-primary">Generate code</button>
+          <button id="submit" class="btn btn-primary btn-block">Generate code</button>
         </div>
       </div>
     </form>
 
-    <div id="codearea" style="display:none">
-      <div class="row">
-        <p>
-          Share this code with the patient <strong>immediately</strong>. This
-          code expires at <span id="expiresAt"></span>.
-        </p>
-      </div>
+    <div id="codeerror" class="alert alert-danger d-none"></div>
 
-      <div class="row">
-        <p id="vercode" class="display-2 alert alert-info" style="font-family:monospace; letter-spacing:0.5em"></p>
-      </div>
+    <div id="codearea" class="d-none">
+      <hr>
 
-      <div class="row">
-        <button id="startover" class="btn btn-warning">Clear and generate another code</button>
-      </div>
+      <h2>Generated code</h2>
+
+      <p>
+        Share the follow code with the patient <strong>immediately</strong>.
+        This code expires at <span id="expiresAt"></span>.
+      </p>
+
+      <div id="vercode" class="text-center text-monospace d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
+
+      <button id="startover" class="btn btn-warning btn-block mb-3">
+        Clear and generate another code
+      </button>
     </div>
-
-    <div class="row alert alert-danger" id="codeerror" style="display:none"></div>
   </main>
 
   {{template "scripts" .}}
 
- <script type="text/javascript">
-   function getCode(csrfToken, data) {
-     $.ajax({
-       url: '/home/issue',
-       type : "POST",
-       dataType : 'json',
-       cache: false,
-       contentType: 'application/json',
-       data : JSON.stringify(data),
-       headers: {"X-CSRF-Token": csrfToken},
-       success : function(result) {
-         if (result.error != "") {
-           $("#codeerror").text(result.error);
-           $("#codearea").hide();
-           $("#codeerror").show();
-           $("#submit").prop('disabled', false);
-         } else {
-           $("#expiresAt").text(result.expiresAt);
-           $("#vercode").text(result.code);
-           $("#codearea").show();
-           $("#codeerror").hide();
-         }
-       },
-       error: function(xhr, resp, text) {
-         var message = resp;
-         if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
-           message = message + ": " + xhr.responseJSON.error;
-         }
-         $("#codeerror").text(message);
-         $("#codearea").hide();
-         $("#codeerror").show();
-         $("#submit").prop('disabled', false);
-       }
-     });
-   }
+  <script type="text/javascript">
+    let $codeerror, $codearea, $expiresAt, $vercode, $submit;
 
-   $(document).ready(function(){
+   $(function() {
+      $codeerror = $('#codeerror');
+      $codearea = $('#codearea');
+      $expiresAt = $('#expiresAt');
+      $vercode = $('#vercode');
+      $submit = $('#submit');
+
       // click on button submit
-      $("#submit").on('click', function(event) {
+      $submit.on('click', function(event) {
         event.preventDefault();
 
         // Disable the submit button so we only issue one code.
-        $("#submit").prop('disabled', true);
+        $submit.prop('disabled', true);
+
         var data = {};
-        $($("#issueForm").serializeArray()).each(function(index, obj){
+        $($('#issueForm').serializeArray()).each(function(index, obj){
           data[obj.name] = obj.value;
         });
-        $.ajax({
-          url: '/home/csrf',
-          type: "GET",
-          dataType: 'json',
-          cache: false,
-          contentType: 'application/json',
-          success: function(result) {
-            if (result.error != "") {
-              $("#codeerror").text(result.error);
-              $("#codearea").hide();
-              $("#codeerror").show();
-              $("#submit").prop('disabled', false);
-            } else {
-              getCode(result.csrftoken, data);
-            }
-          }
-        });
+
+        getCode(data);
       });
 
-      $("#startover").on('click', function() {
+      $('#startover').on('click', function() {
         // Hide the previously issued code and enable the submit button.
-        $("#codearea").hide()
-        $("#symptomDate").val("")
-        $("#submit").prop('disabled', false);
-        $("#vercode").text("")
-        $("#expiresAt").text("")
-        $("#codeerror").text("")
+        $codeerror.addClass('d-none');
+        $codearea.addClass('d-none');
+        $submit.prop('disabled', false);
+        $vercode.text('');
+        $expiresAt.text('');
       });
     });
+
+    function getCode(data) {
+      $.ajax({
+        url: '/home/issue',
+        type: 'POST',
+        dataType: 'json',
+        cache: false,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        headers: {
+          'X-CSRF-Token': '{{.csrfToken}}',
+        },
+        success: function(result) {
+          if(result.error != "") {
+            showError(result.error);
+          } else {
+            $expiresAt.text(result.expiresAt);
+
+            let code = result.code;
+            for(let i = 0; i < code.length; i++) {
+              let $span = $('<span class="border rounded mx-1">').text(code.charAt(i));
+              $vercode.append($span);
+            }
+
+            $codeerror.addClass('d-none');
+            $codearea.removeClass('d-none');
+
+            $codearea[0].scrollIntoView({
+              behavior: 'smooth',
+            });
+          }
+        },
+        error: function(xhr, resp, text) {
+          var message = resp;
+          if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+            message = message + ": " + xhr.responseJSON.error;
+          }
+          showError(message);
+        }
+      });
+    }
+
+    function showError(error) {
+      $codearea.addClass('d-none');
+
+      $codeerror.text(error);
+      $codeerror.removeClass('d-none');
+      $codeerror[0].scrollIntoView({
+        behavior: 'smooth',
+      });
+      $submit.prop('disabled', false);
+    }
   </script>
 </body>
 </html>

@@ -28,6 +28,8 @@ import (
 )
 
 func (c *Controller) HandleIssue() http.Handler {
+	logger := c.logger.Named("issueapi.HandleIssue")
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -64,7 +66,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		if request.Phone != "" {
 			smsProvider, err = realm.GetSMSProvider(ctx, c.db)
 			if err != nil {
-				c.logger.Errorw("failed to get sms provider", "error", err)
+				logger.Errorw("failed to get sms provider", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
 				return
 			}
@@ -121,7 +123,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		code, err := codeRequest.Issue(ctx, c.config.GetColissionRetryCount())
 		if err != nil {
-			c.logger.Errorw("failed to generate otp code", "error", err)
+			logger.Errorw("failed to issue code", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			return
 		}
@@ -131,11 +133,11 @@ func (c *Controller) HandleIssue() http.Handler {
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token
 				if err := c.db.DeleteVerificationCode(code); err != nil {
-					c.logger.Errorw("failed to delete verification code", "error", err)
+					logger.Errorw("failed to delete verification code", "error", err)
 					// fallthrough to the error
 				}
 
-				c.logger.Errorw("failed to send sms", "error", err)
+				logger.Errorw("failed to send sms", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 				return
 			}

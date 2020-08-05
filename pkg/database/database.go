@@ -59,6 +59,12 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 	if err != nil {
 		return nil, fmt.Errorf("database gorm.Open: %w", err)
 	}
+
+	// Log SQL statements in debug mode.
+	if c.Debug {
+		db.LogMode(true)
+	}
+
 	return &Database{
 		db:            db,
 		config:        c,
