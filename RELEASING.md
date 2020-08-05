@@ -5,7 +5,7 @@
   * Both the exposure-notifications-sever and exposure-notifications-verification-server wil follow the same release numbering
     * The verification server release should be cut after the exposure-notifications-server
 
-# Dependenceis
+# Dependencies
 
 You need the kubernetes release-notes tool to generate release notes.
 
