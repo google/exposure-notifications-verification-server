@@ -20,7 +20,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.0.0-20200620013148-b91950f658ec // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/google/exposure-notifications-server v0.0.0-20200801175013-f1d6197d6ab8
+	github.com/google/exposure-notifications-server v0.0.0-20200805174802-a6f48d9c988b
 	github.com/google/go-cmp v0.5.1
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/handlers v1.4.2
