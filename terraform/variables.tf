@@ -57,6 +57,11 @@ variable "appengine_location" {
   default = "us-central"
 }
 
+variable "cloudrun_location" {
+  type    = string
+  default = "us-central1"
+}
+
 # The cloudscheduler_location MUST use the same region as appengine_location but
 # it must include the region number even if this is omitted from the
 # appengine_location (as in the default values).
