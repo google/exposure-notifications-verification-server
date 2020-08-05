@@ -16,43 +16,46 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Create User</h1>
+    <h1>Create user</h1>
 
     <form method="POST" action="/users/create">
       {{$csrfField}}
       <div class="form-group row">
-        <label for="email" class="col-sm-2">Email:</label>
-        <div class="col-sm-10">
+        <label for="email" class="col-sm-3">Email:</label>
+        <div class="col-sm-9">
           <input type="text" id="email" name="email" class="form-control"/>
         </div>
       </div>
+
       <div class="form-group row">
-        <label for="name" class="col-sm-2"
-               title="Name in the form 'First Last', 'Given-name Surname'">
-          Name:
-        </label>
-        <br>
-        <div class="col-sm-10">
+        <label for="name" class="col-sm-3">Name:</label>
+        <div class="col-sm-9">
           <input type="text" id="name" name="name" class="form-control"/>
         </div>
       </div>
+
       <div class="form-group row">
-        <label for="admin" class="col-sm-2">Realm Admin:</label><br>
-        <div class="col-sm-1">
-          <input type="checkbox" id="admin" name="admin" class="form-control" value="true"/>
+        <label for="admin" class="col-sm-3">Options:</label>
+        <div class="col-sm-9">
+          <div class="form-check">
+            <input type="checkbox" id="admin" name="admin" class="form-check-input">
+            <label class="form-check-label" for="admin">
+              Admin
+            </label>
+          </div>
         </div>
-        <div class="col-sm-9"></div>
-      </div>
       </div>
 
       <div class="form-group row">
-        <div class="offset-sm-2 col-sm-10">
-          <button type="submit" class="btn btn-primary" name="Action" value="save">Create user</button>
+        <div class="offset-sm-3 col-sm-9">
+          <button type="submit" class="btn btn-primary btn-block">Create user</button>
         </div>
       </div>
     </form>
 
-    <h2>{{$currentRealm.Name}} Users</h2>
+    <hr>
+
+    <h2>Users</h2>
 
     {{if .realmUsers}}
     <div class="table-responsive">
@@ -61,21 +64,29 @@
           <tr>
             <th scope="col">Email</th>
             <th scope="col">Name</th>
-            <th scope="col">Realm Admin</th>
-            <th scope="col">Delete?</th>
+            <th scope="col">Options</th>
+            <th scope="col"></th>
           </tr>
         </thead>
         <tbody>
           {{range .realmUsers}}
           <tr>
-            <td scope="row">{{.Email}}</td>
-            <td scope="row">{{.Name}}</td>
-            <td scope="row">{{if .CanAdminRealm $currentRealm.ID}}&#x2714;{{end}}</td>
-            <td scope="row">
-              <form method="POST" action="/users/delete/{{.Email}}">
-                {{$csrfField}}
-                <button type="submit" class="btn btn-primary" name="Action" value="delete">Delete User</button>
-              </form>
+            <td>{{.Email}}</td>
+            <td>{{.Name}}</td>
+            <td>
+              {{if .CanAdminRealm $currentRealm.ID}}
+                <span class="badge badge-pill badge-primary">Admin</span>
+              {{end}}
+            </td>
+            <td>
+              {{if eq .ID $currentUser.ID}}
+                <em>(you)</em>
+              {{else}}
+                <form method="POST" action="/users/delete/{{.Email}}">
+                  {{$csrfField}}
+                  <a class="text-danger" data-submit-form data-confirm="Are you sure?">Delete</a>
+                </form>
+              {{end}}
             </td>
           </tr>
           {{end}}

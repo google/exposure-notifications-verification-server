@@ -49,7 +49,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			realm := userRealms[0]
 
 			controller.StoreSessionRealm(session, realm)
-			flash.Alert("Logged into verification system for '%v", realm.Name)
+			flash.Alert("Logged into verification system for '%s'", realm.Name)
 			http.Redirect(w, r, "/home", http.StatusFound)
 			return
 		}
