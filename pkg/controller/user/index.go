@@ -42,7 +42,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		for _, user := range realm.RealmUsers {
 			userStatsSummary, err := c.db.GetUserStatsSummary(user, realm)
 			if err != nil {
-				flash.ErrorNow("Error loading user stats summary: %v", err)
+				controller.InternalError(w, r, c.h, err)
 			}
 			creationCounts1d[user.ID] = userStatsSummary.CodesIssued1d
 			creationCounts7d[user.ID] = userStatsSummary.CodesIssued7d
@@ -54,8 +54,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		m["codesGenerated1d"] = creationCounts1d
 		m["codesGenerated7d"] = creationCounts7d
 		m["codesGenerated30d"] = creationCounts30d
-		m["flash"] = flash
-		m[csrf.TemplateTag] = csrf.TemplateField(r)
 
 		c.h.RenderHTML(w, "users", m)
 	})

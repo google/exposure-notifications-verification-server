@@ -112,16 +112,16 @@ func (c *Controller) HandleCleanup() http.Handler {
 			c.logger.Errorf("db.PurgeTokens: %v", err)
 		} else {
 			c.logger.Infof("purged %v verification tokens", count)
-		}	
+		}
 
 		// Gather usage statistics
-		if count, err := c.db.UpdateUserStats(); err != nil {
+		if err := c.db.UpdateUserStats(); err != nil {
 			c.logger.Errorf("db.UpdateUserStats: %v", err)
 		} else {
 			c.logger.Info("updated statistics for user records")
 		}
 
-		if count, err := c.db.UpdateAuthorizedAppStats(); err != nil {
+		if err := c.db.UpdateAuthorizedAppStats(); err != nil {
 			c.logger.Errorf("db.UpdateAuthorizedAppStats: %v", err)
 		} else {
 			c.logger.Info("updated statistics for authorized app records")

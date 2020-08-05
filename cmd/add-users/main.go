@@ -30,7 +30,7 @@ func main() {
 	emailFlag := flag.String("email", "", "email for the user to add")
 	nameFlag := flag.String("name", "", "name of the user to add")
 	adminFlag := flag.Bool("admin", false, "true if user is admin user")
-	realmID := flag.Int64("realm", -1, "realm to add the user to")
+	realmID := flag.Uint("realm", 0, "realm to add the user to")
 	realmAdminFlag := flag.Bool("admin-realm", false, "realm to add the user to")
 
 	flag.Parse()

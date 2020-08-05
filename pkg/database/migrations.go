@@ -364,8 +364,8 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				sql := "ALTER TABLE users ADD COLUMN disabled bool NOT NULL DEFAULT true"
 				return tx.Exec(sql).Error
 			},
-    }
-    {
+		},
+		{
 			ID: "00016-AddIssuerIDColumns",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Infof("db migrations: adding issuer id columns to verification codes")
@@ -384,6 +384,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					return err
 				}
 				return nil
+			},
 		},
 	})
 }

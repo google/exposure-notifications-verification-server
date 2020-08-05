@@ -45,18 +45,16 @@ func (c *Controller) HandleIndex() http.Handler {
 		for _, app := range realm.AuthorizedApps {
 			appStatsSummary, err := c.db.GetAuthorizedAppStatsSummary(app, realm)
 			if err != nil {
-				flash.ErrorNow("Error loading app stats summary: %v", err)
+				controller.InternalError(w, r, c.h, err)
 			}
 			creationCounts1d[app.ID] = appStatsSummary.CodesIssued1d
 			creationCounts7d[app.ID] = appStatsSummary.CodesIssued7d
 			creationCounts30d[app.ID] = appStatsSummary.CodesIssued30d
 		}
 
-		
 		m["codesGenerated1d"] = creationCounts1d
 		m["codesGenerated7d"] = creationCounts7d
 		m["codesGenerated30d"] = creationCounts30d
-		m["flash"] = flash
 		m["apps"] = realm.AuthorizedApps
 		m["typeAdmin"] = database.APIUserTypeAdmin
 		m["typeDevice"] = database.APIUserTypeDevice
