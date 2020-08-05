@@ -79,7 +79,6 @@ func realMain(ctx context.Context) error {
 	if err := oe.InitExportOnce(); err != nil {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
-
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup sessions
