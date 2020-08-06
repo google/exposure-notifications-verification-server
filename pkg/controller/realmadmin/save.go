@@ -18,12 +18,20 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
 func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
 		Name string `form:"name,required"`
+
+		TwilioAccountSid string `form:"twilio_account_sid"`
+		TwilioAuthToken  string `form:"twilio_auth_token"`
+		TwilioFromNumber string `form:"twilio_from_number"`
 	}
+
+	logger := c.logger.Named("HandleSave")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -48,12 +56,72 @@ func (c *Controller) HandleSave() http.Handler {
 			return
 		}
 
+		// SMS config is all or nothing
+		if (form.TwilioAccountSid != "" || form.TwilioAuthToken != "" || form.TwilioFromNumber != "") &&
+			(form.TwilioAccountSid == "" || form.TwilioAuthToken == "" || form.TwilioFromNumber == "") {
+			flash.Error("Error updating realm: all SMS fields are required")
+			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+			return
+		}
+
+		// Process general settings
 		realm.Name = form.Name
 		if err := c.db.SaveRealm(realm); err != nil {
-			c.logger.Errorf("unable save realm settings: %v", err)
+			logger.Errorw("failed to save realm", "error", err)
 			flash.Error("Error updating realm: %v", err)
 			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 			return
+		}
+
+		// Process SMS settings
+		smsConfig, err := realm.SMSConfig()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		if smsConfig != nil {
+			// We have an existing record
+			if form.TwilioAccountSid == "" && form.TwilioAuthToken == "" && form.TwilioFromNumber == "" {
+				// All fields are empty, delete the record
+				if err := c.db.DeleteSMSConfig(smsConfig); err != nil {
+					logger.Errorw("failed to delete smsConfig", "error", err)
+					flash.Error("Error updating realm: %v", err)
+					http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+					return
+				}
+			} else {
+				// Potential updates
+				smsConfig.TwilioAccountSid = form.TwilioAccountSid
+				smsConfig.TwilioAuthToken = form.TwilioAuthToken
+				smsConfig.TwilioFromNumber = form.TwilioFromNumber
+
+				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
+					logger.Errorw("failed to update smsConfig", "error", err)
+					flash.Error("Error updating realm: %v", err)
+					http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+					return
+				}
+			}
+		} else {
+			// No SMS config exists
+			if form.TwilioAccountSid != "" || form.TwilioAuthToken != "" || form.TwilioFromNumber != "" {
+				// Values were provided
+				smsConfig = &database.SMSConfig{
+					RealmID:          realm.ID,
+					ProviderType:     sms.ProviderTypeTwilio,
+					TwilioAccountSid: form.TwilioAccountSid,
+					TwilioAuthToken:  form.TwilioAuthToken,
+					TwilioFromNumber: form.TwilioFromNumber,
+				}
+
+				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
+					logger.Errorw("failed to create smsConfig", "error", err)
+					flash.Error("Error updating realm: %v", err)
+					http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+					return
+				}
+			}
 		}
 
 		flash.Alert("Updated realm settings!")
