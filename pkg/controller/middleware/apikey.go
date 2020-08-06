@@ -62,6 +62,9 @@ func RequireAPIKey(ctx context.Context, cache *cache.Cache, db *database.Databas
 				if err != nil {
 					return nil, err
 				}
+				if aa == nil {
+					return nil, nil
+				}
 				return aa, nil
 			})
 			if err != nil {
