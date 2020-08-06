@@ -323,8 +323,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00012-DropAuthorizedAppUniqueNameIndex",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Info("dropping authorized apps unique name index")
-				if err := tx.Model(&AuthorizedApp{}).RemoveIndex("uix_authorized_apps_name").Error; err != nil {
-					logger.Warnf("error dropping index, that may not exists: %v", err)
+				sql := "DROP INDEX IF EXISTS uix_authorized_apps_name"
+				if err := tx.Exec(sql).Error; err != nil {
+					return err
 				}
 				return nil
 			},
