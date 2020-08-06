@@ -17,9 +17,11 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/jinzhu/gorm"
 
@@ -35,6 +37,9 @@ type Database struct {
 
 	// cacher is an internal write-through cache for frequent lookups.
 	cacher *cache.Cache
+
+	// keyManager is used to encrypt/decrypt values.
+	keyManager keys.KeyManager
 
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
@@ -54,6 +59,12 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 		return nil, fmt.Errorf("failed to create secret manager: %w", err)
 	}
 
+	// Create the key manager.
+	keyManager, err := keys.KeyManagerFor(ctx, c.Keys.KeyManagerType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create key manager: %w", err)
+	}
+
 	// Connect to the database.
 	db, err := gorm.Open("postgres", c.ConnectionString())
 	if err != nil {
@@ -65,10 +76,14 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 		db.LogMode(true)
 	}
 
+	// Enable auto-loading.
+	db.Set("gorm:auto_preload", true)
+
 	return &Database{
 		db:            db,
 		config:        c,
 		cacher:        cacher,
+		keyManager:    keyManager,
 		secretManager: secretManager,
 	}, nil
 }
@@ -76,4 +91,9 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 // Close will close the database connection. Should be deferred right after Open.
 func (db *Database) Close() error {
 	return db.db.Close()
+}
+
+// IsNotFound determines if an error is a record not found.
+func IsNotFound(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
 }

@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css" integrity="sha256-BJ/G+e+y7bQdrYkS2RBTyNfBHpA9IuGaPmf9htub5MQ=" crossorigin="anonymous">
 
 <title>{{if .title}}{{.title}}{{else}}Diagnosis Verification Server{{end}}</title>
 
@@ -91,7 +92,7 @@
     $('a[data-submit-form]').click(function(e) {
       e.preventDefault();
 
-      let $this = $(e.target);
+      let $this = $(e.currentTarget);
       let confirm = $this.data('confirm');
       if(confirm != '') {
         if (window.confirm(confirm) !== true) {
@@ -100,6 +101,27 @@
       }
 
       $this.closest('form').submit();
+    });
+
+    // Add data-toggle-password to an element with the value pointing to the id
+    // of an input[type="password"]. It will toggle/untoggle the value.
+    $('a[data-toggle-password]').click(function(e) {
+      e.preventDefault();
+
+      let $this = $(e.currentTarget);
+      let selector = $this.data('togglePassword');
+      let $input = $('#'+selector);
+      let $icon = $this.find('span.oi');
+
+      if($input.attr('type') == 'password') {
+        $input.attr('type', 'text');
+        $icon.addClass('oi-lock-unlocked');
+        $icon.removeClass('oi-lock-locked');
+      } else if($input.attr('type') == 'text') {
+        $input.attr('type', 'password');
+        $icon.addClass('oi-lock-locked');
+        $icon.removeClass('oi-lock-unlocked');
+      }
     });
   });
 </script>

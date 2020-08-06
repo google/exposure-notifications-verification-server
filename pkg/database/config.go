@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 )
 
@@ -42,6 +43,15 @@ type Config struct {
 	// CacheTTL is the amount of time to cache values. This is enabled on a
 	// per-query basis. Not all query results are cached.
 	CacheTTL time.Duration `env:"DB_CACHE_TTL, default=5m" json:",omitempty"`
+
+	// Keys is the key management configuration. This is used to resolve values
+	// that are encrypted via a KMS.
+	Keys keys.Config
+
+	// EncryptionKey is the reference to an encryption/decryption key to use when
+	// for application-layer encryption before values are persisted to the
+	// database.
+	EncryptionKey string `env:"DB_ENCRYPTION_KEY,required"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
