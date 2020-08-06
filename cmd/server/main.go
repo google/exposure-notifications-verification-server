@@ -137,6 +137,7 @@ func realMain(ctx context.Context) error {
 	// Install the handlers that don't require authentication first on the main router.
 	indexController := index.New(ctx, config, h)
 	r.Handle("/", indexController.HandleIndex()).Methods("GET")
+	r.Handle("/healthz", controller.HandleHealthz(h, &config.Database)).Methods("GET")
 
 	// Session handling
 	sessionController := session.New(ctx, auth, config, db, h)

@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -71,6 +72,7 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+	r.Handle("/healthz", controller.HandleHealthz(h, &config.Database)).Methods("GET")
 
 	// Setup rate limiter
 	store, err := memorystore.New(&memorystore.Config{
