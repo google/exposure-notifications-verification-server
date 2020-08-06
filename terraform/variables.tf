@@ -47,6 +47,13 @@ variable "database_name" {
   default = "en-verification"
 }
 
+variable "database_backup_location" {
+  type    = string
+  default = "us"
+
+  description = "Location in which to backup the database."
+}
+
 # The location for the app engine; this implicitly defines the region for
 # scheduler jobs as specified by the cloudscheduler_location variable but the
 # values are sometimes different (as in the default values) so they are kept as
