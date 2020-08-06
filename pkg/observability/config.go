@@ -13,6 +13,8 @@
 // limitations under the License.
 
 // Package observability sets up and configures observability tools.
+//
+// TODO(icco): Dedup against exposure-notifications-server/internal/observability
 package observability
 
 // ExporterType represents a type of observability exporter.
