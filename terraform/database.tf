@@ -42,7 +42,7 @@ resource "google_sql_database_instance" "db-inst" {
 
     backup_configuration {
       enabled    = true
-      location   = "us"
+      location   = var.database_backup_location
       start_time = "02:00"
     }
 
