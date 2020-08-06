@@ -125,11 +125,40 @@ func (r *Realm) LoadRealmUsers(db *Database, includeDeleted bool) error {
 	return nil
 }
 
+// DisableAuthorizedApp disables the given authorized app by id.
+func (r *Realm) DisableAuthorizedApp(id uint) error {
+	var app AuthorizedApp
+	if err := r.db.db.
+		Model(AuthorizedApp{}).
+		Where("id = ?", id).
+		Where("realm_id = ?", r.ID).
+		Delete(&app).
+		Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EnableAuthorizedApp enables the given authorized app by id.
+func (r *Realm) EnableAuthorizedApp(id uint) error {
+	if err := r.db.db.
+		Unscoped().
+		Model(AuthorizedApp{}).
+		Where("id = ?", id).
+		Where("realm_id = ?", r.ID).
+		Update("deleted_at", nil).
+		Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetAuthorizedApps does a lazy load on a realm's authorized apps if they are not already loaded.
 func (r *Realm) GetAuthorizedApps(db *Database, includeDeleted bool) ([]*AuthorizedApp, error) {
 	if len(r.AuthorizedApps) > 0 {
 		return r.AuthorizedApps, nil
 	}
+
 	scope := db.db
 	if includeDeleted {
 		scope = db.db.Unscoped()
