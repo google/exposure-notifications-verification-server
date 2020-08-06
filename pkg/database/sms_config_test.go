@@ -16,10 +16,9 @@ package database
 
 import (
 	"context"
-	"strings"
 	"testing"
 
-	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -31,104 +30,43 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 	ctx := context.Background()
 	db := NewTestDatabase(t)
 
+	// Create a key manager
+	km, err := keys.NewInMemory(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := km.AddEncryptionKey("my-key"); err != nil {
+		t.Fatal(err)
+	}
+	db.keyManager = km
+
+	// Create realm
 	realmName := t.Name()
-	var wantSMSConfig *SMSConfig
-	{
-		realm, err := db.CreateRealm(realmName)
-		if err != nil {
-			t.Fatalf("unable to cerate test realm: %v", err)
-		}
-
-		// Create a secret manager.
-		sm, err := secrets.NewInMemoryFromMap(ctx, map[string]string{
-			"my-secret-ref": "def456",
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		db.secretManager = sm
-
-		realm.SMSConfig = &SMSConfig{
-			ProviderType:     sms.ProviderType("TWILIO"),
-			TwilioAccountSid: "abc123",
-			TwilioAuthToken:  "totally-not-valid", // invalid ref, test error propagation
-			TwilioFromNumber: "+11234567890",
-		}
-		if err := db.SaveRealm(realm); err != nil {
-			t.Fatal(err)
-		}
-		wantSMSConfig = realm.SMSConfig
+	realm, err := db.CreateRealm(realmName)
+	if err != nil {
+		t.Fatalf("unable to cerate test realm: %v", err)
 	}
 
-	{
-		realm, err := db.GetRealmByName(realmName)
-		if err != nil {
-			t.Fatalf("failed to read back realm: %v", err)
-		}
-
-		// Get the SMSConfig.
-		smsConfig, err := realm.GetSMSConfig(ctx, db)
-		if err != nil {
-			t.Fatalf("error getting sms config: %v", err)
-		}
-
-		if diff := cmp.Diff(wantSMSConfig, smsConfig, approxTime, cmpopts.IgnoreUnexported(SMSConfig{})); diff != "" {
-			t.Fatalf("mismatch (-want, +got):\n%s", diff)
-		}
-
-		// Attempt to get the SMS provider, but secret resolution should fail.
-		_, err = smsConfig.GetSMSProvider(ctx, db)
-		if err == nil {
-			t.Fatalf("expected error")
-		}
-		if !strings.Contains(err.Error(), "does not exist") {
-			t.Errorf("expected %v to be %v", err, "does not exist")
-		}
-
-		// Delete config.
-		if err := db.DeleteSMSConfig(smsConfig); err != nil {
-			t.Fatal(err)
-		}
+	// Create SMS config
+	smsConfig := &SMSConfig{
+		RealmID:          realm.ID,
+		ProviderType:     sms.ProviderType("TWILIO"),
+		TwilioAccountSid: "abc123",
+		TwilioAuthToken:  "totally-not-valid", // invalid ref, test error propagation
+		TwilioFromNumber: "+11234567890",
+	}
+	if err := db.SaveSMSConfig(smsConfig); err != nil {
+		t.Fatal(err)
 	}
 
-	{
-		realm, err := db.GetRealmByName(realmName)
-		if err != nil {
-			t.Fatalf("failed to read back realm: %v", err)
-		}
+	// Get the config
+	gotSMSConfig, err := realm.SMSConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		// Get the SMSConfig.
-		smsConfig, err := realm.GetSMSConfig(ctx, db)
-		if err != nil {
-			t.Fatalf("error getting sms config: %v", err)
-		}
-		if smsConfig != nil {
-			t.Fatalf("read back deleted sms config, unexpected")
-		}
-		// Create valid config.
-		smsConfig = &SMSConfig{
-			ProviderType:     sms.ProviderType("TWILIO"),
-			TwilioAccountSid: "abc123",
-			TwilioAuthToken:  "my-secret-ref", // Valid secret
-			TwilioFromNumber: "+11234567890",
-		}
-		if err := db.SaveRealm(realm); err != nil {
-			t.Fatalf("error saving realm/sms config: %v", err)
-		}
-
-		// Get the provider.
-		result, err := smsConfig.GetSMSProvider(ctx, db)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if result == nil {
-			t.Fatalf("sms provider was nil")
-		}
-
-		// Secret was resolved.
-		if got, want := smsConfig.twilioAuthSecret, "def456"; got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
+	if diff := cmp.Diff(gotSMSConfig, smsConfig, approxTime, cmpopts.IgnoreUnexported(SMSConfig{})); diff != "" {
+		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
 
@@ -138,39 +76,40 @@ func TestGetSMSProvider(t *testing.T) {
 	ctx := context.Background()
 	db := NewTestDatabase(t)
 
-	// Create a secret manager.
-	sm, err := secrets.NewInMemoryFromMap(ctx, map[string]string{
-		"my-secret-ref": "def456",
-	})
+	// Create a key manager
+	km, err := keys.NewInMemory(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	db.secretManager = sm
+	if err := km.AddEncryptionKey("my-key"); err != nil {
+		t.Fatal(err)
+	}
+	db.keyManager = km
 
 	realm, err := db.CreateRealm("test-sms-realm-1")
 	if err != nil {
 		t.Fatalf("realm create failed: %v", err)
 	}
 
-	smsConfig, err := realm.GetSMSConfig(ctx, db)
+	provider, err := realm.SMSProvider()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if smsConfig != nil {
-		t.Errorf("expected %v to be %v", smsConfig, nil)
+	if provider != nil {
+		t.Errorf("expected %v to be %v", provider, nil)
 	}
 
-	realm.SMSConfig = &SMSConfig{
+	smsConfig := &SMSConfig{
 		ProviderType:     sms.ProviderType("TWILIO"),
 		TwilioAccountSid: "abc123",
 		TwilioAuthToken:  "my-secret-ref",
 		TwilioFromNumber: "+11234567890",
 	}
-	if err := db.SaveRealm(realm); err != nil {
+	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
 	}
 
-	provider, err := realm.SMSConfig.GetSMSProvider(ctx, db)
+	provider, err = realm.SMSProvider()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -16,18 +16,24 @@ package database
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
 
 // SMSConfig represents and SMS configuration.
 type SMSConfig struct {
+	db *Database `gorm:"-"`
+
 	gorm.Model
 
 	// SMS Config belongs to exactly one realm.
 	RealmID uint `gorm:"unique_index"`
+	Realm   Realm
 
 	// ProviderType is the SMS provider type - it's used to determine the
 	// underlying configuration.
@@ -35,39 +41,77 @@ type SMSConfig struct {
 
 	// Twilio configuration options.
 	TwilioAccountSid string `gorm:"type:varchar(250)"`
-	TwilioAuthToken  string `gorm:"type:varchar(250)"` // secret reference
+	TwilioAuthToken  string `gorm:"type:varchar(250)"`
 	TwilioFromNumber string `gorm:"type:varchar(16)"`
 
-	// This field contains the resolved secret, used for testing secrets were
-	// actually resolved properly.
-	twilioAuthSecret string
+	// twilioAuthToken and twilioAuthTokenEncrypted are cached values of the auth
+	// token. It's used to compare whether the value changed to avoid unnecessary
+	// calls the KMS.
+	twilioAuthToken          string `gorm:"-"`
+	twilioAuthTokenEncrypted string `gorm:"-"`
 }
 
-// GetSMSProvider gets the SMS provider for the given realm. The values are
-// cached.
-func (smsConfig *SMSConfig) GetSMSProvider(ctx context.Context, db *Database) (sms.Provider, error) {
-	// The provider itself is cached, not the SMSConfig entity.
-	key := fmt.Sprintf("GetSMSProvider/%v", smsConfig.ID)
-	val, err := db.cacher.WriteThruLookup(key, func() (interface{}, error) {
-		// Get the actual auth token from the secret manager.
-		//
-		// TODO(sethvargo): this is a double switch, since ProviderFor is also a
-		// switch. Maybe we should push this logic down lower? We only want to
-		// resolve secrets for the provider that's configured.
-		switch smsConfig.ProviderType {
-		case sms.ProviderTypeTwilio:
-			authToken, err := db.secretManager.GetSecretValue(ctx, smsConfig.TwilioAuthToken)
-			if err != nil {
-				return nil, fmt.Errorf("failed to resolve twilio auth token secret: %w", err)
-			}
-			smsConfig.twilioAuthSecret = authToken
+// BeforeSave runs before records are saved/created. It's used to mutate values
+// (such as the auth tokens) before storing them in the database. Do not call
+// this function, gorm calls it automatically.
+func (r *SMSConfig) BeforeSave(tx *gorm.DB) error {
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+
+	if plaintext := r.TwilioAuthToken; plaintext != "" {
+		// Don't encrypt again if the value hasn't changed.
+		if plaintext == r.twilioAuthToken {
+			r.TwilioAuthToken = r.twilioAuthTokenEncrypted
+			return nil
 		}
 
+		keyID := r.db.config.EncryptionKey
+		b, err := r.db.keyManager.Encrypt(ctx, keyID, []byte(plaintext), nil)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt twilio auth token: %w", err)
+		}
+		r.TwilioAuthToken = base64.RawStdEncoding.EncodeToString(b)
+	}
+	return nil
+}
+
+// AfterFind runs after a record is found. It's used to mutate values (such as
+// auth tokens) before storing them on the struct. Do not call this function,
+// gorm calls it automatically.
+func (r *SMSConfig) AfterFind() error {
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+
+	if ciphertextStr := r.TwilioAuthToken; ciphertextStr != "" {
+		ciphertext, err := base64util.DecodeString(ciphertextStr)
+		if err != nil {
+			return fmt.Errorf("failed to decode twilio auth token: %w", err)
+		}
+
+		keyID := r.db.config.EncryptionKey
+		plaintext, err := r.db.keyManager.Decrypt(ctx, keyID, []byte(ciphertext), nil)
+		if err != nil {
+			return fmt.Errorf("failed to decrypt twilio auth token: %w", err)
+		}
+		r.TwilioAuthToken = string(plaintext)
+		r.twilioAuthToken = string(plaintext)
+		r.twilioAuthTokenEncrypted = ciphertextStr
+	}
+
+	return nil
+}
+
+// SMSProvider gets the SMS provider for the given realm. The values are
+// cached.
+func (r *SMSConfig) SMSProvider() (sms.Provider, error) {
+	key := fmt.Sprintf("GetSMSProvider/%v", r.ID)
+	val, err := r.db.cacher.WriteThruLookup(key, func() (interface{}, error) {
+		ctx := context.Background()
 		provider, err := sms.ProviderFor(ctx, &sms.Config{
-			ProviderType:     smsConfig.ProviderType,
-			TwilioAccountSid: smsConfig.TwilioAccountSid,
-			TwilioAuthToken:  smsConfig.twilioAuthSecret,
-			TwilioFromNumber: smsConfig.TwilioFromNumber,
+			ProviderType:     r.ProviderType,
+			TwilioAccountSid: r.TwilioAccountSid,
+			TwilioAuthToken:  r.twilioAuthToken,
+			TwilioFromNumber: r.TwilioFromNumber,
 		})
 		if err != nil {
 			return nil, err
@@ -87,6 +131,8 @@ func (smsConfig *SMSConfig) GetSMSProvider(ctx context.Context, db *Database) (s
 
 // SaveSMSConfig creates or updates an SMS configuration record.
 func (db *Database) SaveSMSConfig(s *SMSConfig) error {
+	s.db = db
+
 	if s.Model.ID == 0 {
 		return db.db.Create(s).Error
 	}
@@ -95,5 +141,7 @@ func (db *Database) SaveSMSConfig(s *SMSConfig) error {
 
 // DeleteSMSConfig removes an SMS configuration record.
 func (db *Database) DeleteSMSConfig(s *SMSConfig) error {
+	s.db = db
+
 	return db.db.Unscoped().Delete(s).Error
 }
