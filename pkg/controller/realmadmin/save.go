@@ -59,7 +59,7 @@ func (c *Controller) HandleSave() http.Handler {
 		// SMS config is all or nothing
 		if (form.TwilioAccountSid != "" || form.TwilioAuthToken != "" || form.TwilioFromNumber != "") &&
 			(form.TwilioAccountSid == "" || form.TwilioAuthToken == "" || form.TwilioFromNumber == "") {
-			flash.Error("Error updating realm: all SMS fields are required")
+			flash.Error("Error updating realm: either all SMS fields must be specified or no SMS fields must be specified")
 			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 			return
 		}
