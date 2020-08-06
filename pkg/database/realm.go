@@ -163,7 +163,7 @@ func (r *Realm) GetAuthorizedApps(db *Database, includeDeleted bool) ([]*Authori
 	if includeDeleted {
 		scope = db.db.Unscoped()
 	}
-	if err := scope.Model(r).Related(&r.AuthorizedApps).Error; err != nil {
+	if err := scope.Model(r).Order("LOWER(authorized_apps.name)").Related(&r.AuthorizedApps).Error; err != nil {
 		return nil, err
 	}
 	return r.AuthorizedApps, nil
