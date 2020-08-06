@@ -6,16 +6,12 @@
 </head>
 
 <body>
-  <main role="main" class="container">
-    {{template "flash" .}}
-
+  <main role="main" class="container mt-5">
     <h1>Internal server error</h1>
     <p>
       {{.error}}
     </p>
   </main>
-
-  {{template "scripts" .}}
 </body>
 </html>
 {{end}}
