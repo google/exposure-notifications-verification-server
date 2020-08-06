@@ -63,7 +63,8 @@ steps:
   - 'pipefail'
   - '-c'
   - |-
-    for _SERVICE in ( adminapi apiserver cleanup server ); do
+    SERVICES=( adminapi apiserver cleanup server );
+    for _SERVICE in ${SERVICES[@]}; do
       gcloud run deploy "${_SERVICE}" \
         --quiet \
         --project "${PROJECT_ID}" \
