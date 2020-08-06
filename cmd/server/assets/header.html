@@ -69,6 +69,11 @@
     {{$msg}}
   </div>
   {{end}}
+  {{range $msg := .flash.Warnings}}
+  <div class="alert alert-warning" role="alert">
+    {{$msg}}
+  </div>
+  {{end}}
   {{range $msg := .flash.Alerts}}
   <div class="alert alert-success alert-dismissible fade show" role="alert">
     {{$msg}}
