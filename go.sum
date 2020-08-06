@@ -1178,8 +1178,8 @@ github.com/sethvargo/go-envconfig v0.2.3 h1:gtKpCHoZT1P542H9z5SBxbnZ9GZuVBwC+0qU
 github.com/sethvargo/go-envconfig v0.2.3/go.mod h1:XZ2JRR7vhlBEO5zMmOpLgUhgYltqYqq4d4tKagtPUv0=
 github.com/sethvargo/go-gcpkms v0.1.0 h1:pyjDLqLwpk9pMjDSTilPpaUjgP1AfSjX9WGzitZwGUY=
 github.com/sethvargo/go-gcpkms v0.1.0/go.mod h1:33BuvqUjsYk0bpMgn+WCclCYtMLOyaqtn5j0fCo4vvk=
-github.com/sethvargo/go-limiter v0.2.2 h1:9MsQb01jSwXyuuU4v2KIVtTisvzIQgUpHUEyVoM6s3M=
-github.com/sethvargo/go-limiter v0.2.2/go.mod h1:C0kbSFbiriE5k2FFOe18M1YZbAR2Fiwf72uGu0CXCcU=
+github.com/sethvargo/go-limiter v0.2.3 h1:xgphnEi/Ga/1JMU3Y4Zc8PzyOes4fci/wWwHN6alcqg=
+github.com/sethvargo/go-limiter v0.2.3/go.mod h1:C0kbSFbiriE5k2FFOe18M1YZbAR2Fiwf72uGu0CXCcU=
 github.com/sethvargo/go-retry v0.1.0 h1:8sPqlWannzcReEcYjHSNw9becsiYudcwTD7CasGjQaI=
 github.com/sethvargo/go-retry v0.1.0/go.mod h1:JzIOdZqQDNpPkQDmcqgtteAcxFLtYpNF/zJCM1ysDg8=
 github.com/sethvargo/go-signalcontext v0.1.0 h1:3IU7HOlmRXF0PSDf85C4nJ/zjYDjF+DS+LufcKfLvyk=

@@ -39,7 +39,7 @@ require (
 	github.com/prometheus/statsd_exporter v0.17.0 // indirect
 	github.com/sethvargo/go-envconfig v0.2.3
 	github.com/sethvargo/go-gcpkms v0.1.0
-	github.com/sethvargo/go-limiter v0.2.2
+	github.com/sethvargo/go-limiter v0.2.3
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/stretchr/objx v0.3.0 // indirect
