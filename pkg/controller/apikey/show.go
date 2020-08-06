@@ -19,11 +19,22 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+// HandleShow displays the API key.
+func (c *Controller) HandleShow() http.Handler {
+	logger := c.logger.Named("HandleShow")
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -31,38 +42,34 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		// Perform the lazy load on authorized apps for the realm.
-		if _, err := realm.GetAuthorizedApps(c.db, true); err != nil {
+		// If the API key is present, add it to the variables map and then delete it
+		// from the session.
+		apiKey, ok := session.Values["apiKey"]
+		if ok {
+			m := controller.TemplateMapFromContext(ctx)
+			m["apiKey"] = apiKey
+			delete(session.Values, "apiKey")
+		}
+
+		authApp, err := realm.FindAuthorizedAppString(vars["id"])
+		if err != nil {
+			logger.Errorw("failed to find authorized apps", "error", err)
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
+		if authApp == nil {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
 
-		c.renderIndex(w, r, realm)
+		c.renderShow(w, r, authApp)
 	})
 }
 
-// renderIndex renders the index page.
-func (c *Controller) renderIndex(w http.ResponseWriter, r *http.Request, realm *database.Realm) {
+// renderShow renders the edit page.
+func (c *Controller) renderShow(w http.ResponseWriter, r *http.Request, authApp *database.AuthorizedApp) {
 	ctx := r.Context()
-
-	creationCounts1d := make(map[uint]uint64)
-	creationCounts7d := make(map[uint]uint64)
-	creationCounts30d := make(map[uint]uint64)
-	for _, app := range realm.AuthorizedApps {
-		appStatsSummary, err := c.db.GetAuthorizedAppStatsSummary(app, realm)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-		creationCounts1d[app.ID] = appStatsSummary.CodesIssued1d
-		creationCounts7d[app.ID] = appStatsSummary.CodesIssued7d
-		creationCounts30d[app.ID] = appStatsSummary.CodesIssued30d
-	}
-
 	m := controller.TemplateMapFromContext(ctx)
-	m["apps"] = realm.AuthorizedApps
-	m["codesGenerated1d"] = creationCounts1d
-	m["codesGenerated7d"] = creationCounts7d
-	m["codesGenerated30d"] = creationCounts30d
-	c.h.RenderHTML(w, "apikeys/index", m)
+	m["authApp"] = authApp
+	c.h.RenderHTML(w, "apikeys/show", m)
 }

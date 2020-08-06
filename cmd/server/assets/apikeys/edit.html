@@ -1,0 +1,71 @@
+{{define "apikeys/edit"}}
+
+{{$authApp := .authApp}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Edit API key</h1>
+    <p>
+      Use the form below to edit the API key.
+    </p>
+
+    <div class="card mb-3">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <form method="POST" action="/apikeys/{{$authApp.ID}}">
+          {{ .csrfField }}
+          <input type="hidden" name="_method" value="patch">
+
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">App name:</label>
+            <div class="col-sm-9">
+              <input type="text" id="name" name="name" class="form-control" value="{{$authApp.Name}}">
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="type" class="col-sm-3">Type:</label>
+            <div class="col-sm-9">
+              <select class="form-control" name="type" id="type" disabled>
+                <option selected>
+                  {{if (eq $authApp.APIKeyType 0)}}
+                    Device (can verify codes)
+                  {{else if (eq $authApp.APIKeyType 1)}}
+                    Admin (can issue codes)
+                  {{else}}
+                    Unknown
+                  {{end}}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <div class="offset-sm-3 col-sm-9">
+              <button type="submit" class="btn btn-primary btn-block">Update API key</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div>
+      <p>
+        <a href="/apikeys">&larr; Back to all API keys</a>
+      </p>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

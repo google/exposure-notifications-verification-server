@@ -1,0 +1,71 @@
+{{define "apikeys/show"}}
+
+{{$apiKey := .apiKey}}
+{{$authApp := .authApp}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>{{$authApp.Name}} API key</h1>
+    <p class="float-right">
+      <a href="/apikeys/{{$authApp.ID}}/edit">Edit</a>
+    </p>
+    <p>
+      Here is information about the API key.
+    </p>
+
+    {{if $apiKey}}
+    <div class="card mb-3">
+      <div class="card-header">API key</div>
+      <div class="card-body">
+        <div class="alert alert-danger" role="alert">
+          This is your API key - it will only be displayed once. <strong>You
+          must securely save this API key elsewhere!</strong>
+        </div>
+
+        <textarea class="form-control" rows="4" readonly>{{$apiKey}}</textarea>
+      </div>
+    </div>
+    {{end}}
+
+    <div class="card mb-3">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <strong>App name</strong>
+        <div class="mb-3">
+          {{$authApp.Name}}
+        </div>
+
+        <strong>Type</strong>
+        <div>
+          {{if (eq $authApp.APIKeyType 0)}}
+            Device (can verify codes)
+          {{else if (eq $authApp.APIKeyType 1)}}
+            Admin (can issue codes)
+          {{else}}
+            Unknown
+          {{end}}
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p>
+        <a href="/apikeys">&larr; Back to all API keys</a>
+      </p>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}
