@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.14-alpine AS builder
+FROM golang:1.14 AS builder
 
 ARG SERVICE
 
-# git needed for building Go
-# upx for optimizing binary
-# binutils for strip command
-RUN apk add --no-cache git upx binutils
+RUN apt -qq update && apt -yqq install upx
 
 ENV GOPROXY="https://proxy.golang.org"
 ENV GO111MODULE=on
