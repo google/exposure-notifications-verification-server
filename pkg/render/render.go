@@ -80,6 +80,7 @@ func (r *Renderer) loadTemplates() error {
 	if err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
 	}
+	tmpl = tmpl.Option("missingkey=zero")
 	r.templates = tmpl
 	return nil
 }
