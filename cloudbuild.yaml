@@ -9,7 +9,7 @@ steps:
   args: [
     'build',
     '--tag',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${SHORT_SHA}',
     '--build-arg',
     'SERVICE=apiserver',
     '.',
@@ -20,7 +20,7 @@ steps:
   - apiserver
   args: [
     'push',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${SHORT_SHA}',
   ]
 - id: 'cleanup'
   name: 'docker'
@@ -29,7 +29,7 @@ steps:
   args: [
     'build',
     '--tag',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${SHORT_SHA}',
     '--build-arg',
     'SERVICE=cleanup',
     '.',
@@ -40,7 +40,7 @@ steps:
   - cleanup
   args: [
     'push',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${SHORT_SHA}',
   ]
 - id: 'server'
   name: 'docker'
@@ -49,7 +49,7 @@ steps:
   args: [
     'build',
     '--tag',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${SHORT_SHA}',
     '--build-arg',
     'SERVICE=server',
     '.',
@@ -60,7 +60,7 @@ steps:
   - server
   args: [
     'push',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${SHORT_SHA}',
   ]
 - id: 'adminapi'
   name: 'docker'
@@ -69,7 +69,7 @@ steps:
   args: [
     'build',
     '--tag',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${SHORT_SHA}',
     '--build-arg',
     'SERVICE=adminapi',
     '.',
@@ -80,7 +80,7 @@ steps:
   - adminapi
   args: [
     'push',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${SHORT_SHA}',
   ]
 - id: 'deploy'
   waitFor:
@@ -102,12 +102,12 @@ steps:
         --project "${PROJECT_ID}" \
         --platform "managed" \
         --region "us-central1" \
-        --image "gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${s}:${COMMIT_SHA}" \
+        --image "gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${s}:${SHORT_SHA}" \
         --no-traffic
     done
 images: [
-  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
-  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
-  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${COMMIT_SHA}',
-  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${COMMIT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${SHORT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${SHORT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${SHORT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${SHORT_SHA}',
 ]
