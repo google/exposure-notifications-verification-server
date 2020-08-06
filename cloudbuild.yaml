@@ -1,6 +1,9 @@
+timeout: 40m
 steps:
 - id: 'apiserver'
   name: 'docker'
+  timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -11,6 +14,8 @@ steps:
   ]
 - id: 'cleanup'
   name: 'docker'
+  timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -21,6 +26,8 @@ steps:
   ]
 - id: 'server'
   name: 'docker'
+  timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -31,6 +38,8 @@ steps:
   ]
 - id: 'adminapi'
   name: 'docker'
+  timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
