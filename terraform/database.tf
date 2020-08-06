@@ -146,6 +146,17 @@ resource "google_project_iam_member" "cloudbuild-sql" {
   ]
 }
 
+# Grant Cloud Build use of the KMS key to run migrations
+resource "google_kms_crypto_key_iam_member" "database-database-encrypter" {
+  crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"]
+  ]
+}
+
 # Migrate runs the initial database migrations.
 resource "null_resource" "migrate" {
   provisioner "local-exec" {

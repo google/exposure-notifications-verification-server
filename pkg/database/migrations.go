@@ -17,6 +17,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
@@ -363,6 +364,46 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Rollback: func(tx *gorm.DB) error {
 				sql := "ALTER TABLE users ADD COLUMN disabled bool NOT NULL DEFAULT true"
 				return tx.Exec(sql).Error
+			},
+		},
+		{
+			ID: "00016-MigrateSMSConfigs",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: migrating sms configs")
+
+				var sms SMSConfig
+				rows, err := tx.Model(&SMSConfig{}).Rows()
+				if err != nil {
+					return err
+				}
+				defer rows.Close()
+
+				for rows.Next() {
+					if err := tx.ScanRows(rows, &sms); err != nil {
+						return err
+					}
+
+					// Convert from secret manager -> kms.
+					if strings.HasPrefix(sms.TwilioAuthToken, "projects/") {
+						// Get the secret
+						val, err := db.secretManager.GetSecretValue(ctx, sms.TwilioAuthToken)
+						if err != nil {
+							return err
+						}
+
+						// Save the plaintext back on the model. The model's hook will
+						// encrypt this with the KMS configuration.
+						sms.TwilioAuthToken = string(val)
+						if err := db.SaveSMSConfig(&sms); err != nil {
+							return err
+						}
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
 			},
 		},
 	})

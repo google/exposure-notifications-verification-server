@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -94,6 +95,14 @@ func (r *SMSConfig) AfterFind() error {
 	defer done()
 
 	if ciphertextStr := r.TwilioAuthToken; ciphertextStr != "" {
+		// Legacy versions used secret manager instead of KMS.
+		//
+		// TODO(sethvargo): Remove this after migrations have been in place for a
+		// full release.
+		if strings.HasPrefix("projects/", ciphertextStr) {
+			return nil
+		}
+
 		ciphertext, err := base64util.DecodeString(ciphertextStr)
 		if err != nil {
 			return fmt.Errorf("failed to decode twilio auth token: %w", err)
