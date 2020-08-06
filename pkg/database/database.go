@@ -65,6 +65,9 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 		db.LogMode(true)
 	}
 
+	// Enable auto-loading.
+	db.Set("gorm:auto_preload", true)
+
 	return &Database{
 		db:            db,
 		config:        c,
@@ -76,4 +79,9 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 // Close will close the database connection. Should be deferred right after Open.
 func (db *Database) Close() error {
 	return db.db.Close()
+}
+
+// IsNotFound determines if an error is a record not found.
+func IsNotFound(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
 }
