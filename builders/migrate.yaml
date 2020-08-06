@@ -18,12 +18,14 @@
 
 substitutions:
   _DB_CONN:
+  _DB_ENCRYPTION_KEY:
+  _DB_HOST: 'localhost'
   _DB_NAME: 'verification'
   _DB_PASS_SECRET:
   _DB_PORT: '5432'
-  _DB_HOST: 'localhost'
   _DB_SSLMODE: 'disable'
   _DB_USER: 'verification'
+  _KEY_MANAGER: 'GOOGLE_CLOUD_KMS'
 
 steps:
 - id: 'secrets'
@@ -44,6 +46,8 @@ steps:
   - 'DB_HOST=${_DB_HOST}'
   - 'DB_PORT=${_DB_PORT}'
   - 'DB_SSLMODE=${_DB_SSLMODE}'
+  - 'DB_ENCRYPTION_KEY=${_DB_ENCRYPTION_KEY}'
+  - 'KEY_MANAGER=${_KEY_MANAGER}'
   entrypoint: '/bin/bash'
   args:
   - '-eEuo'

@@ -80,6 +80,12 @@ resource "google_project_iam_member" "server-observability" {
   member  = "serviceAccount:${google_service_account.server.email}"
 }
 
+resource "google_kms_crypto_key_iam_member" "server-database-encrypter" {
+  crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:${google_service_account.server.email}"
+}
+
 resource "google_cloud_run_service" "server" {
   name     = "server"
   location = var.region

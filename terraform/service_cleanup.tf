@@ -55,6 +55,12 @@ resource "google_project_iam_member" "cleanup-observability" {
   member  = "serviceAccount:${google_service_account.cleanup.email}"
 }
 
+resource "google_kms_crypto_key_iam_member" "cleanup-database-encrypter" {
+  crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:${google_service_account.cleanup.email}"
+}
+
 resource "google_cloud_run_service" "cleanup" {
   name     = "cleanup"
   location = var.region
