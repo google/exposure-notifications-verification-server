@@ -103,6 +103,7 @@ steps:
         --platform "managed" \
         --region "us-central1" \
         --image "gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${s}:${SHORT_SHA}" \
+        --tag=${_PR_NUMBER:="latest"} \
         --no-traffic
     done
 images: [
