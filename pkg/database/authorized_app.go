@@ -15,11 +15,16 @@
 package database
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/jinzhu/gorm"
 )
 
@@ -106,6 +111,8 @@ func (db *Database) CreateAuthorizedApp(realmID uint, name string, apiUserType A
 		return nil, fmt.Errorf("rand.Read: %v", err)
 	}
 
+	// realmid.key.hmac
+
 	app := AuthorizedApp{
 		Name:       name,
 		APIKey:     base64.RawStdEncoding.EncodeToString(buffer),
@@ -129,4 +136,57 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 		return nil, err
 	}
 	return &app, nil
+}
+
+func CreateAPIKey(realmID uint) (string, error) {
+	key := strconv.FormatUint(uint64(realmID), 10)
+
+	// Create the "key" parts
+	buf := make([]byte, apiKeyBytes)
+	if _, err := rand.Read(buf); err != nil {
+		return "", fmt.Errorf("failed to rand: %w", err)
+	}
+	key = fmt.Sprintf("%s:%s", key, base64.RawStdEncoding.EncodeToString(buf))
+
+	// Create the HMAC of the key and the realm
+	sig := SignAPIKey(key)
+
+	// Put it all together
+	key = fmt.Sprintf("%s:%s", key, base64.RawStdEncoding.EncodeToString(sig))
+
+	return key, nil
+}
+
+func SignAPIKey(key string) []byte {
+	// TODO(sethvargo): real HMAC key
+	return hmac.New(sha256.New, []byte("TODO")).Sum([]byte(key))
+}
+
+func VerifyAPIKeySignature(key string) (uint, string, error) {
+	parts := strings.SplitN(key, ":", 3)
+	if len(parts) != 3 {
+		return 0, "", fmt.Errorf("invalid API key format")
+	}
+
+	realmIDStr := parts[0]
+	apiKey := parts[1]
+	sig := parts[2]
+
+	gotSig, err := base64util.DecodeString(sig)
+	if err != nil {
+		return 0, "", fmt.Errorf("invalid API key format")
+	}
+
+	expSig := SignAPIKey(fmt.Sprintf("%s:%s", realmIDStr, apiKey))
+
+	if !hmac.Equal(gotSig, expSig) {
+		return 0, "", fmt.Errorf("invalid API key signature")
+	}
+
+	realmID, err := strconv.ParseUint(realmIDStr, 10, 64)
+	if err != nil {
+		return 0, "", fmt.Errorf("invalid API key format")
+	}
+
+	return uint(realmID), apiKey, nil
 }

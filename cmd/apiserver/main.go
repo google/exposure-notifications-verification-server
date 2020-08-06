@@ -18,7 +18,6 @@ package main
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
@@ -100,7 +99,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer store.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc())
+	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc(db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
@@ -149,14 +148,23 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func apiKeyFunc() httplimit.KeyFunc {
+func apiKeyFunc(db *database.Database) httplimit.KeyFunc {
 	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
 
 	return func(r *http.Request) (string, error) {
 		v := r.Header.Get("X-API-Key")
 		if v != "" {
-			dig := sha1.Sum([]byte(v))
-			return fmt.Sprintf("%x", dig), nil
+			// v2 API keys encode the realm
+			realmID, _, err := database.VerifyAPIKeySignature(v)
+			if err == nil {
+				return fmt.Sprintf("%d", realmID), nil
+			}
+
+			// v1 API keys do not, fallback to the database
+			app, err := db.FindAuthorizedAppByAPIKey(v)
+			if err == nil {
+				return fmt.Sprintf("%d", app.RealmID), nil
+			}
 		}
 
 		// If no API key was provided, default to limiting by IP.
