@@ -39,6 +39,11 @@ func init() {
 	gob.Register(*new(sessionKey))
 }
 
+// Back goes back to the referrer.
+func Back(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+}
+
 // InternalError handles an internal error, returning the right response to the
 // client.
 func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, err error) {
