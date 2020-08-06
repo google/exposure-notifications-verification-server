@@ -16,6 +16,7 @@ package database
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
@@ -167,6 +168,32 @@ func (r *Realm) GetAuthorizedApps(db *Database, includeDeleted bool) ([]*Authori
 		return nil, err
 	}
 	return r.AuthorizedApps, nil
+}
+
+// FindAuthorizedApp finds the authorized app by the given id associated to the
+// realm.
+func (r *Realm) FindAuthorizedApp(authAppID uint) (*AuthorizedApp, error) {
+	var app AuthorizedApp
+	if err := r.db.db.Model(AuthorizedApp{}).
+		Where("id = ? AND realm_id = ?", authAppID, r.ID).
+		First(&app).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &app, nil
+}
+
+// FindAuthorizedAppString finds the authorized app by id where the id is a
+// string.
+func (r *Realm) FindAuthorizedAppString(s string) (*AuthorizedApp, error) {
+	id, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return r.FindAuthorizedApp(uint(id))
 }
 
 func (r *Realm) DeleteUserFromRealm(db *Database, u *User) error {
