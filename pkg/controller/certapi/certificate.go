@@ -31,12 +31,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
 			controller.MissingAuthorizedApp(w, r, c.h)
