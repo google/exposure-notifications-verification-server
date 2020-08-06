@@ -17,9 +17,11 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/jinzhu/gorm"
 
@@ -35,6 +37,9 @@ type Database struct {
 
 	// cacher is an internal write-through cache for frequent lookups.
 	cacher *cache.Cache
+
+	// keyManager is used to encrypt/decrypt values.
+	keyManager keys.KeyManager
 
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
@@ -52,6 +57,12 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret manager: %w", err)
+	}
+
+	// Create the key manager.
+	keyManager, err := keys.KeyManagerFor(ctx, c.Keys.KeyManagerType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create key manager: %w", err)
 	}
 
 	// Connect to the database.
@@ -72,6 +83,7 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 		db:            db,
 		config:        c,
 		cacher:        cacher,
+		keyManager:    keyManager,
 		secretManager: secretManager,
 	}, nil
 }
