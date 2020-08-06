@@ -430,6 +430,18 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00018-IncreaseAPIKeySize",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: increasing API key size")
+				sql := "ALTER TABLE authorized_apps ALTER COLUMN api_key TYPE varchar(512)"
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sql := "ALTER TABLE authorized_apps ALTER COLUMN api_key TYPE varchar(100)"
+				return tx.Exec(sql).Error
+			},
+		},
 	})
 }
 

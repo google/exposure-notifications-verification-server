@@ -49,7 +49,8 @@ type AuthorizedApp struct {
 	RealmID    uint        `gorm:"unique_index:realm_apikey_name"`
 	Realm      *Realm      // for loading the owning realm.
 	Name       string      `gorm:"type:varchar(100);unique_index:realm_apikey_name"`
-	APIKey     string      `gorm:"type:varchar(100);unique_index"`
+	// APIKey is the HMACed API key.
+	APIKey string `gorm:"type:varchar(512);unique_index"`
 	APIKeyType APIUserType `gorm:"default:0"`
 }
 
