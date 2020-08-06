@@ -95,6 +95,7 @@ steps:
   - 'pipefail'
   - '-c'
   - |-
+    gcloud components install --quiet beta;
     SERVICES=(adminapi apiserver cleanup server);
     for s in "${SERVICES[@]}"; do
       gcloud beta run deploy "${s}" \
