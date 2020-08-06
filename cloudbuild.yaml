@@ -1,6 +1,11 @@
+timeout: 40m
+options:
+  machineType: 'N1_HIGHCPU_8'
 steps:
 - id: 'apiserver'
   name: 'docker'
+  timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -11,6 +16,8 @@ steps:
   ]
 - id: 'cleanup'
   name: 'docker'
+  timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -21,6 +28,8 @@ steps:
   ]
 - id: 'server'
   name: 'docker'
+  timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -31,6 +40,8 @@ steps:
   ]
 - id: 'adminapi'
   name: 'docker'
+  timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
