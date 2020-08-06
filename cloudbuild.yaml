@@ -14,6 +14,14 @@ steps:
     'SERVICE=apiserver',
     '.',
   ]
+- id: 'apiserver:publish'
+  name: 'docker'
+  waitFor:
+  - apiserver
+  args: [
+    'push',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
+  ]
 - id: 'cleanup'
   name: 'docker'
   timeout: 10m
@@ -25,6 +33,14 @@ steps:
     '--build-arg',
     'SERVICE=cleanup',
     '.',
+  ]
+- id: 'cleanup:publish'
+  name: 'docker'
+  waitFor:
+  - cleanup
+  args: [
+    'push',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${COMMIT_SHA}',
   ]
 - id: 'server'
   name: 'docker'
@@ -38,6 +54,14 @@ steps:
     'SERVICE=server',
     '.',
   ]
+- id: 'server:publish'
+  name: 'docker'
+  waitFor:
+  - server
+  args: [
+    'push',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
+  ]
 - id: 'adminapi'
   name: 'docker'
   timeout: 10m
@@ -50,12 +74,20 @@ steps:
     'SERVICE=adminapi',
     '.',
   ]
+- id: 'adminapi:publish'
+  name: 'docker'
+  waitFor:
+  - adminapi
+  args: [
+    'push',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${COMMIT_SHA}',
+  ]
 - id: 'deploy'
   waitFor:
-  - 'adminapi'
-  - 'apiserver'
-  - 'cleanup'
-  - 'server'
+  - 'adminapi:publish'
+  - 'apiserver:publish'
+  - 'cleanup:publish'
+  - 'server:publish'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
   args:
   - 'bash'
