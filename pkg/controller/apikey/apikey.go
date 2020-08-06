@@ -34,7 +34,7 @@ type Controller struct {
 }
 
 func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
+	logger := logging.FromContext(ctx).Named("apikey")
 
 	return &Controller{
 		config: config,
