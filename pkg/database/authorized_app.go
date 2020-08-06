@@ -111,8 +111,6 @@ func (db *Database) CreateAuthorizedApp(realmID uint, name string, apiUserType A
 		return nil, fmt.Errorf("rand.Read: %v", err)
 	}
 
-	// realmid.key.hmac
-
 	app := AuthorizedApp{
 		Name:       name,
 		APIKey:     base64.RawStdEncoding.EncodeToString(buffer),
