@@ -72,7 +72,6 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
-	r.Handle("/healthz", controller.HandleHealthz(h, &config.Database)).Methods("GET")
 
 	// Setup rate limiter
 	store, err := memorystore.New(&memorystore.Config{
@@ -95,6 +94,8 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
+
+	r.Handle("/healthz", controller.HandleHealthz(h, &config.Database)).Methods("GET")
 
 	// Setup API auth
 	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
