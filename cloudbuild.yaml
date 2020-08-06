@@ -56,16 +56,16 @@ steps:
   - 'apiserver'
   - 'cleanup'
   - 'server'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:303.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
   args:
   - 'bash'
-  - '-eEuo'
+  - '-exEuo'
   - 'pipefail'
   - '-c'
   - |-
-    SERVICES=( adminapi apiserver cleanup server );
-    for _SERVICE in ${SERVICES[@]}; do
-      gcloud run deploy "${_SERVICE}" \
+    SERVICES=(adminapi apiserver cleanup server);
+    for s in "${SERVICES[@]}"; do
+      gcloud run deploy "${s}" \
         --quiet \
         --project "${PROJECT_ID}" \
         --platform "managed" \
