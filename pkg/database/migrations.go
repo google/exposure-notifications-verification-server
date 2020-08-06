@@ -31,6 +31,8 @@ const initState = "00000-Init"
 func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 	logger := logging.FromContext(ctx)
 	options := gormigrate.DefaultOptions
+	options.UseTransaction = true
+
 	return gormigrate.New(db.db, options, []*gormigrate.Migration{
 		{
 			ID: initState,
