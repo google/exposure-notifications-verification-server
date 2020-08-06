@@ -62,7 +62,7 @@ func (f *Flash) Warning(msg string, vars ...interface{}) {
 	f.add(flashKeyWarning, msg, vars...)
 }
 
-// Warning returns the list of warnings in flash, if any.
+// Warnings returns the list of warnings in flash, if any.
 func (f *Flash) Warnings() []string {
 	return f.get(flashKeyWarning)
 }

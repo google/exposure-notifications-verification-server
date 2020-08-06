@@ -24,11 +24,6 @@ import (
 )
 
 func (c *Controller) HandleNew() http.Handler {
-	type FormData struct {
-		Name string               `form:"name,required"`
-		Type database.APIUserType `form:"type,required"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		var authApp database.AuthorizedApp
