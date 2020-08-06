@@ -54,7 +54,7 @@ type SMSConfig struct {
 // BeforeSave runs before records are saved/created. It's used to mutate values
 // (such as the auth tokens) before storing them in the database. Do not call
 // this function, gorm calls it automatically.
-func (r *SMSConfig) BeforeSave(tx *gorm.DB) error {
+func (r *SMSConfig) BeforeSave() error {
 	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
 	defer done()
 
@@ -71,6 +71,17 @@ func (r *SMSConfig) BeforeSave(tx *gorm.DB) error {
 			return fmt.Errorf("failed to encrypt twilio auth token: %w", err)
 		}
 		r.TwilioAuthToken = base64.RawStdEncoding.EncodeToString(b)
+		r.twilioAuthToken = plaintext
+		r.twilioAuthTokenEncrypted = base64.RawStdEncoding.EncodeToString(b)
+	}
+	return nil
+}
+
+// AfterSave runs after records are saved. It's used to mutate values. Do not
+// call this function, gorm calls it automatically.
+func (r *SMSConfig) AfterSave() error {
+	if r.twilioAuthToken != "" {
+		r.TwilioAuthToken = r.twilioAuthToken
 	}
 	return nil
 }

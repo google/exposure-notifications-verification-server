@@ -15,10 +15,8 @@
 package database
 
 import (
-	"context"
 	"testing"
 
-	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -27,18 +25,7 @@ import (
 func TestSMSConfig_Lifecycle(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
 	db := NewTestDatabase(t)
-
-	// Create a key manager
-	km, err := keys.NewInMemory(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := km.AddEncryptionKey("my-key"); err != nil {
-		t.Fatal(err)
-	}
-	db.keyManager = km
 
 	// Create realm
 	realmName := t.Name()
@@ -52,7 +39,7 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 		RealmID:          realm.ID,
 		ProviderType:     sms.ProviderType("TWILIO"),
 		TwilioAccountSid: "abc123",
-		TwilioAuthToken:  "totally-not-valid", // invalid ref, test error propagation
+		TwilioAuthToken:  "def123",
 		TwilioFromNumber: "+11234567890",
 	}
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
@@ -65,26 +52,15 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(gotSMSConfig, smsConfig, approxTime, cmpopts.IgnoreUnexported(SMSConfig{})); diff != "" {
+	if diff := cmp.Diff(gotSMSConfig, smsConfig, approxTime, cmpopts.IgnoreUnexported(SMSConfig{}, Realm{})); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
 
-func TestGetSMSProvider(t *testing.T) {
+func TestSMSProvider(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
 	db := NewTestDatabase(t)
-
-	// Create a key manager
-	km, err := keys.NewInMemory(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := km.AddEncryptionKey("my-key"); err != nil {
-		t.Fatal(err)
-	}
-	db.keyManager = km
 
 	realm, err := db.CreateRealm("test-sms-realm-1")
 	if err != nil {
@@ -100,6 +76,7 @@ func TestGetSMSProvider(t *testing.T) {
 	}
 
 	smsConfig := &SMSConfig{
+		RealmID:          realm.ID,
 		ProviderType:     sms.ProviderType("TWILIO"),
 		TwilioAccountSid: "abc123",
 		TwilioAuthToken:  "my-secret-ref",

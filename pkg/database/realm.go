@@ -15,27 +15,21 @@
 package database
 
 import (
-	"context"
-	"errors"
 	"fmt"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
 
-var (
-	ErrNoSMSConfig = errors.New("no sms config for realm")
-)
-
 // Realm represents a tenant in the system. Typically this corresponds to a
 // geography or a public health authority scope.
 // This is used to manage user logins.
 type Realm struct {
-	gorm.Model
-	Name string `gorm:"type:varchar(200);unique_index"`
+	db *Database `gorm:"-"`
 
-	// Use GetSMSConfig to lazy load this property.
-	SMSConfig *SMSConfig
+	gorm.Model
+
+	Name string `gorm:"type:varchar(200);unique_index"`
 
 	AuthorizedApps []*AuthorizedApp
 
@@ -47,33 +41,41 @@ type Realm struct {
 	Tokens []*Token
 }
 
-// GetSMSProvider returns the configured provider of SMS dispatch for the realm.
-func (r *Realm) GetSMSProvider(ctx context.Context, db *Database) (sms.Provider, error) {
-	smsConfig, err := r.GetSMSConfig(ctx, db)
+// SMSConfig returns the SMS config for the realm, if one exists.
+func (r *Realm) SMSConfig() (*SMSConfig, error) {
+	var c SMSConfig
+	c.db = r.db
+
+	if err := r.db.db.Model(r).Related(&c).Error; err != nil {
+		if IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+// HasSMSConfig returns true if the realm has SMS configuration, false
+// otherwise.
+func (r *Realm) HasSMSConfig() bool {
+	c, _ := r.SMSConfig()
+	return c != nil
+}
+
+// SMSProvider returns the SMS provider for the realm. If no sms configuration
+// exists, it returns nil. If any errors occur creating the provider, they are
+// returned.
+func (r *Realm) SMSProvider() (sms.Provider, error) {
+	c, err := r.SMSConfig()
 	if err != nil {
 		return nil, err
 	}
-	if smsConfig == nil {
-		return nil, ErrNoSMSConfig
+	if c == nil {
+		return nil, nil
 	}
-	return smsConfig.GetSMSProvider(ctx, db)
-}
 
-// GetSMSConfig returns the currently associates SMSConfig for the realm.
-// This is a lazy load over the the SMSConfig attached to the realm.
-func (r *Realm) GetSMSConfig(ctx context.Context, db *Database) (*SMSConfig, error) {
-	if r.SMSConfig != nil {
-		return r.SMSConfig, nil
-	}
-	var sms SMSConfig
-	if err := db.db.Model(r).Related(&sms).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("loading sms_config: %w", err)
-	}
-	r.SMSConfig = &sms
-	return r.SMSConfig, nil
+	return c.SMSProvider()
 }
 
 // AddAuthorizedApp adds to the in memory structure, but does not save.
@@ -162,9 +164,10 @@ func (r *Realm) DeleteUserFromRealm(db *Database, u *User) error {
 }
 
 func (db *Database) CreateRealm(name string) (*Realm, error) {
-	realm := Realm{
-		Name: name,
-	}
+	var realm Realm
+	realm.db = db
+	realm.Name = name
+
 	if err := db.db.Create(&realm).Error; err != nil {
 		return nil, fmt.Errorf("unable to save realm: %w", err)
 	}
@@ -173,6 +176,8 @@ func (db *Database) CreateRealm(name string) (*Realm, error) {
 
 func (db *Database) GetRealmByName(name string) (*Realm, error) {
 	var realm Realm
+	realm.db = db
+
 	if err := db.db.Where("name = ?", name).First(&realm).Error; err != nil {
 		return nil, err
 	}
@@ -181,6 +186,8 @@ func (db *Database) GetRealmByName(name string) (*Realm, error) {
 
 func (db *Database) GetRealm(realmID uint) (*Realm, error) {
 	var realm Realm
+	realm.db = db
+
 	if err := db.db.Where("id = ?", realmID).First(&realm).Error; err != nil {
 		return nil, err
 	}
@@ -188,6 +195,8 @@ func (db *Database) GetRealm(realmID uint) (*Realm, error) {
 }
 
 func (db *Database) SaveRealm(r *Realm) error {
+	r.db = db
+
 	if r.Model.ID == 0 {
 		return db.db.Create(r).Error
 	}
