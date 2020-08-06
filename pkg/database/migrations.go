@@ -427,8 +427,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				if err := tx.DropTable(&UserStats{}).Error; err != nil {
 					return err
 				}
-				return nil
-			},
 		},
 		{
 			ID: "00018-IncreaseAPIKeySize",
@@ -442,8 +440,16 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec(sql).Error
 			},
 		},
+			ID: "00019-AddAPIKeyPreviewAuthApp",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: migrating authapp")
+				return tx.AutoMigrate(AuthorizedApp{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
 		{
-			ID: "00018-HMACAPIKeys",
+			ID: "00020-HMACAPIKeys",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Infof("db migrations: HMACing existing api keys")
 
