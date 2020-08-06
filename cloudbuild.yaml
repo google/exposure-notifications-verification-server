@@ -1,4 +1,6 @@
 timeout: 40m
+options:
+  machineType: 'N1_HIGHCPU_8'
 steps:
 - id: 'apiserver'
   name: 'docker'
