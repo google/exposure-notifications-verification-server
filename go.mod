@@ -26,7 +26,7 @@ require (
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/sessions v1.2.0
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/jinzhu/gorm v1.9.12
+	github.com/jinzhu/gorm v1.9.15
 	github.com/lib/pq v1.8.0 // indirect
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mikehelmick/go-chaff v0.3.0
@@ -48,7 +48,7 @@ require (
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	golang.org/x/tools v0.0.0-20200731060945-b5fad4ed8dd6
 	google.golang.org/genproto v0.0.0-20200731012542-8145dea6a485
-	google.golang.org/grpc v1.31.0
+	google.golang.org/grpc v1.31.0 // indirect
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.5
