@@ -70,7 +70,7 @@ steps:
         --project "${PROJECT_ID}" \
         --platform "managed" \
         --region "us-central1" \
-        --image "gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${_SERVICE}:${COMMIT_SHA}" \
+        --image "gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${s}:${COMMIT_SHA}" \
         --no-traffic
     done
 images: [
