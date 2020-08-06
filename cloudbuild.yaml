@@ -97,7 +97,7 @@ steps:
   - |-
     SERVICES=(adminapi apiserver cleanup server);
     for s in "${SERVICES[@]}"; do
-      gcloud run deploy "${s}" \
+      gcloud beta run deploy "${s}" \
         --quiet \
         --project "${PROJECT_ID}" \
         --platform "managed" \
