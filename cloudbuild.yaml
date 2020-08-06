@@ -11,6 +11,7 @@ steps:
     'SERVICE=apiserver',
     '.',
   ]
+  waitFor: ['-']
 - id: 'cleanup'
   name: 'docker'
   timeout: 10m
@@ -22,6 +23,7 @@ steps:
     'SERVICE=cleanup',
     '.',
   ]
+  waitFor: ['-']
 - id: 'server'
   name: 'docker'
   timeout: 10m
@@ -33,6 +35,7 @@ steps:
     'SERVICE=server',
     '.',
   ]
+  waitFor: ['-']
 - id: 'adminapi'
   name: 'docker'
   timeout: 10m
@@ -44,6 +47,7 @@ steps:
     'SERVICE=adminapi',
     '.',
   ]
+  waitFor: ['-']
 images: [
   'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
   'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
