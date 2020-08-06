@@ -264,24 +264,24 @@ func (db *Database) GenerateAPIKeySignature(key string) ([]byte, error) {
 func (db *Database) VerifyAPIKeySignature(key string) (string, uint, error) {
 	parts := strings.SplitN(key, ".", 3)
 	if len(parts) != 3 {
-		return "", 0, fmt.Errorf("invalid API key format")
+		return "", 0, fmt.Errorf("invalid API key format: wrong number of parts")
 	}
 
 	// Decode the provided signature.
 	gotSig, err := base64util.DecodeString(parts[2])
 	if err != nil {
-		return "", 0, fmt.Errorf("invalid API key format")
+		return "", 0, fmt.Errorf("invalid API key format: decoding failed")
 	}
 
 	// Generate the expected signature.
 	expSig, err := db.GenerateAPIKeySignature(parts[0] + "." + parts[1])
 	if err != nil {
-		return "", 0, fmt.Errorf("invalid API key format")
+		return "", 0, fmt.Errorf("invalid API key format: signature invalid")
 	}
 
 	// Compare (this is an equal-time algorithm).
 	if !hmac.Equal(gotSig, expSig) {
-		return "", 0, fmt.Errorf("invalid API key format")
+		return "", 0, fmt.Errorf("invalid API key format: signature invalid")
 	}
 
 	// API key stays encoded.

@@ -442,6 +442,41 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec(sql).Error
 			},
 		},
+		{
+			ID: "00018-HMACAPIKeys",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: HMACing existing api keys")
+
+				var apps []AuthorizedApp
+				if err := tx.Model(AuthorizedApp{}).Find(&apps).Error; err != nil {
+					return err
+				}
+
+				for _, app := range apps {
+					// If the key has a preview, it's v2
+					if app.APIKeyPreview != "" {
+						continue
+					}
+
+					apiKeyPreview := app.APIKey[:6]
+					newAPIKey, err := db.hmacAPIKey(app.APIKey)
+					if err != nil {
+						return fmt.Errorf("failed to hmac %v: %w", app.Name, err)
+					}
+
+					app.APIKey = newAPIKey
+					app.APIKeyPreview = apiKeyPreview
+
+					if err := db.db.Save(&app).Error; err != nil {
+						return fmt.Errorf("failed to save %v: %w", app.Name, err)
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 

@@ -15,7 +15,9 @@
 package database
 
 import (
+	"encoding/base64"
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 
@@ -55,6 +57,44 @@ func TestDatabase_CreateFindAPIKey(t *testing.T) {
 
 	// Ignore the preloaded realm on the got AuthorizedApp
 	if diff := cmp.Diff(authApp, got, approxTime, cmpopts.IgnoreFields(AuthorizedApp{}, "Realm")); diff != "" {
+		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+// TODO(sethvargo): remove this when all migrations are complete
+func TestDatabase_CreateFindAPIKey_Legacy(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+
+	realm, err := db.CreateRealm("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var authApp AuthorizedApp
+	authApp.RealmID = realm.ID
+	authApp.Name = "Testing 123"
+	authApp.APIKey = "abcd1234"
+	authApp.APIKeyType = APIUserTypeAdmin
+
+	if err := db.db.Create(&authApp).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := db.FindAuthorizedAppByAPIKey(authApp.APIKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil {
+		t.Fatalf("expected result")
+	}
+	if got.Realm == nil {
+		t.Fatalf("expected realm to preload")
+	}
+
+	// Ignore the preloaded realm on the got AuthorizedApp
+	if diff := cmp.Diff(&authApp, got, approxTime, cmpopts.IgnoreFields(AuthorizedApp{}, "Realm")); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
@@ -106,7 +146,7 @@ func TestDatabase_GenerateAPIKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	parts := strings.SplitN(key, ":", 3)
+	parts := strings.SplitN(key, ".", 3)
 	if got, want := len(parts), 3; got != want {
 		t.Fatalf("expected %v to be %v", got, want)
 	}
@@ -123,12 +163,14 @@ func TestDatabase_GenerateVerifyAPIKeySignature(t *testing.T) {
 
 	apiKey, realmID := "abcd1234", uint(15)
 
-	key := fmt.Sprintf("%s:%d", apiKey, realmID)
+	key := fmt.Sprintf("%s.%d", apiKey, realmID)
 	sig, err := db.GenerateAPIKeySignature(key)
 	if err != nil {
 		t.Fatal(err)
 	}
-	key = fmt.Sprintf("%s:%x", key, sig)
+	key = fmt.Sprintf("%s.%s", key, base64.RawURLEncoding.EncodeToString(sig))
+
+	log.Printf("key: %v", key)
 
 	gotAPIKey, gotRealmID, err := db.VerifyAPIKeySignature(key)
 	if err != nil {
