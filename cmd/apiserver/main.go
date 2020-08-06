@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
@@ -155,15 +156,15 @@ func apiKeyFunc(db *database.Database) httplimit.KeyFunc {
 		v := r.Header.Get("X-API-Key")
 		if v != "" {
 			// v2 API keys encode the realm
-			realmID, _, err := database.VerifyAPIKeySignature(v)
+			_, realmID, err := db.VerifyAPIKeySignature(v)
 			if err == nil {
-				return fmt.Sprintf("%d", realmID), nil
+				return strconv.FormatUint(uint64(realmID), 10), nil
 			}
 
 			// v1 API keys do not, fallback to the database
 			app, err := db.FindAuthorizedAppByAPIKey(v)
-			if err == nil {
-				return fmt.Sprintf("%d", app.RealmID), nil
+			if err == nil && app != nil {
+				return strconv.FormatUint(uint64(app.RealmID), 10), nil
 			}
 		}
 
