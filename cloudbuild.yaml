@@ -39,6 +39,28 @@ steps:
     'SERVICE=adminapi',
     '.',
   ]
+- id: 'deploy'
+  waitFor:
+  - 'adminapi'
+  - 'apiserver'
+  - 'cleanup'
+  - 'server'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:303.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    for _SERVICE in ( adminapi apiserver cleanup server ); do
+      gcloud run deploy "${_SERVICE}" \
+        --quiet \
+        --project "${PROJECT_ID}" \
+        --platform "managed" \
+        --region "${_REGION}" \
+        --image "gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${_SERVICE}:${COMMIT_SHA}" \
+        --no-traffic
+    done
 images: [
   'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
   'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
