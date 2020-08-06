@@ -55,6 +55,7 @@ func (r *Renderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string
 
 	// Acquire a renderer
 	b := r.rendererPool.Get().(*bytes.Buffer)
+	b.Reset()
 	defer r.rendererPool.Put(b)
 
 	// Render into the renderer

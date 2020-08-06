@@ -1,8 +1,11 @@
 timeout: 40m
+options:
+  machineType: 'N1_HIGHCPU_8'
 steps:
 - id: 'apiserver'
   name: 'docker'
   timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -11,10 +14,10 @@ steps:
     'SERVICE=apiserver',
     '.',
   ]
-  waitFor: ['-']
 - id: 'cleanup'
   name: 'docker'
   timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -23,10 +26,10 @@ steps:
     'SERVICE=cleanup',
     '.',
   ]
-  waitFor: ['-']
 - id: 'server'
   name: 'docker'
   timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -39,6 +42,7 @@ steps:
 - id: 'adminapi'
   name: 'docker'
   timeout: 10m
+  waitFor: ["-"]
   args: [
     'build',
     '--tag',
@@ -47,7 +51,6 @@ steps:
     'SERVICE=adminapi',
     '.',
   ]
-  waitFor: ['-']
 images: [
   'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
   'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',

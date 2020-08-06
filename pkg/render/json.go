@@ -57,6 +57,7 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 
 	// Acquire a renderer
 	b := r.rendererPool.Get().(*bytes.Buffer)
+	b.Reset()
 	defer r.rendererPool.Put(b)
 
 	// Render into the renderer
