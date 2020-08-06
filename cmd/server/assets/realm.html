@@ -18,15 +18,57 @@
 
     <form method="POST" action="/realm/settings/save">
       {{ .csrfField }}
-      <div class="form-group row">
-        <label for="name" class="col-sm-3">Name:</label>
-        <div class="col-sm-9">
-          <input type="text" id="name" name="name" class="form-control" value="{{.realm.Name}}" />
+
+      <div class="card mb-3">
+        <div class="card-header">
+          General settings
+        </div>
+        <div class="card-body">
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Name:</label>
+            <div class="col-sm-9">
+              <input type="text" id="name" name="name" class="form-control" value="{{.realm.Name}}" required />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{$smsConfig := .realm.SMSConfig}}
+      <div class="card mb-3">
+        <div class="card-header">
+          SMS configuration
+        </div>
+        <div class="card-body">
+          <div class="form-group row">
+            <label for="twilio_account_sid" class="col-sm-3">Twilio account:</label>
+            <div class="col-sm-9">
+              <input type="text" id="twilio_account_sid" name="twilio_account_sid" class="form-control" value="{{if $smsConfig}}{{$smsConfig.TwilioAccountSid}}{{end}}" />
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label for="twilio_auth_token" class="col-sm-3">Twilio auth token:</label>
+            <div class="input-group col-sm-9">
+              <input type="password" id="twilio_auth_token" name="twilio_auth_token" class="form-control" value="{{if $smsConfig}}{{$smsConfig.TwilioAuthToken}}{{end}}">
+              <div class="input-group-append">
+                <a class="input-group-text" data-toggle-password="twilio_auth_token">
+                  <span class="oi oi-lock-locked" aria-hidden="true"></span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label for="twilio_from_number" class="col-sm-3">Twilio number:</label>
+            <div class="col-sm-9">
+              <input type="tel" id="twilio_from_number" name="twilio_from_number" class="form-control" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="form-group row">
-        <div class="offset-sm-3 col-sm-9">
+        <div class="col-sm-12">
           <button type="submit" class="btn btn-primary btn-block">Update realm</button>
         </div>
       </div>

@@ -22,6 +22,8 @@ ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
 DOCKER_CMD="$(command -v docker || true)"
 DB_CONTAINER_IMAGE="registry.hub.docker.com/library/postgres:12-alpine"
 
+KEY_MANAGER="IN_MEMORY"
+
 # Database parameters
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-5432}"
@@ -29,6 +31,7 @@ DB_USER="${DB_USER:-en-verification-server}"
 DB_PASSWORD="${DB_PASSWORD:-BjrvWmjQPXykPu}"
 DB_SSLMODE="${DB_SSLMODE:-require}"
 DB_NAME="${DB_NAME:-en-verification-server-db}"
+DB_ENCRYPTION_KEY="my-key"
 DB_URL="postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
 
 MD5CMD="$(command -v md5 || command -v md5sum)"
@@ -45,12 +48,14 @@ function error() {
 }
 
 function init() {
+  echo "export KEY_MANAGER=\"${KEY_MANAGER}\""
   echo "export DB_HOST=\"${DB_HOST}\""
   echo "export DB_PORT=\"${DB_PORT}\""
   echo "export DB_USER=\"${DB_USER}\""
   echo "export DB_SSLMODE=\"${DB_SSLMODE}\""
   echo "export DB_PASSWORD=\"${DB_PASSWORD}\""
   echo "export DB_NAME=\"${DB_NAME}\""
+  echo "export DB_ENCRYPTION_KEY=\"${DB_ENCRYPTION_KEY}\""
   echo "export DB_URL=\"${DB_URL}\""
 
   echo "export SERVER_NAME=\"${SERVER_NAME}\""

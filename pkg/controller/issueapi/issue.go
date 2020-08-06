@@ -64,7 +64,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		// Verify SMS configuration if phone was provided
 		var smsProvider sms.Provider
 		if request.Phone != "" {
-			smsProvider, err = realm.GetSMSProvider(ctx, c.db)
+			smsProvider, err = realm.SMSProvider()
 			if err != nil {
 				logger.Errorw("failed to get sms provider", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
