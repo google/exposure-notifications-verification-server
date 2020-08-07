@@ -94,8 +94,8 @@ func (db *Database) Close() error {
 }
 
 // Ping attempts a connection and closes it to the database.
-func (db *Database) Ping() error {
-	return db.db.DB().Ping()
+func (db *Database) Ping(ctx context.Context) error {
+	return db.db.DB().PingContext(ctx)
 }
 
 // IsNotFound determines if an error is a record not found.
