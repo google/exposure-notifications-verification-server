@@ -26,14 +26,14 @@ func HandleHealthz(hctx context.Context, h *render.Renderer, cfg *database.Confi
 				db, err := cfg.Open(ctx)
 				if err != nil {
 					logger.Errorw("database error", "error", err)
-					h.JSON500(w, h.InternalError)
+					h.JSON500(w, render.InternalError)
 					return
 				}
 				defer db.Close()
 
 				if err := db.Ping(ctx); err != nil {
 					logger.Errorw("database error", "error", err)
-					h.JSON500(w, h.InternalError)
+					h.JSON500(w, render.InternalError)
 					return
 				}
 			}
