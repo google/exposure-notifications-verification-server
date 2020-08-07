@@ -39,12 +39,12 @@ steps:
   - '-c'
   - |-
     gcloud secrets versions access "${_DB_PASS_SECRET}" > ./db-password
+    gcloud secrets versions access "${_DB_APIKEY_DATABASE_KEY}" > ./db-apikey-db-key
+    gcloud secrets versions access "${_DB_APIKEY_SIGNATURE_KEY}" > ./db-apikey-sig-key
 
 - id: 'migrate'
   name: 'golang:1.14'
   env:
-  - 'DB_APIKEY_DATABASE_KEY=${_DB_APIKEY_DATABASE_KEY}'
-  - 'DB_APIKEY_SIGNATURE_KEY=${_DB_APIKEY_SIGNATURE_KEY}'
   - 'DB_ENCRYPTION_KEY=${_DB_ENCRYPTION_KEY}'
   - 'DB_HOST=${_DB_HOST}'
   - 'DB_NAME=${_DB_NAME}'
@@ -66,4 +66,6 @@ steps:
 
     echo "==> Running migrations"
     export DB_PASSWORD="$(cat ./db-password)"
+    export DB_APIKEY_DATABASE_KEY="$(cat ./db-apikey-db-key)"
+    export DB_APIKEY_SIGNATURE_KEY="$(cat ./db-apikey-sig-key)"
     go run cmd/migrate/main.go

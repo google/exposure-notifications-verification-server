@@ -34,17 +34,17 @@ if [ -z "${DB_ENCRYPTION_KEY:-}" ]; then
 fi
 
 if [ -z "${DB_APIKEY_DATABASE_KEY:-}" ]; then
-  echo "✋ Missing DB_APIKEY_DATABASE_KEY (e.g. projects/my-project/locations/us-east1/keyRings/my-kr/cryptoKeys/my-key)!" >&2
+  echo "✋ Missing DB_APIKEY_DATABASE_KEY (e.g. secret://projects/my-project/locations/us-east1/keyRings/my-kr/cryptoKeys/my-key)!" >&2
   exit 1
 fi
 
 if [ -z "${DB_APIKEY_SIGNATURE_KEY:-}" ]; then
-  echo "✋ Missing DB_APIKEY_SIGNATURE_KEY (e.g. projects/my-project/locations/us-east1/keyRings/my-kr/cryptoKeys/my-key)!" >&2
+  echo "✋ Missing DB_APIKEY_SIGNATURE_KEY (e.g. secret://projects/my-project/locations/us-east1/keyRings/my-kr/cryptoKeys/my-key)!" >&2
   exit 1
 fi
 
 if [ -z "${DB_PASS_SECRET:-}" ]; then
-  echo "✋ Missing DB_PASS_SECRET (e.g. projects/my-project/secrets/my-secret/versions/1)!" >&2
+  echo "✋ Missing DB_PASS_SECRET (e.g. secret://projects/my-project/secrets/my-secret/versions/1)!" >&2
   exit 1
 fi
 
