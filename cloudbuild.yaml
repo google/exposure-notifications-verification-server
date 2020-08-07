@@ -9,10 +9,18 @@ steps:
   args: [
     'build',
     '--tag',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${SHORT_SHA}',
     '--build-arg',
     'SERVICE=apiserver',
     '.',
+  ]
+- id: 'apiserver:publish'
+  name: 'docker'
+  waitFor:
+  - apiserver
+  args: [
+    'push',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${SHORT_SHA}',
   ]
 - id: 'cleanup'
   name: 'docker'
@@ -21,10 +29,18 @@ steps:
   args: [
     'build',
     '--tag',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${SHORT_SHA}',
     '--build-arg',
     'SERVICE=cleanup',
     '.',
+  ]
+- id: 'cleanup:publish'
+  name: 'docker'
+  waitFor:
+  - cleanup
+  args: [
+    'push',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${SHORT_SHA}',
   ]
 - id: 'server'
   name: 'docker'
@@ -33,10 +49,18 @@ steps:
   args: [
     'build',
     '--tag',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${SHORT_SHA}',
     '--build-arg',
     'SERVICE=server',
     '.',
+  ]
+- id: 'server:publish'
+  name: 'docker'
+  waitFor:
+  - server
+  args: [
+    'push',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${SHORT_SHA}',
   ]
 - id: 'adminapi'
   name: 'docker'
@@ -45,14 +69,47 @@ steps:
   args: [
     'build',
     '--tag',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${COMMIT_SHA}',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${SHORT_SHA}',
     '--build-arg',
     'SERVICE=adminapi',
     '.',
   ]
+- id: 'adminapi:publish'
+  name: 'docker'
+  waitFor:
+  - adminapi
+  args: [
+    'push',
+    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${SHORT_SHA}',
+  ]
+- id: 'deploy'
+  waitFor:
+  - 'adminapi:publish'
+  - 'apiserver:publish'
+  - 'cleanup:publish'
+  - 'server:publish'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
+  args:
+  - 'bash'
+  - '-exEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud components install --quiet beta;
+    SERVICES=(adminapi apiserver cleanup server);
+    for s in "${SERVICES[@]}"; do
+      gcloud beta run deploy "${s}" \
+        --quiet \
+        --project "${PROJECT_ID}" \
+        --platform "managed" \
+        --region "us-central1" \
+        --image "gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${s}:${SHORT_SHA}" \
+        --tag=${_PR_NUMBER:="latest"} \
+        --no-traffic
+    done
 images: [
-  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${COMMIT_SHA}',
-  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${COMMIT_SHA}',
-  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${COMMIT_SHA}',
-  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${COMMIT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/server:${SHORT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:${SHORT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/cleanup:${SHORT_SHA}',
+  'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:${SHORT_SHA}',
 ]
