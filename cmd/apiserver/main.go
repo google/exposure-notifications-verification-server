@@ -24,6 +24,7 @@ import (
 	"os"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
@@ -111,6 +112,8 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
+
+	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
 
 	// Setup API auth
 	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)

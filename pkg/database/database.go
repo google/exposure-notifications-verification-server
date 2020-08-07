@@ -93,6 +93,11 @@ func (db *Database) Close() error {
 	return db.db.Close()
 }
 
+// Ping attempts a connection and closes it to the database.
+func (db *Database) Ping(ctx context.Context) error {
+	return db.db.DB().PingContext(ctx)
+}
+
 // IsNotFound determines if an error is a record not found.
 func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
