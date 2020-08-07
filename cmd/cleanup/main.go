@@ -70,7 +70,7 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
-	r.Handle("/healthz", controller.HandleHealthz(h, &config.Database)).Methods("GET")
+	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
 
 	// Cleanup handler doesn't require authentication - does use locking to ensure
 	// database isn't tipped over by cleanup.

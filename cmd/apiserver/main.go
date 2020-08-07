@@ -100,7 +100,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	r.Handle("/healthz", controller.HandleHealthz(h, &config.Database)).Methods("GET")
+	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
 
 	// Setup API auth
 	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
