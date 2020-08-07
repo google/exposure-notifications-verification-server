@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"golang.org/x/time/rate"
@@ -17,7 +16,6 @@ var (
 )
 
 func HandleHealthz(hctx context.Context, h *render.Renderer, cfg *database.Config) http.Handler {
-	logger := logging.FromContext(hctx).Named("healthz")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		params := r.URL.Query()
@@ -25,15 +23,13 @@ func HandleHealthz(hctx context.Context, h *render.Renderer, cfg *database.Confi
 			if rl.Allow() {
 				db, err := cfg.Open(ctx)
 				if err != nil {
-					logger.Errorw("database error", "error", err)
-					h.JSON500(w, render.ErrInternal)
+					InternalError(w, r, h, err)
 					return
 				}
 				defer db.Close()
 
 				if err := db.Ping(ctx); err != nil {
-					logger.Errorw("database error", "error", err)
-					h.JSON500(w, render.ErrInternal)
+					InternalError(w, r, h, err)
 					return
 				}
 			}

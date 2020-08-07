@@ -26,11 +26,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	// InternalError is a generic error we can display to users.
-	ErrInternal = fmt.Errorf("we have encountered an internal error")
-)
-
 // Renderer is responsible for rendering various content and templates like HTML
 // and JSON responses.
 type Renderer struct {
