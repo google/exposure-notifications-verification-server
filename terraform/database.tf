@@ -123,10 +123,6 @@ resource "google_secret_manager_secret_version" "db-secret-version" {
   secret_data = each.value
 }
 
-
-# _DB_APIKEY_DATABASE_KEY=${DB_APIKEY_DATABASE_KEY},_DB_APIKEY_SIGNATURE_KEY=${DB_APIKEY_SIGNATURE_KEY}
-
-
 # Create secret for the database HMAC for API keys
 resource "random_id" "db-apikey-db-hmac" {
   byte_length = 128
@@ -171,10 +167,30 @@ resource "google_secret_manager_secret_version" "db-apikey-sig-hmac" {
   secret_data = random_id.db-apikey-sig-hmac.b64_std
 }
 
-# Grant Cloud Build the ability to access the database password (required to run
+# Grant Cloud Build the ability to access the database secrets (required to run
 # migrations).
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-pwd" {
   secret_id = google_secret_manager_secret.db-secret["password"].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-db-hmac" {
+  secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-sig-hmac" {
+  secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
 
@@ -255,4 +271,16 @@ output "proxy_command" {
 
 output "proxy_env" {
   value = "DB_SSLMODE=disable DB_HOST=127.0.0.1 DB_NAME=${google_sql_database.db.name} DB_PORT=5432 DB_USER=${google_sql_user.user.name} DB_PASSWORD=$(gcloud secrets versions access ${google_secret_manager_secret_version.db-secret-version["password"].name})"
+}
+
+output "db_encryption_key_secret" {
+  value = google_kms_crypto_key.database-encrypter.self_link
+}
+
+output "db_apikey_database_key_secret" {
+  value = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
+}
+
+output "db_apikey_signature_key_secret" {
+  value = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
 }

@@ -67,6 +67,18 @@ resource "google_kms_crypto_key_iam_member" "apiserver-database-encrypter" {
   member        = "serviceAccount:${google_service_account.apiserver.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "apiserver-db-apikey-db-hmac" {
+  secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.apiserver.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "apiserver-db-apikey-sig-hmac" {
+  secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.apiserver.email}"
+}
+
 resource "google_cloud_run_service" "apiserver" {
   name     = "apiserver"
   location = var.region

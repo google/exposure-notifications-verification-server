@@ -31,7 +31,11 @@ const initState = "00000-Init"
 func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 	logger := logging.FromContext(ctx)
 	options := gormigrate.DefaultOptions
-	options.UseTransaction = true
+
+	// Each migration runs in its own transacton already. Setting to true forces
+	// all unrun migrations to run in a _single_ transaction which is probably
+	// undesirable.
+	options.UseTransaction = false
 
 	return gormigrate.New(db.db, options, []*gormigrate.Migration{
 		{
