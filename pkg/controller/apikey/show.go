@@ -51,6 +51,7 @@ func (c *Controller) HandleShow() http.Handler {
 			delete(session.Values, "apiKey")
 		}
 
+		// Pull the authorized app from the id.
 		authApp, err := realm.FindAuthorizedAppString(vars["id"])
 		if err != nil {
 			logger.Errorw("failed to find authorized apps", "error", err)
@@ -62,14 +63,27 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		c.renderShow(w, r, authApp)
+		// Pull the stats - these are cached because it's an expensive query.
+		stats, err := authApp.UsageSummary(c.db)
+		if err != nil {
+			logger.Errorw("failed to load stats", "error", err)
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		if stats == nil {
+			logger.Warnw("no stats for app", "app", authApp.Name)
+			stats = new(database.AuthorizedAppStatsSummary)
+		}
+
+		c.renderShow(w, r, authApp, stats)
 	})
 }
 
 // renderShow renders the edit page.
-func (c *Controller) renderShow(w http.ResponseWriter, r *http.Request, authApp *database.AuthorizedApp) {
+func (c *Controller) renderShow(w http.ResponseWriter, r *http.Request, authApp *database.AuthorizedApp, stats *database.AuthorizedAppStatsSummary) {
 	ctx := r.Context()
 	m := controller.TemplateMapFromContext(ctx)
 	m["authApp"] = authApp
+	m["stats"] = stats
 	c.h.RenderHTML(w, "apikeys/show", m)
 }

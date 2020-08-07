@@ -44,25 +44,7 @@ func (c *Controller) HandleIndex() http.Handler {
 // renderIndex renders the index page.
 func (c *Controller) renderIndex(w http.ResponseWriter, r *http.Request, realm *database.Realm) {
 	ctx := r.Context()
-
-	creationCounts1d := make(map[uint]uint64)
-	creationCounts7d := make(map[uint]uint64)
-	creationCounts30d := make(map[uint]uint64)
-	for _, app := range realm.AuthorizedApps {
-		appStatsSummary, err := c.db.GetAuthorizedAppStatsSummary(app, realm)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-		creationCounts1d[app.ID] = appStatsSummary.CodesIssued1d
-		creationCounts7d[app.ID] = appStatsSummary.CodesIssued7d
-		creationCounts30d[app.ID] = appStatsSummary.CodesIssued30d
-	}
-
 	m := controller.TemplateMapFromContext(ctx)
 	m["apps"] = realm.AuthorizedApps
-	m["codesGenerated1d"] = creationCounts1d
-	m["codesGenerated7d"] = creationCounts7d
-	m["codesGenerated30d"] = creationCounts30d
 	c.h.RenderHTML(w, "apikeys/index", m)
 }

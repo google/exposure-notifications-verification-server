@@ -2,6 +2,7 @@
 
 {{$apiKey := .apiKey}}
 {{$authApp := .authApp}}
+{{$stats := .stats}}
 
 <!doctype html>
 <html lang="en">
@@ -55,6 +56,31 @@
             Unknown
           {{end}}
         </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Statistics</div>
+      <div class="card-body table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr class="thead-dark">
+              <th scope="col" colspan="3">Keys issued</th>
+            </tr>
+            <tr>
+              <th scope="col" width="33%">Today</th>
+              <th scope="col" width="33%">Past 7 days</th>
+              <th scope="col" width="33%">Past 30 days</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{$stats.CodesIssued1d}}</td>
+              <td>{{$stats.CodesIssued1d}}</td>
+              <td>{{$stats.CodesIssued1d}}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

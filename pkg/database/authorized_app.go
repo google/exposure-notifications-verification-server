@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/jinzhu/gorm"
@@ -201,6 +202,43 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 		return nil, err
 	}
 	return &app, nil
+}
+
+// UsageSummary returns the usage summary for the authorized app (api key) over
+// a 1d, 7d, and 30d period. This is expensive so callers should consider
+// caching the value.
+func (a *AuthorizedApp) UsageSummary(db *Database) (*AuthorizedAppStatsSummary, error) {
+	t := time.Now().UTC()
+	roundedTime := t.Truncate(24 * time.Hour)
+
+	var summary AuthorizedAppStatsSummary
+	var stats []AuthorizedAppStats
+
+	if err := db.db.
+		Where("authorized_app_id = ?", a.ID).
+		Where("realm_id = ?", a.RealmID).
+		Where("date BETWEEN ? AND ?", roundedTime.AddDate(0, 0, -30), roundedTime).
+		Find(&stats).Error; err != nil {
+		return nil, err
+	}
+
+	for _, stat := range stats {
+		// All entires are 30d
+		summary.CodesIssued30d += stat.CodesIssued
+
+		// Only one entry is 1d
+		if stat.Date == roundedTime {
+			summary.CodesIssued1d += stat.CodesIssued
+		}
+
+		// Find 7d entries
+		if stat.Date.After(roundedTime.AddDate(0, 0, -7)) {
+			summary.CodesIssued7d += stat.CodesIssued
+		}
+	}
+
+	// create 24h, 7d, 30d counts
+	return &summary, nil
 }
 
 // SaveAuthorizedApp saves the authorized app.

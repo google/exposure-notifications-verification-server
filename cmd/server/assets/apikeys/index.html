@@ -1,9 +1,6 @@
 {{define "apikeys/index"}}
 
 {{$authApp := .authApp}}
-{{$codesGenerated1d := .codesGenerated1d}}
-{{$codesGenerated7d := .codesGenerated7d}}
-{{$codesGenerated30d := .codesGenerated30d}}
 
 <!doctype html>
 <html lang="en">
@@ -29,10 +26,9 @@
         <thead>
           <tr>
             <th scope="col">App</th>
-            <th scope="col" width="100">Key</th>
+            <th scope="col" width="75">Key</th>
             <th scope="col" width="75">Type</th>
             <th scope="col" width="75">Enabled</th>
-            <th scope="col" width="75">Stats</th>
             <th scope="col" width="40"></th>
           </tr>
         </thead>
@@ -57,9 +53,6 @@
               {{else}}
                 <span class="badge badge-pill badge-success">Enabled</span>
               {{end}}
-            </td>
-            <td>
-              {{index $codesGenerated1d .ID}}/d, {{index $codesGenerated7d .ID}}/w, {{index $codesGenerated30d .ID}}/m
             </td>
             <td class="text-center">
               {{if .DeletedAt}}
