@@ -34,7 +34,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 
 	// Each migration runs in its own transacton already. Setting to true forces
 	// all unrun migrations to run in a _single_ transaction which is probably
-	// undesireable.
+	// undesirable.
 	options.UseTransaction = false
 
 	return gormigrate.New(db.db, options, []*gormigrate.Migration{
