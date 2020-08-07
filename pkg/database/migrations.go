@@ -424,8 +424,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				if err := tx.DropTable(&UserStats{}).Error; err != nil {
 					return err
 				}
-			}
-		}
+				return nil
+			},
+		},
 	})
 }
 

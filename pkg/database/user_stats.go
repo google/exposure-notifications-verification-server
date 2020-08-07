@@ -30,8 +30,8 @@ type UserStats struct {
 }
 
 type UserStatsSummary struct {
-	User           User
-	Realm          Realm
+	User           *User
+	Realm          *Realm
 	CodesIssued1d  uint64
 	CodesIssued7d  uint64
 	CodesIssued30d uint64

@@ -46,6 +46,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			appStatsSummary, err := c.db.GetAuthorizedAppStatsSummary(app, realm)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
+				return
 			}
 			creationCounts1d[app.ID] = appStatsSummary.CodesIssued1d
 			creationCounts7d[app.ID] = appStatsSummary.CodesIssued7d
