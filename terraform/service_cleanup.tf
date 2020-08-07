@@ -61,6 +61,18 @@ resource "google_kms_crypto_key_iam_member" "cleanup-database-encrypter" {
   member        = "serviceAccount:${google_service_account.cleanup.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "cleanup-db-apikey-db-hmac" {
+  secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cleanup.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "cleanup-db-apikey-sig-hmac" {
+  secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cleanup.email}"
+}
+
 resource "google_cloud_run_service" "cleanup" {
   name     = "cleanup"
   location = var.region

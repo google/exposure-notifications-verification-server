@@ -167,10 +167,30 @@ resource "google_secret_manager_secret_version" "db-apikey-sig-hmac" {
   secret_data = random_id.db-apikey-sig-hmac.b64_std
 }
 
-# Grant Cloud Build the ability to access the database password (required to run
+# Grant Cloud Build the ability to access the database secrets (required to run
 # migrations).
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-pwd" {
   secret_id = google_secret_manager_secret.db-secret["password"].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-db-hmac" {
+  secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-sig-hmac" {
+  secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
 
