@@ -36,8 +36,27 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		creationCounts1d := make(map[uint]uint64)
+		creationCounts7d := make(map[uint]uint64)
+		creationCounts30d := make(map[uint]uint64)
+		for _, user := range realm.RealmUsers {
+			userStatsSummary, err := c.db.GetUserStatsSummary(user, realm)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			creationCounts1d[user.ID] = userStatsSummary.CodesIssued1d
+			creationCounts7d[user.ID] = userStatsSummary.CodesIssued7d
+			creationCounts30d[user.ID] = userStatsSummary.CodesIssued30d
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
+
+		m["codesGenerated1d"] = creationCounts1d
+		m["codesGenerated7d"] = creationCounts7d
+		m["codesGenerated30d"] = creationCounts30d
 		m["realmUsers"] = realm.RealmUsers
+
 		c.h.RenderHTML(w, "users", m)
 	})
 }

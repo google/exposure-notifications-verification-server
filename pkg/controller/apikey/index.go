@@ -38,6 +38,24 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
+
+		creationCounts1d := make(map[uint]uint64)
+		creationCounts7d := make(map[uint]uint64)
+		creationCounts30d := make(map[uint]uint64)
+		for _, app := range realm.AuthorizedApps {
+			appStatsSummary, err := c.db.GetAuthorizedAppStatsSummary(app, realm)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			creationCounts1d[app.ID] = appStatsSummary.CodesIssued1d
+			creationCounts7d[app.ID] = appStatsSummary.CodesIssued7d
+			creationCounts30d[app.ID] = appStatsSummary.CodesIssued30d
+		}
+
+		m["codesGenerated1d"] = creationCounts1d
+		m["codesGenerated7d"] = creationCounts7d
+		m["codesGenerated30d"] = creationCounts30d
 		m["apps"] = realm.AuthorizedApps
 		m["typeAdmin"] = database.APIUserTypeAdmin
 		m["typeDevice"] = database.APIUserTypeDevice

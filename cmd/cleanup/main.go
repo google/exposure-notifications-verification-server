@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-signalcontext"
 
@@ -54,6 +55,18 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
+
+	// Setup monitoring
+	logger.Info("configuring observability exporter")
+	oeConfig := config.ObservabilityExporterConfig()
+	oe, err := observability.NewFromEnv(ctx, oeConfig)
+	if err != nil {
+		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
+	}
+	if err := oe.InitExportOnce(); err != nil {
+		return fmt.Errorf("error initializing observability exporter: %w", err)
+	}
+	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup database
 	db, err := config.Database.Open(ctx)

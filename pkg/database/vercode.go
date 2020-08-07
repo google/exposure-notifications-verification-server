@@ -45,14 +45,16 @@ var (
 // VerificationCode represnts a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
-	RealmID     uint   // VerificationCodes belong to exactly one realm when issued.
-	Code        string `gorm:"type:varchar(20);unique_index"`
-	Claimed     bool   `gorm:"default:false"`
-	TestType    string `gorm:"type:varchar(20)"`
-	SymptomDate *time.Time
-	ExpiresAt   time.Time
-	IssuingUser *User
-	IssuingApp  *AuthorizedApp
+	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
+	Code          string `gorm:"type:varchar(20);unique_index"`
+	Claimed       bool   `gorm:"default:false"`
+	TestType      string `gorm:"type:varchar(20)"`
+	SymptomDate   *time.Time
+	ExpiresAt     time.Time
+	IssuingUserID int
+	IssuingUser   *User
+	IssuingAppID  int
+	IssuingApp    *AuthorizedApp
 }
 
 // TableName sets the VerificationCode table name

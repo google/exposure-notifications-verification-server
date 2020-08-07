@@ -122,10 +122,20 @@ go run ./cmd/add-realm --name "my-custom-realm"
 
 
 # create a user for whatever email address you want to use
-go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin --realm 1 --admin-realm 1
+go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin --realm 1 --admin-realm
 
 go run ./cmd/server
 ```
+
+### Observability (Tracing and Metrics)
+
+The observability component is responsible for metrics. The following
+configurations are available:
+
+| Name                    | `OBSERVABILITY_EXPORTER` value  | Description
+| ----------------------- | ------------------------------- | -----------
+| OpenCensus Agent        | `OCAGENT`                       | Use OpenCensus.
+| Stackdriver\*           | `STACKDRIVER`                   | Use Stackdriver.
 
 ## API Access
 

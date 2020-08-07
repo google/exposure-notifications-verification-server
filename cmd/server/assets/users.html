@@ -57,6 +57,10 @@
 
     <h2>Users</h2>
 
+    {{$codesGenerated1d := .codesGenerated1d}}
+    {{$codesGenerated7d := .codesGenerated7d}}
+    {{$codesGenerated30d := .codesGenerated30d}}
+
     {{if .realmUsers}}
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
@@ -66,6 +70,9 @@
             <th scope="col">Name</th>
             <th scope="col">Options</th>
             <th scope="col"></th>
+            <th scope="col">Issued (1d)</th>
+            <th scope="col">Issued (7d)</th>
+            <th scope="col">Issued (30d)</th>
           </tr>
         </thead>
         <tbody>
@@ -87,6 +94,15 @@
                   <a class="text-danger" data-submit-form data-confirm="Are you sure?">Delete</a>
                 </form>
               {{end}}
+            </td>
+            <td scope="row">
+              {{index $codesGenerated1d .ID}}
+            </td>
+            <td scope="row">
+              {{index $codesGenerated7d .ID}}
+            </td>
+            <td scope="row">
+              {{index $codesGenerated30d .ID}}
             </td>
           </tr>
           {{end}}

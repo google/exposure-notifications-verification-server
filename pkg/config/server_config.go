@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	firebase "firebase.google.com/go"
@@ -31,8 +32,9 @@ var _ IssueAPIConfig = (*ServerConfig)(nil)
 
 // ServerConfig represents the environment based config for the server.
 type ServerConfig struct {
-	Firebase FirebaseConfig
-	Database database.Config
+	Firebase      FirebaseConfig
+	Database      database.Config
+	Observability observability.Config
 
 	Port string `env:"PORT,default=8080"`
 
@@ -114,6 +116,10 @@ func (c *ServerConfig) GetVerificationCodeDuration() time.Duration {
 
 func (c *ServerConfig) GetVerficationCodeDigits() uint {
 	return c.CodeDigits
+}
+
+func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
+	return &c.Observability
 }
 
 // FirebaseConfig represents configuration specific to firebase auth.
