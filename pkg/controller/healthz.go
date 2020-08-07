@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -25,14 +26,14 @@ func HandleHealthz(hctx context.Context, h *render.Renderer, cfg *database.Confi
 				db, err := cfg.Open(ctx)
 				if err != nil {
 					logger.Errorw("database error", "error", err)
-					h.JSON500(w, err)
+					h.JSON500(w, h.InternalError)
 					return
 				}
 				defer db.Close()
 
 				if err := db.Ping(ctx); err != nil {
 					logger.Errorw("database error", "error", err)
-					h.JSON500(w, err)
+					h.JSON500(w, h.InternalError)
 					return
 				}
 			}
