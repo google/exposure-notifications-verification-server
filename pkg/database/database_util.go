@@ -145,7 +145,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	if err != nil {
 		tb.Fatalf("failed to add encryption key")
 	}
-	if err := km.AddEncryptionKey("my-key"); err != nil {
+	if _, err := km.CreateEncryptionKey("my-key"); err != nil {
 		tb.Fatalf("failed to add encryption key")
 	}
 	db.keyManager = km

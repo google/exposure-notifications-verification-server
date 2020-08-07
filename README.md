@@ -102,14 +102,22 @@ export CERTIFICATE_SIGNING_KEY="<Certificate Key Resource ID from Above>"
 export GOOGLE_APPLICATION_CREDENTIALS=/Users/USERNAME/Documents/project-name-123456-firebase-adminsdk-ab3-4cde56f78g.json
 
 # Configure CSRF_AUTH_KEY. This is a 32 byte string base64 encoded.
-# Create your own with `openssl rand -base64 32 | tr -d '\n'`
+# Create your own with `openssl rand -base64 32`.
 export CSRF_AUTH_KEY="aGVsbG9oZWxsb2hlbGxvaGVsbG9oZWxsb2hlbGxvaGk="
 
 # Configure cookie encryption, the first is 64 bytes, the second is 32.
-# Create your own with `openssl rand -base64 NUM | tr -d '\n'` where NUM is 32 or 64
+# Create your own with `openssl rand -base64 NUM` where NUM is 32 or 64
 export COOKIE_KEYS="M+yP18fJL7e/afWNdvDrHXPRq7BC1T0zlQPHAwNbeEJmp35y7dSTxvhARKLGYzH6DuIUe0uFqsK5XQtGMl8SuQ==,3PBCfkE6aFzq9UQbtzXUOJ4rta5RsYjxtrMz4j41xiE="
 
+# Database encryption key - this is required for values that are encrypted in
+# the database (like SMS configuration) because we need the plaintext value in
+# some instances.
+# Create your own with `openssl rand -base64 32`.
+export KEY_MANAGER="IN_MEMORY"
+export DB_ENCRYPTION_KEY="O04ZjG4WuoceRd0k2pTqDN0r8omr6sbFL0U3T5b12Lo="
+
 # Database HMAC keys - these should be at least 64 bytes, preferably 128
+# Create your own with `openssl rand -base64 128`.
 export DB_APIKEY_DATABASE_KEY="02zaT2Gtx1QfBnS7kxlby5TxbwyMPWqoCpb75zA8MMB8frQX0WVpOl+UaXDwE3jz2fj/eFqmCj75atLL6Gw3Yg=="
 export DB_APIKEY_SIGNATURE_KEY="PsOkeJ+1iXN2bMnKKTH6Ea+KtZGKDHhDN7SpBgPGanEOr7b/heFPS90mHbjqtu2htuCt/kW61ar2BQPhtq+ASw=="
 
