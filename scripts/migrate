@@ -33,6 +33,16 @@ if [ -z "${DB_ENCRYPTION_KEY:-}" ]; then
   exit 1
 fi
 
+if [ -z "${DB_APIKEY_DATABASE_KEY:-}" ]; then
+  echo "✋ Missing DB_APIKEY_DATABASE_KEY (e.g. projects/my-project/locations/us-east1/keyRings/my-kr/cryptoKeys/my-key)!" >&2
+  exit 1
+fi
+
+if [ -z "${DB_APIKEY_SIGNATURE_KEY:-}" ]; then
+  echo "✋ Missing DB_APIKEY_SIGNATURE_KEY (e.g. projects/my-project/locations/us-east1/keyRings/my-kr/cryptoKeys/my-key)!" >&2
+  exit 1
+fi
+
 if [ -z "${DB_PASS_SECRET:-}" ]; then
   echo "✋ Missing DB_PASS_SECRET (e.g. projects/my-project/secrets/my-secret/versions/1)!" >&2
   exit 1
@@ -55,5 +65,5 @@ fi
 
 gcloud builds submit "${ROOT}" \
   --config "${ROOT}/builders/migrate.yaml" \
-  --substitutions "_DB_CONN=${DB_CONN},_DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY},_DB_NAME=${DB_NAME},_DB_PASS_SECRET=${DB_PASS_SECRET},_DB_USER=${DB_USER}" \
+  --substitutions "_DB_CONN=${DB_CONN},_DB_APIKEY_DATABASE_KEY=${DB_APIKEY_DATABASE_KEY},_DB_APIKEY_SIGNATURE_KEY=${DB_APIKEY_SIGNATURE_KEY},_DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY},_DB_NAME=${DB_NAME},_DB_PASS_SECRET=${DB_PASS_SECRET},_DB_USER=${DB_USER}" \
   --project "${PROJECT_ID}"

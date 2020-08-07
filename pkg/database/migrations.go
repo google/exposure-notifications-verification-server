@@ -31,6 +31,8 @@ const initState = "00000-Init"
 func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 	logger := logging.FromContext(ctx)
 	options := gormigrate.DefaultOptions
+	options.UseTransaction = true
+
 	return gormigrate.New(db.db, options, []*gormigrate.Migration{
 		{
 			ID: initState,
@@ -321,8 +323,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00012-DropAuthorizedAppUniqueNameIndex",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Info("dropping authorized apps unique name index")
-				if err := tx.Model(&AuthorizedApp{}).RemoveIndex("uix_authorized_apps_name").Error; err != nil {
-					logger.Warnf("error dropping index, that may not exists: %v", err)
+				sql := "DROP INDEX IF EXISTS uix_authorized_apps_name"
+				if err := tx.Exec(sql).Error; err != nil {
+					return err
 				}
 				return nil
 			},
@@ -424,6 +427,63 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				if err := tx.DropTable(&UserStats{}).Error; err != nil {
 					return err
 				}
+				return nil
+			},
+		},
+		{
+			ID: "00018-IncreaseAPIKeySize",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: increasing API key size")
+				sql := "ALTER TABLE authorized_apps ALTER COLUMN api_key TYPE varchar(512)"
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sql := "ALTER TABLE authorized_apps ALTER COLUMN api_key TYPE varchar(100)"
+				return tx.Exec(sql).Error
+			},
+		},
+		{
+			ID: "00019-AddAPIKeyPreviewAuthApp",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: migrating authapp")
+				return tx.AutoMigrate(AuthorizedApp{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00020-HMACAPIKeys",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: HMACing existing api keys")
+
+				var apps []AuthorizedApp
+				if err := tx.Model(AuthorizedApp{}).Find(&apps).Error; err != nil {
+					return err
+				}
+
+				for _, app := range apps {
+					// If the key has a preview, it's v2
+					if app.APIKeyPreview != "" {
+						continue
+					}
+
+					apiKeyPreview := app.APIKey[:6]
+					newAPIKey, err := db.hmacAPIKey(app.APIKey)
+					if err != nil {
+						return fmt.Errorf("failed to hmac %v: %w", app.Name, err)
+					}
+
+					app.APIKey = newAPIKey
+					app.APIKeyPreview = apiKeyPreview
+
+					if err := db.db.Save(&app).Error; err != nil {
+						return fmt.Errorf("failed to save %v: %w", app.Name, err)
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
 				return nil
 			},
 		},

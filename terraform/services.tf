@@ -26,15 +26,17 @@ locals {
   }
 
   database_config = {
-    DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.self_link
-    DB_HOST           = google_sql_database_instance.db-inst.private_ip_address
-    DB_NAME           = google_sql_database.db.name
-    DB_PASSWORD       = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
-    DB_SSLCERT        = "secret://${google_secret_manager_secret_version.db-secret-version["sslcert"].id}?target=file"
-    DB_SSLKEY         = "secret://${google_secret_manager_secret_version.db-secret-version["sslkey"].id}?target=file"
-    DB_SSLMODE        = "verify-ca"
-    DB_SSLROOTCERT    = "secret://${google_secret_manager_secret_version.db-secret-version["sslrootcert"].id}?target=file"
-    DB_USER           = google_sql_user.user.name
+    DB_ENCRYPTION_KEY       = google_kms_crypto_key.database-encrypter.self_link
+    DB_APIKEY_DATABASE_KEY  = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
+    DB_APIKEY_SIGNATURE_KEY = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
+    DB_HOST                 = google_sql_database_instance.db-inst.private_ip_address
+    DB_NAME                 = google_sql_database.db.name
+    DB_PASSWORD             = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
+    DB_SSLCERT              = "secret://${google_secret_manager_secret_version.db-secret-version["sslcert"].id}?target=file"
+    DB_SSLKEY               = "secret://${google_secret_manager_secret_version.db-secret-version["sslkey"].id}?target=file"
+    DB_SSLMODE              = "verify-ca"
+    DB_SSLROOTCERT          = "secret://${google_secret_manager_secret_version.db-secret-version["sslrootcert"].id}?target=file"
+    DB_USER                 = google_sql_user.user.name
   }
 
   firebase_config = {

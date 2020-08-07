@@ -16,6 +16,7 @@ package database
 
 import (
 	"context"
+	"crypto/rand"
 	"os"
 	"strconv"
 	"testing"
@@ -90,6 +91,10 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	// build database config.
 	config := Config{
 		CacheTTL: 30 * time.Second,
+
+		APIKeyDatabaseHMAC:  generateKey(tb, 128),
+		APIKeySignatureHMAC: generateKey(tb, 128),
+
 		User:     username,
 		Port:     port,
 		Host:     host,
@@ -125,6 +130,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 			tb.Logf("retrying error: %v", err)
 			return retry.RetryableError(err)
 		}
+		db.db.LogMode(false)
 		return nil
 	}); err != nil {
 		tb.Fatalf("failed to start postgres: %s", err)
@@ -158,4 +164,14 @@ func NewTestDatabase(tb testing.TB) *Database {
 
 	db, _ := NewTestDatabaseWithConfig(tb)
 	return db
+}
+
+func generateKey(tb testing.TB, length int) []byte {
+	tb.Helper()
+
+	buf := make([]byte, length)
+	if _, err := rand.Read(buf); err != nil {
+		tb.Fatal(err)
+	}
+	return buf
 }

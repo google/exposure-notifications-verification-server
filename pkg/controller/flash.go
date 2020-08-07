@@ -21,5 +21,10 @@ import (
 
 // Flash gets or creates the flash data for the provided session.
 func Flash(session *sessions.Session) *flash.Flash {
-	return flash.New(session.Values)
+	var values map[interface{}]interface{}
+	if session != nil {
+		values = session.Values
+	}
+
+	return flash.New(values)
 }

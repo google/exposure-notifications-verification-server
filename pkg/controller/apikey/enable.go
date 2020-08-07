@@ -16,14 +16,23 @@ package apikey
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+func (c *Controller) HandleEnable() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -31,20 +40,19 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		// Perform the lazy load on authorized apps for the realm.
-		if _, err := realm.GetAuthorizedApps(c.db, true); err != nil {
+		id, err := strconv.ParseUint(vars["id"], 10, 64)
+		if err != nil {
+			flash.Error("Invalid authorized app")
+			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+			return
+		}
+
+		if err := realm.EnableAuthorizedApp(uint(id)); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(w, r, realm)
+		flash.Alert("Successfully enabled API key")
+		http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 	})
-}
-
-// renderIndex renders the index page.
-func (c *Controller) renderIndex(w http.ResponseWriter, r *http.Request, realm *database.Realm) {
-	ctx := r.Context()
-	m := controller.TemplateMapFromContext(ctx)
-	m["apps"] = realm.AuthorizedApps
-	c.h.RenderHTML(w, "apikeys/index", m)
 }

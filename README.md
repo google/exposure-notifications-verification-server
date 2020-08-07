@@ -109,6 +109,10 @@ export CSRF_AUTH_KEY="aGVsbG9oZWxsb2hlbGxvaGVsbG9oZWxsb2hlbGxvaGk="
 # Create your own with `openssl rand -base64 NUM | tr -d '\n'` where NUM is 32 or 64
 export COOKIE_KEYS="M+yP18fJL7e/afWNdvDrHXPRq7BC1T0zlQPHAwNbeEJmp35y7dSTxvhARKLGYzH6DuIUe0uFqsK5XQtGMl8SuQ==,3PBCfkE6aFzq9UQbtzXUOJ4rta5RsYjxtrMz4j41xiE="
 
+# Database HMAC keys - these should be at least 64 bytes, preferably 128
+export DB_APIKEY_DATABASE_KEY="02zaT2Gtx1QfBnS7kxlby5TxbwyMPWqoCpb75zA8MMB8frQX0WVpOl+UaXDwE3jz2fj/eFqmCj75atLL6Gw3Yg=="
+export DB_APIKEY_SIGNATURE_KEY="PsOkeJ+1iXN2bMnKKTH6Ea+KtZGKDHhDN7SpBgPGanEOr7b/heFPS90mHbjqtu2htuCt/kW61ar2BQPhtq+ASw=="
+
 # Enable dev mode
 export DEV_MODE=1
 

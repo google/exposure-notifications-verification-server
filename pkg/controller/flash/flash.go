@@ -24,11 +24,9 @@ import (
 type flashKey string
 
 const (
-	// flashKeyAlert is the session values key used for alerts.
-	flashKeyAlert flashKey = "_alert"
-
-	// flashKeyAlert is the session values key used for errors.
-	flashKeyError flashKey = "_error"
+	flashKeyAlert   flashKey = "_alert"
+	flashKeyError   flashKey = "_error"
+	flashKeyWarning flashKey = "_warning"
 )
 
 func init() {
@@ -59,12 +57,22 @@ func (f *Flash) Errors() []string {
 	return f.get(flashKeyError)
 }
 
+// Warning adds a new alert to the upcoming flash instance.
+func (f *Flash) Warning(msg string, vars ...interface{}) {
+	f.add(flashKeyWarning, msg, vars...)
+}
+
+// Warnings returns the list of warnings in flash, if any.
+func (f *Flash) Warnings() []string {
+	return f.get(flashKeyWarning)
+}
+
 // Alert adds a new alert to the upcoming flash instance.
 func (f *Flash) Alert(msg string, vars ...interface{}) {
 	f.add(flashKeyAlert, msg, vars...)
 }
 
-// Alerts returns the list of errors in flash, if any.
+// Alerts returns the list of alerts in flash, if any.
 func (f *Flash) Alerts() []string {
 	return f.get(flashKeyAlert)
 }

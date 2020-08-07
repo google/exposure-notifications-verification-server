@@ -62,6 +62,9 @@ func RequireAPIKey(ctx context.Context, cache *cache.Cache, db *database.Databas
 				if err != nil {
 					return nil, err
 				}
+				if aa == nil {
+					return nil, nil
+				}
 				return aa, nil
 			})
 			if err != nil {
@@ -91,7 +94,7 @@ func RequireAPIKey(ctx context.Context, cache *cache.Cache, db *database.Databas
 			}
 
 			if _, ok := allowedTypesMap[authApp.APIKeyType]; !ok {
-				logger.Debugw("wrong request type, got %v, allowed %v", authApp.APIKeyType, allowedTypes)
+				logger.Debugw("wrong request type", "got", authApp.APIKeyType, "allowed", allowedTypes)
 				controller.Unauthorized(w, r, h)
 				return
 			}

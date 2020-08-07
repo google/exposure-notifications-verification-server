@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -115,8 +114,7 @@ func realMain(ctx context.Context) error {
 	r.Use(populateTemplateVariables)
 
 	// Create the renderer
-	glob := filepath.Join(config.AssetsPath, "*")
-	h, err := render.New(ctx, glob, config.DevMode)
+	h, err := render.New(ctx, config.AssetsPath, config.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
@@ -189,7 +187,13 @@ func realMain(ctx context.Context) error {
 
 		apikeyController := apikey.New(ctx, config, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
-		sub.Handle("/create", apikeyController.HandleCreate()).Methods("POST")
+		sub.Handle("", apikeyController.HandleCreate()).Methods("POST")
+		sub.Handle("/new", apikeyController.HandleNew()).Methods("GET")
+		sub.Handle("/{id}/edit", apikeyController.HandleEdit()).Methods("GET")
+		sub.Handle("/{id}", apikeyController.HandleShow()).Methods("GET")
+		sub.Handle("/{id}", apikeyController.HandleUpdate()).Methods("PATCH")
+		sub.Handle("/{id}/disable", apikeyController.HandleDisable()).Methods("PATCH")
+		sub.Handle("/{id}/enable", apikeyController.HandleEnable()).Methods("PATCH")
 	}
 
 	// users
@@ -217,12 +221,18 @@ func realMain(ctx context.Context) error {
 		realmSub.Handle("/save", realmadminController.HandleSave()).Methods("POST")
 	}
 
+	// Wrap the main router in the mutating middleware method. This cannot be
+	// inserted as middleware because gorilla processes the method before
+	// middleware.
+	mux := http.NewServeMux()
+	mux.Handle("/", middleware.MutateMethod(ctx)(r))
+
 	srv, err := server.New(config.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 	logger.Infow("server listening", "port", config.Port)
-	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
+	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
 }
 
 func userEmailKeyFunc() httplimit.KeyFunc {

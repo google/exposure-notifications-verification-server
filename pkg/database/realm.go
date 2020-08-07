@@ -16,6 +16,7 @@ package database
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
@@ -125,19 +126,74 @@ func (r *Realm) LoadRealmUsers(db *Database, includeDeleted bool) error {
 	return nil
 }
 
+// DisableAuthorizedApp disables the given authorized app by id.
+func (r *Realm) DisableAuthorizedApp(id uint) error {
+	var app AuthorizedApp
+	if err := r.db.db.
+		Model(AuthorizedApp{}).
+		Where("id = ?", id).
+		Where("realm_id = ?", r.ID).
+		Delete(&app).
+		Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// EnableAuthorizedApp enables the given authorized app by id.
+func (r *Realm) EnableAuthorizedApp(id uint) error {
+	if err := r.db.db.
+		Unscoped().
+		Model(AuthorizedApp{}).
+		Where("id = ?", id).
+		Where("realm_id = ?", r.ID).
+		Update("deleted_at", nil).
+		Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetAuthorizedApps does a lazy load on a realm's authorized apps if they are not already loaded.
 func (r *Realm) GetAuthorizedApps(db *Database, includeDeleted bool) ([]*AuthorizedApp, error) {
 	if len(r.AuthorizedApps) > 0 {
 		return r.AuthorizedApps, nil
 	}
+
 	scope := db.db
 	if includeDeleted {
 		scope = db.db.Unscoped()
 	}
-	if err := scope.Model(r).Related(&r.AuthorizedApps).Error; err != nil {
+	if err := scope.Model(r).Order("LOWER(authorized_apps.name)").Related(&r.AuthorizedApps).Error; err != nil {
 		return nil, err
 	}
 	return r.AuthorizedApps, nil
+}
+
+// FindAuthorizedApp finds the authorized app by the given id associated to the
+// realm.
+func (r *Realm) FindAuthorizedApp(authAppID uint) (*AuthorizedApp, error) {
+	var app AuthorizedApp
+	if err := r.db.db.Model(AuthorizedApp{}).
+		Where("id = ? AND realm_id = ?", authAppID, r.ID).
+		First(&app).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &app, nil
+}
+
+// FindAuthorizedAppString finds the authorized app by id where the id is a
+// string.
+func (r *Realm) FindAuthorizedAppString(s string) (*AuthorizedApp, error) {
+	id, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return r.FindAuthorizedApp(uint(id))
 }
 
 func (r *Realm) DeleteUserFromRealm(db *Database, u *User) error {

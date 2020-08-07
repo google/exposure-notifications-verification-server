@@ -123,6 +123,54 @@ resource "google_secret_manager_secret_version" "db-secret-version" {
   secret_data = each.value
 }
 
+
+# _DB_APIKEY_DATABASE_KEY=${DB_APIKEY_DATABASE_KEY},_DB_APIKEY_SIGNATURE_KEY=${DB_APIKEY_SIGNATURE_KEY}
+
+
+# Create secret for the database HMAC for API keys
+resource "random_id" "db-apikey-db-hmac" {
+  byte_length = 128
+}
+
+resource "google_secret_manager_secret" "db-apikey-db-hmac" {
+  secret_id = "db-apikey-db-hmac"
+
+  replication {
+    automatic = true
+  }
+
+  depends_on = [
+    google_project_service.services["secretmanager.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_version" "db-apikey-db-hmac" {
+  secret      = google_secret_manager_secret.db-apikey-db-hmac.id
+  secret_data = random_id.db-apikey-db-hmac.b64_std
+}
+
+# Create secret for signature HMAC for api keys
+resource "random_id" "db-apikey-sig-hmac" {
+  byte_length = 128
+}
+
+resource "google_secret_manager_secret" "db-apikey-sig-hmac" {
+  secret_id = "db-apikey-sig-hmac"
+
+  replication {
+    automatic = true
+  }
+
+  depends_on = [
+    google_project_service.services["secretmanager.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_version" "db-apikey-sig-hmac" {
+  secret      = google_secret_manager_secret.db-apikey-sig-hmac.id
+  secret_data = random_id.db-apikey-sig-hmac.b64_std
+}
+
 # Grant Cloud Build the ability to access the database password (required to run
 # migrations).
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-pwd" {

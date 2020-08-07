@@ -69,6 +69,11 @@
     {{$msg}}
   </div>
   {{end}}
+  {{range $msg := .flash.Warnings}}
+  <div class="alert alert-warning" role="alert">
+    {{$msg}}
+  </div>
+  {{end}}
   {{range $msg := .flash.Alerts}}
   <div class="alert alert-success alert-dismissible fade show" role="alert">
     {{$msg}}
@@ -86,6 +91,9 @@
 
 <script type="text/javascript">
   $(function() {
+    // Add data-toogle="tooltop" to toggle tooltips!
+    $('[data-toggle="tooltip"]').tooltip();
+
     // Add data-submit-form properties to a link to have it act as a submit
     // button. You can also add a data-confirm attribute with a confirmation
     // prompt.
@@ -94,7 +102,7 @@
 
       let $this = $(e.currentTarget);
       let confirm = $this.data('confirm');
-      if(confirm != '') {
+      if(typeof(confirm) !== 'undefined') {
         if (window.confirm(confirm) !== true) {
           return;
         }
@@ -102,6 +110,38 @@
 
       $this.closest('form').submit();
     });
+
+    // Add data-method to a link and make the resulting href submit as that
+    // method. You can also add a data-confirm attribute with a confirmation
+    // prompt.
+    $('a[data-method]').click(function(e) {
+      e.preventDefault();
+
+      let $this = $(e.currentTarget);
+      let confirm = $this.data('confirm');
+
+      if(typeof(confirm) !== 'undefined') {
+        if (window.confirm(confirm) !== true) {
+          return;
+        }
+      }
+
+      let $csrfField = $('{{.csrfField}}');
+
+      let $inputField = $('<input>')
+        .attr('type', 'hidden')
+        .attr('name', '_method')
+        .attr('value', $this.data('method'));
+
+      let $form = $('<form>')
+        .attr('method', 'POST')
+        .attr('action', $this.attr('href'));
+
+      $form.append($csrfField);
+      $form.append($inputField);
+
+      $form.appendTo('body').submit();
+    })
 
     // Add data-toggle-password to an element with the value pointing to the id
     // of an input[type="password"]. It will toggle/untoggle the value.

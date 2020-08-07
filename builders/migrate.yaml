@@ -17,6 +17,8 @@
 #
 
 substitutions:
+  _DB_APIKEY_DATABASE_KEY:
+  _DB_APIKEY_SIGNATURE_KEY:
   _DB_CONN:
   _DB_ENCRYPTION_KEY:
   _DB_HOST: 'localhost'
@@ -41,12 +43,14 @@ steps:
 - id: 'migrate'
   name: 'golang:1.14'
   env:
-  - 'DB_NAME=${_DB_NAME}'
-  - 'DB_USER=${_DB_USER}'
+  - 'DB_APIKEY_DATABASE_KEY=${_DB_APIKEY_DATABASE_KEY}'
+  - 'DB_APIKEY_SIGNATURE_KEY=${_DB_APIKEY_SIGNATURE_KEY}'
+  - 'DB_ENCRYPTION_KEY=${_DB_ENCRYPTION_KEY}'
   - 'DB_HOST=${_DB_HOST}'
+  - 'DB_NAME=${_DB_NAME}'
   - 'DB_PORT=${_DB_PORT}'
   - 'DB_SSLMODE=${_DB_SSLMODE}'
-  - 'DB_ENCRYPTION_KEY=${_DB_ENCRYPTION_KEY}'
+  - 'DB_USER=${_DB_USER}'
   - 'KEY_MANAGER=${_KEY_MANAGER}'
   entrypoint: '/bin/bash'
   args:

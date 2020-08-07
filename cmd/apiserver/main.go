@@ -18,10 +18,10 @@ package main
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -101,7 +101,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer store.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc())
+	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc(db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
@@ -152,14 +152,23 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func apiKeyFunc() httplimit.KeyFunc {
+func apiKeyFunc(db *database.Database) httplimit.KeyFunc {
 	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
 
 	return func(r *http.Request) (string, error) {
 		v := r.Header.Get("X-API-Key")
 		if v != "" {
-			dig := sha1.Sum([]byte(v))
-			return fmt.Sprintf("%x", dig), nil
+			// v2 API keys encode the realm
+			_, realmID, err := db.VerifyAPIKeySignature(v)
+			if err == nil {
+				return strconv.FormatUint(uint64(realmID), 10), nil
+			}
+
+			// v1 API keys do not, fallback to the database
+			app, err := db.FindAuthorizedAppByAPIKey(v)
+			if err == nil && app != nil {
+				return strconv.FormatUint(uint64(app.RealmID), 10), nil
+			}
 		}
 
 		// If no API key was provided, default to limiting by IP.
