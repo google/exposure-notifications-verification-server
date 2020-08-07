@@ -1,6 +1,7 @@
 {{define "apikeys"}}
 <!doctype html>
 <html lang="en">
+
 <head>
   {{template "head" .}}
 </head>
@@ -43,6 +44,10 @@
 
     <h2>API keys</h2>
 
+    {{$codesGenerated1d := .codesGenerated1d}}
+    {{$codesGenerated7d := .codesGenerated7d}}
+    {{$codesGenerated30d := .codesGenerated30d}}
+
     {{if .apps}}
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
@@ -52,10 +57,13 @@
             <th scope="col">Key</th>
             <th scope="col">Type</th>
             <th scope="col">Enabled</th>
+            <th scope="col">Issued (1d)</th>
+            <th scope="col">Issued (7d)</th>
+            <th scope="col">Issued (30d)</th>
           </tr>
         </thead>
         <tbody>
-        {{range .apps}}
+          {{range .apps}}
           <tr>
             <td>{{.Name}}</td>
             <td width="100">
@@ -64,18 +72,30 @@
               </div>
             </td>
             <td width="50">
-              {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" data-placement="top" title="Can be used to issue verification codes">Admin</span>{{end}}
-              {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" data-placement="top" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
+              {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" data-placement="top"
+                title="Can be used to issue verification codes">Admin</span>{{end}}
+              {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip"
+                data-placement="top"
+                title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
             </td>
             <td width="50">
               {{if .DeletedAt}}
-                <span class="badge badge-pill badge-danger">Revoked</span>
+              <span class="badge badge-pill badge-danger">Revoked</span>
               {{else}}
-                <span class="badge badge-pill badge-success">Enabled</span>
+              <span class="badge badge-pill badge-success">Enabled</span>
               {{end}}
             </td>
+            <td>
+              {{index $codesGenerated1d .ID}}
+            </td>
+            <td>
+              {{index $codesGenerated7d .ID}}
+            </td>
+            <td>
+              {{index $codesGenerated30d .ID}}
+            </td>
           </tr>
-        {{end}}
+          {{end}}
         </tbody>
       </table>
     </div>
@@ -86,5 +106,6 @@
 
   {{template "scripts" .}}
 </body>
+
 </html>
 {{end}}

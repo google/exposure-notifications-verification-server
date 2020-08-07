@@ -29,9 +29,9 @@ import (
 func main() {
 	emailFlag := flag.String("email", "", "email for the user to add")
 	nameFlag := flag.String("name", "", "name of the user to add")
-	adminFlag := flag.Bool("admin", false, "true if user is a global admin user")
+	adminFlag := flag.Bool("admin", false, "true if user is admin user")
 	realmID := flag.Uint("realm", 0, "realm to add the user to")
-	realmAdminID := flag.Uint("admin-realm", 0, "realm to add the user to")
+	realmAdminFlag := flag.Bool("admin-realm", false, "realm to add the user to")
 
 	flag.Parse()
 
@@ -59,12 +59,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to find specified realmID: %v reason: %v", *realmID, err)
 	}
-	adminRealm, err := findRealm(db, *realmAdminID)
-	if err != nil {
-		log.Fatalf("unable to find specified Admin realmID: %v reason: %v", *realmID, err)
-	}
 
-	if userRealm == nil && adminRealm == nil && !*adminFlag {
+	if userRealm == nil && !*adminFlag {
 		log.Fatalf("Cannot create a non system admin user that is also not in any realms")
 	}
 
@@ -76,14 +72,11 @@ func main() {
 
 	if userRealm != nil {
 		userRealm.AddUser(user)
+		if *realmAdminFlag {
+			userRealm.AddAdminUser(user)
+		}
 		if err := db.SaveRealm(userRealm); err != nil {
 			log.Fatalf("failed to add user %v to realm %v; %v", user.Email, userRealm.Name, err)
-		}
-	}
-	if adminRealm != nil {
-		adminRealm.AddAdminUser(user)
-		if err := db.SaveRealm(adminRealm); err != nil {
-			log.Fatalf("failed to add admin user %v to realm %v; %v", user.Email, adminRealm.Name, err)
 		}
 	}
 }
