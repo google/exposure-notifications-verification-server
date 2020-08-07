@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
@@ -63,6 +64,25 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 	keyManager, err := keys.KeyManagerFor(ctx, c.Keys.KeyManagerType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key manager: %w", err)
+	}
+
+	// If the key manager is in-memory, accept the key as a base64-encoded
+	// in-memory key.
+	if c.Keys.KeyManagerType == keys.KeyManagerTypeInMemory {
+		typ, ok := keyManager.(keys.EncryptionKeyAdder)
+		if !ok {
+			return nil, fmt.Errorf("key manager does not support adding keys")
+		}
+
+		key, err := base64util.DecodeString(c.EncryptionKey)
+		if err != nil {
+			return nil, fmt.Errorf("encryption key is invalid: %w", err)
+		}
+
+		if err := typ.AddEncryptionKey("database-encryption-key", key); err != nil {
+			return nil, fmt.Errorf("failed to add encryption key: %w", err)
+		}
+		c.EncryptionKey = "database-encryption-key"
 	}
 
 	// Connect to the database.
