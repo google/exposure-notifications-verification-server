@@ -102,7 +102,14 @@ export CERTIFICATE_SIGNING_KEY="<Certificate Key Resource ID from Above>"
 export GOOGLE_APPLICATION_CREDENTIALS=/Users/USERNAME/Documents/project-name-123456-firebase-adminsdk-ab3-4cde56f78g.json
 
 # Configure CSRF_AUTH_KEY. This is a 32 byte string base64 encoded.
-export CSRF_AUTH_KEY=aGVsbG9oZWxsb2hlbGxvaGVsbG9oZWxsb2hlbGxvaGk=
+# Create your own with `openssl rand -base64 32 | tr -d '\n'`
+export CSRF_AUTH_KEY="aGVsbG9oZWxsb2hlbGxvaGVsbG9oZWxsb2hlbGxvaGk="
+
+# Configure cookie encryption, the first is 64 bytes, the second is 32.
+# Create your own with `openssl rand -base64 NUM | tr -d '\n'` where NUM is 32 or 64
+export COOKIE_KEYS="M+yP18fJL7e/afWNdvDrHXPRq7BC1T0zlQPHAwNbeEJmp35y7dSTxvhARKLGYzH6DuIUe0uFqsK5XQtGMl8SuQ==,3PBCfkE6aFzq9UQbtzXUOJ4rta5RsYjxtrMz4j41xiE="
+
+# Enable dev mode
 export DEV_MODE=1
 
 # Migrate DB

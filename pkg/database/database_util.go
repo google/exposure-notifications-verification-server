@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -98,6 +99,9 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		Secrets: secrets.Config{
 			SecretManagerType: secrets.SecretManagerTypeInMemory,
 		},
+		Keys: keys.Config{
+			KeyManagerType: keys.KeyManagerTypeInMemory,
+		},
 	}
 
 	// Wait for the container to start - we'll retry connections in a loop below,
@@ -129,6 +133,17 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	if err := db.RunMigrations(ctx); err != nil {
 		tb.Fatalf("failed to migrate database: %v", err)
 	}
+
+	// Create the key manager and default key
+	km, err := keys.NewInMemory(ctx)
+	if err != nil {
+		tb.Fatalf("failed to add encryption key")
+	}
+	if err := km.AddEncryptionKey("my-key"); err != nil {
+		tb.Fatalf("failed to add encryption key")
+	}
+	db.keyManager = km
+	db.config.EncryptionKey = "my-key"
 
 	// Close db when done.
 	tb.Cleanup(func() {

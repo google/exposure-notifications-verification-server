@@ -22,6 +22,7 @@ resource "google_kms_key_ring" "verification" {
   ]
 }
 
+// For signing certificates
 resource "google_kms_crypto_key" "certificate-signer" {
   key_ring = google_kms_key_ring.verification.self_link
   name     = "certificate-signer"
@@ -37,6 +38,7 @@ data "google_kms_crypto_key_version" "certificate-signer-version" {
   crypto_key = google_kms_crypto_key.certificate-signer.self_link
 }
 
+// For signing tokens
 resource "google_kms_crypto_key" "token-signer" {
   key_ring = google_kms_key_ring.verification.self_link
   name     = "token-signer"
@@ -50,4 +52,18 @@ resource "google_kms_crypto_key" "token-signer" {
 
 data "google_kms_crypto_key_version" "token-signer-version" {
   crypto_key = google_kms_crypto_key.token-signer.self_link
+}
+
+// For application-layer encryption
+resource "google_kms_crypto_key" "database-encrypter" {
+  key_ring = google_kms_key_ring.verification.self_link
+  name     = "database-encrypter"
+  purpose  = "ENCRYPT_DECRYPT"
+
+  rotation_period = "2592000s" // 30 days
+
+  version_template {
+    algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
+    protection_level = "HSM"
+  }
 }

@@ -19,7 +19,6 @@ package home
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -71,12 +70,6 @@ func (c *Controller) HandleHome() http.Handler {
 			return
 		}
 
-		smsProvider, err := realm.GetSMSProvider(ctx, c.db)
-		if err != nil && !errors.Is(err, database.ErrNoSMSConfig) {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
 		m := controller.TemplateMapFromContext(ctx)
 		// Set test date params
 		now := time.Now().UTC()
@@ -84,7 +77,6 @@ func (c *Controller) HandleHome() http.Handler {
 		m["minDate"] = now.Add(c.pastDaysDuration).Format("2006-01-02")
 		m["maxSymptomDays"] = c.displayAllowedDays
 		m["duration"] = c.config.CodeDuration.String()
-		m["smsEnabled"] = smsProvider != nil
 		c.h.RenderHTML(w, "home", m)
 	})
 }
