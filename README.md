@@ -127,6 +127,16 @@ go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin 
 go run ./cmd/server
 ```
 
+### Observability (Tracing and Metrics)
+
+The observability component is responsible for metrics. The following
+configurations are available:
+
+| Name                    | `OBSERVABILITY_EXPORTER` value  | Description
+| ----------------------- | ------------------------------- | -----------
+| OpenCensus Agent        | `OCAGENT`                       | Use OpenCensus.
+| Stackdriver\*           | `STACKDRIVER`                   | Use Stackdriver.
+
 ## API Access
 
 Access to the [APIs](https://github.com/google/exposure-notifications-verification-server/blob/main/pkg/api/api.go)

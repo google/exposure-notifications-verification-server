@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -26,7 +27,8 @@ var _ IssueAPIConfig = (*AdminAPIServerConfig)(nil)
 
 // AdminAPIServerConfig represents the environment based config for the Admin API Server.
 type AdminAPIServerConfig struct {
-	Database database.Config
+	Database      database.Config
+	Observability observability.Config
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
@@ -85,4 +87,8 @@ func (c *AdminAPIServerConfig) GetVerificationCodeDuration() time.Duration {
 
 func (c *AdminAPIServerConfig) GetVerficationCodeDigits() uint {
 	return c.CodeDigits
+}
+
+func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
+	return &c.Observability
 }

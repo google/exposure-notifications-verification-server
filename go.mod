@@ -5,6 +5,8 @@ go 1.14
 require (
 	cloud.google.com/go v0.62.0
 	cloud.google.com/go/firestore v1.2.0 // indirect
+	contrib.go.opencensus.io/exporter/ocagent v0.7.0
+	contrib.go.opencensus.io/exporter/stackdriver v0.13.1
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Azure/azure-sdk-for-go v44.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.2 // indirect
@@ -42,6 +44,7 @@ require (
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
+	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1 // indirect
