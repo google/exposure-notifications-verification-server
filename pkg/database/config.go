@@ -19,9 +19,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/sethvargo/go-envconfig"
 )
 
 // Config represents the env var based configuration for database connections.
@@ -56,11 +56,11 @@ type Config struct {
 
 	// APIKeyDatabaseHMAC is the HMAC key to use for API keys before storing them
 	// in the database.
-	APIKeyDatabaseHMAC Base64Bytes `env:"DB_APIKEY_DATABASE_KEY,required"`
+	APIKeyDatabaseHMAC envconfig.Base64Bytes `env:"DB_APIKEY_DATABASE_KEY,required"`
 
 	// APIKeySignatureHMAC is the HMAC key to sign API keys before returning them
 	// to the requestor.
-	APIKeySignatureHMAC Base64Bytes `env:"DB_APIKEY_SIGNATURE_KEY,required"`
+	APIKeySignatureHMAC envconfig.Base64Bytes `env:"DB_APIKEY_SIGNATURE_KEY,required"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
@@ -108,16 +108,4 @@ func setIfPositive(m map[string]string, key string, val uint) {
 	if val > 0 {
 		m[key] = fmt.Sprintf("%d", val)
 	}
-}
-
-// Base64Bytes is a type that parses a base64-encoded string into a []byte. This
-// is duplicated from the main config to avoid a circular reference.
-type Base64Bytes []byte
-
-// EnvDecode implements envconfig.Decoder to decode a base64 value into a
-// []byte. If an error occurs, it is returned.
-func (b *Base64Bytes) EnvDecode(val string) error {
-	var err error
-	*b, err = base64util.DecodeString(val)
-	return err
 }

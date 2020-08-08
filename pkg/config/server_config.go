@@ -22,7 +22,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
-	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 
 	firebase "firebase.google.com/go"
@@ -53,7 +52,7 @@ type ServerConfig struct {
 
 	// CSRFAuthKey is the authentication key. It must be 32-bytes and can be
 	// generated with tools/gen-secret. The value's should be base64 encoded.
-	CSRFAuthKey Base64Bytes `env:"CSRF_AUTH_KEY,required"`
+	CSRFAuthKey envconfig.Base64Bytes `env:"CSRF_AUTH_KEY,required"`
 
 	// Application Config
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
@@ -146,7 +145,7 @@ func (c *ServerConfig) FirebaseConfig() *firebase.Config {
 
 // Base64ByteSlice is a slice of base64-encoded strings that we want to convert
 // to bytes.
-type Base64ByteSlice []Base64Bytes
+type Base64ByteSlice []envconfig.Base64Bytes
 
 // AsBytes returns the value as a slice of bytes instead of its main type.
 func (c Base64ByteSlice) AsBytes() [][]byte {
@@ -155,15 +154,4 @@ func (c Base64ByteSlice) AsBytes() [][]byte {
 		s[i] = []byte(v)
 	}
 	return s
-}
-
-// Base64Bytes is a type that parses a base64-encoded string into a []byte.
-type Base64Bytes []byte
-
-// EnvDecode implements envconfig.Decoder to decode a base64 value into a
-// []byte. If an error occurs, it is returned.
-func (b *Base64Bytes) EnvDecode(val string) error {
-	var err error
-	*b, err = base64util.DecodeString(val)
-	return err
 }
