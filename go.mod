@@ -40,7 +40,7 @@ require (
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/prometheus/client_golang v1.7.1 // indirect
 	github.com/prometheus/statsd_exporter v0.17.0 // indirect
-	github.com/sethvargo/go-envconfig v0.2.3
+	github.com/sethvargo/go-envconfig v0.3.0
 	github.com/sethvargo/go-gcpkms v0.1.0
 	github.com/sethvargo/go-limiter v0.2.4
 	github.com/sethvargo/go-retry v0.1.0

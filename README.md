@@ -97,6 +97,8 @@ export FIREBASE_STORAGE_BUCKET="${FIREBASE_PROJECT_ID}.appspot.com"
 export TOKEN_SIGNING_KEY="<Token Key Resource ID from Above>"
 export CERTIFICATE_SIGNING_KEY="<Certificate Key Resource ID from Above>"
 
+# Disable observability locally
+export OBSERVABILITY_EXPORTER="NOOP"
 
 # D/L SA from Firebase https://console.firebase.google.com/project/project-name-123456/settings/serviceaccounts/adminsdk
 export GOOGLE_APPLICATION_CREDENTIALS=/Users/USERNAME/Documents/project-name-123456-firebase-adminsdk-ab3-4cde56f78g.json
