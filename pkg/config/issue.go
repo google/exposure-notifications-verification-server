@@ -19,8 +19,8 @@ import "time"
 // IssueAPIConfig is an interface that represents what is needed of the verification
 // code issue API.
 type IssueAPIConfig interface {
-	GetColissionRetryCount() uint
+	GetCollisionRetryCount() uint
 	GetAllowedSymptomAge() time.Duration
 	GetVerificationCodeDuration() time.Duration
-	GetVerficationCodeDigits() uint
+	GetVerificationCodeDigits() uint
 }

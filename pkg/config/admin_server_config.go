@@ -42,7 +42,7 @@ type AdminAPIServerConfig struct {
 
 	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
 	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
-	CollisionRetryCount uint          `env:"COLISSION_RETRY_COUNT,default=6"`
+	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
 }
 
@@ -75,7 +75,7 @@ func (c *AdminAPIServerConfig) Validate() error {
 	return nil
 }
 
-func (c *AdminAPIServerConfig) GetColissionRetryCount() uint {
+func (c *AdminAPIServerConfig) GetCollisionRetryCount() uint {
 	return c.CollisionRetryCount
 }
 
@@ -87,7 +87,7 @@ func (c *AdminAPIServerConfig) GetVerificationCodeDuration() time.Duration {
 	return c.CodeDuration
 }
 
-func (c *AdminAPIServerConfig) GetVerficationCodeDigits() uint {
+func (c *AdminAPIServerConfig) GetVerificationCodeDigits() uint {
 	return c.CodeDigits
 }
 
