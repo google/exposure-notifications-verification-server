@@ -19,10 +19,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+
+	"github.com/google/exposure-notifications-server/pkg/base64util"
+	"github.com/google/exposure-notifications-server/pkg/observability"
 
 	firebase "firebase.google.com/go"
 	"github.com/sethvargo/go-envconfig"
