@@ -88,7 +88,7 @@ func (c *Controller) validateToken(verToken string, publicKey crypto.PublicKey) 
 		if kid == c.config.TokenSigningKeyID {
 			return publicKey, nil
 		}
-		return nil, fmt.Errorf("no public key for pecified 'kid' not found: %v", kid)
+		return nil, fmt.Errorf("no public key for specified 'kid' not found: %v", kid)
 	})
 	if err != nil {
 		c.logger.Errorf("invalid verification token: %v", err)

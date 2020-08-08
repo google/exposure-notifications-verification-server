@@ -111,7 +111,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		// Generate verification code
 		codeRequest := otp.Request{
 			DB:            c.db,
-			Length:        c.config.GetVerficationCodeDigits(),
+			Length:        c.config.GetVerificationCodeDigits(),
 			ExpiresAt:     expiryTime,
 			TestType:      request.TestType,
 			SymptomDate:   symptomDate,
@@ -121,7 +121,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			RealmID:       realm.ID,
 		}
 
-		code, err := codeRequest.Issue(ctx, c.config.GetColissionRetryCount())
+		code, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))

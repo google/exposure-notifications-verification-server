@@ -59,7 +59,7 @@ type ServerConfig struct {
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
 	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
 	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
-	CollisionRetryCount uint          `env:"COLISSION_RETRY_COUNT,default=6"`
+	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
@@ -88,7 +88,7 @@ func (c *ServerConfig) Validate() error {
 		Var  time.Duration
 		Name string
 	}{
-		{c.SessionDuration, "SESSION_DUATION"},
+		{c.SessionDuration, "SESSION_DURATION"},
 		{c.RevokeCheckPeriod, "REVOKE_CHECK_DURATION"},
 		{c.CodeDuration, "CODE_DURATION"},
 		{c.AllowedSymptomAge, "ALLOWED_PAST_SYMPTOM_DAYS"},
@@ -103,7 +103,7 @@ func (c *ServerConfig) Validate() error {
 	return nil
 }
 
-func (c *ServerConfig) GetColissionRetryCount() uint {
+func (c *ServerConfig) GetCollisionRetryCount() uint {
 	return c.CollisionRetryCount
 }
 
@@ -115,7 +115,7 @@ func (c *ServerConfig) GetVerificationCodeDuration() time.Duration {
 	return c.CodeDuration
 }
 
-func (c *ServerConfig) GetVerficationCodeDigits() uint {
+func (c *ServerConfig) GetVerificationCodeDigits() uint {
 	return c.CodeDigits
 }
 
