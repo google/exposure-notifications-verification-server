@@ -33,10 +33,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
+	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	firebase "firebase.google.com/go"
@@ -75,9 +75,10 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
-	if err := oe.InitExportOnce(); err != nil {
+	if err := oe.StartExporter(); err != nil {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
+	defer oe.Close()
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup sessions

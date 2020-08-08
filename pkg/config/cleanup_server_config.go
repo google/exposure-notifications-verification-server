@@ -19,7 +19,8 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+
+	"github.com/google/exposure-notifications-server/pkg/observability"
 
 	"github.com/sethvargo/go-envconfig"
 )
