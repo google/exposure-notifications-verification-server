@@ -25,14 +25,16 @@ DB_CONTAINER_IMAGE="registry.hub.docker.com/library/postgres:12-alpine"
 KEY_MANAGER="IN_MEMORY"
 
 # Database parameters
-DB_HOST="${DB_HOST:-127.0.0.1}"
-DB_PORT="${DB_PORT:-5432}"
-DB_USER="${DB_USER:-en-verification-server}"
-DB_PASSWORD="${DB_PASSWORD:-BjrvWmjQPXykPu}"
-DB_SSLMODE="${DB_SSLMODE:-require}"
-DB_NAME="${DB_NAME:-en-verification-server-db}"
+DB_APIKEY_DATABASE_KEY="${DB_APIKEY_DATABASE_KEY:-"02zaT2Gtx1QfBnS7kxlby5TxbwyMPWqoCpb75zA8MMB8frQX0WVpOl+UaXDwE3jz2fj/eFqmCj75atLL6Gw3Yg=="}"
+DB_APIKEY_SIGNATURE_KEY="${DB_APIKEY_SIGNATURE_KEY:-"PsOkeJ+1iXN2bMnKKTH6Ea+KtZGKDHhDN7SpBgPGanEOr7b/heFPS90mHbjqtu2htuCt/kW61ar2BQPhtq+ASw=="}"
 DB_ENCRYPTION_KEY="my-key"
+DB_HOST="${DB_HOST:-"127.0.0.1"}"
+DB_NAME="${DB_NAME:-"en-verification-server-db"}"
+DB_PASSWORD="${DB_PASSWORD:-"BjrvWmjQPXykPu"}"
+DB_PORT="${DB_PORT:-"5432"}"
+DB_SSLMODE="${DB_SSLMODE:-"require"}"
 DB_URL="postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
+DB_USER="${DB_USER:-"en-verification-server"}"
 
 MD5CMD="$(command -v md5 || command -v md5sum)"
 DB_SHA="$(echo -n "${DB_NAME}|${DB_PORT}" | ${MD5CMD} | cut -d' ' -f1)"
@@ -49,16 +51,18 @@ function error() {
 
 function init() {
   echo "export KEY_MANAGER=\"${KEY_MANAGER}\""
-  echo "export DB_HOST=\"${DB_HOST}\""
-  echo "export DB_PORT=\"${DB_PORT}\""
-  echo "export DB_USER=\"${DB_USER}\""
-  echo "export DB_SSLMODE=\"${DB_SSLMODE}\""
-  echo "export DB_PASSWORD=\"${DB_PASSWORD}\""
-  echo "export DB_NAME=\"${DB_NAME}\""
-  echo "export DB_ENCRYPTION_KEY=\"${DB_ENCRYPTION_KEY}\""
-  echo "export DB_URL=\"${DB_URL}\""
-
   echo "export SERVER_NAME=\"${SERVER_NAME}\""
+
+  echo "export DB_APIKEY_DATABASE_KEY=\"${DB_APIKEY_DATABASE_KEY}\""
+  echo "export DB_APIKEY_SIGNATURE_KEY=\"${DB_APIKEY_SIGNATURE_KEY}\""
+  echo "export DB_ENCRYPTION_KEY=\"${DB_ENCRYPTION_KEY}\""
+  echo "export DB_HOST=\"${DB_HOST}\""
+  echo "export DB_NAME=\"${DB_NAME}\""
+  echo "export DB_PASSWORD=\"${DB_PASSWORD}\""
+  echo "export DB_PORT=\"${DB_PORT}\""
+  echo "export DB_SSLMODE=\"${DB_SSLMODE}\""
+  echo "export DB_URL=\"${DB_URL}\""
+  echo "export DB_USER=\"${DB_USER}\""
 }
 
 # gencerts creates the postgres SSL certificates if they do not already exist.
