@@ -18,7 +18,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20200710164510-efbc4488d8fe // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20200620013148-b91950f658ec // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/google/exposure-notifications-server v0.2.1-0.20200807233203-03c134c9d30f
+	github.com/google/exposure-notifications-server v0.2.1-0.20200809182804-ec155262f49a
 	github.com/google/go-cmp v0.5.1
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/handlers v1.4.2
@@ -47,10 +47,10 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
-	golang.org/x/sys v0.0.0-20200806125547-5acd03effb82 // indirect
+	golang.org/x/sys v0.0.0-20200808120158-1030fc2bf1d9 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.0.0-20200807224323-c05a0f5be48b
-	google.golang.org/genproto v0.0.0-20200806141610-86f49bd18e98
+	google.golang.org/genproto v0.0.0-20200808173500-a06252235341
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.5
