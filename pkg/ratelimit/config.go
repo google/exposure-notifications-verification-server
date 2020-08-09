@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/sethvargo/go-limiter"
@@ -39,9 +40,10 @@ const (
 // Config represents rate limiting configuration
 type Config struct {
 	// Common configuration
-	Type     RateLimitType `env:"RATE_LIMIT_TYPE,default=NOOP"`
-	Tokens   uint64        `env:"RATE_LIMIT_TOKENS,default=60"`
-	Interval time.Duration `env:"RATE_LIMIT_INTERVAL,default=1m"`
+	Type        RateLimitType `env:"RATE_LIMIT_TYPE,default=NOOP"`
+	Tokens      uint64        `env:"RATE_LIMIT_TOKENS,default=60"`
+	Interval    time.Duration `env:"RATE_LIMIT_INTERVAL,default=1m"`
+	FailureMode string        `env:"RATE_LIMIT_FAILURE_MODE,default=closed"`
 
 	// Redis configuration
 	RedisHost     string `env:"REDIS_HOST,default=127.0.0.1"`
@@ -65,6 +67,12 @@ func RateLimiterFor(_ context.Context, c *Config) (limiter.Store, error) {
 		})
 	case RateLimiterTypeRedis:
 		addr := c.RedisHost + ":" + c.RedisPort
+
+		failureMode := redisstore.FailClosed
+		if strings.ToLower(c.FailureMode) == "open" {
+			failureMode = redisstore.FailOpen
+		}
+
 		return redisstore.New(&redisstore.Config{
 			Tokens:          c.Tokens,
 			Interval:        c.Interval,
@@ -75,6 +83,7 @@ func RateLimiterFor(_ context.Context, c *Config) (limiter.Store, error) {
 			},
 			AuthUsername: c.RedisUsername,
 			AuthPassword: c.RedisPassword,
+			FailureMode:  failureMode,
 		})
 	}
 
