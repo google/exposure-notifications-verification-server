@@ -19,32 +19,39 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
 )
 
 var (
-	name = flag.String("name", "", "name of the realm to add")
+	nameFlag = flag.String("name", "", "name of the realm to add")
 )
 
 func main() {
+	flag.Parse()
+
 	ctx, done := signalcontext.OnInterrupt()
+
+	logger := logging.NewLogger(true)
+	ctx = logging.WithLogger(ctx, logger)
+
 	err := realMain(ctx)
 	done()
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
+		logger.Fatal(err)
 	}
 }
 
 func realMain(ctx context.Context) error {
-	flag.Parse()
+	logger := logging.FromContext(ctx)
 
-	if *name == "" {
+	if *nameFlag == "" {
 		return fmt.Errorf("--name must be passed and cannot be empty")
 	}
 
@@ -60,12 +67,12 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	realm := database.Realm{
-		Name: *name,
+		Name: *nameFlag,
 	}
 	if err := db.SaveRealm(&realm); err != nil {
 		return fmt.Errorf("failed to create realm: %w", err)
 	}
 
-	fmt.Printf("successfully created realm %v (%v)\n", realm.Name, realm.ID)
+	logger.Infow("created realm", "realm", realm)
 	return nil
 }

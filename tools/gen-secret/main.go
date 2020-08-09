@@ -21,39 +21,60 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"flag"
-	"log"
+	"fmt"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	"github.com/sethvargo/go-signalcontext"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
+var (
+	numBytesFlag  = flag.Uint("bytes", 0, "number of bytes to generate")
+	idFlag        = flag.String("id", "", "ID fo the secret to generate")
+	projectIDFlag = flag.String("project", "", "Google Cloud Project ID")
+)
+
 func main() {
-	numBytesFlag := flag.Uint("bytes", 0, "number of bytes to generate")
-	idFlag := flag.String("id", "", "ID fo the secret to generate")
-	projectIDFlag := flag.String("project", "", "Google Cloud Project ID")
 	flag.Parse()
 
+	ctx, done := signalcontext.OnInterrupt()
+
+	logger := logging.NewLogger(true)
+	ctx = logging.WithLogger(ctx, logger)
+
+	err := realMain(ctx)
+	done()
+
+	if err != nil {
+		logger.Fatal(err)
+	}
+}
+
+func realMain(ctx context.Context) error {
+	logger := logging.FromContext(ctx)
+
 	if *numBytesFlag == 0 {
-		log.Fatalf("--bytes must be a positive value, got 0")
+		return fmt.Errorf("--bytes must be a positive value, got 0")
 	}
 	if *idFlag == "" {
-		log.Fatalf("--id must not be empty, this is the secret id")
+		return fmt.Errorf("--id must not be empty, this is the secret id")
 	}
 	if *projectIDFlag == "" {
-		log.Fatalf("--project must not be empty, this is the GCP project id")
+		return fmt.Errorf("--project must not be empty, this is the GCP project id")
 	}
 
 	payload := make([]byte, *numBytesFlag)
 	_, err := rand.Read(payload)
 	if err != nil {
-		log.Fatalf("error generating random secret: %v", err)
+		return fmt.Errorf("error generating random secret: %w", err)
 	}
 
 	// Create the client.
-	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		log.Fatalf("failed to create secretmanager client: %v", err)
+		return fmt.Errorf("failed to create secretmanager client: %w", err)
 	}
 
 	// Build the request.
@@ -70,14 +91,13 @@ func main() {
 	}
 
 	// Call the API to create the secret.
-	result, err := client.CreateSecret(ctx, req)
+	secret, err := client.CreateSecret(ctx, req)
 	if err != nil {
-		log.Fatalf("failed to create secret: %v", err)
+		return fmt.Errorf("failed to create secret: %v", err)
 	}
-	if result != nil {
-		log.Printf("Created secret: %v", result.Name)
+	if secret != nil {
+		logger.Infow("created secret", "secret", secret)
 	}
-	log.Printf("Creating secret version.")
 
 	// Encode to base64 so we can use our secret:// resolution in the server.
 	data := base64.StdEncoding.EncodeToString(payload)
@@ -90,9 +110,11 @@ func main() {
 	}
 
 	// Call the API.
-	addResult, err := client.AddSecretVersion(ctx, addReq)
+	version, err := client.AddSecretVersion(ctx, addReq)
 	if err != nil {
-		log.Fatalf("failed to add secret version: %v", err)
+		return fmt.Errorf("failed to add secret version: %w", err)
 	}
-	log.Printf("Added secret version: %s", addResult.Name)
+	logger.Infow("added secret version", "version", version)
+
+	return nil
 }

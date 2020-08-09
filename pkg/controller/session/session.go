@@ -19,12 +19,13 @@ package session
 import (
 	"context"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
+	"firebase.google.com/go/auth"
 	"go.uber.org/zap"
 )
 

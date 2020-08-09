@@ -18,25 +18,47 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
+	"github.com/sethvargo/go-signalcontext"
+)
+
+var (
+	codeFlag    = flag.String("code", "", "verification code to exchange")
+	apikeyFlag  = flag.String("apikey", "", "API Key to use")
+	addrFlag    = flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
+	timeoutFlag = flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 )
 
 func main() {
-	codeFlag := flag.String("code", "", "verification code to exchange")
-	apikeyFlag := flag.String("apikey", "", "API Key to use")
-	addrFlag := flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
-	timeoutFlag := flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	flag.Parse()
 
-	ctx := context.Background()
+	ctx, done := signalcontext.OnInterrupt()
+
+	logger := logging.NewLogger(true)
+	ctx = logging.WithLogger(ctx, logger)
+
+	err := realMain(ctx)
+	done()
+
+	if err != nil {
+		logger.Fatal(err)
+	}
+}
+
+func realMain(ctx context.Context) error {
+	logger := logging.FromContext(ctx)
 
 	request, response, err := clients.GetToken(ctx, *addrFlag, *apikeyFlag, *codeFlag, *timeoutFlag)
+	logger.Debugw("sent request", "request", request)
 	if err != nil {
-		log.Printf("Send request: %+v", request)
-		log.Fatalf("error making API call: %v", err)
+		return fmt.Errorf("failed to get token: %w", err)
 	}
-	log.Printf("Result: \n%+v", response)
+	logger.Debugw("got response", "response", response)
+	return nil
 }

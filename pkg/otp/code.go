@@ -25,7 +25,8 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
 // GenerateCode creates a new OTP code.

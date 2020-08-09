@@ -20,7 +20,9 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
 	"github.com/gorilla/mux"
 )
 

@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/jinzhu/gorm"
 	"gopkg.in/gormigrate.v1"
