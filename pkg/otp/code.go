@@ -58,15 +58,14 @@ type Request struct {
 	IssuingApp    *database.AuthorizedApp
 }
 
-// Issue wiill generate a verification code and save it to the database, based
-// on the paremters provited.
-func (o *Request) Issue(ctx context.Context, retryCount uint) (string, error) {
+// Issue will generate a verification code and save it to the database, based
+// on the paremters provided.
+func (o *Request) Issue(ctx context.Context, retryCount uint) (string, uint, error) {
 	logger := logging.FromContext(ctx)
-	var code string
+	var verificationCode database.VerificationCode
 	var err error
-	var i uint
-	for i = 0; i < retryCount; i++ {
-		code, err = GenerateCode(o.Length)
+	for i := uint(0); i < retryCount; i++ {
+		code, err := GenerateCode(o.Length)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
 			continue
@@ -88,6 +87,8 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, error) {
 			break // successful save, nil error, break out.
 		}
 	}
-	return code, err
-
+	if err != nil {
+		return "", 0, err
+	}
+	return verificationCode.Code, verificationCode.ID, nil
 }

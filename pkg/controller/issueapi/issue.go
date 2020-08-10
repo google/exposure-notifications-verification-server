@@ -121,7 +121,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			RealmID:       realm.ID,
 		}
 
-		code, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
+		code, id, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
@@ -145,6 +145,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
+				ID:                 id,
 				VerificationCode:   code,
 				ExpiresAt:          expiryTime.Format(time.RFC1123),
 				ExpiresAtTimestamp: expiryTime.Unix(),

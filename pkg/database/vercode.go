@@ -42,7 +42,7 @@ var (
 	ErrTestTooOld         = errors.New("test date is more than 14 day ago")
 )
 
-// VerificationCode represnts a verification code in the database.
+// VerificationCode represents a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
 	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
@@ -74,7 +74,7 @@ func (v *VerificationCode) FormatSymptomDate() string {
 	return v.SymptomDate.Format("2006-01-02")
 }
 
-// IsExpired returns ture if a verification code has expired.
+// IsExpired returns true if a verification code has expired.
 func (v *VerificationCode) IsExpired() bool {
 	return !v.ExpiresAt.After(time.Now())
 }
