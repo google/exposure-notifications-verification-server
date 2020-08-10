@@ -15,6 +15,8 @@
 package issueapi
 
 import (
+	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"net/http"
 	"strings"
@@ -143,9 +145,13 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 		}
 
+		var intAsBytes []byte
+		binary.LittleEndian.PutUint64(intAsBytes, uint64(id))
+		idString := base64.StdEncoding.EncodeToString(intAsBytes)
+
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
-				ID:                 id,
+				ID:                 idString,
 				VerificationCode:   code,
 				ExpiresAt:          expiryTime.Format(time.RFC1123),
 				ExpiresAtTimestamp: expiryTime.Unix(),

@@ -63,7 +63,7 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	ID                 uint   `json:"id"` // Handle which allows the issuer to track status of the issued verification code.
+	ID                 string `json:"id"` // Handle which allows the issuer to track status of the issued verification code.
 	VerificationCode   string `json:"code"`
 	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
 	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
