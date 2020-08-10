@@ -56,7 +56,7 @@ func TestIssue(t *testing.T) {
 			ExpiresAt: time.Now().Add(time.Hour),
 			TestType:  "confirmed",
 		}
-		code, err := otp.Issue(ctx, 10)
+		_, code, err := otp.Issue(ctx, 10)
 		if err != nil {
 			t.Errorf("error generating code: %v", err)
 		}
