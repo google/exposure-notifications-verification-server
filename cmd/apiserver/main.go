@@ -30,7 +30,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/mikehelmick/go-chaff"
@@ -38,6 +37,7 @@ import (
 	"github.com/sethvargo/go-signalcontext"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
@@ -48,10 +48,12 @@ import (
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
+	logger := logging.NewLogger(true)
+	ctx = logging.WithLogger(ctx, logger)
+
 	err := realMain(ctx)
 	done()
 
-	logger := logging.FromContext(ctx)
 	if err != nil {
 		logger.Fatal(err)
 	}

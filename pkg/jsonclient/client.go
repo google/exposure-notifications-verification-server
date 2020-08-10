@@ -23,7 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
 // MakeRequest uses an HTTP client to send and receive JSON based on interface{}.

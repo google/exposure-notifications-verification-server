@@ -26,12 +26,14 @@ import (
 	"net/http"
 	"time"
 
-	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
-	"github.com/google/exposure-notifications-server/pkg/util"
-	"github.com/google/exposure-notifications-server/pkg/verification"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+
+	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/util"
+	"github.com/google/exposure-notifications-server/pkg/verification"
+
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
 )
@@ -62,10 +64,12 @@ func timeToInterval(t time.Time) int32 {
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
+	logger := logging.NewLogger(true)
+	ctx = logging.WithLogger(ctx, logger)
+
 	err := realMain(ctx)
 	done()
 
-	logger := logging.FromContext(ctx)
 	if err != nil {
 		logger.Fatal(err)
 	}

@@ -24,7 +24,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
 	"go.uber.org/zap"
 )
 

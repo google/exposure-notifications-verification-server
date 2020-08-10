@@ -17,7 +17,6 @@ package database
 import (
 	"encoding/base64"
 	"fmt"
-	"log"
 	"strings"
 	"testing"
 
@@ -169,8 +168,6 @@ func TestDatabase_GenerateVerifyAPIKeySignature(t *testing.T) {
 		t.Fatal(err)
 	}
 	key = fmt.Sprintf("%s.%s", key, base64.RawURLEncoding.EncodeToString(sig))
-
-	log.Printf("key: %v", key)
 
 	gotAPIKey, gotRealmID, err := db.VerifyAPIKeySignature(key)
 	if err != nil {

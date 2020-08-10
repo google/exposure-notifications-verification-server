@@ -21,11 +21,13 @@ import (
 	"net/http"
 	"time"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
+	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 )
