@@ -28,6 +28,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// allowedResponseCodes are the list of allowed response codes. This is
+// primarily here to catch if someone, in the future, accidentially includes a
+// bad status code.
+var allowedResponseCodes = map[int]struct{}{
+	400: {},
+	401: {},
+	404: {},
+	405: {},
+	413: {},
+	429: {},
+	500: {},
+}
+
 // Renderer is responsible for rendering various content and templates like HTML
 // and JSON responses.
 type Renderer struct {
@@ -103,4 +116,11 @@ func loadTemplates(tmpl *template.Template, root string) error {
 
 		return nil
 	})
+}
+
+// AllowedResponseCode returns true if the code is a permitted response code,
+// false otherwise.
+func (r *Renderer) AllowedResponseCode(code int) bool {
+	_, ok := allowedResponseCodes[code]
+	return ok
 }
