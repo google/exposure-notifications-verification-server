@@ -56,7 +56,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			// if it's a user logged in, we can pull realm from the context.
 			realm = controller.RealmFromContext(ctx)
 			if realm == nil {
-				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Errorf("missing realm"))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 				return
 			}
 		}
@@ -72,14 +72,14 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 			if smsProvider == nil {
 				err := fmt.Errorf("phone provided, but no sms provider is configured")
-				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error(err))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			}
 		}
 
 		// Verify the test type
 		request.TestType = strings.ToLower(request.TestType)
 		if _, ok := c.validTestType[request.TestType]; !ok {
-			c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Errorf("invalid test type"))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid test type"))
 			return
 		}
 
@@ -90,7 +90,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		var symptomDate *time.Time
 		if request.SymptomDate != "" {
 			if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
-				c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Errorf("failed to process symptom onset date: %v", err))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process symptom onset date: %v", err))
 				return
 			} else {
 				parsed = parsed.Local()
@@ -98,7 +98,7 @@ func (c *Controller) HandleIssue() http.Handler {
 					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v",
 						minDate.Format("2006-01-02"),
 						maxDate.Format("2006-01-02"))
-					c.h.RenderJSON(w, http.StatusUnprocessableEntity, api.Error(err))
+					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 					return
 				}
 				symptomDate = &parsed
