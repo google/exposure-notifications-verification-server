@@ -220,6 +220,29 @@ client **MUST NOT** process. Client's should sporadically issue chaff requests.
     }
     ```
 
+#### API Response Codes
+
+-   `400` - The client made a bad/invalid request. Search the JSON response body
+    for the `"errors"` key. The body may be empty.
+
+-   `401` - The client is unauthorized. This could be an invalid API key or
+    revoked permissions. This usually has no `"errors"` key, but clients can try
+    to read the JSON body to see if there's additional information (it may be
+    empty)
+
+-   `404` - The client made a request to an invalid URL (routing error). Do not
+    retry.
+
+-   `405` - The client used the wrong HTTP verb. Do not retry.
+
+-   `429` - The client is rate limited. Check the `X-Retry-After` header to
+    determine when to retry the request. Clients can also monitor the
+    `X-RateLimit-Remaining` header that's returned with all responses to
+    determine their rate limit and rate limit expiration.
+
+-   `5xx` - Internal server error. Clients should retry with a reasonable
+    backoff algorithm and maximum cap.
+
 
 ### Test Utilities
 
