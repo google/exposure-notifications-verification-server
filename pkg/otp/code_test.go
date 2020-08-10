@@ -72,7 +72,7 @@ func TestIssue(t *testing.T) {
 		if err != nil {
 			t.Errorf("didn't find previously saved code")
 		}
-		if verCode.Code != code {
+		if verCode != nil && verCode.Code != code {
 			t.Fatalf("loaded code doesn't match requested code")
 		}
 	}

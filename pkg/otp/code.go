@@ -70,7 +70,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (uint, string, err
 			logger.Errorf("code generation error: %v", err)
 			continue
 		}
-		verificationCode := database.VerificationCode{
+		verificationCode = database.VerificationCode{
 			RealmID:     o.RealmID,
 			Code:        code,
 			TestType:    strings.ToLower(o.TestType),
