@@ -145,6 +145,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 		}
 
+		// Convert the uint to an encoded string for the response.
 		var intAsBytes []byte
 		binary.LittleEndian.PutUint64(intAsBytes, uint64(id))
 		idString := base64.URLEncoding.EncodeToString(intAsBytes)
