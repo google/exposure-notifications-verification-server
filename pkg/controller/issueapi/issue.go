@@ -147,7 +147,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var intAsBytes []byte
 		binary.LittleEndian.PutUint64(intAsBytes, uint64(id))
-		idString := base64.StdEncoding.EncodeToString(intAsBytes)
+		idString := base64.URLEncoding.EncodeToString(intAsBytes)
 
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
