@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
@@ -129,7 +128,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer store.Close()
 
-	httplimiter, err := limitware.NewMiddleware(store, userEmailKeyFunc())
+	httplimiter, err := limitware.NewMiddleware(store, limitware.UserEmailKeyFunc())
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
@@ -236,18 +235,4 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", config.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
-}
-
-func userEmailKeyFunc() limitware.KeyFunc {
-	ipKeyFunc := limitware.IPKeyFunc("X-Forwarded-For")
-
-	return func(r *http.Request) (string, error) {
-		user := controller.UserFromContext(r.Context())
-		if user != nil && user.Email != "" {
-			dig := sha1.Sum([]byte(user.Email))
-			return fmt.Sprintf("%x", dig), nil
-		}
-
-		return ipKeyFunc(r)
-	}
 }

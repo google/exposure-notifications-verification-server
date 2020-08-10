@@ -2,14 +2,17 @@
 package limitware
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/sethvargo/go-limiter"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
+	"github.com/sethvargo/go-limiter"
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/metric"
@@ -134,4 +137,44 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		// in the stack to continue processing.
 		next.ServeHTTP(w, r)
 	})
+}
+
+// APIKeyFunc returns a default key function for ratelimiting on our API key header.
+func APIKeyFunc(db *database.Database) KeyFunc {
+	ipKeyFunc := IPKeyFunc("X-Forwarded-For")
+
+	return func(r *http.Request) (string, error) {
+		v := r.Header.Get("X-API-Key")
+		if v != "" {
+			// v2 API keys encode the realm
+			_, realmID, err := db.VerifyAPIKeySignature(v)
+			if err == nil {
+				return strconv.FormatUint(uint64(realmID), 10), nil
+			}
+
+			// v1 API keys do not, fallback to the database
+			app, err := db.FindAuthorizedAppByAPIKey(v)
+			if err == nil && app != nil {
+				return strconv.FormatUint(uint64(app.RealmID), 10), nil
+			}
+		}
+
+		// If no API key was provided, default to limiting by IP.
+		return ipKeyFunc(r)
+	}
+}
+
+// UserEmailKeyFunc pulls the user out of the request context and uses that to ratelimit.
+func UserEmailKeyFunc() KeyFunc {
+	ipKeyFunc := IPKeyFunc("X-Forwarded-For")
+
+	return func(r *http.Request) (string, error) {
+		user := controller.UserFromContext(r.Context())
+		if user != nil && user.Email != "" {
+			dig := sha1.Sum([]byte(user.Email))
+			return fmt.Sprintf("%x", dig), nil
+		}
+
+		return ipKeyFunc(r)
+	}
 }

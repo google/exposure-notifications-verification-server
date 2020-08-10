@@ -18,9 +18,7 @@ package main
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
@@ -99,7 +97,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer store.Close()
 
-	httplimiter, err := limitware.NewMiddleware(store, apiKeyFunc())
+	httplimiter, err := limitware.NewMiddleware(store, limitware.APIKeyFunc(db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
@@ -134,19 +132,4 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", config.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
-}
-
-func apiKeyFunc() limitware.KeyFunc {
-	ipKeyFunc := limitware.IPKeyFunc("X-Forwarded-For")
-
-	return func(r *http.Request) (string, error) {
-		v := r.Header.Get("X-API-Key")
-		if v != "" {
-			dig := sha1.Sum([]byte(v))
-			return fmt.Sprintf("%x", dig), nil
-		}
-
-		// If no API key was provided, default to limiting by IP.
-		return ipKeyFunc(r)
-	}
 }

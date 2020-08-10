@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -104,7 +103,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer store.Close()
 
-	httplimiter, err := limitware.NewMiddleware(store, apiKeyFunc(db))
+	httplimiter, err := limitware.NewMiddleware(store, limitware.APIKeyFunc(db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
@@ -153,30 +152,6 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", config.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
-}
-
-func apiKeyFunc(db *database.Database) limitware.KeyFunc {
-	ipKeyFunc := limitware.IPKeyFunc("X-Forwarded-For")
-
-	return func(r *http.Request) (string, error) {
-		v := r.Header.Get("X-API-Key")
-		if v != "" {
-			// v2 API keys encode the realm
-			_, realmID, err := db.VerifyAPIKeySignature(v)
-			if err == nil {
-				return strconv.FormatUint(uint64(realmID), 10), nil
-			}
-
-			// v1 API keys do not, fallback to the database
-			app, err := db.FindAuthorizedAppByAPIKey(v)
-			if err == nil && app != nil {
-				return strconv.FormatUint(uint64(app.RealmID), 10), nil
-			}
-		}
-
-		// If no API key was provided, default to limiting by IP.
-		return ipKeyFunc(r)
-	}
 }
 
 func handleChaff(tracker *chaff.Tracker, next http.Handler) http.Handler {
