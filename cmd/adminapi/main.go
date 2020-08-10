@@ -136,8 +136,8 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func apiKeyFunc() httplimit.KeyFunc {
-	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
+func apiKeyFunc() limitware.KeyFunc {
+	ipKeyFunc := limitware.IPKeyFunc("X-Forwarded-For")
 
 	return func(r *http.Request) (string, error) {
 		v := r.Header.Get("X-API-Key")

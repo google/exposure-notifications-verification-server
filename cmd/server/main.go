@@ -238,8 +238,8 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
 }
 
-func userEmailKeyFunc() httplimit.KeyFunc {
-	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
+func userEmailKeyFunc() limitware.KeyFunc {
+	ipKeyFunc := limitware.IPKeyFunc("X-Forwarded-For")
 
 	return func(r *http.Request) (string, error) {
 		user := controller.UserFromContext(r.Context())
