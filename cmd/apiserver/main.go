@@ -31,10 +31,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/mikehelmick/go-chaff"
-	"github.com/sethvargo/go-limiter/httplimit"
-	"github.com/sethvargo/go-signalcontext"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -43,6 +41,8 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/mikehelmick/go-chaff"
+	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
@@ -104,7 +104,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer store.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc(db))
+	httplimiter, err := limitware.NewMiddleware(store, apiKeyFunc(db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
