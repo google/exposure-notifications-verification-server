@@ -23,7 +23,7 @@ const (
 	TestTypeConfirmed = "confirmed"
 	// TestTypeLikely is the string that represents a clinical diagnosis.
 	TestTypeLikely = "likely"
-	// TestTypeNegative is the string that represents a netgative test.
+	// TestTypeNegative is the string that represents a negative test.
 	TestTypeNegative = "negative"
 )
 
@@ -63,13 +63,14 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
+	ID                 string `json:"id"` // Handle which allows the issuer to track status of the issued verification code.
 	VerificationCode   string `json:"code"`
 	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
 	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
 	Error              string `json:"error"`
 }
 
-// VerifyCodeRequest is the request structure for exchanging a shor term Verification Code
+// VerifyCodeRequest is the request structure for exchanging a short term Verification Code
 // (OTP) for a long term token (a JWT) that can later be used to sign TEKs.
 //
 // Requires API key in a HTTP header, X-API-Key: APIKEY
@@ -79,7 +80,7 @@ type VerifyCodeRequest struct {
 
 // VerifyCodeResponse either contains an error, or contains the test parameters
 // (type and [optional] date) as well as the verification token. The verification token
-// may be snet back on a valid VerificationCertificateRequest later.
+// may be sent back on a valid VerificationCertificateRequest later.
 type VerifyCodeResponse struct {
 	TestType          string `json:"testtype"`
 	SymptomDate       string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
@@ -89,7 +90,7 @@ type VerifyCodeResponse struct {
 
 // VerificationCertificateRequest is used to accept a long term token and
 // an HMAC of the TEKs.
-// The details of the HMAC calculation are avialble at:
+// The details of the HMAC calculation are available at:
 // https://github.com/google/exposure-notifications-server/blob/main/docs/design/verification_protocol.md
 //
 // Requires API key in a HTTP header, X-API-Key: APIKEY
