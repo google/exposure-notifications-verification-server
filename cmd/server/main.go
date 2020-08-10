@@ -33,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -43,7 +44,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
 )
 
@@ -129,7 +129,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer store.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(store, userEmailKeyFunc())
+	httplimiter, err := limitware.NewMiddleware(store, userEmailKeyFunc())
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
