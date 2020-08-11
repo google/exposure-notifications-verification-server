@@ -47,6 +47,7 @@ type VerificationCode struct {
 	gorm.Model
 	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
 	Code          string `gorm:"type:varchar(20);unique_index"`
+	UUID          string `gorm:"type:uuid;unique_index;default:null"`
 	Claimed       bool   `gorm:"default:false"`
 	TestType      string `gorm:"type:varchar(20)"`
 	SymptomDate   *time.Time
