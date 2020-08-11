@@ -74,7 +74,8 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.h.RenderJSON(w, http.StatusOK, api.Error(err))
+			c.logger.Errorw("bad request", "error", err)
+			c.h.RenderJSON(w, http.StatusOK, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
 		}
 
@@ -82,7 +83,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		signer, err := c.signer.NewSigner(ctx, c.config.TokenSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
 		}
 
@@ -91,12 +92,16 @@ func (c *Controller) HandleVerify() http.Handler {
 		verificationToken, err := c.db.VerifyCodeAndIssueToken(authApp.RealmID, request.VerificationCode, c.config.VerificationTokenDuration)
 		if err != nil {
 			c.logger.Errorw("failed to issue verification token", "error", err)
-			if errors.Is(err, database.ErrVerificationCodeExpired) || errors.Is(err, database.ErrVerificationCodeUsed) {
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
-				return
+			switch {
+			case errors.Is(err, database.ErrVerificationCodeExpired):
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrTokenExpired))
+			case errors.Is(err, database.ErrVerificationCodeUsed):
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
+			case errors.Is(err, database.ErrVerificationCodeNotFound):
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
+			default:
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			}
-
-			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
 			return
 		}
 
@@ -115,7 +120,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
 			c.logger.Errorw("failed to sign token", "error", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			return
 		}
 
