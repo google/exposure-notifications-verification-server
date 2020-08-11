@@ -118,8 +118,9 @@ func (c *Controller) HandleCertificate() http.Handler {
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 			case errors.Is(err, database.ErrTokenMetadataMismatch):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
+			default:
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			}
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
