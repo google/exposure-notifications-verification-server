@@ -103,6 +103,26 @@ type IssueCodeResponse struct {
 	ErrorCode          string `json:"errorCode,omitempty"`
 }
 
+// CheckCodeStatusRequest defines the parameters to request the status for a
+// previously issued OTP code. This is called by the Web frontend.
+// API is served at /api/codestatus
+type CheckCodeStatusRequest struct {
+	ID []string `json:"id"`
+}
+
+// CheckCodeStatusResponse defines the response type for CheckCodeStatusRequest.
+type CheckCodeStatusResponse struct {
+	CodeStatus map[string]CodeStatus `json:"codeStatus"`
+}
+
+// CodeStatus defines the status of an OTP code.
+type CodeStatus struct {
+	Claimed            bool   `json:"claimed"`
+	VerificationCode   string `json:"code"`
+	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
+	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
+}
+
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code
 // (OTP) for a long term token (a JWT) that can later be used to sign TEKs.
 //

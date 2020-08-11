@@ -27,8 +27,11 @@ func TestSaveVerCode(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
+	uuid := "5148c75c-2bc5-4874-9d1c-f9185d0e1b8a"
+
 	maxAge := time.Hour
 	code := VerificationCode{
+		UUID:      uuid,
 		Code:      "12345678",
 		TestType:  "confirmed",
 		ExpiresAt: time.Now().Add(time.Hour),
@@ -51,11 +54,11 @@ func TestSaveVerCode(t *testing.T) {
 		t.Fatalf("error claiming verification code: %v", err)
 	}
 
-	got, err = db.FindVerificationCode(code.Code)
+	statuses, err := db.FindVerificationCodeByIDs([]string{uuid, "d8da639b-3ead-4de0-8bc3-ef197ec57fc0"})
 	if err != nil {
 		t.Fatalf("error reading code from db: %v", err)
 	}
-	if diff := cmp.Diff(code, *got, approxTime); diff != "" {
+	if diff := cmp.Diff(code, statuses, approxTime); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }

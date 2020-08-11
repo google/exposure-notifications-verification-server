@@ -104,10 +104,20 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 // FindVerificationCode find a verification code by the code number.
 func (db *Database) FindVerificationCode(code string) (*VerificationCode, error) {
 	var vc VerificationCode
-	if err := db.db.Where("code = ?", code).First(&vc).Error; err != nil {
+	if err := db.db.Where("code = ?", code).Debug().First(&vc).Error; err != nil {
 		return nil, err
 	}
 	return &vc, nil
+}
+
+// FindVerificationCodeByIDs find a list of verification codes by UUID.
+func (db *Database) FindVerificationCodeByIDs(uuids []string) ([]VerificationCode, error) {
+	codes := make([]VerificationCode, 0, len(uuids))
+	if err := db.db.Where("UUID IN (?)", uuids).Debug().Find(&codes).Error; err != nil {
+		return nil, err
+	}
+
+	return codes, nil
 }
 
 // SaveVerificationCode created or updates a verification code in the database.

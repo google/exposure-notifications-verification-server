@@ -47,7 +47,7 @@ func IssueCode(ctx context.Context, hostname string, apiKey, reportType, symptom
 	return &request, &response, nil
 }
 
-// GetToken makes the API call to exchang a code for a token.
+// GetToken makes the API call to exchange a code for a token.
 func GetToken(ctx context.Context, hostname, apikey, code string, timeout time.Duration) (*api.VerifyCodeRequest, *api.VerifyCodeResponse, error) {
 	url := hostname + "/api/verify"
 	request := api.VerifyCodeRequest{
