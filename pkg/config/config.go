@@ -32,7 +32,7 @@ type Validatable interface {
 }
 
 // ProcessWith creates a new config with the given lookuper for parsing config.
-func ProcessWith(ctx context.Context, spec Validatable, l envconfig.Lookuper) error {
+func ProcessWith(ctx context.Context, spec interface{}, l envconfig.Lookuper) error {
 	// Build a list of mutators. This list will grow as we initialize more of the
 	// configuration, such as the secret manager.
 	var mutatorFuncs []envconfig.MutatorFunc
@@ -67,8 +67,10 @@ func ProcessWith(ctx context.Context, spec Validatable, l envconfig.Lookuper) er
 		return err
 	}
 
-	if err := spec.Validate(); err != nil {
-		return err
+	if typ, ok := spec.(Validatable); ok {
+		if err := typ.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return nil
