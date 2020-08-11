@@ -25,11 +25,36 @@ const (
 	TestTypeLikely = "likely"
 	// TestTypeNegative is the string that represents a negative test.
 	TestTypeNegative = "negative"
+
+	// error_code definitions for the APIs.
+	// General
+	ErrUnparsableRequest = "unparsable_request"
+	ErrInternal          = "internal_server_error"
+
+	// Verify API responses
+	// ErrVerifyCodeInvalid indicates the code entered is unknown or already used.
+	ErrVerifyCodeInvalid = "code_invalid"
+	// ErrVerifyCodeExpired indicates the code provided is known to the server, but expired.
+	ErrVerifyCodeExpired = "code_expired"
+
+	// Certificate API responses
+	// ErrTokenInvalid indicates the token provided is unknown or already used
+	ErrTokenInvalid = "token_invalid"
+	// ErrTokenExpired indicates that the token provided is known but expired.
+	ErrTokenExpired = "token_expired"
+	// ErrHMACInvalid indicates that the HMAC that is being signed is invalid (wrong length)
+	ErrHMACInvalid = "hmac_invalid"
 )
 
 // ErrorReturn defines the common error type.
 type ErrorReturn struct {
-	Error string `json:"error"`
+	Error     string `json:"error"`
+	ErrorCode string `json:"error_code"`
+}
+
+// InternalError constructs a generic internal error.
+func InternalError() *ErrorReturn {
+	return Errorf("internal error").WithCode(ErrInternal)
 }
 
 // Errorf creates an ErrorReturn w/ the formateed message.
@@ -46,10 +71,17 @@ func Error(err error) *ErrorReturn {
 	return &ErrorReturn{Error: err.Error()}
 }
 
+// WithCode adds an error code to an ErrorReturn
+func (e *ErrorReturn) WithCode(code string) *ErrorReturn {
+	e.ErrorCode = code
+	return e
+}
+
 // CSRFResponse is the return type when requesting an AJAX CSRF token.
 type CSRFResponse struct {
 	CSRFToken string `json:"csrftoken"`
 	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode`
 }
 
 // IssueCodeRequest defines the parameters to request an new OTP (short term)
@@ -68,6 +100,7 @@ type IssueCodeResponse struct {
 	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
 	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
 	Error              string `json:"error"`
+	ErrorCode          string `json:"error_code,omitempty"`
 }
 
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code
@@ -82,10 +115,11 @@ type VerifyCodeRequest struct {
 // (type and [optional] date) as well as the verification token. The verification token
 // may be sent back on a valid VerificationCertificateRequest later.
 type VerifyCodeResponse struct {
-	TestType          string `json:"testtype"`
-	SymptomDate       string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
-	VerificationToken string `json:"token"`       // JWT - signed, not encrypted.
-	Error             string `json:"error"`
+	TestType          string `json:"testtype,omitempty"`
+	SymptomDate       string `json:"symptomDate,omitempty"` // ISO 8601 formatted date, YYYY-MM-DD
+	VerificationToken string `json:"token,omitempty"`       // JWT - signed, not encrypted.
+	Error             string `json:"error,omitempty"`
+	ErrorCode         string `json:"error_code,omitempty"`
 }
 
 // VerificationCertificateRequest is used to accept a long term token and
@@ -103,6 +137,7 @@ type VerificationCertificateRequest struct {
 // a signed certificate that can be presented to the configured exposure
 // notifications server to publish keys along w/ the certified diagnosis.
 type VerificationCertificateResponse struct {
-	Certificate string `json:"certificate"`
-	Error       string `json:"error"`
+	Certificate string `json:"certificate,omitempty"`
+	Error       string `json:"error,omitempty"`
+	ErrorCode   string `json:"error_code,omitempty"`
 }
