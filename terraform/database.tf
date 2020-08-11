@@ -231,7 +231,7 @@ resource "null_resource" "migrate" {
       DB_CONN           = google_sql_database_instance.db-inst.connection_name
       DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.self_link
       DB_NAME           = google_sql_database.db.name
-      DB_PASS_SECRET    = google_secret_manager_secret_version.db-secret-version["password"].name
+      DB_PASSWORD       = google_secret_manager_secret_version.db-secret-version["password"].name
       DB_USER           = google_sql_user.user.name
     }
 
@@ -261,7 +261,7 @@ output "db_user" {
   value = google_sql_user.user.name
 }
 
-output "db_pass_secret" {
+output "db_password" {
   value = google_secret_manager_secret_version.db-secret-version["password"].name
 }
 
