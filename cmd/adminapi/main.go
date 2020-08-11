@@ -22,13 +22,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"time"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
@@ -39,7 +40,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-limiter/httplimit"
-	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-signalcontext"
 )
 
@@ -89,21 +89,18 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
-	// Setup rate limiter
-	store, err := memorystore.New(&memorystore.Config{
-		Tokens:   config.RateLimit,
-		Interval: 1 * time.Minute,
-	})
+	// Rate limiting
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer store.Close()
+	defer limiterStore.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc())
+	httplimiter, err := httplimit.NewMiddleware(limiterStore, limiterFunc(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
-	r.Use(httplimiter.Handle)
+	rateLimit := httplimiter.Handle
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
@@ -124,6 +121,7 @@ func realMain(ctx context.Context) error {
 
 	// Install the APIKey Auth Middleware
 	r.Use(requireAPIKey)
+	r.Use(rateLimit)
 
 	issueapiController := issueapi.New(ctx, config, db, h)
 	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")
@@ -136,17 +134,34 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func apiKeyFunc() httplimit.KeyFunc {
-	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
+// limiterFunc is a custom rate limiter function. It limits by realm (by API
+// key, if one exists, then by IP.
+func limiterFunc(ctx context.Context) httplimit.KeyFunc {
+	logger := logging.FromContext(ctx).Named("ratelimit")
 
 	return func(r *http.Request) (string, error) {
-		v := r.Header.Get("X-API-Key")
-		if v != "" {
-			dig := sha1.Sum([]byte(v))
-			return fmt.Sprintf("%x", dig), nil
+		ctx := r.Context()
+
+		// See if a user exists on the context
+		authApp := controller.AuthorizedAppFromContext(ctx)
+		if authApp != nil && authApp.RealmID != 0 {
+			logger.Debugw("limiting by authApp realm", "authApp", authApp.ID)
+			dig := sha1.Sum([]byte(fmt.Sprintf("%d", authApp.RealmID)))
+			return fmt.Sprintf("adminapi:realm:%x", dig), nil
 		}
 
-		// If no API key was provided, default to limiting by IP.
-		return ipKeyFunc(r)
+		// Get the remote addr
+		ip := r.RemoteAddr
+
+		// Check if x-forwarded-for exists, the load balancer sets this, and the
+		// first entry is the real client IP
+		xff := r.Header.Get("x-forwarded-for")
+		if xff != "" {
+			ip = strings.Split(xff, ",")[0]
+		}
+
+		logger.Debugw("limiting by ip", "ip", ip)
+		dig := sha1.Sum([]byte(ip))
+		return fmt.Sprintf("adminapi:ip:%x", dig), nil
 	}
 }

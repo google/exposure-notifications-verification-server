@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	"github.com/google/exposure-notifications-server/pkg/observability"
 
@@ -36,8 +37,10 @@ type AdminAPIServerConfig struct {
 	// production environments.
 	DevMode bool `env:"DEV_MODE"`
 
+	// Rate limiting configuration
+	RateLimit ratelimit.Config
+
 	Port                string        `env:"PORT,default=8080"`
-	RateLimit           uint64        `env:"RATE_LIMIT,default=60"`
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 
 	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
