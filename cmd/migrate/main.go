@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -51,12 +52,12 @@ func main() {
 }
 
 func realMain(ctx context.Context) error {
-	var config database.Config
-	if err := envconfig.Process(ctx, &config); err != nil {
+	var dbConfig database.Config
+	if err := config.ProcessWith(ctx, &dbConfig, envconfig.OsLookuper()); err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
-	db, err := config.Open(ctx)
+	db, err := dbConfig.Open(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
