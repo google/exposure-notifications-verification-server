@@ -81,7 +81,7 @@ func (e *ErrorReturn) WithCode(code string) *ErrorReturn {
 type CSRFResponse struct {
 	CSRFToken string `json:"csrftoken"`
 	Error     string `json:"error"`
-	ErrorCode string `json:"errorCode`
+	ErrorCode string `json:"errorCode"`
 }
 
 // IssueCodeRequest defines the parameters to request an new OTP (short term)
@@ -100,7 +100,7 @@ type IssueCodeResponse struct {
 	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
 	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
 	Error              string `json:"error"`
-	ErrorCode          string `json:"error_code,omitempty"`
+	ErrorCode          string `json:"errorCode,omitempty"`
 }
 
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code
@@ -119,7 +119,7 @@ type VerifyCodeResponse struct {
 	SymptomDate       string `json:"symptomDate,omitempty"` // ISO 8601 formatted date, YYYY-MM-DD
 	VerificationToken string `json:"token,omitempty"`       // JWT - signed, not encrypted.
 	Error             string `json:"error,omitempty"`
-	ErrorCode         string `json:"error_code,omitempty"`
+	ErrorCode         string `json:"errorCode,omitempty"`
 }
 
 // VerificationCertificateRequest is used to accept a long term token and
@@ -139,5 +139,5 @@ type VerificationCertificateRequest struct {
 type VerificationCertificateResponse struct {
 	Certificate string `json:"certificate,omitempty"`
 	Error       string `json:"error,omitempty"`
-	ErrorCode   string `json:"error_code,omitempty"`
+	ErrorCode   string `json:"errorCode,omitempty"`
 }
