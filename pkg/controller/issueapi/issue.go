@@ -15,8 +15,6 @@
 package issueapi
 
 import (
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strings"
@@ -123,7 +121,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			RealmID:       realm.ID,
 		}
 
-		id, code, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
+		code, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
@@ -145,14 +143,9 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 		}
 
-		// Convert the uint to an encoded hex string for the response.
-		var intAsBytes []byte
-		binary.LittleEndian.PutUint64(intAsBytes, uint64(id))
-		idString := hex.EncodeToString(intAsBytes)
-
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
-				ID:                 idString,
+				ID:                 uuid,
 				VerificationCode:   code,
 				ExpiresAt:          expiryTime.Format(time.RFC1123),
 				ExpiresAtTimestamp: expiryTime.Unix(),

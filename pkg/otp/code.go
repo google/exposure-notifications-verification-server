@@ -58,9 +58,10 @@ type Request struct {
 	IssuingApp    *database.AuthorizedApp
 }
 
-// Issue will generate a verification code and save it to the database, based
-// on the paremters provided.
-func (o *Request) Issue(ctx context.Context, retryCount uint) (uint, string, error) {
+// Issue will generate a verification code and save it to the database, based on
+// the paremters provided. It returns the code, a UUID for accessing the code,
+// and any errors.
+func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, error) {
 	logger := logging.FromContext(ctx)
 	var verificationCode database.VerificationCode
 	var err error
@@ -88,7 +89,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (uint, string, err
 		}
 	}
 	if err != nil {
-		return 0, "", err
+		return "", "", err
 	}
-	return verificationCode.ID, verificationCode.Code, nil
+	return verificationCode.Code, verificationCode.UUID, nil
 }
