@@ -58,8 +58,11 @@ func TestSaveVerCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading code from db: %v", err)
 	}
-	if diff := cmp.Diff(code, statuses, approxTime); diff != "" {
+	if diff := cmp.Diff(code, statuses[0], approxTime); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+	}
+	if len(statuses) != 1 {
+		t.Fatal("Only expected one code found in response.")
 	}
 }
 
