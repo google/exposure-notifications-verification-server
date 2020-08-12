@@ -117,7 +117,7 @@ func (db *Database) Open(ctx context.Context) error {
 	}
 
 	// Enable auto-preloading.
-	rawDB.Set("gorm:auto_preload", true)
+	rawDB = rawDB.Set("gorm:auto_preload", true)
 
 	db.db = rawDB
 	return nil

@@ -93,7 +93,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	if err := db.SaveUser(user); err != nil {
-		return fmt.Errorf("failed to save user: %w", err)
+		return fmt.Errorf("failed to save user: %w: %v", err, user.ErrorMessages())
 	}
 	logger.Debugw("saved user", "user", user)
 
