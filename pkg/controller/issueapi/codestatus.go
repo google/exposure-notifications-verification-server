@@ -16,7 +16,6 @@ package issueapi
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -96,7 +95,6 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.CheckCodeStatusResponse{
 				Claimed:            code.Claimed,
-				ExpiresAt:          code.ExpiresAt.Format(time.RFC1123),
 				ExpiresAtTimestamp: code.ExpiresAt.Unix(),
 			})
 	})

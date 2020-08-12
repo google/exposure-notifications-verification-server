@@ -125,10 +125,6 @@ type CheckCodeStatusResponse struct {
 	// Claimed is true if a user has used the OTP code to get a token via the VerifyCode api.
 	Claimed bool `json:"claimed"`
 
-	// ExpiresAt is a RFC1123 formatted string formatted timestamp, in UTC.
-	// After this time the code will no longer be accepted and is eligible for deletion.
-	ExpiresAt string `json:"expiresAt"` // RFC1123 string formatted timestamp, in UTC.
-
 	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
 	// After this time the code will no longer be accepted and is eligible for deletion.
 	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
