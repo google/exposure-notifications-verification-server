@@ -117,8 +117,8 @@ type CheckCodeStatusResponse struct {
 
 // CodeStatus defines the status of an OTP code.
 type CodeStatus struct {
+	ID                 string `json:"id"`
 	Claimed            bool   `json:"claimed"`
-	VerificationCode   string `json:"code"`
 	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
 	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
 }
