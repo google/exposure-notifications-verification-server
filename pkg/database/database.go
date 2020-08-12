@@ -23,8 +23,10 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/jinzhu/gorm"
+	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -42,12 +44,16 @@ type Database struct {
 	// keyManager is used to encrypt/decrypt values.
 	keyManager keys.KeyManager
 
+	// logger is the internal logger.
+	logger *zap.SugaredLogger
+
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
 }
 
-// Open created a DB connection through gorm.
-func (c *Config) Open(ctx context.Context) (*Database, error) {
+// Load loads the configuration and processes any dependencies like secret and
+// key managers. It does NOT connect to the database.
+func (c *Config) Load(ctx context.Context) (*Database, error) {
 	// Create the cacher.
 	cacher, err := cache.New(c.CacheTTL)
 	if err != nil {
@@ -85,27 +91,36 @@ func (c *Config) Open(ctx context.Context) (*Database, error) {
 		c.EncryptionKey = "database-encryption-key"
 	}
 
-	// Connect to the database.
-	db, err := gorm.Open("postgres", c.ConnectionString())
+	logger := logging.FromContext(ctx).Named("database")
+
+	return &Database{
+		config:        c,
+		cacher:        cacher,
+		keyManager:    keyManager,
+		logger:        logger,
+		secretManager: secretManager,
+	}, nil
+}
+
+// Open creates a database connection. This should only be called once.
+func (db *Database) Open(ctx context.Context) error {
+	c := db.config
+
+	rawDB, err := gorm.Open("postgres", c.ConnectionString())
 	if err != nil {
-		return nil, fmt.Errorf("database gorm.Open: %w", err)
+		return fmt.Errorf("database gorm.Open: %w", err)
 	}
 
 	// Log SQL statements in debug mode.
 	if c.Debug {
-		db.LogMode(true)
+		rawDB = rawDB.LogMode(true)
 	}
 
-	// Enable auto-loading.
-	db.Set("gorm:auto_preload", true)
+	// Enable auto-preloading.
+	rawDB.Set("gorm:auto_preload", true)
 
-	return &Database{
-		db:            db,
-		config:        c,
-		cacher:        cacher,
-		keyManager:    keyManager,
-		secretManager: secretManager,
-	}, nil
+	db.db = rawDB
+	return nil
 }
 
 // Close will close the database connection. Should be deferred right after Open.

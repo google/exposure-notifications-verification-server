@@ -21,8 +21,12 @@ func HandleHealthz(hctx context.Context, h *render.Renderer, cfg *database.Confi
 		params := r.URL.Query()
 		if s := params.Get("service"); s == "database" {
 			if rl.Allow() {
-				db, err := cfg.Open(ctx)
+				db, err := cfg.Load(ctx)
 				if err != nil {
+					InternalError(w, r, h, err)
+					return
+				}
+				if err := db.Open(ctx); err != nil {
 					InternalError(w, r, h, err)
 					return
 				}

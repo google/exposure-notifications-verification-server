@@ -24,7 +24,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"github.com/jinzhu/gorm"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
 )
@@ -69,8 +68,11 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
-	db, err := config.Open(ctx)
+	db, err := config.Load(ctx)
 	if err != nil {
+		return fmt.Errorf("failed to load database config: %w", err)
+	}
+	if err := db.Open(ctx); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
@@ -84,9 +86,14 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("cannot create a non system admin user that is also not in any realms")
 	}
 
-	user, err := db.CreateUser(*emailFlag, *nameFlag, *adminFlag)
-	if err == gorm.ErrRecordNotFound {
-		return fmt.Errorf("unexpected error: %v", err)
+	user := &database.User{
+		Name:  *nameFlag,
+		Email: *emailFlag,
+		Admin: *adminFlag,
+	}
+
+	if err := db.SaveUser(user); err != nil {
+		return fmt.Errorf("failed to save user: %w", err)
 	}
 	logger.Debugw("saved user", "user", user)
 

@@ -57,8 +57,11 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
-	db, err := dbConfig.Open(ctx)
+	db, err := dbConfig.Load(ctx)
 	if err != nil {
+		return fmt.Errorf("failed to load database config: %w", err)
+	}
+	if err := db.Open(ctx); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
