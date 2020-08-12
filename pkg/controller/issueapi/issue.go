@@ -55,10 +55,10 @@ func (c *Controller) HandleIssue() http.Handler {
 		} else {
 			// if it's a user logged in, we can pull realm from the context.
 			realm = controller.RealmFromContext(ctx)
-			if realm == nil {
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
-				return
-			}
+		}
+		if realm == nil {
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
+			return
 		}
 
 		// Verify SMS configuration if phone was provided
@@ -148,7 +148,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				UUID:               uuid,
 				VerificationCode:   code,
 				ExpiresAt:          expiryTime.Format(time.RFC1123),
-				ExpiresAtTimestamp: expiryTime.Unix(),
+				ExpiresAtTimestamp: expiryTime.UTC().Unix(),
 			})
 	})
 }

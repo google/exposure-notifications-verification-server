@@ -55,10 +55,10 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 		} else {
 			// if it's a user logged in, we can pull realm from the context.
 			realm = controller.RealmFromContext(ctx)
-			if realm == nil {
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
-				return
-			}
+		}
+		if realm == nil {
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
+			return
 		}
 
 		code, err := c.db.FindVerificationCodeByUUID(request.UUID)
@@ -74,7 +74,7 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			return
 		}
 
-		if code.IssuingUser.Email != user.Email {
+		if code.IssuingUser.Email != user.Email && !user.CanAdminRealm(realm.ID) {
 			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Errorf("failed to check otp code status: user does not match issuing user"))
 			return
@@ -95,7 +95,7 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.CheckCodeStatusResponse{
 				Claimed:            code.Claimed,
-				ExpiresAtTimestamp: code.ExpiresAt.Unix(),
+				ExpiresAtTimestamp: code.ExpiresAt.UTC().Unix(),
 			})
 	})
 }
