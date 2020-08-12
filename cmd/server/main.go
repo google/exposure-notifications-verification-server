@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -122,18 +123,17 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	// Setup rate limiting
-	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
+	// Rate limiting
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer store.Close()
+	defer limiterStore.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(store, userEmailKeyFunc())
+	httplimiter, err := httplimit.NewMiddleware(limiterStore, limiterFunc(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
-	r.Use(httplimiter.Handle)
 
 	// Install the CSRF protection middleware.
 	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
@@ -147,20 +147,26 @@ func realMain(ctx context.Context) error {
 	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	requireRealm := middleware.RequireRealm(ctx, db, h)
+	rateLimit := httplimiter.Handle
 
-	// Install the handlers that don't require authentication first on the main router.
-	indexController := index.New(ctx, config, h)
-	r.Handle("/", indexController.HandleIndex()).Methods("GET")
-	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+	{
+		sub := r.PathPrefix("").Subrouter()
+		sub.Use(rateLimit)
 
-	// Session handling
-	sessionController := session.New(ctx, auth, config, db, h)
-	r.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
-	r.Handle("/session", sessionController.HandleCreate()).Methods("POST")
+		indexController := index.New(ctx, config, h)
+		sub.Handle("/", indexController.HandleIndex()).Methods("GET")
+		sub.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+
+		// Session handling
+		sessionController := session.New(ctx, auth, config, db, h)
+		sub.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
+		sub.Handle("/session", sessionController.HandleCreate()).Methods("POST")
+	}
 
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(rateLimit)
 
 		// Realms - list and select.
 		realmController := realm.New(ctx, config, db, h)
@@ -172,6 +178,7 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(requireRealm)
+		sub.Use(rateLimit)
 
 		homeController := home.New(ctx, config, db, h)
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
@@ -187,6 +194,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAuth)
 		sub.Use(requireRealm)
 		sub.Use(requireAdmin)
+		sub.Use(rateLimit)
 
 		apikeyController := apikey.New(ctx, config, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
@@ -205,6 +213,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAuth)
 		userSub.Use(requireRealm)
 		userSub.Use(requireAdmin)
+		userSub.Use(rateLimit)
 
 		userController := user.New(ctx, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
@@ -218,6 +227,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireAuth)
 		realmSub.Use(requireRealm)
 		realmSub.Use(requireAdmin)
+		realmSub.Use(rateLimit)
 
 		realmadminController := realmadmin.New(ctx, config, db, h)
 		realmSub.Handle("", realmadminController.HandleIndex()).Methods("GET")
@@ -238,16 +248,34 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
 }
 
-func userEmailKeyFunc() httplimit.KeyFunc {
-	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
+// limiterFunc is a custom rate limiter function. It limits by user, if one
+// exists, then by IP.
+func limiterFunc(ctx context.Context) httplimit.KeyFunc {
+	logger := logging.FromContext(ctx).Named("ratelimit")
 
 	return func(r *http.Request) (string, error) {
-		user := controller.UserFromContext(r.Context())
+		ctx := r.Context()
+
+		// See if a user exists on the context
+		user := controller.UserFromContext(ctx)
 		if user != nil && user.Email != "" {
+			logger.Debugw("limiting by user", "user", user.ID)
 			dig := sha1.Sum([]byte(user.Email))
-			return fmt.Sprintf("%x", dig), nil
+			return fmt.Sprintf("server:user:%x", dig), nil
 		}
 
-		return ipKeyFunc(r)
+		// Get the remote addr
+		ip := r.RemoteAddr
+
+		// Check if x-forwarded-for exists, the load balancer sets this, and the
+		// first entry is the real client IP
+		xff := r.Header.Get("x-forwarded-for")
+		if xff != "" {
+			ip = strings.Split(xff, ",")[0]
+		}
+
+		logger.Debugw("limiting by ip", "ip", ip)
+		dig := sha1.Sum([]byte(ip))
+		return fmt.Sprintf("server:ip:%x", dig), nil
 	}
 }
