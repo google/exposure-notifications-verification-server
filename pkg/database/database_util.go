@@ -17,6 +17,7 @@ package database
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"os"
 	"strconv"
 	"testing"
@@ -104,9 +105,11 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		Secrets: secrets.Config{
 			SecretManagerType: secrets.SecretManagerTypeInMemory,
 		},
+
 		Keys: keys.Config{
 			KeyManagerType: keys.KeyManagerTypeInMemory,
 		},
+		EncryptionKey: base64.RawStdEncoding.EncodeToString(generateKey(tb, 32)),
 	}
 
 	// Wait for the container to start - we'll retry connections in a loop below,
@@ -122,11 +125,14 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	b = retry.WithMaxRetries(10, b)
 	b = retry.WithCappedDuration(10*time.Second, b)
 
-	var db *Database
+	// Load the configuration
+	db, err := config.Load(ctx)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	if err := retry.Do(ctx, b, func(_ context.Context) error {
-		var err error
-		db, err = config.Open(ctx)
-		if err != nil {
+		if err := db.Open(ctx); err != nil {
 			tb.Logf("retrying error: %v", err)
 			return retry.RetryableError(err)
 		}
@@ -139,17 +145,6 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	if err := db.RunMigrations(ctx); err != nil {
 		tb.Fatalf("failed to migrate database: %v", err)
 	}
-
-	// Create the key manager and default key
-	km, err := keys.NewInMemory(ctx)
-	if err != nil {
-		tb.Fatalf("failed to add encryption key")
-	}
-	if _, err := km.CreateEncryptionKey("my-key"); err != nil {
-		tb.Fatalf("failed to add encryption key")
-	}
-	db.keyManager = km
-	db.config.EncryptionKey = "my-key"
 
 	// Close db when done.
 	tb.Cleanup(func() {
@@ -170,8 +165,13 @@ func generateKey(tb testing.TB, length int) []byte {
 	tb.Helper()
 
 	buf := make([]byte, length)
-	if _, err := rand.Read(buf); err != nil {
+	n, err := rand.Read(buf)
+	if err != nil {
 		tb.Fatal(err)
 	}
+	if n < length {
+		tb.Fatalf("insufficient bytes read: %v, expected %v", n, length)
+	}
+
 	return buf
 }
