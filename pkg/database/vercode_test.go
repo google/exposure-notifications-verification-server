@@ -54,15 +54,12 @@ func TestSaveVerCode(t *testing.T) {
 		t.Fatalf("error claiming verification code: %v", err)
 	}
 
-	statuses, err := db.FindVerificationCodeByIDs([]string{uuid, "d8da639b-3ead-4de0-8bc3-ef197ec57fc0"})
+	got, err = db.FindVerificationCodeByID(uuid)
 	if err != nil {
 		t.Fatalf("error reading code from db: %v", err)
 	}
-	if diff := cmp.Diff(code, statuses[0], approxTime); diff != "" {
+	if diff := cmp.Diff(code, *got, approxTime); diff != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
-	}
-	if len(statuses) != 1 {
-		t.Fatal("Only expected one code found in response.")
 	}
 }
 

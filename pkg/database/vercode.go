@@ -110,14 +110,14 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 	return &vc, nil
 }
 
-// FindVerificationCodeByIDs find a list of verification codes by UUID.
-func (db *Database) FindVerificationCodeByIDs(uuids []string) ([]VerificationCode, error) {
-	codes := make([]VerificationCode, 0, len(uuids))
-	if err := db.db.Where("UUID IN (?)", uuids).Find(&codes).Error; err != nil {
+// FindVerificationCodeByID find a verification codes by UUID.
+func (db *Database) FindVerificationCodeByID(uuid string) (*VerificationCode, error) {
+	var code VerificationCode
+	if err := db.db.Where("UUID = ?", uuid).Find(&code).Error; err != nil {
 		return nil, err
 	}
 
-	return codes, nil
+	return &code, nil
 }
 
 // SaveVerificationCode created or updates a verification code in the database.

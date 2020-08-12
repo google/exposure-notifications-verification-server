@@ -107,16 +107,11 @@ type IssueCodeResponse struct {
 // previously issued OTP code. This is called by the Web frontend.
 // API is served at /api/codestatus
 type CheckCodeStatusRequest struct {
-	ID []string `json:"id"`
+	ID string `json:"id"`
 }
 
 // CheckCodeStatusResponse defines the response type for CheckCodeStatusRequest.
 type CheckCodeStatusResponse struct {
-	CodeStatus map[string]CodeStatus `json:"codeStatus"`
-}
-
-// CodeStatus defines the status of an OTP code.
-type CodeStatus struct {
 	Claimed            bool   `json:"claimed"`
 	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
 	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
