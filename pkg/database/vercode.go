@@ -110,8 +110,8 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 	return &vc, nil
 }
 
-// FindVerificationCodeByID find a verification codes by UUID.
-func (db *Database) FindVerificationCodeByID(uuid string) (*VerificationCode, error) {
+// FindVerificationCodeByUUID find a verification codes by UUID.
+func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, error) {
 	var code VerificationCode
 	if err := db.db.Where("UUID = ?", uuid).Find(&code).Error; err != nil {
 		return nil, err

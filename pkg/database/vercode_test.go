@@ -54,7 +54,7 @@ func TestSaveVerCode(t *testing.T) {
 		t.Fatalf("error claiming verification code: %v", err)
 	}
 
-	got, err = db.FindVerificationCodeByID(uuid)
+	got, err = db.FindVerificationCodeByUUID(uuid)
 	if err != nil {
 		t.Fatalf("error reading code from db: %v", err)
 	}
