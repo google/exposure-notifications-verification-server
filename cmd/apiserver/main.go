@@ -18,10 +18,11 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -97,18 +98,18 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
-	// Setup rate limiter
-	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
+	// Rate limiting
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer store.Close()
+	defer limiterStore.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(store, apiKeyFunc(db))
+	httplimiter, err := httplimit.NewMiddleware(limiterStore, limiterFunc(ctx, db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
-	r.Use(httplimiter.Handle)
+	rateLimit := httplimiter.Handle
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
@@ -126,6 +127,10 @@ func realMain(ctx context.Context) error {
 	requireAPIKey := middleware.RequireAPIKey(ctx, apiKeyCache, db, h, []database.APIUserType{
 		database.APIUserTypeDevice,
 	})
+
+	// Install the rate limiting first. In this case, we want to limit by key
+	// first to reduce the chance of a database lookup.
+	r.Use(rateLimit)
 
 	// Install the APIKey Auth Middleware
 	r.Use(requireAPIKey)
@@ -155,27 +160,45 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func apiKeyFunc(db *database.Database) httplimit.KeyFunc {
-	ipKeyFunc := httplimit.IPKeyFunc("X-Forwarded-For")
+// limiterFunc is a custom rate limiter function. It limits by API key realm, if
+// one exists, then by IP.
+func limiterFunc(ctx context.Context, db *database.Database) httplimit.KeyFunc {
+	logger := logging.FromContext(ctx).Named("ratelimit")
 
 	return func(r *http.Request) (string, error) {
+		// Procss the API key
 		v := r.Header.Get("X-API-Key")
 		if v != "" {
 			// v2 API keys encode the realm
 			_, realmID, err := db.VerifyAPIKeySignature(v)
 			if err == nil {
-				return strconv.FormatUint(uint64(realmID), 10), nil
+				logger.Debugw("limiting by api key v2 realm", "realm", realmID)
+				dig := sha1.Sum([]byte(fmt.Sprintf("%d", realmID)))
+				return fmt.Sprintf("apiserver:realm:%x", dig), nil
 			}
 
 			// v1 API keys do not, fallback to the database
 			app, err := db.FindAuthorizedAppByAPIKey(v)
 			if err == nil && app != nil {
-				return strconv.FormatUint(uint64(app.RealmID), 10), nil
+				logger.Debugw("limiting by api key v1 realm", "realm", app.RealmID)
+				dig := sha1.Sum([]byte(fmt.Sprintf("%d", app.RealmID)))
+				return fmt.Sprintf("apiserver:realm:%x", dig), nil
 			}
 		}
 
-		// If no API key was provided, default to limiting by IP.
-		return ipKeyFunc(r)
+		// Get the remote addr
+		ip := r.RemoteAddr
+
+		// Check if x-forwarded-for exists, the load balancer sets this, and the
+		// first entry is the real client IP
+		xff := r.Header.Get("x-forwarded-for")
+		if xff != "" {
+			ip = strings.Split(xff, ",")[0]
+		}
+
+		logger.Debugw("limiting by ip", "ip", ip)
+		dig := sha1.Sum([]byte(ip))
+		return fmt.Sprintf("apiserver:ip:%x", dig), nil
 	}
 }
 
