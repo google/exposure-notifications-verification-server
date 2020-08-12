@@ -61,7 +61,7 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			}
 		}
 
-		code, err := c.db.FindVerificationCodeByUUID(request.ID)
+		code, err := c.db.FindVerificationCodeByUUID(request.UUID)
 		if err != nil {
 			logger.Errorw("failed to check otp code status", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to check otp code status, please try again"))

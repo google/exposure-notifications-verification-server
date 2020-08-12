@@ -137,7 +137,7 @@ func realMain(ctx context.Context) error {
 			logger.Infof("Token Response: %+v", token)
 		}
 
-		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.ID, timeout)
+		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
 		if err != nil {
 			return fmt.Errorf("error issuing verification code: %w", err)
 		} else if code.Error != "" {
@@ -148,7 +148,7 @@ func realMain(ctx context.Context) error {
 			logger.Infof("Code Status Response: %+v", codeStatus)
 		}
 		if !codeStatus.Claimed {
-			return fmt.Errorf("expected claimed OTP code for %s", statusReq.ID)
+			return fmt.Errorf("expected claimed OTP code for %s", statusReq.UUID)
 		}
 
 		// Get the verification certificate

@@ -51,7 +51,7 @@ func IssueCode(ctx context.Context, hostname string, apiKey, reportType, symptom
 func CheckCodeStatus(ctx context.Context, hostname string, apiKey, uuid string, timeout time.Duration) (*api.CheckCodeStatusRequest, *api.CheckCodeStatusResponse, error) {
 	url := hostname + "/api/checkcodestatus"
 	request := api.CheckCodeStatusRequest{
-		ID: uuid,
+		UUID: uuid,
 	}
 	client := &http.Client{
 		Timeout: timeout,

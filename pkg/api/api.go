@@ -95,8 +95,8 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	// ID is a UUID handle which allows the issuer to track status of the issued verification code.
-	ID string `json:"id"`
+	// UUID is a handle which allows the issuer to track status of the issued verification code.
+	UUID string `json:"uuid"`
 
 	// The OTP code which may be exchanged by the user for a signing token.
 	VerificationCode string `json:"code"`
@@ -117,7 +117,8 @@ type IssueCodeResponse struct {
 // previously issued OTP code. This is called by the Web frontend.
 // API is served at /api/checkcodestatus
 type CheckCodeStatusRequest struct {
-	ID string `json:"id"`
+	// UUID is a handle which allows the issuer to track status of the issued verification code.
+	UUID string `json:"uuid"`
 }
 
 // CheckCodeStatusResponse defines the response type for CheckCodeStatusRequest.

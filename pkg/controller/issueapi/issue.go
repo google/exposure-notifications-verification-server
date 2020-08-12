@@ -145,7 +145,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
-				ID:                 uuid,
+				UUID:               uuid,
 				VerificationCode:   code,
 				ExpiresAt:          expiryTime.Format(time.RFC1123),
 				ExpiresAtTimestamp: expiryTime.Unix(),
