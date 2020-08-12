@@ -105,7 +105,7 @@ type IssueCodeResponse struct {
 
 // CheckCodeStatusRequest defines the parameters to request the status for a
 // previously issued OTP code. This is called by the Web frontend.
-// API is served at /api/codestatus
+// API is served at /api/checkcodestatus
 type CheckCodeStatusRequest struct {
 	ID string `json:"id"`
 }
