@@ -40,6 +40,11 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
+		if user == nil {
+			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
+			c.h.RenderJSON(w, http.StatusUnauthorized, api.Errorf("failed to check otp code status: user does not match issuing user"))
+			return
+		}
 
 		var realm *database.Realm
 		if authApp != nil {
@@ -64,6 +69,12 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			return
 		}
 
+		if code.UUID == "" { // if no row is found, code will not be populated
+			logger.Errorw("failed to check otp code status", "error", "code not found")
+			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("failed to check otp code status"))
+			return
+		}
+
 		if code.IssuingUser.Email != user.Email {
 			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Errorf("failed to check otp code status: user does not match issuing user"))
@@ -71,20 +82,14 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 		}
 
 		if code.IsExpired() {
-			logger.Errorw("failed to check otp code status", "error", "code exists but is expired")
-			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("failed to check otp code status"))
+			logger.Errorw("failed to check otp code status", "error", "code exists but has expired")
+			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("code does not exist or has expired"))
 			return
 		}
 
 		if code.RealmID != realm.ID {
 			logger.Errorw("failed to check otp code status", "error", "realmID does not match")
-			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("failed to check otp code status"))
-			return
-		}
-
-		if code.UUID != request.ID {
-			logger.Errorw("failed to check otp code status", "error", "code not found")
-			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("failed to check otp code status"))
+			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("code does not exist or has expired"))
 			return
 		}
 
