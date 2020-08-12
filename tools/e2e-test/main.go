@@ -137,6 +137,20 @@ func realMain(ctx context.Context) error {
 			logger.Infof("Token Response: %+v", token)
 		}
 
+		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.ID, timeout)
+		if err != nil {
+			return fmt.Errorf("error issuing verification code: %w", err)
+		} else if code.Error != "" {
+			return fmt.Errorf("issue API Error: %+v", codeStatus)
+		}
+		if *verbose {
+			logger.Infof("Code Status Request: %+v", statusReq)
+			logger.Infof("Code Status Response: %+v", codeStatus)
+		}
+		if !codeStatus.Claimed {
+			return fmt.Errorf("Expected claimed OTP code for %s", statusReq.ID)
+		}
+
 		// Get the verification certificate
 		logger.Infof("Calculating HMAC and getting verification certificate")
 		hmacSecret := make([]byte, 32)

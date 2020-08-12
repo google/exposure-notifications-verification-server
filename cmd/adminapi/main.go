@@ -127,6 +127,7 @@ func realMain(ctx context.Context) error {
 
 	issueapiController := issueapi.New(ctx, config, db, h)
 	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")
+	r.Handle("/api/checkcodestatus", issueapiController.HandleIssue()).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {

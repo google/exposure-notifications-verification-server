@@ -179,6 +179,7 @@ func realMain(ctx context.Context) error {
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, config, db, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
+		sub.Handle("/checkcodestatus", issueapiController.HandleCheckCodeStatus()).Methods("POST")
 	}
 
 	// apikeys
