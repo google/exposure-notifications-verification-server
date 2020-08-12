@@ -76,6 +76,12 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			return
 		}
 
+		if code.RealmID != realm.ID {
+			logger.Errorw("failed to check otp code status", "error", "realmID does not match")
+			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("failed to check otp code status"))
+			return
+		}
+
 		if code.UUID != request.ID {
 			logger.Errorw("failed to check otp code status", "error", "code not found")
 			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("failed to check otp code status"))

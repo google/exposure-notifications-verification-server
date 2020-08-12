@@ -148,7 +148,7 @@ func realMain(ctx context.Context) error {
 			logger.Infof("Code Status Response: %+v", codeStatus)
 		}
 		if !codeStatus.Claimed {
-			return fmt.Errorf("Expected claimed OTP code for %s", statusReq.ID)
+			return fmt.Errorf("expected claimed OTP code for %s", statusReq.ID)
 		}
 
 		// Get the verification certificate
