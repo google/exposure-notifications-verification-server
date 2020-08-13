@@ -110,6 +110,16 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 	return &vc, nil
 }
 
+// FindVerificationCodeByUUID find a verification codes by UUID.
+func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, error) {
+	var code VerificationCode
+	if err := db.db.Where("UUID = ?", uuid).Find(&code).Error; err != nil {
+		return nil, err
+	}
+
+	return &code, nil
+}
+
 // SaveVerificationCode created or updates a verification code in the database.
 // Max age represents the maximum age of the test date [optional] in the record.
 func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Duration) error {

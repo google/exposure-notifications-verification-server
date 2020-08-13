@@ -95,12 +95,40 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	ID                 string `json:"id"` // Handle which allows the issuer to track status of the issued verification code.
-	VerificationCode   string `json:"code"`
-	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
-	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
-	Error              string `json:"error"`
-	ErrorCode          string `json:"errorCode,omitempty"`
+	// UUID is a handle which allows the issuer to track status of the issued verification code.
+	UUID string `json:"uuid"`
+
+	// The OTP code which may be exchanged by the user for a signing token.
+	VerificationCode string `json:"code"`
+
+	// ExpiresAt is a RFC1123 formatted string formatted timestamp, in UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAt string `json:"expiresAt"`
+
+	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
+
+	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
+// CheckCodeStatusRequest defines the parameters to request the status for a
+// previously issued OTP code. This is called by the Web frontend.
+// API is served at /api/checkcodestatus
+type CheckCodeStatusRequest struct {
+	// UUID is a handle which allows the issuer to track status of the issued verification code.
+	UUID string `json:"uuid"`
+}
+
+// CheckCodeStatusResponse defines the response type for CheckCodeStatusRequest.
+type CheckCodeStatusResponse struct {
+	// Claimed is true if a user has used the OTP code to get a token via the VerifyCode api.
+	Claimed bool `json:"claimed"`
+
+	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
 }
 
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code
