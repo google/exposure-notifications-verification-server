@@ -129,6 +129,9 @@ type CheckCodeStatusResponse struct {
 	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
 	// After this time the code will no longer be accepted and is eligible for deletion.
 	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
+
+	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode,omitempty"`
 }
 
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code

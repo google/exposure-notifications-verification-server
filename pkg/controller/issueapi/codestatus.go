@@ -68,13 +68,15 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			return
 		}
 
+		logger.Debugf("Found code: %#v", code)
+
 		if code.UUID == "" { // if no row is found, code will not be populated
 			logger.Errorw("failed to check otp code status", "error", "code not found")
 			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("failed to check otp code status"))
 			return
 		}
 
-		if code.IssuingUser.Email != user.Email && !user.CanAdminRealm(realm.ID) {
+		if !(code.IssuingUser != nil && code.IssuingUser.Email == user.Email || user.CanAdminRealm(realm.ID)) {
 			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Errorf("failed to check otp code status: user does not match issuing user"))
 			return

@@ -1,0 +1,164 @@
+{{define "cstatus"}}
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+
+  <style>
+    #vercode {
+      flex-shrink: 10;
+      line-height: 2.3em;
+      max-width: 480px;
+    }
+
+    #vercode span {
+      flex: 1;
+      margin: 0 0.1em;
+    }
+  </style>
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Check verification code status</h1>
+    <p>
+      Use a unique identifier to check the status of the verification code
+      previously shared with your patient.
+    </p>
+
+    <form id="statusForm" action="#">
+      <div class="row form-group">
+        <label for="uuid" class="col-sm-3">Code Identifier</label>
+        <div class="col-sm-9">
+          <div class="input-group p-0 shadow-sm">
+            <input type="text" id="uuid" name="uuid" class="form-control" />
+          </div>
+          <small class="form-text text-muted">
+            Identifier in the format XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX given from the Issue Code form.
+          </small>
+        </div>
+      </div>
+
+      <div class="row form-group">
+        <div class="offset-sm-3 col-sm-9">
+          <button id="submit" class="btn btn-primary btn-block">Check Status</button>
+        </div>
+      </div>
+    </form>
+
+    <div id="codeerror" class="alert alert-danger d-none"></div>
+
+    <div id="codearea" class="d-none">
+      <hr>
+
+      <h2>Code status</h2>
+
+      <p>
+        The claimed status of this code is:
+      </p>
+
+      <div id="vercode"
+        class="text-center text-monospace d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3">
+      </div>
+
+      <button id="startover" class="btn btn-warning btn-block mb-3">
+        Clear and check another code
+      </button>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+
+  <script type="text/javascript">
+    let $codeerror, $codearea, $expiresAt, $codeUUID, $vercode, $submit;
+
+    $(function () {
+      $codeerror = $('#codeerror');
+      $codearea = $('#codearea');
+      $expiresAt = $('#expiresAt');
+      $codeUUID = $('#codeUUID');
+      $vercode = $('#vercode');
+      $submit = $('#submit');
+
+      // click on button submit
+      $submit.on('click', function (event) {
+        event.preventDefault();
+
+        // Disable the submit button so we only issue one code.
+        $submit.prop('disabled', true);
+
+        var data = {};
+        $($('#statusForm').serializeArray()).each(function (index, obj) {
+          data[obj.name] = obj.value;
+        });
+
+        getCode(data);
+      });
+
+      $('#startover').on('click', function () {
+        // Hide the previously issued code and enable the submit button.
+        $codeerror.addClass('d-none');
+        $codearea.addClass('d-none');
+        $submit.prop('disabled', false);
+        $vercode.text('');
+        $expiresAt.text('');
+        $codeUUID.text('');
+      });
+    });
+
+    function getCode(data) {
+      $.ajax({
+        url: '/cstatus/checkcodestatus',
+        type: 'POST',
+        dataType: 'json',
+        cache: false,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        headers: {
+          'X-CSRF-Token': '{{.csrfToken}}',
+        },
+        success: function (result) {
+          if (result.error != "") {
+            showError(result.error);
+          } else {
+            let $span = $('<span class="border rounded mx-1">').text(result.claimed);
+            $vercode.append($span);
+
+            $codeerror.addClass('d-none');
+            $codearea.removeClass('d-none');
+
+            $codearea[0].scrollIntoView({
+              behavior: 'smooth',
+            });
+          }
+        },
+        error: function (xhr, resp, text) {
+          var message = resp;
+          if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+            message = message + ": " + xhr.responseJSON.error;
+          }
+          showError(message);
+        }
+      });
+    }
+
+    function showError(error) {
+      $codearea.addClass('d-none');
+
+      $codeerror.text(error);
+      $codeerror.removeClass('d-none');
+      $codeerror[0].scrollIntoView({
+        behavior: 'smooth',
+      });
+      $submit.prop('disabled', false);
+    }
+  </script>
+</body>
+
+</html>
+{{end}}
