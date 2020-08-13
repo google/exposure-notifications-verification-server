@@ -68,7 +68,7 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			return
 		}
 
-		logger.Infof("Found code: %#v", code)
+		logger.Debugw("Found code", "verificationCode", code)
 
 		if code.UUID == "" { // if no row is found, code will not be populated
 			logger.Errorw("failed to check otp code status", "error", "code not found")

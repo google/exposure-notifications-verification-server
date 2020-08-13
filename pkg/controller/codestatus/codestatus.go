@@ -53,12 +53,6 @@ func (c *Controller) HandleCodeStatus() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
-
 		m := controller.TemplateMapFromContext(ctx)
 		c.h.RenderHTML(w, "cstatus", m)
 	})
