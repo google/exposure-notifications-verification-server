@@ -56,9 +56,12 @@ func TestIssue(t *testing.T) {
 			ExpiresAt: time.Now().Add(time.Hour),
 			TestType:  "confirmed",
 		}
-		code, err := otp.Issue(ctx, 10)
+		code, uuid, err := otp.Issue(ctx, 10)
 		if err != nil {
 			t.Errorf("error generating code: %v", err)
+		}
+		if uuid == "" {
+			t.Errorf("expected uuid from db, was empty")
 		}
 		codes = append(codes, code)
 	}
@@ -72,7 +75,7 @@ func TestIssue(t *testing.T) {
 		if err != nil {
 			t.Errorf("didn't find previously saved code")
 		}
-		if verCode.Code != code {
+		if verCode != nil && verCode.Code != code {
 			t.Fatalf("loaded code doesn't match requested code")
 		}
 	}

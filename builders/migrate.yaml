@@ -23,31 +23,22 @@ substitutions:
   _DB_ENCRYPTION_KEY:
   _DB_HOST: 'localhost'
   _DB_NAME: 'verification'
-  _DB_PASS_SECRET:
+  _DB_PASSWORD:
   _DB_PORT: '5432'
   _DB_SSLMODE: 'disable'
   _DB_USER: 'verification'
   _KEY_MANAGER: 'GOOGLE_CLOUD_KMS'
 
 steps:
-- id: 'secrets'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:303.0.0-alpine'
-  args:
-  - 'bash'
-  - '-eEuo'
-  - 'pipefail'
-  - '-c'
-  - |-
-    gcloud secrets versions access "${_DB_PASS_SECRET}" > ./db-password
-    gcloud secrets versions access "${_DB_APIKEY_DATABASE_KEY}" > ./db-apikey-db-key
-    gcloud secrets versions access "${_DB_APIKEY_SIGNATURE_KEY}" > ./db-apikey-sig-key
-
 - id: 'migrate'
   name: 'golang:1.14'
   env:
+  - 'DB_APIKEY_DATABASE_KEY=${_DB_APIKEY_DATABASE_KEY}'
+  - 'DB_APIKEY_SIGNATURE_KEY=${_DB_APIKEY_SIGNATURE_KEY}'
   - 'DB_ENCRYPTION_KEY=${_DB_ENCRYPTION_KEY}'
   - 'DB_HOST=${_DB_HOST}'
   - 'DB_NAME=${_DB_NAME}'
+  - 'DB_PASSWORD=${_DB_PASSWORD}'
   - 'DB_PORT=${_DB_PORT}'
   - 'DB_SSLMODE=${_DB_SSLMODE}'
   - 'DB_USER=${_DB_USER}'
@@ -65,7 +56,4 @@ steps:
     sleep 5
 
     echo "==> Running migrations"
-    export DB_PASSWORD="$(cat ./db-password)"
-    export DB_APIKEY_DATABASE_KEY="$(cat ./db-apikey-db-key)"
-    export DB_APIKEY_SIGNATURE_KEY="$(cat ./db-apikey-sig-key)"
     go run cmd/migrate/main.go

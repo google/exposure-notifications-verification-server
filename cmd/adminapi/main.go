@@ -20,13 +20,13 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
@@ -37,7 +37,6 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-signalcontext"
 )
 
@@ -87,21 +86,18 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
-	// Setup rate limiter
-	store, err := memorystore.New(&memorystore.Config{
-		Tokens:   config.RateLimit,
-		Interval: 1 * time.Minute,
-	})
+	// Rate limiting
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer store.Close()
+	defer limiterStore.Close()
 
-	httplimiter, err := limitware.NewMiddleware(store, limitware.APIKeyFunc(db))
+	httplimiter, err := limitware.NewMiddleware(limiterStore, limitware.APIKeyFunc(ctx, "adminapi", db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
-	r.Use(httplimiter.Handle)
+	rateLimit := httplimiter.Handle
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
@@ -122,6 +118,7 @@ func realMain(ctx context.Context) error {
 
 	// Install the APIKey Auth Middleware
 	r.Use(requireAPIKey)
+	r.Use(rateLimit)
 
 	issueapiController := issueapi.New(ctx, config, db, h)
 	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")

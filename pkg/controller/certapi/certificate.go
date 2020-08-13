@@ -15,6 +15,7 @@
 package certapi
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
@@ -33,6 +35,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
+			c.logger.Errorf("missing authorized app")
 			controller.MissingAuthorizedApp(w, r, c.h)
 			return
 		}
@@ -40,7 +43,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		publicKey, err := c.getPublicKey(ctx, c.config.TokenSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get public key", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
 		}
 
@@ -48,20 +51,21 @@ func (c *Controller) HandleCertificate() http.Handler {
 		signer, err := c.signer.NewSigner(ctx, c.config.CertificateSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, nil)
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
 		}
 
 		var request api.VerificationCertificateRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			c.logger.Errorf("failed to parse json request", "error", err)
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			return
 		}
 
 		// Parse and validate the verification token.
 		tokenID, subject, err := c.validateToken(request.VerificationToken, publicKey)
 		if err != nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			return
 		}
 
@@ -69,12 +73,12 @@ func (c *Controller) HandleCertificate() http.Handler {
 		hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusBadRequest,
-				api.Errorf("exposure key HMAC is not a valid base64: %v", err))
+				api.Errorf("exposure key HMAC is not a valid base64: %v", err).WithCode(api.ErrHMACInvalid))
 			return
 		}
 		if len(hmacBytes) != 32 {
 			c.h.RenderJSON(w, http.StatusBadRequest,
-				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", len(hmacBytes)))
+				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", len(hmacBytes)).WithCode(api.ErrHMACInvalid))
 			return
 		}
 
@@ -99,7 +103,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		certificate, err := jwthelper.SignJWT(certToken, signer)
 		if err != nil {
 			c.logger.Errorw("failed to sign certificate", "error", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			return
 		}
 
@@ -107,7 +111,16 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// client can retry.
 		if err := c.db.ClaimToken(authApp.RealmID, tokenID, subject); err != nil {
 			c.logger.Errorw("failed to claim token", "tokenID", tokenID, "error", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			switch {
+			case errors.Is(err, database.ErrTokenExpired):
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenExpired))
+			case errors.Is(err, database.ErrTokenUsed):
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
+			case errors.Is(err, database.ErrTokenMetadataMismatch):
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
+			default:
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			}
 			return
 		}
 

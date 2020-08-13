@@ -33,6 +33,7 @@ import (
 // primarily here to catch if someone, in the future, accidentially includes a
 // bad status code.
 var allowedResponseCodes = map[int]struct{}{
+	200: {},
 	400: {},
 	401: {},
 	404: {},

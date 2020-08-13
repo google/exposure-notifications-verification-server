@@ -31,11 +31,12 @@ const (
 )
 
 var (
-	ErrVerificationCodeExpired = errors.New("verification code expired")
-	ErrVerificationCodeUsed    = errors.New("verification code used")
-	ErrTokenExpired            = errors.New("verification token expired")
-	ErrTokenUsed               = errors.New("verification token used")
-	ErrTokenMetadataMismatch   = errors.New("verification token test metadata mismatch")
+	ErrVerificationCodeNotFound = errors.New("verification code not found")
+	ErrVerificationCodeExpired  = errors.New("verification code expired")
+	ErrVerificationCodeUsed     = errors.New("verification code used")
+	ErrTokenExpired             = errors.New("verification token expired")
+	ErrTokenUsed                = errors.New("verification token used")
+	ErrTokenMetadataMismatch    = errors.New("verification token test metadata mismatch")
 )
 
 // Token represents an issued "long term" from a validated verification code.
@@ -157,6 +158,9 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, expire
 		// Also lock the row for update.
 		var vc VerificationCode
 		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("code = ? and realm_id = ?", verCode, realmID).First(&vc).Error; err != nil {
+			if gorm.IsRecordNotFoundError(err) {
+				return ErrVerificationCodeNotFound
+			}
 			return err
 		}
 		if vc.IsExpired() {

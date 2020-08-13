@@ -96,18 +96,18 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
-	// Setup rate limiter
-	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
+	// Rate limiting
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer store.Close()
+	defer limiterStore.Close()
 
-	httplimiter, err := limitware.NewMiddleware(store, limitware.APIKeyFunc(db))
+	httplimiter, err := limitware.NewMiddleware(limiterStore, limitware.APIKeyFunc(ctx, "apiserver", db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
-	r.Use(httplimiter.Handle)
+	rateLimit := httplimiter.Handle
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
@@ -125,6 +125,10 @@ func realMain(ctx context.Context) error {
 	requireAPIKey := middleware.RequireAPIKey(ctx, apiKeyCache, db, h, []database.APIUserType{
 		database.APIUserTypeDevice,
 	})
+
+	// Install the rate limiting first. In this case, we want to limit by key
+	// first to reduce the chance of a database lookup.
+	r.Use(rateLimit)
 
 	// Install the APIKey Auth Middleware
 	r.Use(requireAPIKey)

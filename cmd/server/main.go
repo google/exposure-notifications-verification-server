@@ -121,18 +121,17 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	// Setup rate limiting
-	store, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
+	// Rate limiting
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer store.Close()
+	defer limiterStore.Close()
 
-	httplimiter, err := limitware.NewMiddleware(store, limitware.UserEmailKeyFunc())
+	httplimiter, err := limitware.NewMiddleware(limiterStore, limitware.UserEmailKeyFunc(ctx, "server"))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
-	r.Use(httplimiter.Handle)
 
 	// Install the CSRF protection middleware.
 	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
@@ -146,20 +145,26 @@ func realMain(ctx context.Context) error {
 	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	requireRealm := middleware.RequireRealm(ctx, db, h)
+	rateLimit := httplimiter.Handle
 
-	// Install the handlers that don't require authentication first on the main router.
-	indexController := index.New(ctx, config, h)
-	r.Handle("/", indexController.HandleIndex()).Methods("GET")
-	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+	{
+		sub := r.PathPrefix("").Subrouter()
+		sub.Use(rateLimit)
 
-	// Session handling
-	sessionController := session.New(ctx, auth, config, db, h)
-	r.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
-	r.Handle("/session", sessionController.HandleCreate()).Methods("POST")
+		indexController := index.New(ctx, config, h)
+		sub.Handle("/", indexController.HandleIndex()).Methods("GET")
+		sub.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+
+		// Session handling
+		sessionController := session.New(ctx, auth, config, db, h)
+		sub.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
+		sub.Handle("/session", sessionController.HandleCreate()).Methods("POST")
+	}
 
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(rateLimit)
 
 		// Realms - list and select.
 		realmController := realm.New(ctx, config, db, h)
@@ -171,6 +176,7 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(requireRealm)
+		sub.Use(rateLimit)
 
 		homeController := home.New(ctx, config, db, h)
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
@@ -186,6 +192,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAuth)
 		sub.Use(requireRealm)
 		sub.Use(requireAdmin)
+		sub.Use(rateLimit)
 
 		apikeyController := apikey.New(ctx, config, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
@@ -204,6 +211,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAuth)
 		userSub.Use(requireRealm)
 		userSub.Use(requireAdmin)
+		userSub.Use(rateLimit)
 
 		userController := user.New(ctx, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
@@ -217,6 +225,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireAuth)
 		realmSub.Use(requireRealm)
 		realmSub.Use(requireAdmin)
+		realmSub.Use(rateLimit)
 
 		realmadminController := realmadmin.New(ctx, config, db, h)
 		realmSub.Handle("", realmadminController.HandleIndex()).Methods("GET")

@@ -491,6 +491,62 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00021-AddUUIDExtension",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: adding uuid extension")
+				return tx.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00022-AddUUIDToVerificationCodes",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: migrating verification code uuid")
+
+				if err := tx.AutoMigrate(VerificationCode{}).Error; err != nil {
+					return fmt.Errorf("failed to auto migrate: %w", err)
+				}
+
+				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid SET DEFAULT uuid_generate_v4()").Error; err != nil {
+					return fmt.Errorf("failed to set default: %w", err)
+				}
+
+				if err := tx.Exec("UPDATE verification_codes SET uuid = uuid_generate_v4() WHERE uuid IS NULL").Error; err != nil {
+					return fmt.Errorf("failed to add defaults: %w", err)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid DROP DEFAULT").Error; err != nil {
+					return fmt.Errorf("failed to set default: %w", err)
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00023-MakeUUIDVerificationCodesNotNull",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: making verification code uuid not null")
+
+				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid SET NOT NULL").Error; err != nil {
+					return fmt.Errorf("failed to set null: %w", err)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid DROP NOT NULL").Error; err != nil {
+					return fmt.Errorf("failed to set null: %w", err)
+				}
+
+				return nil
+			},
+		},
 	})
 }
 

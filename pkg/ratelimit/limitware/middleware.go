@@ -2,15 +2,19 @@
 package limitware
 
 import (
+	"context"
 	"crypto/sha1"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/sethvargo/go-limiter"
 	"go.opentelemetry.io/otel/api/global"
@@ -140,41 +144,73 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 }
 
 // APIKeyFunc returns a default key function for ratelimiting on our API key header.
-func APIKeyFunc(db *database.Database) KeyFunc {
-	ipKeyFunc := IPKeyFunc("X-Forwarded-For")
+func APIKeyFunc(ctx context.Context, scope string, db *database.Database) KeyFunc {
+	logger := logging.FromContext(ctx).Named("ratelimit")
 
 	return func(r *http.Request) (string, error) {
+		// Procss the API key
 		v := r.Header.Get("X-API-Key")
 		if v != "" {
 			// v2 API keys encode the realm
 			_, realmID, err := db.VerifyAPIKeySignature(v)
 			if err == nil {
-				return strconv.FormatUint(uint64(realmID), 10), nil
+				logger.Debugw("limiting by api key v2 realm", "realm", realmID)
+				dig := sha1.Sum([]byte(fmt.Sprintf("%d", realmID)))
+				return fmt.Sprintf("apiserver:realm:%x", dig), nil
 			}
 
 			// v1 API keys do not, fallback to the database
 			app, err := db.FindAuthorizedAppByAPIKey(v)
 			if err == nil && app != nil {
-				return strconv.FormatUint(uint64(app.RealmID), 10), nil
+				logger.Debugw("limiting by api key v1 realm", "realm", app.RealmID)
+				dig := sha1.Sum([]byte(fmt.Sprintf("%d", app.RealmID)))
+				return fmt.Sprintf("%s:realm:%x", scope, dig), nil
 			}
 		}
 
-		// If no API key was provided, default to limiting by IP.
-		return ipKeyFunc(r)
+		// Get the remote addr
+		ip := r.RemoteAddr
+
+		// Check if x-forwarded-for exists, the load balancer sets this, and the
+		// first entry is the real client IP
+		xff := r.Header.Get("x-forwarded-for")
+		if xff != "" {
+			ip = strings.Split(xff, ",")[0]
+		}
+
+		logger.Debugw("limiting by ip", "ip", ip)
+		dig := sha1.Sum([]byte(ip))
+		return fmt.Sprintf("%s:ip:%x", scope, dig), nil
 	}
 }
 
 // UserEmailKeyFunc pulls the user out of the request context and uses that to ratelimit.
-func UserEmailKeyFunc() KeyFunc {
-	ipKeyFunc := IPKeyFunc("X-Forwarded-For")
+func UserEmailKeyFunc(ctx context.Context, scope string) KeyFunc {
+	logger := logging.FromContext(ctx).Named("ratelimit")
 
 	return func(r *http.Request) (string, error) {
-		user := controller.UserFromContext(r.Context())
+		ctx := r.Context()
+
+		// See if a user exists on the context
+		user := controller.UserFromContext(ctx)
 		if user != nil && user.Email != "" {
+			logger.Debugw("limiting by user", "user", user.ID)
 			dig := sha1.Sum([]byte(user.Email))
-			return fmt.Sprintf("%x", dig), nil
+			return fmt.Sprintf("%s:user:%x", scope, dig), nil
 		}
 
-		return ipKeyFunc(r)
+		// Get the remote addr
+		ip := r.RemoteAddr
+
+		// Check if x-forwarded-for exists, the load balancer sets this, and the
+		// first entry is the real client IP
+		xff := r.Header.Get("x-forwarded-for")
+		if xff != "" {
+			ip = strings.Split(xff, ",")[0]
+		}
+
+		logger.Debugw("limiting by ip", "ip", ip)
+		dig := sha1.Sum([]byte(ip))
+		return fmt.Sprintf("%s:ip:%x", scope, dig), nil
 	}
 }
