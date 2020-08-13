@@ -22,6 +22,7 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -93,7 +94,9 @@ func (r *Renderer) loadTemplates() error {
 		return nil
 	}
 
-	tmpl := template.New("").Option("missingkey=zero")
+	tmpl := template.New("").
+		Option("missingkey=zero").
+		Funcs(templateFuncs())
 	if err := loadTemplates(tmpl, r.templatesRoot); err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
 	}
@@ -118,6 +121,12 @@ func loadTemplates(tmpl *template.Template, root string) error {
 
 		return nil
 	})
+}
+
+func templateFuncs() template.FuncMap {
+	return map[string]interface{}{
+		"joinStrings": strings.Join,
+	}
 }
 
 // AllowedResponseCode returns true if the code is a permitted response code,

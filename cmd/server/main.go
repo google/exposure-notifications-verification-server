@@ -91,8 +91,11 @@ func realMain(ctx context.Context) error {
 	sessions.Options.SameSite = http.SameSiteStrictMode
 
 	// Setup database
-	db, err := config.Database.Open(ctx)
+	db, err := config.Database.Load(ctx)
 	if err != nil {
+		return fmt.Errorf("failed to load database config: %w", err)
+	}
+	if err := db.Open(ctx); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()

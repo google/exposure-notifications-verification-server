@@ -50,13 +50,16 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
-	db, err := config.Open(ctx)
+	db, err := config.Load(ctx)
 	if err != nil {
+		return fmt.Errorf("failed to load database config: %w", err)
+	}
+	if err := db.Open(ctx); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
 
-	// Create two users
+	// Create users
 	user := &database.User{Email: "user@example.com", Name: "Demo User"}
 	if err := db.SaveUser(user); err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
@@ -68,6 +71,12 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create admin: %w", err)
 	}
 	logger.Infow("created admin", "admin", admin)
+
+	super := &database.User{Email: "super@example.com", Name: "Super User", Admin: true}
+	if err := db.SaveUser(super); err != nil {
+		return fmt.Errorf("failed to create super: %w", err)
+	}
+	logger.Infow("created super", "super", super)
 
 	// Create a realm
 	realm1 := &database.Realm{
