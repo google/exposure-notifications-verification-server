@@ -228,11 +228,13 @@ resource "null_resource" "migrate" {
       PROJECT_ID = var.project
       REGION     = var.region
 
-      DB_CONN           = google_sql_database_instance.db-inst.connection_name
-      DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.self_link
-      DB_NAME           = google_sql_database.db.name
-      DB_PASSWORD       = google_secret_manager_secret_version.db-secret-version["password"].name
-      DB_USER           = google_sql_user.user.name
+      DB_APIKEY_DATABASE_KEY  = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
+      DB_APIKEY_SIGNATURE_KEY = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
+      DB_CONN                 = google_sql_database_instance.db-inst.connection_name
+      DB_ENCRYPTION_KEY       = google_kms_crypto_key.database-encrypter.self_link
+      DB_NAME                 = google_sql_database.db.name
+      DB_PASSWORD             = google_secret_manager_secret_version.db-secret-version["password"].name
+      DB_USER                 = google_sql_user.user.name
     }
 
     command = "${path.module}/../scripts/migrate"
