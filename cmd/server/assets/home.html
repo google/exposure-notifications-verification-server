@@ -1,7 +1,6 @@
 {{define "home"}}
 <!doctype html>
 <html lang="en">
-
 <head>
   {{template "head" .}}
 
@@ -29,7 +28,7 @@
     <p>
       Complete the following form to issue a single-use token to verify a
       patient. <strong>Do not submit this form until you are prepared to relay
-        the code to the patient.</strong>
+      the code to the patient.</strong>
     </p>
 
     <form id="issueForm" action="#">
@@ -64,14 +63,11 @@
         <label for="symptomDate" class="col-sm-3">Symptoms onset</label>
         <div class="col-sm-9">
           <div class="datepicker date input-group p-0 shadow-sm">
-            <input type="date" id="symptomDate" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}"
-              class="form-control" />
+            <input type="date" id="symptomDate" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
           </div>
           <small class="form-text text-muted">
-            <strong>Recommended</strong>: cannot be more than {{.maxSymptomDays}} days prior to today. This system is
-            based on
-            <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC</a> dates, you may need to
-            adjust accordingly.
+            <strong>Recommended</strong>: cannot be more than {{.maxSymptomDays}} days prior to today. This system is based on
+            <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC</a> dates, you may need to adjust accordingly.
             The current UTC date is <strong>{{.maxDate}}</strong>.
           </small>
         </div>
@@ -112,9 +108,7 @@
         This code expires at <span id="expiresAt"></span>.
       </p>
 
-      <div id="vercode"
-        class="text-center text-monospace d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3">
-      </div>
+      <div id="vercode" class="text-center text-monospace d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
 
       <p>
         Track the status of this code with the following ID: <span id="codeUUID" style="font-weight: bold;"></span>
@@ -132,7 +126,7 @@
   <script type="text/javascript">
     let $codeerror, $codearea, $expiresAt, $codeUUID, $vercode, $submit;
 
-    $(function () {
+   $(function() {
       $codeerror = $('#codeerror');
       $codearea = $('#codearea');
       $expiresAt = $('#expiresAt');
@@ -141,21 +135,21 @@
       $submit = $('#submit');
 
       // click on button submit
-      $submit.on('click', function (event) {
+      $submit.on('click', function(event) {
         event.preventDefault();
 
         // Disable the submit button so we only issue one code.
         $submit.prop('disabled', true);
 
         var data = {};
-        $($('#issueForm').serializeArray()).each(function (index, obj) {
+        $($('#issueForm').serializeArray()).each(function(index, obj){
           data[obj.name] = obj.value;
         });
 
         getCode(data);
       });
 
-      $('#startover').on('click', function () {
+      $('#startover').on('click', function() {
         // Hide the previously issued code and enable the submit button.
         $codeerror.addClass('d-none');
         $codearea.addClass('d-none');
@@ -177,15 +171,15 @@
         headers: {
           'X-CSRF-Token': '{{.csrfToken}}',
         },
-        success: function (result) {
-          if (result.error != "") {
+        success: function(result) {
+          if(result.error != "") {
             showError(result.error);
           } else {
             $expiresAt.text(result.expiresAt);
             $codeUUID.text(result.uuid);
 
             let code = result.code;
-            for (let i = 0; i < code.length; i++) {
+            for(let i = 0; i < code.length; i++) {
               let $span = $('<span class="border rounded mx-1">').text(code.charAt(i));
               $vercode.append($span);
             }
@@ -198,7 +192,7 @@
             });
           }
         },
-        error: function (xhr, resp, text) {
+        error: function(xhr, resp, text) {
           var message = resp;
           if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
             message = message + ": " + xhr.responseJSON.error;
@@ -220,6 +214,5 @@
     }
   </script>
 </body>
-
 </html>
 {{end}}
