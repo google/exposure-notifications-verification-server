@@ -198,7 +198,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(rateLimit)
 
 		codeStatusController := codestatus.New(ctx, config, db, h)
-		sub.Handle("", codeStatusController.HandleCodeStatus()).Methods("GET")
+		sub.Handle("", codeStatusController.Show()).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
 		sub.Handle("/checkcodestatus", issueapiController.HandleCheckCodeStatus()).Methods("POST")

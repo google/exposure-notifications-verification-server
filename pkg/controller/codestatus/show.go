@@ -17,32 +17,16 @@
 package codestatus
 
 import (
-	"context"
+	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"go.uber.org/zap"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-type Controller struct {
-	config *config.ServerConfig
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
-}
+func (c *Controller) Show() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 
-// New creates a new controller for the home page.
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-
-	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logger,
-	}
+		m := controller.TemplateMapFromContext(ctx)
+		c.h.RenderHTML(w, "cstatus", m)
+	})
 }
