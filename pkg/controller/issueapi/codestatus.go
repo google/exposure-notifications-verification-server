@@ -68,7 +68,7 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			return
 		}
 
-		logger.Debugf("Found code: %#v", code)
+		logger.Infof("Found code: %#v", code)
 
 		if code.UUID == "" { // if no row is found, code will not be populated
 			logger.Errorw("failed to check otp code status", "error", "code not found")
@@ -76,6 +76,7 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 			return
 		}
 
+		// The current user must have issued the code or be a realm admin.
 		if !(code.IssuingUser != nil && code.IssuingUser.Email == user.Email || user.CanAdminRealm(realm.ID)) {
 			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Errorf("failed to check otp code status: user does not match issuing user"))
