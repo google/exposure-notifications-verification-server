@@ -39,6 +39,11 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
+		// Use the symptom onset date if given, otherwise fallback to test date.
+		if request.SymptomDate == "" {
+			request.SymptomDate = request.TestDate
+		}
+
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))

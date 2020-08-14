@@ -35,65 +35,101 @@
     </p>
 
     <form id="issueForm" action="#">
-      <div class="form-group row">
-        <label for="testType" class="col-sm-3">COVID-19 status</label>
-        <div class="col-sm-9">
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
-            <label class="form-check-label" for="testType1">Confirmed <strong>positive</strong> test</label>
-            <small class="form-text text-muted">
-              Confirmed positive test result from an official testing source
-            </small>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" />
-            <label class="form-check-label" for="testType2">Likely diagnosis</label>
-            <small class="form-text text-muted">
-              Clinical diagnosis without a test
-            </small>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="testType" id="testType3" value="negative" />
-            <label class="form-check-label" for="testType3">Confirmed <strong>negative</strong> test</label>
-            <small class="form-text text-muted">
-              Confirmed negative test result from an official testing source
-            </small>
+      <div class="card mb-3">
+        <div class="card-header">Diagnosis</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
+                <label class="form-check-label" for="testType1">
+                  Confirmed <strong>positive</strong> test
+                  <small class="form-text text-muted">
+                    Confirmed positive test result from an official testing source
+                  </small>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" />
+                <label class="form-check-label" for="testType2">
+                  Likely diagnosis
+                  <small class="form-text text-muted">
+                    Clinical diagnosis without a test
+                  </small>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="testType" id="testType3" value="negative" />
+                <label class="form-check-label" for="testType3">
+                  Confirmed <strong>negative</strong> test
+                  <small class="form-text text-muted">
+                    Confirmed negative test result from an official testing source
+                  </small>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="row form-group">
-        <label for="symptomDate" class="col-sm-3">Symptoms onset</label>
-        <div class="col-sm-9">
-          <div class="datepicker date input-group p-0 shadow-sm">
-            <input type="date" id="symptomDate" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+      <div class="card mb-3">
+        <div class="card-header">Dates</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="testDate">Testing date</label>
+              <input type="date" id="testDate" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+              <small class="form-text text-muted">
+                <strong>Recommended.</strong>
+                This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when the test was performed.
+                Click here to <a href="#" data-fill-target="testDate" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
+              </small>
+            </div>
+
+            <div class="form-group col-md-6">
+              <label for="symptomDate">Symptoms onset</label>
+              <div class="input-group">
+                <input type="date" id="symptomDate" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+              </div>
+              <small class="form-text text-muted">
+                <strong>Recommended.</strong>
+                This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when symptoms began. It cannot be more than {{.maxSymptomDays}} days ago.
+                Click here to <a href="#" data-fill-target="symptomDate" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
+              </small>
+            </div>
           </div>
-          <small class="form-text text-muted">
-            <strong>Recommended</strong>: cannot be more than {{.maxSymptomDays}} days prior to today. This system is based on
-            <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC</a> dates, you may need to adjust accordingly.
-            The current UTC date is <strong>{{.maxDate}}</strong>.
-          </small>
         </div>
       </div>
 
       {{ if $hasSMSConfig }}
-      <div class="row form-group">
-        <label for="symptomDate" class="col-sm-3">Patient phone</label>
-        <div class="col-sm-9">
-          <div class="input-group">
-            <input type="tel" id="phone" name="phone" class="form-control" />
+      <div class="card mb-3">
+        <div class="card-header">Notification</div>
+        <div class="card-body">
+          <div class="row form-group">
+            <label for="symptomDate" class="col-sm-3">Patient phone</label>
+            <div class="col-sm-9">
+              <div class="input-group">
+                <input type="tel" id="phone" name="phone" class="form-control" />
+              </div>
+              <small class="form-text text-muted">
+                If provided, the system will send text containing the code to the
+                patient. This must be a phone number capable of receiving SMS text
+                messages.
+              </small>
+            </div>
           </div>
-          <small class="form-text text-muted">
-            If provided, the system will send text containing the code to the
-            patient. This must be a phone number capable of receiving SMS text
-            messages.
-          </small>
         </div>
       </div>
       {{ end }}
 
-      <div class="row form-group">
-        <div class="offset-sm-3 col-sm-9">
+      <div class="row mb-3">
+        <div class="col">
           <button id="submit" class="btn btn-primary btn-block">Generate code</button>
         </div>
       </div>
