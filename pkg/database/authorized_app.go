@@ -19,7 +19,6 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -49,9 +48,10 @@ type AuthorizedApp struct {
 	Errorable
 
 	// AuthorizedApps belong to exactly one realm.
-	RealmID uint   `gorm:"unique_index:realm_apikey_name"`
-	Realm   *Realm // for loading the owning realm.
-	Name    string `gorm:"type:varchar(100);unique_index:realm_apikey_name"`
+	RealmID uint `gorm:"unique_index:realm_apikey_name"`
+
+	// Name is the name of the authorized app.
+	Name string `gorm:"type:varchar(100);unique_index:realm_apikey_name"`
 
 	// APIKeyPreview is the first few characters of the API key for display
 	// purposes. This can help admins in the UI when determining which API key is
@@ -91,18 +91,13 @@ func (a *AuthorizedApp) IsDeviceType() bool {
 	return a.APIKeyType == APIUserTypeDevice
 }
 
-// GetRealm does a lazy load read of the realm associated with this
-// authorized app.
-func (a *AuthorizedApp) GetRealm(db *Database) (*Realm, error) {
-	if a.Realm != nil {
-		return a.Realm, nil
-	}
+// Realm returns the associated realm for this app.
+func (a *AuthorizedApp) Realm(db *Database) (*Realm, error) {
 	var realm Realm
 	if err := db.db.Model(a).Related(&realm).Error; err != nil {
 		return nil, err
 	}
-	a.Realm = &realm
-	return a.Realm, nil
+	return &realm, nil
 }
 
 // TODO(mikehelmick): Implement revoke API key functionality.
@@ -112,58 +107,35 @@ func (AuthorizedApp) TableName() string {
 	return "authorized_apps"
 }
 
-// ListAuthorizedApps retrieves all of the configured authorized apps.
-// Done without pagination, as the expected number of authorized apps
-// is low signal digits.
-func (db *Database) ListAuthorizedApps(includeDeleted bool) ([]*AuthorizedApp, error) {
-	var apps []*AuthorizedApp
-
-	scope := db.db
-	if includeDeleted {
-		scope = db.db.Unscoped()
-	}
-	if err := scope.Preload("Realm").Order("LOWER(name) ASC").Find(&apps).Error; err != nil {
-		return nil, fmt.Errorf("query authorized apps: %w", err)
-	}
-	return apps, nil
-}
-
 // CreateAuthorizedApp generates a new API key and assigns it to the specified
 // app. Note that the API key is NOT stored in the database, only a hash. The
 // only time the API key is available is as the string return parameter from
 // invoking this function.
-func (db *Database) CreateAuthorizedApp(realmID uint, name string, apiUserType APIUserType) (string, *AuthorizedApp, error) {
-	if !(apiUserType == APIUserTypeAdmin || apiUserType == APIUserTypeDevice) {
-		return "", nil, fmt.Errorf("invalid API Key user type requested: %v", apiUserType)
-	}
-
-	fullAPIKey, err := db.GenerateAPIKey(realmID)
+func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp) (string, error) {
+	fullAPIKey, err := db.GenerateAPIKey(r.ID)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to generate API key: %w", err)
+		return "", fmt.Errorf("failed to generate API key: %w", err)
 	}
 
 	parts := strings.SplitN(fullAPIKey, ".", 3)
 	if len(parts) != 3 {
-		return "", nil, fmt.Errorf("internal error, key is invalid")
+		return "", fmt.Errorf("internal error, key is invalid")
 	}
 	apiKey := parts[0]
 
 	hmacedKey, err := db.hmacAPIKey(apiKey)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to create hmac: %w", err)
+		return "", fmt.Errorf("failed to create hmac: %w", err)
 	}
 
-	var app AuthorizedApp
-	app.RealmID = realmID
-	app.Name = name
+	app.RealmID = r.ID
 	app.APIKey = hmacedKey
 	app.APIKeyPreview = apiKey[:6]
-	app.APIKeyType = apiUserType
 
-	if err := db.db.Create(&app).Error; err != nil {
-		return "", nil, fmt.Errorf("failed to create api key: %w", err)
+	if err := db.db.Save(&app).Error; err != nil {
+		return "", err
 	}
-	return fullAPIKey, &app, nil
+	return fullAPIKey, nil
 }
 
 // FindAuthorizedAppByAPIKey located an authorized app based on API key. If no
@@ -185,12 +157,11 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 		// Find the API key that matches the constraints.
 		var app AuthorizedApp
 		if err := db.db.
-			Preload("Realm").
 			Where("api_key = ?", hmacedKey).
 			Where("realm_id = ?", realmID).
 			First(&app).
 			Error; err != nil {
-			if gorm.IsRecordNotFoundError(err) || errors.Is(err, gorm.ErrRecordNotFound) {
+			if IsNotFound(err) {
 				return nil, nil
 			}
 			return nil, err
@@ -208,15 +179,10 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 
 	var app AuthorizedApp
 	if err := db.db.
-		Preload("Realm").
-		Where("api_key = ?", apiKey).
-		// TODO(sethvargo): Remove the plaintext check after all keys have been hashed
-		// in the database. We still need to keep the v1 path looking up by hmac
-		// though, since v1 keys still exist.
 		Or("api_key = ?", hmacedKey).
 		First(&app).
 		Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) || errors.Is(err, gorm.ErrRecordNotFound) {
+		if IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -259,6 +225,22 @@ func (a *AuthorizedApp) UsageSummary(db *Database) (*AuthorizedAppStatsSummary, 
 
 	// create 24h, 7d, 30d counts
 	return &summary, nil
+}
+
+// Disable disables the authorized app.
+func (a *AuthorizedApp) Disable(db *Database) error {
+	if err := db.db.Delete(a).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// Enable enables the authorized app.
+func (a *AuthorizedApp) Enable(db *Database) error {
+	if err := db.db.Unscoped().Model(a).Update("deleted_at", nil).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 // SaveAuthorizedApp saves the authorized app.

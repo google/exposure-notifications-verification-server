@@ -16,7 +16,6 @@ package database
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
@@ -27,13 +26,15 @@ import (
 // This is used to manage user logins.
 type Realm struct {
 	gorm.Model
+	Errorable
 
+	// Name is the name of the realm.
 	Name string `gorm:"type:varchar(200);unique_index"`
 
-	AuthorizedApps []*AuthorizedApp
-
-	RealmUsers  []*User `gorm:"many2many:user_realms"`
-	RealmAdmins []*User `gorm:"many2many:admin_realms"`
+	// These are here for gorm to setup the association. You should NOT call them
+	// directly, ever. The have to be public for reflection.
+	RealmUsers  []*User `gorm:"many2many:user_realms;PRELOAD:false"`
+	RealmAdmins []*User `gorm:"many2many:admin_realms;PRELOAD:false"`
 
 	// Relations to items that blong to a realm.
 	Codes  []*VerificationCode
@@ -76,145 +77,70 @@ func (r *Realm) HasSMSConfig(db *Database) (bool, error) {
 func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 	smsConfig, err := r.SMSConfig(db)
 	if err != nil {
-
-// AddAuthorizedApp adds to the in memory structure, but does not save.
-// Use SaveRealm to persist.
-func (r *Realm) AddAuthorizedApp(a *AuthorizedApp) {
-	r.AuthorizedApps = append(r.AuthorizedApps, a)
-}
-
-// AddUser add to the in memory structure, but does not save.
-// Use SaveRealm to persist.
-func (r *Realm) AddUser(u *User) {
-	for _, cUser := range r.RealmUsers {
-		if cUser.ID == u.ID {
-			return
+		if IsNotFound(err) {
+			return nil, nil
 		}
-	}
-	r.RealmUsers = append(r.RealmUsers, u)
-}
-
-// AddAdminUser adds to the in memory structure, but does not save.
-// Use SaveRealm to persist.
-func (r *Realm) AddAdminUser(u *User) {
-	// To be an admin of the realm you also have to be a user of the realm.
-	r.AddUser(u)
-	for _, cUser := range r.RealmAdmins {
-		if cUser.ID == u.ID {
-			return
-		}
-	}
-	r.RealmAdmins = append(r.RealmAdmins, u)
-}
-
-// LoadRealmUsers performs a lazy load over the users of the realm.
-// Really only needed for user admin scenarios.
-func (r *Realm) LoadRealmUsers(db *Database, includeDeleted bool) error {
-	scope := db.db
-	if includeDeleted {
-		scope = db.db.Unscoped()
-	}
-	if err := scope.Model(r).Preload("Realms").Preload("AdminRealms").Order("email").Related(&r.RealmUsers, "RealmUsers").Error; err != nil {
-		return fmt.Errorf("unable to load realm users: %w", err)
-	}
-	if err := scope.Model(r).Preload("Realms").Preload("AdminRealms").Order("email").Related(&r.RealmAdmins, "RealmAdmins").Error; err != nil {
-		return fmt.Errorf("unable to load realm admins: %w", err)
-	}
-
-	return nil
-}
-
-// DisableAuthorizedApp disables the given authorized app by id.
-func (r *Realm) DisableAuthorizedApp(id uint) error {
-	var app AuthorizedApp
-	if err := r.db.db.
-		Model(AuthorizedApp{}).
-		Where("id = ?", id).
-		Where("realm_id = ?", r.ID).
-		Delete(&app).
-		Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// EnableAuthorizedApp enables the given authorized app by id.
-func (r *Realm) EnableAuthorizedApp(id uint) error {
-	if err := r.db.db.
-		Unscoped().
-		Model(AuthorizedApp{}).
-		Where("id = ?", id).
-		Where("realm_id = ?", r.ID).
-		Update("deleted_at", nil).
-		Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// GetAuthorizedApps does a lazy load on a realm's authorized apps if they are not already loaded.
-func (r *Realm) GetAuthorizedApps(db *Database, includeDeleted bool) ([]*AuthorizedApp, error) {
-	if len(r.AuthorizedApps) > 0 {
-		return r.AuthorizedApps, nil
-	}
-
-	scope := db.db
-	if includeDeleted {
-		scope = db.db.Unscoped()
-	}
-	if err := scope.Model(r).Order("LOWER(authorized_apps.name)").Related(&r.AuthorizedApps).Error; err != nil {
 		return nil, err
 	}
-	return r.AuthorizedApps, nil
+	return smsConfig.SMSProvider(db)
 }
 
-// FindAuthorizedApp finds the authorized app by the given id associated to the
-// realm.
-func (r *Realm) FindAuthorizedApp(authAppID uint) (*AuthorizedApp, error) {
-	var app AuthorizedApp
-	if err := r.db.db.Model(AuthorizedApp{}).
-		Where("id = ? AND realm_id = ?", authAppID, r.ID).
-		First(&app).
+// ListAuthorizedApps gets all the authorized apps for the realm.
+func (r *Realm) ListAuthorizedApps(db *Database) ([]*AuthorizedApp, error) {
+	var authApps []*AuthorizedApp
+	if err := db.db.
+		Unscoped().
+		Model(r).
+		Order("authorized_apps.deleted_at DESC, LOWER(authorized_apps.name)").
+		Related(&authApps).
 		Error; err != nil {
 		if IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
+	return authApps, nil
+}
+
+// FindAuthorizedApp finds the authorized app by the given id associated to the
+// realm.
+func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp, error) {
+	var app AuthorizedApp
+	if err := db.db.
+		Unscoped().
+		Model(AuthorizedApp{}).
+		Where("id = ? AND realm_id = ?", id, r.ID).
+		First(&app).
+		Error; err != nil {
+		return nil, err
+	}
 	return &app, nil
 }
 
-// FindAuthorizedAppString finds the authorized app by id where the id is a
-// string.
-func (r *Realm) FindAuthorizedAppString(s string) (*AuthorizedApp, error) {
-	id, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
+// ListUsers returns the list of users on this realm.
+func (r *Realm) ListUsers(db *Database) ([]*User, error) {
+	var users []*User
+	if err := db.db.
+		Model(r).
+		Related(&users, "RealmUsers").
+		Order("email").
+		Error; err != nil {
 		return nil, err
 	}
-	return r.FindAuthorizedApp(uint(id))
+	return users, nil
 }
 
-func (r *Realm) DeleteUserFromRealm(db *Database, u *User) error {
-	return db.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(r).Association("RealmUsers").Delete(u).Error; err != nil {
-			return fmt.Errorf("unable to remove user from realm: %w", err)
-		}
-		if err := tx.Model(r).Association("RealmAdmins").Delete(u).Error; err != nil {
-			return fmt.Errorf("unable to remove user from realm admins: %w", err)
-		}
-
-		// If the user no has no associations, the user should be deleted.
-		var user User
-		if err := tx.Preload("Realms").Preload("AdminRealms").Where("id = ?", u.ID).First(&user).Error; err != nil {
-			return fmt.Errorf("failed to check other user associations: %w", err)
-		}
-		if len(user.AdminRealms) == 0 && len(user.Realms) == 0 {
-			if err := tx.Delete(user).Error; err != nil {
-				return fmt.Errorf("unable to delete user: %w", err)
-			}
-		}
-		return nil
-	})
+// FindUser finds the given user in the realm by ID.
+func (r *Realm) FindUser(db *Database, id interface{}) (*User, error) {
+	var user User
+	if err := db.db.
+		Table("users").
+		Joins("INNER JOIN user_realms ON user_id = ? AND realm_id = ?", id, r.ID).
+		Find(&user, "users.id = ?", id).
+		Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (db *Database) CreateRealm(name string) (*Realm, error) {

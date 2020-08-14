@@ -85,84 +85,82 @@ func (u *User) CanAdminRealm(realmID uint) bool {
 	return false
 }
 
-// ListUsers retrieves all of the configured users.
-// Done without pagination.
-// This is not scoped to realms.
-func (db *Database) ListUsers(includeDeleted bool) ([]*User, error) {
-	var users []*User
-
-	scope := db.db
-	if includeDeleted {
-		scope = db.db.Unscoped()
-	}
-	if err := scope.Order("email ASC").Find(&users).Error; err != nil {
-		return nil, fmt.Errorf("query users: %w", err)
-	}
-	return users, nil
+// AddRealm adds the user to the realm.
+func (u *User) AddRealm(realm *Realm) {
+	u.Realms = append(u.Realms, realm)
 }
 
-// GetUser reads back a User struct by email address.
-func (db *Database) GetUser(id uint) (*User, error) {
+// AddRealmAdmin adds the user to the realm as an admin.
+func (u *User) AddRealmAdmin(realm *Realm) {
+	u.AdminRealms = append(u.AdminRealms, realm)
+	u.AddRealm(realm)
+}
+
+// RemoveRealm removes the user from the realm. It also removes the user as an
+// admin of that realm. You must save the user to persist the changes.
+func (u *User) RemoveRealm(realm *Realm) {
+	for i, r := range u.Realms {
+		if r.ID == realm.ID {
+			u.Realms = append(u.Realms[:i], u.Realms[i+1:]...)
+		}
+	}
+	u.RemoveRealmAdmin(realm)
+}
+
+// RemoveRealmAdmin removes the user from the realm. You must save the user to
+// persist the changes.
+func (u *User) RemoveRealmAdmin(realm *Realm) {
+	for i, r := range u.AdminRealms {
+		if r.ID == realm.ID {
+			u.AdminRealms = append(u.AdminRealms[:i], u.AdminRealms[i+1:]...)
+		}
+	}
+}
+
+// FindUser finds a user by the given id, if one exists. The id can be a string
+// or integer value. It returns an error if the record is not found.
+func (db *Database) FindUser(id interface{}) (*User, error) {
 	var user User
-	if err := db.db.Preload("Realms").Preload("AdminRealms").Where("id = ?", id).First(&user).Error; err != nil {
+	if err := db.db.
+		Where("id = ?", id).
+		First(&user).
+		Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-// FindUser reads back a User struct by email address.
-func (db *Database) FindUser(email string) (*User, error) {
+// FindUserByEmail reads back a User struct by email address. It returns an
+// error if the record is not found.
+func (db *Database) FindUserByEmail(email string) (*User, error) {
 	var user User
-	if err := db.db.Preload("Realms").Preload("AdminRealms").Where("email = ?", email).First(&user).Error; err != nil {
+	if err := db.db.
+		Where("email = ?", email).
+		First(&user).
+		Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-// CreateUser creates a user record.
-func (db *Database) CreateUser(email string, name string, admin bool) (*User, error) {
-	if email == "" {
-		return nil, fmt.Errorf("email cannot be empty")
-	}
-
-	parts := strings.Split(email, "@")
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("provided email address may not be valid, double check: '%v'", email)
-	}
-
-	if name == "" {
-		name = parts[0]
-	}
-
-	user, err := db.FindUser(email)
-	if err == gorm.ErrRecordNotFound {
-		// New record.
-		user = &User{}
-	} else if err != nil {
-		return nil, err
-	}
-
-	// Update fields
-	user.Email = email
-	user.Name = name
-	user.Admin = admin
-
-	if err := db.SaveUser(user); err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-// SaveUser creates or updates a user record.
+// SaveUser updates the user in the database.
 func (db *Database) SaveUser(u *User) error {
-	if u.Model.ID == 0 {
-		return db.db.Create(u).Error
-	}
-	return db.db.Save(u).Error
-}
+	// Gorm can't tell the difference between an empty slice and a non-loaded
+	// slice, so we have to explicitly tell it - if the slice is empty, remove
+	// previous associations.
+	if !db.db.NewRecord(u) {
+		if len(u.Realms) == 0 {
+			if err := db.db.Model(u).Association("Realms").Clear().Error; err != nil {
+				return err
+			}
+		}
 
-// DeleteUser removes a user record.
-func (db *Database) DeleteUser(u *User) error {
-	return db.db.Delete(u).Error
+		if len(u.AdminRealms) == 0 {
+			if err := db.db.Model(u).Association("AdminRealms").Clear().Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	return db.db.Save(u).Error
 }

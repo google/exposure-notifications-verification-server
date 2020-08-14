@@ -59,14 +59,36 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	// Create a realm
+	realm1 := &database.Realm{
+		Name: "Narnia",
+	}
+	if err := db.SaveRealm(realm1); err != nil {
+		return fmt.Errorf("failed to create realm")
+	}
+	logger.Infow("created realm", "realm", realm1)
+
+	// Create another realm
+	realm2 := &database.Realm{
+		Name: "Wonderland",
+	}
+	if err := db.SaveRealm(realm2); err != nil {
+		return fmt.Errorf("failed to create realm")
+	}
+	logger.Infow("created realm", "realm", realm2)
+
 	// Create users
 	user := &database.User{Email: "user@example.com", Name: "Demo User"}
+	user.AddRealm(realm1)
+	user.AddRealm(realm2)
 	if err := db.SaveUser(user); err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
 	logger.Infow("created user", "user", user)
 
 	admin := &database.User{Email: "admin@example.com", Name: "Admin User"}
+	admin.AddRealm(realm1)
+	admin.AddRealmAdmin(realm1)
 	if err := db.SaveUser(admin); err != nil {
 		return fmt.Errorf("failed to create admin: %w", err)
 	}
@@ -78,38 +100,21 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("created super", "super", super)
 
-	// Create a realm
-	realm1 := &database.Realm{
-		Name:           "Narnia",
-		AuthorizedApps: nil,
-		RealmUsers:     []*database.User{user, admin},
-		RealmAdmins:    []*database.User{admin},
-	}
-	if err := db.SaveRealm(realm1); err != nil {
-		return fmt.Errorf("failed to create realm")
-	}
-	logger.Infow("created realm", "realm", realm1)
-
-	// Create another realm
-	realm2 := &database.Realm{
-		Name:           "Wonderland",
-		AuthorizedApps: nil,
-		RealmUsers:     []*database.User{user},
-	}
-	if err := db.SaveRealm(realm2); err != nil {
-		return fmt.Errorf("failed to create realm")
-	}
-	logger.Infow("created realm", "realm", realm2)
-
 	// Create a device API key
-	deviceAPIKey, _, err := db.CreateAuthorizedApp(realm1.ID, "Corona Capture", database.APIUserTypeDevice)
+	deviceAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
+		Name:       "Corona Capture",
+		APIKeyType: database.APIUserTypeDevice,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create device api key")
 	}
 	logger.Infow("created device api key", "key", deviceAPIKey)
 
 	// Create an admin API key
-	adminAPIKey, _, err := db.CreateAuthorizedApp(realm1.ID, "Tracing Tracker", database.APIUserTypeAdmin)
+	adminAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
+		Name:       "Tracing Tracker",
+		APIKeyType: database.APIUserTypeAdmin,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create admin api key")
 	}

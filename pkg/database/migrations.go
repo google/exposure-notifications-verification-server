@@ -252,10 +252,14 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 				for _, u := range users {
 					logger.Infof("added user: %v to default realm", u.ID)
+
+					u.AddRealm(&defaultRealm)
 					if u.Admin {
-						defaultRealm.AddAdminUser(u)
-					} else {
-						defaultRealm.AddUser(u)
+						u.AddRealmAdmin(&defaultRealm)
+					}
+
+					if err := tx.Save(u).Error; err != nil {
+						return err
 					}
 				}
 
@@ -269,11 +273,10 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 				for _, a := range authApps {
 					logger.Infof("added auth app: %v to default realm", a.Name)
-					defaultRealm.AddAuthorizedApp(a)
-				}
-
-				if err := tx.Save(&defaultRealm).Error; err != nil {
-					return err
+					a.RealmID = defaultRealm.ID
+					if err := tx.Save(a).Error; err != nil {
+						return err
+					}
 				}
 
 				logger.Info("Add RealmID to VerificationCodes.")

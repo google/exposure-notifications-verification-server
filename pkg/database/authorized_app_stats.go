@@ -129,7 +129,7 @@ func (db *Database) updateAuthorizedAppStatsDay(t time.Time) error {
 	}
 
 	for _, realm := range realms {
-		apps, err := realm.GetAuthorizedApps(db, false)
+		apps, err := realm.ListAuthorizedApps(db)
 		if err != nil {
 			return err
 		}
