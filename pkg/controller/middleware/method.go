@@ -38,7 +38,6 @@ func MutateMethod(ctx context.Context) mux.MiddlewareFunc {
 				r.Method = method
 			}
 
-			logger.Debugw("done")
 			next.ServeHTTP(w, r)
 		})
 	}

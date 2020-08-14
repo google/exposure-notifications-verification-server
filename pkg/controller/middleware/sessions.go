@@ -84,7 +84,6 @@ func RequireSession(ctx context.Context, store sessions.Store, h *render.Rendere
 				logger: logger,
 			}
 
-			logger.Debugw("done")
 			next.ServeHTTP(bfbw, r)
 
 			// Ensure the session is saved - this will happen if no bytes were
