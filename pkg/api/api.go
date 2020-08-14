@@ -49,7 +49,7 @@ const (
 // ErrorReturn defines the common error type.
 type ErrorReturn struct {
 	Error     string `json:"error"`
-	ErrorCode string `json:"error_code"`
+	ErrorCode string `json:"errorCode"`
 }
 
 // InternalError constructs a generic internal error.
