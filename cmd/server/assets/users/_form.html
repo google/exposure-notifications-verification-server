@@ -1,0 +1,63 @@
+{{define "users/_form"}}
+
+{{$currentRealm := .currentRealm}} {{$user := .user}}
+
+{{if $user.ID}}
+<form method="POST" action="/users/{{$user.ID}}">
+  <input type="hidden" name="_method" value="PATCH">
+{{else}}
+<form method="POST" action="/users">
+{{end}}
+
+  {{ .csrfField }}
+
+  <div class="form-group row">
+    <label for="name" class="col-sm-3">Name:</label>
+    <div class="col-sm-9">
+      <input type="text" id="name" name="name" class="form-control{{if $user.ErrorsFor "name"}} is-invalid{{end}}" value="{{$user.Name}}">
+      {{if $user.ErrorsFor "name"}}
+      <div class="invalid-feedback">
+        {{joinStrings ($user.ErrorsFor "name") ", "}}
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="form-group row">
+    <label for="name" class="col-sm-3">Email:</label>
+    <div class="col-sm-9">
+      <input type="email" id="email" name="email" class="form-control{{if $user.ErrorsFor "email"}} is-invalid{{end}}" value="{{$user.Email}}">
+      {{if $user.ErrorsFor "email"}}
+      <div class="invalid-feedback">
+        {{joinStrings ($user.ErrorsFor "email") ", "}}
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="form-group row">
+    <label for="admin" class="col-sm-3">Options:</label>
+    <div class="col-sm-9">
+      <div class="form-check">
+        <input type="checkbox" id="admin" name="admin" class="form-check-input"{{if $user.CanAdminRealm $currentRealm.ID}} checked{{end}}>
+        <label class="form-check-label" for="admin">
+          Admin
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group row">
+    <div class="offset-sm-3 col-sm-9">
+      <button type="submit" class="btn btn-primary btn-block">
+        {{if $user.ID}}
+          Update user
+        {{else}}
+          Create user
+        {{end}}
+      </button>
+    </div>
+  </div>
+</form>
+
+{{end}}

@@ -15,6 +15,7 @@
 package user
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -22,7 +23,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleDelete() http.Handler {
+func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -32,7 +33,6 @@ func (c *Controller) HandleDelete() http.Handler {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
-		flash := controller.Flash(session)
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -40,6 +40,7 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
+		// Pull the user from the id.
 		user, err := realm.FindUser(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -51,15 +52,23 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		user.RemoveRealm(realm)
-
-		if err := c.db.SaveUser(user); err != nil {
-			flash.Error("Failed to remove user from realm: %v", err)
-			http.Redirect(w, r, "/users", http.StatusSeeOther)
+		// Pull the stats - these are cached because it's an expensive query.
+		stats, err := c.db.GetUserStatsSummary(user, realm)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
+		if stats == nil {
+			stats = new(database.UserStatsSummary)
+		}
 
-		flash.Alert("Successfully removed user '%v from realm'", user.Email)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		c.renderShow(ctx, w, user, stats)
 	})
+}
+
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats *database.UserStatsSummary) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["user"] = user
+	m["stats"] = stats
+	c.h.RenderHTML(w, "users/show", m)
 }
