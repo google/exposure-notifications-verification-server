@@ -74,12 +74,11 @@ func (c *Controller) HandleSave() http.Handler {
 		}
 
 		// Process SMS settings
-		smsConfig, err := realm.SMSConfig()
-		if err != nil {
+		smsConfig, err := realm.SMSConfig(c.db)
+		if err != nil && !database.IsNotFound(err) {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
-
 		if smsConfig != nil {
 			// We have an existing record
 			if form.TwilioAccountSid == "" && form.TwilioAuthToken == "" && form.TwilioFromNumber == "" {

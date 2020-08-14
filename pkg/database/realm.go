@@ -26,8 +26,6 @@ import (
 // geography or a public health authority scope.
 // This is used to manage user logins.
 type Realm struct {
-	db *Database `gorm:"-"`
-
 	gorm.Model
 
 	Name string `gorm:"type:varchar(200);unique_index"`
@@ -42,42 +40,42 @@ type Realm struct {
 	Tokens []*Token
 }
 
-// SMSConfig returns the SMS config for the realm, if one exists.
-func (r *Realm) SMSConfig() (*SMSConfig, error) {
-	var c SMSConfig
-	c.db = r.db
-
-	if err := r.db.db.Model(r).Related(&c).Error; err != nil {
-		if IsNotFound(err) {
-			return nil, nil
-		}
+// SMSConfig returns the SMS configuration for this realm, if one exists.
+func (r *Realm) SMSConfig(db *Database) (*SMSConfig, error) {
+	var smsConfig SMSConfig
+	if err := db.db.
+		Model(r).
+		Related(&smsConfig, "SMSConfig").
+		Error; err != nil {
 		return nil, err
 	}
-
-	return &c, nil
+	return &smsConfig, nil
 }
 
-// HasSMSConfig returns true if the realm has SMS configuration, false
-// otherwise.
-func (r *Realm) HasSMSConfig() bool {
-	c, _ := r.SMSConfig()
-	return c != nil
+// HasSMSConfig returns true if the realm has an SMS config, false otherwise.
+// This does not perform the KMS encryption/decryption, so it's more efficient
+// that loading the full SMS config.
+func (r *Realm) HasSMSConfig(db *Database) (bool, error) {
+	var smsConfig SMSConfig
+	if err := db.db.
+		Select("id").
+		Model(r).
+		Related(&smsConfig, "SMSConfig").
+		Error; err != nil {
+		if IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 // SMSProvider returns the SMS provider for the realm. If no sms configuration
 // exists, it returns nil. If any errors occur creating the provider, they are
 // returned.
-func (r *Realm) SMSProvider() (sms.Provider, error) {
-	c, err := r.SMSConfig()
+func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
+	smsConfig, err := r.SMSConfig(db)
 	if err != nil {
-		return nil, err
-	}
-	if c == nil {
-		return nil, nil
-	}
-
-	return c.SMSProvider()
-}
 
 // AddAuthorizedApp adds to the in memory structure, but does not save.
 // Use SaveRealm to persist.
@@ -221,7 +219,6 @@ func (r *Realm) DeleteUserFromRealm(db *Database, u *User) error {
 
 func (db *Database) CreateRealm(name string) (*Realm, error) {
 	var realm Realm
-	realm.db = db
 	realm.Name = name
 
 	if err := db.db.Create(&realm).Error; err != nil {
@@ -232,7 +229,6 @@ func (db *Database) CreateRealm(name string) (*Realm, error) {
 
 func (db *Database) GetRealmByName(name string) (*Realm, error) {
 	var realm Realm
-	realm.db = db
 
 	if err := db.db.Where("name = ?", name).First(&realm).Error; err != nil {
 		return nil, err
@@ -242,7 +238,6 @@ func (db *Database) GetRealmByName(name string) (*Realm, error) {
 
 func (db *Database) GetRealm(realmID uint) (*Realm, error) {
 	var realm Realm
-	realm.db = db
 
 	if err := db.db.Where("id = ?", realmID).First(&realm).Error; err != nil {
 		return nil, err
@@ -259,8 +254,6 @@ func (db *Database) GetRealms() ([]*Realm, error) {
 }
 
 func (db *Database) SaveRealm(r *Realm) error {
-	r.db = db
-
 	if r.Model.ID == 0 {
 		return db.db.Create(r).Error
 	}
