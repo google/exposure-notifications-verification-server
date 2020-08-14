@@ -1,0 +1,76 @@
+{{define "users/index"}}
+
+{{$csrfField := .csrfField}}
+{{$currentUser := .currentUser}}
+{{$currentRealm := .currentRealm}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Users</h1>
+    <p>
+      These are the users of this realm. You can also <a
+      href="/users/new">create a new user</a>.
+    </p>
+
+    {{if .realmUsers}}
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col" width="300">Email</th>
+            <th scope="col" width="75">Options</th>
+            <th scope="col" width="40"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .realmUsers}}
+          <tr>
+            <td>
+              <a href="/users/{{.ID}}">{{.Name}}</a>
+            </td>
+            <td>
+              {{.Email}}
+            </td>
+            <td class="text-center">
+              {{if .CanAdminRealm $currentRealm.ID}}
+                <span class="badge badge-pill badge-primary">Admin</span>
+              {{end}}
+            </td>
+            <td class="text-center">
+              {{- /* cannot delete yourself */ -}}
+              {{if not (eq .ID $currentUser.ID)}}
+              <a href="/users/{{.ID}}" class="d-block text-danger"
+                data-method="DELETE"
+                data-confirm="Are you sure you want to remove '{{.Name}}'?"
+                data-toggle="tooltip"
+                title="Remove this user">
+                <span class="oi oi-trash" aria-hidden="true"></span>
+              </a>
+              {{end}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p>There are no users. Create one above.</p>
+    {{end}}
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

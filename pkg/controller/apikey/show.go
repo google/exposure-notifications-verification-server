@@ -15,6 +15,7 @@
 package apikey
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -52,14 +53,15 @@ func (c *Controller) HandleShow() http.Handler {
 		}
 
 		// Pull the authorized app from the id.
-		authApp, err := realm.FindAuthorizedAppString(vars["id"])
+		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
 		if err != nil {
-			logger.Errorw("failed to find authorized apps", "error", err)
+			if database.IsNotFound(err) {
+				logger.Debugw("auth app does not exist", "id", vars["id"])
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
-			return
-		}
-		if authApp == nil {
-			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
@@ -75,13 +77,12 @@ func (c *Controller) HandleShow() http.Handler {
 			stats = new(database.AuthorizedAppStatsSummary)
 		}
 
-		c.renderShow(w, r, authApp, stats)
+		c.renderShow(ctx, w, authApp, stats)
 	})
 }
 
 // renderShow renders the edit page.
-func (c *Controller) renderShow(w http.ResponseWriter, r *http.Request, authApp *database.AuthorizedApp, stats *database.AuthorizedAppStatsSummary) {
-	ctx := r.Context()
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp, stats *database.AuthorizedAppStatsSummary) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["authApp"] = authApp
 	m["stats"] = stats

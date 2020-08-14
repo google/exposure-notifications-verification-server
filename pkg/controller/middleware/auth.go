@@ -86,7 +86,7 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 				return
 			}
 
-			user, err := db.FindUser(email)
+			user, err := db.FindUserByEmail(email)
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					logger.Debugw("user does not exist")

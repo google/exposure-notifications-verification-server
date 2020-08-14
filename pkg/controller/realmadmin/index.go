@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -30,8 +31,18 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		smsConfig, err := realm.SMSConfig(c.db)
+		if err != nil {
+			if !database.IsNotFound(err) {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			smsConfig = new(database.SMSConfig)
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		m["realm"] = realm
+		m["smsConfig"] = smsConfig
 		c.h.RenderHTML(w, "realm", m)
 	})
 }

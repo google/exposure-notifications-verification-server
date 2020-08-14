@@ -18,12 +18,14 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
 )
 
 func (c *Controller) HandleDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -38,25 +40,26 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		// TODO(sethvargo): switch to a form post parameter instead - this leaks
-		// emails in request logs.
-		vars := mux.Vars(r)
-		email := vars["email"]
-
-		user, err := c.db.FindUser(email)
+		user, err := realm.FindUser(c.db, vars["id"])
 		if err != nil {
-			flash.Error("Failed to find user: %v", err)
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		user.RemoveRealm(realm)
+
+		if err := c.db.SaveUser(user); err != nil {
+			flash.Error("Failed to remove user from realm: %v", err)
 			http.Redirect(w, r, "/users", http.StatusSeeOther)
 			return
 		}
 
-		if err := realm.DeleteUserFromRealm(c.db, user); err != nil {
-			flash.Error("Failed to delete user: %v", err)
-			http.Redirect(w, r, "/users", http.StatusSeeOther)
-			return
-		}
-
-		flash.Alert("Deleted User %v", user.Email)
+		flash.Alert("Successfully removed user '%v from realm'", user.Email)
 		http.Redirect(w, r, "/users", http.StatusSeeOther)
 	})
 }

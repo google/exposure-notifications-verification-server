@@ -1,4 +1,7 @@
 {{define "home"}}
+
+{{$hasSMSConfig := .hasSMSConfig}}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -73,7 +76,7 @@
         </div>
       </div>
 
-      {{ if .currentRealm.HasSMSConfig }}
+      {{ if $hasSMSConfig }}
       <div class="row form-group">
         <label for="symptomDate" class="col-sm-3">Patient phone</label>
         <div class="col-sm-9">
