@@ -15,6 +15,7 @@
 package realmadmin
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -24,14 +25,13 @@ import (
 
 func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
-		Name string `form:"name,required"`
+		Name             string            `form:"name"`
+		AllowedTestTypes database.TestType `form:"allowedTestTypes"`
 
 		TwilioAccountSid string `form:"twilio_account_sid"`
 		TwilioAuthToken  string `form:"twilio_auth_token"`
 		TwilioFromNumber string `form:"twilio_from_number"`
 	}
-
-	logger := c.logger.Named("HandleSave")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -52,7 +52,7 @@ func (c *Controller) HandleSave() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+			c.renderShow(ctx, w, realm, nil)
 			return
 		}
 
@@ -60,16 +60,16 @@ func (c *Controller) HandleSave() http.Handler {
 		if (form.TwilioAccountSid != "" || form.TwilioAuthToken != "" || form.TwilioFromNumber != "") &&
 			(form.TwilioAccountSid == "" || form.TwilioAuthToken == "" || form.TwilioFromNumber == "") {
 			flash.Error("Error updating realm: either all SMS fields must be specified or no SMS fields must be specified")
-			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+			c.renderShow(ctx, w, realm, nil)
 			return
 		}
 
 		// Process general settings
 		realm.Name = form.Name
+		realm.AllowedTestTypes = form.AllowedTestTypes
 		if err := c.db.SaveRealm(realm); err != nil {
-			logger.Errorw("failed to save realm", "error", err)
-			flash.Error("Error updating realm: %v", err)
-			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+			flash.Error("Failed to update realm: %v", err)
+			c.renderShow(ctx, w, realm, nil)
 			return
 		}
 
@@ -84,9 +84,8 @@ func (c *Controller) HandleSave() http.Handler {
 			if form.TwilioAccountSid == "" && form.TwilioAuthToken == "" && form.TwilioFromNumber == "" {
 				// All fields are empty, delete the record
 				if err := c.db.DeleteSMSConfig(smsConfig); err != nil {
-					logger.Errorw("failed to delete smsConfig", "error", err)
-					flash.Error("Error updating realm: %v", err)
-					http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+					flash.Error("Failed to update realm: %v", err)
+					c.renderShow(ctx, w, realm, smsConfig)
 					return
 				}
 			} else {
@@ -96,9 +95,8 @@ func (c *Controller) HandleSave() http.Handler {
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
-					logger.Errorw("failed to update smsConfig", "error", err)
-					flash.Error("Error updating realm: %v", err)
-					http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+					flash.Error("Failed to update realm: %v", err)
+					c.renderShow(ctx, w, realm, smsConfig)
 					return
 				}
 			}
@@ -115,15 +113,26 @@ func (c *Controller) HandleSave() http.Handler {
 				}
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
-					logger.Errorw("failed to create smsConfig", "error", err)
-					flash.Error("Error updating realm: %v", err)
-					http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+					flash.Error("Failed to update realm: %v", err)
+					c.renderShow(ctx, w, realm, smsConfig)
 					return
 				}
 			}
 		}
 
-		flash.Alert("Updated realm settings!")
+		flash.Alert("Successfully updated realm settings!")
 		http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 	})
+}
+
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, realm *database.Realm, smsConfig *database.SMSConfig) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["realm"] = realm
+	m["smsConfig"] = smsConfig
+	m["testTypes"] = map[string]database.TestType{
+		"confirmed": database.TestTypeConfirmed,
+		"likely":    database.TestTypeConfirmed | database.TestTypeLikely,
+		"negative":  database.TestTypeConfirmed | database.TestTypeLikely | database.TestTypeNegative,
+	}
+	c.h.RenderHTML(w, "realm", m)
 }

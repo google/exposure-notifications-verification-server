@@ -16,9 +16,20 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
+)
+
+// TestType is a test type in the database.
+type TestType int16
+
+const (
+	_ TestType = 1 << iota
+	TestTypeConfirmed
+	TestTypeLikely
+	TestTypeNegative
 )
 
 // Realm represents a tenant in the system. Typically this corresponds to a
@@ -31,15 +42,33 @@ type Realm struct {
 	// Name is the name of the realm.
 	Name string `gorm:"type:varchar(200);unique_index"`
 
+	// AllowedTestTypes is the type of tests that this realm permits. The default
+	// value is to allow all test types.
+	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
+
 	// These are here for gorm to setup the association. You should NOT call them
 	// directly, ever. Use the ListUsers function instead. The have to be public
 	// for reflection.
-	RealmUsers  []*User `gorm:"many2many:user_realms;PRELOAD:false"`
-	RealmAdmins []*User `gorm:"many2many:admin_realms;PRELOAD:false"`
+	RealmUsers  []*User `gorm:"many2many:user_realms; PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
+	RealmAdmins []*User `gorm:"many2many:admin_realms; PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 
-	// Relations to items that blong to a realm.
-	Codes  []*VerificationCode
-	Tokens []*Token
+	// Relations to items that belong to a realm.
+	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
+	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
+}
+
+// BeforeSave runs validations. If there are errors, the save fails.
+func (r *Realm) BeforeSave(tx *gorm.DB) error {
+	r.Name = strings.TrimSpace(r.Name)
+
+	if r.Name == "" {
+		r.AddError("name", "cannot be blank")
+	}
+
+	if len(r.Errors()) > 0 {
+		return fmt.Errorf("validation failed")
+	}
+	return nil
 }
 
 // SMSConfig returns the SMS configuration for this realm, if one exists.
@@ -142,6 +171,21 @@ func (r *Realm) FindUser(db *Database, id interface{}) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// ValidTestType returns true if the given test type string is valid for this
+// realm, false otherwise.
+func (r *Realm) ValidTestType(typ string) bool {
+	switch strings.TrimSpace(strings.ToLower(typ)) {
+	case "confirmed":
+		return r.AllowedTestTypes&TestTypeConfirmed != 0
+	case "likely":
+		return r.AllowedTestTypes&TestTypeLikely != 0
+	case "negative":
+		return r.AllowedTestTypes&TestTypeNegative != 0
+	default:
+		return false
+	}
 }
 
 func (db *Database) CreateRealm(name string) (*Realm, error) {

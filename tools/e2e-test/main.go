@@ -87,10 +87,10 @@ func realMain(ctx context.Context) error {
 	verbose := flag.Bool("v", false, "ALL THE MESSAGES!")
 	flag.Parse()
 
-	reportType := "confirmed"
+	testType := "confirmed"
 	iterations := 1
 	if *doRevision {
-		reportType = "likely"
+		testType = "likely"
 		iterations++
 	}
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format("2006-01-02")
@@ -113,7 +113,7 @@ func realMain(ctx context.Context) error {
 	for i := 0; i < iterations; i++ {
 		// Issue the verification code.
 		logger.Infof("Issuing verification code")
-		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, reportType, symptomDate, timeout)
+		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, timeout)
 		if err != nil {
 			return fmt.Errorf("error issuing verification code: %w", err)
 		} else if code.Error != "" {
@@ -199,7 +199,7 @@ func realMain(ctx context.Context) error {
 		}
 
 		if *doRevision {
-			reportType = "confirmed"
+			testType = "confirmed"
 			revisionToken = response.RevisionToken
 
 			// Generate 1 more TEK

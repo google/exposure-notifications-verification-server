@@ -49,6 +49,17 @@ func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		// If there's a firebase cookie in the session, try to redirect to /home. If
+		// the cookie is invalid, the auth middleware will pick it up, delete the
+		// cookie from the session, and kick them back here.
+		session := controller.SessionFromContext(ctx)
+		if session != nil {
+			if c := controller.FirebaseCookieFromSession(session); c != "" {
+				http.Redirect(w, r, "/home", http.StatusSeeOther)
+				return
+			}
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
 		c.h.RenderHTML(w, "index", m)

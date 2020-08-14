@@ -40,9 +40,6 @@ func (c *Controller) HandleIndex() http.Handler {
 			smsConfig = new(database.SMSConfig)
 		}
 
-		m := controller.TemplateMapFromContext(ctx)
-		m["realm"] = realm
-		m["smsConfig"] = smsConfig
-		c.h.RenderHTML(w, "realm", m)
+		c.renderShow(ctx, w, realm, smsConfig)
 	})
 }

@@ -66,6 +66,14 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
+		// Validate that the request with the provided test type is valid for this
+		// realm.
+		if !realm.ValidTestType(request.TestType) {
+			c.h.RenderJSON(w, http.StatusBadRequest,
+				api.Errorf("unsupported test type: %v", request.TestType))
+			return
+		}
+
 		// Verify SMS configuration if phone was provided
 		var smsProvider sms.Provider
 		if request.Phone != "" {
