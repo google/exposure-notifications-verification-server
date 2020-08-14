@@ -15,49 +15,20 @@
 package apikey
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 )
-
-// HandleEdit renders the edit form.
-func (c *Controller) HandleEdit() http.Handler {
-	logger := c.logger.Named("HandleEdit")
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		vars := mux.Vars(r)
-
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
-
-		authApp, err := realm.FindAuthorizedAppString(vars["id"])
-		if err != nil {
-			logger.Errorw("failed to find authorized apps", "error", err)
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-		if authApp == nil {
-			controller.Unauthorized(w, r, c.h)
-			return
-		}
-
-		c.renderEdit(w, r, authApp)
-	})
-}
 
 // HandleUpdate handles an update.
 func (c *Controller) HandleUpdate() http.Handler {
 	type FormData struct {
-		Name string `form:"name,required"`
+		Name string `form:"name"`
 	}
-
-	logger := c.logger.Named("HandleUpdate")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -76,31 +47,44 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
+		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
+		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// Requested form, stop processing.
+		if r.Method == http.MethodGet {
+			c.renderEdit(ctx, w, authApp)
+			return
+		}
+
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			var authApp database.AuthorizedApp
 			authApp.Name = form.Name
 
+			if terr, ok := err.(schema.MultiError); ok {
+				for k, err := range terr {
+					authApp.AddError(k, err.Error())
+				}
+			}
+
 			flash.Error("Failed to process form: %v", err)
-			c.renderEdit(w, r, &authApp)
-			return
+			c.renderEdit(ctx, w, authApp)
 		}
 
-		authApp, err := realm.FindAuthorizedAppString(vars["id"])
-		if err != nil {
-			logger.Errorw("failed to find authorized apps", "error", err)
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-		if authApp == nil {
-			controller.Unauthorized(w, r, c.h)
-			return
-		}
-
+		// Build the authorized app struct
 		authApp.Name = form.Name
+
+		// Save
 		if err := c.db.SaveAuthorizedApp(authApp); err != nil {
-			logger.Errorw("failed to save authorized app", "error", err)
-			controller.InternalError(w, r, c.h, err)
+			flash.Error("Failed to save api key: %v", err)
+			c.renderEdit(ctx, w, authApp)
 			return
 		}
 
@@ -110,8 +94,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 }
 
 // renderEdit renders the edit page.
-func (c *Controller) renderEdit(w http.ResponseWriter, r *http.Request, authApp *database.AuthorizedApp) {
-	ctx := r.Context()
+func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["authApp"] = authApp
 	c.h.RenderHTML(w, "apikeys/edit", m)

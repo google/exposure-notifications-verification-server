@@ -46,6 +46,8 @@ const (
 // the verification protocol.
 type AuthorizedApp struct {
 	gorm.Model
+	Errorable
+
 	// AuthorizedApps belong to exactly one realm.
 	RealmID uint   `gorm:"unique_index:realm_apikey_name"`
 	Realm   *Realm // for loading the owning realm.
@@ -61,6 +63,24 @@ type AuthorizedApp struct {
 
 	// APIKeyType s the API key type.
 	APIKeyType APIUserType `gorm:"default:0"`
+}
+
+// BeforeSave runs validations. If there are errors, the save fails.
+func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
+	a.Name = strings.TrimSpace(a.Name)
+
+	if a.Name == "" {
+		a.AddError("name", "cannot be blank")
+	}
+
+	if a.APIKeyType < 0 {
+		a.AddError("type", "is invalid")
+	}
+
+	if len(a.Errors()) > 0 {
+		return fmt.Errorf("validation failed")
+	}
+	return nil
 }
 
 func (a *AuthorizedApp) IsAdminType() bool {

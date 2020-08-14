@@ -15,6 +15,7 @@
 package apikey
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -32,19 +33,19 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		// Perform the lazy load on authorized apps for the realm.
-		if _, err := realm.GetAuthorizedApps(c.db, true); err != nil {
+		apps, err := realm.ListAuthorizedApps(c.db)
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(w, r, realm)
+		c.renderIndex(ctx, w, apps)
 	})
 }
 
 // renderIndex renders the index page.
-func (c *Controller) renderIndex(w http.ResponseWriter, r *http.Request, realm *database.Realm) {
-	ctx := r.Context()
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.AuthorizedApp) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["apps"] = realm.AuthorizedApps
+	m["apps"] = apps
 	c.h.RenderHTML(w, "apikeys/index", m)
 }

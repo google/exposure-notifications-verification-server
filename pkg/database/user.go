@@ -25,6 +25,8 @@ import (
 // User represents a user of the system
 type User struct {
 	gorm.Model
+	Errorable
+
 	Email           string `gorm:"type:varchar(250);unique_index"`
 	Name            string `gorm:"type:varchar(100)"`
 	Admin           bool   `gorm:"default:false"`
@@ -33,8 +35,27 @@ type User struct {
 	AdminRealms     []*Realm `gorm:"many2many:admin_realms"`
 }
 
-func (u *User) MultipleRealms() bool {
-	return len(u.Realms) > 1
+// BeforeSave runs validations. If there are errors, the save fails.
+func (u *User) BeforeSave(tx *gorm.DB) error {
+	u.Email = strings.TrimSpace(u.Email)
+	u.Name = strings.TrimSpace(u.Name)
+
+	if u.Email == "" {
+		u.AddError("email", "cannot be blank")
+	}
+
+	if !strings.Contains(u.Email, "@") {
+		u.AddError("email", "appears to be invalid")
+	}
+
+	if u.Name == "" {
+		u.AddError("name", "cannot be blank")
+	}
+
+	if len(u.Errors()) > 0 {
+		return fmt.Errorf("validation failed")
+	}
+	return nil
 }
 
 func (u *User) GetRealm(realmID uint) *Realm {
