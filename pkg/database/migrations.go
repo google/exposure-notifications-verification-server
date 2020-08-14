@@ -550,6 +550,46 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00024-AddTestTypesToRealms",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: adding test types to realm")
+
+				sql := fmt.Sprintf("ALTER TABLE realms ADD COLUMN IF NOT EXISTS allowed_test_types INTEGER DEFAULT %d",
+					TestTypeConfirmed|TestTypeLikely|TestTypeNegative)
+				if err := tx.Exec(sql).Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS allowed_test_types").Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00025-SetTestTypesNotNull",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: setting test types to not-null")
+
+				if err := tx.Exec("ALTER TABLE realms ALTER COLUMN allowed_test_types SET NOT NULL").Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Exec("ALTER TABLE realms ALTER COLUMN allowed_test_types DROP NOT NULL").Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+		},
 	})
 }
 

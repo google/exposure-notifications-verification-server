@@ -1,5 +1,6 @@
 {{define "home"}}
 
+{{$currentRealm := .currentRealm}}
 {{$hasSMSConfig := .hasSMSConfig}}
 
 <!doctype html>
@@ -34,24 +35,35 @@
       the code to the patient.</strong>
     </p>
 
+    {{/* Calculate the column width based on the number of expected choices */}}
+    {{$colWidth := 12}}
+    {{if $currentRealm.ValidTestType "negative"}}
+      {{$colWidth = 4}}
+    {{else if $currentRealm.ValidTestType "likely" }}
+      {{$colWidth = 6}}
+    {{end}}
+
     <form id="issueForm" action="#">
       <div class="card mb-3">
         <div class="card-header">Diagnosis</div>
         <div class="card-body">
           <div class="form-row">
-            <div class="form-group col-md-4">
+            {{if $currentRealm.ValidTestType "confirmed"}}
+            <div class="form-group col-md-{{$colWidth}}">
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
                 <label class="form-check-label" for="testType1">
-                  Confirmed <strong>positive</strong> test
+                  <strong>Positive</strong> test
                   <small class="form-text text-muted">
                     Confirmed positive test result from an official testing source
                   </small>
                 </label>
               </div>
             </div>
+            {{end}}
 
-            <div class="form-group col-md-4">
+            {{if $currentRealm.ValidTestType "likely"}}
+            <div class="form-group col-md-{{$colWidth}}">
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" />
                 <label class="form-check-label" for="testType2">
@@ -62,18 +74,21 @@
                 </label>
               </div>
             </div>
+            {{end}}
 
-            <div class="form-group col-md-4">
+            {{if $currentRealm.ValidTestType "negative"}}
+            <div class="form-group col-md-{{$colWidth}}">
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="testType" id="testType3" value="negative" />
                 <label class="form-check-label" for="testType3">
-                  Confirmed <strong>negative</strong> test
+                  <strong>Negative</strong> test
                   <small class="form-text text-muted">
                     Confirmed negative test result from an official testing source
                   </small>
                 </label>
               </div>
             </div>
+            {{end}}
           </div>
         </div>
       </div>

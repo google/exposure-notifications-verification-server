@@ -70,7 +70,8 @@ func realMain(ctx context.Context) error {
 
 	// Create another realm
 	realm2 := &database.Realm{
-		Name: "Wonderland",
+		Name:             "Wonderland",
+		AllowedTestTypes: database.TestTypeLikely | database.TestTypeConfirmed,
 	}
 	if err := db.SaveRealm(realm2); err != nil {
 		return fmt.Errorf("failed to create realm")
