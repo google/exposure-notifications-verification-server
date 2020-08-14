@@ -1,0 +1,55 @@
+{{define "codestatus/show"}}
+
+{{$apiKey := .apiKey}}
+{{$authApp := .authApp}}
+{{$stats := .stats}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Check verification code status</h1>
+    <p>
+      Use a unique identifier to check the status of a verification code previously shared with your patient.
+    </p>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th scope="col">UUID</th>
+            <th scope="col">Status</th>
+            <th scope="col">Expires</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{.UUID}}</td>
+            <td>{{.Status}}</td>
+            <td>{{.Expires}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <p>
+        <a href="/codestatus">&larr; Enter another code</a>
+      </p>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+
+</html>
+{{end}}

@@ -178,7 +178,6 @@ func realMain(ctx context.Context) error {
 		sub.Handle("/select", realmController.HandleSelect()).Methods("POST")
 	}
 
-	issueapiController := issueapi.New(ctx, config, db, h)
 	{
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(requireAuth)
@@ -189,19 +188,20 @@ func realMain(ctx context.Context) error {
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
+		issueapiController := issueapi.New(ctx, config, db, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 	}
+
 	{
-		sub := r.PathPrefix("/cstatus").Subrouter()
+		sub := r.PathPrefix("/codestatus").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(requireRealm)
+		sub.Use(requireAdmin)
 		sub.Use(rateLimit)
 
 		codeStatusController := codestatus.New(ctx, config, db, h)
-		sub.Handle("", codeStatusController.Show()).Methods("GET")
-
-		// API for creating new verification codes. Called via AJAX.
-		sub.Handle("/checkcodestatus", issueapiController.HandleCheckCodeStatus()).Methods("POST")
+		sub.Handle("", codeStatusController.HandleIndex()).Methods("GET")
+		sub.Handle("/{id}", codeStatusController.HandleShow()).Methods("GET")
 	}
 
 	// apikeys

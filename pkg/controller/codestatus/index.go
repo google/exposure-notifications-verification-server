@@ -18,37 +18,18 @@ package codestatus
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleShow() http.Handler {
+func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		uuids := r.URL.Query()["uuid"]
-		var uuid string
-		if len(uuids) == 1 {
-			uuid = uuids[0]
-		}
-
-		// TODO: err
-		code, _ := c.db.FindVerificationCodeByUUID(uuid)
-
 		m := controller.TemplateMapFromContext(ctx)
+		// TODO(whaught): we're going to load a list of recent codes to show
+		// and mostly replace this experience
 
-		// TODO(whaught): errors?
-		// TODO(whaught): logic
-		m["UUID"] = uuid
-		var status string
-		if code.Claimed {
-			status = "claimed by user"
-		} else {
-			status = "not yet claimed"
-		}
-		m["Status"] = status
-		m["Expires"] = code.ExpiresAt.UTC().Format(time.RFC1123)
-		c.h.RenderHTML(w, "codestatus/show", m)
+		c.h.RenderHTML(w, "codestatus/index", m)
 	})
 }
