@@ -163,6 +163,20 @@
         $icon.removeClass('oi-lock-unlocked');
       }
     });
+
+    $('a[data-fill-target]').click(function(e) {
+      e.preventDefault();
+
+      let $this = $(e.currentTarget);
+      let selector = $this.data('fillTarget');
+      let value = $this.data('fillValue');
+      let $target = $('#'+selector);
+
+      console.log($target);
+      console.log(value);
+
+      $target.val(value);
+    })
   });
 </script>
 {{end}}
