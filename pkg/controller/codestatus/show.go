@@ -21,26 +21,35 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 )
 
-func (c *Controller) HandleShow() http.Handler {
+func (c *Controller) HandleShow(issueCtrl *issueapi.Controller) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		uuids := r.URL.Query()["uuid"]
 		var uuid string
 		if len(uuids) == 1 {
 			uuid = uuids[0]
 		}
-
-		// TODO: err
-		code, _ := c.db.FindVerificationCodeByUUID(uuid)
-
 		m := controller.TemplateMapFromContext(ctx)
-
-		// TODO(whaught): errors?
-		// TODO(whaught): logic
 		m["UUID"] = uuid
+
+		code, _, apiErr := issueCtrl.CheckCodeStatus(r, uuid)
+		if apiErr != nil {
+			flash.Error("Failed to process form: %v", apiErr.Error)
+			c.h.RenderHTML(w, "codestatus/show", m)
+			return
+		}
+
 		var status string
 		if code.Claimed {
 			status = "claimed by user"

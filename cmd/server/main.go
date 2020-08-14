@@ -200,8 +200,9 @@ func realMain(ctx context.Context) error {
 		sub.Use(rateLimit)
 
 		codeStatusController := codestatus.New(ctx, config, db, h)
+		issueapiController := issueapi.New(ctx, config, db, h)
 		sub.Handle("", codeStatusController.HandleIndex()).Methods("GET")
-		sub.Handle("/{id}", codeStatusController.HandleShow()).Methods("GET")
+		sub.Handle("/{id}", codeStatusController.HandleShow(issueapiController)).Methods("GET")
 	}
 
 	// apikeys

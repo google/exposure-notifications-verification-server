@@ -23,82 +23,16 @@ import (
 )
 
 func (c *Controller) HandleCheckCodeStatus() http.Handler {
-	logger := c.logger.Named("issueapi.CheckCodeStatus")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
 		var request api.CheckCodeStatusRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
-		authApp, user, err := c.getAuthorizationFromContext(r)
+		code, errCode, err := c.CheckCodeStatus(r, request.UUID)
 		if err != nil {
-			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-			return
-		}
-		if user == nil {
-			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
-			c.h.RenderJSON(w, http.StatusUnauthorized,
-				api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth))
-			return
-		}
-
-		var realm *database.Realm
-		if authApp != nil {
-			realm, err = authApp.GetRealm(c.db)
-			if err != nil {
-				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
-				return
-			}
-		} else {
-			// if it's a user logged in, we can pull realm from the context.
-			realm = controller.RealmFromContext(ctx)
-		}
-		if realm == nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
-			return
-		}
-
-		code, err := c.db.FindVerificationCodeByUUID(request.UUID)
-		if err != nil {
-			logger.Errorw("failed to check otp code status", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError,
-				api.Errorf("failed to check otp code status, please try again").WithCode(api.ErrInternal))
-			return
-		}
-
-		logger.Debugw("Found code", "verificationCode", code)
-
-		if code.UUID == "" { // if no row is found, code will not be populated
-			logger.Errorw("failed to check otp code status", "error", "code not found")
-			c.h.RenderJSON(w, http.StatusNotFound,
-				api.Errorf("failed to check otp code status").WithCode(api.ErrVerifyCodeNotFound))
-			return
-		}
-
-		// The current user must have issued the code or be a realm admin.
-		if !(code.IssuingUser != nil && code.IssuingUser.Email == user.Email || user.CanAdminRealm(realm.ID)) {
-			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
-			c.h.RenderJSON(w, http.StatusUnauthorized,
-				api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth))
-			return
-		}
-
-		if code.IsExpired() {
-			logger.Errorw("failed to check otp code status", "error", "code exists but has expired")
-			c.h.RenderJSON(w, http.StatusNotFound,
-				api.Errorf("code has expired").WithCode(api.ErrVerifyCodeExpired))
-			return
-		}
-
-		if code.RealmID != realm.ID {
-			logger.Errorw("failed to check otp code status", "error", "realmID does not match")
-			c.h.RenderJSON(w, http.StatusNotFound,
-				api.Errorf("code does not exist").WithCode(api.ErrVerifyCodeNotFound))
-			return
+			c.h.RenderJSON(w, errCode, err)
 		}
 
 		c.h.RenderJSON(w, http.StatusOK,
@@ -107,4 +41,67 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 				ExpiresAtTimestamp: code.ExpiresAt.UTC().Unix(),
 			})
 	})
+}
+
+func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.VerificationCode, int, *api.ErrorReturn) {
+	ctx := r.Context()
+	logger := c.logger.Named("issueapi.CheckCodeStatus")
+	authApp, user, err := c.getAuthorizationFromContext(r)
+	if err != nil {
+		return nil, http.StatusUnauthorized, api.Error(err)
+	}
+	if user == nil {
+		logger.Errorw("failed to check otp code status", "error", "no user found")
+		return nil, http.StatusUnauthorized,
+			api.Errorf("failed to check otp code status: no user found").WithCode(api.ErrVerifyCodeUserUnauth)
+	}
+
+	var realm *database.Realm
+	if authApp != nil {
+		realm, err = authApp.GetRealm(c.db)
+		if err != nil {
+			return nil, http.StatusUnauthorized, nil
+		}
+	} else {
+		// if it's a user logged in, we can pull realm from the context.
+		realm = controller.RealmFromContext(ctx)
+	}
+	if realm == nil {
+		return nil, http.StatusBadRequest, api.Errorf("missing realm")
+	}
+
+	code, err := c.db.FindVerificationCodeByUUID(uuid)
+	if err != nil {
+		logger.Errorw("failed to check otp code status", "error", err)
+		return nil, http.StatusInternalServerError,
+			api.Errorf("failed to check otp code status, please try again").WithCode(api.ErrInternal)
+	}
+
+	logger.Debugw("Found code", "verificationCode", code)
+
+	if code.UUID == "" { // if no row is found, code will not be populated
+		logger.Errorw("failed to check otp code status", "error", "code not found")
+		return nil, http.StatusNotFound,
+			api.Errorf("failed to check otp code status").WithCode(api.ErrVerifyCodeNotFound)
+	}
+
+	// The current user must have issued the code or be a realm admin.
+	if !(code.IssuingUser != nil && code.IssuingUser.Email == user.Email || user.CanAdminRealm(realm.ID)) {
+		logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
+		return nil, http.StatusUnauthorized,
+			api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth)
+	}
+
+	if code.IsExpired() {
+		logger.Errorw("failed to check otp code status", "error", "code exists but has expired")
+		return nil, http.StatusNotFound,
+			api.Errorf("code has expired").WithCode(api.ErrVerifyCodeExpired)
+	}
+
+	if code.RealmID != realm.ID {
+		logger.Errorw("failed to check otp code status", "error", "realmID does not match")
+		return nil, http.StatusNotFound,
+			api.Errorf("code does not exist").WithCode(api.ErrVerifyCodeNotFound)
+	}
+	return code, 0, nil
 }
