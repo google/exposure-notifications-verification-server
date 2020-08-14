@@ -92,8 +92,9 @@ type CSRFResponse struct {
 // code. This is called by the Web frontend.
 // API is served at /api/issue
 type IssueCodeRequest struct {
-	TestType    string `json:"testType"`
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
+	TestDate    string `json:"testDate"`
+	TestType    string `json:"testType"`
 	Phone       string `json:"phone"`
 }
 

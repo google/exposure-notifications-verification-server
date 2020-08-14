@@ -80,7 +80,6 @@ func (c *Controller) HandleHome() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		// Set test date params
 		now := time.Now().UTC()
-		m["todayDate"] = now.Format("2006-01-02")
 		m["maxDate"] = now.Format("2006-01-02")
 		m["minDate"] = now.Add(c.pastDaysDuration).Format("2006-01-02")
 		m["maxSymptomDays"] = c.displayAllowedDays

@@ -30,32 +30,18 @@ import (
 func (c *Controller) HandleIssue() http.Handler {
 	logger := c.logger.Named("issueapi.HandleIssue")
 
-	type FormData struct {
-		Phone       string `json:"phone"`
-		SymptomDate string `json:"symptomDate"`
-		TestDate    string `json:"testDate"`
-		TestType    string `json:"testType"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var form FormData
-		if err := controller.BindJSON(w, r, &form); err != nil {
+		var request api.IssueCodeRequest
+		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
 		// Use the symptom onset date if given, otherwise fallback to test date.
-		date := form.SymptomDate
-		if date == "" {
-			date = form.TestDate
-		}
-
-		request := &api.IssueCodeRequest{
-			Phone:       form.Phone,
-			SymptomDate: date,
-			TestType:    form.TestType,
+		if request.SymptomDate == "" {
+			request.SymptomDate = request.TestDate
 		}
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
