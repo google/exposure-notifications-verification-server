@@ -73,7 +73,7 @@ func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("name", "cannot be blank")
 	}
 
-	if a.APIKeyType < 0 {
+	if !(a.APIKeyType == APIUserTypeDevice || a.APIKeyType == APIUserTypeAdmin) {
 		a.AddError("type", "is invalid")
 	}
 
@@ -99,8 +99,6 @@ func (a *AuthorizedApp) Realm(db *Database) (*Realm, error) {
 	}
 	return &realm, nil
 }
-
-// TODO(mikehelmick): Implement revoke API key functionality.
 
 // TableName definition for the authorized apps relation.
 func (AuthorizedApp) TableName() string {

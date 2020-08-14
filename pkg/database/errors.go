@@ -20,7 +20,9 @@ import (
 
 // Errorable defines an embeddable struct for managing errors on models.
 type Errorable struct {
-	// errors is the list of errors on the model, usually from validation.
+	// errors is the list of errors on the model, usually from validation. The
+	// string key is the column name (or virtual column name) of the field that
+	// has errors.
 	errors map[string][]string
 }
 

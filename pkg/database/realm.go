@@ -32,7 +32,8 @@ type Realm struct {
 	Name string `gorm:"type:varchar(200);unique_index"`
 
 	// These are here for gorm to setup the association. You should NOT call them
-	// directly, ever. The have to be public for reflection.
+	// directly, ever. Use the ListUsers function instead. The have to be public
+	// for reflection.
 	RealmUsers  []*User `gorm:"many2many:user_realms;PRELOAD:false"`
 	RealmAdmins []*User `gorm:"many2many:admin_realms;PRELOAD:false"`
 
