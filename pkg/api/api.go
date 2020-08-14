@@ -36,6 +36,10 @@ const (
 	ErrVerifyCodeInvalid = "code_invalid"
 	// ErrVerifyCodeExpired indicates the code provided is known to the server, but expired.
 	ErrVerifyCodeExpired = "code_expired"
+	// ErrVerifyCodeNotFound indicates the code does not exist on the server/realm.
+	ErrVerifyCodeNotFound = "code_not_found"
+	// ErrVerifyCodeUserUnauth indicates the code does not belong to the requesting user.
+	ErrVerifyCodeUserUnauth = "code_user_unauthorized"
 
 	// Certificate API responses
 	// ErrTokenInvalid indicates the token provided is unknown or already used
@@ -49,7 +53,7 @@ const (
 // ErrorReturn defines the common error type.
 type ErrorReturn struct {
 	Error     string `json:"error"`
-	ErrorCode string `json:"error_code"`
+	ErrorCode string `json:"errorCode"`
 }
 
 // InternalError constructs a generic internal error.

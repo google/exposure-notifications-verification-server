@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This server implements the device facing APIs for exchaning verification codes
-// for tokens and tokens for certificates.
+// This server implements the admin facing APIs for issuing diagnosis codes
+// and checking the status of previously issued codes.
 package main
 
 import (
