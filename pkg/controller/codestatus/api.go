@@ -12,23 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package codestatus defines a web controller for the code status page of the verification
-// server. This view allows users to view the status of previously-issued OTP codes.
 package codestatus
 
 import (
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+func (c *Controller) HandleCheckCodeStatus() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		var request api.CheckCodeStatusRequest
+		if err := controller.BindJSON(w, r, &request); err != nil {
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			return
+		}
 
-		m := controller.TemplateMapFromContext(ctx)
-		// TODO(whaught): load a list of recent codes to show
+		code, errCode, err := c.CheckCodeStatus(r, request.UUID)
+		if err != nil {
+			c.h.RenderJSON(w, errCode, err)
+		}
 
-		c.h.RenderHTML(w, "codestatus/index", m)
+		c.h.RenderJSON(w, http.StatusOK,
+			&api.CheckCodeStatusResponse{
+				Claimed:            code.Claimed,
+				ExpiresAtTimestamp: code.ExpiresAt.UTC().Unix(),
+			})
 	})
 }

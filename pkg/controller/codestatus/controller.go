@@ -29,20 +29,33 @@ import (
 )
 
 type Controller struct {
-	config *config.ServerConfig
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	serverconfig *config.ServerConfig
+	apiconfig    *config.AdminAPIServerConfig
+	db           *database.Database
+	h            *render.Renderer
+	logger       *zap.SugaredLogger
 }
 
-// New creates a new controller for the home page.
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+// NewServer creates a new controller for serving admin server requests.
+func NewServer(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logger,
+		serverconfig: config,
+		db:           db,
+		h:            h,
+		logger:       logger,
+	}
+}
+
+// NewAPI creates a new controller serving API requests.
+func NewAPI(ctx context.Context, config *config.AdminAPIServerConfig, db *database.Database, h *render.Renderer) *Controller {
+	logger := logging.FromContext(ctx)
+
+	return &Controller{
+		apiconfig: config,
+		db:        db,
+		h:         h,
+		logger:    logger,
 	}
 }

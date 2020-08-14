@@ -21,10 +21,9 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 )
 
-func (c *Controller) HandleShow(issueCtrl *issueapi.Controller) http.Handler {
+func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -43,7 +42,7 @@ func (c *Controller) HandleShow(issueCtrl *issueapi.Controller) http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		m["UUID"] = uuid
 
-		code, _, apiErr := issueCtrl.CheckCodeStatus(r, uuid)
+		code, _, apiErr := c.CheckCodeStatus(r, uuid)
 		if apiErr != nil {
 			flash.Error("Failed to process form: %v", apiErr.Error)
 			c.h.RenderHTML(w, "codestatus/show", m)
