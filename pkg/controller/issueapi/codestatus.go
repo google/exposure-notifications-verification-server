@@ -41,7 +41,8 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 		}
 		if user == nil {
 			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
-			c.h.RenderJSON(w, http.StatusUnauthorized, api.Errorf("failed to check otp code status: user does not match issuing user"))
+			c.h.RenderJSON(w, http.StatusUnauthorized,
+				api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth))
 			return
 		}
 
@@ -64,31 +65,39 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 		code, err := c.db.FindVerificationCodeByUUID(request.UUID)
 		if err != nil {
 			logger.Errorw("failed to check otp code status", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to check otp code status, please try again"))
+			c.h.RenderJSON(w, http.StatusInternalServerError,
+				api.Errorf("failed to check otp code status, please try again").WithCode(api.ErrInternal))
 			return
 		}
+
+		logger.Debugw("Found code", "verificationCode", code)
 
 		if code.UUID == "" { // if no row is found, code will not be populated
 			logger.Errorw("failed to check otp code status", "error", "code not found")
-			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("failed to check otp code status"))
+			c.h.RenderJSON(w, http.StatusNotFound,
+				api.Errorf("failed to check otp code status").WithCode(api.ErrVerifyCodeNotFound))
 			return
 		}
 
-		if code.IssuingUser.Email != user.Email && !user.CanAdminRealm(realm.ID) {
+		// The current user must have issued the code or be a realm admin.
+		if !(code.IssuingUser != nil && code.IssuingUser.Email == user.Email || user.CanAdminRealm(realm.ID)) {
 			logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
-			c.h.RenderJSON(w, http.StatusUnauthorized, api.Errorf("failed to check otp code status: user does not match issuing user"))
+			c.h.RenderJSON(w, http.StatusUnauthorized,
+				api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth))
 			return
 		}
 
 		if code.IsExpired() {
 			logger.Errorw("failed to check otp code status", "error", "code exists but has expired")
-			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("code does not exist or has expired"))
+			c.h.RenderJSON(w, http.StatusNotFound,
+				api.Errorf("code has expired").WithCode(api.ErrVerifyCodeExpired))
 			return
 		}
 
 		if code.RealmID != realm.ID {
 			logger.Errorw("failed to check otp code status", "error", "realmID does not match")
-			c.h.RenderJSON(w, http.StatusNotFound, api.Errorf("code does not exist or has expired"))
+			c.h.RenderJSON(w, http.StatusNotFound,
+				api.Errorf("code does not exist").WithCode(api.ErrVerifyCodeNotFound))
 			return
 		}
 
