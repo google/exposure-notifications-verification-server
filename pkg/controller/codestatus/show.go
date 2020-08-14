@@ -27,6 +27,9 @@ func (c *Controller) Show() http.Handler {
 		ctx := r.Context()
 
 		m := controller.TemplateMapFromContext(ctx)
+		// TODO(whaught): we're going to load a list of recent codes to show
+		// and mostly replace this experience
+
 		c.h.RenderHTML(w, "cstatus", m)
 	})
 }

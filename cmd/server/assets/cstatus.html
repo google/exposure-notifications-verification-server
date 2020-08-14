@@ -59,7 +59,7 @@
       <h2>Code status</h2>
 
       <p>
-        The claimed status of this code is:
+        The status of this code is:
       </p>
 
       <div id="vercode"
@@ -126,7 +126,33 @@
           if (result.error != "") {
             showError(result.error);
           } else {
-            let $span = $('<span class="border rounded mx-1">').text(result.claimed);
+            let text = ""
+            if (result.claimed) {
+              text += "claimed by patient"
+            } else {
+              text += "not yet claimed"
+            }
+            let $span = $('<span class="border rounded mx-1">').text(text);
+            $vercode.append($span);
+
+            let ts = Math.round((new Date()).getTime() / 1000);
+            let elapsed = new Date((result.expiresAtTimestamp-ts) * 1000);
+            text = "expires in "
+
+            let hours = elapsed.getUTCHours()
+            let minutes = elapsed.getUTCMinutes()
+            let seconds = elapsed.getSeconds()
+
+            if (hours > 0) {
+              text += hours + "h"
+            }
+            if (minutes > 0) {
+              text += minutes + "m"
+            }
+            if (seconds > 0) {
+              text += seconds + "s"
+            }
+            $span = $('<span class="border rounded mx-1">').text(text);
             $vercode.append($span);
 
             $codeerror.addClass('d-none');
