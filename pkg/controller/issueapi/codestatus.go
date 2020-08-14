@@ -48,7 +48,7 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 
 		var realm *database.Realm
 		if authApp != nil {
-			realm, err = authApp.GetRealm(c.db)
+			realm, err = authApp.Realm(c.db)
 			if err != nil {
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				return

@@ -1,4 +1,7 @@
 {{define "realm"}}
+
+{{$smsConfig := .smsConfig}}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -33,7 +36,6 @@
         </div>
       </div>
 
-      {{$smsConfig := .realm.SMSConfig}}
       <div class="card mb-3">
         <div class="card-header">
           SMS configuration
