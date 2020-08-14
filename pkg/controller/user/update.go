@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+package user
 
 import (
 	"context"
@@ -24,10 +24,11 @@ import (
 	"github.com/gorilla/schema"
 )
 
-// HandleUpdate handles an update.
 func (c *Controller) HandleUpdate() http.Handler {
 	type FormData struct {
-		Name string `form:"name"`
+		Email string `form:"email"`
+		Name  string `form:"name"`
+		Admin bool   `form:"admin"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +48,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
+		user, err := realm.FindUser(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -60,42 +61,49 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderEdit(ctx, w, authApp)
+			c.renderEdit(ctx, w, user)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			authApp.Name = form.Name
+			user.Email = form.Email
+			user.Name = form.Name
 
 			if terr, ok := err.(schema.MultiError); ok {
 				for k, err := range terr {
-					authApp.AddError(k, err.Error())
+					user.AddError(k, err.Error())
 				}
 			}
 
 			flash.Error("Failed to process form: %v", err)
-			c.renderEdit(ctx, w, authApp)
-		}
-
-		// Build the authorized app struct
-		authApp.Name = form.Name
-
-		// Save
-		if err := c.db.SaveAuthorizedApp(authApp); err != nil {
-			flash.Error("Failed to save api key: %v", err)
-			c.renderEdit(ctx, w, authApp)
+			c.renderEdit(ctx, w, user)
 			return
 		}
 
-		flash.Alert("Successfully updated API key!")
-		http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+		// Build the user struct
+		user.Email = form.Email
+		user.Name = form.Name
+
+		// Manage realm admin permissions.
+		if form.Admin {
+			user.AddRealmAdmin(realm)
+		} else {
+			user.RemoveRealmAdmin(realm)
+		}
+
+		if err := c.db.SaveUser(user); err != nil {
+			flash.Error("Failed to update user: %v", err)
+			c.renderNew(ctx, w, user)
+			return
+		}
+		flash.Alert("Successfully updated user '%v'", form.Name)
+		http.Redirect(w, r, "/users", http.StatusSeeOther)
 	})
 }
 
-// renderEdit renders the edit page.
-func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp) {
+func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["authApp"] = authApp
-	c.h.RenderHTML(w, "apikeys/edit", m)
+	m["user"] = user
+	c.h.RenderHTML(w, "users/edit", m)
 }

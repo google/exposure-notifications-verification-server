@@ -58,7 +58,7 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 
 	var realm *database.Realm
 	if authApp != nil {
-		realm, err = authApp.GetRealm(c.db)
+		realm, err = authApp.Realm(c.db)
 		if err != nil {
 			return nil, http.StatusUnauthorized, nil
 		}

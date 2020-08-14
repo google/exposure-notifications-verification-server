@@ -26,7 +26,7 @@
       <div class="collapse navbar-collapse" id="navbar">
         {{if .currentUser}}
           <ul class="navbar-nav mr-auto">
-            {{if .currentUser.MultipleRealms}}
+            {{if gt (len .currentUser.Realms) 1}}
             <li class="nav-item">
               <a class="nav-link" href="/realm">Select realm</a>
             </li>
@@ -166,6 +166,20 @@
         $icon.removeClass('oi-lock-unlocked');
       }
     });
+
+    $('a[data-fill-target]').click(function(e) {
+      e.preventDefault();
+
+      let $this = $(e.currentTarget);
+      let selector = $this.data('fillTarget');
+      let value = $this.data('fillValue');
+      let $target = $('#'+selector);
+
+      console.log($target);
+      console.log(value);
+
+      $target.val(value);
+    })
   });
 </script>
 {{end}}

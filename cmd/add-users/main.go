@@ -92,20 +92,17 @@ func realMain(ctx context.Context) error {
 		Admin: *adminFlag,
 	}
 
+	if userRealm != nil {
+		user.AddRealm(userRealm)
+		if *realmAdminFlag {
+			user.AddRealmAdmin(userRealm)
+		}
+	}
+
 	if err := db.SaveUser(user); err != nil {
-		return fmt.Errorf("failed to save user: %w", err)
+		return fmt.Errorf("failed to save user: %w: %v", err, user.ErrorMessages())
 	}
 	logger.Debugw("saved user", "user", user)
-
-	if userRealm != nil {
-		userRealm.AddUser(user)
-		if *realmAdminFlag {
-			userRealm.AddAdminUser(user)
-		}
-		if err := db.SaveRealm(userRealm); err != nil {
-			return fmt.Errorf("failed to add user %v to realm %v; %w", user.Email, userRealm.Name, err)
-		}
-	}
 
 	return nil
 }

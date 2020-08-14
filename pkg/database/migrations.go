@@ -252,10 +252,14 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 				for _, u := range users {
 					logger.Infof("added user: %v to default realm", u.ID)
+
+					u.AddRealm(&defaultRealm)
 					if u.Admin {
-						defaultRealm.AddAdminUser(u)
-					} else {
-						defaultRealm.AddUser(u)
+						u.AddRealmAdmin(&defaultRealm)
+					}
+
+					if err := tx.Save(u).Error; err != nil {
+						return err
 					}
 				}
 
@@ -269,11 +273,10 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 				for _, a := range authApps {
 					logger.Infof("added auth app: %v to default realm", a.Name)
-					defaultRealm.AddAuthorizedApp(a)
-				}
-
-				if err := tx.Save(&defaultRealm).Error; err != nil {
-					return err
+					a.RealmID = defaultRealm.ID
+					if err := tx.Save(a).Error; err != nil {
+						return err
+					}
 				}
 
 				logger.Info("Add RealmID to VerificationCodes.")
@@ -542,6 +545,46 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Rollback: func(tx *gorm.DB) error {
 				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid DROP NOT NULL").Error; err != nil {
 					return fmt.Errorf("failed to set null: %w", err)
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00024-AddTestTypesToRealms",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: adding test types to realm")
+
+				sql := fmt.Sprintf("ALTER TABLE realms ADD COLUMN IF NOT EXISTS allowed_test_types INTEGER DEFAULT %d",
+					TestTypeConfirmed|TestTypeLikely|TestTypeNegative)
+				if err := tx.Exec(sql).Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS allowed_test_types").Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00025-SetTestTypesNotNull",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: setting test types to not-null")
+
+				if err := tx.Exec("ALTER TABLE realms ALTER COLUMN allowed_test_types SET NOT NULL").Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.Exec("ALTER TABLE realms ALTER COLUMN allowed_test_types DROP NOT NULL").Error; err != nil {
+					return err
 				}
 
 				return nil

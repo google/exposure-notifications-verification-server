@@ -83,7 +83,6 @@ func RequireRealm(ctx context.Context, db *database.Database, h *render.Renderer
 			ctx = controller.WithRealm(ctx, realm)
 			*r = *r.WithContext(ctx)
 
-			logger.Debugw("done")
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -119,7 +118,6 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 				return
 			}
 
-			logger.Debugw("done")
 			next.ServeHTTP(w, r)
 		})
 	}

@@ -129,10 +129,12 @@ func (db *Database) updateUserStatsDay(t time.Time) error {
 	}
 
 	for _, realm := range realms {
-		if err := realm.LoadRealmUsers(db, false); err != nil {
+		realmUsers, err := realm.ListUsers(db)
+		if err != nil {
 			return err
 		}
-		for _, user := range realm.RealmUsers {
+
+		for _, user := range realmUsers {
 			codesIssued, err := db.countVerificationCodesByUser(realm.ID, user.ID, roundedTime)
 			if err != nil {
 				return err

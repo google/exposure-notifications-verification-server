@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+package user
 
 import (
 	"context"
@@ -20,11 +20,19 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -32,20 +40,35 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		// Perform the lazy load on authorized apps for the realm.
-		apps, err := realm.ListAuthorizedApps(c.db)
+		// Pull the user from the id.
+		user, err := realm.FindUser(c.db, vars["id"])
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(ctx, w, apps)
+		// Pull the stats - these are cached because it's an expensive query.
+		stats, err := c.db.GetUserStatsSummary(user, realm)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		if stats == nil {
+			stats = new(database.UserStatsSummary)
+		}
+
+		c.renderShow(ctx, w, user, stats)
 	})
 }
 
-// renderIndex renders the index page.
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.AuthorizedApp) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats *database.UserStatsSummary) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["apps"] = apps
-	c.h.RenderHTML(w, "apikeys/index", m)
+	m["user"] = user
+	m["stats"] = stats
+	c.h.RenderHTML(w, "users/show", m)
 }

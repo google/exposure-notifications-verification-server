@@ -1,0 +1,82 @@
+{{define "users/show"}}
+
+{{$currentRealm := .currentRealm}}
+{{$user := .user}}
+{{$stats := .stats}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>{{$user.Name}}</h1>
+    <p class="float-right">
+      <a href="/users/{{$user.ID}}/edit">Edit</a>
+    </p>
+    <p>
+      Here is information about the user.
+    </p>
+
+    <div class="card mb-3">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <strong>Name</strong>
+        <div class="mb-3">
+          {{$user.Name}}
+        </div>
+
+        <strong>Email</strong>
+        <div class="mb-3">
+          {{$user.Email}}
+        </div>
+
+        <strong>Admin</strong>
+        <div class="mb-3">
+          {{$user.CanAdminRealm $currentRealm.ID}}
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Statistics</div>
+      <div class="card-body table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr class="thead-dark">
+              <th scope="col" colspan="3">Keys issued</th>
+            </tr>
+            <tr>
+              <th scope="col" width="33%">Today</th>
+              <th scope="col" width="33%">Past 7 days</th>
+              <th scope="col" width="33%">Past 30 days</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{$stats.CodesIssued1d}}</td>
+              <td>{{$stats.CodesIssued1d}}</td>
+              <td>{{$stats.CodesIssued1d}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <p>
+        <a href="/apikeys">&larr; Back to all API keys</a>
+      </p>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

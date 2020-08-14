@@ -17,6 +17,7 @@ package database
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -117,7 +118,16 @@ func (db *Database) Open(ctx context.Context) error {
 	}
 
 	// Enable auto-preloading.
-	rawDB.Set("gorm:auto_preload", true)
+	rawDB = rawDB.Set("gorm:auto_preload", true)
+
+	// Callbacks
+	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	rawDB.Callback().Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+
+	rawDB.Callback().Update().Before("gorm:update").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	rawDB.Callback().Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+
+	rawDB.Callback().Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
 	db.db = rawDB
 	return nil
@@ -136,4 +146,167 @@ func (db *Database) Ping(ctx context.Context) error {
 // IsNotFound determines if an error is a record not found.
 func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
+}
+
+// callbackKMSDecrypt decrypts the given column in the table using the key
+// manager and key id.
+func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, table, column string) func(scope *gorm.Scope) {
+	return func(scope *gorm.Scope) {
+		// Do nothing if not the target table
+		if scope.TableName() != table {
+			return
+		}
+
+		// Do nothing if there are errors
+		if scope.HasError() {
+			scope.Log("skipping decryption, model has errors")
+			return
+		}
+
+		realField, ciphertext, hasRealField := getFieldString(scope, column)
+		if !hasRealField {
+			scope.Log(fmt.Sprintf("skipping decryption, %s is not a string", realField.Name))
+			return
+		}
+		if ciphertext == "" {
+			scope.Log(fmt.Sprintf("skipping decryption, %s is blank", realField.Name))
+			return
+		}
+
+		plaintextCacheField, plaintextCache, hasPlaintextCache := getFieldString(scope, column+"PlaintextCache")
+		ciphertextCacheField, ciphertextCache, hasCiphertextCache := getFieldString(scope, column+"CiphertextCache")
+
+		// Optimization - if PlaintextCache and CiphertextCache columns exist and the
+		// ciphertext is unchanged, do not decrypt.
+		if hasPlaintextCache && hasCiphertextCache && ciphertext == ciphertextCache {
+			if err := realField.Set(plaintextCache); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to re-use plaintext: %w", err))
+				return
+			}
+		}
+
+		ciphertextBytes, err := base64util.DecodeString(ciphertext)
+		if err != nil {
+			_ = scope.Err(fmt.Errorf("cannot decrypt %s, invalid ciphertext", realField.Name))
+			return
+		}
+
+		plaintextBytes, err := keyManager.Decrypt(ctx, keyID, ciphertextBytes, nil)
+		if err != nil {
+			_ = scope.Err(fmt.Errorf("failed to decrypt %s: %w", column, err))
+			return
+		}
+		plaintext := string(plaintextBytes)
+
+		if hasRealField {
+			if err := realField.Set(plaintext); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", realField.Name, err))
+				return
+			}
+		}
+
+		if hasPlaintextCache {
+			if err := plaintextCacheField.Set(plaintext); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", plaintextCacheField.Name, err))
+				return
+			}
+		}
+
+		if hasCiphertextCache {
+			if err := ciphertextCacheField.Set(ciphertext); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", ciphertextCacheField.Name, err))
+				return
+			}
+		}
+	}
+}
+
+// callbackKMSEncrypt encrypts the given column in the table using the key
+// manager and key id before saving in the database.
+func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, table, column string) func(scope *gorm.Scope) {
+	return func(scope *gorm.Scope) {
+		// Do nothing if not the target table
+		if scope.TableName() != table {
+			return
+		}
+
+		// Do nothing if there are errors
+		if scope.HasError() {
+			scope.Log("skipping encryption, model has errors")
+			return
+		}
+
+		realField, plaintext, hasRealField := getFieldString(scope, column)
+		if !hasRealField {
+			scope.Log(fmt.Sprintf("skipping encryption, %s is not a string", realField.Name))
+			return
+		}
+		if plaintext == "" {
+			scope.Log(fmt.Sprintf("skipping encryption, %s is blank", realField.Name))
+			return
+		}
+
+		plaintextCacheField, plaintextCache, hasPlaintextCache := getFieldString(scope, column+"PlaintextCache")
+		ciphertextCacheField, ciphertextCache, hasCiphertextCache := getFieldString(scope, column+"CiphertextCache")
+
+		// Optimization - if PlaintextCache and CiphertextCache columns exist and the
+		// plaintext is unchanged, do not re-encrypt.
+		if hasPlaintextCache && hasCiphertextCache && plaintext == plaintextCache {
+			if err := realField.Set(ciphertextCache); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to re-use encrypted ciphertext: %w", err))
+				return
+			}
+		}
+
+		b, err := keyManager.Encrypt(ctx, keyID, []byte(plaintext), nil)
+		if err != nil {
+			_ = scope.Err(fmt.Errorf("failed to encrypt %s: %w", column, err))
+			return
+		}
+		ciphertext := base64.RawStdEncoding.EncodeToString(b)
+
+		if hasRealField {
+			if err := realField.Set(ciphertext); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", realField.Name, err))
+				return
+			}
+		}
+
+		if hasPlaintextCache {
+			if err := plaintextCacheField.Set(plaintext); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", plaintextCacheField.Name, err))
+				return
+			}
+		}
+
+		if hasCiphertextCache {
+			if err := ciphertextCacheField.Set(ciphertext); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", ciphertextCacheField.Name, err))
+				return
+			}
+		}
+	}
+}
+
+func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) {
+	field, ok := scope.FieldByName(name)
+	if !ok {
+		return field, "", false
+	}
+
+	if !field.Field.CanInterface() {
+		return field, "", false
+	}
+
+	val := field.Field.Interface()
+	if val == nil {
+		return field, "", false
+	}
+
+	typ, ok := val.(string)
+	if !ok {
+		return field, "", false
+	}
+
+	return field, typ, true
 }

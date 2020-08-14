@@ -71,6 +71,12 @@ func (c *Controller) HandleHome() http.Handler {
 			return
 		}
 
+		hasSMSConfig, err := realm.HasSMSConfig(c.db)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		// Set test date params
 		now := time.Now().UTC()
@@ -78,6 +84,7 @@ func (c *Controller) HandleHome() http.Handler {
 		m["minDate"] = now.Add(c.pastDaysDuration).Format("2006-01-02")
 		m["maxSymptomDays"] = c.displayAllowedDays
 		m["duration"] = c.config.CodeDuration.String()
+		m["hasSMSConfig"] = hasSMSConfig
 		c.h.RenderHTML(w, "home", m)
 	})
 }

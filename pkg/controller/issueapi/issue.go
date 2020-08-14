@@ -39,6 +39,11 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
+		// Use the symptom onset date if given, otherwise fallback to test date.
+		if request.SymptomDate == "" {
+			request.SymptomDate = request.TestDate
+		}
+
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
@@ -47,7 +52,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var realm *database.Realm
 		if authApp != nil {
-			realm, err = authApp.GetRealm(c.db)
+			realm, err = authApp.Realm(c.db)
 			if err != nil {
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				return
@@ -61,10 +66,18 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
+		// Validate that the request with the provided test type is valid for this
+		// realm.
+		if !realm.ValidTestType(request.TestType) {
+			c.h.RenderJSON(w, http.StatusBadRequest,
+				api.Errorf("unsupported test type: %v", request.TestType))
+			return
+		}
+
 		// Verify SMS configuration if phone was provided
 		var smsProvider sms.Provider
 		if request.Phone != "" {
-			smsProvider, err = realm.SMSProvider()
+			smsProvider, err = realm.SMSProvider(c.db)
 			if err != nil {
 				logger.Errorw("failed to get sms provider", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))

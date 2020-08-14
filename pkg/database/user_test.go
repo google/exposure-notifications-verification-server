@@ -15,10 +15,7 @@
 package database
 
 import (
-	"strings"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestUserLifecycle(t *testing.T) {
@@ -28,38 +25,63 @@ func TestUserLifecycle(t *testing.T) {
 
 	email := "dr@example.com"
 	user := User{
-		Email:       email,
-		Name:        "Dr Example",
-		Admin:       false,
-		Realms:      []*Realm{},
-		AdminRealms: []*Realm{},
+		Email: email,
+		Name:  "Dr Example",
+		Admin: false,
 	}
 
 	if err := db.SaveUser(&user); err != nil {
 		t.Fatalf("error creating user: %v", err)
 	}
 
-	got, err := db.FindUser(email)
-	if err != nil {
-		t.Fatalf("error reading user from db: %v", err)
+	// Find user by ID
+	{
+		got, err := db.FindUser(user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := got.ID, user.ID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
 	}
 
-	if diff := cmp.Diff(user, *got, approxTime); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+	// Find user by email
+	{
+		got, err := db.FindUserByEmail(email)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := got.ID, user.ID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got, want := got.Email, user.Email; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got, want := got.Name, user.Name; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got, want := got.Admin, user.Admin; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
 	}
 
+	// Update an attribute
 	user.Admin = true
 	if err := db.SaveUser(&user); err != nil {
-		t.Fatalf("error updating user: %v", err)
+		t.Fatal(err)
 	}
 
-	got, err = db.FindUser(email)
-	if err != nil {
-		t.Fatalf("error reading user from db: %v", err)
-	}
+	// Verify updated attribute saved
+	{
+		got, err := db.FindUserByEmail(email)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if diff := cmp.Diff(user, *got, approxTime); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+		if got, want := got.Admin, true; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
 	}
 }
 
@@ -68,9 +90,12 @@ func TestUserNotFound(t *testing.T) {
 
 	db := NewTestDatabase(t)
 
-	if _, err := db.FindUser("fake@user.com"); err == nil {
-		t.Fatalf("expected error, got nil")
-	} else if !strings.Contains(err.Error(), "record not found") {
-		t.Errorf("wrong error, wanted 'record not found', got '%v'", err)
+	_, err := db.FindUserByEmail("fake@user.com")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	if !IsNotFound(err) {
+		t.Errorf("expected %#v to be %#v", err, "not found")
 	}
 }

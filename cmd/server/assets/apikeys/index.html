@@ -28,7 +28,7 @@
             <th scope="col">App</th>
             <th scope="col" width="75">Key</th>
             <th scope="col" width="75">Type</th>
-            <th scope="col" width="75">Enabled</th>
+            <th scope="col" width="95">Enabled</th>
             <th scope="col" width="40"></th>
           </tr>
         </thead>
@@ -49,7 +49,7 @@
             </td>
             <td>
               {{if .DeletedAt}}
-                <span class="badge badge-pill badge-danger">Revoked</span>
+                <span class="badge badge-pill badge-danger">Disabled</span>
               {{else}}
                 <span class="badge badge-pill badge-success">Enabled</span>
               {{end}}
