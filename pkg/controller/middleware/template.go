@@ -21,8 +21,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"github.com/gorilla/mux"
 )
 
@@ -30,8 +28,6 @@ import (
 // information and bootstraps the map for more values to be set by other
 // middlewares.
 func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.PopulateTemplateVariables")
-
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -50,7 +46,6 @@ func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig)
 			ctx = controller.WithTemplateMap(ctx, m)
 			*r = *r.WithContext(ctx)
 
-			logger.Debugw("done")
 			next.ServeHTTP(w, r)
 		})
 	}

@@ -131,7 +131,6 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 			ctx = controller.WithUser(ctx, user)
 			*r = *r.WithContext(ctx)
 
-			logger.Debugw("done")
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -158,7 +157,6 @@ func RequireAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
-			logger.Debugw("done")
 			next.ServeHTTP(w, r)
 		})
 	}
