@@ -196,7 +196,6 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("/codestatus").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(requireRealm)
-		sub.Use(requireAdmin)
 		sub.Use(rateLimit)
 
 		codeStatusController := codestatus.NewServer(ctx, config, db, h)

@@ -56,7 +56,14 @@ func (c *Controller) HandleShow() http.Handler {
 			status = "not yet claimed"
 		}
 		m["Status"] = status
-		m["Expires"] = code.ExpiresAt.UTC().Format(time.RFC1123)
+		var exp string
+		if code.IsExpired() {
+			exp = "expired"
+		} else {
+			// TODO(whaught): This might be nicer as a formatted duration until now
+			exp = code.ExpiresAt.UTC().Format(time.RFC1123)
+		}
+		m["Expires"] = exp
 		c.h.RenderHTML(w, "codestatus/show", m)
 	})
 }

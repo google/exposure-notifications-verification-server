@@ -64,7 +64,7 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 	if code.UUID == "" { // if no row is found, code will not be populated
 		logger.Errorw("failed to check otp code status", "error", "code not found")
 		return nil, http.StatusNotFound,
-			api.Errorf("failed to check otp code status").WithCode(api.ErrVerifyCodeNotFound)
+			api.Errorf("code does not exist or is expired and removed").WithCode(api.ErrVerifyCodeNotFound)
 	}
 
 	// The current user must have issued the code or be a realm admin.
@@ -74,16 +74,10 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 			api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth)
 	}
 
-	if code.IsExpired() {
-		logger.Errorw("failed to check otp code status", "error", "code exists but has expired")
-		return nil, http.StatusNotFound,
-			api.Errorf("code has expired").WithCode(api.ErrVerifyCodeExpired)
-	}
-
 	if code.RealmID != realm.ID {
 		logger.Errorw("failed to check otp code status", "error", "realmID does not match")
 		return nil, http.StatusNotFound,
-			api.Errorf("code does not exist").WithCode(api.ErrVerifyCodeNotFound)
+			api.Errorf("code does not exist or is expired and removed").WithCode(api.ErrVerifyCodeNotFound)
 	}
 	return code, 0, nil
 }
