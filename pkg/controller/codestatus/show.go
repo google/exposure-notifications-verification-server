@@ -24,6 +24,10 @@ import (
 )
 
 func (c *Controller) HandleShow() http.Handler {
+	type FormData struct {
+		UUID string `form:"uuid"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -41,13 +45,11 @@ func (c *Controller) HandleShow() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
-		type FormData struct {
-			UUID string `form:"uuid"`
-		}
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
 			c.h.RenderHTML(w, "code/show", m)
+			return
 		}
 
 		m["uuid"] = form.UUID
