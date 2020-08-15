@@ -24,6 +24,8 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
@@ -64,7 +66,8 @@ func timeToInterval(t time.Time) int32 {
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
