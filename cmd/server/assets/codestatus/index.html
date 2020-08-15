@@ -22,7 +22,8 @@
 
     <div class="card mb-3">
       <div class="card-body">
-        <form method="GET" action="codestatus/show">
+        <form method="POST" action="codestatus/show">
+          {{ .csrfField }}
           <div class="row form-group">
             <label for="uuid" class="col-sm-3">Code Identifier</label>
             <div class="col-sm-9">

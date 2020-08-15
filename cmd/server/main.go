@@ -200,7 +200,7 @@ func realMain(ctx context.Context) error {
 
 		codeStatusController := codestatus.NewServer(ctx, config, db, h)
 		sub.Handle("", codeStatusController.HandleIndex()).Methods("GET")
-		sub.Handle("/{id}", codeStatusController.HandleShow()).Methods("GET")
+		sub.Handle("/{id}", codeStatusController.HandleShow()).Methods("POST")
 	}
 
 	// apikeys

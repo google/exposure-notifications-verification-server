@@ -34,15 +34,24 @@ func (c *Controller) HandleShow() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		uuids := r.URL.Query()["uuid"]
-		var uuid string
-		if len(uuids) == 1 {
-			uuid = uuids[0]
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
 		}
-		m := controller.TemplateMapFromContext(ctx)
-		m["UUID"] = uuid
 
-		code, _, apiErr := c.CheckCodeStatus(r, uuid)
+		m := controller.TemplateMapFromContext(ctx)
+		type FormData struct {
+			UUID string `form:"uuid"`
+		}
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			flash.Error("Failed to process form: %v", err)
+			c.h.RenderHTML(w, "codestatus/show", m)
+		}
+
+		m["UUID"] = form.UUID
+		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
 			flash.Error("Failed to process form: %v", apiErr.Error)
 			c.h.RenderHTML(w, "codestatus/show", m)

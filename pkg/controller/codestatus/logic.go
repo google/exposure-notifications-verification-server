@@ -27,7 +27,7 @@ import (
 
 func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.VerificationCode, int, *api.ErrorReturn) {
 	ctx := r.Context()
-	logger := c.logger.Named("issueapi.CheckCodeStatus")
+	logger := c.logger.Named("codestatus.CheckCodeStatus")
 	authApp, user, err := c.getAuthorizationFromContext(r)
 	if err != nil {
 		return nil, http.StatusUnauthorized, api.Error(err)
