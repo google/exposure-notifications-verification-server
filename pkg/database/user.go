@@ -145,22 +145,7 @@ func (db *Database) FindUserByEmail(email string) (*User, error) {
 
 // SaveUser updates the user in the database.
 func (db *Database) SaveUser(u *User) error {
-	// Gorm can't tell the difference between an empty slice and a non-loaded
-	// slice, so we have to explicitly tell it - if the slice is empty, remove
-	// previous associations.
-	if !db.db.NewRecord(u) {
-		if len(u.Realms) == 0 {
-			if err := db.db.Model(u).Association("Realms").Clear().Error; err != nil {
-				return err
-			}
-		}
-
-		if len(u.AdminRealms) == 0 {
-			if err := db.db.Model(u).Association("AdminRealms").Clear().Error; err != nil {
-				return err
-			}
-		}
-	}
-
+	db.db.Model(u).Association("Realms").Replace(u.Realms)
+	db.db.Model(u).Association("AdminRealms").Replace(u.AdminRealms)
 	return db.db.Save(u).Error
 }

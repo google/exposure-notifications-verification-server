@@ -590,6 +590,48 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00026-EnableExtension_citext",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: enabling citext extension")
+				return tx.Exec("CREATE EXTENSION citext").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("DROP EXTENSION citext").Error
+			},
+		},
+		{
+			ID: "00026-AlterColumns_citext",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: setting columns to case insensitive")
+				sqls := []string{
+					"ALTER TABLE authorized_apps ALTER COLUMN name TYPE CITEXT",
+					"ALTER TABLE realms ALTER COLUMN name TYPE CITEXT",
+					"ALTER TABLE users ALTER COLUMN email TYPE CITEXT",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					"ALTER TABLE authorized_apps ALTER COLUMN name TYPE TEXT",
+					"ALTER TABLE realms ALTER COLUMN name TYPE TEXT",
+					"ALTER TABLE users ALTER COLUMN email TYPE TEXT",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
 	})
 }
 
