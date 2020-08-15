@@ -50,7 +50,7 @@ func (c *Controller) HandleShow() http.Handler {
 			c.h.RenderHTML(w, "codestatus/show", m)
 		}
 
-		m["UUID"] = form.UUID
+		m["uuid"] = form.UUID
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
 			flash.Error("Failed to process form: %v", apiErr.Error)
@@ -64,7 +64,7 @@ func (c *Controller) HandleShow() http.Handler {
 		} else {
 			status = "not yet claimed"
 		}
-		m["Status"] = status
+		m["status"] = status
 		var exp string
 		if code.IsExpired() {
 			exp = "expired"
@@ -72,7 +72,7 @@ func (c *Controller) HandleShow() http.Handler {
 			// TODO(whaught): This might be nicer as a formatted duration until now
 			exp = code.ExpiresAt.UTC().Format(time.RFC1123)
 		}
-		m["Expires"] = exp
+		m["expires"] = exp
 		c.h.RenderHTML(w, "codestatus/show", m)
 	})
 }
