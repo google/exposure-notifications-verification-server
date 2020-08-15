@@ -31,7 +31,7 @@ substitutions:
 
 steps:
 - id: 'migrate'
-  name: 'golang:1.14'
+  name: 'golang:1.15'
   env:
   - 'DB_APIKEY_DATABASE_KEY=${_DB_APIKEY_DATABASE_KEY}'
   - 'DB_APIKEY_SIGNATURE_KEY=${_DB_APIKEY_SIGNATURE_KEY}'
