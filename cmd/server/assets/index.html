@@ -57,10 +57,8 @@
       // tosUrl and privacyPolicyUrl accept either url string or a callback
       // function. You should update these to point to your Terms of Service and
       // Privacy Policy accordingly.
-      'tosUrl': 'http://example.com',
-      'privacyPolicyUrl': function() {
-        window.location.assign('http://example.com');
-      }
+      'tosUrl': '{{.firebase.TermsOfServiceURL}}',
+      'privacyPolicyUrl': '{{.firebase.PrivacyPolicyURL}}',
     };
 
     // Initialize the FirebaseUI Widget using Firebase.

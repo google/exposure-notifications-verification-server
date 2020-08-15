@@ -89,10 +89,11 @@ export FIREBASE_PROJECT_ID="YOUR-PROJECT-123456"
 export FIREBASE_MESSAGE_SENDER_ID="789123456"
 export FIREBASE_APP_ID="1:123456:web:abcd1234"
 export FIREBASE_MEASUREMENT_ID="G-J12345C"
-
 export FIREBASE_AUTH_DOMAIN="${FIREBASE_PROJECT_ID}.firebaseapp.com"
 export FIREBASE_DATABASE_URL="https://${FIREBASE_PROJECT_ID}.firebaseio.com"
 export FIREBASE_STORAGE_BUCKET="${FIREBASE_PROJECT_ID}.appspot.com"
+export FIREBASE_TERMS_OF_SERVICE_URL="https://example.com"
+export FIREBASE_PRIVACY_POLICY_URL="https://example.com"
 
 export TOKEN_SIGNING_KEY="<Token Key Resource ID from Above>"
 export CERTIFICATE_SIGNING_KEY="<Certificate Key Resource ID from Above>"
