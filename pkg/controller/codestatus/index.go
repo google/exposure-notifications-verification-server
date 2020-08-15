@@ -29,6 +29,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		// TODO(whaught): load a list of recent codes to show
 
-		c.h.RenderHTML(w, "codestatus/index", m)
+		c.h.RenderHTML(w, "code/status", m)
 	})
 }

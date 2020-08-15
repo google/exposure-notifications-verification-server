@@ -6,6 +6,7 @@
 
 <!doctype html>
 <html lang="en">
+
 <head>
   {{template "head" .}}
 </head>
@@ -30,7 +31,7 @@
       <div class="card-body">
         <div class="alert alert-danger" role="alert">
           This is your API key - it will only be displayed once. <strong>You
-          must securely save this API key elsewhere!</strong>
+            must securely save this API key elsewhere!</strong>
         </div>
 
         <textarea class="form-control" rows="4" readonly>{{$apiKey}}</textarea>
@@ -49,11 +50,11 @@
         <strong>Type</strong>
         <div>
           {{if (eq $authApp.APIKeyType 0)}}
-            Device (can verify codes)
+          Device (can verify codes)
           {{else if (eq $authApp.APIKeyType 1)}}
-            Admin (can issue codes)
+          Admin (can issue codes)
           {{else}}
-            Unknown
+          Unknown
           {{end}}
         </div>
       </div>
@@ -93,5 +94,6 @@
 
   {{template "scripts" .}}
 </body>
+
 </html>
 {{end}}

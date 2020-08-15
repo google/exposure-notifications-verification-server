@@ -193,14 +193,14 @@ func realMain(ctx context.Context) error {
 	}
 
 	{
-		sub := r.PathPrefix("/codestatus").Subrouter()
+		sub := r.PathPrefix("/code").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(requireRealm)
 		sub.Use(rateLimit)
 
 		codeStatusController := codestatus.NewServer(ctx, config, db, h)
-		sub.Handle("", codeStatusController.HandleIndex()).Methods("GET")
-		sub.Handle("/{id}", codeStatusController.HandleShow()).Methods("POST")
+		sub.Handle("/status", codeStatusController.HandleIndex()).Methods("GET")
+		sub.Handle("/show", codeStatusController.HandleShow()).Methods("POST")
 	}
 
 	// apikeys

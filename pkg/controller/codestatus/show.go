@@ -47,14 +47,14 @@ func (c *Controller) HandleShow() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.h.RenderHTML(w, "codestatus/show", m)
+			c.h.RenderHTML(w, "code/show", m)
 		}
 
 		m["uuid"] = form.UUID
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
 			flash.Error("Failed to process form: %v", apiErr.Error)
-			c.h.RenderHTML(w, "codestatus/show", m)
+			c.h.RenderHTML(w, "code/show", m)
 			return
 		}
 
@@ -73,6 +73,6 @@ func (c *Controller) HandleShow() http.Handler {
 			exp = code.ExpiresAt.UTC().Format(time.RFC1123)
 		}
 		m["expires"] = exp
-		c.h.RenderHTML(w, "codestatus/show", m)
+		c.h.RenderHTML(w, "code/show", m)
 	})
 }
