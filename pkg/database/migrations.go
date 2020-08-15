@@ -236,7 +236,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				defaultRealm := Realm{
 					Name: "Default",
 				}
-				if err := tx.Create(&defaultRealm).Error; err != nil {
+				if err := tx.FirstOrCreate(&defaultRealm).Error; err != nil {
 					return err
 				}
 
