@@ -17,16 +17,43 @@ package realmadmin
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
+var (
+	shortCodeLengths = []int{6, 7, 8}
+	shortCodeMinutes = []int{}
+	longCodeLengths  = []int{12, 13, 14, 15, 16}
+	longCodeHours    = []int{}
+)
+
+func init() {
+	for i := 5; i <= 60; i++ {
+		shortCodeMinutes = append(shortCodeMinutes, i)
+	}
+	for i := 1; i <= 24; i++ {
+		longCodeHours = append(longCodeHours, i)
+	}
+}
+
 func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
 		Name             string            `form:"name"`
+		RegionCode       string            `form:"regionCode"`
 		AllowedTestTypes database.TestType `form:"allowedTestTypes"`
+
+		CodeLength          uint   `form:"codeLength"`
+		CodeDurationMinutes int64  `form:"codeDuration"`
+		UseSMSLongCodes     bool   `form:"UseSMSLongCodes"`
+		LongCodeLength      uint   `form:"longCodeLength"`
+		LongCodeHours       int64  `form:"longCodeDuration"`
+		DeepLinkProtocol    string `form:"deepLinkProtocol"`
+		DeepLinkRegion      bool   `form:"DeepLinkRegion"`
+		SMSTextGreeting     string `form:"SMSTextGreeting"`
 
 		TwilioAccountSid string `form:"twilio_account_sid"`
 		TwilioAuthToken  string `form:"twilio_auth_token"`
@@ -66,7 +93,18 @@ func (c *Controller) HandleSave() http.Handler {
 
 		// Process general settings
 		realm.Name = form.Name
+		realm.RegionCode = form.RegionCode
 		realm.AllowedTestTypes = form.AllowedTestTypes
+		realm.CodeLength = form.CodeLength
+		codeDuration := time.Minute * time.Duration(form.CodeDurationMinutes)
+		realm.CodeDurationSeconds = int64(codeDuration.Seconds())
+		realm.UseSMSLongCodes = form.UseSMSLongCodes
+		realm.LongCodeLength = form.LongCodeLength
+		longCodeDuration := time.Hour * time.Duration(form.LongCodeHours)
+		realm.LongCodeDurationSeconds = int64(longCodeDuration.Seconds())
+		realm.DeepLinkProtocol = form.DeepLinkProtocol
+		realm.DeepLinkRegion = form.DeepLinkRegion
+		realm.SMSTextGreeting = form.SMSTextGreeting
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to update realm: %v", err)
 			c.renderShow(ctx, w, realm, nil)
@@ -134,5 +172,10 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, real
 		"likely":    database.TestTypeConfirmed | database.TestTypeLikely,
 		"negative":  database.TestTypeConfirmed | database.TestTypeLikely | database.TestTypeNegative,
 	}
+	// Valid settings for code parameters.
+	m["shortCodeLengths"] = shortCodeLengths
+	m["shortCodeMinutes"] = shortCodeMinutes
+	m["longCodeLengths"] = longCodeLengths
+	m["longCodeHours"] = longCodeHours
 	c.h.RenderHTML(w, "realm", m)
 }

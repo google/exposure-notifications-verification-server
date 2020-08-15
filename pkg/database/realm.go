@@ -17,6 +17,7 @@ package database
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
@@ -32,6 +33,11 @@ const (
 	TestTypeNegative
 )
 
+const (
+	maxCodeDurationSeconds     = 60 * 60      // 1 hour in seconds
+	maxLongCodeDurationSeconds = 60 * 60 * 24 // 24 hours in seconds
+)
+
 // Realm represents a tenant in the system. Typically this corresponds to a
 // geography or a public health authority scope.
 // This is used to manage user logins.
@@ -41,6 +47,19 @@ type Realm struct {
 
 	// Name is the name of the realm.
 	Name string `gorm:"type:varchar(200);unique_index"`
+
+	// Code configuration
+	RegionCode              string `gorm:"type:varchar(5); not null; default: ''"`
+	CodeLength              uint   `gorm:"type:smallint; not null; default: 8"`
+	CodeDurationSeconds     int64  `gorm:"type:bigint; not null; default: 900"` // default 15m (in seconds)
+	UseSMSLongCodes         bool   `gorm:"type:boolean; not null; default: true"`
+	LongCodeLength          uint   `gorm:"type:smallint; not null; default: 16"`
+	LongCodeDurationSeconds int64  `gorm:"type:bigint; not null; default: 86400"` // default 24h
+	// SMS Content
+	DeepLinkProtocol string `gorm:"type:varchar(50); not null; default: 'ens://v?'"`
+	DeepLinkRegion   bool   `gorm:"type:boolean; not null; default: true"`
+	// The default SMSTextGreeting is shown before the deep link or code and expiration time (always included).
+	SMSTextGreeting string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code:'"`
 
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
@@ -55,20 +74,75 @@ type Realm struct {
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
+
+	// Populated by AfterFind
+	codeDuration     time.Duration
+	longCodeDuration time.Duration
+}
+
+// NewRealmWithDefaults initializes a new Realm with the default settings populated,
+// and the provided name. It does NOT save the Realm to the database.
+func NewRealmWithDefaults(name string) *Realm {
+	return &Realm{
+		Name:                    name,
+		CodeLength:              8,
+		CodeDurationSeconds:     900, // 15m
+		UseSMSLongCodes:         true,
+		LongCodeLength:          16,
+		LongCodeDurationSeconds: 86400,
+		DeepLinkProtocol:        "ens://v?",
+		DeepLinkRegion:          true,
+		SMSTextGreeting:         "This is your Exposure Notifications Verification code:",
+		AllowedTestTypes:        14,
+	}
+}
+
+func (r *Realm) AfterFind(tx *gorm.DB) error {
+	r.codeDuration = time.Duration(r.CodeDurationSeconds) * time.Second
+	r.longCodeDuration = time.Duration(r.LongCodeDurationSeconds) * time.Second
+	return nil
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
 func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	r.Name = strings.TrimSpace(r.Name)
-
 	if r.Name == "" {
 		r.AddError("name", "cannot be blank")
+	}
+
+	r.RegionCode = strings.ToUpper(strings.TrimSpace(r.RegionCode))
+
+	if r.CodeLength < 6 {
+		r.AddError("codeLength", "must be at least 6")
+	}
+	if r.CodeDurationSeconds > maxCodeDurationSeconds {
+		r.AddError("codeDurationSeconds", "must be no more than 1 hour")
 	}
 
 	if len(r.Errors()) > 0 {
 		return fmt.Errorf("validation failed")
 	}
 	return nil
+}
+
+func (r *Realm) GetCodeDuration() time.Duration {
+	return r.codeDuration
+}
+
+// GetCodeDurationMinutes is a helper for the HTML rendering to get a round
+// minutes value.
+func (r *Realm) GetCodeDurationMinutes() int {
+	return int(r.codeDuration.Minutes())
+}
+
+func (r *Realm) GetLongCodeDuration() time.Duration {
+	return r.longCodeDuration
+}
+
+// GetLongCodeDurationHours is a helper for the HTML rendering to get a round
+// hours value.
+func (r *Realm) GetLongCodeDurationHours() int {
+	return int(r.longCodeDuration.Hours())
 }
 
 // SMSConfig returns the SMS configuration for this realm, if one exists.
@@ -189,13 +263,12 @@ func (r *Realm) ValidTestType(typ string) bool {
 }
 
 func (db *Database) CreateRealm(name string) (*Realm, error) {
-	var realm Realm
-	realm.Name = name
+	realm := NewRealmWithDefaults(name)
 
-	if err := db.db.Create(&realm).Error; err != nil {
+	if err := db.db.Create(realm).Error; err != nil {
 		return nil, fmt.Errorf("unable to save realm: %w", err)
 	}
-	return &realm, nil
+	return realm, nil
 }
 
 func (db *Database) GetRealmByName(name string) (*Realm, error) {

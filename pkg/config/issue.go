@@ -21,6 +21,4 @@ import "time"
 type IssueAPIConfig interface {
 	GetCollisionRetryCount() uint
 	GetAllowedSymptomAge() time.Duration
-	GetVerificationCodeDuration() time.Duration
-	GetVerificationCodeDigits() uint
 }

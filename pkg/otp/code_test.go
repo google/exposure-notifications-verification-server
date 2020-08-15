@@ -42,6 +42,27 @@ func TestGenerateCode(t *testing.T) {
 	}
 }
 
+func TestGenerateAlphanumericCode(t *testing.T) {
+	// Run through a whole bunch of iterations.
+	for j := 0; j < 1000; j++ {
+		code, err := GenerateAlphanumericCode(16)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if got := len(code); got != 16 {
+			t.Fatalf("code is wrong length want 16, got %v", got)
+		}
+		t.Log(code)
+
+		for i, c := range code {
+			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'v')) {
+				t.Errorf("code[%v]: %v outside expected range 0-9,a-v", i, c)
+			}
+		}
+	}
+}
+
 func TestIssue(t *testing.T) {
 	t.Parallel()
 	db := database.NewTestDatabase(t)
@@ -49,14 +70,17 @@ func TestIssue(t *testing.T) {
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)
+	longCodes := make([]string, 0, numCodes)
 	for i := 0; i < numCodes; i++ {
 		otp := Request{
-			DB:        db,
-			Length:    8,
-			ExpiresAt: time.Now().Add(time.Hour),
-			TestType:  "confirmed",
+			DB:             db,
+			ShortLength:    8,
+			ShortExpiresAt: time.Now().Add(15 * time.Minute),
+			LongLength:     16,
+			LongExpiresAt:  time.Now().Add(24 * time.Hour),
+			TestType:       "confirmed",
 		}
-		code, uuid, err := otp.Issue(ctx, 10)
+		code, longCode, uuid, err := otp.Issue(ctx, 10)
 		if err != nil {
 			t.Errorf("error generating code: %v", err)
 		}
@@ -64,6 +88,7 @@ func TestIssue(t *testing.T) {
 			t.Errorf("expected uuid from db, was empty")
 		}
 		codes = append(codes, code)
+		longCodes = append(longCodes, longCode)
 	}
 
 	if got := len(codes); got != numCodes {
@@ -76,6 +101,16 @@ func TestIssue(t *testing.T) {
 			t.Errorf("didn't find previously saved code")
 		}
 		if verCode != nil && verCode.Code != code {
+			t.Fatalf("loaded code doesn't match requested code")
+		}
+	}
+
+	for _, code := range longCodes {
+		verCode, err := db.FindVerificationCode(code)
+		if err != nil {
+			t.Errorf("didn't find previously saved code")
+		}
+		if verCode != nil && verCode.LongCode != code {
 			t.Fatalf("loaded code doesn't match requested code")
 		}
 	}

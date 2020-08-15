@@ -83,7 +83,7 @@ func (c *Controller) HandleHome() http.Handler {
 		m["maxDate"] = now.Format("2006-01-02")
 		m["minDate"] = now.Add(c.pastDaysDuration).Format("2006-01-02")
 		m["maxSymptomDays"] = c.displayAllowedDays
-		m["duration"] = c.config.CodeDuration.String()
+		m["duration"] = realm.GetCodeDuration().String()
 		m["hasSMSConfig"] = hasSMSConfig
 		c.h.RenderHTML(w, "home", m)
 	})

@@ -118,23 +118,30 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 		}
 
-		expiration := c.config.GetVerificationCodeDuration()
-		expiryTime := time.Now().UTC().Add(expiration)
+		now := time.Now().UTC()
+		expiryTime := now.Add(realm.GetCodeDuration())
+		longExpiryTime := now.Add(realm.GetLongCodeDuration())
+		if request.Phone == "" || smsProvider == nil {
+			// If this isn't going to be send via SMS, make the long code expiration time same as short.
+			longExpiryTime = expiryTime
+		}
 
 		// Generate verification code
 		codeRequest := otp.Request{
-			DB:            c.db,
-			Length:        c.config.GetVerificationCodeDigits(),
-			ExpiresAt:     expiryTime,
-			TestType:      request.TestType,
-			SymptomDate:   symptomDate,
-			MaxSymptomAge: c.config.GetAllowedSymptomAge(),
-			IssuingUser:   user,
-			IssuingApp:    authApp,
-			RealmID:       realm.ID,
+			DB:             c.db,
+			ShortLength:    realm.CodeLength,
+			ShortExpiresAt: expiryTime,
+			LongLength:     realm.LongCodeLength,
+			LongExpiresAt:  longExpiryTime,
+			TestType:       request.TestType,
+			SymptomDate:    symptomDate,
+			MaxSymptomAge:  c.config.GetAllowedSymptomAge(),
+			IssuingUser:    user,
+			IssuingApp:     authApp,
+			RealmID:        realm.ID,
 		}
 
-		code, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
+		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
@@ -142,7 +149,31 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			message := fmt.Sprintf(smsTemplate, code, int(expiration.Minutes()))
+			link := code
+			expValue := realm.GetCodeDuration().Minutes()
+			expUnit := "minutes"
+			if realm.UseSMSLongCodes {
+				// Format is protocol, r=region and c=code
+				// ens://v?r=us-ca&c=a1b2c3d4e5f6g7h8
+				link = realm.DeepLinkProtocol
+				if realm.DeepLinkRegion {
+					link = link + "r=" + realm.RegionCode + "&"
+				}
+				if realm.UseSMSLongCodes {
+					link = link + "c=" + longCode
+					// alter expiration time.
+					if realm.GetLongCodeDuration().Hours() >= 2 {
+						expValue = realm.GetLongCodeDuration().Hours()
+						expUnit = "hours"
+					}
+				} else {
+					link = link + "c=" + code
+				}
+			}
+
+			// The actual SMS message is
+			// "realm greeting" link/code Expires in XX units
+			message := fmt.Sprintf("%s %s Expires in %d %s", realm.SMSTextGreeting, link, int64(expValue), expUnit)
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token
 				if err := c.db.DeleteVerificationCode(code); err != nil {
@@ -178,7 +209,3 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 
 	return authorizedApp, user, nil
 }
-
-const smsTemplate = `Your exposure notifications verification code is %s. ` +
-	`Enter this code into your exposure notifications app. Do NOT share this ` +
-	`code with anyone. This code expires in %d minutes.`

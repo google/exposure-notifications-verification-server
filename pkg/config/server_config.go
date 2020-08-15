@@ -56,8 +56,6 @@ type ServerConfig struct {
 
 	// Application Config
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
-	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
-	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
 
@@ -89,7 +87,6 @@ func (c *ServerConfig) Validate() error {
 	}{
 		{c.SessionDuration, "SESSION_DURATION"},
 		{c.RevokeCheckPeriod, "REVOKE_CHECK_DURATION"},
-		{c.CodeDuration, "CODE_DURATION"},
 		{c.AllowedSymptomAge, "ALLOWED_PAST_SYMPTOM_DAYS"},
 	}
 
@@ -108,14 +105,6 @@ func (c *ServerConfig) GetCollisionRetryCount() uint {
 
 func (c *ServerConfig) GetAllowedSymptomAge() time.Duration {
 	return c.AllowedSymptomAge
-}
-
-func (c *ServerConfig) GetVerificationCodeDuration() time.Duration {
-	return c.CodeDuration
-}
-
-func (c *ServerConfig) GetVerificationCodeDigits() uint {
-	return c.CodeDigits
 }
 
 func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
