@@ -22,12 +22,13 @@ import (
 	"fmt"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
-	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 
 	// ensure the postgres dialiect is compiled in.
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -39,8 +40,8 @@ type Database struct {
 	db     *gorm.DB
 	config *Config
 
-	// cacher is an internal write-through cache for frequent lookups.
-	cacher *cache.Cache
+	// cacher is a write-through cache for frequent lookups.
+	cacher cache.Cacher
 
 	// keyManager is used to encrypt/decrypt values.
 	keyManager keys.KeyManager
@@ -56,7 +57,7 @@ type Database struct {
 // key managers. It does NOT connect to the database.
 func (c *Config) Load(ctx context.Context) (*Database, error) {
 	// Create the cacher.
-	cacher, err := cache.New(c.CacheTTL)
+	cacher, err := cache.NewInMemory(nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cache: %w", err)
 	}
