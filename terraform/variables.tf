@@ -139,7 +139,7 @@ variable "server_custom_domain" {
 terraform {
   required_providers {
     google      = "~> 3.32"
-    google-beta = "~> 3.34"
+    google-beta = "~> 3.35"
     null        = "~> 2.1"
     random      = "~> 2.3"
   }
