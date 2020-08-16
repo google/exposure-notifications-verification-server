@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This server implements the device facing APIs for exchaning verification codes
+// This server implements the device facing APIs for exchanging verification codes
 // for tokens and tokens for certificates.
 package main
 
@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -47,7 +48,8 @@ import (
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)

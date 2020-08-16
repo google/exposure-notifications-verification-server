@@ -1,0 +1,34 @@
+{{define "users/edit"}}
+
+{{$currentRealm := .currentRealm}}
+{{$user := .user}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Edit user</h1>
+    <p>
+      Use the form below to edit the user.
+    </p>
+
+    <div class="card mb-3">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        {{template "users/_form" .}}
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

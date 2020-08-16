@@ -36,6 +36,10 @@ const (
 	ErrVerifyCodeInvalid = "code_invalid"
 	// ErrVerifyCodeExpired indicates the code provided is known to the server, but expired.
 	ErrVerifyCodeExpired = "code_expired"
+	// ErrVerifyCodeNotFound indicates the code does not exist on the server/realm.
+	ErrVerifyCodeNotFound = "code_not_found"
+	// ErrVerifyCodeUserUnauth indicates the code does not belong to the requesting user.
+	ErrVerifyCodeUserUnauth = "code_user_unauthorized"
 
 	// Certificate API responses
 	// ErrTokenInvalid indicates the token provided is unknown or already used
@@ -49,7 +53,7 @@ const (
 // ErrorReturn defines the common error type.
 type ErrorReturn struct {
 	Error     string `json:"error"`
-	ErrorCode string `json:"error_code"`
+	ErrorCode string `json:"errorCode"`
 }
 
 // InternalError constructs a generic internal error.
@@ -88,19 +92,51 @@ type CSRFResponse struct {
 // code. This is called by the Web frontend.
 // API is served at /api/issue
 type IssueCodeRequest struct {
-	TestType    string `json:"testType"`
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
+	TestDate    string `json:"testDate"`
+	TestType    string `json:"testType"`
 	Phone       string `json:"phone"`
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	ID                 string `json:"id"` // Handle which allows the issuer to track status of the issued verification code.
-	VerificationCode   string `json:"code"`
-	ExpiresAt          string `json:"expiresAt"`          // RFC1123 string formatted timestamp, in UTC.
-	ExpiresAtTimestamp int64  `json:"expiresAtTimestamp"` // Unix, seconds since the epoch. Still UTC.
-	Error              string `json:"error"`
-	ErrorCode          string `json:"errorCode,omitempty"`
+	// UUID is a handle which allows the issuer to track status of the issued verification code.
+	UUID string `json:"uuid"`
+
+	// The OTP code which may be exchanged by the user for a signing token.
+	VerificationCode string `json:"code"`
+
+	// ExpiresAt is a RFC1123 formatted string formatted timestamp, in UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAt string `json:"expiresAt"`
+
+	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
+
+	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
+// CheckCodeStatusRequest defines the parameters to request the status for a
+// previously issued OTP code. This is called by the Web frontend.
+// API is served at /api/checkcodestatus
+type CheckCodeStatusRequest struct {
+	// UUID is a handle which allows the issuer to track status of the issued verification code.
+	UUID string `json:"uuid"`
+}
+
+// CheckCodeStatusResponse defines the response type for CheckCodeStatusRequest.
+type CheckCodeStatusResponse struct {
+	// Claimed is true if a user has used the OTP code to get a token via the VerifyCode api.
+	Claimed bool `json:"claimed"`
+
+	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
+
+	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode,omitempty"`
 }
 
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code

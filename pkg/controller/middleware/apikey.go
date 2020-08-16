@@ -108,7 +108,6 @@ func RequireAPIKey(ctx context.Context, cache *cache.Cache, db *database.Databas
 			ctx = controller.WithAuthorizedApp(ctx, authApp)
 			*r = *r.WithContext(ctx)
 
-			logger.Debugw("done")
 			next.ServeHTTP(w, r)
 		})
 	}

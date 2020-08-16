@@ -24,6 +24,8 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
@@ -64,7 +66,8 @@ func timeToInterval(t time.Time) int32 {
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -87,10 +90,10 @@ func realMain(ctx context.Context) error {
 	verbose := flag.Bool("v", false, "ALL THE MESSAGES!")
 	flag.Parse()
 
-	reportType := "confirmed"
+	testType := "confirmed"
 	iterations := 1
 	if *doRevision {
-		reportType = "likely"
+		testType = "likely"
 		iterations++
 	}
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format("2006-01-02")
@@ -113,7 +116,7 @@ func realMain(ctx context.Context) error {
 	for i := 0; i < iterations; i++ {
 		// Issue the verification code.
 		logger.Infof("Issuing verification code")
-		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, reportType, symptomDate, timeout)
+		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, timeout)
 		if err != nil {
 			return fmt.Errorf("error issuing verification code: %w", err)
 		} else if code.Error != "" {
@@ -135,6 +138,20 @@ func realMain(ctx context.Context) error {
 		if *verbose {
 			logger.Infof("Token Request: %+v", tokenRequest)
 			logger.Infof("Token Response: %+v", token)
+		}
+
+		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
+		if err != nil {
+			return fmt.Errorf("error issuing verification code: %w", err)
+		} else if codeStatus.Error != "" {
+			return fmt.Errorf("issue API Error: %+v", codeStatus)
+		}
+		if *verbose {
+			logger.Infof("Code Status Request: %+v", statusReq)
+			logger.Infof("Code Status Response: %+v", codeStatus)
+		}
+		if !codeStatus.Claimed {
+			return fmt.Errorf("expected claimed OTP code for %s", statusReq.UUID)
 		}
 
 		// Get the verification certificate
@@ -185,7 +202,7 @@ func realMain(ctx context.Context) error {
 		}
 
 		if *doRevision {
-			reportType = "confirmed"
+			testType = "confirmed"
 			revisionToken = response.RevisionToken
 
 			// Generate 1 more TEK

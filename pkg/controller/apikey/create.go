@@ -23,19 +23,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func (c *Controller) HandleNew() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		var authApp database.AuthorizedApp
-		authApp.APIKeyType = -1
-		c.renderNew(ctx, w, &authApp)
-	})
-}
-
 func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Name string               `form:"name,required"`
-		Type database.APIUserType `form:"type,required"`
+		Name string               `form:"name"`
+		Type database.APIUserType `form:"type"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,26 +45,36 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
+		// Requested form, stop processing.
+		if r.Method == http.MethodGet {
 			var authApp database.AuthorizedApp
-			authApp.Name = form.Name
-			authApp.APIKeyType = form.Type
-
-			flash.Error("Failed to process form: %v", err)
+			authApp.APIKeyType = -1
 			c.renderNew(ctx, w, &authApp)
 			return
 		}
 
-		apiKey, authApp, err := c.db.CreateAuthorizedApp(realm.ID, form.Name, form.Type)
-		if err != nil {
-			var authApp database.AuthorizedApp
-			authApp.Name = form.Name
-			authApp.APIKeyType = form.Type
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			authApp := &database.AuthorizedApp{
+				Name:       form.Name,
+				APIKeyType: form.Type,
+			}
 
-			c.logger.Errorw("failed to create authorized app", "error", err)
-			flash.Error("Failed to create API key: %v", err)
-			c.renderNew(ctx, w, &authApp)
+			flash.Error("Failed to process form: %v", err)
+			c.renderNew(ctx, w, authApp)
+			return
+		}
+
+		// Build the authorized app struct
+		authApp := &database.AuthorizedApp{
+			Name:       form.Name,
+			APIKeyType: form.Type,
+		}
+
+		apiKey, err := realm.CreateAuthorizedApp(c.db, authApp)
+		if err != nil {
+			flash.Error("Failed to create API Key: %v", err)
+			c.renderNew(ctx, w, authApp)
 			return
 		}
 

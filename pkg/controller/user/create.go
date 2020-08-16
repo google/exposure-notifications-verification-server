@@ -15,15 +15,17 @@
 package user
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Email string `form:"email,required"`
-		Name  string `form:"name,required"`
+		Email string `form:"email"`
+		Name  string `form:"name"`
 		Admin bool   `form:"admin"`
 	}
 
@@ -37,51 +39,66 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
-
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
 			controller.MissingRealm(w, r, c.h)
 			return
 		}
 
+		// Requested form, stop processing.
+		if r.Method == http.MethodGet {
+			var user database.User
+			c.renderNew(ctx, w, &user)
+			return
+		}
+
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
+			user := &database.User{
+				Email: form.Email,
+				Name:  form.Name,
+				Admin: form.Admin,
+			}
+
 			flash.Error("Failed to process form: %v", err)
-			http.Redirect(w, r, "/users", http.StatusSeeOther)
+			c.renderNew(ctx, w, user)
 			return
 		}
 
-		m := controller.TemplateMapFromContext(ctx)
-		m["user"] = user
-
-		newUser, err := c.db.FindUser(form.Email)
+		// See if the user already exists by email - they may be a member of another
+		// realm.
+		user, err := c.db.FindUserByEmail(form.Email)
 		if err != nil {
-			// User doesn't exist, create.
-			newUser, err = c.db.CreateUser(form.Email, form.Name, false)
-			if err != nil {
-				flash.Error("Failed to create user: %v", err)
-				http.Redirect(w, r, "/users", http.StatusSeeOther)
+			if !database.IsNotFound(err) {
+				controller.InternalError(w, r, c.h, err)
 				return
 			}
+
+			user = new(database.User)
 		}
 
-		realm.AddUser(newUser)
+		// Build the user struct
+		user.Email = form.Email
+		user.Name = form.Name
+		user.Realms = append(user.Realms, realm)
+
 		if form.Admin {
-			realm.AddAdminUser(newUser)
+			user.AdminRealms = append(user.AdminRealms, realm)
 		}
 
-		if err := c.db.SaveRealm(realm); err != nil {
+		if err := c.db.SaveUser(user); err != nil {
 			flash.Error("Failed to create user: %v", err)
-			http.Redirect(w, r, "/users", http.StatusSeeOther)
+			c.renderNew(ctx, w, user)
 			return
 		}
 
-		flash.Alert("Created User %v", form.Email)
+		flash.Alert("Successfully created user '%v'", form.Name)
 		http.Redirect(w, r, "/users", http.StatusSeeOther)
 	})
+}
+
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["user"] = user
+	c.h.RenderHTML(w, "users/new", m)
 }

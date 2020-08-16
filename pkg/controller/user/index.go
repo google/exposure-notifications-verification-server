@@ -30,8 +30,8 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		// Lazy load users
-		if err := realm.LoadRealmUsers(c.db, false); err != nil {
+		realmUsers, err := realm.ListUsers(c.db)
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
@@ -39,7 +39,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		creationCounts1d := make(map[uint]uint64)
 		creationCounts7d := make(map[uint]uint64)
 		creationCounts30d := make(map[uint]uint64)
-		for _, user := range realm.RealmUsers {
+		for _, user := range realmUsers {
 			userStatsSummary, err := c.db.GetUserStatsSummary(user, realm)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
@@ -55,8 +55,8 @@ func (c *Controller) HandleIndex() http.Handler {
 		m["codesGenerated1d"] = creationCounts1d
 		m["codesGenerated7d"] = creationCounts7d
 		m["codesGenerated30d"] = creationCounts30d
-		m["realmUsers"] = realm.RealmUsers
+		m["realmUsers"] = realmUsers
 
-		c.h.RenderHTML(w, "users", m)
+		c.h.RenderHTML(w, "users/index", m)
 	})
 }

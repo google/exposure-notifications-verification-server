@@ -1,4 +1,9 @@
 {{define "realm"}}
+
+{{$realm := .realm}}
+{{$smsConfig := .smsConfig}}
+{{$testTypes := .testTypes}}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -13,7 +18,7 @@
 
     <h1>Realm settings</h1>
     <p>
-      Find or edit the settings for <strong>{{.realm.Name}}</strong> below.
+      Find or edit the settings for <strong>{{$realm.Name}}</strong> below.
     </p>
 
     <form method="POST" action="/realm/settings/save">
@@ -27,13 +32,62 @@
           <div class="form-group row">
             <label for="name" class="col-sm-3">Name:</label>
             <div class="col-sm-9">
-              <input type="text" id="name" name="name" class="form-control" value="{{.realm.Name}}" required />
+              <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}" />
+              {{if $realm.ErrorsFor "name"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($realm.ErrorsFor "name") ", "}}
+              </div>
+              {{end}}
+            </div>
+          </div>
+
+          <div class="form-group row mb-0">
+            <label class="col-sm-3">Allowed tests:</label>
+            <div class="col-sm-9">
+              <div class="form-group mb-0">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="allowedTestTypes" id="negative" value="{{$testTypes.negative}}"{{if eq $realm.AllowedTestTypes $testTypes.negative}} checked{{end}}/>
+                  <label class="form-check-label" for="negative">
+                    Positive + Likely + Negative
+                    <small class="form-text text-muted">
+                      Support confirmed positive tests from an official testing
+                      source, clinical diagnoses without a test, and confirmed
+                      negative test from an official testing source.
+                    </small>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="allowedTestTypes" id="likely" value="{{$testTypes.likely}}"{{if eq $realm.AllowedTestTypes $testTypes.likely}} checked{{end}} />
+                  <label class="form-check-label" for="likely">
+                    Positive + Likely
+                    <small class="form-text text-muted">
+                      Support confirmed positive tests from an official testing
+                      source and clinical diagnoses without a test.
+                    </small>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="allowedTestTypes" id="confirmed" value="{{$testTypes.confirmed}}"{{if eq $realm.AllowedTestTypes $testTypes.confirmed}} checked{{end}} />
+                  <label class="form-check-label" for="confirmed">
+                    Positive
+                    <small class="form-text text-muted">
+                      Only permit confirmed positive tests from an official
+                      testing source.
+                    </small>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {{$smsConfig := .realm.SMSConfig}}
       <div class="card mb-3">
         <div class="card-header">
           SMS configuration

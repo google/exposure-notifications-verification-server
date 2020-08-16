@@ -28,18 +28,28 @@
           <div class="form-group row">
             <label for="name" class="col-sm-3">App name:</label>
             <div class="col-sm-9">
-              <input type="text" id="name" name="name" class="form-control" value="{{$authApp.Name}}">
+              <input type="text" id="name" name="name" class="form-control{{if $authApp.ErrorsFor "name"}} is-invalid{{end}}" value="{{$authApp.Name}}">
+              {{if $authApp.ErrorsFor "name"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($authApp.ErrorsFor "name") ", "}}
+              </div>
+              {{end}}
             </div>
           </div>
 
           <div class="form-group row">
             <label for="type" class="col-sm-3">Type:</label>
             <div class="col-sm-9">
-              <select class="form-control" name="type" id="type">
+              <select class="form-control{{if $authApp.ErrorsFor "type"}} is-invalid{{end}}" name="type" id="type">
                 <option value="-1" {{if (eq $authApp.APIKeyType -1)}}selected{{else}}disabled{{end}}>Select...</option>
                 <option value="{{.typeDevice}}" {{if (eq $authApp.APIKeyType .typeDevice)}}selected{{end}}>Device (can verify codes)</option>
                 <option value="{{.typeAdmin}}" {{if (eq $authApp.APIKeyType .typeAdmin)}}selected{{end}}>Admin (can issue codes)</option>
               </select>
+              {{if $authApp.ErrorsFor "type"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($authApp.ErrorsFor "type") ", "}}
+              </div>
+              {{end}}
             </div>
           </div>
 

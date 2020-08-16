@@ -19,6 +19,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
@@ -29,7 +31,7 @@ import (
 )
 
 var (
-	reportFlag  = flag.String("type", "", "diagnosis report type: confirmed, likely, negative")
+	testFlag    = flag.String("type", "", "diagnosis test type: confirmed, likely, negative")
 	onsetFlag   = flag.String("onset", "", "Symptom onset date, YYYY-MM-DD format")
 	apikeyFlag  = flag.String("apikey", "", "API Key to use")
 	addrFlag    = flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
@@ -41,7 +43,8 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -55,7 +58,7 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	request, response, err := clients.IssueCode(ctx, *addrFlag, *apikeyFlag, *reportFlag, *onsetFlag, *timeoutFlag)
+	request, response, err := clients.IssueCode(ctx, *addrFlag, *apikeyFlag, *testFlag, *onsetFlag, *timeoutFlag)
 	logger.Debugw("sent request", "request", request)
 	if err != nil {
 		return fmt.Errorf("failed to get token: %w", err)

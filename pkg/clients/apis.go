@@ -26,10 +26,10 @@ import (
 
 // IssueCode uses the ADMIN API to issue a verification code.
 // Currently does not accept the SMS param.
-func IssueCode(ctx context.Context, hostname string, apiKey, reportType, symptomDate string, timeout time.Duration) (*api.IssueCodeRequest, *api.IssueCodeResponse, error) {
+func IssueCode(ctx context.Context, hostname string, apiKey, testType, symptomDate string, timeout time.Duration) (*api.IssueCodeRequest, *api.IssueCodeResponse, error) {
 	url := hostname + "/api/issue"
 	request := api.IssueCodeRequest{
-		TestType:    reportType,
+		TestType:    testType,
 		SymptomDate: symptomDate,
 	}
 	client := &http.Client{
@@ -47,7 +47,28 @@ func IssueCode(ctx context.Context, hostname string, apiKey, reportType, symptom
 	return &request, &response, nil
 }
 
-// GetToken makes the API call to exchang a code for a token.
+// CheckCodeStatus uses the ADMIN API to retrieve the status of an OTP code.
+func CheckCodeStatus(ctx context.Context, hostname string, apiKey, uuid string, timeout time.Duration) (*api.CheckCodeStatusRequest, *api.CheckCodeStatusResponse, error) {
+	url := hostname + "/api/checkcodestatus"
+	request := api.CheckCodeStatusRequest{
+		UUID: uuid,
+	}
+	client := &http.Client{
+		Timeout: timeout,
+	}
+
+	var response api.CheckCodeStatusResponse
+
+	headers := http.Header{}
+	headers.Add("X-API-Key", apiKey)
+
+	if err := jsonclient.MakeRequest(ctx, client, url, headers, request, &response); err != nil {
+		return &request, nil, err
+	}
+	return &request, &response, nil
+}
+
+// GetToken makes the API call to exchange a code for a token.
 func GetToken(ctx context.Context, hostname, apikey, code string, timeout time.Duration) (*api.VerifyCodeRequest, *api.VerifyCodeResponse, error) {
 	url := hostname + "/api/verify"
 	request := api.VerifyCodeRequest{

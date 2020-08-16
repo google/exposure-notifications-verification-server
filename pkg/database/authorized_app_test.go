@@ -19,9 +19,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestDatabase_CreateFindAPIKey(t *testing.T) {
@@ -34,7 +31,12 @@ func TestDatabase_CreateFindAPIKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apiKey, authApp, err := db.CreateAuthorizedApp(realm.ID, "University System Health Org", APIUserTypeAdmin)
+	authApp := &AuthorizedApp{
+		Name:       "University System Health Org",
+		APIKeyType: APIUserTypeAdmin,
+	}
+
+	apiKey, err := realm.CreateAuthorizedApp(db, authApp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,87 +48,29 @@ func TestDatabase_CreateFindAPIKey(t *testing.T) {
 	if got == nil {
 		t.Fatalf("expected result")
 	}
-	if got.Realm == nil {
-		t.Fatalf("expected realm to preload")
+
+	if _, err := got.Realm(db); err != nil {
+		t.Fatalf("expected realm: %v", err)
 	}
 
 	if strings.Contains(apiKey, authApp.APIKey) {
 		t.Errorf("database API key should be HMACed!")
 	}
 
-	// Ignore the preloaded realm on the got AuthorizedApp
-	if diff := cmp.Diff(authApp, got, approxTime, cmpopts.IgnoreFields(AuthorizedApp{}, "Realm")); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+	if got, want := got.RealmID, authApp.RealmID; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
 	}
-}
-
-// TODO(sethvargo): remove this when all migrations are complete
-func TestDatabase_CreateFindAPIKey_Legacy(t *testing.T) {
-	t.Parallel()
-
-	db := NewTestDatabase(t)
-
-	realm, err := db.CreateRealm("foo")
-	if err != nil {
-		t.Fatal(err)
+	if got, want := got.Name, authApp.Name; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
 	}
-
-	var authApp AuthorizedApp
-	authApp.RealmID = realm.ID
-	authApp.Name = "Testing 123"
-	authApp.APIKey = "abcd1234"
-	authApp.APIKeyType = APIUserTypeAdmin
-
-	if err := db.db.Create(&authApp).Error; err != nil {
-		t.Fatal(err)
+	if got, want := got.APIKey, authApp.APIKey; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
 	}
-
-	got, err := db.FindAuthorizedAppByAPIKey(authApp.APIKey)
-	if err != nil {
-		t.Fatal(err)
+	if got, want := got.APIKeyPreview, authApp.APIKeyPreview; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
 	}
-	if got == nil {
-		t.Fatalf("expected result")
-	}
-	if got.Realm == nil {
-		t.Fatalf("expected realm to preload")
-	}
-
-	// Ignore the preloaded realm on the got AuthorizedApp
-	if diff := cmp.Diff(&authApp, got, approxTime, cmpopts.IgnoreFields(AuthorizedApp{}, "Realm")); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
-	}
-}
-
-func TestDatabase_ListAPIKeys(t *testing.T) {
-	t.Parallel()
-
-	db := NewTestDatabase(t)
-
-	realm, err := db.CreateRealm("bar")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, authApp1, err := db.CreateAuthorizedApp(realm.ID, "App 1", APIUserTypeAdmin)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, authApp2, err := db.CreateAuthorizedApp(realm.ID, "App 2", APIUserTypeDevice)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []*AuthorizedApp{authApp1, authApp2}
-	got, err := db.ListAuthorizedApps(false)
-
-	if err != nil {
-		t.Fatalf("error listing apps: %v", err)
-	}
-
-	// Ignore the preloaded realm on the got AuthorizedApp
-	if diff := cmp.Diff(want, got, approxTime, cmpopts.IgnoreFields(AuthorizedApp{}, "Realm")); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+	if got, want := got.APIKeyType, authApp.APIKeyType; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
 	}
 }
 

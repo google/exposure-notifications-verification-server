@@ -16,9 +16,9 @@ package apikey
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
 )
 
@@ -40,19 +40,23 @@ func (c *Controller) HandleDisable() http.Handler {
 			return
 		}
 
-		id, err := strconv.ParseUint(vars["id"], 10, 64)
+		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
 		if err != nil {
-			flash.Error("Invalid authorized app")
-			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
-			return
-		}
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
 
-		if err := realm.DisableAuthorizedApp(uint(id)); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		flash.Alert("Successfully disabled API key")
+		if err := authApp.Disable(c.db); err != nil {
+			flash.Error("Failed to disable API Key: %v", err)
+			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+		}
+
+		flash.Alert("Successfully disabled API key '%v'", authApp.Name)
 		http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 	})
 }

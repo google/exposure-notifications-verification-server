@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -49,7 +50,8 @@ import (
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -187,6 +189,7 @@ func realMain(ctx context.Context) error {
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, config, db, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
+		sub.Handle("/checkcodestatus", issueapiController.HandleCheckCodeStatus()).Methods("POST")
 	}
 
 	// apikeys
@@ -200,8 +203,8 @@ func realMain(ctx context.Context) error {
 		apikeyController := apikey.New(ctx, config, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
 		sub.Handle("", apikeyController.HandleCreate()).Methods("POST")
-		sub.Handle("/new", apikeyController.HandleNew()).Methods("GET")
-		sub.Handle("/{id}/edit", apikeyController.HandleEdit()).Methods("GET")
+		sub.Handle("/new", apikeyController.HandleCreate()).Methods("GET")
+		sub.Handle("/{id}/edit", apikeyController.HandleUpdate()).Methods("GET")
 		sub.Handle("/{id}", apikeyController.HandleShow()).Methods("GET")
 		sub.Handle("/{id}", apikeyController.HandleUpdate()).Methods("PATCH")
 		sub.Handle("/{id}/disable", apikeyController.HandleDisable()).Methods("PATCH")
@@ -218,8 +221,12 @@ func realMain(ctx context.Context) error {
 
 		userController := user.New(ctx, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
-		userSub.Handle("/create", userController.HandleCreate()).Methods("POST")
-		userSub.Handle("/delete/{email}", userController.HandleDelete()).Methods("POST")
+		userSub.Handle("", userController.HandleCreate()).Methods("POST")
+		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
+		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")
+		userSub.Handle("/{id}", userController.HandleShow()).Methods("GET")
+		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
+		userSub.Handle("/{id}", userController.HandleDelete()).Methods("DELETE")
 	}
 
 	// realms
