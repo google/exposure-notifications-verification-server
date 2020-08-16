@@ -22,10 +22,10 @@ resource "google_compute_backend_service" "apiserver" {
 
 resource "google_compute_global_forwarding_rule" "apiserver-http" {
   name       = "apiserver-http"
-  target     = "${google_compute_backend_service.apiserver.self_link}"
-  ip_address = "${google_compute_global_address.apiserver.address}"
+  target     = google_compute_backend_service.apiserver.self_link
+  ip_address = google_compute_global_address.apiserver.address
   port_range = "80"
-  depends_on = ["google_compute_global_address.apiserver"]
+  depends_on = [google_compute_global_address.apiserver]
 }
 
 resource "google_compute_global_address" "apiserver" {
