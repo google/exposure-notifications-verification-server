@@ -641,16 +641,12 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				dropColumns := []string{
-					"use_sms_long_codes",
-					"use_sms_long_codes",
 					"long_code_length",
-					"long_code_duration_seconds",
+					"long_code_duration",
 					"region_code",
 					"code_length",
-					"code_duration_seconds",
-					"deep_link_protocol",
-					"deep_link_region",
-					"sms_text_greeting",
+					"code_duration",
+					"sms_text_template",
 				}
 				for _, col := range dropColumns {
 					stmt := fmt.Sprintf("ALTER TABLE realms DROP COLUMN %s", col)

@@ -52,7 +52,7 @@
               {{end}}
               <small class="form-text text-muted">
                 Used in creating deep link SMS for multi-helath authority apps. Region should
-                be ISO 3166-1 country codes and ISO 3166-2 subdivision codes where applicable.
+                be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and ISO 3166-2 subdivision codes</a> where applicable.
                 For example, Washington State would be <code>US-WA</code>.
               </small>
             </div>
@@ -111,7 +111,7 @@
         </div>
         <div class="card-body">
           <div class="form-group row">
-            <label for="codeLength" class="col-sm-3">Code length:</label>
+            <label for="codeLength" class="col-sm-3">Short code characters:</label>
             <div class="col-sm-9">
               <select class="form-control{{if $realm.ErrorsFor "codeLength"}} is-invalid{{end}}" name="codeLength" id="codeLength">
                 {{range $cl := .shortCodeLengths}}
@@ -119,7 +119,7 @@
                 {{end}}
               </select>
               <small class="form-text text-muted">
-                The 'short' verification code is intended to be read over the phone to the
+                The short verification code is intended to be dictated over the phone to the
                 person and is <code>6</code>, <code>7</code>, or <code>8</code> digits in length.
               </small>
             </div>
@@ -144,21 +144,7 @@
           </div>
 
           <div class="form-group row">
-            <label for="codeLength" class="col-sm-3">Send long codes in SMS:</label>
-            <div class="col-sm-9">
-              <select class="form-control{{if $realm.ErrorsFor "UseSMSLongCodes"}} is-invalid{{end}}" name="UseSMSLongCodes" id="UseSMSLongCodes">
-                <option value="true" {{if $realm.UseSMSLongCodes}}selected{{end}}>Yes</option>
-                <option value="false" {{if not $realm.UseSMSLongCodes}}selected{{end}}>No</option>
-              </select>
-              <small class="form-text text-muted">
-                If enabled, a longer code will be send via SMS to the user, using a deep link protocol
-                that can be registered by your application allowing for one click diagnosis reporting.
-              </small>
-            </div>
-          </div>
-
-          <div class="form-group row">
-            <label for="codeLength" class="col-sm-3">Long code length:</label>
+            <label for="codeLength" class="col-sm-3">Long code characters:</label>
             <div class="col-sm-9">
               <select class="form-control{{if $realm.ErrorsFor "longCodeLength"}} is-invalid{{end}}" name="longCodeLength" id="longCodeLength">
                 {{range $cl := .longCodeLengths}}
@@ -190,64 +176,37 @@
           </div>
 
           <div class="form-group row">
-            <label for="name" class="col-sm-3">Deep link protocol:</label>
+            <label for="name" class="col-sm-3">SMS text template:</label>
             <div class="col-sm-9">
-              <input type="text" id="deepLinkProtocol" name="deepLinkProtocol" class="form-control{{if $realm.ErrorsFor "deepLinkProtocol"}} is-invalid{{end}}" value="{{$realm.DeepLinkProtocol}}" />
-              {{if $realm.ErrorsFor "deepLinkProtocol"}}
+              <textarea id="SMSTextTemplate" name="SMSTextTemplate" class="form-control{{if $realm.ErrorsFor "SMSTextTemplate"}} is-invalid{{end}}">{{$realm.SMSTextTemplate}}</textarea>
+              {{if $realm.ErrorsFor "SMSTextTemplate"}}
               <div class="invalid-feedback">
-                {{joinStrings ($realm.ErrorsFor "deepLinkProtocol") ", "}}
+                {{joinStrings ($realm.ErrorsFor "SMSTextTemplate") ", "}}
               </div>
               {{end}}
               <small class="form-text text-muted">
-                Used to send deep links over sms, for example <code>ens://v?r=US-WA&c=ABCD1234</code>.
-                The protocol setting here should include the protocol up through the <code>?</code>,
-                so the in this example, the protocol setting is <code>ens://v?</code>
-              </small>
-            </div>
-          </div>
-
-          <div class="form-group row">
-            <label for="codeLength" class="col-sm-3">Include region in deep link:</label>
-            <div class="col-sm-9">
-              <select class="form-control{{if $realm.ErrorsFor "DeepLinkRegion"}} is-invalid{{end}}" name="DeepLinkRegion" id="DeepLinkRegion">
-                <option value="true" {{if $realm.DeepLinkRegion}}selected{{end}}>Yes</option>
-                <option value="false" {{if not $realm.DeepLinkRegion}}selected{{end}}>No</option>
-              </select>
-              <small class="form-text text-muted">
-                If enabled, your realm's region designation will be included in the SMS deep link.
-              </small>
-            </div>
-          </div>
-
-          <div class="form-group row">
-            <label for="name" class="col-sm-3">SMS text greeting:</label>
-            <div class="col-sm-9">
-              <input type="text" id="SMSTextGreeting" name="SMSTextGreeting" class="form-control{{if $realm.ErrorsFor "SMSTextGreeting"}} is-invalid{{end}}" value="{{$realm.SMSTextGreeting}}" />
-              {{if $realm.ErrorsFor "SMSTextGreeting"}}
-              <div class="invalid-feedback">
-                {{joinStrings ($realm.ErrorsFor "SMSTextGreeting") ", "}}
-              </div>
-              {{end}}
-              <small class="form-text text-muted">
-                The SMS message will be constructed as <code>[greeting] [code or link] [expiry]</code>. The overall
+                The SMS message will be constructed based on the template you provide. The overall
                 length of of the SMS message should not exceede 160 characters, or your message will need to be split
-                in transit and may not be joined correctly. Examples:
+                in transit and may not be joined correctly. There are some special strings that you can use
+                to substitute items. Your SMS template <em>MUST</em> contain either the <code>[code]</code> or
+                <code>[longcode]</code>.
                 <ul>
-                  <li>No deep link / short codes in SMS</li>
-                  <ul>
-                    <li>If you have an 8 digit code, valid for 60 minutes the fixed piece of your message is
-                      <code> 12345678 Expires in 60 minutes</code>. That is <code>31</code> characters, leaving
-                      you with 129 characters for your greeting.
-                    </li>
-                  </ul>
-                  <li>With a deep link and long code in SMS</li>
-                  <ul>
-                    <li>If you are using 16 digit codes, valid for 24 hours using a deep link protocol as
-                      described above. In that case, the fixed piece of your message is
-                      <code> ens://v?r=US-WA&c=12345678ABCDEFGH Expires in 24 hours</code>. That is
-                      <code>56</code> characters, leaving you with 104 characters for your greeting.
-                    </li>
-                  </ul>
+                  <li><code>[region]</code>The region setting (set on this page).</li>
+                  <li><code>[code]</code>The 'short' verification code.</li>                  
+                  <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units).</li>
+                  <li><code>[longcode]</code>The 'long' verification code</li>
+                  <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
+                </ul>
+
+                Here are some example SMS templates.
+                <ul>
+                  <li>Send short code in SMS (<code>104</code> characters with 8 digit codes and 60 minute expiration):
+                      <pre>State of Wonder Dept. of Health, your exposure notifications code is [code] and expires in [expires] minutes</pre>
+                  </li>
+                  <li>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration):
+                      <pre>You have tested positive for Covid-19. Click here to share anonymous data for exposure notifications
+                        dohen://v?c=[longcode] (Expires in [longexpires] hours)</pre>
+                  </li>
                 </ul>
               </small>
             </div>

@@ -119,10 +119,11 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		now := time.Now().UTC()
-		expiryTime := now.Add(realm.GetCodeDuration())
-		longExpiryTime := now.Add(realm.GetLongCodeDuration())
+		expiryTime := now.Add(realm.CodeDuration.Duration)
+		longExpiryTime := now.Add(realm.LongCodeDuration.Duration)
 		if request.Phone == "" || smsProvider == nil {
 			// If this isn't going to be send via SMS, make the long code expiration time same as short.
+			// This is because the long code will never be shown or sent.
 			longExpiryTime = expiryTime
 		}
 
@@ -149,31 +150,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			link := code
-			expValue := realm.GetCodeDuration().Minutes()
-			expUnit := "minutes"
-			if realm.UseSMSLongCodes {
-				// Format is protocol, r=region and c=code
-				// ens://v?r=us-ca&c=a1b2c3d4e5f6g7h8
-				link = realm.DeepLinkProtocol
-				if realm.DeepLinkRegion {
-					link = link + "r=" + realm.RegionCode + "&"
-				}
-				if realm.UseSMSLongCodes {
-					link = link + "c=" + longCode
-					// alter expiration time.
-					if realm.GetLongCodeDuration().Hours() >= 2 {
-						expValue = realm.GetLongCodeDuration().Hours()
-						expUnit = "hours"
-					}
-				} else {
-					link = link + "c=" + code
-				}
-			}
-
-			// The actual SMS message is
-			// "realm greeting" link/code Expires in XX units
-			message := fmt.Sprintf("%s %s Expires in %d %s", realm.SMSTextGreeting, link, int64(expValue), expUnit)
+			message := realm.BuildSMSText(code, longCode)
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token
 				if err := c.db.DeleteVerificationCode(code); err != nil {

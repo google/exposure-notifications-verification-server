@@ -80,16 +80,20 @@ func (v *VerificationCode) FormatSymptomDate() string {
 // IsCodeExpired checks to see if the actual code provides is the
 // short or long code and deteriminies if it is expired based on that.
 func (v *VerificationCode) IsCodeExpired(code string) bool {
-	now := time.Now()
-	if v.Code == code {
+	now := time.Now().UTC()
+	switch code {
+	case v.Code:
 		return !v.ExpiresAt.After(now)
+	case v.LongCode:
+		return !v.LongExpiresAt.After(now)
+	default:
+		return true
 	}
-	return !v.LongExpiresAt.After(now)
 }
 
 // IsExpired returns true if a verification code has expired.
 func (v *VerificationCode) IsExpired() bool {
-	now := time.Now()
+	now := time.Now().UTC()
 	return v.ExpiresAt.Before(now) && v.LongExpiresAt.Before(now)
 }
 

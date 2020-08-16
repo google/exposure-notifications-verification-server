@@ -48,12 +48,9 @@ func (c *Controller) HandleSave() http.Handler {
 
 		CodeLength          uint   `form:"codeLength"`
 		CodeDurationMinutes int64  `form:"codeDuration"`
-		UseSMSLongCodes     bool   `form:"UseSMSLongCodes"`
 		LongCodeLength      uint   `form:"longCodeLength"`
 		LongCodeHours       int64  `form:"longCodeDuration"`
-		DeepLinkProtocol    string `form:"deepLinkProtocol"`
-		DeepLinkRegion      bool   `form:"DeepLinkRegion"`
-		SMSTextGreeting     string `form:"SMSTextGreeting"`
+		SMSTextTemplate     string `form:"SMSTextTemplate"`
 
 		TwilioAccountSid string `form:"twilio_account_sid"`
 		TwilioAuthToken  string `form:"twilio_auth_token"`
@@ -96,15 +93,10 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.RegionCode = form.RegionCode
 		realm.AllowedTestTypes = form.AllowedTestTypes
 		realm.CodeLength = form.CodeLength
-		codeDuration := time.Minute * time.Duration(form.CodeDurationMinutes)
-		realm.CodeDurationSeconds = int64(codeDuration.Seconds())
-		realm.UseSMSLongCodes = form.UseSMSLongCodes
+		realm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
 		realm.LongCodeLength = form.LongCodeLength
-		longCodeDuration := time.Hour * time.Duration(form.LongCodeHours)
-		realm.LongCodeDurationSeconds = int64(longCodeDuration.Seconds())
-		realm.DeepLinkProtocol = form.DeepLinkProtocol
-		realm.DeepLinkRegion = form.DeepLinkRegion
-		realm.SMSTextGreeting = form.SMSTextGreeting
+		realm.LongCodeDuration.Duration = time.Hour * time.Duration(form.LongCodeHours)
+		realm.SMSTextTemplate = form.SMSTextTemplate
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to update realm: %v", err)
 			c.renderShow(ctx, w, realm, nil)

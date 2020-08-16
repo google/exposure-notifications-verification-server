@@ -56,8 +56,8 @@ func TestGenerateAlphanumericCode(t *testing.T) {
 		t.Log(code)
 
 		for i, c := range code {
-			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'v')) {
-				t.Errorf("code[%v]: %v outside expected range 0-9,a-v", i, c)
+			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z')) {
+				t.Errorf("code[%v]: %v outside expected range 0-9,a-z", i, c)
 			}
 		}
 	}

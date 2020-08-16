@@ -30,10 +30,8 @@ import (
 )
 
 const (
-	// a 32 character charset devides evenly over 256, allowing random bytes
-	// to be mapped evenly onto this space without any bias.
-	// Apologies to the letters that were left out.
-	charset = "abcdefghijklmnopqrstuv0123456789"
+	// all lowercase characters plus 0-9
+	charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
 
 // GenerateCode creates a new OTP code.
@@ -57,15 +55,23 @@ func GenerateCode(length uint) (string, error) {
 // base64 encode to that length string.
 // For example 16 character string requires 12 bytes.
 func GenerateAlphanumericCode(length uint) (string, error) {
-	buffer := make([]byte, length)
-	if _, err := rand.Read(buffer); err != nil {
+	var result string
+	for i := uint(0); i < length; i++ {
+		ch, err := randomFromCharset()
+		if err != nil {
+			return "", err
+		}
+		result = result + ch
+	}
+	return result, nil
+}
+
+func randomFromCharset() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+	if err != nil {
 		return "", err
 	}
-	for i, v := range buffer {
-		buffer[i] = charset[v%byte(len(charset))]
-	}
-
-	return string(buffer), nil
+	return string(charset[n.Int64()]), nil
 }
 
 // Request represents the parameters of a verification code request.
