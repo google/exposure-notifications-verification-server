@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -49,7 +50,8 @@ import (
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)

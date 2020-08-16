@@ -22,6 +22,8 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -41,7 +43,8 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
