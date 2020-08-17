@@ -14,15 +14,23 @@
   nav.navbar {
     margin-bottom: 40px;
   }
+
+  div.realm-header {
+    background-color: #0055b1;
+  }
 </style>
 {{end}}
 
 {{define "navbar"}}
 <header>
+  {{if .currentRealm}}
+  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white realm-header">
+    {{.currentRealm.Name}}{{if .currentRealm.RegionCode}} - {{.currentRealm.RegionCode}}{{end}}
+  </div>
+  {{end}}
+
   <nav class="navbar navbar-expand-md navbar-dark bg-primary">
     <div class="container">
-      <a class="navbar-brand" href="#">{{if .currentRealm}}{{.currentRealm.Name}}{{if .currentRealm.RegionCode}} -
-        {{.currentRealm.RegionCode}}{{end}}{{else}}V{{end}}</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar"
         aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -31,11 +39,6 @@
       <div class="collapse navbar-collapse" id="navbar">
         {{if .currentUser}}
         <ul class="navbar-nav mr-auto">
-          {{if gt (len .currentUser.Realms) 1}}
-          <li class="nav-item">
-            <a class="nav-link" href="/realm">Select realm</a>
-          </li>
-          {{end}}
           {{if .currentRealm}}
           <li class="nav-item">
             <a class="nav-link" href="/home">Issue code</a>
@@ -56,14 +59,29 @@
           {{end}}
           {{end}}
         </ul>
-        <span class="navbar-text">
-          {{.currentUser.Name}} | <a href="/signout">Sign out</a>
-        </span>
+
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{.currentUser.Name}}
+            </a>
+
+            <div class="dropdown-menu" aria-labelledby="profile-menu">
+              <h6 class="dropdown-header">Actions</h6>
+              {{if gt (len .currentUser.Realms) 1}}
+              <a class="dropdown-item" href="/realm">Change realm</a>
+              {{end}}
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="/signout">Sign out</a>
+            </div>
+          </li>
+        </ul>
         {{else}}
-        <ul class="navbar-nav mr-auto"></ul>
-        <span class="navbar-text">
-          <a href="/">Sign in</a>
-        </span>
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Sign in</a>
+          </li>
+        </ul>
         {{end}}
       </div>
     </div>
