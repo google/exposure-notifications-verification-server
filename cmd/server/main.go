@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -189,7 +190,17 @@ func realMain(ctx context.Context) error {
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, config, db, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
-		sub.Handle("/checkcodestatus", issueapiController.HandleCheckCodeStatus()).Methods("POST")
+	}
+
+	{
+		sub := r.PathPrefix("/code").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(requireRealm)
+		sub.Use(rateLimit)
+
+		codeStatusController := codestatus.NewServer(ctx, config, db, h)
+		sub.Handle("/status", codeStatusController.HandleIndex()).Methods("GET")
+		sub.Handle("/show", codeStatusController.HandleShow()).Methods("POST")
 	}
 
 	// apikeys

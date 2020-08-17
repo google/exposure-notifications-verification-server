@@ -1,0 +1,51 @@
+{{define "code/show"}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Verification code status</h1>
+    <p>
+      Status of a verification code previously shared with your patient.
+    </p>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th scope="col" width=400>UUID</th>
+            <th scope="col">Status</th>
+            <th scope="col" width=150>Expires</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-monospace">{{.uuid}}</td>
+            <td>{{.status}}</td>
+            <td>{{.expires}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <p>
+        <a href="/code/status">&larr; Enter another code</a>
+      </p>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+
+</html>
+{{end}}

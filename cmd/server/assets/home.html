@@ -164,6 +164,11 @@
 
       <div id="vercode" class="text-center text-monospace d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
 
+      <p>
+        Track the status of this code with the following ID: <span id="codeUUID" style="font-weight: bold;"></span>
+        <br />You may use this to see if the patient has successfully claimed their code.
+      </p>
+
       <button id="startover" class="btn btn-warning btn-block mb-3">
         Clear and generate another code
       </button>
@@ -173,12 +178,13 @@
   {{template "scripts" .}}
 
   <script type="text/javascript">
-    let $codeerror, $codearea, $expiresAt, $vercode, $submit;
+    let $codeerror, $codearea, $expiresAt, $codeUUID, $vercode, $submit;
 
    $(function() {
       $codeerror = $('#codeerror');
       $codearea = $('#codearea');
       $expiresAt = $('#expiresAt');
+      $codeUUID = $('#codeUUID');
       $vercode = $('#vercode');
       $submit = $('#submit');
 
@@ -204,6 +210,7 @@
         $submit.prop('disabled', false);
         $vercode.text('');
         $expiresAt.text('');
+        $codeUUID.text('');
       });
     });
 
@@ -223,6 +230,7 @@
             showError(result.error);
           } else {
             $expiresAt.text(result.expiresAt);
+            $codeUUID.text(result.uuid);
 
             let code = result.code;
             for(let i = 0; i < code.length; i++) {

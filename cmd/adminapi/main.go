@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -127,7 +128,9 @@ func realMain(ctx context.Context) error {
 
 	issueapiController := issueapi.New(ctx, config, db, h)
 	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")
-	r.Handle("/api/checkcodestatus", issueapiController.HandleCheckCodeStatus()).Methods("POST")
+
+	codeStatusController := codestatus.NewAPI(ctx, config, db, h)
+	r.Handle("/api/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {
