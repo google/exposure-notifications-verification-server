@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/jinzhu/gorm"
 )
 
@@ -37,6 +38,7 @@ var (
 	ErrTokenExpired             = errors.New("verification token expired")
 	ErrTokenUsed                = errors.New("verification token used")
 	ErrTokenMetadataMismatch    = errors.New("verification token test metadata mismatch")
+	ErrUnsupportedTestType      = errors.New("verification code has unsupported test type")
 )
 
 // Token represents an issued "long term" from a validated verification code.
@@ -145,7 +147,7 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 // The verCode can be the "short code" or the "long code" which impacts expiry time.
 //
 // The long term token can be used later to sign keys when they are submitted.
-func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, expireAfter time.Duration) (*Token, error) {
+func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, acceptTypes api.AcceptTypes, expireAfter time.Duration) (*Token, error) {
 	buffer := make([]byte, tokenBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -170,6 +172,10 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, expire
 		}
 		if vc.Claimed {
 			return ErrVerificationCodeUsed
+		}
+
+		if _, ok := acceptTypes[vc.TestType]; !ok {
+			return ErrUnsupportedTestType
 		}
 
 		// Mark claimed. Transactional update.
