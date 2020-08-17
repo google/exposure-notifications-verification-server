@@ -18,9 +18,15 @@ import (
 
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/httplimit"
-	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/api/kv"
-	"go.opentelemetry.io/otel/api/metric"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
+	"go.uber.org/zap"
+)
+
+var (
+	MetricPrefix = observability.MetricRoot + "/ratelimit/limitware"
+	OkTag, _     = tag.NewKey("ok")
 )
 
 // Middleware is a handler/mux that can wrap other middlware to implement HTTP
@@ -29,13 +35,14 @@ import (
 type Middleware struct {
 	store      limiter.Store
 	keyFunc    httplimit.KeyFunc
-	meter      metric.Meter
-	reqCounter metric.Int64Counter
+	reqCounter *stats.Int64Measure
+	keyErrors  *stats.Int64Measure
+	logger     *zap.SugaredLogger
 }
 
 // NewMiddleware creates a new middleware suitable for use as an HTTP handler.
 // This function returns an error if either the Store or KeyFunc are nil.
-func NewMiddleware(s limiter.Store, f httplimit.KeyFunc) (*Middleware, error) {
+func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc) (*Middleware, error) {
 	if s == nil {
 		return nil, fmt.Errorf("store cannot be nil")
 	}
@@ -44,17 +51,23 @@ func NewMiddleware(s limiter.Store, f httplimit.KeyFunc) (*Middleware, error) {
 		return nil, fmt.Errorf("key function cannot be nil")
 	}
 
-	meter := global.Meter(observability.MetricRoot + "/ratelimit/limitware")
-	rc, err := meter.NewInt64Counter("request_count", metric.WithDescription("counts number of requests processed by middleware and their status"))
-	if err != nil {
-		return nil, err
+	logger := logging.FromContext(ctx).Named("ratelimit")
+
+	rc := stats.Int64(MetricPrefix+"/request", "requests seen by middleware", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/request_count",
+		Measure:     rc,
+		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{},
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
 	}
 
 	return &Middleware{
 		store:      s,
 		keyFunc:    f,
-		meter:      meter,
 		reqCounter: rc,
+		logger:     logger,
 	}, nil
 }
 
@@ -68,6 +81,8 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		// Call the key function - if this fails, it's an internal server error.
 		key, err := m.keyFunc(r)
 		if err != nil {
+			m.logger.Errorw("could not call key function", "error", err)
+			stats.Record(r.Context(), m.keyErrors.M(1))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -81,16 +96,17 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		w.Header().Set(httplimit.HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
 		w.Header().Set(httplimit.HeaderRateLimitReset, resetTime)
 
-		// Record request status - async call
-		m.meter.RecordBatch(
-			r.Context(),
-			[]kv.KeyValue{kv.Bool("ok", ok)},
-			m.reqCounter.Measurement(1),
-		)
+		// Record request status
+		ctx, err := tag.New(r.Context(), tag.Insert(OkTag, fmt.Sprintf("%v", ok)))
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		stats.Record(ctx, m.reqCounter.M(1))
 
 		// Fail if there were no tokens remaining.
 		if !ok {
-			w.Header().Set(HeaderRetryAfter, resetTime)
+			w.Header().Set(httplimit.HeaderRetryAfter, resetTime)
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return
 		}

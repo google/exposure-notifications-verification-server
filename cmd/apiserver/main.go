@@ -108,7 +108,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer limiterStore.Close()
 
-	httplimiter, err := limitware.NewMiddleware(limiterStore, limitware.APIKeyFunc(ctx, "apiserver", db))
+	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore, limitware.APIKeyFunc(ctx, "apiserver", db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
