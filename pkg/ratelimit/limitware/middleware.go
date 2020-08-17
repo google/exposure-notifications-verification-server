@@ -33,11 +33,12 @@ var (
 // rate limiting. It can rate limit based on an arbitrary KeyFunc, and supports
 // anything that implements limiter.Store.
 type Middleware struct {
-	store      limiter.Store
-	keyFunc    httplimit.KeyFunc
-	reqCounter *stats.Int64Measure
-	keyErrors  *stats.Int64Measure
-	logger     *zap.SugaredLogger
+	store       limiter.Store
+	keyFunc     httplimit.KeyFunc
+	reqCounter  *stats.Int64Measure
+	keyErrors   *stats.Int64Measure
+	rateLimited *stats.Int64Measure
+	logger      *zap.SugaredLogger
 }
 
 // NewMiddleware creates a new middleware suitable for use as an HTTP handler.
@@ -73,12 +74,23 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc) (*
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
 	}
 
+	rl := stats.Int64(MetricPrefix+"/rate_limited", "rate limited requests", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/rate_limited_count",
+		Measure:     rl,
+		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{},
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
 	return &Middleware{
-		store:      s,
-		keyFunc:    f,
-		reqCounter: rc,
-		keyErrors:  ke,
-		logger:     logger,
+		store:       s,
+		keyFunc:     f,
+		reqCounter:  rc,
+		keyErrors:   ke,
+		rateLimited: rl,
+		logger:      logger,
 	}, nil
 }
 
@@ -89,11 +101,13 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc) (*
 // metadata about when it's safe to retry.
 func (m *Middleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		// Call the key function - if this fails, it's an internal server error.
 		key, err := m.keyFunc(r)
 		if err != nil {
 			m.logger.Errorw("could not call key function", "error", err)
-			stats.Record(r.Context(), m.keyErrors.M(1))
+			stats.Record(ctx, m.keyErrors.M(1))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -108,8 +122,9 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		w.Header().Set(httplimit.HeaderRateLimitReset, resetTime)
 
 		// Record request status
-		ctx, err := tag.New(r.Context(), tag.Insert(OkTag, fmt.Sprintf("%v", ok)))
+		ctx, err = tag.New(ctx, tag.Insert(OkTag, fmt.Sprintf("%v", ok)))
 		if err != nil {
+			m.logger.Errorw("could not create tag", "error", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -117,6 +132,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 
 		// Fail if there were no tokens remaining.
 		if !ok {
+			stats.Record(ctx, m.rateLimited.M(1))
 			w.Header().Set(httplimit.HeaderRetryAfter, resetTime)
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return
@@ -131,7 +147,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 // APIKeyFunc returns a default key function for ratelimiting on our API key
 // header. It falls back to rate limiting by the client ip.
 func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named("ratelimit")
+	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope)
 
 	return func(r *http.Request) (string, error) {
@@ -162,7 +178,7 @@ func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httpli
 // UserEmailKeyFunc pulls the user out of the request context and uses that to
 // ratelimit. It falls back to rate limiting by the client ip.
 func UserEmailKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named("ratelimit")
+	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope)
 
 	return func(r *http.Request) (string, error) {
@@ -182,7 +198,7 @@ func UserEmailKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
 
 // IPAddressKeyFunc uses the client IP to rate limit.
 func IPAddressKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named("ratelimit")
+	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
 
 	return func(r *http.Request) (string, error) {
 		// Get the remote addr
