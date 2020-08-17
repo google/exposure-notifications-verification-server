@@ -117,7 +117,8 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 	})
 }
 
-// APIKeyFunc returns a default key function for ratelimiting on our API key header.
+// APIKeyFunc returns a default key function for ratelimiting on our API key
+// header. It falls back to rate limiting by the client ip.
 func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httplimit.KeyFunc {
 	logger := logging.FromContext(ctx).Named("ratelimit")
 
@@ -158,7 +159,8 @@ func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httpli
 	}
 }
 
-// UserEmailKeyFunc pulls the user out of the request context and uses that to ratelimit.
+// UserEmailKeyFunc pulls the user out of the request context and uses that to
+// ratelimit. It falls back to rate limiting by the client ip.
 func UserEmailKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
 	logger := logging.FromContext(ctx).Named("ratelimit")
 
