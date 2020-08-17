@@ -63,10 +63,21 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc) (*
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
 	}
 
+	ke := stats.Int64(MetricPrefix+"/key_errors", "errors seen from key function", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/key_errors_count",
+		Measure:     ke,
+		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{},
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
 	return &Middleware{
 		store:      s,
 		keyFunc:    f,
 		reqCounter: rc,
+		keyErrors:  ke,
 		logger:     logger,
 	}, nil
 }
