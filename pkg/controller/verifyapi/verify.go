@@ -107,6 +107,8 @@ func (c *Controller) HandleVerify() http.Handler {
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
+			case errors.Is(err, database.ErrUnsupportedTestType):
+				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 			default:
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			}

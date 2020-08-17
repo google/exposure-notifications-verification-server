@@ -42,6 +42,7 @@ const (
 	ErrVerifyCodeUserUnauth = "code_user_unauthorized"
 	// ErrUnsupportedTestType indicates the client is unable to process the appropriate test type
 	// in thise case, the user should be directed to upgrade their app / operating system.
+	// Accompanied by an HTTP status of StatusPreconditionFailed (412).
 	ErrUnsupportedTestType = "unsupported_test_type"
 	// ErrInvalidTestType indicates the client says it supports a test type this server doesn't
 	// know about.
