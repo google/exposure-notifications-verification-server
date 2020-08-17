@@ -118,23 +118,31 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 		}
 
-		expiration := c.config.GetVerificationCodeDuration()
-		expiryTime := time.Now().UTC().Add(expiration)
+		now := time.Now().UTC()
+		expiryTime := now.Add(realm.CodeDuration.Duration)
+		longExpiryTime := now.Add(realm.LongCodeDuration.Duration)
+		if request.Phone == "" || smsProvider == nil {
+			// If this isn't going to be send via SMS, make the long code expiration time same as short.
+			// This is because the long code will never be shown or sent.
+			longExpiryTime = expiryTime
+		}
 
 		// Generate verification code
 		codeRequest := otp.Request{
-			DB:            c.db,
-			Length:        c.config.GetVerificationCodeDigits(),
-			ExpiresAt:     expiryTime,
-			TestType:      request.TestType,
-			SymptomDate:   symptomDate,
-			MaxSymptomAge: c.config.GetAllowedSymptomAge(),
-			IssuingUser:   user,
-			IssuingApp:    authApp,
-			RealmID:       realm.ID,
+			DB:             c.db,
+			ShortLength:    realm.CodeLength,
+			ShortExpiresAt: expiryTime,
+			LongLength:     realm.LongCodeLength,
+			LongExpiresAt:  longExpiryTime,
+			TestType:       request.TestType,
+			SymptomDate:    symptomDate,
+			MaxSymptomAge:  c.config.GetAllowedSymptomAge(),
+			IssuingUser:    user,
+			IssuingApp:     authApp,
+			RealmID:        realm.ID,
 		}
 
-		code, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
+		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
@@ -142,7 +150,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			message := fmt.Sprintf(smsTemplate, code, int(expiration.Minutes()))
+			message := realm.BuildSMSText(code, longCode)
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token
 				if err := c.db.DeleteVerificationCode(code); err != nil {
@@ -178,7 +186,3 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 
 	return authorizedApp, user, nil
 }
-
-const smsTemplate = `Your exposure notifications verification code is %s. ` +
-	`Enter this code into your exposure notifications app. Do NOT share this ` +
-	`code with anyone. This code expires in %d minutes.`

@@ -85,6 +85,7 @@ func TestIssueToken(t *testing.T) {
 	cases := []struct {
 		Name         string
 		Verification VerificationCode
+		UseLongCode  bool
 		Error        string
 		Delay        time.Duration
 		TokenAge     time.Duration
@@ -92,71 +93,97 @@ func TestIssueToken(t *testing.T) {
 		ClaimError   string
 	}{
 		{
-			Name: "normal token issue",
+			Name: "normal_token_issue",
 			Verification: VerificationCode{
-				Code:        "12345678",
-				TestType:    "confirmed",
-				SymptomDate: &symptomDate,
-				ExpiresAt:   time.Now().Add(time.Hour),
+				Code:          "12345678",
+				LongCode:      "12345678ABC",
+				TestType:      "confirmed",
+				SymptomDate:   &symptomDate,
+				ExpiresAt:     time.Now().Add(time.Hour),
+				LongExpiresAt: time.Now().Add(time.Hour),
 			},
 			Error:    "",
 			TokenAge: time.Hour,
 		},
 		{
-			Name: "already claimed",
+			Name: "long_code_token_issue",
 			Verification: VerificationCode{
-				Code:      "00000001",
-				Claimed:   true,
-				TestType:  "confirmed",
-				ExpiresAt: time.Now().Add(time.Hour),
+				Code:          "22332244",
+				LongCode:      "abcd1234efgh5678",
+				TestType:      "confirmed",
+				SymptomDate:   &symptomDate,
+				ExpiresAt:     time.Now().Add(5 * time.Second),
+				LongExpiresAt: time.Now().Add(time.Hour),
+			},
+			UseLongCode: true,
+			Error:       "",
+			TokenAge:    time.Hour,
+		},
+		{
+			Name: "already_claimed",
+			Verification: VerificationCode{
+				Code:          "00000001",
+				LongCode:      "00000001ABC",
+				Claimed:       true,
+				TestType:      "confirmed",
+				ExpiresAt:     time.Now().Add(time.Hour),
+				LongExpiresAt: time.Now().Add(time.Hour),
 			},
 			Error:    ErrVerificationCodeUsed.Error(),
 			TokenAge: time.Hour,
 		},
 		{
-			Name: "code expired",
+			Name: "code_expired",
 			Verification: VerificationCode{
-				Code:      "00000002",
-				Claimed:   false,
-				TestType:  "confirmed",
-				ExpiresAt: time.Now().Add(2 * time.Second),
+				Code:          "00000002",
+				LongCode:      "00000002ABC",
+				Claimed:       false,
+				TestType:      "confirmed",
+				ExpiresAt:     time.Now().Add(2 * time.Second),
+				LongExpiresAt: time.Now().Add(2 * time.Second),
 			},
 			Delay:    2 * time.Second,
 			Error:    ErrVerificationCodeExpired.Error(),
 			TokenAge: time.Hour,
 		},
 		{
-			Name: "token expired",
+			Name: "token_expired",
 			Verification: VerificationCode{
-				Code:      "00000003",
-				Claimed:   false,
-				TestType:  "confirmed",
-				ExpiresAt: time.Now().Add(time.Hour),
+				Code:          "00000003",
+				LongCode:      "00000003ABC",
+				Claimed:       false,
+				TestType:      "confirmed",
+				ExpiresAt:     time.Now().Add(time.Hour),
+				LongExpiresAt: time.Now().Add(time.Hour),
 			},
 			Delay:      time.Second,
 			ClaimError: ErrTokenExpired.Error(),
 			TokenAge:   time.Millisecond,
 		},
 		{
-			Name: "wrong test type",
+			Name: "wrong_test_type",
 			Verification: VerificationCode{
-				Code:      "00000005",
-				Claimed:   false,
-				TestType:  "confirmed",
-				ExpiresAt: time.Now().Add(time.Hour),
+				Code:          "00000005",
+				LongCode:      "00000005ABC",
+				Claimed:       false,
+				TestType:      "confirmed",
+				ExpiresAt:     time.Now().Add(time.Hour),
+				LongExpiresAt: time.Now().Add(time.Hour),
 			},
 			ClaimError: ErrTokenMetadataMismatch.Error(),
 			TokenAge:   time.Hour,
 			Subject:    &Subject{"negative", nil},
 		},
 		{
-			Name: "wrong test date",
+			Name: "wrong_test_date",
 			Verification: VerificationCode{
-				Code:        "00000007",
-				Claimed:     false,
-				TestType:    "confirmed",
-				SymptomDate: &symptomDate,
-				ExpiresAt:   time.Now().Add(time.Hour),
+				Code:          "00000007",
+				LongCode:      "00000007ABC",
+				Claimed:       false,
+				TestType:      "confirmed",
+				SymptomDate:   &symptomDate,
+				ExpiresAt:     time.Now().Add(time.Hour),
+				LongExpiresAt: time.Now().Add(time.Hour),
 			},
 			ClaimError: ErrTokenMetadataMismatch.Error(),
 			TokenAge:   time.Hour,
@@ -181,7 +208,12 @@ func TestIssueToken(t *testing.T) {
 				time.Sleep(tc.Delay)
 			}
 
-			tok, err := db.VerifyCodeAndIssueToken(realm.ID, tc.Verification.Code, tc.TokenAge)
+			code := tc.Verification.Code
+			if tc.UseLongCode {
+				code = tc.Verification.LongCode
+			}
+
+			tok, err := db.VerifyCodeAndIssueToken(realm.ID, code, tc.TokenAge)
 			if err != nil {
 				if tc.Error == "" {
 					t.Fatalf("error issuing token: %v", err)

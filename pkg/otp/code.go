@@ -29,6 +29,11 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
+const (
+	// all lowercase characters plus 0-9
+	charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+)
+
 // GenerateCode creates a new OTP code.
 func GenerateCode(length uint) (string, error) {
 	limit := big.NewInt(0)
@@ -45,40 +50,76 @@ func GenerateCode(length uint) (string, error) {
 	return result, nil
 }
 
+// GenerateAlphanumericCode will generate an alpha numberic code.
+// It uses the length to estimate how many bytes of randomness will
+// base64 encode to that length string.
+// For example 16 character string requires 12 bytes.
+func GenerateAlphanumericCode(length uint) (string, error) {
+	var result string
+	for i := uint(0); i < length; i++ {
+		ch, err := randomFromCharset()
+		if err != nil {
+			return "", err
+		}
+		result = result + ch
+	}
+	return result, nil
+}
+
+func randomFromCharset() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+	if err != nil {
+		return "", err
+	}
+	return string(charset[n.Int64()]), nil
+}
+
 // Request represents the parameters of a verification code request.
 type Request struct {
-	DB            *database.Database
-	RealmID       uint
-	Length        uint
-	ExpiresAt     time.Time
-	TestType      string
-	SymptomDate   *time.Time
-	MaxSymptomAge time.Duration
-	IssuingUser   *database.User
-	IssuingApp    *database.AuthorizedApp
+	DB             *database.Database
+	RealmID        uint
+	ShortLength    uint
+	ShortExpiresAt time.Time
+	LongLength     uint
+	LongExpiresAt  time.Time
+	TestType       string
+	SymptomDate    *time.Time
+	MaxSymptomAge  time.Duration
+	IssuingUser    *database.User
+	IssuingApp     *database.AuthorizedApp
 }
 
 // Issue will generate a verification code and save it to the database, based on
-// the paremters provided. It returns the code, a UUID for accessing the code,
-// and any errors.
-func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, error) {
+// the paremters provided. It returns the short code, long code, a UUID for
+// accessing the code, and any errors.
+func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, string, error) {
 	logger := logging.FromContext(ctx)
 	var verificationCode database.VerificationCode
 	var err error
 	for i := uint(0); i < retryCount; i++ {
-		code, err := GenerateCode(o.Length)
+		code, err := GenerateCode(o.ShortLength)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
 			continue
 		}
+		longCode := code
+		if o.LongLength > 0 {
+			longCode, err = GenerateAlphanumericCode(o.LongLength)
+			if err != nil {
+				logger.Errorf("long code generation error: %v", err)
+				continue
+			}
+		}
 		verificationCode = database.VerificationCode{
-			RealmID:     o.RealmID,
-			Code:        code,
-			TestType:    strings.ToLower(o.TestType),
-			SymptomDate: o.SymptomDate,
-			ExpiresAt:   o.ExpiresAt,
-			IssuingUser: o.IssuingUser,
-			IssuingApp:  o.IssuingApp,
+			RealmID:       o.RealmID,
+			Code:          code,
+			LongCode:      longCode,
+			TestType:      strings.ToLower(o.TestType),
+			SymptomDate:   o.SymptomDate,
+			ExpiresAt:     o.ShortExpiresAt,
+			LongExpiresAt: o.LongExpiresAt,
+			IssuingUser:   o.IssuingUser,
+			IssuingApp:    o.IssuingApp,
 		}
 		// If a verification code already exists, it will fail to save, and we retry.
 		if err := o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {
@@ -89,7 +130,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, e
 		}
 	}
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return verificationCode.Code, verificationCode.UUID, nil
+	return verificationCode.Code, verificationCode.LongCode, verificationCode.UUID, nil
 }
