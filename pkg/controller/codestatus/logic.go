@@ -42,7 +42,8 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 	if authApp != nil {
 		realm, err = authApp.Realm(c.db)
 		if err != nil {
-			return nil, http.StatusUnauthorized, nil
+			logger.Errorw("internal error", "error", err)
+			return nil, http.StatusInternalServerError, api.InternalError()
 		}
 	} else {
 		// if it's a user logged in, we can pull realm from the context.
