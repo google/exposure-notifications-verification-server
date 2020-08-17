@@ -121,6 +121,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 // header. It falls back to rate limiting by the client ip.
 func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httplimit.KeyFunc {
 	logger := logging.FromContext(ctx).Named("ratelimit")
+	ipAddrLimit := IPAddressKeyFunc(ctx, scope)
 
 	return func(r *http.Request) (string, error) {
 		// Procss the API key
@@ -143,19 +144,7 @@ func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httpli
 			}
 		}
 
-		// Get the remote addr
-		ip := r.RemoteAddr
-
-		// Check if x-forwarded-for exists, the load balancer sets this, and the
-		// first entry is the real client IP
-		xff := r.Header.Get("x-forwarded-for")
-		if xff != "" {
-			ip = strings.Split(xff, ",")[0]
-		}
-
-		logger.Debugw("limiting by ip", "ip", ip)
-		dig := sha1.Sum([]byte(ip))
-		return fmt.Sprintf("%s:ip:%x", scope, dig), nil
+		return ipAddrLimit(r)
 	}
 }
 
@@ -163,6 +152,7 @@ func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httpli
 // ratelimit. It falls back to rate limiting by the client ip.
 func UserEmailKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
 	logger := logging.FromContext(ctx).Named("ratelimit")
+	ipAddrLimit := IPAddressKeyFunc(ctx, scope)
 
 	return func(r *http.Request) (string, error) {
 		ctx := r.Context()
@@ -175,6 +165,15 @@ func UserEmailKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
 			return fmt.Sprintf("%s:user:%x", scope, dig), nil
 		}
 
+		return ipAddrLimit(r)
+	}
+}
+
+// IPAddressKeyFunc uses the client IP to rate limit.
+func IPAddressKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
+	logger := logging.FromContext(ctx).Named("ratelimit")
+
+	return func(r *http.Request) (string, error) {
 		// Get the remote addr
 		ip := r.RemoteAddr
 
