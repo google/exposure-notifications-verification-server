@@ -1,4 +1,4 @@
-// Package ovservability provides tools for working with open census.
+// Package observability provides tools for working with open census.
 package observability
 
 const (
