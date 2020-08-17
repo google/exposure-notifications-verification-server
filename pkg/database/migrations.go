@@ -633,10 +633,35 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00028-AddSMSDeeplinkFields",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Infof("db migrations: adding SMS deeplink settings")
+				logger.Infof("db migrations: adding long_code and SMS deeplink settings")
+				// long_code cannot be auto migrated because of unique index.
+				// manually create long_code and long_expires_at and backfill with existing data.
+				sqls := []string{
+					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_code VARCHAR(20)",
+					"UPDATE verification_codes SET long_code = code",
+					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_long_code ON verification_codes(long_code)",
+					"ALTER TABLE verification_codes ALTER COLUMN long_code SET NOT NULL",
+					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_expires_at TIMESTAMPTZ",
+					"UPDATE verification_codes SET long_expires_at = expires_at",
+				}
+				for _, stmt := range sqls {
+					if err := tx.Exec(stmt).Error; err != nil {
+						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
+					}
+				}
+
 				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
 					return err
 				}
+				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
+					return err
+				}
+
+				logger.Infof("db migrations: add verification code purge index")
+				if err := tx.Model(&VerificationCode{}).AddIndex("ver_code_long_purge_index", "long_expires_at").Error; err != nil {
+					return err
+				}
+
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
