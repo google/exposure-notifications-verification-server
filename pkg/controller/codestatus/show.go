@@ -17,6 +17,7 @@
 package codestatus
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -47,14 +48,14 @@ func (c *Controller) HandleShow() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			renderShow(ctx, w, "", "", "")
+			c.renderShow(ctx, w, "", "", "")
 			return
 		}
 
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
 			flash.Error("Failed to process form: %v", apiErr.Error)
-			renderShow(ctx, w, form.UUID, "", "")
+			c.renderShow(ctx, w, form.UUID, "", "")
 			return
 		}
 
@@ -71,14 +72,14 @@ func (c *Controller) HandleShow() http.Handler {
 			// TODO(whaught): This might be nicer as a formatted duration until now
 			exp = code.ExpiresAt.UTC().Format(time.RFC1123)
 		}
-		renderShow(ctx, w, form.UUID, status, exp)
+		c.renderShow(ctx, w, form.UUID, status, exp)
 	})
+}
 
-	func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status, expires string) {
-		m := controller.TemplateMapFromContext(ctx)
-		m["uuid"] = uuid
-		m["status"] = status
-		m["expires"] = exp
-		c.h.RenderHTML(w, "code/show", m)
-	}
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status, expires string) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["uuid"] = uuid
+	m["status"] = status
+	m["expires"] = expires
+	c.h.RenderHTML(w, "code/show", m)
 }
