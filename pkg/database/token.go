@@ -180,7 +180,7 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 
 		// Mark claimed. Transactional update.
 		vc.Claimed = true
-		res := db.db.Save(vc)
+		res := db.db.Save(&vc)
 		if res.Error != nil {
 			return res.Error
 		}
