@@ -24,6 +24,9 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/plugin/ochttp/propagation/tracecontext"
 )
 
 // MakeRequest uses an HTTP client to send and receive JSON based on interface{}.
@@ -32,6 +35,12 @@ func MakeRequest(ctx context.Context, client *http.Client, url string, headers h
 	data, err := json.Marshal(input)
 	if err != nil {
 		return err
+	}
+
+	// Set transport to have tracing data.
+	client.Transport = &ochttp.Transport{
+		Base:        client.Transport,
+		Propagation: &tracecontext.HTTPFormat{},
 	}
 
 	buffer := bytes.NewBuffer(data)

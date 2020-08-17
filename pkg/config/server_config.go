@@ -56,8 +56,6 @@ type ServerConfig struct {
 
 	// Application Config
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
-	CodeDuration        time.Duration `env:"CODE_DURATION,default=1h"`
-	CodeDigits          uint          `env:"CODE_DIGITS,default=8"`
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
 
@@ -89,7 +87,6 @@ func (c *ServerConfig) Validate() error {
 	}{
 		{c.SessionDuration, "SESSION_DURATION"},
 		{c.RevokeCheckPeriod, "REVOKE_CHECK_DURATION"},
-		{c.CodeDuration, "CODE_DURATION"},
 		{c.AllowedSymptomAge, "ALLOWED_PAST_SYMPTOM_DAYS"},
 	}
 
@@ -110,14 +107,6 @@ func (c *ServerConfig) GetAllowedSymptomAge() time.Duration {
 	return c.AllowedSymptomAge
 }
 
-func (c *ServerConfig) GetVerificationCodeDuration() time.Duration {
-	return c.CodeDuration
-}
-
-func (c *ServerConfig) GetVerificationCodeDigits() uint {
-	return c.CodeDigits
-}
-
 func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }
@@ -132,6 +121,9 @@ type FirebaseConfig struct {
 	MessageSenderID string `env:"FIREBASE_MESSAGE_SENDER_ID,required"`
 	AppID           string `env:"FIREBASE_APP_ID,required"`
 	MeasurementID   string `env:"FIREBASE_MEASUREMENT_ID,required"`
+
+	TermsOfServiceURL string `env:"FIREBASE_TERMS_OF_SERVICE_URL,required"`
+	PrivacyPolicyURL  string `env:"FIREBASE_PRIVACY_POLICY_URL,required"`
 }
 
 // FirebaseConfig returns the firebase SDK config based on the local env config.

@@ -18,11 +18,9 @@ package main
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
-	"net/http"
 	"os"
-	"strings"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -31,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
@@ -40,14 +39,14 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -100,7 +99,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer limiterStore.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(limiterStore, limiterFunc(ctx))
+	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore, limitware.APIKeyFunc(ctx, "adminapi", db))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
@@ -139,36 +138,4 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", config.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
-}
-
-// limiterFunc is a custom rate limiter function. It limits by realm (by API
-// key, if one exists, then by IP.
-func limiterFunc(ctx context.Context) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named("ratelimit")
-
-	return func(r *http.Request) (string, error) {
-		ctx := r.Context()
-
-		// See if a user exists on the context
-		authApp := controller.AuthorizedAppFromContext(ctx)
-		if authApp != nil && authApp.RealmID != 0 {
-			logger.Debugw("limiting by authApp realm", "authApp", authApp.ID)
-			dig := sha1.Sum([]byte(fmt.Sprintf("%d", authApp.RealmID)))
-			return fmt.Sprintf("adminapi:realm:%x", dig), nil
-		}
-
-		// Get the remote addr
-		ip := r.RemoteAddr
-
-		// Check if x-forwarded-for exists, the load balancer sets this, and the
-		// first entry is the real client IP
-		xff := r.Header.Get("x-forwarded-for")
-		if xff != "" {
-			ip = strings.Split(xff, ",")[0]
-		}
-
-		logger.Debugw("limiting by ip", "ip", ip)
-		dig := sha1.Sum([]byte(ip))
-		return fmt.Sprintf("adminapi:ip:%x", dig), nil
-	}
 }

@@ -232,11 +232,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					return err
 				}
 				logger.Info("Create the DEFAULT realm")
-				// Create the default realm.
-				defaultRealm := Realm{
-					Name: "Default",
-				}
-				if err := tx.Create(&defaultRealm).Error; err != nil {
+				// Create the default realm with all of the default settings.
+				defaultRealm := NewRealmWithDefaults("Default")
+				if err := tx.FirstOrCreate(defaultRealm).Error; err != nil {
 					return err
 				}
 
@@ -253,9 +251,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				for _, u := range users {
 					logger.Infof("added user: %v to default realm", u.ID)
 
-					u.AddRealm(&defaultRealm)
+					u.AddRealm(defaultRealm)
 					if u.Admin {
-						u.AddRealmAdmin(&defaultRealm)
+						u.AddRealmAdmin(defaultRealm)
 					}
 
 					if err := tx.Save(u).Error; err != nil {
@@ -587,6 +585,75 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					return err
 				}
 
+				return nil
+			},
+		},
+		{
+			ID: "00026-EnableExtension_citext",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: enabling citext extension")
+				return tx.Exec("CREATE EXTENSION citext").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("DROP EXTENSION citext").Error
+			},
+		},
+		{
+			ID: "00027-AlterColumns_citext",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: setting columns to case insensitive")
+				sqls := []string{
+					"ALTER TABLE authorized_apps ALTER COLUMN name TYPE CITEXT",
+					"ALTER TABLE realms ALTER COLUMN name TYPE CITEXT",
+					"ALTER TABLE users ALTER COLUMN email TYPE CITEXT",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					"ALTER TABLE authorized_apps ALTER COLUMN name TYPE TEXT",
+					"ALTER TABLE realms ALTER COLUMN name TYPE TEXT",
+					"ALTER TABLE users ALTER COLUMN email TYPE TEXT",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
+		{
+			ID: "00028-AddSMSDeeplinkFields",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: adding SMS deeplink settings")
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				dropColumns := []string{
+					"long_code_length",
+					"long_code_duration",
+					"region_code",
+					"code_length",
+					"code_duration",
+					"sms_text_template",
+				}
+				for _, col := range dropColumns {
+					stmt := fmt.Sprintf("ALTER TABLE realms DROP COLUMN %s", col)
+					if err := tx.Exec(stmt).Error; err != nil {
+						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
+					}
+				}
 				return nil
 			},
 		},
