@@ -40,6 +40,12 @@ const (
 	ErrVerifyCodeNotFound = "code_not_found"
 	// ErrVerifyCodeUserUnauth indicates the code does not belong to the requesting user.
 	ErrVerifyCodeUserUnauth = "code_user_unauthorized"
+	// ErrUnsupportedTestType indicates the client is unable to process the appropriate test type
+	// in thise case, the user should be directed to upgrade their app / operating system.
+	ErrUnsupportedTestType = "unsupported_test_type"
+	// ErrInvalidTestType indicates the client says it supports a test type this server doesn't
+	// know about.
+	ErrInvalidTestType = "invalid_test_type"
 
 	// Certificate API responses
 	// ErrTokenInvalid indicates the token provided is unknown or already used
@@ -142,9 +148,23 @@ type CheckCodeStatusResponse struct {
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code
 // (OTP) for a long term token (a JWT) that can later be used to sign TEKs.
 //
+// 'code' is either the issued short code or long code issued to the user. Either one is
+//   acceptable. Note that they normally have different expiry times.
+// 'accept' is a list of accepted test types by the client. Acceptable values are
+//   - ["confirmed"]
+//   - ["confirmed", "likely"]  == ["likely"]
+//   - ["confirmed", "likely", "negative"] == ["negative"]
+//   These values form a hierarchy, if a client will accept 'likely' they must accept
+//   both confirmed and likely. 'negative' indicates you accept confirmed, likely, and negative.
+//   A client can pass in the complete list they accept or the "highest" value they can accept.
+//   If this value is omitted or is empty, the client agrees to accept ALL possible
+//   test types, including test types that may be introduced in the future.
+//
+//
 // Requires API key in a HTTP header, X-API-Key: APIKEY
 type VerifyCodeRequest struct {
-	VerificationCode string `json:"code"`
+	VerificationCode string   `json:"code"`
+	AcceptTestTypes  []string `json:"accept,omitempty"`
 }
 
 // VerifyCodeResponse either contains an error, or contains the test parameters
