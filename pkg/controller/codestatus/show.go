@@ -44,19 +44,17 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		m := controller.TemplateMapFromContext(ctx)
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.h.RenderHTML(w, "code/show", m)
+			renderShow(ctx, w, "", "", "")
 			return
 		}
 
-		m["uuid"] = form.UUID
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
 			flash.Error("Failed to process form: %v", apiErr.Error)
-			c.h.RenderHTML(w, "code/show", m)
+			renderShow(ctx, w, form.UUID, "", "")
 			return
 		}
 
@@ -66,7 +64,6 @@ func (c *Controller) HandleShow() http.Handler {
 		} else {
 			status = "not yet claimed"
 		}
-		m["status"] = status
 		var exp string
 		if code.IsExpired() {
 			exp = "expired"
@@ -74,7 +71,14 @@ func (c *Controller) HandleShow() http.Handler {
 			// TODO(whaught): This might be nicer as a formatted duration until now
 			exp = code.ExpiresAt.UTC().Format(time.RFC1123)
 		}
+		renderShow(ctx, w, form.UUID, status, exp)
+	})
+
+	func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status, expires string) {
+		m := controller.TemplateMapFromContext(ctx)
+		m["uuid"] = uuid
+		m["status"] = status
 		m["expires"] = exp
 		c.h.RenderHTML(w, "code/show", m)
-	})
+	}
 }
