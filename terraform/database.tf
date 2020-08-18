@@ -235,6 +235,8 @@ resource "null_resource" "migrate" {
       DB_NAME                 = google_sql_database.db.name
       DB_PASSWORD             = google_secret_manager_secret_version.db-secret-version["password"].name
       DB_USER                 = google_sql_user.user.name
+      DB_DEBUG                = true
+      LOG_DEBUG               = true
     }
 
     command = "${path.module}/../scripts/migrate"
