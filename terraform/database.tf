@@ -243,6 +243,8 @@ resource "null_resource" "migrate" {
   }
 
   depends_on = [
+    google_sql_database.db,
+    google_secret_manager_secret_version.db-apikey-sig-hmac,
     google_project_service.services["cloudbuild.googleapis.com"],
     google_secret_manager_secret_iam_member.cloudbuild-db-pwd,
     google_project_iam_member.cloudbuild-sql,
