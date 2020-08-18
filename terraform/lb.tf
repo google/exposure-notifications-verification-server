@@ -1,9 +1,12 @@
 # https://github.com/hashicorp/terraform-provider-google-beta/pull/2348
 # https://cloud.google.com/load-balancing/docs/negs/setting-up-serverless-negs
-resource "google_compute_region_network_endpoint_group" "apiserver-us-central1" {
-  provider  = google-beta
-  region    = "us-central1"
-  cloud_run = "apiserver"
+resource "google_compute_region_network_endpoint_group" "apiserver" {
+  name     = "api-server"
+  provider = google-beta
+  region   = var.cloudrun_region
+  cloud_run {
+    service = "apiserver"
+  }
 }
 
 resource "google_compute_backend_service" "apiserver" {
@@ -11,7 +14,7 @@ resource "google_compute_backend_service" "apiserver" {
   enable_cdn = true
 
   backend {
-    group = google_compute_region_network_endpoint_group.apiserver-us-central1.id
+    group = google_compute_region_network_endpoint_group.apiserver.id
   }
 }
 
@@ -39,6 +42,6 @@ resource "google_compute_forwarding_rule" "verification-server" {
   ip_address            = google_compute_global_address.verification-server.address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "80"
-  target                = google_compute_region_target_http_proxy.default.id
+  target                = google_compute_target_http_proxy.default.id
   network_tier          = "PREMIUM"
 }
