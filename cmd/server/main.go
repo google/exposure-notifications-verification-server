@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
@@ -165,6 +166,14 @@ func realMain(ctx context.Context) error {
 		sessionController := session.New(ctx, auth, config, db, h)
 		sub.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
 		sub.Handle("/session", sessionController.HandleCreate()).Methods("POST")
+	}
+
+	{
+		sub := r.PathPrefix("/login").Subrouter()
+		sub.Use(rateLimit)
+
+		loginController := login.New(ctx, config, h)
+		sub.Handle("", loginController.HandleLogin()).Methods("GET")
 	}
 
 	{
