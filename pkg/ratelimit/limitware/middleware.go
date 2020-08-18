@@ -37,13 +37,28 @@ type Middleware struct {
 	keyFunc     httplimit.KeyFunc
 	reqCounter  *stats.Int64Measure
 	keyErrors   *stats.Int64Measure
+	takeErrors  *stats.Int64Measure
 	rateLimited *stats.Int64Measure
 	logger      *zap.SugaredLogger
+
+	allowOnError bool
+}
+
+// Option is an option to the middleware.
+type Option func(m *Middleware) *Middleware
+
+// AllowOnError instructs the middleware to fail (internal server error) on
+// connection errors. The default behavior is to fail on errors to Take.
+func AllowOnError(v bool) Option {
+	return func(m *Middleware) *Middleware {
+		m.allowOnError = v
+		return m
+	}
 }
 
 // NewMiddleware creates a new middleware suitable for use as an HTTP handler.
 // This function returns an error if either the Store or KeyFunc are nil.
-func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc) (*Middleware, error) {
+func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc, opts ...Option) (*Middleware, error) {
 	if s == nil {
 		return nil, fmt.Errorf("store cannot be nil")
 	}
@@ -74,6 +89,16 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc) (*
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
 	}
 
+	te := stats.Int64(MetricPrefix+"/take_errors", "errors seen from take function", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/take_errors_count",
+		Measure:     te,
+		Aggregation: view.Count(),
+		TagKeys:     []tag.Key{},
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
 	rl := stats.Int64(MetricPrefix+"/rate_limited", "rate limited requests", stats.UnitDimensionless)
 	if err := view.Register(&view.View{
 		Name:        MetricPrefix + "/rate_limited_count",
@@ -84,14 +109,25 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc) (*
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
 	}
 
-	return &Middleware{
+	m := &Middleware{
 		store:       s,
 		keyFunc:     f,
 		reqCounter:  rc,
 		keyErrors:   ke,
+		takeErrors:  te,
 		rateLimited: rl,
 		logger:      logger,
-	}, nil
+	}
+
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+
+		m = opt(m)
+	}
+
+	return m, nil
 }
 
 // Handle returns the HTTP handler as a middleware. This handler calls Take() on
@@ -113,7 +149,17 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		}
 
 		// Take from the store.
-		limit, remaining, reset, ok := m.store.Take(key)
+		limit, remaining, reset, ok, err := m.store.Take(key)
+		if err != nil {
+			m.logger.Errorw("failed to take", "error", err)
+			stats.Record(ctx, m.takeErrors.M(1))
+
+			if !m.allowOnError {
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		resetTime := time.Unix(0, int64(reset)).UTC().Format(time.RFC1123)
 
 		// Set headers (we do this regardless of whether the request is permitted).
