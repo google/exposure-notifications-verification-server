@@ -3,7 +3,7 @@
 resource "google_compute_region_network_endpoint_group" "apiserver" {
   name     = "api-server"
   provider = google-beta
-  region   = var.cloudrun_region
+  region   = var.region
   cloud_run {
     service = "apiserver"
   }
