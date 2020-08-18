@@ -72,10 +72,8 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	realm := database.Realm{
-		Name: *nameFlag,
-	}
-	if err := db.SaveRealm(&realm); err != nil {
+	realm := database.NewRealmWithDefaults(*nameFlag)
+	if err := db.SaveRealm(realm); err != nil {
 		return fmt.Errorf("failed to create realm: %w", err)
 	}
 
