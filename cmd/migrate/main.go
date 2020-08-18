@@ -19,6 +19,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -40,7 +42,8 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -52,10 +55,12 @@ func main() {
 }
 
 func realMain(ctx context.Context) error {
+	logger := logging.FromContext(ctx)
 	var dbConfig database.Config
 	if err := config.ProcessWith(ctx, &dbConfig, envconfig.OsLookuper()); err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
+	logger.Debugw("running migrate", "dbconfig", dbConfig)
 
 	db, err := dbConfig.Load(ctx)
 	if err != nil {

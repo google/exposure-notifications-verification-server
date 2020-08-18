@@ -16,15 +16,15 @@ package main
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -34,6 +34,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -44,14 +45,14 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/sethvargo/go-limiter/httplimit"
 	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -133,7 +134,7 @@ func realMain(ctx context.Context) error {
 	}
 	defer limiterStore.Close()
 
-	httplimiter, err := httplimit.NewMiddleware(limiterStore, limiterFunc(ctx))
+	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore, limitware.UserEmailKeyFunc(ctx, "server"))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
@@ -189,7 +190,17 @@ func realMain(ctx context.Context) error {
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, config, db, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
-		sub.Handle("/checkcodestatus", issueapiController.HandleCheckCodeStatus()).Methods("POST")
+	}
+
+	{
+		sub := r.PathPrefix("/code").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(requireRealm)
+		sub.Use(rateLimit)
+
+		codeStatusController := codestatus.NewServer(ctx, config, db, h)
+		sub.Handle("/status", codeStatusController.HandleIndex()).Methods("GET")
+		sub.Handle("/show", codeStatusController.HandleShow()).Methods("POST")
 	}
 
 	// apikeys
@@ -254,36 +265,4 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", config.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
-}
-
-// limiterFunc is a custom rate limiter function. It limits by user, if one
-// exists, then by IP.
-func limiterFunc(ctx context.Context) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named("ratelimit")
-
-	return func(r *http.Request) (string, error) {
-		ctx := r.Context()
-
-		// See if a user exists on the context
-		user := controller.UserFromContext(ctx)
-		if user != nil && user.Email != "" {
-			logger.Debugw("limiting by user", "user", user.ID)
-			dig := sha1.Sum([]byte(user.Email))
-			return fmt.Sprintf("server:user:%x", dig), nil
-		}
-
-		// Get the remote addr
-		ip := r.RemoteAddr
-
-		// Check if x-forwarded-for exists, the load balancer sets this, and the
-		// first entry is the real client IP
-		xff := r.Header.Get("x-forwarded-for")
-		if xff != "" {
-			ip = strings.Split(xff, ",")[0]
-		}
-
-		logger.Debugw("limiting by ip", "ip", ip)
-		dig := sha1.Sum([]byte(ip))
-		return fmt.Sprintf("server:ip:%x", dig), nil
-	}
 }

@@ -19,6 +19,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -41,7 +43,8 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -102,7 +105,7 @@ func realMain(ctx context.Context) error {
 	if err := db.SaveUser(user); err != nil {
 		return fmt.Errorf("failed to save user: %w: %v", err, user.ErrorMessages())
 	}
-	logger.Debugw("saved user", "user", user)
+	logger.Infow("saved user", "user", user)
 
 	return nil
 }

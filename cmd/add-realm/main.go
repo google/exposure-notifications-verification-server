@@ -19,6 +19,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -37,7 +39,8 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -69,10 +72,8 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	realm := database.Realm{
-		Name: *nameFlag,
-	}
-	if err := db.SaveRealm(&realm); err != nil {
+	realm := database.NewRealmWithDefaults(*nameFlag)
+	if err := db.SaveRealm(realm); err != nil {
 		return fmt.Errorf("failed to create realm: %w", err)
 	}
 

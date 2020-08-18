@@ -232,11 +232,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					return err
 				}
 				logger.Info("Create the DEFAULT realm")
-				// Create the default realm.
-				defaultRealm := Realm{
-					Name: "Default",
-				}
-				if err := tx.FirstOrCreate(&defaultRealm).Error; err != nil {
+				// Create the default realm with all of the default settings.
+				defaultRealm := NewRealmWithDefaults("Default")
+				if err := tx.FirstOrCreate(defaultRealm).Error; err != nil {
 					return err
 				}
 
@@ -253,9 +251,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				for _, u := range users {
 					logger.Infof("added user: %v to default realm", u.ID)
 
-					u.AddRealm(&defaultRealm)
+					u.AddRealm(defaultRealm)
 					if u.Admin {
-						u.AddRealmAdmin(&defaultRealm)
+						u.AddRealmAdmin(defaultRealm)
 					}
 
 					if err := tx.Save(u).Error; err != nil {
@@ -601,7 +599,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 		},
 		{
-			ID: "00026-AlterColumns_citext",
+			ID: "00027-AlterColumns_citext",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Infof("db migrations: setting columns to case insensitive")
 				sqls := []string{
@@ -627,6 +625,58 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				for _, sql := range sqls {
 					if err := tx.Exec(sql).Error; err != nil {
 						return err
+					}
+				}
+				return nil
+			},
+		},
+		{
+			ID: "00028-AddSMSDeeplinkFields",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Infof("db migrations: adding long_code and SMS deeplink settings")
+				// long_code cannot be auto migrated because of unique index.
+				// manually create long_code and long_expires_at and backfill with existing data.
+				sqls := []string{
+					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_code VARCHAR(20)",
+					"UPDATE verification_codes SET long_code = code",
+					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_long_code ON verification_codes(long_code)",
+					"ALTER TABLE verification_codes ALTER COLUMN long_code SET NOT NULL",
+					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_expires_at TIMESTAMPTZ",
+					"UPDATE verification_codes SET long_expires_at = expires_at",
+				}
+				for _, stmt := range sqls {
+					if err := tx.Exec(stmt).Error; err != nil {
+						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
+					}
+				}
+
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
+				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
+					return err
+				}
+
+				logger.Infof("db migrations: add verification code purge index")
+				if err := tx.Model(&VerificationCode{}).AddIndex("ver_code_long_purge_index", "long_expires_at").Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				dropColumns := []string{
+					"long_code_length",
+					"long_code_duration",
+					"region_code",
+					"code_length",
+					"code_duration",
+					"sms_text_template",
+				}
+				for _, col := range dropColumns {
+					stmt := fmt.Sprintf("ALTER TABLE realms DROP COLUMN %s", col)
+					if err := tx.Exec(stmt).Error; err != nil {
+						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
 					}
 				}
 				return nil

@@ -41,6 +41,23 @@
             </div>
           </div>
 
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Region code:</label>
+            <div class="col-sm-9">
+              <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}" />
+              {{if $realm.ErrorsFor "regionCode"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($realm.ErrorsFor "regionCode") ", "}}
+              </div>
+              {{end}}
+              <small class="form-text text-muted">
+                Used in creating deep link SMS for multi-helath authority apps. Region should
+                be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and ISO 3166-2 subdivision codes</a> where applicable.
+                For example, Washington State would be <code>US-WA</code>.
+              </small>
+            </div>
+          </div>
+
           <div class="form-group row mb-0">
             <label class="col-sm-3">Allowed tests:</label>
             <div class="col-sm-9">
@@ -86,6 +103,117 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          Verification code configuration
+        </div>
+        <div class="card-body">
+          <div class="form-group row">
+            <label for="codeLength" class="col-sm-3">Short code characters:</label>
+            <div class="col-sm-9">
+              <select class="form-control{{if $realm.ErrorsFor "codeLength"}} is-invalid{{end}}" name="codeLength" id="codeLength">
+                {{range $cl := .shortCodeLengths}}
+                <option value="{{$cl}}" {{if (eq $cl $realm.CodeLength)}}selected{{end}}>{{$cl}}</option>
+                {{end}}
+              </select>
+              <small class="form-text text-muted">
+                The short verification code is intended to be dictated over the phone to the
+                person and is <code>6</code>, <code>7</code>, or <code>8</code> digits in length.
+              </small>
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label for="codeLength" class="col-sm-3">Code expires after:</label>
+            <div class="col-sm-8">
+              <select class="form-control{{if $realm.ErrorsFor "CodeDurationSeconds"}} is-invalid{{end}}" name="codeDuration" id="codeDuration">
+                {{$current := $realm.GetCodeDurationMinutes}}
+                {{range $scm := .shortCodeMinutes}}
+                <option value="{{$scm}}" {{if (eq $scm $current)}}selected{{end}}>{{$scm}}</option>
+                {{end}}
+              </select>
+              <small class="form-text text-muted">
+                The short code can be valid from anywhere between <code>5</code> and <code>60</code>
+                minutes. If you are using SMS deeplinks, it is recommended to keep this duration
+                short and let the long code be valid for a longer period (up to <code>24</code> hours).
+              </small>
+            </div>
+            <div class="col-sm-1">minutes</div>
+          </div>
+
+          <div class="form-group row">
+            <label for="codeLength" class="col-sm-3">Long code characters:</label>
+            <div class="col-sm-9">
+              <select class="form-control{{if $realm.ErrorsFor "longCodeLength"}} is-invalid{{end}}" name="longCodeLength" id="longCodeLength">
+                {{range $cl := .longCodeLengths}}
+                <option value="{{$cl}}" {{if (eq $cl $realm.LongCodeLength)}}selected{{end}}>{{$cl}}</option>
+                {{end}}
+              </select>
+              <small class="form-text text-muted">
+                The 'long' verification code is only delivered over SMS, is more complex with <code>12</code> -
+                <code>16</code> alphanumeric characters, and is never shown to a human. It is recommended
+                to leave this at the default of <code>16</code> digits.
+              </small>
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label for="codeLength" class="col-sm-3">Long code expires after:</label>
+            <div class="col-sm-8">
+              <select class="form-control{{if $realm.ErrorsFor "LongCodeDurationSeconds"}} is-invalid{{end}}" name="longCodeDuration" id="longCodeDuration">
+                {{$current := $realm.GetLongCodeDurationHours}}
+                {{range $lch := .longCodeHours}}
+                <option value="{{$lch}}" {{if (eq $lch $current)}}selected{{end}}>{{$lch}}</option>
+                {{end}}
+              </select>
+              <small class="form-text text-muted">
+                The long code can be valid between <code>1</code> and <code>24</code> hours.
+              </small>
+            </div>
+            <div class="col-sm-1">hours</div>
+          </div>
+
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">SMS text template:</label>
+            <div class="col-sm-9">
+              <textarea id="SMSTextTemplate" name="SMSTextTemplate" class="form-control{{if $realm.ErrorsFor "SMSTextTemplate"}} is-invalid{{end}}">{{$realm.SMSTextTemplate}}</textarea>
+              {{if $realm.ErrorsFor "SMSTextTemplate"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($realm.ErrorsFor "SMSTextTemplate") ", "}}
+              </div>
+              {{end}}
+              <small class="form-text text-muted">
+                The SMS message will be constructed based on the template you provide. The overall
+                length of of the SMS message should not exceede 160 characters, or your message will need to be split
+                in transit and may not be joined correctly. There are some special strings that you can use
+                to substitute items. Your SMS template <em>MUST</em> contain either the <code>[code]</code> or
+                <code>[longcode]</code>.         
+                <ul>
+                  <li><code>[region]</code>The region setting (set on this page).</li>
+                  <li><code>[code]</code>The 'short' verification code.</li>                  
+                  <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units).</li>
+                  <li><code>[longcode]</code>The 'long' verification code</li>
+                  <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
+                </ul>
+
+                Here are some example SMS templates. The recommended usage is to include the long code in the SMS, and make
+                it clickable by registering a customer URI handler for your app.
+                <ul>
+                  <li>Send short code in SMS (<code>104</code> characters with 8 digit codes and 60 minute expiration):
+                      <pre>State of Wonder Dept. of Health, your exposure notifications code is [code] and expires in [expires] minutes</pre>
+                  </li>
+                  <li>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration):
+                      <pre>You have tested positive for Covid-19. Click here to share anonymous data for exposure notifications
+                        dohen://v?c=[longcode] (Expires in [longexpires] hours)</pre>
+                  </li>
+                </ul>
+              </small>
+            </div>
+          </div>
+
+        </div>        
       </div>
 
       <div class="card mb-3">

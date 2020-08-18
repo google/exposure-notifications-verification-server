@@ -12,13 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+// Package codestatus defines a web controller for the code status page of the verification
+// server. This view allows users to view the status of previously-issued OTP codes.
+package codestatus
 
-import "time"
+import (
+	"net/http"
 
-// IssueAPIConfig is an interface that represents what is needed of the verification
-// code issue API.
-type IssueAPIConfig interface {
-	GetCollisionRetryCount() uint
-	GetAllowedSymptomAge() time.Duration
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+)
+
+func (c *Controller) HandleIndex() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		m := controller.TemplateMapFromContext(ctx)
+		// TODO(whaught): load a list of recent codes to show
+
+		c.h.RenderHTML(w, "code/status", m)
+	})
 }

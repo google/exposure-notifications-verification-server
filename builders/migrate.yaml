@@ -20,6 +20,7 @@ substitutions:
   _DB_APIKEY_DATABASE_KEY:
   _DB_APIKEY_SIGNATURE_KEY:
   _DB_CONN:
+  _DB_DEBUG: 'false'
   _DB_ENCRYPTION_KEY:
   _DB_HOST: 'localhost'
   _DB_NAME: 'verification'
@@ -28,6 +29,7 @@ substitutions:
   _DB_SSLMODE: 'disable'
   _DB_USER: 'verification'
   _KEY_MANAGER: 'GOOGLE_CLOUD_KMS'
+  _LOG_DEBUG: 'false'
 
 steps:
 - id: 'migrate'
@@ -35,6 +37,7 @@ steps:
   env:
   - 'DB_APIKEY_DATABASE_KEY=${_DB_APIKEY_DATABASE_KEY}'
   - 'DB_APIKEY_SIGNATURE_KEY=${_DB_APIKEY_SIGNATURE_KEY}'
+  - 'DB_DEBUG=${_DB_DEBUG}'
   - 'DB_ENCRYPTION_KEY=${_DB_ENCRYPTION_KEY}'
   - 'DB_HOST=${_DB_HOST}'
   - 'DB_NAME=${_DB_NAME}'
@@ -43,6 +46,7 @@ steps:
   - 'DB_SSLMODE=${_DB_SSLMODE}'
   - 'DB_USER=${_DB_USER}'
   - 'KEY_MANAGER=${_KEY_MANAGER}'
+  - 'LOG_DEBUG=${_LOG_DEBUG}'
   entrypoint: '/bin/bash'
   args:
   - '-eEuo'

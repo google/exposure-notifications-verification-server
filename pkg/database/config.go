@@ -56,11 +56,11 @@ type Config struct {
 
 	// APIKeyDatabaseHMAC is the HMAC key to use for API keys before storing them
 	// in the database.
-	APIKeyDatabaseHMAC envconfig.Base64Bytes `env:"DB_APIKEY_DATABASE_KEY,required"`
+	APIKeyDatabaseHMAC envconfig.Base64Bytes `env:"DB_APIKEY_DATABASE_KEY,required" json:"-"`
 
 	// APIKeySignatureHMAC is the HMAC key to sign API keys before returning them
 	// to the requestor.
-	APIKeySignatureHMAC envconfig.Base64Bytes `env:"DB_APIKEY_SIGNATURE_KEY,required"`
+	APIKeySignatureHMAC envconfig.Base64Bytes `env:"DB_APIKEY_SIGNATURE_KEY,required" json:"-"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The

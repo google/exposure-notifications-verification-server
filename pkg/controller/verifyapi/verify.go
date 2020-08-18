@@ -87,9 +87,17 @@ func (c *Controller) HandleVerify() http.Handler {
 			return
 		}
 
+		// Process and validate the requested acceptable test types.
+		acceptTypes, err := request.GetAcceptedTestTypes()
+		if err != nil {
+			c.logger.Errorf("invalid accept test types", "error", err)
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
+			return
+		}
+
 		// Exchange the short term verification code for a long term verification token.
 		// The token can be used to sign TEKs later.
-		verificationToken, err := c.db.VerifyCodeAndIssueToken(authApp.RealmID, request.VerificationCode, c.config.VerificationTokenDuration)
+		verificationToken, err := c.db.VerifyCodeAndIssueToken(authApp.RealmID, request.VerificationCode, acceptTypes, c.config.VerificationTokenDuration)
 		if err != nil {
 			c.logger.Errorw("failed to issue verification token", "error", err)
 			switch {
@@ -99,6 +107,8 @@ func (c *Controller) HandleVerify() http.Handler {
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
+			case errors.Is(err, database.ErrUnsupportedTestType):
+				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 			default:
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			}

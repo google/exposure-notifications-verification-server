@@ -1,0 +1,52 @@
+{{define "code/status"}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Verification code status</h1>
+    <p>
+      Use an identifier to check the status of a code previously shared with your patient.
+    </p>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <form method="POST" action="show">
+          {{ .csrfField }}
+          <div class="row form-group">
+            <label for="uuid" class="col-sm-3">Code Identifier</label>
+            <div class="col-sm-9">
+              <div class="input-group p-0 shadow-sm">
+                <input type="text" id="uuid" name="uuid" class="form-control"
+                  placeholder="xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              </div>
+              <small class="form-text text-muted">
+                Identifier given from the Issue Code form.
+              </small>
+            </div>
+          </div>
+
+          <div class="row form-group">
+            <div class="offset-sm-3 col-sm-9">
+              <button id="submit" class="btn btn-primary btn-block">Check status</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+
+</html>
+{{end}}

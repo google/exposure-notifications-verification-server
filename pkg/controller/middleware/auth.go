@@ -91,17 +91,20 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					logger.Debugw("user does not exist")
 					flash.Error("That user does not exist.")
+					controller.ClearSessionFirebaseCookie(session)
 					controller.Unauthorized(w, r, h)
 					return
 				}
 
 				logger.Errorw("failed to find user", "error", err)
+				controller.ClearSessionFirebaseCookie(session)
 				controller.InternalError(w, r, h, err)
 				return
 			}
 
 			if user == nil {
 				logger.Debugw("user does not exist")
+				controller.ClearSessionFirebaseCookie(session)
 				controller.Unauthorized(w, r, h)
 				return
 			}

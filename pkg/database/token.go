@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/jinzhu/gorm"
 )
 
@@ -37,6 +38,7 @@ var (
 	ErrTokenExpired             = errors.New("verification token expired")
 	ErrTokenUsed                = errors.New("verification token used")
 	ErrTokenMetadataMismatch    = errors.New("verification token test metadata mismatch")
+	ErrUnsupportedTestType      = errors.New("verification code has unsupported test type")
 )
 
 // Token represents an issued "long term" from a validated verification code.
@@ -142,9 +144,10 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 // it for a long term token. The verification code must not have expired and must
 // not have been previously used. Both acctions are done in a single database
 // transaction.
+// The verCode can be the "short code" or the "long code" which impacts expiry time.
 //
 // The long term token can be used later to sign keys when they are submitted.
-func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, expireAfter time.Duration) (*Token, error) {
+func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, acceptTypes api.AcceptTypes, expireAfter time.Duration) (*Token, error) {
 	buffer := make([]byte, tokenBytes)
 	_, err := rand.Read(buffer)
 	if err != nil {
@@ -157,22 +160,27 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, expire
 		// Load the verification code - do quick expiry and claim checks.
 		// Also lock the row for update.
 		var vc VerificationCode
-		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("code = ? and realm_id = ?", verCode, realmID).First(&vc).Error; err != nil {
+		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("(code = ? OR long_code = ?) AND realm_id = ?", verCode, verCode, realmID).First(&vc).Error; err != nil {
 			if gorm.IsRecordNotFoundError(err) {
 				return ErrVerificationCodeNotFound
 			}
 			return err
 		}
-		if vc.IsExpired() {
+		// Checks which code is being used and if that makes it expired.
+		if vc.IsCodeExpired(verCode) {
 			return ErrVerificationCodeExpired
 		}
 		if vc.Claimed {
 			return ErrVerificationCodeUsed
 		}
 
+		if _, ok := acceptTypes[vc.TestType]; !ok {
+			return ErrUnsupportedTestType
+		}
+
 		// Mark claimed. Transactional update.
 		vc.Claimed = true
-		res := db.db.Save(vc)
+		res := db.db.Save(&vc)
 		if res.Error != nil {
 			return res.Error
 		}

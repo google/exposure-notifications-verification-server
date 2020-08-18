@@ -19,6 +19,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
@@ -41,7 +43,8 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
-	logger := logging.NewLogger(true)
+	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
+	logger := logging.NewLogger(debug)
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -56,10 +59,10 @@ func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
 	request, response, err := clients.IssueCode(ctx, *addrFlag, *apikeyFlag, *testFlag, *onsetFlag, *timeoutFlag)
-	logger.Debugw("sent request", "request", request)
+	logger.Infow("sent request", "request", request)
 	if err != nil {
 		return fmt.Errorf("failed to get token: %w", err)
 	}
-	logger.Debugw("got response", "response", response)
+	logger.Infow("got response", "response", response)
 	return nil
 }
