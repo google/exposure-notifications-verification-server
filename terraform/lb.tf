@@ -12,6 +12,7 @@ resource "google_compute_region_network_endpoint_group" "apiserver" {
 }
 
 resource "google_compute_backend_service" "apiserver" {
+  provider   = google-beta
   name       = "apiserver"
   project    = var.project
   enable_cdn = true
