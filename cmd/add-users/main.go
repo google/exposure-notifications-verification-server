@@ -22,6 +22,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -66,12 +67,12 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("--email must be passed and cannot be empty")
 	}
 
-	var config database.Config
-	if err := envconfig.Process(ctx, &config); err != nil {
+	var cfg database.Config
+	if err := config.ProcessWith(ctx, &cfg, envconfig.OsLookuper()); err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
-	db, err := config.Load(ctx)
+	db, err := cfg.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
