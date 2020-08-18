@@ -55,10 +55,12 @@ func main() {
 }
 
 func realMain(ctx context.Context) error {
+	logger := logging.FromContext(ctx)
 	var dbConfig database.Config
 	if err := config.ProcessWith(ctx, &dbConfig, envconfig.OsLookuper()); err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
+	logger.Debugw("running migrate", "dbconfig", dbConfig)
 
 	db, err := dbConfig.Load(ctx)
 	if err != nil {

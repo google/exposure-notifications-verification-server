@@ -233,14 +233,18 @@ resource "null_resource" "migrate" {
       DB_CONN                 = google_sql_database_instance.db-inst.connection_name
       DB_ENCRYPTION_KEY       = google_kms_crypto_key.database-encrypter.self_link
       DB_NAME                 = google_sql_database.db.name
-      DB_PASSWORD             = google_secret_manager_secret_version.db-secret-version["password"].name
+      DB_PASSWORD             = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
       DB_USER                 = google_sql_user.user.name
+      DB_DEBUG                = true
+      LOG_DEBUG               = true
     }
 
     command = "${path.module}/../scripts/migrate"
   }
 
   depends_on = [
+    google_sql_database.db,
+    google_secret_manager_secret_version.db-apikey-sig-hmac,
     google_project_service.services["cloudbuild.googleapis.com"],
     google_secret_manager_secret_iam_member.cloudbuild-db-pwd,
     google_project_iam_member.cloudbuild-sql,
