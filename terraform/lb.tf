@@ -18,8 +18,7 @@ resource "google_compute_backend_service" "apiserver" {
   enable_cdn = true
 
   backend {
-    balancing_mode = RATE
-    group          = google_compute_region_network_endpoint_group.apiserver.id
+    group = google_compute_region_network_endpoint_group.apiserver.id
   }
 }
 
