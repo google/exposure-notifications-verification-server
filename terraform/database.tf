@@ -167,6 +167,29 @@ resource "google_secret_manager_secret_version" "db-apikey-sig-hmac" {
   secret_data = random_id.db-apikey-sig-hmac.b64_std
 }
 
+# Create secret for the database HMAC for verification codes
+resource "random_id" "db-verification-code-hmac" {
+  byte_length = 128
+}
+
+resource "google_secret_manager_secret" "db-verification-code-hmac" {
+  secret_id = "db-verification-code-hmac"
+
+  replication {
+    automatic = true
+  }
+
+  depends_on = [
+    google_project_service.services["secretmanager.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_version" "db-verification-code-hmac" {
+  secret      = google_secret_manager_secret.db-verification-code-hmac.id
+  secret_data = random_id.db-verification-code-hmac.b64_std
+}
+
+
 # Grant Cloud Build the ability to access the database secrets (required to run
 # migrations).
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-pwd" {
@@ -191,6 +214,16 @@ resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-db-hmac
 
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-sig-hmac" {
   secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_iam_member" "cloudbuild-db-verification-code-hmac" {
+  secret_id = google_secret_manager_secret.db-verification-code-hmac.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
 
@@ -228,15 +261,16 @@ resource "null_resource" "migrate" {
       PROJECT_ID = var.project
       REGION     = var.region
 
-      DB_APIKEY_DATABASE_KEY  = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
-      DB_APIKEY_SIGNATURE_KEY = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
-      DB_CONN                 = google_sql_database_instance.db-inst.connection_name
-      DB_ENCRYPTION_KEY       = google_kms_crypto_key.database-encrypter.self_link
-      DB_NAME                 = google_sql_database.db.name
-      DB_PASSWORD             = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
-      DB_USER                 = google_sql_user.user.name
-      DB_DEBUG                = true
-      LOG_DEBUG               = true
+      DB_APIKEY_DATABASE_KEY            = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
+      DB_APIKEY_SIGNATURE_KEY           = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
+      DB_CONN                           = google_sql_database_instance.db-inst.connection_name
+      DB_DEBUG                          = true
+      DB_ENCRYPTION_KEY                 = google_kms_crypto_key.database-encrypter.self_link
+      DB_NAME                           = google_sql_database.db.name
+      DB_PASSWORD                       = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
+      DB_USER                           = google_sql_user.user.name
+      DB_VERIFICATION_CODE_DATABASE_KEY = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
+      LOG_DEBUG                         = true
     }
 
     command = "${path.module}/../scripts/migrate"
@@ -289,4 +323,8 @@ output "db_apikey_database_key_secret" {
 
 output "db_apikey_signature_key_secret" {
   value = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
+}
+
+output "db_verification_code_key_secret" {
+  value = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
 }

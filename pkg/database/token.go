@@ -113,7 +113,12 @@ func (t *Token) Subject() *Subject {
 func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) error {
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		var tok Token
-		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("token_id = ? and realm_id = ?", tokenID, realmID).First(&tok).Error; err != nil {
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where("token_id = ?", tokenID).
+			Where("realm_id = ?", realmID).
+			First(&tok).
+			Error; err != nil {
 			return err
 		}
 
@@ -136,7 +141,7 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 		}
 
 		tok.Used = true
-		return db.db.Save(&tok).Error
+		return tx.Save(&tok).Error
 	})
 }
 
@@ -155,17 +160,29 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 	}
 	tokenID := base64.RawStdEncoding.EncodeToString(buffer)
 
+	hmacedCode, err := db.hmacVerificationCode(verCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create hmac: %w", err)
+	}
+
 	var tok *Token
 	err = db.db.Transaction(func(tx *gorm.DB) error {
 		// Load the verification code - do quick expiry and claim checks.
 		// Also lock the row for update.
 		var vc VerificationCode
-		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("(code = ? OR long_code = ?) AND realm_id = ?", verCode, verCode, realmID).First(&vc).Error; err != nil {
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where("realm_id = ?", realmID).
+			// TODO(sethvargo): remove plaintext token check after migrations.
+			Where("(code = ? OR code = ? OR long_code = ? OR long_code = ?)", hmacedCode, verCode, hmacedCode, verCode).
+			First(&vc).
+			Error; err != nil {
 			if gorm.IsRecordNotFoundError(err) {
 				return ErrVerificationCodeNotFound
 			}
 			return err
 		}
+
 		// Checks which code is being used and if that makes it expired.
 		if vc.IsCodeExpired(verCode) {
 			return ErrVerificationCodeExpired
@@ -180,9 +197,8 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 
 		// Mark claimed. Transactional update.
 		vc.Claimed = true
-		res := db.db.Save(&vc)
-		if res.Error != nil {
-			return res.Error
+		if err := tx.Save(&vc).Error; err != nil {
+			return err
 		}
 
 		// Issue the token. Take the generated value and create a new long term token.
@@ -195,14 +211,18 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			RealmID:     realmID,
 		}
 
-		return db.db.Create(tok).Error
+		return tx.Create(tok).Error
 	})
+
 	return tok, err
 }
 
 func (db *Database) FindTokenByID(tokenID string) (*Token, error) {
 	var token Token
-	if err := db.db.Where("token_id = ?", tokenID).First(&token).Error; err != nil {
+	if err := db.db.
+		Or("token_id = ?", tokenID).
+		First(&token).
+		Error; err != nil {
 		return nil, err
 	}
 	return &token, nil

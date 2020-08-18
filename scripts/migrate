@@ -43,6 +43,11 @@ if [ -z "${DB_APIKEY_SIGNATURE_KEY:-}" ]; then
   exit 1
 fi
 
+if [ -z "${DB_VERIFICATION_CODE_DATABASE_KEY:-}" ]; then
+  echo "✋ Missing DB_VERIFICATION_CODE_DATABASE_KEY (e.g. secret://projects/my-project/secrets/my-secret/versions/1)!" >&2
+  exit 1
+fi
+
 if [ -z "${DB_PASSWORD:-}" ]; then
   echo "✋ Missing DB_PASSWORD (e.g. secret://projects/my-project/secrets/my-secret/versions/1)!" >&2
   exit 1
@@ -58,7 +63,18 @@ if [ -z "${DB_USER:-}" ]; then
   echo "🚧 Using username \"${DB_USER}\"" >&2
 fi
 
+SUBS="_DB_CONN=${DB_CONN}"
+SUBS="${SUBS},_DB_APIKEY_DATABASE_KEY=${DB_APIKEY_DATABASE_KEY}"
+SUBS="${SUBS},_DB_APIKEY_SIGNATURE_KEY=${DB_APIKEY_SIGNATURE_KEY}"
+SUBS="${SUBS},_DB_VERIFICATION_CODE_DATABASE_KEY=${DB_VERIFICATION_CODE_DATABASE_KEY}"
+SUBS="${SUBS},_DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY}"
+SUBS="${SUBS},_DB_NAME=${DB_NAME}"
+SUBS="${SUBS},_DB_PASSWORD=${DB_PASSWORD}"
+SUBS="${SUBS},_DB_USER=${DB_USER}"
+SUBS="${SUBS},_DB_DEBUG=${DB_DEBUG}"
+SUBS="${SUBS},_LOG_DEBUG=${LOG_DEBUG}"
+
 gcloud builds submit "${ROOT}" \
   --config "${ROOT}/builders/migrate.yaml" \
-  --substitutions "_DB_CONN=${DB_CONN},_DB_APIKEY_DATABASE_KEY=${DB_APIKEY_DATABASE_KEY},_DB_APIKEY_SIGNATURE_KEY=${DB_APIKEY_SIGNATURE_KEY},_DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY},_DB_NAME=${DB_NAME},_DB_PASSWORD=${DB_PASSWORD},_DB_USER=${DB_USER},_DB_DEBUG=${DB_DEBUG},_LOG_DEBUG=${LOG_DEBUG}" \
+  --substitutions "${SUBS}" \
   --project "${PROJECT_ID}"

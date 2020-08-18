@@ -28,6 +28,7 @@ substitutions:
   _DB_PORT: '5432'
   _DB_SSLMODE: 'disable'
   _DB_USER: 'verification'
+  _DB_VERIFICATION_CODE_DATABASE_KEY:
   _KEY_MANAGER: 'GOOGLE_CLOUD_KMS'
   _LOG_DEBUG: 'false'
 
@@ -45,6 +46,7 @@ steps:
   - 'DB_PORT=${_DB_PORT}'
   - 'DB_SSLMODE=${_DB_SSLMODE}'
   - 'DB_USER=${_DB_USER}'
+  - 'DB_VERIFICATION_CODE_DATABASE_KEY=${_DB_VERIFICATION_CODE_DATABASE_KEY}'
   - 'KEY_MANAGER=${_KEY_MANAGER}'
   - 'LOG_DEBUG=${_LOG_DEBUG}'
   entrypoint: '/bin/bash'
