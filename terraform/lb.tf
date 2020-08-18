@@ -23,14 +23,14 @@ resource "google_compute_global_address" "verification-server" {
 }
 
 resource "google_compute_url_map" "urlmap" {
-  name = "verification-server"
-
+  name            = "verification-server"
   default_service = google_compute_backend_service.apiserver.id
 
   // TODO(icco): Add host base routing for all four services.
 }
 
 resource "google_compute_target_http_proxy" "default" {
+  name    = "verification-server"
   url_map = google_compute_url_map.urlmap.id
 }
 
