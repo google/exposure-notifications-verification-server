@@ -30,7 +30,7 @@ for the verification system, this server:
 	 * Please see the documentation for the [HMAC Calculation](https://developers.google.com/android/exposure-notifications/verification-system#hmac-calc)
 	 * The Verification Certificate is also a JWT
 
-![Verification Flow](https://developers.google.com/android/exposure-notifications/images/verification-certificate-hmac-flow-diagram.png)
+![Verification Flow](https://developers.google.com/android/exposure-notifications/images/verification-flow.svg)
 
 Architecture details
 
