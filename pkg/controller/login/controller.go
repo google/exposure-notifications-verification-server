@@ -32,7 +32,7 @@ type Controller struct {
 	logger *zap.SugaredLogger
 }
 
-// New creates a new index controller. The index controller is thread-safe.
+// New creates a new login controller.
 func New(ctx context.Context, config *config.ServerConfig, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
