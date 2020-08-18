@@ -20,7 +20,7 @@ substitutions:
   _DB_APIKEY_DATABASE_KEY:
   _DB_APIKEY_SIGNATURE_KEY:
   _DB_CONN:
-  _DB_DEBUG: false
+  _DB_DEBUG: 'false'
   _DB_ENCRYPTION_KEY:
   _DB_HOST: 'localhost'
   _DB_NAME: 'verification'
@@ -29,7 +29,7 @@ substitutions:
   _DB_SSLMODE: 'disable'
   _DB_USER: 'verification'
   _KEY_MANAGER: 'GOOGLE_CLOUD_KMS'
-  _LOG_DEBUG: false
+  _LOG_DEBUG: 'false'
 
 steps:
 - id: 'migrate'
