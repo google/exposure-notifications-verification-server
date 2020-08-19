@@ -62,6 +62,10 @@ type Config struct {
 	// to the requestor.
 	APIKeySignatureHMAC envconfig.Base64Bytes `env:"DB_APIKEY_SIGNATURE_KEY,required" json:"-"`
 
+	// VerificationCodeDatabaseHMAC is the HMAC key to hash codes before storing
+	// them in the database.
+	VerificationCodeDatabaseHMAC envconfig.Base64Bytes `env:"DB_VERIFICATION_CODE_DATABASE_KEY,required"`
+
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
 	// table implementation is the source of truth for which values are secrets

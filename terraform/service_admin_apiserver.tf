@@ -73,6 +73,12 @@ resource "google_secret_manager_secret_iam_member" "adminapi-db-apikey-sig-hmac"
   member    = "serviceAccount:${google_service_account.adminapi.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "adminapi-db-verification-code-hmac" {
+  secret_id = google_secret_manager_secret.db-verification-code-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.adminapi.email}"
+}
+
 resource "google_cloud_run_service" "adminapi" {
   name     = "adminapi"
   location = var.region

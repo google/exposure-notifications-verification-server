@@ -73,6 +73,12 @@ resource "google_secret_manager_secret_iam_member" "cleanup-db-apikey-sig-hmac" 
   member    = "serviceAccount:${google_service_account.cleanup.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "cleanup-db-verification-code-hmac" {
+  secret_id = google_secret_manager_secret.db-verification-code-hmac.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cleanup.email}"
+}
+
 resource "google_cloud_run_service" "cleanup" {
   name     = "cleanup"
   location = var.region

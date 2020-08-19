@@ -123,6 +123,7 @@ export DB_ENCRYPTION_KEY="O04ZjG4WuoceRd0k2pTqDN0r8omr6sbFL0U3T5b12Lo="
 # Create your own with `openssl rand -base64 128`.
 export DB_APIKEY_DATABASE_KEY="02zaT2Gtx1QfBnS7kxlby5TxbwyMPWqoCpb75zA8MMB8frQX0WVpOl+UaXDwE3jz2fj/eFqmCj75atLL6Gw3Yg=="
 export DB_APIKEY_SIGNATURE_KEY="PsOkeJ+1iXN2bMnKKTH6Ea+KtZGKDHhDN7SpBgPGanEOr7b/heFPS90mHbjqtu2htuCt/kW61ar2BQPhtq+ASw=="
+export DB_VERIFICATION_CODE_DATABASE_KEY="F1lVUOZYknxojwslyUPkkq1e4urzWBn4E1ecg/qgu8eVaMU+revTQ/VGvR67dlgpWuzH+/YuyfuVgPLBU9xRdw=="
 
 # Enable dev mode
 export DEV_MODE=1

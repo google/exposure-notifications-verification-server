@@ -33,8 +33,9 @@ DB_NAME="${DB_NAME:-"en-verification-server-db"}"
 DB_PASSWORD="${DB_PASSWORD:-"BjrvWmjQPXykPu"}"
 DB_PORT="${DB_PORT:-"5432"}"
 DB_SSLMODE="${DB_SSLMODE:-"require"}"
-DB_USER="${DB_USER:-"en-verification-server"}"
 DB_URL="postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
+DB_USER="${DB_USER:-"en-verification-server"}"
+DB_VERIFICATION_CODE_DATABASE_KEY="${DB_VERIFICATION_CODE_DATABASE_KEY:-"F1lVUOZYknxojwslyUPkkq1e4urzWBn4E1ecg/qgu8eVaMU+revTQ/VGvR67dlgpWuzH+/YuyfuVgPLBU9xRdw=="}"
 
 MD5CMD="$(command -v md5 || command -v md5sum)"
 DB_SHA="$(echo -n "${DB_NAME}|${DB_PORT}" | ${MD5CMD} | cut -d' ' -f1)"
@@ -63,6 +64,7 @@ function init() {
   echo "export DB_SSLMODE=\"${DB_SSLMODE}\""
   echo "export DB_URL=\"${DB_URL}\""
   echo "export DB_USER=\"${DB_USER}\""
+  echo "export DB_VERIFICATION_CODE_DATABASE_KEY=\"${DB_VERIFICATION_CODE_DATABASE_KEY}\""
 }
 
 # gencerts creates the postgres SSL certificates if they do not already exist.

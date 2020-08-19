@@ -15,7 +15,11 @@
 package database
 
 import (
+	"crypto/hmac"
+	"crypto/sha512"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -46,8 +50,8 @@ var (
 type VerificationCode struct {
 	gorm.Model
 	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
-	Code          string `gorm:"type:varchar(20);unique_index"`
-	LongCode      string `gorm:"type:varchar(20);unique_index"`
+	Code          string `gorm:"type:varchar(512);unique_index"`
+	LongCode      string `gorm:"type:varchar(512);unique_index"`
 	UUID          string `gorm:"type:uuid;unique_index;default:null"`
 	Claimed       bool   `gorm:"default:false"`
 	TestType      string `gorm:"type:varchar(20)"`
@@ -126,8 +130,17 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 // FindVerificationCode find a verification code by the code number (can be short
 // code or long code).
 func (db *Database) FindVerificationCode(code string) (*VerificationCode, error) {
+	hmacedCode, err := db.hmacVerificationCode(code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create hmac: %w", err)
+	}
+
 	var vc VerificationCode
-	if err := db.db.Where("code = ? OR long_code = ?", code, code).First(&vc).Error; err != nil {
+	if err := db.db.
+		// TODO(sethvargo): remove non-hmaced lookup after migrations
+		Where("code = ? OR code = ? OR long_code = ? OR long_code = ?", hmacedCode, code, hmacedCode, code).
+		First(&vc).
+		Error; err != nil {
 		return nil, err
 	}
 	return &vc, nil
@@ -135,12 +148,11 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 
 // FindVerificationCodeByUUID find a verification codes by UUID.
 func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, error) {
-	var code VerificationCode
-	if err := db.db.Where("UUID = ?", uuid).Find(&code).Error; err != nil {
+	var vc VerificationCode
+	if err := db.db.Where("uuid = ?", uuid).Find(&vc).Error; err != nil {
 		return nil, err
 	}
-
-	return &code, nil
+	return &vc, nil
 }
 
 // SaveVerificationCode created or updates a verification code in the database.
@@ -157,7 +169,16 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 
 // DeleteVerificationCode deletes the code if it exists. This is a hard delete.
 func (db *Database) DeleteVerificationCode(code string) error {
-	return db.db.Unscoped().Where("code = ? OR long_code = ?", code, code).Delete(&VerificationCode{}).Error
+	hmacedCode, err := db.hmacVerificationCode(code)
+	if err != nil {
+		return fmt.Errorf("failed to create hmac: %w", err)
+	}
+
+	return db.db.Unscoped().
+		// TODO(sethvargo): remove non-hmaced lookup after migrations
+		Where("code = ? OR code = ? OR long_code = ? OR long_code = ?", hmacedCode, code, hmacedCode, code).
+		Delete(&VerificationCode{}).
+		Error
 }
 
 // PurgeVerificationCodes will delete verifications that have expired since at least the
@@ -171,4 +192,14 @@ func (db *Database) PurgeVerificationCodes(maxAge time.Duration) (int64, error) 
 	// Delete codes that expired before the delete before time.
 	rtn := db.db.Unscoped().Where("expires_at < ? AND long_expires_at < ?", deleteBefore, deleteBefore).Delete(&VerificationCode{})
 	return rtn.RowsAffected, rtn.Error
+}
+
+// hmacVerificationCode is a helper for generating the HMAC of a token. It returns the
+// hex-encoded HMACed value, suitable for insertion into the database.
+func (db *Database) hmacVerificationCode(v string) (string, error) {
+	sig := hmac.New(sha512.New, db.config.VerificationCodeDatabaseHMAC)
+	if _, err := sig.Write([]byte(v)); err != nil {
+		return "", nil
+	}
+	return base64.RawURLEncoding.EncodeToString(sig.Sum(nil)), nil
 }

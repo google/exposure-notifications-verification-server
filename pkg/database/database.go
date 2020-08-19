@@ -120,7 +120,7 @@ func (db *Database) Open(ctx context.Context) error {
 	// Enable auto-preloading.
 	rawDB = rawDB.Set("gorm:auto_preload", true)
 
-	// Callbacks
+	// SMS configs
 	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 	rawDB.Callback().Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
@@ -128,6 +128,10 @@ func (db *Database) Open(ctx context.Context) error {
 	rawDB.Callback().Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
 	rawDB.Callback().Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+
+	// Verification codes
+	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.hmacVerificationCode, "verification_codes", "code"))
+	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.hmacVerificationCode, "verification_codes", "long_code"))
 
 	db.db = rawDB
 	return nil
@@ -284,6 +288,42 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", ciphertextCacheField.Name, err))
 				return
 			}
+		}
+	}
+}
+
+// callback HMAC alters HMACs the value with the given key before saving.
+func callbackHMAC(ctx context.Context, hashFunc func(string) (string, error), table, column string) func(scope *gorm.Scope) {
+	return func(scope *gorm.Scope) {
+		// Do nothing if not the target table
+		if scope.TableName() != table {
+			return
+		}
+
+		// Do nothing if there are errors
+		if scope.HasError() {
+			return
+		}
+
+		field, value, ok := getFieldString(scope, column)
+		if !ok {
+			scope.Log(fmt.Sprintf("skipping HMAC, %s is not a string", field.Name))
+			return
+		}
+		if value == "" {
+			scope.Log(fmt.Sprintf("skipping HMAC, %s is blank", field.Name))
+			return
+		}
+
+		sig, err := hashFunc(value)
+		if err != nil {
+			_ = scope.Err(fmt.Errorf("failed to generate HMAC for column %s: %w", field.Name, err))
+			return
+		}
+
+		if err := field.Set(sig); err != nil {
+			_ = scope.Err(fmt.Errorf("failed to set column %s: %w", field.Name, err))
+			return
 		}
 	}
 }
