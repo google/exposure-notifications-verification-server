@@ -24,9 +24,6 @@
     window.addEventListener('load', function() {
       firebase.auth().signOut().then(function() {
         document.getElementById('signout').textContent = 'You are logged out.';
-        setTimeout(function() {
-          window.location.href = '/';
-        }, 3000);
       }).catch(function(error) {
         document.getElementById('signout').textContent = 'Error signing out, close browser window.';
       });
