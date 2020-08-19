@@ -12,32 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package login defines the controller for the login page.
 package login
 
 import (
 	"context"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
+	"firebase.google.com/go/auth"
 	"go.uber.org/zap"
 )
 
 type Controller struct {
+	client *auth.Client
 	config *config.ServerConfig
+	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-// New creates a new login controller.
-func New(ctx context.Context, config *config.ServerConfig, h *render.Renderer) *Controller {
+// New creates a new session controller.
+func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
+		client: client,
 		config: config,
+		db:     db,
 		h:      h,
 		logger: logger,
 	}

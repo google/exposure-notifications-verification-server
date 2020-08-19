@@ -36,6 +36,21 @@ import (
 // is set in the template map. It fetches a user from the session and stores the
 // full record in the request context.
 func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
+	return requireAuth(ctx, client, db, h, ttl, true /*requireVerified*/)
+}
+
+// RequireAuthNotVerified requires a user to be logged in. Does not require the user to have verified the login email.
+func RequireAuthNotVerified(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
+	return requireAuth(ctx, client, db, h, ttl, false /*requireVerified*/)
+}
+
+func requireAuth(
+	ctx context.Context,
+	client *auth.Client,
+	db *database.Database,
+	h *render.Renderer,
+	ttl time.Duration,
+	requireVerified bool) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
 
 	return func(next http.Handler) http.Handler {
@@ -86,19 +101,21 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 				return
 			}
 
-			fbUser, err := client.GetUserByEmail(ctx, email)
-			if err != nil {
-				logger.Debugw("firebase user does not exist")
-				flash.Error("That user does not exist.")
-				controller.ClearSessionFirebaseCookie(session)
-				controller.Unauthorized(w, r, h)
-				return
-			}
-			if !fbUser.EmailVerified {
-				logger.Debugw("user email not verified")
-				flash.Error("User email not verified.")
-				http.Redirect(w, r, "/login/verifyemail", http.StatusSeeOther)
-				return
+			if requireVerified {
+				fbUser, err := client.GetUserByEmail(ctx, email)
+				if err != nil {
+					logger.Debugw("firebase user does not exist")
+					flash.Error("That user does not exist.")
+					controller.ClearSessionFirebaseCookie(session)
+					controller.Unauthorized(w, r, h)
+					return
+				}
+				if !fbUser.EmailVerified {
+					logger.Debugw("user email not verified")
+					flash.Error("User email not verified.")
+					http.Redirect(w, r, "/login/verifyemail", http.StatusSeeOther)
+					return
+				}
 			}
 
 			user, err := db.FindUserByEmail(email)
