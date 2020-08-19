@@ -188,41 +188,28 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 	return &app, nil
 }
 
-// UsageSummary returns the usage summary for the authorized app (api key) over
-// a 1d, 7d, and 30d period. This is expensive so callers should consider
-// caching the value.
-func (a *AuthorizedApp) UsageSummary(db *Database) (*AuthorizedAppStatsSummary, error) {
-	t := time.Now().UTC()
-	roundedTime := t.Truncate(24 * time.Hour)
+// Stats returns the usage statistics for this app. If no stats exist, it
+// returns an empty array.
+func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) ([]*AuthorizedAppStats, error) {
+	var stats []*AuthorizedAppStats
 
-	var summary AuthorizedAppStatsSummary
-	var stats []AuthorizedAppStats
+	start = start.Truncate(24 * time.Hour)
+	stop = stop.Truncate(24 * time.Hour)
 
 	if err := db.db.
+		Model(&AuthorizedAppStats{}).
 		Where("authorized_app_id = ?", a.ID).
-		Where("realm_id = ?", a.RealmID).
-		Where("date BETWEEN ? AND ?", roundedTime.AddDate(0, 0, -30), roundedTime).
-		Find(&stats).Error; err != nil {
+		Where("date >= ? AND date <= ?", start, stop).
+		Order("date DESC").
+		Find(&stats).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
 		return nil, err
 	}
 
-	for _, stat := range stats {
-		// All entires are 30d
-		summary.CodesIssued30d += stat.CodesIssued
-
-		// Only one entry is 1d
-		if stat.Date == roundedTime {
-			summary.CodesIssued1d += stat.CodesIssued
-		}
-
-		// Find 7d entries
-		if stat.Date.After(roundedTime.AddDate(0, 0, -7)) {
-			summary.CodesIssued7d += stat.CodesIssued
-		}
-	}
-
-	// create 24h, 7d, 30d counts
-	return &summary, nil
+	return stats, nil
 }
 
 // Disable disables the authorized app.

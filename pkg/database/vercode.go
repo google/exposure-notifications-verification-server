@@ -69,6 +69,41 @@ func (VerificationCode) TableName() string {
 	return "verification_codes"
 }
 
+// AfterCreate runs after the verification code has been saved, primarily used
+// to update statistics about usage. If the executions fail, an error is logged
+// but the transaction continues. This is called automatically by gorm.
+func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
+	// If the issuer was a user, update the user stats for the day.
+	if v.IssuingUserID != 0 {
+		sql := `
+			INSERT INTO user_stats (date, realm_id, user_id, codes_issued)
+				VALUES ($1, $2, $3, 1)
+			ON CONFLICT (date, realm_id, user_id) DO UPDATE
+				SET codes_issued = user_stats.codes_issued + 1
+		`
+
+		day := time.Now().UTC().Truncate(24 * time.Hour)
+		if err := scope.DB().Exec(sql, day, v.RealmID, v.IssuingUserID).Error; err != nil {
+			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		}
+	}
+
+	// If the issuer was a app, update the app stats for the day.
+	if v.IssuingAppID != 0 {
+		sql := `
+			INSERT INTO authorized_app_stats (date, authorized_app_id, codes_issued)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, authorized_app_id) DO UPDATE
+				SET codes_issued = authorized_app_stats.codes_issued + 1
+		`
+
+		day := time.Now().UTC().Truncate(24 * time.Hour)
+		if err := scope.DB().Exec(sql, day, v.IssuingAppID).Error; err != nil {
+			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		}
+	}
+}
+
 // TODO(mikehelmick) - Add method to soft delete expired codes
 // TODO(mikehelmick) - Add method to purge verification codes that are > XX hours old
 //   Keeping expired codes prevents a code from being regenerated during that period of time.

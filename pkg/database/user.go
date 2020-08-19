@@ -143,6 +143,31 @@ func (db *Database) FindUserByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
+// Stats returns the usage statistics for this user at the provided realm. If no
+// stats exist, it returns an empty array.
+func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*UserStats, error) {
+	var stats []*UserStats
+
+	start = start.Truncate(24 * time.Hour)
+	stop = stop.Truncate(24 * time.Hour)
+
+	if err := db.db.
+		Model(&UserStats{}).
+		Where("user_id = ?", u.ID).
+		Where("realm_id = ?", realmID).
+		Where("date >= ? AND date <= ?", start, stop).
+		Order("date DESC").
+		Find(&stats).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+
+	return stats, nil
+}
+
 // SaveUser updates the user in the database.
 func (db *Database) SaveUser(u *User) error {
 	db.db.Model(u).Association("Realms").Replace(u.Realms)

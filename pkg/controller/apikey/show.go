@@ -17,6 +17,7 @@ package apikey
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -65,16 +66,12 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		// Pull the stats - these are cached because it's an expensive query.
-		stats, err := authApp.UsageSummary(c.db)
+		// TODO(sethvargo): support configurable time ranges
+		now := time.Now().UTC()
+		stats, err := authApp.Stats(c.db, now.Add(-7*24*time.Hour), now)
 		if err != nil {
-			logger.Errorw("failed to load stats", "error", err)
 			controller.InternalError(w, r, c.h, err)
 			return
-		}
-		if stats == nil {
-			logger.Warnw("no stats for app", "app", authApp.Name)
-			stats = new(database.AuthorizedAppStatsSummary)
 		}
 
 		c.renderShow(ctx, w, authApp, stats)
@@ -82,7 +79,7 @@ func (c *Controller) HandleShow() http.Handler {
 }
 
 // renderShow renders the edit page.
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp, stats *database.AuthorizedAppStatsSummary) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp, stats []*database.AuthorizedAppStats) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["authApp"] = authApp
 	m["stats"] = stats

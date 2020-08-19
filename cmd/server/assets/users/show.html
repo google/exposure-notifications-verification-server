@@ -47,25 +47,26 @@
     <div class="card mb-3">
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
+        {{if $stats}}
         <table class="table table-bordered table-striped">
           <thead>
-            <tr class="thead-dark">
-              <th scope="col" colspan="3">Keys issued</th>
-            </tr>
             <tr>
-              <th scope="col" width="33%">Today</th>
-              <th scope="col" width="33%">Past 7 days</th>
-              <th scope="col" width="33%">Past 30 days</th>
+              <th scope="col" width="125px">Date</th>
+              <th scope="col">Keys issued</th>
             </tr>
           </thead>
           <tbody>
+            {{range $stat := $stats}}
             <tr>
-              <td>{{$stats.CodesIssued1d}}</td>
-              <td>{{$stats.CodesIssued1d}}</td>
-              <td>{{$stats.CodesIssued1d}}</td>
+              <td>{{$stat.Date.Format "2006-01-02"}}</td>
+              <td>{{$stat.CodesIssued}}</td>
             </tr>
+            {{end}}
           </tbody>
         </table>
+        {{else}}
+          <p>This user has not recently issued any codes.</p>
+        {{end}}
       </div>
     </div>
 

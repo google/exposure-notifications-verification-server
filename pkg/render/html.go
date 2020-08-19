@@ -125,7 +125,7 @@ const htmlErrTmpl = `
 
   <body>
     <h1>Internal server error</h1>
-    <p>%s</p>
+    <p style="font-family:monospace">%s</p>
   </body>
 </html>
 `
