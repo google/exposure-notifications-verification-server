@@ -26,15 +26,13 @@ type AuthorizedAppStats struct {
 	Date            time.Time `gorm:"unique_index:idx_date_app_realm"`
 	AuthorizedAppID uint      `gorm:"unique_index:idx_date_app_realm"`
 	RealmID         uint      `gorm:"unique_index:idx_date_app_realm"`
-	CodesIssued     uint64
+	Stat
 }
 
 type AuthorizedAppStatsSummary struct {
-	AuthorizedApp  *AuthorizedApp
-	Realm          *Realm
-	CodesIssued1d  uint64
-	CodesIssued7d  uint64
-	CodesIssued30d uint64
+	AuthorizedApp *AuthorizedApp
+	Realm         *Realm
+	Summary
 }
 
 // TableName sets the AuthorizedAppStats table name
@@ -46,7 +44,6 @@ func (db *Database) GetAuthorizedAppStatsSummary(a *AuthorizedApp, r *Realm) (*A
 	t := time.Now().UTC()
 	roundedTime := t.Truncate(24 * time.Hour)
 
-	var summary = &AuthorizedAppStatsSummary{}
 	var dailyStats []*AuthorizedAppStats
 
 	// get the last 30 days of dates and counts for a given user in a realm.
@@ -58,20 +55,9 @@ func (db *Database) GetAuthorizedAppStatsSummary(a *AuthorizedApp, r *Realm) (*A
 		return nil, err
 	}
 
-	for _, AuthorizedAppStats := range dailyStats {
-		// All entires are 30d
-		summary.CodesIssued30d += AuthorizedAppStats.CodesIssued
-
-		// Only one entry is 1d
-		if AuthorizedAppStats.Date == roundedTime {
-			summary.CodesIssued1d += AuthorizedAppStats.CodesIssued
-		}
-
-		// Find 7d entries
-		if AuthorizedAppStats.Date.After(roundedTime.AddDate(0, 0, -7)) {
-			summary.CodesIssued7d += AuthorizedAppStats.CodesIssued
-
-		}
+	var summary = &AuthorizedAppStatsSummary{}
+	for _, appStats := range dailyStats {
+		summary.AccumulateDated(appStats.Stat, appStats.Date, roundedTime)
 	}
 
 	// create 24h, 7d, 30d counts

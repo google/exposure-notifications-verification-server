@@ -23,18 +23,16 @@ import (
 // UserStats represents statistics related to a user in the database.
 type UserStats struct {
 	gorm.Model
-	Date        time.Time `gorm:"unique_index:idx_date_user_realm"`
-	UserID      uint      `gorm:"unique_index:idx_date_user_realm"`
-	RealmID     uint      `gorm:"unique_index:idx_date_user_realm"`
-	CodesIssued uint64
+	Date    time.Time `gorm:"unique_index:idx_date_user_realm"`
+	UserID  uint      `gorm:"unique_index:idx_date_user_realm"`
+	RealmID uint      `gorm:"unique_index:idx_date_user_realm"`
+	Stat
 }
 
 type UserStatsSummary struct {
-	User           *User
-	Realm          *Realm
-	CodesIssued1d  uint64
-	CodesIssued7d  uint64
-	CodesIssued30d uint64
+	User  *User
+	Realm *Realm
+	Summary
 }
 
 // TableName sets the UserStats table name
@@ -46,7 +44,6 @@ func (db *Database) GetUserStatsSummary(u *User, r *Realm) (*UserStatsSummary, e
 	t := time.Now().UTC()
 	roundedTime := t.Truncate(24 * time.Hour)
 
-	var summary = &UserStatsSummary{}
 	var dailyStats []*UserStats
 
 	// get the last 30 days of dates and counts for a given user in a realm.
@@ -58,20 +55,9 @@ func (db *Database) GetUserStatsSummary(u *User, r *Realm) (*UserStatsSummary, e
 		return nil, err
 	}
 
+	var summary = &UserStatsSummary{}
 	for _, userStats := range dailyStats {
-		// All entires are 30d
-		summary.CodesIssued30d += userStats.CodesIssued
-
-		// Only one entry is 1d
-		if userStats.Date == roundedTime {
-			summary.CodesIssued1d += userStats.CodesIssued
-		}
-
-		// Find 7d entries
-		if userStats.Date.After(roundedTime.AddDate(0, 0, -7)) {
-			summary.CodesIssued7d += userStats.CodesIssued
-
-		}
+		summary.AccumulateDated(userStats.Stat, userStats.Date, roundedTime)
 	}
 
 	// create 24h, 7d, 30d counts
