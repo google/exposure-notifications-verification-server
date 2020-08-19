@@ -139,6 +139,17 @@ resource "google_cloud_run_service" "adminapi" {
   }
 }
 
+resource "google_compute_region_network_endpoint_group" "adminapi" {
+  name     = "adminapi"
+  provider = google-beta
+  project  = var.project
+  region   = var.region
+
+  cloud_run {
+    service = google_cloud_run_service.adminapi.name
+  }
+}
+
 resource "google_cloud_run_domain_mapping" "adminapi" {
   count    = var.adminapi_custom_domain != "" ? 1 : 0
   location = var.cloudrun_location
