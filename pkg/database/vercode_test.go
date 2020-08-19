@@ -19,60 +19,89 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/jinzhu/gorm"
 )
 
-func TestSaveVerCode(t *testing.T) {
+func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	t.Parallel()
 	db := NewTestDatabase(t)
 
 	uuid := "5148c75c-2bc5-4874-9d1c-f9185d0e1b8a"
+	code := "12345678"
+	longCode := "abcdefgh12345678"
 
 	maxAge := time.Hour
-	code := VerificationCode{
+	vc := &VerificationCode{
 		UUID:          uuid,
-		Code:          "12345678",
-		LongCode:      "abcdefgh12345678",
+		Code:          code,
+		LongCode:      longCode,
 		TestType:      "confirmed",
 		ExpiresAt:     time.Now().Add(time.Hour),
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(&code, maxAge); err != nil {
+	if err := db.SaveVerificationCode(vc, maxAge); err != nil {
 		t.Fatalf("error creating verification code: %v", err)
 	}
 
-	got, err := db.FindVerificationCode(code.Code)
-	if err != nil {
-		t.Fatalf("error reading code from db: %v", err)
-	}
-	if diff := cmp.Diff(code, *got, approxTime); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
-	}
-
-	// find by long code
 	{
-		got, err := db.FindVerificationCode(code.LongCode)
+		// Find by raw code
+		got, err := db.FindVerificationCode(code)
 		if err != nil {
-			t.Fatalf("error reading code from db: %v", err)
+			t.Fatal(err)
 		}
-		if diff := cmp.Diff(code, *got, approxTime); diff != "" {
-			t.Fatalf("mismatch (-want, +got):\n%s", diff)
+		if got, want := got.Code, code; got == want {
+			t.Errorf("expected %#v to not be %#v (should be hmac)", got, want)
 		}
 	}
 
-	code.Claimed = true
-	if err := db.SaveVerificationCode(&code, maxAge); err != nil {
-		t.Fatalf("error claiming verification code: %v", err)
+	{
+		// Find by raw long code
+		got, err := db.FindVerificationCode(longCode)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := got.LongCode, longCode; got == want {
+			t.Errorf("expected %#v to not be %#v (should be hmac)", got, want)
+		}
 	}
 
-	got, err = db.FindVerificationCodeByUUID(uuid)
-	if err != nil {
-		t.Fatalf("error reading code from db: %v", err)
+	vc.Claimed = true
+	if err := db.SaveVerificationCode(vc, maxAge); err != nil {
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(code, *got, approxTime); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+}
+
+func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+
+	vc := &VerificationCode{
+		Code:          "123456",
+		LongCode:      "defghijk329024",
+		TestType:      "confirmed",
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(2 * time.Hour),
+	}
+
+	if err := db.SaveVerificationCode(vc, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+
+	uuid := vc.UUID
+	if uuid == "" {
+		t.Fatal("expected uuid")
+	}
+
+	{
+		got, err := db.FindVerificationCodeByUUID(uuid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := got.ID, vc.ID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
 	}
 }
 

@@ -1,0 +1,104 @@
+{{define "login"}}
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{template "head" .}}
+
+    {{template "firebase" .}}
+</head>
+
+<body>
+    {{template "navbar" .}}
+
+    <main role="main" class="container">
+        {{template "flash" .}}
+        <div class="alert alert-warning" role="alert" id="message"></div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row form-group">
+                    <label for="email" class="col-sm-3">Email</label>
+                    <div class="col-sm-9">
+                        <div class="input-group p-0 shadow-sm">
+                            <input type="email" id="email" name="email" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row form-group">
+                    <label for="pwd" class="col-sm-3">Password</label>
+                    <div class="col-sm-9">
+                        <div class="input-group p-0 shadow-sm">
+                            <input type="password" id="pwd" name="pwd" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row form-group">
+                    <div class="offset-sm-3 col-sm-9">
+                        <button id="submit" class="btn btn-primary btn-block">Login</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {{template "scripts" .}}
+
+    <script>
+        $(function () {
+            $submit = $('#submit');
+            $message = $('#message');
+
+            $submit.on('click', function (event) {
+                // Disable the submit button so we only attempt once.
+                $submit.prop('disabled', true);
+
+                $email = $('#email');
+                $pwd = $('#pwd');
+
+                firebase.auth().signInWithEmailAndPassword($email.val(), $pwd.val()).catch(function (error) {
+                    $message.text(error.message);
+                    $submit.prop('disabled', false);
+                });
+            });
+        });
+
+        firebase.auth().onAuthStateChanged(function (user) {
+            $message = $('#message');
+            if (user) {
+                $message.text("Welcome, " + user.email);
+
+                user.getIdToken().then(
+                    idToken => {
+                        $.ajax({
+                            type: 'POST',
+                            url: "login/session",
+                            data: { idToken: idToken },
+                            headers: { "X-CSRF-Token": "{{.csrfToken}}" },
+                            contentType: 'application/x-www-form-urlencoded',
+                            success: function (returnData) {
+                                // The user successfully signed in, redirect to realm selection.
+                                window.location.assign('/realm');
+                            },
+                            error: function (xhr, status, e) {
+                                // There was an error finding the user. Redirect to the
+                                // signout page to clear the firebase cookie and any session
+                                // data.
+                                //
+                                // The flash data may have more detailed error messages, which
+                                // will be displayed on the signout page.
+                                window.location.assign("/signout");
+                            }
+                        })
+                    })
+            } else {
+                $message.text("No user signed in.");
+            }
+        });
+    </script>
+</body>
+
+</html>
+{{end}}

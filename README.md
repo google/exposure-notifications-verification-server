@@ -30,7 +30,7 @@ for the verification system, this server:
 	 * Please see the documentation for the [HMAC Calculation](https://developers.google.com/android/exposure-notifications/verification-system#hmac-calc)
 	 * The Verification Certificate is also a JWT
 
-![Verification Flow](https://developers.google.com/android/exposure-notifications/images/verification-certificate-hmac-flow-diagram.png)
+![Verification Flow](https://developers.google.com/android/exposure-notifications/images/verification-flow.svg)
 
 Architecture details
 
@@ -123,6 +123,7 @@ export DB_ENCRYPTION_KEY="O04ZjG4WuoceRd0k2pTqDN0r8omr6sbFL0U3T5b12Lo="
 # Create your own with `openssl rand -base64 128`.
 export DB_APIKEY_DATABASE_KEY="02zaT2Gtx1QfBnS7kxlby5TxbwyMPWqoCpb75zA8MMB8frQX0WVpOl+UaXDwE3jz2fj/eFqmCj75atLL6Gw3Yg=="
 export DB_APIKEY_SIGNATURE_KEY="PsOkeJ+1iXN2bMnKKTH6Ea+KtZGKDHhDN7SpBgPGanEOr7b/heFPS90mHbjqtu2htuCt/kW61ar2BQPhtq+ASw=="
+export DB_VERIFICATION_CODE_DATABASE_KEY="F1lVUOZYknxojwslyUPkkq1e4urzWBn4E1ecg/qgu8eVaMU+revTQ/VGvR67dlgpWuzH+/YuyfuVgPLBU9xRdw=="
 
 # Enable dev mode
 export DEV_MODE=1
@@ -140,6 +141,19 @@ go run ./cmd/add-realm --name "my-custom-realm"
 go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin --realm 1 --admin-realm
 
 go run ./cmd/server
+```
+
+If you see an error like:
+
+```text
+Your application has authenticated using end user credentials from the Google Cloud SDK or Google Cloud Shell which are not supported by the identitytoolkit.googleapis.com
+```
+
+Try installing the firebase-cli and authenticating:
+
+```text
+brew install firebase-cli
+firebase login
 ```
 
 ### Observability (Tracing and Metrics)

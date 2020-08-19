@@ -18,14 +18,13 @@ package ratelimit
 import (
 	"context"
 	"fmt"
-	"net"
-	"strings"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-limiter/noopstore"
-	"github.com/sethvargo/go-limiter/redisstore"
+	"github.com/sethvargo/go-redisstore"
 )
 
 // RateLimitType represents a type of rate limiter.
@@ -40,23 +39,21 @@ const (
 // Config represents rate limiting configuration
 type Config struct {
 	// Common configuration
-	Type        RateLimitType `env:"RATE_LIMIT_TYPE,default=NOOP"`
-	Tokens      uint64        `env:"RATE_LIMIT_TOKENS,default=60"`
-	Interval    time.Duration `env:"RATE_LIMIT_INTERVAL,default=1m"`
-	FailureMode string        `env:"RATE_LIMIT_FAILURE_MODE,default=closed"`
+	Type     RateLimitType `env:"RATE_LIMIT_TYPE,default=NOOP"`
+	Tokens   uint64        `env:"RATE_LIMIT_TOKENS,default=60"`
+	Interval time.Duration `env:"RATE_LIMIT_INTERVAL,default=1m"`
 
 	// Redis configuration
 	RedisHost     string `env:"REDIS_HOST,default=127.0.0.1"`
 	RedisPort     string `env:"REDIS_PORT,default=6379"`
 	RedisUsername string `env:"REDIS_USERNAME"`
 	RedisPassword string `env:"REDIS_PASSWORD"`
-	RedisMinPool  uint64 `env:"REDIS_MIN_POOL,default=16"`
 	RedisMaxPool  uint64 `env:"REDIS_MAX_POOL,default=64"`
 }
 
 // RateLimiterFor returns the rate limiter for the given type, or an error
 // if one does not exist.
-func RateLimiterFor(_ context.Context, c *Config) (limiter.Store, error) {
+func RateLimiterFor(ctx context.Context, c *Config) (limiter.Store, error) {
 	switch c.Type {
 	case RateLimiterTypeNoop:
 		return noopstore.New()
@@ -68,22 +65,23 @@ func RateLimiterFor(_ context.Context, c *Config) (limiter.Store, error) {
 	case RateLimiterTypeRedis:
 		addr := c.RedisHost + ":" + c.RedisPort
 
-		failureMode := redisstore.FailClosed
-		if strings.ToLower(c.FailureMode) == "open" {
-			failureMode = redisstore.FailOpen
+		config := &redisstore.Config{
+			Tokens:   c.Tokens,
+			Interval: c.Interval,
 		}
 
-		return redisstore.New(&redisstore.Config{
-			Tokens:          c.Tokens,
-			Interval:        c.Interval,
-			InitialPoolSize: c.RedisMinPool,
-			MaxPoolSize:     c.RedisMaxPool,
-			DialFunc: func() (net.Conn, error) {
-				return net.Dial("tcp", addr)
+		return redisstore.NewWithPool(config, &redis.Pool{
+			DialContext: func(ctx context.Context) (redis.Conn, error) {
+				return redis.DialContext(ctx, "tcp", addr,
+					redis.DialUsername(c.RedisUsername),
+					redis.DialPassword(c.RedisPassword),
+				)
 			},
-			AuthUsername: c.RedisUsername,
-			AuthPassword: c.RedisPassword,
-			FailureMode:  failureMode,
+			TestOnBorrow: func(conn redis.Conn, _ time.Time) error {
+				_, err := conn.Do("PING")
+				return err
+			},
+			MaxActive: int(c.RedisMaxPool),
 		})
 	}
 
