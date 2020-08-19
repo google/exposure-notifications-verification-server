@@ -1,0 +1,69 @@
+{{define "login/verifyemail"}}
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{template "head" .}}
+
+    {{template "firebase" .}}
+</head>
+
+<body>
+    {{template "navbar" .}}
+
+    <main role="main" class="container">
+        {{template "flash" .}}
+
+        <div class="card mb-3">
+            <h1>Email Verification</h1>
+            <p id="subtitle">Use this page to verify your login email address</p>
+
+            <div class="row form-group">
+                <div class="col-sm-9">
+                    <button id="verify" class="btn btn-primary btn-block">Send Verification Email</button>
+                </div>
+            </div>
+
+            <div>
+                <p>
+                    <a href="/home">&larr; Go home</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    {{template "scripts" .}}
+
+    <script>
+        $(function () {
+            $verify = $('#verify');
+            $verify.on('click', function (event) {
+                let user = firebase.auth().currentUser
+                if (!user.emailVerified) {
+                    user.sendEmailVerification().then(function () {
+                        $('body').prepend('<div class="alert alert-warning" role="alert" id="message">Verification email sent.</div>')
+                        $verify.prop('disabled', true);
+                    }
+                    );
+                }
+            });
+        });
+
+        firebase.auth().onAuthStateChanged(function (user) {
+            $subtitle = $('#subtitle');
+            if (user) {
+                if (user.emailVerified) {
+                    $subtitle.text("Welcome, " + user.email + ". Your email has already been verified.");
+                    $('#verify').prop('disabled', true);
+                } else {
+                    $subtitle.text("Welcome, " + user.email + ". Please verify your email to continue.");
+                }
+            } else {
+                window.location.assign("/login");
+            }
+        });
+    </script>
+</body>
+
+</html>
+{{end}}
