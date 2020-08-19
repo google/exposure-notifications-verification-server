@@ -96,7 +96,7 @@ func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error
 	switch {
 	case v.Code == code || v.Code == hmacedCode:
 		return !v.ExpiresAt.After(now), nil
-	case v.LongCode == code || v.Code == hmacedCode:
+	case v.LongCode == code || v.LongCode == hmacedCode:
 		return !v.LongExpiresAt.After(now), nil
 	default:
 		return true, fmt.Errorf("not found")
