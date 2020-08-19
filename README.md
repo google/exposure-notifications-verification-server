@@ -143,6 +143,19 @@ go run ./cmd/add-users --email YOUR-NAME@DOMAIN.com --name "First Last" --admin 
 go run ./cmd/server
 ```
 
+If you see an error like:
+
+```text
+Your application has authenticated using end user credentials from the Google Cloud SDK or Google Cloud Shell which are not supported by the identitytoolkit.googleapis.com
+```
+
+Try installing the firebase-cli and authenticating:
+
+```text
+brew install firebase-cli
+firebase login
+```
+
 ### Observability (Tracing and Metrics)
 
 The observability component is responsible for metrics. The following
