@@ -100,8 +100,8 @@ func TestIssue(t *testing.T) {
 		if err != nil {
 			t.Errorf("didn't find previously saved code")
 		}
-		if verCode != nil && verCode.Code != code {
-			t.Fatalf("loaded code doesn't match requested code")
+		if exp, err := db.IsCodeExpired(verCode, code); exp || err != nil {
+			t.Fatalf("loaded code doesn't match requested code, %v %v", exp, err)
 		}
 	}
 
@@ -110,7 +110,7 @@ func TestIssue(t *testing.T) {
 		if err != nil {
 			t.Errorf("didn't find previously saved code")
 		}
-		if verCode != nil && verCode.LongCode != code {
+		if exp, err := db.IsCodeExpired(verCode, code); exp || err != nil {
 			t.Fatalf("loaded code doesn't match requested code")
 		}
 	}
