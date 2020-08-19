@@ -83,15 +83,23 @@ func (v *VerificationCode) FormatSymptomDate() string {
 
 // IsCodeExpired checks to see if the actual code provides is the
 // short or long code and deteriminies if it is expired based on that.
-func (v *VerificationCode) IsCodeExpired(code string) bool {
+func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error) {
+	hmacedCode := code
+	if len(code) < 20 {
+		var err error
+		hmacedCode, err = db.hmacVerificationCode(code)
+		if err != nil {
+			return false, fmt.Errorf("failed to create hmac: %w", err)
+		}
+	}
 	now := time.Now().UTC()
-	switch code {
-	case v.Code:
-		return !v.ExpiresAt.After(now)
-	case v.LongCode:
-		return !v.LongExpiresAt.After(now)
+	switch {
+	case v.Code == code || v.Code == hmacedCode:
+		return !v.ExpiresAt.After(now), nil
+	case v.LongCode == code || v.Code == hmacedCode:
+		return !v.LongExpiresAt.After(now), nil
 	default:
-		return true
+		return true, fmt.Errorf("not found")
 	}
 }
 

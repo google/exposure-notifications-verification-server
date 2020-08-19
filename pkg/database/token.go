@@ -183,10 +183,13 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			return err
 		}
 
-		// Checks which code is being used and if that makes it expired.
-		if vc.IsCodeExpired(verCode) {
+		if expired, err := db.IsCodeExpired(&vc, verCode); err != nil {
+			db.logger.Debugw("error checking code expiration", "error", err)
+			return ErrVerificationCodeExpired
+		} else if expired {
 			return ErrVerificationCodeExpired
 		}
+
 		if vc.Claimed {
 			return ErrVerificationCodeUsed
 		}
