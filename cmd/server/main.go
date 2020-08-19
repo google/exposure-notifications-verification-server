@@ -176,12 +176,12 @@ func realMain(ctx context.Context) error {
 
 		loginController := login.New(ctx, config, h)
 		sub.Handle("", loginController.HandleLogin()).Methods("GET")
+		sub.Handle("/verifyemail", loginController.HandleVerifyEmail()).Methods("GET")
 
 		// Session handling
 		// TODO(whaught): these are duplicated so they serve at this path for ajax
 		sessionController := session.New(ctx, auth, config, db, h)
 		sub.Handle("/session", sessionController.HandleCreate()).Methods("POST")
-		sub.Handle("/verifyemail", loginController.HandleVerifyEmail()).Methods("GET")
 	}
 
 	{
