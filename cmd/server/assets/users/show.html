@@ -6,8 +6,11 @@
 
 <!doctype html>
 <html lang="en">
+
 <head>
   {{template "head" .}}
+
+  {{template "firebase" .}}
 </head>
 
 <body>
@@ -36,6 +39,9 @@
         <div class="mb-3">
           {{$user.Email}}
         </div>
+
+        <strong>Email Verified</strong>
+        <div id="verified" class="mb-3">false</div>
 
         <strong>Admin</strong>
         <div class="mb-3">
@@ -77,6 +83,19 @@
   </main>
 
   {{template "scripts" .}}
+  <script type="text/javascript">
+    firebase.auth().onAuthStateChanged(function (user) {
+      $ver = $('#verified');
+      if (user) {
+        if (user.emailVerified) {
+          $ver.text('true')
+        } else {
+          $ver.text('false')
+        }
+      }
+    });
+  </script>
 </body>
+
 </html>
 {{end}}

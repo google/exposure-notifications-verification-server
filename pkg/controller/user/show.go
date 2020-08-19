@@ -70,5 +70,6 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
 	m["stats"] = stats
+	m["firebase"] = c.config.Firebase
 	c.h.RenderHTML(w, "users/show", m)
 }
