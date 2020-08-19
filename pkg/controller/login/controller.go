@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package login defines the controller for the login page.
 package login
 
 import (
@@ -35,7 +36,7 @@ type Controller struct {
 	logger *zap.SugaredLogger
 }
 
-// New creates a new session controller.
+// New creates a new login controller.
 func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
