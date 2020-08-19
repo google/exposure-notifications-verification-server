@@ -41,7 +41,7 @@
                 let user = firebase.auth().currentUser
                 if (!user.emailVerified) {
                     user.sendEmailVerification().then(function () {
-                        $('body').prepend('<div class="alert alert-warning" role="alert" id="message">Verification email sent.</div>')
+                        $('main').prepend('<div class="alert alert-warning" role="alert" id="message">Verification email sent.</div>')
                         $verify.prop('disabled', true);
                     }
                     );

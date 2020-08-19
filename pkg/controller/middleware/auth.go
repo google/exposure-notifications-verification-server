@@ -86,6 +86,21 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 				return
 			}
 
+			fbUser, err := client.GetUserByEmail(ctx, email)
+			if err != nil {
+				logger.Debugw("firebase user does not exist")
+				flash.Error("That user does not exist.")
+				controller.ClearSessionFirebaseCookie(session)
+				controller.Unauthorized(w, r, h)
+				return
+			}
+			if !fbUser.EmailVerified {
+				logger.Debugw("user email not verified")
+				flash.Error("User email not verified.")
+				http.Redirect(w, r, "/login/verifyemail", http.StatusSeeOther)
+				return
+			}
+
 			user, err := db.FindUserByEmail(email)
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
