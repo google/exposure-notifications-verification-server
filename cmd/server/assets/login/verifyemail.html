@@ -20,7 +20,7 @@
 
             <div class="row form-group">
                 <div class="col-sm-9">
-                    <button id="verify" class="btn btn-primary btn-block">Send Verification Email</button>
+                    <button id="verify" class="btn btn-primary btn-block" disabled>Send Verification Email</button>
                 </div>
             </div>
 
@@ -54,9 +54,9 @@
             if (user) {
                 if (user.emailVerified) {
                     $subtitle.text("Welcome, " + user.email + ". Your email has already been verified.");
-                    $('#verify').prop('disabled', true);
                 } else {
                     $subtitle.text("Welcome, " + user.email + ". Please verify your email to continue.");
+                    $('#verify').prop('disabled', false);
                 }
             } else {
                 window.location.assign("/login");
