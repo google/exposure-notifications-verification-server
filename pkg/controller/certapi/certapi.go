@@ -22,8 +22,8 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/cache"
@@ -39,10 +39,10 @@ type Controller struct {
 	h           *render.Renderer
 	logger      *zap.SugaredLogger
 	pubKeyCache *cache.Cache
-	signer      signer.KeyManager
+	kms         keys.Manager
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, signer signer.KeyManager, pubKeyCache *cache.Cache) *Controller {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.Manager, pubKeyCache *cache.Cache) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
@@ -50,7 +50,7 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 		db:          db,
 		h:           h,
 		logger:      logger,
-		signer:      signer,
+		kms:         kms,
 		pubKeyCache: pubKeyCache,
 	}
 }
@@ -59,7 +59,7 @@ func (c *Controller) getPublicKey(ctx context.Context, keyID string) (crypto.Pub
 	// Get the public key for the Token Signing Key.
 	keyCache, err := c.pubKeyCache.WriteThruLookup(keyID,
 		func() (interface{}, error) {
-			signer, err := c.signer.NewSigner(ctx, c.config.TokenSigningKey)
+			signer, err := c.kms.NewSigner(ctx, c.config.TokenSigningKey)
 			if err != nil {
 				return nil, err
 			}

@@ -48,7 +48,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		// Get the signer based on Key configuration.
-		signer, err := c.signer.NewSigner(ctx, c.config.CertificateSigningKey)
+		signer, err := c.kms.NewSigner(ctx, c.config.CertificateSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())

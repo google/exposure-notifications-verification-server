@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package signer defines the interface for signing.
-// TODO(mikehelmick) - this needs to be simplified. Do away w/ dynamic registry
-// and more more towards what we have in exposure-notifications-server
-// Make signing impl in exposure-notifications-server in pkg so we can depend on it.
-package signer
+// Package keys defines the interface for signing.
+package keys
 
 import (
 	"context"
 	"crypto"
 )
 
-type KeyManager interface {
+// Manager represents the interface to the Key Management System.
+type Manager interface {
 	NewSigner(ctx context.Context, keyID string) (crypto.Signer, error)
 }
