@@ -20,19 +20,19 @@ import (
 	"crypto"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	"github.com/google/exposure-notifications-verification-server/pkg/signer"
+	"github.com/google/exposure-notifications-verification-server/pkg/keys"
 	"github.com/sethvargo/go-gcpkms/pkg/gcpkms"
 )
 
 // Compile time check that GCPKeyManager satisfies signer interface
-var _ signer.KeyManager = (*GCPKeyManager)(nil)
+var _ keys.Manager = (*GCPKeyManager)(nil)
 
 // GCPKeyManager providers a crypto.Signer that uses GCP KSM to sign bytes.
 type GCPKeyManager struct {
 	client *kms.KeyManagementClient
 }
 
-func New(ctx context.Context) (signer.KeyManager, error) {
+func New(ctx context.Context) (keys.Manager, error) {
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
 		return nil, err
