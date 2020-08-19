@@ -138,9 +138,21 @@ variable "server_custom_domain" {
 
 terraform {
   required_providers {
-    google      = "~> 3.32"
-    google-beta = "~> 3.32"
-    null        = "~> 2.1"
-    random      = "~> 2.3"
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 3.32"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 3.32"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 2.1"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 2.3"
+    }
   }
 }
