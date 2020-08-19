@@ -75,7 +75,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.logger.Errorw("bad request", "error", err)
-			c.h.RenderJSON(w, http.StatusOK, api.Error(err).WithCode(api.ErrUnparsableRequest))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
 		}
 
