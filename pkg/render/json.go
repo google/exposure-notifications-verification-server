@@ -46,8 +46,8 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 	if !r.AllowedResponseCode(code) {
 		r.logger.Errorw("unregistered response code", "code", code)
 
-		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
 		msg := escapeJSON(fmt.Sprintf("%d is not a registered response code", code))
 		fmt.Fprintf(w, jsonErrTmpl, msg)
 		return
@@ -55,8 +55,8 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 
 	// Avoid marshaling nil data.
 	if data == nil {
-		w.WriteHeader(code)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(code)
 
 		// Return an OK response.
 		if code >= 200 && code < 300 {
@@ -83,15 +83,15 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 		}
 		msg = escapeJSON(msg)
 
-		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, jsonErrTmpl, msg)
 		return
 	}
 
 	// Rendering worked, flush to the response
-	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
 	if _, err := b.WriteTo(w); err != nil {
 		// We couldn't write the buffer. We can't change the response header or
 		// content type if we got this far, so the best option we have is to log the

@@ -86,8 +86,8 @@ func (r *Renderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string
 	}
 
 	// Rendering worked, flush to the response
-	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	w.WriteHeader(code)
 	if _, err := b.WriteTo(w); err != nil {
 		// We couldn't write the buffer. We can't change the response header or
 		// content type if we got this far, so the best option we have is to log the
