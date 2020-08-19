@@ -21,7 +21,7 @@
                     <label for="email" class="col-sm-3">Email</label>
                     <div class="col-sm-9">
                         <div class="input-group p-0 shadow-sm">
-                            <input type="text" id="email" name="email" class="form-control" />
+                            <input type="email" id="email" name="email" class="form-control" />
                         </div>
                     </div>
                 </div>
@@ -74,7 +74,7 @@
                     idToken => {
                         $.ajax({
                             type: 'POST',
-                            url: "/session",
+                            url: "login/session",
                             data: { idToken: idToken },
                             headers: { "X-CSRF-Token": "{{.csrfToken}}" },
                             contentType: 'application/x-www-form-urlencoded',
