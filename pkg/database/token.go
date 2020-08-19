@@ -220,7 +220,7 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 func (db *Database) FindTokenByID(tokenID string) (*Token, error) {
 	var token Token
 	if err := db.db.
-		Or("token_id = ?", tokenID).
+		Where("token_id = ?", tokenID).
 		First(&token).
 		Error; err != nil {
 		return nil, err
