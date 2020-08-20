@@ -73,7 +73,6 @@
           return
         }
 
-        flash("Welcome, " + user.email, "success")
         user.getIdToken().then(idToken => {
           $.ajax({
             type: 'POST',
