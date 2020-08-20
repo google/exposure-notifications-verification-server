@@ -12,29 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package session
+// Package keys defines the interface for signing.
+package keys
 
 import (
-	"net/http"
-
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"context"
+	"crypto"
 )
 
-func (c *Controller) HandleDelete() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-
-		// Set MaxAge to -1 to expire the session.
-		session.Options.MaxAge = -1
-
-		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "signout", m)
-	})
+// Manager represents the interface to the Key Management System.
+type Manager interface {
+	NewSigner(ctx context.Context, keyID string) (crypto.Signer, error)
 }

@@ -1,20 +1,18 @@
 {{define "firebase"}}
-  <script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-auth.js"></script>
-  <script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
-  <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
+<script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-auth.js"></script>
 
-  <script type="text/javascript">
-    var firebaseConfig = {
-      apiKey: "{{.firebase.APIKey}}",
-      projectId: "{{.firebase.ProjectID}}",
-      authDomain: "{{.firebase.AuthDomain}}",
-      databaseURL: "https://{{.firebase.DatabaseURL}}",
-      projectId: "{{.firebase.ProjectID}}",
-      storageBucket: "{{.firebase.StorageBucket}}",
-      messagingSenderId: "{{.firebase.MessageSenderID}}",
-      appId: "{{.firebase.AppID}}"
-    };
-    firebase.initializeApp(firebaseConfig);
-  </script>
+<script type="text/javascript">
+  var firebaseConfig = {
+    apiKey: "{{.firebase.APIKey}}",
+    projectId: "{{.firebase.ProjectID}}",
+    authDomain: "{{.firebase.AuthDomain}}",
+    databaseURL: "https://{{.firebase.DatabaseURL}}",
+    projectId: "{{.firebase.ProjectID}}",
+    storageBucket: "{{.firebase.StorageBucket}}",
+    messagingSenderId: "{{.firebase.MessageSenderID}}",
+    appId: "{{.firebase.AppID}}"
+  };
+  firebase.initializeApp(firebaseConfig);
+</script>
 {{end}}

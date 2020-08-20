@@ -1,6 +1,7 @@
 {{define "signout"}}
 <!doctype html>
 <html lang="en">
+
 <head>
   {{template "head" .}}
 
@@ -13,7 +14,7 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <div id="firebaseui-auth-container">
+    <div id="auth-container">
       <p id="signout">Signing out...</p>
     </div>
   </main>
@@ -21,14 +22,15 @@
   {{template "scripts" .}}
 
   <script type="text/javascript">
-    window.addEventListener('load', function() {
-      firebase.auth().signOut().then(function() {
+    window.addEventListener('load', function () {
+      firebase.auth().signOut().then(function () {
         document.getElementById('signout').textContent = 'You are logged out.';
-      }).catch(function(error) {
+      }).catch(function (error) {
         document.getElementById('signout').textContent = 'Error signing out, close browser window.';
       });
     });
   </script>
 </body>
+
 </html>
 {{end}}

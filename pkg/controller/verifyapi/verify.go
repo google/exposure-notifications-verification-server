@@ -31,8 +31,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
+	"github.com/google/exposure-notifications-verification-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/google/exposure-notifications-verification-server/pkg/signer"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -47,10 +47,10 @@ type Controller struct {
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
-	signer signer.KeyManager
+	kms    keys.Manager
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, signer signer.KeyManager) *Controller {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.Manager) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
@@ -58,7 +58,7 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 		db:     db,
 		h:      h,
 		logger: logger,
-		signer: signer,
+		kms:    kms,
 	}
 }
 
@@ -80,7 +80,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		}
 
 		// Get the signer based on Key configuration.
-		signer, err := c.signer.NewSigner(ctx, c.config.TokenSigningKey)
+		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
