@@ -35,12 +35,7 @@ import (
 // RequireAuth requires a user to be logged in. It also ensures that currentUser
 // is set in the template map. It fetches a user from the session and stores the
 // full record in the request context.
-func RequireAuth(
-	ctx context.Context,
-	client *auth.Client,
-	db *database.Database,
-	h *render.Renderer,
-	ttl time.Duration) mux.MiddlewareFunc {
+func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
 
 	return func(next http.Handler) http.Handler {
@@ -146,11 +141,6 @@ func RequireAuth(
 
 // RequireVerified requires a user to have verified their login email.
 func RequireVerified(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
-	ctx context.Context,
-	client *auth.Client,
-	db *database.Database,
-	h *render.Renderer,
-	ttl time.Duration) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireVerified")
 
 	return func(next http.Handler) http.Handler {
