@@ -50,7 +50,10 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 
 			user := controller.UserFromContext(ctx)
 			if user == nil {
-				// unauth, probably an error
+				logger.Debugw("no user found when checking email verification")
+				flash.Error("Log in first to verify email.")
+				controller.ClearSessionFirebaseCookie(session)
+				controller.Unauthorized(w, r, h)
 				return
 			}
 
