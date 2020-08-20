@@ -114,19 +114,6 @@ func (c *Controller) HandleCleanup() http.Handler {
 			c.logger.Infof("purged %v verification tokens", count)
 		}
 
-		// Gather usage statistics
-		if err := c.db.UpdateUserStats(); err != nil {
-			c.logger.Errorf("db.UpdateUserStats: %v", err)
-		} else {
-			c.logger.Info("updated statistics for user records")
-		}
-
-		if err := c.db.UpdateAuthorizedAppStats(); err != nil {
-			c.logger.Errorf("db.UpdateAuthorizedAppStats: %v", err)
-		} else {
-			c.logger.Info("updated statistics for authorized app records")
-		}
-
 		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{true})
 	})
 }

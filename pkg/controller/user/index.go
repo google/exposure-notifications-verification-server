@@ -15,9 +15,11 @@
 package user
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -30,33 +32,18 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		realmUsers, err := realm.ListUsers(c.db)
+		users, err := realm.ListUsers(c.db)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		creationCounts1d := make(map[uint]uint64)
-		creationCounts7d := make(map[uint]uint64)
-		creationCounts30d := make(map[uint]uint64)
-		for _, user := range realmUsers {
-			userStatsSummary, err := c.db.GetUserStatsSummary(user, realm)
-			if err != nil {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
-			creationCounts1d[user.ID] = userStatsSummary.CodesIssued1d
-			creationCounts7d[user.ID] = userStatsSummary.CodesIssued7d
-			creationCounts30d[user.ID] = userStatsSummary.CodesIssued30d
-		}
-
-		m := controller.TemplateMapFromContext(ctx)
-
-		m["codesGenerated1d"] = creationCounts1d
-		m["codesGenerated7d"] = creationCounts7d
-		m["codesGenerated30d"] = creationCounts30d
-		m["realmUsers"] = realmUsers
-
-		c.h.RenderHTML(w, "users/index", m)
+		c.renderIndex(ctx, w, users)
 	})
+}
+
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, users []*database.User) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["users"] = users
+	c.h.RenderHTML(w, "users/index", m)
 }

@@ -17,6 +17,7 @@ package user
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -52,21 +53,19 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		// Pull the stats - these are cached because it's an expensive query.
-		stats, err := c.db.GetUserStatsSummary(user, realm)
+		// TODO(sethvargo): support configurable time ranges
+		now := time.Now().UTC()
+		stats, err := user.Stats(c.db, realm.ID, now.Add(-7*24*time.Hour), now)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
-		}
-		if stats == nil {
-			stats = new(database.UserStatsSummary)
 		}
 
 		c.renderShow(ctx, w, user, stats)
 	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats *database.UserStatsSummary) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats []*database.UserStats) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
 	m["stats"] = stats

@@ -3,6 +3,7 @@
 {{$csrfField := .csrfField}}
 {{$currentUser := .currentUser}}
 {{$currentRealm := .currentRealm}}
+{{$users := .users}}
 
 <!doctype html>
 <html lang="en">
@@ -23,7 +24,7 @@
       href="/users/new">create a new user</a>.
     </p>
 
-    {{if .realmUsers}}
+    {{if $users}}
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
         <thead>
@@ -35,7 +36,7 @@
           </tr>
         </thead>
         <tbody>
-          {{range .realmUsers}}
+          {{range $users}}
           <tr>
             <td>
               <a href="/users/{{.ID}}">{{.Name}}</a>

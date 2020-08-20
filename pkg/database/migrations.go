@@ -757,6 +757,58 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00031-AlterStatsColumns",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: changing stats columns")
+
+				sqls := []string{
+					// AuthorizedApps
+					"CREATE UNIQUE INDEX IF NOT EXISTS idx_authorized_app_stats_date_authorized_app_id ON authorized_app_stats (date, authorized_app_id)",
+					"DROP INDEX IF EXISTS idx_date_app_realm",
+					"DROP INDEX IF EXISTS idx_authorized_app_stats_deleted_at",
+					"CREATE INDEX IF NOT EXISTS idx_authorized_app_stats_date ON authorized_app_stats (date)",
+					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS id",
+					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS created_at",
+					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS updated_at",
+					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS deleted_at",
+					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS realm_id",
+					"ALTER TABLE authorized_app_stats ALTER COLUMN date TYPE date",
+					"ALTER TABLE authorized_app_stats ALTER COLUMN date SET NOT NULL",
+					"ALTER TABLE authorized_app_stats ALTER COLUMN authorized_app_id SET NOT NULL",
+					"ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued TYPE INTEGER",
+					"ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued SET DEFAULT 0",
+					"ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued SET NOT NULL",
+
+					// Users
+					"CREATE UNIQUE INDEX IF NOT EXISTS idx_user_stats_date_realm_id_user_id ON user_stats (date, realm_id, user_id)",
+					"DROP INDEX IF EXISTS idx_date_user_realm",
+					"DROP INDEX IF EXISTS idx_user_stats_deleted_at",
+					"CREATE INDEX IF NOT EXISTS idx_user_stats_date ON user_stats (date)",
+					"ALTER TABLE user_stats DROP COLUMN IF EXISTS id",
+					"ALTER TABLE user_stats DROP COLUMN IF EXISTS created_at",
+					"ALTER TABLE user_stats DROP COLUMN IF EXISTS updated_at",
+					"ALTER TABLE user_stats DROP COLUMN IF EXISTS deleted_at",
+					"ALTER TABLE user_stats ALTER COLUMN date TYPE date",
+					"ALTER TABLE user_stats ALTER COLUMN date SET NOT NULL",
+					"ALTER TABLE user_stats ALTER COLUMN realm_id SET NOT NULL",
+					"ALTER TABLE user_stats ALTER COLUMN user_id SET NOT NULL",
+					"ALTER TABLE user_stats ALTER COLUMN codes_issued TYPE INTEGER",
+					"ALTER TABLE user_stats ALTER COLUMN codes_issued SET DEFAULT 0",
+					"ALTER TABLE user_stats ALTER COLUMN codes_issued SET NOT NULL",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return fmt.Errorf("%s: %w", sql, err)
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 
