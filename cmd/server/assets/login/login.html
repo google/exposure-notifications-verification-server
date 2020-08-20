@@ -13,7 +13,6 @@
 
     <main role="main" class="container">
         {{template "flash" .}}
-        <div class="alert alert-warning" role="alert" id="message"></div>
 
         <div class="card mb-3">
             <div class="card-body">
@@ -49,7 +48,6 @@
     <script>
         $(function () {
             $submit = $('#submit');
-            $message = $('#message');
 
             $submit.on('click', function (event) {
                 // Disable the submit button so we only attempt once.
@@ -96,8 +94,6 @@
                             }
                         })
                     })
-            } else {
-                $message.text("No user signed in.");
             }
         });
     </script>
