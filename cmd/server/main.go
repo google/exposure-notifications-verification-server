@@ -155,22 +155,32 @@ func realMain(ctx context.Context) error {
 	rateLimit := httplimiter.Handle
 
 	{
-		sub := r.PathPrefix("").Subrouter()
-		sub.Use(rateLimit)
-
 		loginController := login.New(ctx, auth, config, db, h)
-		sub.Handle("/", loginController.HandleLogin()).Methods("GET")
-		sub.Handle("/session", loginController.HandleCreate()).Methods("POST")
-		sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
-	}
+		{
+			sub := r.PathPrefix("").Subrouter()
+			sub.Use(rateLimit)
 
-	{
-		sub := r.PathPrefix("/login").Subrouter()
-		sub.Use(rateLimit)
-		sub.Use(requireAuth)
+			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
+			sub.Handle("/session", loginController.HandleCreate()).Methods("POST")
+			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
+		}
 
-		loginController := login.New(ctx, auth, config, db, h)
-		sub.Handle("/verifyemail", loginController.HandleVerifyEmail()).Methods("GET")
+		{
+			sub := r.PathPrefix("/login/verifyemail").Subrouter()
+			sub.Use(rateLimit)
+			sub.Use(requireAuth)
+
+			sub.Handle("", loginController.HandleVerifyEmail()).Methods("GET")
+		}
+
+		{
+			sub := r.PathPrefix("/login").Subrouter()
+			sub.Use(rateLimit)
+			sub.Use(requireVerified)
+			sub.Use(requireAuth)
+
+			sub.Handle("/registerphone", loginController.HandleRegisterPhone()).Methods("GET")
+		}
 	}
 
 	{
