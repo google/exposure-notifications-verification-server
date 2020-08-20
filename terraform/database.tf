@@ -313,6 +313,10 @@ output "proxy_env" {
   value = "DB_SSLMODE=disable DB_HOST=127.0.0.1 DB_NAME=${google_sql_database.db.name} DB_PORT=5432 DB_USER=${google_sql_user.user.name} DB_PASSWORD=$(gcloud secrets versions access ${google_secret_manager_secret_version.db-secret-version["password"].name})"
 }
 
+output "psql_env" {
+  value = "PGHOST=127.0.0.1 PGPORT=5432 PGUSER=${google_sql_user.user.name} PGPASSWORD=$(gcloud secrets versions access ${google_secret_manager_secret_version.db-secret-version["password"].name})"
+}
+
 output "db_encryption_key_secret" {
   value = google_kms_crypto_key.database-encrypter.self_link
 }
