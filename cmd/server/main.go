@@ -176,8 +176,8 @@ func realMain(ctx context.Context) error {
 		{
 			sub := r.PathPrefix("/login").Subrouter()
 			sub.Use(rateLimit)
-			sub.Use(requireVerified)
 			sub.Use(requireAuth)
+			sub.Use(requireVerified)
 
 			sub.Handle("/registerphone", loginController.HandleRegisterPhone()).Methods("GET")
 		}
