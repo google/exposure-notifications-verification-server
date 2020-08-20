@@ -3,100 +3,115 @@
 <html lang="en">
 
 <head>
-    {{template "head" .}}
+  {{template "head" .}}
 
-    {{template "firebase" .}}
+  {{template "firebase" .}}
 </head>
 
 <body>
-    {{template "navbar" .}}
+  {{template "navbar" .}}
 
-    <main role="main" class="container">
-        {{template "flash" .}}
+  <main role="main" class="container">
+    {{template "flash" .}}
 
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="row form-group">
-                    <label for="email" class="col-sm-3">Email</label>
-                    <div class="col-sm-9">
-                        <div class="input-group p-0 shadow-sm">
-                            <input type="email" id="email" name="email" class="form-control" />
-                        </div>
-                    </div>
-                </div>
+    <h1>Login</h1>
+    <p>
+      Use the form below to login to the system.
+    </p>
 
-                <div class="row form-group">
-                    <label for="pwd" class="col-sm-3">Password</label>
-                    <div class="col-sm-9">
-                        <div class="input-group p-0 shadow-sm">
-                            <input type="password" id="pwd" name="pwd" class="form-control" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row form-group">
-                    <div class="offset-sm-3 col-sm-9">
-                        <button id="submit" class="btn btn-primary btn-block">Login</button>
-                    </div>
-                </div>
+    <div class="card mb-3">
+      <div class="card-body">
+        <form id="loginForm" action="/" method="POST">
+          <div class="row form-group">
+            <label for="email" class="col-sm-3">Email</label>
+            <div class="col-sm-9">
+              <div class="input-group p-0 shadow-sm">
+                <input type="email" id="email" name="email" class="form-control" required />
+              </div>
             </div>
-        </div>
-    </main>
+          </div>
 
-    {{template "scripts" .}}
+          <div class="row form-group">
+            <label for="password" class="col-sm-3">Password</label>
+            <div class="col-sm-9">
+              <div class="input-group p-0 shadow-sm">
+                <input type="password" id="password" name="password" class="form-control" required />
+              </div>
+            </div>
+          </div>
 
-    <script>
-        $(function () {
-            $submit = $('#submit');
+          <div class="row form-group">
+            <div class="offset-sm-3 col-sm-9">
+              <button type="submit" id="submit" class="btn btn-primary btn-block">Login</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
 
-            $submit.on('click', function (event) {
-                // Disable the submit button so we only attempt once.
-                $submit.prop('disabled', true);
+  {{template "scripts" .}}
 
-                $email = $('#email');
-                $pwd = $('#pwd');
+  <script>
+    $(function () {
+      let $main = $('main');
+      let $form = $('#loginForm');
+      let $submit = $('#submit');
+      let $email = $('#email');
+      let $password = $('#password');
 
-                firebase.auth().signInWithEmailAndPassword($email.val(), $pwd.val()).catch(function (error) {
-                    $('main').prepend(
-                        '<div class="alert alert-warning" role="alert">'
-                        + error.message + '</div>');
-                    $submit.prop('disabled', false);
-                });
-            });
+      $form.on('submit', function (event) {
+        event.preventDefault();
+
+        // Disable the submit button so we only attempt once.
+        $submit.prop('disabled', true);
+
+        firebase.auth().signInWithEmailAndPassword($email.val(), $password.val()).catch(function (error) {
+          clearExistingAlerts();
+          let $div = $('<div class="alert alert-danger" role="alert" />');
+          $div.text(error.message);
+          $main.prepend($div);
+
+          $submit.prop('disabled', false);
         });
+      });
 
-        firebase.auth().onAuthStateChanged(function (user) {
-            if (user) {
-                $('main').prepend(
-                    '<div class="alert alert-success alert-dismissible" role="alert">Welcome, '
-                    + user.email + '</div>');
+      firebase.auth().onAuthStateChanged(function (user) {
+        if (!user) {
+          return
+        }
 
-                user.getIdToken().then(
-                    idToken => {
-                        $.ajax({
-                            type: 'POST',
-                            url: "/session",
-                            data: { idToken: idToken },
-                            headers: { "X-CSRF-Token": "{{.csrfToken}}" },
-                            contentType: 'application/x-www-form-urlencoded',
-                            success: function (returnData) {
-                                // The user successfully signed in, redirect to realm selection.
-                                window.location.assign('/realm');
-                            },
-                            error: function (xhr, status, e) {
-                                // There was an error finding the user. Redirect to the
-                                // signout page to clear the firebase cookie and any session
-                                // data.
-                                //
-                                // The flash data may have more detailed error messages, which
-                                // will be displayed on the signout page.
-                                window.location.assign("/signout");
-                            }
-                        })
-                    })
+        clearExistingAlerts();
+
+        user.getIdToken().then(idToken => {
+          $.ajax({
+            type: 'POST',
+            url: '/session',
+            data: { idToken: idToken },
+            headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
+            contentType: 'application/x-www-form-urlencoded',
+            success: function (returnData) {
+              // The user successfully signed in, redirect to realm selection.
+              window.location.assign('/realm');
+            },
+            error: function (xhr, status, e) {
+              // There was an error finding the user. Redirect to the
+              // signout page to clear the firebase cookie and any session
+              // data.
+              //
+              // The flash data may have more detailed error messages, which
+              // will be displayed on the signout page.
+              window.location.assign("/signout");
             }
+          })
         });
-    </script>
+      });
+
+      function clearExistingAlerts() {
+        $main.find('div.alert').remove();
+      }
+    });
+  </script>
 </body>
 
 </html>
