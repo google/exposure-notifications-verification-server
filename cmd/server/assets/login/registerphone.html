@@ -27,6 +27,9 @@
                         <div class="input-group p-0 shadow-sm">
                             <input type="tel" id="phone" name="phone" class="form-control" />
                         </div>
+                        <small class="form-text text-muted">
+                            Format: +1 123-456-7890. Standard SMS rates may apply.
+                        </small>
                     </div>
                 </div>
 
@@ -68,6 +71,7 @@
                     function (verificationId) {
                         var verificationCode = window.prompt('Please enter the verification ' +
                             'code that was sent to your mobile device.');
+                        // TODO: enroll the credential
                     },
                     function (err) {
                         $('main').prepend(
