@@ -76,9 +76,8 @@
             // TODO: enroll the credential
           },
           function (err) {
-            $('main').prepend(
-              '<div class="alert alert-warning" role="alert">'
-              + err.message + '</div>');
+            clearExistingFlash();
+            flash(err.message)
           });
       });
     });

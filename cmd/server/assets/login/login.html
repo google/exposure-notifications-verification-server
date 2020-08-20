@@ -54,7 +54,6 @@
 
   <script>
     $(function () {
-      let $main = $('main');
       let $form = $('#loginForm');
       let $submit = $('#submit');
       let $email = $('#email');
@@ -66,14 +65,15 @@
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
-        firebase.auth().signInWithEmailAndPassword($email.val(), $password.val()).catch(function (error) {
-          clearExistingAlerts();
-          let $div = $('<div class="alert alert-danger" role="alert" />');
-          $div.text(error.message);
-          $main.prepend($div);
-
-          $submit.prop('disabled', false);
-        });
+        firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
+          .then(function (userCredential) {
+            clearExistingFlash();
+          })
+          .catch(function (error) {
+            clearExistingFlash();
+            flash(error.message, "danger")
+            $submit.prop('disabled', false);
+          });
       });
 
       firebase.auth().onAuthStateChanged(function (user) {
@@ -81,8 +81,7 @@
           return
         }
 
-        clearExistingAlerts();
-
+        flash("Welcome, " + user.email, "success")
         user.getIdToken().then(idToken => {
           $.ajax({
             type: 'POST',
@@ -106,10 +105,6 @@
           })
         });
       });
-
-      function clearExistingAlerts() {
-        $main.find('div.alert').remove();
-      }
     });
   </script>
 </body>
