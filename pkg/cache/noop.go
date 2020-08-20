@@ -34,7 +34,7 @@ func NewNoop() (Cacher, error) {
 
 // Fetch calls FetchFunc and does no caching.
 func (c *noop) Fetch(_ context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	if c.isStopped() {
 		return ErrStopped
 	}
 	if f == nil {
@@ -49,7 +49,7 @@ func (c *noop) Fetch(_ context.Context, key string, out interface{}, ttl time.Du
 
 // Write does nothing.
 func (c *noop) Write(_ context.Context, _ string, _ interface{}, ttl time.Duration) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	if c.isStopped() {
 		return ErrStopped
 	}
 	return nil
@@ -57,7 +57,7 @@ func (c *noop) Write(_ context.Context, _ string, _ interface{}, ttl time.Durati
 
 // Read always returns ErrNotFound.
 func (c *noop) Read(_ context.Context, _ string, _ interface{}) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	if c.isStopped() {
 		return ErrStopped
 	}
 	return ErrNotFound
@@ -65,7 +65,7 @@ func (c *noop) Read(_ context.Context, _ string, _ interface{}) error {
 
 // Delete does nothing.
 func (c *noop) Delete(_ context.Context, _ string) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	if c.isStopped() {
 		return ErrStopped
 	}
 	return nil
@@ -77,4 +77,9 @@ func (c *noop) Close() error {
 		return nil
 	}
 	return nil
+}
+
+// isStopped returns true if the cacher is stopped.
+func (c *noop) isStopped() bool {
+	return atomic.LoadUint32(&c.stopped) == 1
 }

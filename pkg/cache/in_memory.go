@@ -17,7 +17,6 @@ package cache
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -30,8 +29,7 @@ type inMemory struct {
 	data map[string]*item
 	mu   sync.RWMutex
 
-	stopped uint32
-	stopCh  chan struct{}
+	stopCh chan struct{}
 }
 
 type item struct {
@@ -69,14 +67,15 @@ func NewInMemory(i *InMemoryConfig) (Cacher, error) {
 // result of f in the cache for ttl. The ttl is calculated from the time the
 // value is inserted, not the time the function is called.
 func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
-		return ErrStopped
-	}
-
 	now := time.Now().UnixNano()
 
 	// Try a read-only lock first
 	c.mu.RLock()
+	if c.data == nil {
+		c.mu.RUnlock()
+		return ErrStopped
+	}
+
 	if i, ok := c.data[key]; ok && now < i.expires {
 		c.mu.RUnlock()
 		return readInto(i.value, out)
@@ -86,21 +85,24 @@ func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl tim
 	// Now acquire a full lock, it's possible another goroutine wrote between our
 	// read and write lock.
 	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.data == nil {
+		return ErrStopped
+	}
+
 	if i, ok := c.data[key]; ok && now < i.expires {
-		c.mu.Unlock()
 		return readInto(i.value, out)
 	}
 
 	// The value is not in the cache (or the value exists but has expired), call f
 	// to get a new value.
 	if f == nil {
-		c.mu.Unlock()
 		return ErrMissingFetchFunc
 	}
 
 	val, err := f()
 	if err != nil {
-		c.mu.Unlock()
 		return err
 	}
 
@@ -113,36 +115,37 @@ func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl tim
 		// Explicitly re-caputure the time instead of using now.
 		expires: time.Now().UnixNano() + int64(ttl),
 	}
-	c.mu.Unlock()
 
 	return nil
 }
 
 // Write adds a new item to the cache with the given TTL.
 func (c *inMemory) Write(_ context.Context, key string, value interface{}, ttl time.Duration) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
-		return ErrStopped
-	}
-
 	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.data == nil {
+		return ErrStopped
+
+	}
 	c.data[key] = &item{
 		value:   value,
 		expires: time.Now().UnixNano() + int64(ttl),
 	}
-	c.mu.Unlock()
 	return nil
 }
 
 // Read fetches the value at the key. If the value does not exist, it returns
 // ErrNotFound. If the types are incompatible, it returns an error.
 func (c *inMemory) Read(_ context.Context, key string, out interface{}) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
-		return ErrStopped
-	}
-
 	now := time.Now().UnixNano()
 
 	c.mu.RLock()
+	if c.data == nil {
+		c.mu.RUnlock()
+		return ErrStopped
+	}
+
 	if i, ok := c.data[key]; ok {
 		// Item is still valid
 		if now < i.expires {
@@ -153,35 +156,34 @@ func (c *inMemory) Read(_ context.Context, key string, out interface{}) error {
 		// Item has expired, defer deletion (we don't have an exclusive lock)
 		go c.purge(key, i.expires)
 	}
-	c.mu.RUnlock()
 
+	c.mu.RUnlock()
 	return ErrNotFound
 }
 
-// Delete removes an item from the cache, if it exists, regardless of TTL. It
-// returns a boolean indicating whether the value was removed.
+// Delete removes an item from the cache, if it exists, regardless of TTL.
 func (c *inMemory) Delete(_ context.Context, key string) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.data == nil {
 		return ErrStopped
 	}
 
-	c.mu.Lock()
 	delete(c.data, key)
-	c.mu.Unlock()
 	return nil
 }
 
 // Close completely stops the cacher. It is not safe to use after closing.
 func (c *inMemory) Close() error {
-	if !atomic.CompareAndSwapUint32(&c.stopped, 0, 1) {
-		return nil
-	}
-
-	close(c.stopCh)
-
 	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.data != nil {
+		close(c.stopCh)
+	}
 	c.data = nil
-	c.mu.Unlock()
+
 	return nil
 }
 
@@ -190,15 +192,6 @@ func (c *inMemory) Close() error {
 // different, it does nothing. The expected expiration time is used to handle a
 // race where the item is updated by another routine.
 func (c *inMemory) purge(key string, expectedTTL int64) {
-	if atomic.LoadUint32(&c.stopped) == 1 {
-		return
-	}
-
-	select {
-	case <-c.stopCh:
-	default:
-	}
-
 	c.mu.Lock()
 	if c.data != nil {
 		if i, ok := c.data[key]; ok && i.expires == expectedTTL {

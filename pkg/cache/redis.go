@@ -44,7 +44,7 @@ type RedisConfig struct {
 	// cache values.
 	Prefix string
 
-	// Address is the redis address.
+	// Address is the redis address and port. The default value is 127.0.0.1:6379.
 	Address string
 
 	// Username and Password are used for authentication.
@@ -89,7 +89,7 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 // result of f in the cache for ttl. The ttl is calculated from the time the
 // value is inserted, not the time the function is called.
 func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) (retErr error) {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	if c.isStopped() {
 		return ErrStopped
 	}
 
@@ -165,7 +165,7 @@ func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time
 
 // Write adds a new item to the cache with the given TTL.
 func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	if c.isStopped() {
 		return ErrStopped
 	}
 
@@ -185,7 +185,7 @@ func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl ti
 // Read fetches the value at the key. If the value does not exist, it returns
 // ErrNotFound.
 func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	if c.isStopped() {
 		return ErrStopped
 	}
 
@@ -207,10 +207,9 @@ func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
 
 }
 
-// Delete removes an item from the cache, if it exists, regardless of TTL. It
-// returns a boolean indicating whether the value was removed.
+// Delete removes an item from the cache, if it exists, regardless of TTL.
 func (c *redis) Delete(ctx context.Context, key string) error {
-	if atomic.LoadUint32(&c.stopped) == 1 {
+	if c.isStopped() {
 		return ErrStopped
 	}
 
@@ -256,4 +255,9 @@ func (c *redis) withConn(f func(conn redigo.Conn) error) error {
 		return fmt.Errorf("failed to close connection: %w", err)
 	}
 	return nil
+}
+
+// isStopped returns true if the cacher is stopped.
+func (c *redis) isStopped() bool {
+	return atomic.LoadUint32(&c.stopped) == 1
 }
