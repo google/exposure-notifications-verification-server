@@ -64,6 +64,9 @@
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}
+        <div id="chart" style="height: 300px;" class="m-3">
+          <span>Loading chart...</span>
+        </div>
         <table class="table table-bordered table-striped">
           <thead>
             <tr>
@@ -94,6 +97,32 @@
   </main>
 
   {{template "scripts" .}}
+
+  {{if $stats}}
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script>
+    google.charts.load('current', {packages: ['line']});
+    google.charts.setOnLoadCallback(drawChart)
+
+    function drawChart() {
+      var data = google.visualization.arrayToDataTable([
+        ['Date', 'Codes issued'],
+        {{range $stat := $stats}}
+        ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}],
+        {{end}}
+      ]);
+
+      var options = {
+        colors: ['#007bff'],
+        legend: {position: 'none'},
+        tooltip: {trigger: 'focus'},
+      };
+
+      var chart = new google.charts.Line(document.getElementById('chart'));
+      chart.draw(data, options);
+    }
+  </script>
+  {{end}}
 </body>
 
 </html>
