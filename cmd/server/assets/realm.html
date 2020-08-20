@@ -189,10 +189,10 @@
                 length of of the SMS message should not exceede 160 characters, or your message will need to be split
                 in transit and may not be joined correctly. There are some special strings that you can use
                 to substitute items. Your SMS template <em>MUST</em> contain either the <code>[code]</code> or
-                <code>[longcode]</code>.         
+                <code>[longcode]</code>.
                 <ul>
                   <li><code>[region]</code>The region setting (set on this page).</li>
-                  <li><code>[code]</code>The 'short' verification code.</li>                  
+                  <li><code>[code]</code>The 'short' verification code.</li>
                   <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units).</li>
                   <li><code>[longcode]</code>The 'long' verification code</li>
                   <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
@@ -201,19 +201,32 @@
                 Here are some example SMS templates. The recommended usage is to include the long code in the SMS, and make
                 it clickable by registering a customer URI handler for your app.
                 <ul>
-                  <li>Send short code in SMS (<code>104</code> characters with 8 digit codes and 60 minute expiration):
-                      <pre>State of Wonder Dept. of Health, your exposure notifications code is [code] and expires in [expires] minutes</pre>
+                  <li>
+                    <p>Send short code in SMS (<code>104</code> characters with 8 digit codes and 60 minute expiration):</p>
+                    <p>
+                      <samp class="text-dark">
+                        State of Wonder Dept. of Health, your exposure
+                        notifications code is [code] and expires in [expires]
+                        minutes.
+                      </samp>
+                    </p>
                   </li>
-                  <li>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration):
-                      <pre>You have tested positive for Covid-19. Click here to share anonymous data for exposure notifications
-                        dohen://v?c=[longcode] (Expires in [longexpires] hours)</pre>
+                  <li>
+                    <p>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration):</p>
+                    <p>
+                      <samp class="text-dark">
+                        You have tested positive for Covid-19. Click here to
+                        share anonymous data for exposure notifications
+                        dohen://v?c=[longcode] (Expires in [longexpires] hours)
+                      </samp>
+                    </p>
                   </li>
                 </ul>
               </small>
             </div>
           </div>
 
-        </div>        
+        </div>
       </div>
 
       <div class="card mb-3">
