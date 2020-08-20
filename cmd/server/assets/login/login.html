@@ -54,7 +54,6 @@
 
   <script>
     $(function () {
-      let $main = $('main');
       let $form = $('#loginForm');
       let $submit = $('#submit');
       let $email = $('#email');
@@ -68,10 +67,7 @@
 
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val()).catch(function (error) {
           clearExistingAlerts();
-          let $div = $('<div class="alert alert-danger" role="alert" />');
-          $div.text(error.message);
-          $main.prepend($div);
-
+          alert(error.message, "danger")
           $submit.prop('disabled', false);
         });
       });
@@ -80,8 +76,6 @@
         if (!user) {
           return
         }
-
-        clearExistingAlerts();
 
         user.getIdToken().then(idToken => {
           $.ajax({
@@ -106,10 +100,6 @@
           })
         });
       });
-
-      function clearExistingAlerts() {
-        $main.find('div.alert').remove();
-      }
     });
   </script>
 </body>

@@ -18,6 +18,7 @@
   div.realm-header {
     background-color: #0055b1;
   }
+
 </style>
 {{end}}
 
@@ -208,5 +209,26 @@
       $target.val(value);
     })
   });
+
+  var $main = $('main');
+
+  function clearExistingAlerts() {
+    $main.find('div.alert').remove();
+  }
+
+  function alert(message, errLevel) {
+    switch (errLevel) {
+      case "warning":
+      case "danger":
+      case "success":
+        break;
+      default:
+        errLevel = "warning"
+    }
+
+    let $div = $('<div class="alert alert-' + errLevel + '" role="alert" />');
+    $div.text(message);
+    $main.prepend($div);
+  }
 </script>
 {{end}}
