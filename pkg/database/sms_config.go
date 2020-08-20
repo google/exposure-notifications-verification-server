@@ -17,6 +17,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
@@ -48,9 +49,11 @@ type SMSConfig struct {
 // SMSProvider gets the SMS provider for the given realm. The values are
 // cached.
 func (r *SMSConfig) SMSProvider(db *Database) (sms.Provider, error) {
-	key := fmt.Sprintf("GetSMSProvider/%v", r.ID)
-	val, err := db.cacher.WriteThruLookup(key, func() (interface{}, error) {
-		ctx := context.Background()
+	ctx := context.Background()
+	key := fmt.Sprintf("sms_configs:provider:%v", r.ID)
+
+	var provider sms.Provider
+	if err := db.cacher.Fetch(ctx, key, &provider, 30*time.Minute, func() (interface{}, error) {
 		provider, err := sms.ProviderFor(ctx, &sms.Config{
 			ProviderType:     r.ProviderType,
 			TwilioAccountSid: r.TwilioAccountSid,
@@ -61,16 +64,10 @@ func (r *SMSConfig) SMSProvider(db *Database) (sms.Provider, error) {
 			return nil, err
 		}
 		return provider, nil
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
-
-	if val == nil {
-		return nil, nil
-	}
-
-	return val.(sms.Provider), nil
+	return provider, nil
 }
 
 // SaveSMSConfig creates or updates an SMS configuration record.
