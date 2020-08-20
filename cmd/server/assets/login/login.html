@@ -65,11 +65,15 @@
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
-        firebase.auth().signInWithEmailAndPassword($email.val(), $password.val()).catch(function (error) {
-          clearExistingAlerts();
-          alert(error.message, "danger")
-          $submit.prop('disabled', false);
-        });
+        firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
+          .then(function (userCredential) {
+            clearExistingAlerts();
+          })
+          .catch(function (error) {
+            clearExistingAlerts();
+            alert(error.message, "danger")
+            $submit.prop('disabled', false);
+          });
       });
 
       firebase.auth().onAuthStateChanged(function (user) {
