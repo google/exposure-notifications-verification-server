@@ -15,27 +15,31 @@
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center align-self-center">
         <div class="col-sm-6">
-        <div class="card shadow-sm">
-          <div class="card-header">Login</div>
-          <div class="card-body">
-            <form id="loginForm" action="/" method="POST">
-              <div class="form-group mb-2">
-                <input type="email" id="email" name="email" class="form-control" placeholder="Email address" required />
-              </div>
+          <div class="card shadow-sm">
+            <div class="card-header">Login</div>
+            <div class="card-body">
+              <form id="loginForm" action="/" method="POST">
+                <div class="form-group mb-2">
+                  <input type="email" id="email" name="email" class="form-control" placeholder="Email address"
+                    required />
+                </div>
 
-              <div class="form-group">
-                <input type="password" id="password" name="password" class="form-control" placeholder="Password" required />
-              </div>
+                <div class="form-group">
+                  <input type="password" id="password" name="password" class="form-control" placeholder="Password"
+                    required />
+                </div>
 
-              <button type="submit" id="submit" class="btn btn-primary btn-block">Login</button>
-            </form>
+                <button type="submit" id="submit" class="btn btn-primary btn-block">Login</button>
+              </form>
+              <div class="card-body">
+                <a class="card-link" href="legacylogin">New user</a>
+              </div>
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>
-
-    <a href="legacylogin">Create new user</a>
+    </div>
   </main>
 
   {{template "scripts" .}}
