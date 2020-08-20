@@ -22,6 +22,9 @@ import (
 	"os"
 	"strconv"
 
+	firebase "firebase.google.com/go"
+	firebaseauth "firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -48,12 +51,13 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx).Named("seed")
 
-	var config database.Config
-	if err := envconfig.Process(ctx, &config); err != nil {
-		return fmt.Errorf("failed to parse config: %w", err)
+	// Database
+	var dbConfig database.Config
+	if err := envconfig.Process(ctx, &dbConfig); err != nil {
+		return fmt.Errorf("failed to parse database config: %w", err)
 	}
 
-	db, err := config.Load(ctx)
+	db, err := dbConfig.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
@@ -61,6 +65,25 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
+
+	// Firebase
+	var fbConfig config.FirebaseConfig
+	if err := envconfig.Process(ctx, &fbConfig); err != nil {
+		return fmt.Errorf("failed to parse firebase config: %w", err)
+	}
+
+	fb, err := firebase.NewApp(ctx, &firebase.Config{
+		DatabaseURL:   fbConfig.DatabaseURL,
+		ProjectID:     fbConfig.ProjectID,
+		StorageBucket: fbConfig.StorageBucket,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to setup firebase: %w", err)
+	}
+	fbAuth, err := fb.Auth(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to configure firebase: %w", err)
+	}
 
 	// Create a realm
 	realm1 := database.NewRealmWithDefaults("Narnia")
@@ -86,6 +109,18 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("created user", "user", user)
 
+	if err := createFirebaseUser(ctx, fbAuth, user); err != nil {
+		return err
+	}
+	logger.Infow("enabled user", "user", user)
+
+	unverified := &database.User{Email: "unverified@example.com", Name: "Unverified User"}
+	unverified.AddRealm(realm1)
+	if err := db.SaveUser(unverified); err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+	logger.Infow("created user", "user", unverified)
+
 	admin := &database.User{Email: "admin@example.com", Name: "Admin User"}
 	admin.AddRealm(realm1)
 	admin.AddRealmAdmin(realm1)
@@ -94,11 +129,21 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("created admin", "admin", admin)
 
+	if err := createFirebaseUser(ctx, fbAuth, admin); err != nil {
+		return err
+	}
+	logger.Infow("enabled admin", "admin", admin)
+
 	super := &database.User{Email: "super@example.com", Name: "Super User", Admin: true}
 	if err := db.SaveUser(super); err != nil {
 		return fmt.Errorf("failed to create super: %w", err)
 	}
 	logger.Infow("created super", "super", super)
+
+	if err := createFirebaseUser(ctx, fbAuth, super); err != nil {
+		return err
+	}
+	logger.Infow("enabled super", "super", super)
 
 	// Create a device API key
 	deviceAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
@@ -119,6 +164,43 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create admin api key")
 	}
 	logger.Infow("created device api key", "key", adminAPIKey)
+
+	return nil
+}
+
+func createFirebaseUser(ctx context.Context, fbAuth *firebaseauth.Client, user *database.User) error {
+	existing, err := fbAuth.GetUserByEmail(ctx, user.Email)
+	if err != nil && !firebaseauth.IsUserNotFound(err) {
+		return fmt.Errorf("failed to get user by email %v: %w", user.Email, err)
+	}
+
+	// User exists, verify email
+	if existing != nil {
+		// Already verified
+		if existing.EmailVerified {
+			return nil
+		}
+
+		update := (&firebaseauth.UserToUpdate{}).
+			EmailVerified(true)
+
+		if _, err := fbAuth.UpdateUser(ctx, existing.UID, update); err != nil {
+			return fmt.Errorf("failed to update user %v: %w", user.Email, err)
+		}
+
+		return nil
+	}
+
+	// User does not exist
+	create := (&firebaseauth.UserToCreate{}).
+		Email(user.Email).
+		EmailVerified(true).
+		DisplayName(user.Name).
+		Password("password")
+
+	if _, err := fbAuth.CreateUser(ctx, create); err != nil {
+		return fmt.Errorf("failed to create user %v: %w", user.Email, err)
+	}
 
 	return nil
 }
