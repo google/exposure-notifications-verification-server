@@ -76,8 +76,8 @@
             // TODO: enroll the credential
           },
           function (err) {
-            clearExistingAlerts();
-            alert(err.message)
+            clearExistingFlash();
+            flash(err.message)
           });
       });
     });

@@ -67,11 +67,11 @@
 
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
           .then(function (userCredential) {
-            clearExistingAlerts();
+            clearExistingFlash();
           })
           .catch(function (error) {
-            clearExistingAlerts();
-            alert(error.message, "danger")
+            clearExistingFlash();
+            flash(error.message, "danger")
             $submit.prop('disabled', false);
           });
       });
@@ -81,7 +81,7 @@
           return
         }
 
-        alert("Welcome, " + user.email, "success")
+        flash("Welcome, " + user.email, "success")
         user.getIdToken().then(idToken => {
           $.ajax({
             type: 'POST',

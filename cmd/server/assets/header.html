@@ -212,11 +212,11 @@
 
   var $main = $('main');
 
-  function clearExistingAlerts() {
+  function clearExistingFlash() {
     $main.find('div.alert').remove();
   }
 
-  function alert(message, errLevel) {
+  function flash(message, errLevel) {
     switch (errLevel) {
       case "warning":
       case "danger":
