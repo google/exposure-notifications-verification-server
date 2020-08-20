@@ -149,6 +149,7 @@ func realMain(ctx context.Context) error {
 
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
+	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	requireRealm := middleware.RequireRealm(ctx, db, h)
 	rateLimit := httplimiter.Handle
@@ -164,11 +165,9 @@ func realMain(ctx context.Context) error {
 	}
 
 	{
-		requireAuthNotVerified := middleware.RequireAuthNotVerified(ctx, auth, db, h, config.SessionDuration)
-
 		sub := r.PathPrefix("/login").Subrouter()
 		sub.Use(rateLimit)
-		sub.Use(requireAuthNotVerified)
+		sub.Use(requireAuth)
 
 		loginController := login.New(ctx, auth, config, db, h)
 		sub.Handle("/verifyemail", loginController.HandleVerifyEmail()).Methods("GET")
@@ -177,6 +176,7 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(requireVerified)
 		sub.Use(rateLimit)
 
 		// Realms - list and select.
@@ -188,6 +188,7 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(requireVerified)
 		sub.Use(requireRealm)
 		sub.Use(rateLimit)
 
@@ -202,6 +203,7 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/code").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(requireVerified)
 		sub.Use(requireRealm)
 		sub.Use(rateLimit)
 
@@ -214,6 +216,7 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(requireVerified)
 		sub.Use(requireRealm)
 		sub.Use(requireAdmin)
 		sub.Use(rateLimit)
@@ -233,6 +236,7 @@ func realMain(ctx context.Context) error {
 	{
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(requireAuth)
+		userSub.Use(requireVerified)
 		userSub.Use(requireRealm)
 		userSub.Use(requireAdmin)
 		userSub.Use(rateLimit)
@@ -251,6 +255,7 @@ func realMain(ctx context.Context) error {
 	{
 		realmSub := r.PathPrefix("/realm/settings").Subrouter()
 		realmSub.Use(requireAuth)
+		realmSub.Use(requireVerified)
 		realmSub.Use(requireRealm)
 		realmSub.Use(requireAdmin)
 		realmSub.Use(rateLimit)

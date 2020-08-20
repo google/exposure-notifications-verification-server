@@ -35,22 +35,12 @@ import (
 // RequireAuth requires a user to be logged in. It also ensures that currentUser
 // is set in the template map. It fetches a user from the session and stores the
 // full record in the request context.
-func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
-	return requireAuth(ctx, client, db, h, ttl, true /*requireVerified*/)
-}
-
-// RequireAuthNotVerified requires a user to be logged in. Does not require the user to have verified the login email.
-func RequireAuthNotVerified(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
-	return requireAuth(ctx, client, db, h, ttl, false /*requireVerified*/)
-}
-
-func requireAuth(
+func RequireAuth(
 	ctx context.Context,
 	client *auth.Client,
 	db *database.Database,
 	h *render.Renderer,
-	ttl time.Duration,
-	requireVerified bool) mux.MiddlewareFunc {
+	ttl time.Duration) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
 
 	return func(next http.Handler) http.Handler {
@@ -101,23 +91,6 @@ func requireAuth(
 				return
 			}
 
-			if requireVerified {
-				fbUser, err := client.GetUserByEmail(ctx, email)
-				if err != nil {
-					logger.Debugw("firebase user does not exist")
-					flash.Error("That user does not exist.")
-					controller.ClearSessionFirebaseCookie(session)
-					controller.Unauthorized(w, r, h)
-					return
-				}
-				if !fbUser.EmailVerified {
-					logger.Debugw("user email not verified")
-					flash.Error("User email not verified.")
-					http.Redirect(w, r, "/login/verifyemail", http.StatusSeeOther)
-					return
-				}
-			}
-
 			user, err := db.FindUserByEmail(email)
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -165,6 +138,58 @@ func requireAuth(
 			// Save the user on the context.
 			ctx = controller.WithUser(ctx, user)
 			*r = *r.WithContext(ctx)
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// RequireVerified requires a user to have verified their login email.
+func RequireVerified(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
+	ctx context.Context,
+	client *auth.Client,
+	db *database.Database,
+	h *render.Renderer,
+	ttl time.Duration) mux.MiddlewareFunc {
+	logger := logging.FromContext(ctx).Named("middleware.RequireVerified")
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			session := controller.SessionFromContext(ctx)
+			if session == nil {
+				logger.Errorw("session does not exist")
+				controller.MissingSession(w, r, h)
+				return
+			}
+
+			flash := controller.Flash(session)
+
+			user := controller.UserFromContext(ctx)
+			if user == nil {
+				// unauth, probably an error
+				return
+			}
+
+			m := controller.TemplateMapFromContext(ctx)
+
+			fbUser, err := client.GetUserByEmail(ctx, user.Email)
+			if err != nil {
+				delete(m, "currentUser") // Remove user from the template map.
+				logger.Debugw("firebase user does not exist")
+				flash.Error("That user does not exist.")
+				controller.ClearSessionFirebaseCookie(session)
+				controller.Unauthorized(w, r, h)
+				return
+			}
+			if !fbUser.EmailVerified {
+				delete(m, "currentUser") // Remove user from the template map.
+				logger.Debugw("user email not verified")
+				flash.Error("User email not verified.")
+				http.Redirect(w, r, "/login/verifyemail", http.StatusSeeOther)
+				return
+			}
 
 			next.ServeHTTP(w, r)
 		})
