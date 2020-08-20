@@ -144,7 +144,7 @@ terraform {
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 3.32"
+      version = "~> 3.35"
     }
     null = {
       source  = "hashicorp/null"

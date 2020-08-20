@@ -168,6 +168,17 @@ resource "google_cloud_run_service" "server" {
   }
 }
 
+resource "google_compute_region_network_endpoint_group" "server" {
+  name     = "server"
+  provider = google-beta
+  project  = var.project
+  region   = var.region
+
+  cloud_run {
+    service = google_cloud_run_service.server.name
+  }
+}
+
 resource "google_cloud_run_domain_mapping" "server" {
   count    = var.server_custom_domain != "" ? 1 : 0
   location = var.cloudrun_location

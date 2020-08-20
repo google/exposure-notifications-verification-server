@@ -147,6 +147,17 @@ resource "google_cloud_run_service" "apiserver" {
   }
 }
 
+resource "google_compute_region_network_endpoint_group" "apiserver" {
+  name     = "apiserver"
+  provider = google-beta
+  project  = var.project
+  region   = var.region
+
+  cloud_run {
+    service = google_cloud_run_service.apiserver.name
+  }
+}
+
 resource "google_cloud_run_domain_mapping" "apiserver" {
   count    = var.apiserver_custom_domain != "" ? 1 : 0
   location = var.cloudrun_location
