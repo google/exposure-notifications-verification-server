@@ -56,11 +56,13 @@
       });
 
     $(function () {
+      let $phone = $('#phone')
+
       $('#register').on('click', function (event) {
         firebase.auth().currentUser.multiFactor.getSession().then(function (multiFactorSession) {
           // Specify the phone number and pass the MFA session.
           var phoneInfoOptions = {
-            phoneNumber: $('#phone').val(),
+            phoneNumber: $phone.val(),
             session: multiFactorSession
           };
           var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
