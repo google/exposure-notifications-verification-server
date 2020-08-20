@@ -22,17 +22,14 @@ import (
 	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/index"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/session"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
@@ -152,6 +149,7 @@ func realMain(ctx context.Context) error {
 
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
+	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	requireRealm := middleware.RequireRealm(ctx, db, h)
 	rateLimit := httplimiter.Handle
@@ -160,33 +158,25 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("").Subrouter()
 		sub.Use(rateLimit)
 
-		indexController := index.New(ctx, config, h)
-		sub.Handle("/", indexController.HandleIndex()).Methods("GET")
-		sub.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
-
-		// Session handling
-		sessionController := session.New(ctx, auth, config, db, h)
-		sub.Handle("/signout", sessionController.HandleDelete()).Methods("GET")
-		sub.Handle("/session", sessionController.HandleCreate()).Methods("POST")
+		loginController := login.New(ctx, auth, config, db, h)
+		sub.Handle("/", loginController.HandleLogin()).Methods("GET")
+		sub.Handle("/session", loginController.HandleCreate()).Methods("POST")
+		sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 	}
 
 	{
 		sub := r.PathPrefix("/login").Subrouter()
 		sub.Use(rateLimit)
+		sub.Use(requireAuth)
 
-		loginController := login.New(ctx, config, h)
-		sub.Handle("", loginController.HandleLogin()).Methods("GET")
+		loginController := login.New(ctx, auth, config, db, h)
 		sub.Handle("/verifyemail", loginController.HandleVerifyEmail()).Methods("GET")
-
-		// Session handling
-		// TODO(whaught): these are duplicated so they serve at this path for ajax
-		sessionController := session.New(ctx, auth, config, db, h)
-		sub.Handle("/session", sessionController.HandleCreate()).Methods("POST")
 	}
 
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(requireVerified)
 		sub.Use(rateLimit)
 
 		// Realms - list and select.
@@ -198,6 +188,7 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(requireVerified)
 		sub.Use(requireRealm)
 		sub.Use(rateLimit)
 
@@ -212,6 +203,7 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/code").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(requireVerified)
 		sub.Use(requireRealm)
 		sub.Use(rateLimit)
 
@@ -224,6 +216,7 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
 		sub.Use(requireAuth)
+		sub.Use(requireVerified)
 		sub.Use(requireRealm)
 		sub.Use(requireAdmin)
 		sub.Use(rateLimit)
@@ -243,6 +236,7 @@ func realMain(ctx context.Context) error {
 	{
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(requireAuth)
+		userSub.Use(requireVerified)
 		userSub.Use(requireRealm)
 		userSub.Use(requireAdmin)
 		userSub.Use(rateLimit)
@@ -261,6 +255,7 @@ func realMain(ctx context.Context) error {
 	{
 		realmSub := r.PathPrefix("/realm/settings").Subrouter()
 		realmSub.Use(requireAuth)
+		realmSub.Use(requireVerified)
 		realmSub.Use(requireRealm)
 		realmSub.Use(requireAdmin)
 		realmSub.Use(rateLimit)
