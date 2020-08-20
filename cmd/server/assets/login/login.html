@@ -59,16 +59,19 @@
                 $pwd = $('#pwd');
 
                 firebase.auth().signInWithEmailAndPassword($email.val(), $pwd.val()).catch(function (error) {
-                    $message.text(error.message);
+                    $('main').prepend(
+                        '<div class="alert alert-warning" role="alert">'
+                        + error.message + '</div>');
                     $submit.prop('disabled', false);
                 });
             });
         });
 
         firebase.auth().onAuthStateChanged(function (user) {
-            $message = $('#message');
             if (user) {
-                $message.text("Welcome, " + user.email);
+                $('main').prepend(
+                    '<div class="alert alert-success alert-dismissible" role="alert">Welcome, '
+                    + user.email + '</div>');
 
                 user.getIdToken().then(
                     idToken => {
