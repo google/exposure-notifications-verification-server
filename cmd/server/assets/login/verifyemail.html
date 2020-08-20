@@ -3,68 +3,68 @@
 <html lang="en">
 
 <head>
-    {{template "head" .}}
+  {{template "head" .}}
 
-    {{template "firebase" .}}
+  {{template "firebase" .}}
 </head>
 
 <body>
-    {{template "navbar" .}}
+  {{template "navbar" .}}
 
-    <main role="main" class="container">
-        {{template "flash" .}}
+  <main role="main" class="container">
+    {{template "flash" .}}
 
-        <div class="card mb-3">
-            <div class="card-body">
-                <h1>Email Verification</h1>
-                <p id="subtitle">Use this page to verify your login email address</p>
+    <div class="card mb-3">
+      <div class="card-body">
+        <h1>Email Verification</h1>
+        <p id="subtitle">Use this page to verify your login email address</p>
 
-                <div class="row form-group">
-                    <div class="col-sm-9">
-                        <button id="verify" class="btn btn-primary btn-block" disabled>Send Verification Email</button>
-                    </div>
-                </div>
-
-                <div>
-                    <p>
-                        <a href="/home">&larr; Go home</a>
-                    </p>
-                </div>
-            </div>
+        <div class="row form-group">
+          <div class="col-sm-9">
+            <button id="verify" class="btn btn-primary btn-block" disabled>Send Verification Email</button>
+          </div>
         </div>
-    </main>
 
-    {{template "scripts" .}}
+        <div>
+          <p>
+            <a href="/home">&larr; Go home</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
 
-    <script>
-        $(function () {
-            $verify = $('#verify');
-            $verify.on('click', function (event) {
-                let user = firebase.auth().currentUser
-                if (!user.emailVerified) {
-                    user.sendEmailVerification().then(function () {
-                        $('main').prepend('<div class="alert alert-warning" role="alert">Verification email sent.</div>')
-                        $verify.prop('disabled', true);
-                    }
-                    );
-                }
-            });
-        });
+  {{template "scripts" .}}
 
-        firebase.auth().onAuthStateChanged(function (user) {
-            $subtitle = $('#subtitle');
-            if (user) {
-                if (user.emailVerified) {
-                    $subtitle.text("Welcome, " + user.email + ". Your email has already been verified.");
-                } else {
-                    $subtitle.text("Welcome, " + user.email + ". Please verify your email to continue.");
-                    $('#verify').prop('disabled', false);
-                }
-            } else {
-                window.location.assign("/");
-            }
-        });
-    </script>
+  <script>
+    $(function () {
+      $verify = $('#verify');
+      $verify.on('click', function (event) {
+        let user = firebase.auth().currentUser
+        if (!user.emailVerified) {
+          user.sendEmailVerification().then(function () {
+            $('main').prepend('<div class="alert alert-warning" role="alert">Verification email sent.</div>')
+            $verify.prop('disabled', true);
+          }
+          );
+        }
+      });
+    });
+
+    firebase.auth().onAuthStateChanged(function (user) {
+      $subtitle = $('#subtitle');
+      if (user) {
+        if (user.emailVerified) {
+          $subtitle.text("Welcome, " + user.email + ". Your email has already been verified.");
+        } else {
+          $subtitle.text("Welcome, " + user.email + ". Please verify your email to continue.");
+          $('#verify').prop('disabled', false);
+        }
+      } else {
+        window.location.assign("/");
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -3,84 +3,84 @@
 <html lang="en">
 
 <head>
-    {{template "head" .}}
+  {{template "head" .}}
 
-    {{template "firebase" .}}
+  {{template "firebase" .}}
 </head>
 
 <body>
-    {{template "navbar" .}}
+  {{template "navbar" .}}
 
-    <main role="main" class="container">
-        {{template "flash" .}}
+  <main role="main" class="container">
+    {{template "flash" .}}
 
-        <h1>SMS Auth Registration</h1>
-        <p id="subtitle">Use this page to register a phone number for 2-factor authentication.</p>
+    <h1>SMS Auth Registration</h1>
+    <p id="subtitle">Use this page to register a phone number for 2-factor authentication.</p>
 
-        <div id="recaptcha-container" class="center-block"></div>
+    <div id="recaptcha-container" class="center-block"></div>
 
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="row form-group">
-                    <label for="phone" class="col-sm-3">Phone number</label>
-                    <div class="col-sm-9">
-                        <div class="input-group p-0 shadow-sm">
-                            <input type="tel" id="phone" name="phone" class="form-control" />
-                        </div>
-                        <small class="form-text text-muted">
-                            Format: +1 123-456-7890. Standard SMS rates may apply.
-                        </small>
-                    </div>
-                </div>
-
-                <div class="row form-group">
-                    <div class="offset-sm-3 col-sm-9">
-                        <button id="register" class="btn btn-primary btn-block">Register</button>
-                    </div>
-                </div>
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row form-group">
+          <label for="phone" class="col-sm-3">Phone number</label>
+          <div class="col-sm-9">
+            <div class="input-group p-0 shadow-sm">
+              <input type="tel" id="phone" name="phone" class="form-control" />
             </div>
+            <small class="form-text text-muted">
+              Format: +1 123-456-7890. Standard SMS rates may apply.
+            </small>
+          </div>
         </div>
-    </main>
 
-    {{template "scripts" .}}
+        <div class="row form-group">
+          <div class="offset-sm-3 col-sm-9">
+            <button id="register" class="btn btn-primary btn-block">Register</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 
-    <script>
-        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-            'recaptcha-container',
-            { 'size': 'invisible' }
-        );
+  {{template "scripts" .}}
 
-        recaptchaVerifier.render()
-            .then(function (widgetId) {
-                window.recaptchaWidgetId = widgetId;
-            });
+  <script>
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+      'recaptcha-container',
+      { 'size': 'invisible' }
+    );
 
-        $(function () {
-            $('#register').on('click', function (event) {
-                firebase.auth().currentUser.multiFactor.getSession().then(function (multiFactorSession) {
-                    // Specify the phone number and pass the MFA session.
-                    var phoneInfoOptions = {
-                        phoneNumber: $('#phone').val(),
-                        session: multiFactorSession
-                    };
-                    var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-                    // Send SMS verification code.
-                    return phoneAuthProvider.verifyPhoneNumber(
-                        phoneInfoOptions, window.recaptchaVerifier);
-                }).then(
-                    function (verificationId) {
-                        var verificationCode = window.prompt('Please enter the verification ' +
-                            'code that was sent to your mobile device.');
-                        // TODO: enroll the credential
-                    },
-                    function (err) {
-                        $('main').prepend(
-                            '<div class="alert alert-warning" role="alert">'
-                            + err.message + '</div>');
-                    });
-            });
-        });
-    </script>
+    recaptchaVerifier.render()
+      .then(function (widgetId) {
+        window.recaptchaWidgetId = widgetId;
+      });
+
+    $(function () {
+      $('#register').on('click', function (event) {
+        firebase.auth().currentUser.multiFactor.getSession().then(function (multiFactorSession) {
+          // Specify the phone number and pass the MFA session.
+          var phoneInfoOptions = {
+            phoneNumber: $('#phone').val(),
+            session: multiFactorSession
+          };
+          var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+          // Send SMS verification code.
+          return phoneAuthProvider.verifyPhoneNumber(
+            phoneInfoOptions, window.recaptchaVerifier);
+        }).then(
+          function (verificationId) {
+            var verificationCode = window.prompt('Please enter the verification ' +
+              'code that was sent to your mobile device.');
+            // TODO: enroll the credential
+          },
+          function (err) {
+            $('main').prepend(
+              '<div class="alert alert-warning" role="alert">'
+              + err.message + '</div>');
+          });
+      });
+    });
+  </script>
 </body>
 
 </html>
