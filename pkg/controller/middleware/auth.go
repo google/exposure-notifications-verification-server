@@ -139,53 +139,6 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 	}
 }
 
-// RequireVerified requires a user to have verified their login email.
-func RequireVerified(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireVerified")
-
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			session := controller.SessionFromContext(ctx)
-			if session == nil {
-				logger.Errorw("session does not exist")
-				controller.MissingSession(w, r, h)
-				return
-			}
-
-			flash := controller.Flash(session)
-
-			user := controller.UserFromContext(ctx)
-			if user == nil {
-				// unauth, probably an error
-				return
-			}
-
-			m := controller.TemplateMapFromContext(ctx)
-
-			fbUser, err := client.GetUserByEmail(ctx, user.Email)
-			if err != nil {
-				delete(m, "currentUser") // Remove user from the template map.
-				logger.Debugw("firebase user does not exist")
-				flash.Error("That user does not exist.")
-				controller.ClearSessionFirebaseCookie(session)
-				controller.Unauthorized(w, r, h)
-				return
-			}
-			if !fbUser.EmailVerified {
-				delete(m, "currentUser") // Remove user from the template map.
-				logger.Debugw("user email not verified")
-				flash.Error("User email not verified.")
-				http.Redirect(w, r, "/login/verifyemail", http.StatusSeeOther)
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
 // RequireAdmin requires the current user is a global administrator. It must
 // come after RequireAuth so that a user is set on the context.
 func RequireAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
