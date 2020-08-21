@@ -8,8 +8,8 @@ ens://v?r=[region]&c=[verification code]
 
 ## Scheme semantics
 
-Send COVID-19 exposure notifications verifications code into a compatible
-mobile application or operating system for verificafication of a diagnosis
+Send COVID-19 exposure notifications verification codes into a compatible
+mobile application or operating system for verification of a diagnosis
 to share within the exposure notifications system.
 
 * `ens` : describes that the exposure notifications application to be opened.
