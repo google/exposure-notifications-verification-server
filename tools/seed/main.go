@@ -87,6 +87,7 @@ func realMain(ctx context.Context) error {
 
 	// Create a realm
 	realm1 := database.NewRealmWithDefaults("Narnia")
+	realm1.RegionCode = "US-PA"
 	if err := db.SaveRealm(realm1); err != nil {
 		return fmt.Errorf("failed to create realm: %v", realm1.ErrorMessages())
 	}
@@ -95,6 +96,7 @@ func realMain(ctx context.Context) error {
 	// Create another realm
 	realm2 := database.NewRealmWithDefaults("Wonderland")
 	realm2.AllowedTestTypes = database.TestTypeLikely | database.TestTypeConfirmed
+	realm2.RegionCode = "US-WA"
 	if err := db.SaveRealm(realm2); err != nil {
 		return fmt.Errorf("failed to create realm")
 	}

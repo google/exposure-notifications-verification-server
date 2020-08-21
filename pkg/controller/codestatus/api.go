@@ -36,8 +36,9 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.CheckCodeStatusResponse{
-				Claimed:            code.Claimed,
-				ExpiresAtTimestamp: code.ExpiresAt.UTC().Unix(),
+				Claimed:                code.Claimed,
+				ExpiresAtTimestamp:     code.ExpiresAt.UTC().Unix(),
+				LongExpiresAtTimestamp: code.LongExpiresAt.UTC().Unix(),
 			})
 	})
 }
