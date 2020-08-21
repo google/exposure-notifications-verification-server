@@ -25,7 +25,7 @@ to share within the exposure notifications system.
 
 Use URL encoding if applicable. This URI is intended to be sent over SMS. While
 there is no stricit limit on length, it is recommended that the greeting text
-combined with the URI not exceede 160 characters in total.
+combined with the URI not exceed 160 characters in total.
 
 ## Examples
 
