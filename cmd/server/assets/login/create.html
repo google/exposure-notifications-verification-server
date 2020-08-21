@@ -1,4 +1,4 @@
-{{define "login"}}
+{{define "login/create"}}
 <!doctype html>
 <html lang="en">
 
@@ -16,7 +16,7 @@
       <div class="d-flex w-100 justify-content-center align-self-center">
         <div class="col-sm-6">
           <div class="card shadow-sm">
-            <div class="card-header">Login</div>
+            <div class="card-header">New User</div>
             <div class="card-body">
               <form id="loginForm" action="/" method="POST">
                 <div class="form-group mb-2">
@@ -29,12 +29,8 @@
                     required />
                 </div>
 
-                <button type="submit" id="submit" class="btn btn-primary btn-block">Login</button>
+                <button type="submit" id="submit" class="btn btn-primary btn-block">Create</button>
               </form>
-              <div class="card-body">
-                <a class="card-link" href="login/create">New user</a>
-                <a class="card-link" href="legacylogin">Legacy login</a>
-              </div>
             </div>
           </div>
         </div>
@@ -52,15 +48,20 @@
       let $email = $('#email');
       let $password = $('#password');
 
+      let auth = firebase.auth()
+
       $form.on('submit', function (event) {
         event.preventDefault();
 
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
-        firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
+        let email = $email.val();
+        let pwd = $password.val();
+        auth.createUserWithEmailAndPassword(email, pwd)
           .then(function (userCredential) {
             clearExistingFlash();
+            return auth.signInWithEmailAndPassword(email, pwd);
           })
           .catch(function (error) {
             clearExistingFlash();
@@ -69,12 +70,11 @@
           });
       });
 
-      firebase.auth().onAuthStateChanged(function (user) {
+      auth.onAuthStateChanged(function (user) {
         if (!user) {
           return
         }
 
-        flash("Welcome, " + user.email, "success")
         user.getIdToken().then(idToken => {
           $.ajax({
             type: 'POST',
