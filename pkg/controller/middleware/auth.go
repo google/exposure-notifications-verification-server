@@ -29,6 +29,7 @@ import (
 
 	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/jinzhu/gorm"
 )
 
@@ -41,6 +42,9 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			m := controller.TemplateMapFromContext(ctx)
+			m["signOut"] = "true"
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
@@ -59,51 +63,8 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 				return
 			}
 
-			token, err := client.VerifySessionCookie(ctx, firebaseCookie)
-			if err != nil {
-				logger.Debugw("failed to verify firebase cookie", "error", err)
-				flash.Error("An error occurred trying to verify your credentials.")
-				controller.ClearSessionFirebaseCookie(session)
-				controller.Unauthorized(w, r, h)
-				return
-			}
-
-			emailRaw, ok := token.Claims["email"]
-			if !ok {
-				logger.Debugw("firebase token does not have an email")
-				flash.Error("An error occurred trying to verify your credentials.")
-				controller.ClearSessionFirebaseCookie(session)
-				controller.Unauthorized(w, r, h)
-				return
-			}
-
-			email, ok := emailRaw.(string)
-			if !ok {
-				logger.Debugw("firebase email is not a string")
-				flash.Error("An error occurred trying to verify your credentials.")
-				controller.ClearSessionFirebaseCookie(session)
-				controller.Unauthorized(w, r, h)
-				return
-			}
-
-			user, err := db.FindUserByEmail(email)
-			if err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					logger.Debugw("user does not exist")
-					flash.Error("That user does not exist.")
-					controller.ClearSessionFirebaseCookie(session)
-					controller.Unauthorized(w, r, h)
-					return
-				}
-
-				logger.Errorw("failed to find user", "error", err)
-				controller.ClearSessionFirebaseCookie(session)
-				controller.InternalError(w, r, h, err)
-				return
-			}
-
+			user := VerifyCookieAndUser(ctx, client, db, session, firebaseCookie)
 			if user == nil {
-				logger.Debugw("user does not exist")
 				controller.ClearSessionFirebaseCookie(session)
 				controller.Unauthorized(w, r, h)
 				return
@@ -127,7 +88,7 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 			}
 
 			// Save the user in the template map.
-			m := controller.TemplateMapFromContext(ctx)
+			delete(m, "signOut")
 			m["currentUser"] = user
 
 			// Save the user on the context.
@@ -137,6 +98,55 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// VerifyCookieAndUser verifies the cookie from the user and then matches it against the database.User
+// to ensure both exist.
+func VerifyCookieAndUser(ctx context.Context, client *auth.Client, db *database.Database, session *sessions.Session, cookie string) *database.User {
+	flash := controller.Flash(session)
+	logger := logging.FromContext(ctx).Named("middleware.VerifyCookieAndUser")
+
+	token, err := client.VerifySessionCookie(ctx, cookie)
+	if err != nil {
+		logger.Debugw("failed to verify firebase cookie", "error", err)
+		flash.Error("An error occurred trying to verify your credentials.")
+		return nil
+	}
+
+	emailRaw, ok := token.Claims["email"]
+	if !ok {
+		logger.Debugw("firebase token does not have an email")
+		flash.Error("An error occurred trying to verify your credentials.")
+		return nil
+	}
+
+	email, ok := emailRaw.(string)
+	if !ok {
+		logger.Debugw("firebase email is not a string")
+		flash.Error("An error occurred trying to verify your credentials.")
+		return nil
+	}
+
+	user, err := db.FindUserByEmail(email)
+	if err != nil {
+		controller.ClearSessionFirebaseCookie(session)
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Debugw("user does not exist")
+			flash.Error("That user does not exist.")
+			return nil
+		}
+
+		logger.Errorw("failed to find user", "error", err)
+		return nil
+	}
+
+	if user == nil {
+		logger.Debugw("user does not exist")
+		return nil
+	}
+
+	return user
 }
 
 // RequireAdmin requires the current user is a global administrator. It must
