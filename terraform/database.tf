@@ -23,7 +23,7 @@ resource "google_sql_database_instance" "db-inst" {
   project          = var.project
   region           = var.region
   database_version = "POSTGRES_12"
-  name             = var.database_name
+  name             = "${var.database_name}-${random_string.db-name.result}"
 
   settings {
     tier              = var.database_tier
