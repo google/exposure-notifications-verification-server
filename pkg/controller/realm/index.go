@@ -57,6 +57,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		// User must select their realm.
 		m := controller.TemplateMapFromContext(ctx)
 		m["realms"] = userRealms
-		c.h.RenderHTML(w, "select-realm", m)
+		c.h.RenderHTML(w, "realms/select", m)
 	})
 }

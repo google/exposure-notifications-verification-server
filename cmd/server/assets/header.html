@@ -19,6 +19,10 @@
     background-color: #0055b1;
   }
 
+  a.input-group-text:hover {
+    cursor: pointer;
+    text-decoration: none;
+  }
 </style>
 {{end}}
 
@@ -172,7 +176,7 @@
       $form.append($inputField);
 
       $form.appendTo('body').submit();
-    })
+    });
 
     // Add data-toggle-password to an element with the value pointing to the id
     // of an input[type="password"]. It will toggle/untoggle the value.
@@ -200,14 +204,26 @@
 
       let $this = $(e.currentTarget);
       let selector = $this.data('fillTarget');
+
       let value = $this.data('fillValue');
       let $target = $('#' + selector);
-
-      console.log($target);
-      console.log(value);
-
       $target.val(value);
-    })
+    });
+
+    $('a[data-copy]').click(function (e) {
+      e.preventDefault();
+
+      let $this = $(e.currentTarget);
+      let selector = $this.data('copyTarget');
+      let $target = $('#' + selector);
+
+      $target[0].focus();
+      $target[0].setSelectionRange(0, 99999);
+
+      document.execCommand('copy');
+      $this.tooltip('hide');
+      document.getSelection().removeAllRanges();
+    });
   });
 
   var $main = $('main');
