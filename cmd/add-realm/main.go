@@ -24,10 +24,10 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
 )
 
@@ -59,12 +59,12 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("--name must be passed and cannot be empty")
 	}
 
-	var cfg database.Config
-	if err := config.ProcessWith(ctx, &cfg, envconfig.OsLookuper()); err != nil {
-		return fmt.Errorf("failed to process config: %w", err)
+	cfg, err := config.NewToolConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to process environment: %w", err)
 	}
 
-	db, err := cfg.Load(ctx)
+	db, err := cfg.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
@@ -73,11 +73,51 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	realm := database.NewRealmWithDefaults(*nameFlag)
-	if err := db.SaveRealm(realm); err != nil {
-		return fmt.Errorf("failed to create realm: %w", err)
+	// Create the KMS client.
+	keys, err := gcpkms.New(ctx, &cfg.GCPKMS)
+	if err != nil {
+		return fmt.Errorf("unable to connect to key manager: %w", err)
 	}
 
-	logger.Infow("created realm", "realm", realm)
+	// See if realm exists.
+	realm, err := db.GetRealmByName(*nameFlag)
+	if err != nil {
+		logger.Infow("realm alredy exists, skipping create", "realm", realm)
+	}
+
+	if realm == nil {
+		logger.Info("creating realm")
+		realm = database.NewRealmWithDefaults(*nameFlag)
+		if err := db.SaveRealm(realm); err != nil {
+			return fmt.Errorf("failed to create realm: %w", err)
+		}
+		logger.Infow("created realm", "realm", realm)
+	}
+
+	// Ensure the realm has a signing key.
+	realmKeys, err := realm.ListSigningKeys(db)
+	if err != nil {
+		return fmt.Errorf("unable to list signing keys for realm: %w", err)
+	}
+	if len(realmKeys) > 0 {
+		logger.Infow("realm has signing keys already")
+		return nil
+	}
+
+	versions, err := keys.GetSigningKeyVersions(ctx, cfg.CertificateSigningKeyRing, realm.SigningKeyID())
+	if err != nil {
+		return fmt.Errorf("unable to list signing keys on kms: %w", err)
+	}
+	if len(versions) > 0 {
+		logger.Infow("relam has signing keys in the KMS", "keyRing", cfg.CertificateSigningKeyRing, "keyID", realm.SigningKeyID())
+		return nil
+	}
+
+	id, err := keys.CreateSigningKeyVersion(ctx, cfg.CertificateSigningKeyRing, realm.SigningKeyID())
+	if err != nil {
+		return fmt.Errorf("unable to create signing key for realm: %w", err)
+	}
+	logger.Infow("provisioned certificate signing key for realm", "keyID", id)
+
 	return nil
 }

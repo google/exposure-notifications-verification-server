@@ -93,7 +93,7 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	// Setup signer
-	signer, err := gcpkms.New(ctx)
+	signer, err := gcpkms.New(ctx, &config.GCPKMS)
 	if err != nil {
 		return fmt.Errorf("failed to crate key manager: %w", err)
 	}

@@ -18,9 +18,25 @@ package keys
 import (
 	"context"
 	"crypto"
+	"time"
 )
 
 // Manager represents the interface to the Key Management System.
 type Manager interface {
 	NewSigner(ctx context.Context, keyID string) (crypto.Signer, error)
+
+	CreateSigningKeyVersion(ctx context.Context, keyRing string, name string) (string, error)
+	GetSigningKeyVersions(ctx context.Context, keyRing string, name string) ([]SigningKeyVersion, error)
+
+	// TODO(mikehelmick): for rotation, implement destroy
+	// DestroySigningKeyVersion(ctx context.Context, keyID string) error
+}
+
+// SigningKeyVersion represents the necessary deatils that this application needs
+// to manage signing keys in an external KMS.
+type SigningKeyVersion interface {
+	KeyID() string
+	CreatedAt() time.Time
+	DetroyedAt() time.Time
+	GetSigner(ctx context.Context) (crypto.Signer, error)
 }

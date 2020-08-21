@@ -93,6 +93,10 @@ func NewRealmWithDefaults(name string) *Realm {
 	}
 }
 
+func (r *Realm) SigningKeyID() string {
+	return fmt.Sprintf("realm-%d", r.ID)
+}
+
 // BeforeSave runs validations. If there are errors, the save fails.
 func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	r.Name = strings.TrimSpace(r.Name)
@@ -209,6 +213,23 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		return nil, err
 	}
 	return provider, nil
+}
+
+func (r *Realm) ListSigningKeys(db *Database) ([]*SigningKey, error) {
+	var keys []*SigningKey
+	if err := db.db.
+		Unscoped().
+		Model(r).
+		Order("signing_keys.deleted_at DESC").
+		Order("signing_keys.created_at DESC").
+		Related(&keys).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return keys, nil
 }
 
 // ListAuthorizedApps gets all the authorized apps for the realm.
