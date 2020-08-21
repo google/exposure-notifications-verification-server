@@ -17,8 +17,6 @@
     <h1>SMS auth registration</h1>
     <p id="subtitle">Use this page to register a phone number for 2-factor authentication.</p>
 
-    <div id="recaptcha-container" class="center-block"></div>
-
     <div class="card mb-3">
       <div class="card-body">
         <form id="registerForm" action="/" method="POST">
@@ -53,6 +51,8 @@
         </form>
       </div>
     </div>
+
+    <div id="recaptcha-container" class="center-block"></div>
   </main>
 
   {{template "scripts" .}}
