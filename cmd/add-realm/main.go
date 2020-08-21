@@ -94,30 +94,9 @@ func realMain(ctx context.Context) error {
 		logger.Infow("created realm", "realm", realm)
 	}
 
-	// Ensure the realm has a signing key.
-	realmKeys, err := realm.ListSigningKeys(db)
-	if err != nil {
-		return fmt.Errorf("unable to list signing keys for realm: %w", err)
+	if err := realm.EnsureSigningKeyExists(ctx, db, keys); err != nil{
+		retun fmt.Errorf("error creating keys: %w", err)
 	}
-	if len(realmKeys) > 0 {
-		logger.Infow("realm has signing keys already")
-		return nil
-	}
-
-	versions, err := keys.GetSigningKeyVersions(ctx, cfg.CertificateSigningKeyRing, realm.SigningKeyID())
-	if err != nil {
-		return fmt.Errorf("unable to list signing keys on kms: %w", err)
-	}
-	if len(versions) > 0 {
-		logger.Infow("relam has signing keys in the KMS", "keyRing", cfg.CertificateSigningKeyRing, "keyID", realm.SigningKeyID())
-		return nil
-	}
-
-	id, err := keys.CreateSigningKeyVersion(ctx, cfg.CertificateSigningKeyRing, realm.SigningKeyID())
-	if err != nil {
-		return fmt.Errorf("unable to create signing key for realm: %w", err)
-	}
-	logger.Infow("provisioned certificate signing key for realm", "keyID", id)
 
 	return nil
 }

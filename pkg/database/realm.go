@@ -20,7 +20,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
 	"github.com/jinzhu/gorm"
 )
 
@@ -95,6 +99,35 @@ func NewRealmWithDefaults(name string) *Realm {
 
 func (r *Realm) SigningKeyID() string {
 	return fmt.Sprintf("realm-%d", r.ID)
+}
+
+func (r *Realm) EnsureSigningKeyExists(ctx context.Context, db *Database, keyRing string, keys keys.Manager) error {
+	logger := logging.FromContext(ctx)
+	// Ensure the realm has a signing key.
+	realmKeys, err := r.ListSigningKeys(db)
+	if err != nil {
+		return fmt.Errorf("unable to list signing keys for realm: %w", err)
+	}
+	if len(realmKeys) > 0 {
+		return nil
+	}
+
+	versions, err := keys.GetSigningKeyVersions(ctx, keyRing, r.SigningKeyID())
+	if err != nil {
+		return fmt.Errorf("unable to list signing keys on kms: %w", err)
+	}
+	for _, v := range versions {
+		if v.DetroyedAt().IsZero() {
+			return nil
+		}
+	}
+
+	id, err := keys.CreateSigningKeyVersion(ctx, keyRing, r.SigningKeyID())
+	if err != nil {
+		return fmt.Errorf("unable to create signing key for realm: %w", err)
+	}
+	logger.Infow("provisioned certificate signing key for realm", "keyID", id)
+	return nil
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
