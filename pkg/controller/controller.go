@@ -73,7 +73,7 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	case prefixInList(accept, ContentTypeHTML):
 		flash := Flash(SessionFromContext(r.Context()))
 		flash.Error("You are not authorized to perform that action!")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, "/signout", http.StatusSeeOther)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusUnauthorized, apiErrorUnauthorized)
 	default:
