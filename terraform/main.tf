@@ -36,6 +36,7 @@ resource "google_project_service" "services" {
   project = var.project
   for_each = toset([
     "cloudbuild.googleapis.com",
+    "cloudidentity.googleapis.com",
     "cloudkms.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "cloudscheduler.googleapis.com",
@@ -43,6 +44,7 @@ resource "google_project_service" "services" {
     "containerregistry.googleapis.com",
     "firebase.googleapis.com",
     "iam.googleapis.com",
+    "identitytoolkit.googleapis.com",
     "redis.googleapis.com",
     "run.googleapis.com",
     "secretmanager.googleapis.com",
@@ -125,6 +127,52 @@ resource "google_project_iam_member" "cloudbuild-deploy" {
 resource "google_app_engine_application" "app" {
   project     = data.google_project.project.project_id
   location_id = var.appengine_location
+}
+
+# Create a helper for generating the local environment configuration - this is
+# disabled by default because it includes sensitive information to the project.
+resource "local_file" "env" {
+  count = var.create_env_file == true ? 1 : 0
+
+  filename        = "${path.root}/.env"
+  file_permission = "0600"
+
+  sensitive_content = <<EOF
+export PROJECT_ID="${var.project}"
+
+export CSRF_AUTH_KEY="secret://${google_secret_manager_secret_version.csrf-token-version.id}"
+export COOKIE_KEYS="secret://${google_secret_manager_secret_version.cookie-hmac-key-version.id},secret://${google_secret_manager_secret_version.cookie-encryption-key-version.id}"
+
+# Note: these configurations assume you're using the Cloud SQL proxy!
+export DB_APIKEY_DATABASE_KEY="secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
+export DB_APIKEY_SIGNATURE_KEY="secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
+export DB_ENCRYPTION_KEY="${google_kms_crypto_key.database-encrypter.self_link}"
+export DB_HOST="127.0.0.1"
+export DB_PORT="5432"
+export DB_NAME="${google_sql_database.db.name}"
+export DB_PASSWORD="secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
+export DB_SSLMODE="disable"
+export DB_USER="${google_sql_user.user.name}"
+export DB_VERIFICATION_CODE_DATABASE_KEY="secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
+
+export FIREBASE_API_KEY="${data.google_firebase_web_app_config.default.api_key}"
+export FIREBASE_APP_ID="${google_firebase_web_app.default.app_id}"
+export FIREBASE_AUTH_DOMAIN="${data.google_firebase_web_app_config.default.auth_domain}"
+export FIREBASE_DATABASE_URL="${data.google_firebase_web_app_config.default.database_url}"
+export FIREBASE_MEASUREMENT_ID="${data.google_firebase_web_app_config.default.measurement_id}"
+export FIREBASE_MESSAGE_SENDER_ID="${data.google_firebase_web_app_config.default.messaging_sender_id}"
+export FIREBASE_PROJECT_ID="${google_firebase_web_app.default.project}"
+export FIREBASE_STORAGE_BUCKET="${data.google_firebase_web_app_config.default.storage_bucket}"
+
+export RATE_LIMIT_TYPE="REDIS"
+export RATE_LIMIT_TOKENS="60"
+export RATE_LIMIT_INTERVAL="1m"
+export REDIS_HOST="${google_redis_instance.cache.host}"
+export REDIS_PORT="${google_redis_instance.cache.port}"
+
+export CERTIFICATE_SIGNING_KEY="${trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
+export TOKEN_SIGNING_KEY="${trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
+EOF
 }
 
 output "project_id" {
