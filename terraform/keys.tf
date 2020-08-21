@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+resource "random_string" "kms" {
+  length  = 5
+  special = false
+  number  = false
+  upper   = false
+}
+
 resource "google_kms_key_ring" "verification" {
   project  = var.project
-  name     = "verification"
+  name     = "verification-${random_string.kms.result}"
   location = var.kms_location
 
   depends_on = [
@@ -25,7 +32,7 @@ resource "google_kms_key_ring" "verification" {
 // For signing certificates
 resource "google_kms_crypto_key" "certificate-signer" {
   key_ring = google_kms_key_ring.verification.self_link
-  name     = "certificate-signer"
+  name     = "certificate-signer-${random_string.kms.result}"
   purpose  = "ASYMMETRIC_SIGN"
 
   version_template {
@@ -41,7 +48,7 @@ data "google_kms_crypto_key_version" "certificate-signer-version" {
 // For signing tokens
 resource "google_kms_crypto_key" "token-signer" {
   key_ring = google_kms_key_ring.verification.self_link
-  name     = "token-signer"
+  name     = "token-signer-${random_string.kms.result}"
   purpose  = "ASYMMETRIC_SIGN"
 
   version_template {
@@ -57,7 +64,7 @@ data "google_kms_crypto_key_version" "token-signer-version" {
 // For application-layer encryption
 resource "google_kms_crypto_key" "database-encrypter" {
   key_ring = google_kms_key_ring.verification.self_link
-  name     = "database-encrypter"
+  name     = "database-encrypter-${random_string.kms.result}"
   purpose  = "ENCRYPT_DECRYPT"
 
   rotation_period = "2592000s" // 30 days
