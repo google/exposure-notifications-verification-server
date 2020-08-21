@@ -176,7 +176,7 @@
       $form.append($inputField);
 
       $form.appendTo('body').submit();
-    })
+    });
 
     // Add data-toggle-password to an element with the value pointing to the id
     // of an input[type="password"]. It will toggle/untoggle the value.
@@ -206,10 +206,22 @@
       let selector = $this.data('fillTarget');
       let value = $this.data('fillValue');
       let $target = $('#' + selector);
+    });
 
+    $('a[data-copy]').click(function (e) {
+      e.preventDefault();
 
-      $target.val(value);
-    })
+      let $this = $(e.currentTarget);
+      let selector = $this.data('copyTarget');
+      let $target = $('#' + selector);
+
+      $target[0].focus();
+      $target[0].setSelectionRange(0, 99999);
+
+      document.execCommand('copy');
+      $this.tooltip('hide');
+      document.getSelection().removeAllRanges();
+    });
   });
 
   var $main = $('main');
