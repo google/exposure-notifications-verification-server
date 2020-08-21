@@ -43,9 +43,6 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			m := controller.TemplateMapFromContext(ctx)
-			m["signOut"] = "true"
-
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
 				logger.Errorw("session does not exist")
@@ -88,7 +85,7 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 			}
 
 			// Save the user in the template map.
-			delete(m, "signOut")
+			m := controller.TemplateMapFromContext(ctx)
 			m["currentUser"] = user
 
 			// Save the user on the context.
