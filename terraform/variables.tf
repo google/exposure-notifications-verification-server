@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+variable "create_env_file" {
+  type    = bool
+  default = false
+
+  description = "Create a .env file in the module directory with variables set to the configuration values."
+}
+
 variable "project" {
   type = string
 }
@@ -145,6 +152,10 @@ terraform {
     google-beta = {
       source  = "hashicorp/google-beta"
       version = "~> 3.35"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 1.4"
     }
     null = {
       source  = "hashicorp/null"
