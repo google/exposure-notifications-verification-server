@@ -99,14 +99,13 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 // VerifyCookieAndUser verifies the cookie from the user and then matches it against the database.User
 // to ensure both exist.
 func VerifyCookieAndUser(ctx context.Context, client *auth.Client, db *database.Database, session *sessions.Session, cookie string) *database.User {
-	user := verifyCookieAndUserHelper(ctx, client, db, session, cookie)
-	if user == nil {
-		controller.ClearSessionFirebaseCookie(session)
-	}
-	return user
-}
+	var user *database.User
+	defer func() {
+		if user == nil {
+			controller.ClearSessionFirebaseCookie(session)
+		}
+	}()
 
-func verifyCookieAndUserHelper(ctx context.Context, client *auth.Client, db *database.Database, session *sessions.Session, cookie string) *database.User {
 	flash := controller.Flash(session)
 	logger := logging.FromContext(ctx).Named("middleware.VerifyCookieAndUser")
 
@@ -131,7 +130,7 @@ func verifyCookieAndUserHelper(ctx context.Context, client *auth.Client, db *dat
 		return nil
 	}
 
-	user, err := db.FindUserByEmail(email)
+	user, err = db.FindUserByEmail(email)
 	if err != nil {
 		controller.ClearSessionFirebaseCookie(session)
 
