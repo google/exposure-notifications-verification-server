@@ -62,7 +62,6 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 
 			user := VerifyCookieAndUser(ctx, client, db, session, firebaseCookie)
 			if user == nil {
-				controller.ClearSessionFirebaseCookie(session)
 				controller.Unauthorized(w, r, h)
 				return
 			}
@@ -100,6 +99,14 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 // VerifyCookieAndUser verifies the cookie from the user and then matches it against the database.User
 // to ensure both exist.
 func VerifyCookieAndUser(ctx context.Context, client *auth.Client, db *database.Database, session *sessions.Session, cookie string) *database.User {
+	user := verifyCookieAndUserHelper(ctx, client, db, session, cookie)
+	if user == nil {
+		controller.ClearSessionFirebaseCookie(session)
+	}
+	return user
+}
+
+func verifyCookieAndUserHelper(ctx context.Context, client *auth.Client, db *database.Database, session *sessions.Session, cookie string) *database.User {
 	flash := controller.Flash(session)
 	logger := logging.FromContext(ctx).Named("middleware.VerifyCookieAndUser")
 
@@ -135,11 +142,6 @@ func VerifyCookieAndUser(ctx context.Context, client *auth.Client, db *database.
 		}
 
 		logger.Errorw("failed to find user", "error", err)
-		return nil
-	}
-
-	if user == nil {
-		logger.Debugw("user does not exist")
 		return nil
 	}
 
