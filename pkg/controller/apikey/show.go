@@ -16,6 +16,7 @@ package apikey
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -66,10 +67,14 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		// TODO(sethvargo): support configurable time ranges
-		now := time.Now().UTC()
-		stats, err := authApp.Stats(c.db, now.Add(-7*24*time.Hour), now)
-		if err != nil {
+		// Get and cache the stats for this user.
+		var stats []*database.AuthorizedAppStats
+		cacheKey := fmt.Sprintf("stats:app:%d:%d", realm.ID, authApp.ID)
+		if err := c.cache.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
+			now := time.Now().UTC()
+			past := now.Add(-14 * 24 * time.Hour)
+			return authApp.Stats(c.db, past, now)
+		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}

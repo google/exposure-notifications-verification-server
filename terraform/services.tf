@@ -25,6 +25,11 @@ locals {
     COOKIE_KEYS = "secret://${google_secret_manager_secret_version.cookie-hmac-key-version.id},secret://${google_secret_manager_secret_version.cookie-encryption-key-version.id}"
   }
 
+  cache_config = {
+    CACHE_TYPE          = "REDIS"
+    CACHE_REDIS_ADDRESS = "${google_redis_instance.cache.host}:${google_redis_instance.cache.port}"
+  }
+
   database_config = {
     DB_APIKEY_DATABASE_KEY            = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
     DB_APIKEY_SIGNATURE_KEY           = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"

@@ -18,6 +18,7 @@ package user
 import (
 	"context"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -30,17 +31,19 @@ import (
 // Controller manages users
 type Controller struct {
 	config *config.ServerConfig
+	cache  cache.Cacher
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
 // New creates a new controller for managing users.
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, cache cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
 		config: config,
+		cache:  cache,
 		db:     db,
 		h:      h,
 		logger: logger,
