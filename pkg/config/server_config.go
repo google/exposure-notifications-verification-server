@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
@@ -35,6 +36,7 @@ type ServerConfig struct {
 	Firebase      FirebaseConfig
 	Database      database.Config
 	Observability observability.Config
+	Cache         cache.Config `env:",prefix=CACHE_"`
 
 	Port string `env:"PORT,default=8080"`
 

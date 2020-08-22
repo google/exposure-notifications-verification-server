@@ -26,8 +26,9 @@ var _ Cacher = (*inMemory)(nil)
 // development and testing, but isn't recommended in production as the caches
 // aren't shared among instances.
 type inMemory struct {
-	data map[string]*item
-	mu   sync.RWMutex
+	prefix string
+	data   map[string]*item
+	mu     sync.RWMutex
 
 	stopCh chan struct{}
 }
@@ -38,6 +39,9 @@ type item struct {
 }
 
 type InMemoryConfig struct {
+	// Prefix is a custom value to prefix keys in shared systems.
+	Prefix string
+
 	// GCInterval is how frequently to purge stale entries from the cache.
 	GCInterval time.Duration
 }
@@ -54,6 +58,7 @@ func NewInMemory(i *InMemoryConfig) (Cacher, error) {
 	}
 
 	c := &inMemory{
+		prefix: i.Prefix,
 		data:   make(map[string]*item),
 		stopCh: make(chan struct{}),
 	}
@@ -68,6 +73,10 @@ func NewInMemory(i *InMemoryConfig) (Cacher, error) {
 // value is inserted, not the time the function is called.
 func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
 	now := time.Now().UnixNano()
+
+	if c.prefix != "" {
+		key = c.prefix + key
+	}
 
 	// Try a read-only lock first
 	c.mu.RLock()
@@ -126,8 +135,12 @@ func (c *inMemory) Write(_ context.Context, key string, value interface{}, ttl t
 
 	if c.data == nil {
 		return ErrStopped
-
 	}
+
+	if c.prefix != "" {
+		key = c.prefix + key
+	}
+
 	c.data[key] = &item{
 		value:   value,
 		expires: time.Now().UnixNano() + int64(ttl),
@@ -144,6 +157,10 @@ func (c *inMemory) Read(_ context.Context, key string, out interface{}) error {
 	if c.data == nil {
 		c.mu.RUnlock()
 		return ErrStopped
+	}
+
+	if c.prefix != "" {
+		key = c.prefix + key
 	}
 
 	if i, ok := c.data[key]; ok {
@@ -168,6 +185,10 @@ func (c *inMemory) Delete(_ context.Context, key string) error {
 
 	if c.data == nil {
 		return ErrStopped
+	}
+
+	if c.prefix != "" {
+		key = c.prefix + key
 	}
 
 	delete(c.data, key)

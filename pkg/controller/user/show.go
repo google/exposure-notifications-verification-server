@@ -16,6 +16,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -53,10 +54,14 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		// TODO(sethvargo): support configurable time ranges
-		now := time.Now().UTC()
-		stats, err := user.Stats(c.db, realm.ID, now.Add(-7*24*time.Hour), now)
-		if err != nil {
+		// Get and cache the stats for this user.
+		var stats []*database.UserStats
+		cacheKey := fmt.Sprintf("stats:user:%d:%d", realm.ID, user.ID)
+		if err := c.cache.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
+			now := time.Now().UTC()
+			past := now.Add(-14 * 24 * time.Hour)
+			return user.Stats(c.db, realm.ID, past, now)
+		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
