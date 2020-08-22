@@ -53,8 +53,6 @@
 
     firebase.auth().onAuthStateChanged(function (user) {
       if (!user) {
-        // TODO(whaught): we we seem to get here on first login.
-        // Investigate why the user is not populated properly
         window.location.assign("/signout");
         return
       }

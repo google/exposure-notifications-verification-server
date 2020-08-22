@@ -21,15 +21,9 @@
 
   <script type="text/javascript">
     var uiConfig = {
-      'callbacks': {
-        // Called when the user has been successfully signed in.
-        'signInSuccess': function (user, credential, redirectUrl) {
-          setSession(user)
-          return false
-        }
-      },
-      'credentialHelper': firebaseui.auth.CredentialHelper.NONE,
-      'signInOptions': [
+      signInSuccessUrl: "/",
+      credentialHelper: firebaseui.auth.CredentialHelper.NONE,
+      signInOptions: [
         firebase.auth.EmailAuthProvider.PROVIDER_ID
       ],
 
@@ -45,7 +39,7 @@
     var ui = new firebaseui.auth.AuthUI(firebase.auth());
 
     function getCookie(name) {
-      var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+      let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
       return v ? v[2] : null;
     }
 
