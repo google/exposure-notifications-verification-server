@@ -32,7 +32,8 @@ var _ Cacher = (*redis)(nil)
 // redis is an shared cache implementation backed by Redis. It's ideal for
 // production installations since the cache is shared among all services.
 type redis struct {
-	pool *redigo.Pool
+	pool   *redigo.Pool
+	prefix string
 
 	stopped uint32
 	stopCh  chan struct{}
@@ -78,6 +79,7 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 			MaxIdle:   0,
 			MaxActive: 0,
 		},
+		prefix: i.Prefix,
 		stopCh: make(chan struct{}),
 	}
 
@@ -91,6 +93,10 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) (retErr error) {
 	if c.isStopped() {
 		return ErrStopped
+	}
+
+	if c.prefix != "" {
+		key = c.prefix + key
 	}
 
 	fn := func(conn redigo.Conn) error {
@@ -169,6 +175,10 @@ func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl ti
 		return ErrStopped
 	}
 
+	if c.prefix != "" {
+		key = c.prefix + key
+	}
+
 	return c.withConn(func(conn redigo.Conn) error {
 		var encoded bytes.Buffer
 		if err := gob.NewEncoder(&encoded).Encode(value); err != nil {
@@ -187,6 +197,10 @@ func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl ti
 func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
 	if c.isStopped() {
 		return ErrStopped
+	}
+
+	if c.prefix != "" {
+		key = c.prefix + key
 	}
 
 	return c.withConn(func(conn redigo.Conn) error {
@@ -211,6 +225,10 @@ func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
 func (c *redis) Delete(ctx context.Context, key string) error {
 	if c.isStopped() {
 		return ErrStopped
+	}
+
+	if c.prefix != "" {
+		key = c.prefix + key
 	}
 
 	return c.withConn(func(conn redigo.Conn) error {
