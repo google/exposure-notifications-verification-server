@@ -20,12 +20,16 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
+	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/jinzhu/gorm"
+	"github.com/sethvargo/go-retry"
 	"go.uber.org/zap"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -146,6 +150,50 @@ func (db *Database) Close() error {
 // Ping attempts a connection and closes it to the database.
 func (db *Database) Ping(ctx context.Context) error {
 	return db.db.DB().PingContext(ctx)
+}
+
+// do executes a gorm query, handling connection resets and intermittent
+// failures.
+func (db *Database) do(fn func() error) error {
+	ctx := context.Background()
+
+	log.Printf("\n\n1\n\n")
+
+	b, err := retry.NewFibonacci(250 * time.Millisecond)
+	if err != nil {
+		return fmt.Errorf("failed to create retry: %w", err)
+	}
+	b = retry.WithMaxDuration(5*time.Second, b)
+
+	return retry.Do(ctx, b, func(ctx context.Context) error {
+		log.Printf("\n\n2\n\n")
+
+		if err := fn(); err != nil {
+			log.Printf("\n\n3: %#v\n\n", err)
+
+			// This is really annoying, but gorm swallows the actual error type, so we
+			// have to drop back to strings :(
+			if strings.Contains(err.Error(), "connection reset by peer") ||
+				strings.Contains(err.Error(), "connection refused") {
+				// Close existing connection
+				if err := db.db.Close(); err != nil {
+					return fmt.Errorf("failed to close database to reconnect: %w", err)
+				}
+
+				// Reconnect
+				if err := db.Open(context.Background()); err != nil {
+					return fmt.Errorf("failed to re-open database connection: %w", err)
+				}
+
+				// Try again
+				return retry.RetryableError(err)
+			}
+
+			return err
+		}
+
+		return nil
+	})
 }
 
 // IsNotFound determines if an error is a record not found.

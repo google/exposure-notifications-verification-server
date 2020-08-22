@@ -94,7 +94,9 @@ func (a *AuthorizedApp) IsDeviceType() bool {
 // Realm returns the associated realm for this app.
 func (a *AuthorizedApp) Realm(db *Database) (*Realm, error) {
 	var realm Realm
-	if err := db.db.Model(a).Related(&realm).Error; err != nil {
+	if err := db.do(func() error {
+		return db.db.Model(a).Related(&realm).Error
+	}); err != nil {
 		return nil, err
 	}
 	return &realm, nil
