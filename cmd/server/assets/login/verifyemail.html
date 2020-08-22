@@ -52,16 +52,19 @@
     });
 
     firebase.auth().onAuthStateChanged(function (user) {
-      if (user) {
-        if (user.emailVerified) {
-          $subtitle.text("Welcome, " + user.email + ". Your email has already been verified.");
-          $skip.text("Continue")
-        } else {
-          $subtitle.text("Welcome, " + user.email + ". Please verify your email to continue.");
-          $verify.prop('disabled', false);
-        }
-      } else {
+      if (!user) {
+        // TODO(whaught): we we seem to get here on first login.
+        // Investigate why the user is not populated properly
         window.location.assign("/signout");
+        return
+      }
+
+      if (user.emailVerified) {
+        $subtitle.text("Welcome, " + user.email + ". Your email has already been verified.");
+        $skip.text("Continue")
+      } else {
+        $subtitle.text("Welcome, " + user.email + ". Please verify your email to continue.");
+        $verify.prop('disabled', false);
       }
     });
   </script>
