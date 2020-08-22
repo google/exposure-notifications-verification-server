@@ -19,6 +19,8 @@
 *.terraform/
 *.tfvars
 terraform/state.tf
+terraform/override.tf
+terraform/*_override.tf
 
 # Testing things
 local/
