@@ -142,7 +142,7 @@ func realMain(ctx context.Context) error {
 
 		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
 		if err != nil {
-			return fmt.Errorf("error issuing verification code: %w", err)
+			return fmt.Errorf("error check code status: %w", err)
 		} else if codeStatus.Error != "" {
 			return fmt.Errorf("issue API Error: %+v", codeStatus)
 		}
