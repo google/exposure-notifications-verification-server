@@ -116,29 +116,7 @@
         if (!user) {
           return
         }
-
-        user.getIdToken().then(idToken => {
-          $.ajax({
-            type: 'POST',
-            url: '/session',
-            data: { idToken: idToken },
-            headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
-            contentType: 'application/x-www-form-urlencoded',
-            success: function (returnData) {
-              // The user successfully signed in, redirect to realm selection.
-              window.location.assign('/realm');
-            },
-            error: function (xhr, status, e) {
-              // There was an error finding the user. Redirect to the
-              // signout page to clear the firebase cookie and any session
-              // data.
-              //
-              // The flash data may have more detailed error messages, which
-              // will be displayed on the signout page.
-              window.location.assign("/signout");
-            }
-          })
-        });
+        setSession(user)
       });
     });
   </script>
