@@ -809,6 +809,25 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00032-RegionCodeSize",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: increasing region code sizes")
+				sqls := []string{
+					"ALTER TABLE realms ALTER COLUMN region_code TYPE varchar(10)",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 
