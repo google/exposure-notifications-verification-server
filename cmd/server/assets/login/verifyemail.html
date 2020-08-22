@@ -24,6 +24,8 @@
             <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
           </div>
         </div>
+
+        <a id="skip" class="card-link" href="/">Continue</a>
       </div>
     </div>
   </main>
@@ -33,12 +35,15 @@
   <script>
     let $verify = $('#verify');
     let $subtitle = $('#subtitle');
+    let $skip = $('#skip');
+
     $(function () {
       $verify.on('click', function (event) {
         let user = firebase.auth().currentUser
         if (!user.emailVerified) {
           user.sendEmailVerification().then(function () {
-            main.prepend('<div class="alert alert-warning" role="alert" id="message">Verification email sent.</div>')
+            clearExistingFlash();
+            flash("Verification email sent.", "success");
             $verify.prop('disabled', true);
           }
           );
@@ -50,12 +55,13 @@
       if (user) {
         if (user.emailVerified) {
           $subtitle.text("Welcome, " + user.email + ". Your email has already been verified.");
+          $skip.text("Continue")
         } else {
           $subtitle.text("Welcome, " + user.email + ". Please verify your email to continue.");
           $verify.prop('disabled', false);
         }
       } else {
-        window.location.assign("/");
+        window.location.assign("/signout");
       }
     });
   </script>

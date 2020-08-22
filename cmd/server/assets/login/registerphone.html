@@ -49,6 +49,8 @@
             </div>
           </div>
         </form>
+
+        <a id="skip" class="card-link" href="/realm">Skip for now</a>
       </div>
     </div>
 
@@ -73,6 +75,7 @@
       let $submit = $('#register');
       let $phone = $('#phone');
       let $form = $('#registerForm');
+      let $skip = $('#skip');
 
       $form.on('submit', function (event) {
         event.preventDefault();
@@ -100,7 +103,8 @@
           return user.multiFactor.enroll(multiFactorAssertion, $displayName.val());
         }).then(function () {
           clearExistingFlash();
-          flash("SMS authentication enrolled successfully", "success");
+          flash("SMS authentication enrolled successfully.", "success");
+          $skip.text("Continue")
         }).catch(function (err) {
           clearExistingFlash();
           flash(err.message);
