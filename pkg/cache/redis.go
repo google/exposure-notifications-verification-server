@@ -103,14 +103,14 @@ func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time
 	}
 
 	fn := func(conn redigo.Conn) (io.Reader, error) {
-		cached, err := redigo.Bytes(conn.Do("GET", key))
+		cached, err := redigo.String(conn.Do("GET", key))
 		if err != nil && !errors.Is(err, redigo.ErrNil) {
 			return nil, fmt.Errorf("failed to GET key: %w", err)
 		}
 
 		// Found a value
-		if len(cached) > 0 {
-			return bytes.NewReader(cached), nil
+		if cached != "" {
+			return strings.NewReader(cached), nil
 		}
 
 		// No value found
@@ -136,7 +136,7 @@ func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time
 			return nil, fmt.Errorf("failed to MULTI: %w", err)
 		}
 
-		if _, err := conn.Do("PSETEX", key, int64(ttl.Milliseconds()), encoded.Bytes()); err != nil {
+		if _, err := conn.Do("PSETEX", key, int64(ttl.Milliseconds()), encoded.String()); err != nil {
 			err = fmt.Errorf("failed to PSETEX: %w", err)
 
 			if _, derr := conn.Do("DISCARD"); derr != nil {
@@ -197,7 +197,7 @@ func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl ti
 			return fmt.Errorf("failed to encode value: %w", err)
 		}
 
-		if _, err := redigo.String(conn.Do("PSETEX", key, int64(ttl.Milliseconds()), encoded.Bytes())); err != nil {
+		if _, err := redigo.String(conn.Do("PSETEX", key, int64(ttl.Milliseconds()), encoded.String())); err != nil {
 			return fmt.Errorf("failed to PSETEX value: %w", err)
 		}
 		return nil
