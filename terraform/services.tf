@@ -69,7 +69,7 @@ locals {
   signing_config = {
     CERTIFICATE_SIGNING_KEY     = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
     TOKEN_SIGNING_KEY           = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
-    CERTIFICATE_SIGNING_KEYRING = data.google_kms_key_ring.verification.self_link
+    CERTIFICATE_SIGNING_KEYRING = google_kms_key_ring.verification.self_link
   }
 }
 
