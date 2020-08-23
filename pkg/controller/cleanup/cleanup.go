@@ -25,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"go.uber.org/zap"
@@ -34,18 +33,16 @@ import (
 // Controller is a controller for the cleanup service.
 type Controller struct {
 	config *config.CleanupConfig
-	cache  *cache.Cache
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
 // New creates a new cleanup controller.
-func New(ctx context.Context, config *config.CleanupConfig, cache *cache.Cache, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.CleanupConfig, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 	return &Controller{
 		config: config,
-		cache:  cache,
 		db:     db,
 		h:      h,
 		logger: logger,
@@ -53,38 +50,18 @@ func New(ctx context.Context, config *config.CleanupConfig, cache *cache.Cache, 
 }
 
 func (c *Controller) shouldCleanup() error {
-	cStatCache, err := c.cache.WriteThruLookup(database.CleanupName,
-		func() (interface{}, error) {
-			cState, err := c.db.FindCleanupStatus(database.CleanupName)
-			if err != nil {
-				return nil, err
-			}
-			return cState, err
-		})
+	cStat, err := c.db.CreateCleanup(database.CleanupName)
 	if err != nil {
-		// in case this was not found, create a new record.
-		cStatCache, err = c.db.CreateCleanup(database.CleanupName)
-		if err != nil {
-			return fmt.Errorf("error attempting to backfill cleanup config: %v", err)
-		}
-	}
-
-	cStat, ok := cStatCache.(*database.CleanupStatus)
-	if !ok {
-		return fmt.Errorf("cleanup cache is typed incorrectly")
+		return fmt.Errorf("failed to create cleanup: %w", err)
 	}
 
 	if cStat.NotBefore.After(time.Now().UTC()) {
-		return fmt.Errorf("skipping cleanup. no cleanup before %v", cStat.NotBefore)
+		return fmt.Errorf("skipping cleanup, no cleanup before %v", cStat.NotBefore)
 	}
 
 	// Attempt to advance the generation.
-	cStat, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod)
-	if err != nil {
+	if _, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod); err != nil {
 		return fmt.Errorf("unable to lock cleanup: %v", err)
-	}
-	if err := c.cache.Set(database.CleanupName, cStat); err != nil {
-		return fmt.Errorf("failed to set cache: %w", err)
 	}
 	return nil
 }
