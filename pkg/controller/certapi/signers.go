@@ -41,7 +41,7 @@ func (c *Controller) getSignerForRealm(ctx context.Context, authApp *database.Au
 			}
 
 			if !realm.UseRealmCertificateKey {
-				// This realm is using the sytem key.
+				// This realm is using the system key.
 				signer, err := c.kms.NewSigner(ctx, c.config.VerificateSettings.CertificateSigningKey)
 				if err != nil {
 					return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %v: %w", sRealmID, err)

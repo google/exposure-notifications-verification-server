@@ -83,7 +83,7 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 	signingKeyManager, ok := keyManager.(keys.SigningKeyManagement)
 	if !ok {
 		signingKeyManager = nil
-		logger.Errorf("key manager does not support the keys.SigningKeyManagement interface, falling back to single verificaiton signing key")
+		logger.Errorf("key manager does not support the keys.SigningKeyManagement interface, falling back to single verification signing key")
 	}
 
 	// If the key manager is in-memory, accept the key as a base64-encoded
