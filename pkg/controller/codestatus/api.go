@@ -32,6 +32,7 @@ func (c *Controller) HandleCheckCodeStatus() http.Handler {
 		code, errCode, err := c.CheckCodeStatus(r, request.UUID)
 		if err != nil {
 			c.h.RenderJSON(w, errCode, err)
+			return
 		}
 
 		c.h.RenderJSON(w, http.StatusOK,
