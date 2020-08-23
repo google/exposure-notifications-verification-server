@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package certapi implements the token + TEK verification API.
+// Package keyutils provides helpers for working with ECDSA public keys.
 package keyutils
 
 import (
