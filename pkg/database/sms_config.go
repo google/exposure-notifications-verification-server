@@ -15,10 +15,6 @@
 package database
 
 import (
-	"context"
-	"fmt"
-	"time"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
@@ -41,33 +37,9 @@ type SMSConfig struct {
 
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
-	TwilioAuthToken                string `gorm:"type:varchar(250)" json:"-"`
-	TwilioAuthTokenPlaintextCache  string `gorm:"-" json:"-"`
-	TwilioAuthTokenCiphertextCache string `gorm:"-" json:"-"`
-}
-
-// SMSProvider gets the SMS provider for the given realm. The values are
-// cached.
-func (r *SMSConfig) SMSProvider(db *Database) (sms.Provider, error) {
-	ctx := context.Background()
-	key := fmt.Sprintf("sms_configs:provider:%v", r.ID)
-
-	var provider sms.Provider
-	if err := db.cacher.Fetch(ctx, key, &provider, 30*time.Minute, func() (interface{}, error) {
-		provider, err := sms.ProviderFor(ctx, &sms.Config{
-			ProviderType:     r.ProviderType,
-			TwilioAccountSid: r.TwilioAccountSid,
-			TwilioAuthToken:  r.TwilioAuthToken,
-			TwilioFromNumber: r.TwilioFromNumber,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return provider, nil
-	}); err != nil {
-		return nil, err
-	}
-	return provider, nil
+	TwilioAuthToken                string `gorm:"type:varchar(250)"`
+	TwilioAuthTokenPlaintextCache  string `gorm:"-"`
+	TwilioAuthTokenCiphertextCache string `gorm:"-"`
 }
 
 // SaveSMSConfig creates or updates an SMS configuration record.

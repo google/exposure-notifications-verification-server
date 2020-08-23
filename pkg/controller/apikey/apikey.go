@@ -30,18 +30,18 @@ import (
 
 type Controller struct {
 	config *config.ServerConfig
-	cache  cache.Cacher
+	cacher cache.Cacher
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-func New(ctx context.Context, config *config.ServerConfig, cache cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("apikey")
 
 	return &Controller{
 		config: config,
-		cache:  cache,
+		cacher: cacher,
 		db:     db,
 		h:      h,
 		logger: logger,

@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
@@ -93,7 +94,9 @@ func realMain(ctx context.Context) error {
 	sessions.Options.SameSite = http.SameSiteStrictMode
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, "server:", &config.Cache)
+	// TODO(sethvargo): switch to HMAC
+	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
+		cache.HashKeyFunc(sha1.New), cache.PrefixKeyFunc("server:")))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}

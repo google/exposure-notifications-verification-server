@@ -30,7 +30,7 @@ const (
 
 // Config represents configuration for a cacher.
 type Config struct {
-	Type CacherType `env:"TYPE, default=NOOP"`
+	Type CacherType `env:"TYPE, default=IN_MEMORY"`
 
 	// Redis options
 	RedisAddress  string `env:"REDIS_ADDRESS"`
@@ -38,17 +38,17 @@ type Config struct {
 	RedisPassword string `env:"REDIS_PASSWORD"`
 }
 
-func CacherFor(ctx context.Context, prefix string, c *Config) (Cacher, error) {
+func CacherFor(ctx context.Context, c *Config, keyFunc KeyFunc) (Cacher, error) {
 	switch typ := c.Type; typ {
 	case TypeNoop:
 		return NewNoop()
 	case TypeInMemory:
 		return NewInMemory(&InMemoryConfig{
-			Prefix: prefix,
+			KeyFunc: keyFunc,
 		})
 	case TypeRedis:
 		return NewRedis(&RedisConfig{
-			Prefix:   prefix,
+			KeyFunc:  keyFunc,
 			Address:  c.RedisAddress,
 			Username: c.RedisUsername,
 			Password: c.RedisPassword,

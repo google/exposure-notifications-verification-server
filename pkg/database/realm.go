@@ -15,6 +15,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -196,7 +197,18 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		}
 		return nil, err
 	}
-	return smsConfig.SMSProvider(db)
+
+	ctx := context.Background()
+	provider, err := sms.ProviderFor(ctx, &sms.Config{
+		ProviderType:     smsConfig.ProviderType,
+		TwilioAccountSid: smsConfig.TwilioAccountSid,
+		TwilioAuthToken:  smsConfig.TwilioAuthToken,
+		TwilioFromNumber: smsConfig.TwilioFromNumber,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return provider, nil
 }
 
 // ListAuthorizedApps gets all the authorized apps for the realm.

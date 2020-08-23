@@ -91,8 +91,6 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 
 	// build database config.
 	config := Config{
-		CacheTTL: 30 * time.Second,
-
 		APIKeyDatabaseHMAC:  generateKey(tb, 128),
 		APIKeySignatureHMAC: generateKey(tb, 128),
 

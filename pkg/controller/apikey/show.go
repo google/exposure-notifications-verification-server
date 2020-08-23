@@ -70,7 +70,7 @@ func (c *Controller) HandleShow() http.Handler {
 		// Get and cache the stats for this user.
 		var stats []*database.AuthorizedAppStats
 		cacheKey := fmt.Sprintf("stats:app:%d:%d", realm.ID, authApp.ID)
-		if err := c.cache.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
+		if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
 			now := time.Now().UTC()
 			past := now.Add(-14 * 24 * time.Hour)
 			return authApp.Stats(c.db, past, now)

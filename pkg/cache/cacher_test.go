@@ -26,15 +26,12 @@ import (
 )
 
 type testStruct struct {
-	Public  string
-	private int64
-
-	in testEmbeddedStruct
+	Public string
+	In     testEmbeddedStruct
 }
 
 type testEmbeddedStruct struct {
-	Public  []byte
-	private float64
+	Public []byte
 }
 
 func testRandomKey(tb testing.TB) string {
@@ -88,11 +85,9 @@ func exerciseCacher(t *testing.T, cacher Cacher) {
 			name: "struct",
 			do: func(tb testing.TB) {
 				in := testStruct{
-					Public:  "foo",
-					private: 4,
-					in: testEmbeddedStruct{
-						Public:  []byte("\x12"),
-						private: 5,
+					Public: "foo",
+					In: testEmbeddedStruct{
+						Public: []byte("\x12"),
 					},
 				}
 				var out testStruct
