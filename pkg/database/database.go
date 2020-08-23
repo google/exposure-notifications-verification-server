@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -64,6 +65,8 @@ func (db *Database) KeyManager() keys.KeyManager {
 // Load loads the configuration and processes any dependencies like secret and
 // key managers. It does NOT connect to the database.
 func (c *Config) Load(ctx context.Context) (*Database, error) {
+	logger := logging.FromContext(ctx).Named("database")
+
 	// Create the secret manager.
 	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
 	if err != nil {
@@ -104,7 +107,6 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 
 	return &Database{
 		config:            c,
-		cacher:            cacher,
 		keyManager:        keyManager,
 		signingKeyManager: signingKeyManager,
 		logger:            logger,
