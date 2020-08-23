@@ -15,7 +15,9 @@
 package cache
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"sync/atomic"
 	"time"
 )
@@ -44,7 +46,12 @@ func (c *noop) Fetch(_ context.Context, key string, out interface{}, ttl time.Du
 	if err != nil {
 		return err
 	}
-	return readInto(val, out)
+
+	var b bytes.Buffer
+	if err := json.NewEncoder(&b).Encode(val); err != nil {
+		return err
+	}
+	return json.NewDecoder(&b).Decode(out)
 }
 
 // Write does nothing.

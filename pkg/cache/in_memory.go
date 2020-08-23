@@ -16,6 +16,8 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -26,21 +28,21 @@ var _ Cacher = (*inMemory)(nil)
 // development and testing, but isn't recommended in production as the caches
 // aren't shared among instances.
 type inMemory struct {
-	prefix string
-	data   map[string]*item
-	mu     sync.RWMutex
+	data    map[string]*item
+	mu      sync.RWMutex
+	keyFunc KeyFunc
 
 	stopCh chan struct{}
 }
 
 type item struct {
-	value   interface{}
+	value   []byte
 	expires int64
 }
 
 type InMemoryConfig struct {
-	// Prefix is a custom value to prefix keys in shared systems.
-	Prefix string
+	// KeyFunc is the key function.
+	KeyFunc KeyFunc
 
 	// GCInterval is how frequently to purge stale entries from the cache.
 	GCInterval time.Duration
@@ -58,9 +60,9 @@ func NewInMemory(i *InMemoryConfig) (Cacher, error) {
 	}
 
 	c := &inMemory{
-		prefix: i.Prefix,
-		data:   make(map[string]*item),
-		stopCh: make(chan struct{}),
+		data:    make(map[string]*item),
+		keyFunc: i.KeyFunc,
+		stopCh:  make(chan struct{}),
 	}
 	go c.cleanup(gcInterval)
 
@@ -74,8 +76,12 @@ func NewInMemory(i *InMemoryConfig) (Cacher, error) {
 func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
 	now := time.Now().UnixNano()
 
-	if c.prefix != "" {
-		key = c.prefix + key
+	if c.keyFunc != nil {
+		var err error
+		key, err = c.keyFunc(key)
+		if err != nil {
+			return fmt.Errorf("failed to execute keyFunc: %w", err)
+		}
 	}
 
 	// Try a read-only lock first
@@ -87,7 +93,7 @@ func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl tim
 
 	if i, ok := c.data[key]; ok && now < i.expires {
 		c.mu.RUnlock()
-		return readInto(i.value, out)
+		return json.Unmarshal(i.value, out)
 	}
 	c.mu.RUnlock()
 
@@ -101,7 +107,7 @@ func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl tim
 	}
 
 	if i, ok := c.data[key]; ok && now < i.expires {
-		return readInto(i.value, out)
+		return json.Unmarshal(i.value, out)
 	}
 
 	// The value is not in the cache (or the value exists but has expired), call f
@@ -115,12 +121,13 @@ func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl tim
 		return err
 	}
 
-	if err := readInto(val, out); err != nil {
+	b, err := json.Marshal(val)
+	if err != nil {
 		return err
 	}
 
 	c.data[key] = &item{
-		value: val,
+		value: b,
 		// Explicitly re-caputure the time instead of using now.
 		expires: time.Now().UnixNano() + int64(ttl),
 	}
@@ -129,7 +136,7 @@ func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl tim
 }
 
 // Write adds a new item to the cache with the given TTL.
-func (c *inMemory) Write(_ context.Context, key string, value interface{}, ttl time.Duration) error {
+func (c *inMemory) Write(_ context.Context, key string, val interface{}, ttl time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -137,12 +144,21 @@ func (c *inMemory) Write(_ context.Context, key string, value interface{}, ttl t
 		return ErrStopped
 	}
 
-	if c.prefix != "" {
-		key = c.prefix + key
+	if c.keyFunc != nil {
+		var err error
+		key, err = c.keyFunc(key)
+		if err != nil {
+			return fmt.Errorf("failed to execute keyFunc: %w", err)
+		}
+	}
+
+	b, err := json.Marshal(val)
+	if err != nil {
+		return err
 	}
 
 	c.data[key] = &item{
-		value:   value,
+		value:   b,
 		expires: time.Now().UnixNano() + int64(ttl),
 	}
 	return nil
@@ -159,15 +175,19 @@ func (c *inMemory) Read(_ context.Context, key string, out interface{}) error {
 		return ErrStopped
 	}
 
-	if c.prefix != "" {
-		key = c.prefix + key
+	if c.keyFunc != nil {
+		var err error
+		key, err = c.keyFunc(key)
+		if err != nil {
+			return fmt.Errorf("failed to execute keyFunc: %w", err)
+		}
 	}
 
 	if i, ok := c.data[key]; ok {
 		// Item is still valid
 		if now < i.expires {
 			c.mu.RUnlock()
-			return readInto(i.value, out)
+			return json.Unmarshal(i.value, out)
 		}
 
 		// Item has expired, defer deletion (we don't have an exclusive lock)
@@ -187,8 +207,12 @@ func (c *inMemory) Delete(_ context.Context, key string) error {
 		return ErrStopped
 	}
 
-	if c.prefix != "" {
-		key = c.prefix + key
+	if c.keyFunc != nil {
+		var err error
+		key, err = c.keyFunc(key)
+		if err != nil {
+			return fmt.Errorf("failed to execute keyFunc: %w", err)
+		}
 	}
 
 	delete(c.data, key)
