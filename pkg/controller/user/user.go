@@ -31,19 +31,19 @@ import (
 // Controller manages users
 type Controller struct {
 	config *config.ServerConfig
-	cache  cache.Cacher
+	cacher cache.Cacher
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
 // New creates a new controller for managing users.
-func New(ctx context.Context, config *config.ServerConfig, cache cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
 		config: config,
-		cache:  cache,
+		cacher: cacher,
 		db:     db,
 		h:      h,
 		logger: logger,
