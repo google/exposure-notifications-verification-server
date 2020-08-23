@@ -47,7 +47,7 @@ type APIServerConfig struct {
 	TokenIssuer               string        `env:"TOKEN_ISSUER,default=diagnosis-verification-example"`
 
 	// Verification certificate config
-	VerificateSettings CertificateSigningConfig
+	VerificationSettings CertificateSigningConfig
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config

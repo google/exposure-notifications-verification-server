@@ -47,12 +47,12 @@ type Controller struct {
 func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
 	logger := logging.FromContext(ctx)
 
-	pubKeyCache, err := keyutils.NewPublicKeyCache(config.VerificateSettings.PublicKeyCacheDuration)
+	pubKeyCache, err := keyutils.NewPublicKeyCache(config.VerificationSettings.PublicKeyCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create public key cache, likely invalid duration: %w", err)
 	}
 
-	signerCache, err := cache.New(config.VerificateSettings.SignerCacheDuration)
+	signerCache, err := cache.New(config.VerificationSettings.SignerCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
 	}

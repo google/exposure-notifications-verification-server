@@ -69,12 +69,12 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 
 	if !realm.UseRealmCertificateKey {
 		// load the system information.
-		m["certIssuer"] = c.config.VerificateSettings.CertificateIssuer
-		m["certAudience"] = c.config.VerificateSettings.CertificateAudience
-		m["certDuration"] = c.config.VerificateSettings.CertificateDuration
-		m["certKeyID"] = c.config.VerificateSettings.CertificateSigningKeyID
+		m["certIssuer"] = c.config.VerificationSettings.CertificateIssuer
+		m["certAudience"] = c.config.VerificationSettings.CertificateAudience
+		m["certDuration"] = c.config.VerificationSettings.CertificateDuration
+		m["certKeyID"] = c.config.VerificationSettings.CertificateSigningKeyID
 		// Download and PEM encode the public key.
-		publicKey, err := c.publicKeyCache.GetPublicKey(ctx, c.config.VerificateSettings.CertificateSigningKey, c.db.KeyManager())
+		publicKey, err := c.publicKeyCache.GetPublicKey(ctx, c.config.VerificationSettings.CertificateSigningKey, c.db.KeyManager())
 		if err != nil {
 			m["certPublicKeyError"] = fmt.Sprintf("Error loading public key: %v", err)
 		} else {
