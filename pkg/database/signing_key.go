@@ -14,18 +14,29 @@
 
 package database
 
-import "github.com/jinzhu/gorm"
+import (
+	"fmt"
+
+	"github.com/jinzhu/gorm"
+)
 
 // SigningKey represents a reference to a KMS backed signing key
-// for verification certificate signing.
+// version for verification certificate signing.
 type SigningKey struct {
 	gorm.Model
 	Errorable
 
 	// A signing key belongs to exactly one realm.
-	RealmID uint `gorm:"index:addr"`
+	RealmID uint `gorm:"index:realm"`
 
-	KeyID string
+	// Reference to an exact version of a key in the KMS
+	KeyID  string
+	Active bool
+}
+
+// GetKID returns the 'kid' field value to use in signing JWTs.
+func (s *SigningKey) GetKID() string {
+	return fmt.Sprintf("r%dv%d", s.RealmID, s.Model.ID)
 }
 
 func (s *SigningKey) Delete(db *Database) error {

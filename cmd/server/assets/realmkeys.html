@@ -1,0 +1,261 @@
+{{define "realmkeys"}}
+
+{{$realm := .realm}}
+{{$publicKeys := .publicKeys}}
+{{$csrfField := .csrfField}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Verification certificate key settings</h1>
+    <p>
+      View or edit the verification certificate signing keys for <strong>{{$realm.Name}}</strong> below.
+    </p>
+    
+    {{if not $realm.UseRealmCertificateKey}}
+      <!-- This is only shown if the realm is NOT set to use per-realm signing keys -->
+      <div class="card mb-3">
+        <div class="card-header">
+          System verification certificate information
+        </div>      
+        <div class="card-body">
+          <div class="alert alert-info" role="alert">
+                This information needs to be communicated to the operator
+                of you exposure notification key server in order to be able to utilize
+                verification certificates issued by this server.
+          </div>
+ 
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Issuer (iss):</label>
+            <div class="col-sm-9">
+              <input type="text" id="iss" class="form-control" value="{{.certIssuer}}" readonly/>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Audience (aud):</label>
+            <div class="col-sm-9">
+              <input type="text" id="aud" class="form-control" value="{{.certAudience}}" readonly/>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Certificate duration:</label>
+            <div class="col-sm-9">
+              <input type="text" id="certDuration" class="form-control" value="{{.certDuration}}" readonly/>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Key ID (kid):</label>
+            <div class="col-sm-9">
+              <input type="text" id="certKeyID" class="form-control" value="{{.certKeyID}}" readonly/>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Public key:</label>
+            <div class="col-sm-9">
+            {{if .certPublicKey}}
+            <div class="alert alert-secondary" role="alert">
+            <pre>{{.certPublicKey}}</pre>
+            </div>
+            {{else}}
+            <div class="alert alert-danger" role="alert">{{.certPublicKeyError}}</div>
+            {{end}}
+            </div>
+          </div>
+        </div>
+      </div>
+    {{end}}
+      
+    <div class="card mb-3">
+        <div class="card-header">
+          Realm signing key configuration
+        </div>
+        <div class="card-body">
+        {{if .supportsPerRealmSigning}}            
+          {{if not $realm.UseRealmCertificateKey}}
+            {{if $realm.CanUpgradeToRealmSigningKeys}}
+            <form method="POST" action="/realm/keys/upgrade">
+                {{ .csrfField }}
+                <div class="form-group row">
+                  <div class="col-sm-12">
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Unerversable action:</strong> Before upgrading to realm specific signing keys, make sure that you have
+                        configured the signing key information on your exposure notifications key server.
+                        Once you upgrade to realm spcific signing keys, this realm cannot be changed
+                        back to using the system signer. This change will be effective immediatly.
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Upgrade to realm specific signing keys</button>
+                  </div>
+                </div>
+            </form>
+            {{else}}
+            <div class="alert alert-info" role="alert">
+                After setting your realm's issuer and audience settings, you can enable
+                signing verification certificates with realm specific keys.
+            </div>
+            {{end}}
+          {{end}}
+
+          {{if $realm.UseRealmCertificateKey}}
+          <div class="alert alert-info" role="alert">
+            This information needs to be communicated to the operator
+            of you exposure notification key server in order to be able to utilize
+            verification certificates issued by this server.
+          </div>
+          {{end}}
+
+          <form method="POST" action="/realm/keys/save">
+            {{ .csrfField }}
+            <div class="form-group row">
+                <label for="name" class="col-sm-3">Issuer (iss):</label>
+                <div class="col-sm-9">
+                  <input type="text" id="iss" name="iss" class="form-control" value="{{$realm.CertificateIssuer}}" />
+                  <small class="form-text text-muted">
+                    Once this value is configured on the key server, it should not be changed.
+                  </small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="name" class="col-sm-3">Audience (aud):</label>
+                <div class="col-sm-9">
+                  <input type="text" id="aud" name="aud" class="form-control" value="{{$realm.CertificateAudience}}" />
+                  <small class="form-text text-muted">
+                    The audience value should be provided by your exposure notifications key server operator.
+                  </small>
+                </div>                
+            </div>
+            <div class="form-group row">
+                <label for="name" class="col-sm-3">Certificate duration:</label>
+                <div class="col-sm-9">
+                  <input type="text" id="certDuration" name="certDuration" class="form-control" value="{{$realm.CertificateDuration.Duration}}" />
+                  <small class="form-text text-muted">
+                    Length of time that the verification certificate is valid for. This should be relatively low, <code>15m</code> is recommended.
+                  </small>
+                </div>
+            </div>
+
+            {{if $realm.UseRealmCertificateKey}}
+            <div class="form-group row">
+                <label for="name" class="col-sm-3">Key ID (kid):</label>
+                <div class="col-sm-9">
+                  <input type="text" id="certKeyID" class="form-control" value="{{.activeRealmKey}}" readonly/>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="name" class="col-sm-3">Public key:</label>
+                <div class="col-sm-9">
+                {{if .activePublicKey}}
+                <div class="alert alert-secondary" role="alert">
+                <pre>{{.activePublicKey}}</pre>
+                </div>
+                {{else}}
+                <div class="alert alert-danger" role="alert">error loading public key value</div>
+                {{end}}
+                </div>
+            </div>
+            {{end}}
+
+            <div class="form-group row">
+                <div class="col-sm-12">
+                  <button type="submit" class="btn btn-primary btn-block">Save realm certificate settings</button>
+                </div>
+              </div>
+          </form>
+        
+        {{else}}
+        <div class="alert alert-danger" role="alert">
+            This server is not configured to support per-realm certificate
+            signing keys. Please ask your operator about enablign this
+            functionality.
+        </div>
+        {{end}}
+        </div>
+    </div>
+
+    {{if .supportsPerRealmSigning}}
+    <div class="card mb-3">
+        <div class="card-header">
+          Realm public keys
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/realm/keys/create">
+                {{ .csrfField }}
+                <div class="form-group row">
+                  <div class="col-sm-12">
+                    <small class="form-text text-muted">
+                    Creating a new key will not immediatly make that key active. Before starting to use a new
+                    signing key version, you must communicate the new key ID to your exposure notifications
+                    key server operator.
+                    </small>
+                    <button type="submit" class="btn btn-primary btn-block">Create new signing key version</button>
+                  </div>
+                </div>
+            </form>
+
+            {{if not .realmKeys}}
+            <div class="alert alert-warning" role="alert">No keys have been created for {{$realm.Name}}.</div>
+            {{else}}
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                  <thead>
+                    <tr>
+                      <th scope="col" width="40">KeyID</th>
+                      <th scope="col" width="100">Public Key</th>
+                      <th scope="col" width="40">Active</th>
+                      <th scope="col" width="80">Controls</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            {{range $rk := .realmKeys}}
+                <tr>
+                    <td>{{$rk.GetKID}}</td>
+                    <td>
+                        <div class="alert alert-secondary" role="alert">
+                          <pre>{{index $publicKeys $rk.GetKID}}</pre>
+                        </div>
+                        Backed by (your server operator may ask you for this information):<br/>
+                        <code>{{$rk.KeyID}}</code>
+                    </td>
+                    <td>
+                        {{if $rk.Active}}<span class="badge badge-success">Active</span>
+                        {{else}}
+                        <span class="badge badge-secondary">Not active</span>
+                        {{end}}
+                    </td>
+                    <td>
+                        {{if not $rk.Active}}
+                        <form method="POST" action="/realm/keys/activate">
+                            {{ $csrfField }}
+                            <input type="hidden" name="skid" value="{{$rk.Model.ID}}" />
+                            <button type="submit" class="btn btn-primary btn-block">Make Active</button>                            
+                        </form>
+
+                        <!-- TODO - implement destroy -->
+                        {{end}}
+                    </td>
+                </tr>
+            {{end}}
+                  </tbody>
+                </table>
+            </div>
+
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+
+
+  </main>
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

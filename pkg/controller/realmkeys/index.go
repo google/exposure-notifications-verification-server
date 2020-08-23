@@ -12,8 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gcpkms
+package realmkeys
 
-type Config struct {
-	UseHSM bool `env:"USE_HSM,default=true"`
+import (
+	"net/http"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+)
+
+func (c *Controller) HandleIndex() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		c.renderShow(ctx, w, r, realm)
+	})
 }

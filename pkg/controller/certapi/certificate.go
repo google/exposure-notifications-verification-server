@@ -40,7 +40,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 			return
 		}
 
-		publicKey, err := c.getPublicKey(ctx, c.config.TokenSigningKey)
+		publicKey, err := c.pubKeyCache.GetPublicKey(ctx, c.config.TokenSigningKey, c.kms)
 		if err != nil {
 			c.logger.Errorw("failed to get public key", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
@@ -48,7 +48,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		// Get the signer based on Key configuration.
-		signer, err := c.kms.NewSigner(ctx, c.config.CertificateSigningKey)
+		signer, err := c.kms.NewSigner(ctx, c.config.VerificateSettings.CertificateSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
@@ -92,14 +92,14 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		claims.SignedMAC = request.ExposureKeyHMAC
-		claims.StandardClaims.Audience = c.config.CertificateAudience
-		claims.StandardClaims.Issuer = c.config.CertificateIssuer
+		claims.StandardClaims.Audience = c.config.VerificateSettings.CertificateAudience
+		claims.StandardClaims.Issuer = c.config.VerificateSettings.CertificateIssuer
 		claims.StandardClaims.IssuedAt = now.Unix()
-		claims.StandardClaims.ExpiresAt = now.Add(c.config.CertificateDuration).Unix()
+		claims.StandardClaims.ExpiresAt = now.Add(c.config.VerificateSettings.CertificateDuration).Unix()
 		claims.StandardClaims.NotBefore = now.Add(-1 * time.Second).Unix()
 
 		certToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-		certToken.Header[verifyapi.KeyIDHeader] = c.config.CertificateSigningKeyID
+		certToken.Header[verifyapi.KeyIDHeader] = c.config.VerificateSettings.CertificateSigningKeyID
 		certificate, err := jwthelper.SignJWT(certToken, signer)
 		if err != nil {
 			c.logger.Errorw("failed to sign certificate", "error", err)

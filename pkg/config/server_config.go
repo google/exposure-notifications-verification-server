@@ -63,8 +63,8 @@ type ServerConfig struct {
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
-	// Configuration for configuring realm signing keys.
-	CertificateSigningKeyRing string `env:"CERTIFICATE_SIGNING_KEYRING,required"`
+	// Certificate signing key settings, needed for public key / settings display.
+	VerificateSettings CertificateSigningConfig
 
 	// If Dev mode is true, cookies aren't required to be sent over secure channels.
 	// This includes CSRF protection base cookie. You want this false in production (the default).

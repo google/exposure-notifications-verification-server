@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	"github.com/google/exposure-notifications-server/pkg/observability"
@@ -31,7 +30,6 @@ import (
 type APIServerConfig struct {
 	Database      database.Config
 	Observability observability.Config
-	GCPKMS        gcpkms.Config
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
@@ -49,13 +47,7 @@ type APIServerConfig struct {
 	TokenIssuer               string        `env:"TOKEN_ISSUER,default=diagnosis-verification-example"`
 
 	// Verification certificate config
-	PublicKeyCacheDuration    time.Duration `env:"PUBLIC_KEY_CACHE_DURATION,default=15m"`
-	CertificateSigningKeyRing string        `env:"CERTIFICATE_SIGNING_KEYRING,required"`
-	CertificateSigningKey     string        `env:"CERTIFICATE_SIGNING_KEY,required"`
-	CertificateSigningKeyID   string        `env:"CERTIFICATE_SIGNING_KEY_ID,default=v1"`
-	CertificateIssuer         string        `env:"CERTIFICATE_ISSUER,default=diagnosis-verification-example"`
-	CertificateAudience       string        `env:"CERTIFICATE_AUDIENCE,default=exposure-notifications-server"`
-	CertificateDuration       time.Duration `env:"CERTIFICATE_DURATION,default=15m"`
+	VerificateSettings CertificateSigningConfig
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
@@ -77,7 +69,6 @@ func (c *APIServerConfig) Validate() error {
 		Name string
 	}{
 		{c.APIKeyCacheDuration, "API_KEY_CACHE_DURATION"},
-		{c.PublicKeyCacheDuration, "PUBLIC_KEY_CACHE_DURATION"},
 	}
 
 	for _, f := range fields {

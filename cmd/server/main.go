@@ -32,6 +32,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
@@ -274,7 +275,7 @@ func realMain(ctx context.Context) error {
 
 	// realms
 	{
-		realmSub := r.PathPrefix("/realm/settings").Subrouter()
+		realmSub := r.PathPrefix("/realm").Subrouter()
 		realmSub.Use(requireAuth)
 		realmSub.Use(requireVerified)
 		realmSub.Use(requireRealm)
@@ -282,8 +283,18 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(rateLimit)
 
 		realmadminController := realmadmin.New(ctx, config, db, h)
-		realmSub.Handle("", realmadminController.HandleIndex()).Methods("GET")
-		realmSub.Handle("/save", realmadminController.HandleSave()).Methods("POST")
+		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
+		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
+
+		realmKeysController, err := realmkeys.New(ctx, config, db, h)
+		if err != nil {
+			return fmt.Errorf("failed to create realmkeys controller: %w", err)
+		}
+		realmSub.Handle("/keys", realmKeysController.HandleIndex()).Methods("GET")
+		realmSub.Handle("/keys/create", realmKeysController.HandleNewKey()).Methods("POST")
+		realmSub.Handle("/keys/upgrade", realmKeysController.HandleUpgrade()).Methods("POST")
+		realmSub.Handle("/keys/save", realmKeysController.HandleSave()).Methods("POST")
+		realmSub.Handle("/keys/activate", realmKeysController.HandleActivate()).Methods("POST")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be
