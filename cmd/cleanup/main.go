@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -29,7 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-signalcontext"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -94,14 +92,7 @@ func realMain(ctx context.Context) error {
 	r := mux.NewRouter()
 	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
 
-	// Cleanup handler doesn't require authentication - does use locking to ensure
-	// database isn't tipped over by cleanup.
-	cleanupCache, err := cache.New(time.Minute)
-	if err != nil {
-		return fmt.Errorf("failed to create cache: %w", err)
-	}
-
-	cleanupController := cleanup.New(ctx, config, cleanupCache, db, h)
+	cleanupController := cleanup.New(ctx, config, db, h)
 	r.Handle("/", cleanupController.HandleCleanup()).Methods("GET")
 
 	srv, err := server.New(config.Port)

@@ -46,7 +46,10 @@ func (db *Database) CreateCleanup(cType string) (*CleanupStatus, error) {
 		Generation: 1,
 		NotBefore:  time.Now().UTC(),
 	}
-	if err := db.db.Create(cstat).Error; err != nil {
+	if err := db.db.
+		Set("gorm:insert_option", "ON CONFLICT (uix_cleanup_statuses_type) DO NOTHING RETURNING *").
+		Create(cstat).
+		Error; err != nil {
 		return nil, err
 	}
 	return cstat, nil
@@ -66,15 +69,20 @@ func (db *Database) FindCleanupStatus(cType string) (*CleanupStatus, error) {
 func (db *Database) ClaimCleanup(current *CleanupStatus, lockTime time.Duration) (*CleanupStatus, error) {
 	var cstat CleanupStatus
 	err := db.db.Transaction(func(tx *gorm.DB) error {
-		if err := db.db.Set("gorm:query_option", "FOR UPDATE").Where("type = ?", current.Type).First(&cstat).Error; err != nil {
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where("type = ?", current.Type).
+			First(&cstat).
+			Error; err != nil {
 			return err
 		}
 		if cstat.Generation != current.Generation {
 			return ErrCleanupWrongGeneration
 		}
+
 		cstat.Generation++
 		cstat.NotBefore = time.Now().UTC().Add(lockTime)
-		return db.db.Save(&cstat).Error
+		return tx.Save(&cstat).Error
 	})
 	if err != nil {
 		return nil, err
