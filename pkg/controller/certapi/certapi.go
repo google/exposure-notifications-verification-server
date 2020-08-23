@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -38,7 +39,8 @@ type Controller struct {
 	db          *database.Database
 	h           *render.Renderer
 	logger      *zap.SugaredLogger
-	pubKeyCache *keyutils.PublicKeyCache
+	pubKeyCache *keyutils.PublicKeyCache // Cache of public keys for verification token verification.
+	signerCache *cache.Cache             // Cache signers on a per-realm basis.
 	kms         keys.KeyManager
 }
 
@@ -47,7 +49,12 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 
 	pubKeyCache, err := keyutils.NewPublicKeyCache(config.VerificateSettings.PublicKeyCacheDuration)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot create public key cache, likely invalid duration: %w", err)
+	}
+
+	signerCache, err := cache.New(config.VerificateSettings.SignerCacheDuration)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
 	}
 
 	return &Controller{
@@ -55,8 +62,9 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 		db:          db,
 		h:           h,
 		logger:      logger,
-		kms:         kms,
 		pubKeyCache: pubKeyCache,
+		signerCache: signerCache,
+		kms:         kms,
 	}, nil
 }
 
