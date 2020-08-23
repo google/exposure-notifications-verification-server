@@ -132,7 +132,7 @@ func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl tim
 		expires: time.Now().UnixNano() + int64(ttl),
 	}
 
-	return nil
+	return json.Unmarshal(b, out)
 }
 
 // Write adds a new item to the cache with the given TTL.
