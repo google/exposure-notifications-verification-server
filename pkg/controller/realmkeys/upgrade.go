@@ -48,6 +48,6 @@ func (c *Controller) HandleUpgrade() http.Handler {
 			flash.Error("Issuer and Audience settings not complete, cannot upgrade.")
 		}
 
-		c.renderShow(ctx, w, r, realm)
+		c.redirectShow(ctx, w, r)
 	})
 }

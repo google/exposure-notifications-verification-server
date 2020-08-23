@@ -301,6 +301,7 @@ func (r *Realm) SetActiveSigningKey(db *Database, keyID uint) (string, error) {
 				if err := tx.Save(k).Error; err != nil {
 					return err
 				}
+				kid = k.GetKID()
 			} else {
 				if k.Active {
 					k.Active = false

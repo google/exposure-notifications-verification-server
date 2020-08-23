@@ -44,6 +44,6 @@ func (c *Controller) HandleNewKey() http.Handler {
 			flash.Alert("Created new key ID %q. Communicate the new key material (below) to your key server operator.", kid)
 		}
 
-		c.renderShow(ctx, w, r, realm)
+		c.redirectShow(ctx, w, r)
 	})
 }

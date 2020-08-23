@@ -24,23 +24,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 )
 
-/*
-block, _ := pem.Decode([]byte(k.PublicKeyPEM))
-	if block == nil || block.Type != "PUBLIC KEY" {
-		return nil, errors.New("unable to decode PEM block containing PUBLIC KEY")
-	}
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("x509.ParsePKIXPublicKey: %w", err)
-	}
-
-	switch typ := pub.(type) {
-	case *ecdsa.PublicKey:
-		return typ, nil
-	default:
-		return nil, fmt.Errorf("unsupported public key type: %T", typ)
-	}
-*/
+func (c *Controller) redirectShow(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/realm/keys", http.StatusSeeOther)
+}
 
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
@@ -57,6 +43,7 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		m["realmKeys"] = keys
 
 		publicKeys := make(map[string]string)
+		// Go through and load / parse all of the public keys for the realm.
 		for _, k := range keys {
 			if k.Active {
 				m["activeRealmKey"] = k.GetKID()
@@ -71,7 +58,9 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 					publicKeys[k.GetKID()] = fmt.Errorf("error decoding public key: %v", err).Error()
 				} else {
 					publicKeys[k.GetKID()] = pem
-					m["activePublicKey"] = pem
+					if k.Active {
+						m["activePublicKey"] = pem
+					}
 				}
 			}
 		}

@@ -208,10 +208,10 @@
                 <table class="table table-bordered table-striped">
                   <thead>
                     <tr>
-                      <th scope="col" width="40">KeyID</th>
+                      <th scope="col" width="30">KeyID</th>
                       <th scope="col" width="100">Public Key</th>
-                      <th scope="col" width="40">Active</th>
-                      <th scope="col" width="80">Controls</th>
+                      <th scope="col" width="30">Active</th>
+                      <th scope="col" width="100">Controls</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -236,7 +236,8 @@
                         <form method="POST" action="/realm/keys/activate">
                             {{ $csrfField }}
                             <input type="hidden" name="skid" value="{{$rk.Model.ID}}" />
-                            <button type="submit" class="btn btn-primary btn-block">Make Active</button>                            
+                            <button type="submit" class="btn btn-primary btn-block">Make Active</button>
+                            <div class="alert alert-danger" role="alert">Do not make a key active until the keyID and public key have been shared with the key server.</div>                      
                         </form>
 
                         <!-- TODO - implement destroy -->
