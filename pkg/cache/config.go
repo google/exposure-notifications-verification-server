@@ -30,7 +30,7 @@ const (
 
 // Config represents configuration for a cacher.
 type Config struct {
-	Type CacherType `env:"TYPE, default=NOOP"`
+	Type CacherType `env:"TYPE, default=IN_MEMORY"`
 
 	// Redis options
 	RedisAddress  string `env:"REDIS_ADDRESS"`
