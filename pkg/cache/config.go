@@ -38,17 +38,17 @@ type Config struct {
 	RedisPassword string `env:"REDIS_PASSWORD"`
 }
 
-func CacherFor(ctx context.Context, prefix string, c *Config) (Cacher, error) {
+func CacherFor(ctx context.Context, c *Config, keyFunc KeyFunc) (Cacher, error) {
 	switch typ := c.Type; typ {
 	case TypeNoop:
 		return NewNoop()
 	case TypeInMemory:
 		return NewInMemory(&InMemoryConfig{
-			Prefix: prefix,
+			KeyFunc: keyFunc,
 		})
 	case TypeRedis:
 		return NewRedis(&RedisConfig{
-			Prefix:   prefix,
+			KeyFunc:  keyFunc,
 			Address:  c.RedisAddress,
 			Username: c.RedisUsername,
 			Password: c.RedisPassword,
