@@ -16,7 +16,7 @@
       <div class="d-flex w-100 justify-content-center align-self-center">
         <div class="col-sm-6">
           <div class="card shadow-sm">
-            <div class="card-header">Create New User</div>
+            <div class="card-header">Create new user</div>
             <div class="card-body">
               <form id="loginForm" action="/" method="POST">
                 <div class="form-group mb-2">
@@ -54,7 +54,6 @@
       let $email = $('#email');
       let $password = $('#password');
       let $retype = $('#retype');
-
       let auth = firebase.auth()
 
       $form.on('submit', function (event) {
@@ -62,12 +61,10 @@
 
         let email = $email.val();
         let pwd = $password.val();
-
         if (pwd != $retype.val()) {
           flash("Password and retyped passwords must match", "danger")
           return
         }
-
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
