@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
@@ -175,6 +176,11 @@ func realMain(ctx context.Context) error {
 			sub.Handle("/login/create", loginController.HandleLoginCreate()).Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
+		}
+
+		{
+			sub := r.PathPrefix("").Subrouter()
+			sub.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
 		}
 
 		{
