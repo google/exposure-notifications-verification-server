@@ -115,7 +115,7 @@ func realMain(ctx context.Context) error {
 
 	for i := 0; i < iterations; i++ {
 		// Issue the verification code.
-		logger.Infof("Issuing verification code")
+		logger.Infof("Issuing verification code, iteration %d", i)
 		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, timeout)
 		if err != nil {
 			return fmt.Errorf("error issuing verification code: %w", err)
@@ -140,11 +140,12 @@ func realMain(ctx context.Context) error {
 			logger.Infof("Token Response: %+v", token)
 		}
 
+		logger.Infof("Check code status")
 		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
 		if err != nil {
 			return fmt.Errorf("error check code status: %w", err)
 		} else if codeStatus.Error != "" {
-			return fmt.Errorf("issue API Error: %+v", codeStatus)
+			return fmt.Errorf("check code status Error: %+v", codeStatus)
 		}
 		if *verbose {
 			logger.Infof("Code Status Request: %+v", statusReq)
