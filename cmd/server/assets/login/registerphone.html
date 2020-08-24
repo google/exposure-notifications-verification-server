@@ -108,6 +108,7 @@
         }).catch(function (err) {
           clearExistingFlash();
           flash(err.message);
+          $submit.prop('disabled', false);
         }
         );
       });
