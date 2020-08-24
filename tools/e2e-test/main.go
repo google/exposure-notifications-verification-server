@@ -116,7 +116,7 @@ func realMain(ctx context.Context) error {
 	for i := 0; i < iterations; i++ {
 		// Issue the verification code.
 		logger.Infof("Issuing verification code")
-		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, timeout)
+		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, 0, timeout)
 		if err != nil {
 			return fmt.Errorf("error issuing verification code: %w", err)
 		} else if code.Error != "" {
