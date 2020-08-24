@@ -20,7 +20,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleNewKey() http.Handler {
+func (c *Controller) HandleCreateKey() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

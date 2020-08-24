@@ -36,7 +36,7 @@ type SigningKey struct {
 
 // GetKID returns the 'kid' field value to use in signing JWTs.
 func (s *SigningKey) GetKID() string {
-	return fmt.Sprintf("r%dv%d", s.RealmID, s.Model.ID)
+	return fmt.Sprintf("r%dv%d", s.RealmID, s.ID)
 }
 
 func (s *SigningKey) Delete(db *Database) error {
@@ -44,8 +44,5 @@ func (s *SigningKey) Delete(db *Database) error {
 }
 
 func (db *Database) SaveSigningKey(s *SigningKey) error {
-	if s.Model.ID == 0 {
-		return db.db.Create(s).Error
-	}
 	return db.db.Save(s).Error
 }

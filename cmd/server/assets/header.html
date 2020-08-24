@@ -254,3 +254,11 @@
   }
 </script>
 {{end}}
+
+{{define "clipy"}}
+<div class="input-group-append">
+  <a class="input-group-text" data-toggle="tooltip" title="Copy to clipboard" data-copy data-copy-target="{{.}}">
+    <span class="oi oi-clipboard" aria-hidden="true"></span>
+  </a>
+</div>
+{{end}}

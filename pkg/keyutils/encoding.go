@@ -22,6 +22,7 @@ import (
 	"fmt"
 )
 
+// EncodePublicKey returns the base64 encoded PEM block.
 func EncodePublicKey(publicKey crypto.PublicKey) (string, error) {
 	switch typ := publicKey.(type) {
 	case *ecdsa.PublicKey:

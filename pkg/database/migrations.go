@@ -842,9 +842,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.DropTable(&SigningKey{}).Error; err != nil {
-					return err
-				}
+				// SigningKeys table left in place so references to crypto keys aren't lost.
 				return nil
 			},
 		},

@@ -16,16 +16,15 @@ package realmkeys
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
 func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
-		Issuer         string `form:"iss"`
-		Audience       string `form:"aud"`
-		DuratingString string `form:"certDuration"`
+		Issuer         string `form:"certificateIssuer"`
+		Audience       string `form:"certificateAudience"`
+		DuratingString string `form:"certificateDuration"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,35 +50,16 @@ func (c *Controller) HandleSave() http.Handler {
 			return
 		}
 
-		errors := false
-		if realm.UseRealmCertificateKey {
-			if form.Issuer == "" {
-				flash.Error("Issuer cannot be blank")
-				errors = true
-			}
-			if form.Audience == "" {
-				flash.Error("Audience cannot be blank")
-				errors = true
-			}
-		}
-		dur, err := time.ParseDuration(form.DuratingString)
-		if err != nil {
-			flash.Error("Certificate duration is invalid: %v", err)
-			errors = true
-		}
-		if errors {
-			c.renderShow(ctx, w, r, realm)
-		} else {
-			// Update settings.
-			realm.CertificateIssuer = form.Issuer
-			realm.CertificateAudience = form.Audience
-			realm.CertificateDuration.Duration = dur
+		// Update settings.
+		realm.CertificateIssuer = form.Issuer
+		realm.CertificateAudience = form.Audience
+		// AsString delgates the duration parsing and validation to the model.
+		realm.CertificateDuration.AsString = form.DuratingString
 
-			if err := c.db.SaveRealm(realm); err != nil {
-				flash.Error("Failed to update realm: %v", err)
-			} else {
-				flash.Alert("Updated realm certificate settings.")
-			}
+		if err := c.db.SaveRealm(realm); err != nil {
+			flash.Error("Failed to update realm: %v", err)
+		} else {
+			flash.Alert("Updated realm certificate settings.")
 		}
 		c.renderShow(ctx, w, r, realm)
 	})

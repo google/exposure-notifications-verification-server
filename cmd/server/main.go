@@ -291,7 +291,7 @@ func realMain(ctx context.Context) error {
 			return fmt.Errorf("failed to create realmkeys controller: %w", err)
 		}
 		realmSub.Handle("/keys", realmKeysController.HandleIndex()).Methods("GET")
-		realmSub.Handle("/keys/create", realmKeysController.HandleNewKey()).Methods("POST")
+		realmSub.Handle("/keys/create", realmKeysController.HandleCreateKey()).Methods("POST")
 		realmSub.Handle("/keys/upgrade", realmKeysController.HandleUpgrade()).Methods("POST")
 		realmSub.Handle("/keys/save", realmKeysController.HandleSave()).Methods("POST")
 		realmSub.Handle("/keys/activate", realmKeysController.HandleActivate()).Methods("POST")

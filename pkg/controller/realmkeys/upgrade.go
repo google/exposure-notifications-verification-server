@@ -41,6 +41,8 @@ func (c *Controller) HandleUpgrade() http.Handler {
 			realm.UseRealmCertificateKey = true
 			if err := c.db.SaveRealm(realm); err != nil {
 				flash.Error("Error upgrading realm: %v", err)
+				c.renderShow(ctx, w, r, realm)
+				return
 			} else {
 				flash.Alert("Successfully switched to realm specific signing keys.")
 			}

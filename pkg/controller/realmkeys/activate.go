@@ -48,11 +48,13 @@ func (c *Controller) HandleActivate() http.Handler {
 			return
 		}
 
-		if kid, err := realm.SetActiveSigningKey(c.db, form.SigningKeyID); err != nil {
+		kid, err := realm.SetActiveSigningKey(c.db, form.SigningKeyID)
+		if err != nil {
 			flash.Error("Unable to set active signing key: %v", err)
-		} else {
-			flash.Alert("Updated active signing key to %q", kid)
+			c.renderShow(ctx, w, r, realm)
+			return
 		}
+		flash.Alert("Updated active signing key to %q", kid)
 
 		c.redirectShow(ctx, w, r)
 	})

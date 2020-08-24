@@ -97,13 +97,14 @@ type Realm struct {
 // and the provided name. It does NOT save the Realm to the database.
 func NewRealmWithDefaults(name string) *Realm {
 	return &Realm{
-		Name:             name,
-		CodeLength:       8,
-		CodeDuration:     DurationSeconds{Duration: 15 * time.Minute},
-		LongCodeLength:   16,
-		LongCodeDuration: DurationSeconds{Duration: 24 * time.Hour},
-		SMSTextTemplate:  "This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours",
-		AllowedTestTypes: 14,
+		Name:                name,
+		CodeLength:          8,
+		CodeDuration:        FromDuration(15 * time.Minute),
+		LongCodeLength:      16,
+		LongCodeDuration:    FromDuration(24 * time.Hour),
+		SMSTextTemplate:     "This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours",
+		AllowedTestTypes:    14,
+		CertificateDuration: FromDuration(15 * time.Minute),
 	}
 }
 
@@ -178,6 +179,21 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	// Check that we have exactly one of [code] or [longcode] as template substitutions.
 	if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
 		r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+	}
+
+	if r.UseRealmCertificateKey {
+		if r.CertificateIssuer == "" {
+			r.AddError("certificateIssuer", "cannot be blank")
+		}
+		if r.CertificateAudience == "" {
+			r.AddError("certificateAudience", "cannot be blank")
+		}
+	}
+
+	if r.CertificateDuration.AsString != "" {
+		if err := r.CertificateDuration.Update(); err != nil {
+			r.AddError("certificateDuration", "invalid certificate duration")
+		}
 	}
 
 	if len(r.Errors()) > 0 {
@@ -266,10 +282,14 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 	return provider, nil
 }
 
+// GetCurrentSigning key returns the currently active signing key, the one marked
+// active in the database. If there is more than one active, the most recently
+// crated on wins. Should not occur due to transactional update.
 func (r *Realm) GetCurrentSigningKey(db *Database) (*SigningKey, error) {
 	var signingKey SigningKey
 	if err := db.db.
 		Model(r).
+		Where("active = ?", true).
 		Order("signing_keys.created_at DESC").
 		First(&signingKey).
 		Error; err != nil {
@@ -281,6 +301,8 @@ func (r *Realm) GetCurrentSigningKey(db *Database) (*SigningKey, error) {
 	return &signingKey, nil
 }
 
+// SetActiveSigningKey sets a specific signing key to active=true for the realm,
+// and tranmsactionally sets all other signing keys to active=false.
 func (r *Realm) SetActiveSigningKey(db *Database, keyID uint) (string, error) {
 	var kid string
 	err := db.db.Transaction(func(tx *gorm.DB) error {
@@ -331,7 +353,7 @@ func (r *Realm) ListSigningKeys(db *Database) ([]*SigningKey, error) {
 		Related(&keys).
 		Error; err != nil {
 		if IsNotFound(err) {
-			return nil, nil
+			return keys, nil
 		}
 		return nil, err
 	}
