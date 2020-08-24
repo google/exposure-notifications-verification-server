@@ -88,6 +88,7 @@ resource "google_cloud_run_service" "adminapi" {
   template {
     spec {
       service_account_name = google_service_account.adminapi.email
+      timeout_seconds      = 25
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:initial"

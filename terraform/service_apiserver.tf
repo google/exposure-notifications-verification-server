@@ -94,6 +94,7 @@ resource "google_cloud_run_service" "apiserver" {
   template {
     spec {
       service_account_name = google_service_account.apiserver.email
+      timeout_seconds      = 25
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:initial"
