@@ -102,11 +102,11 @@ func (c *Controller) HandleVerify() http.Handler {
 			c.logger.Errorw("failed to issue verification token", "error", err)
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrTokenExpired))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
 			case errors.Is(err, database.ErrVerificationCodeUsed):
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 			case errors.Is(err, database.ErrUnsupportedTestType):
 				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 			default:
