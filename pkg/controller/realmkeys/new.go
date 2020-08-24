@@ -40,10 +40,11 @@ func (c *Controller) HandleCreateKey() http.Handler {
 		kid, err := realm.CreateNewSigningKeyVersion(ctx, c.db)
 		if err != nil {
 			flash.Error("Unable to create a new signing key: %v", err)
-		} else {
-			flash.Alert("Created new key ID %q. Communicate the new key material (below) to your key server operator.", kid)
+			c.renderShow(ctx, w, r, realm)
+			return
 		}
 
+		flash.Alert("Created new key ID %q. Communicate the new key material (below) to your key server operator.", kid)
 		c.redirectShow(ctx, w, r)
 	})
 }

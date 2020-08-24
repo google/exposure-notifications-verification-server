@@ -58,9 +58,10 @@ func (c *Controller) HandleSave() http.Handler {
 
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to update realm: %v", err)
-		} else {
-			flash.Alert("Updated realm certificate settings.")
+			c.renderShow(ctx, w, r, realm)
 		}
-		c.renderShow(ctx, w, r, realm)
+
+		flash.Alert("Updated realm certificate settings.")
+		c.redirectShow(ctx, w, r)
 	})
 }

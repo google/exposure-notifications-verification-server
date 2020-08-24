@@ -13,14 +13,14 @@
       <label for="name" class="col-sm-3">Issuer (iss):</label>
       <div class="input-group col-sm-9">
         <input type="text" id="systemiss" class="form-control" value="{{.certIssuer}}" readonly/>
-        {{template "clipy" "systemiss"}}
+        {{template "clippy" "systemiss"}}
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Audience (aud):</label>
       <div class="input-group col-sm-9">
         <input type="text" id="systemaud" class="form-control" value="{{.certAudience}}" readonly/>
-        {{template "clipy" "systemaud"}}
+        {{template "clippy" "systemaud"}}
       </div>
     </div>
     <div class="form-group row">
@@ -33,14 +33,14 @@
       <label for="name" class="col-sm-3">Key ID (kid):</label>
       <div class="input-group col-sm-9">
         <input type="text" id="systemCertKeyID" class="form-control" value="{{.certKeyID}}" readonly/>
-        {{template "clipy" "systemCertKeyID"}}        
+        {{template "clippy" "systemCertKeyID"}}        
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Public key:</label>
       <div class="input-group col-sm-9">
         <textarea class="form-control" rows="4" id="systemPublicKey" readonly>{{if .certPublicKey}}{{.certPublicKey}}{{else}}{{.certPublicKeyError}}{{end}}</textarea>
-        {{template "clipy" "systemPublicKey"}}
+        {{template "clippy" "systemPublicKey"}}
       </div>
     </div>
   </div>
@@ -94,7 +94,7 @@
                   <td>
                     <div class="input-group">                      
                       <textarea class="form-control" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID}}</textarea>                          
-                      {{template "clipy" $rk.GetKID}}
+                      {{template "clippy" $rk.GetKID}}
                     </div>
                     Backed by (your server operator may ask you for this information):<br/>
                     <code>{{$rk.KeyID}}</code>
@@ -182,7 +182,7 @@
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">
                 <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control" value="{{$realm.CertificateIssuer}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
                 {{if $realm.UseRealmCertificateKey}}
-                  {{template "clipy" "certificateIssuer"}}
+                  {{template "clippy" "certificateIssuer"}}
                 {{else}}
                   {{if $realm.ErrorsFor "certificateIssuer"}}
                     <div class="invalid-feedback">
@@ -200,7 +200,7 @@
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">
                 <input type="text" id="certificateAudience" name="certificateAudience" class="form-control" value="{{$realm.CertificateAudience}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
                 {{if $realm.UseRealmCertificateKey}}
-                  {{template "clipy" "certificateAudience"}}
+                  {{template "clippy" "certificateAudience"}}
                 {{else}}
                   {{if $realm.ErrorsFor "certificateAudience"}}
                     <div class="invalid-feedback">
@@ -234,14 +234,14 @@
               <label for="name" class="col-sm-3">Key ID (kid):</label>
               <div class="input-group col-sm-9">
                 <input type="text" id="certKeyID" class="form-control" value="{{.activeRealmKey}}" readonly/>
-                {{template "clipy" "certKeyID"}}
+                {{template "clippy" "certKeyID"}}
               </div>
             </div>
             <div class="form-group row">
               <label for="name" class="col-sm-3">Public key:</label>
               <div class="input-group col-sm-9">
                 <textarea class="form-control" rows="4" id="activePublicKey" readonly>{{if .activePublicKey}}{{.activePublicKey}}{{else}}Temporarily unable to show public key{{end}}</textarea>
-                {{template "clipy" "activePublicKey"}}
+                {{template "clippy" "activePublicKey"}}
               </div>
             </div>
             {{end}}
