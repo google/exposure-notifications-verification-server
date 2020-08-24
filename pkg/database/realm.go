@@ -282,7 +282,7 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 	return provider, nil
 }
 
-// GetCurrentSigning key returns the currently active signing key, the one marked
+// GetCurrentSigningKey returns the currently active signing key, the one marked
 // active in the database. If there is more than one active, the most recently
 // crated on wins. Should not occur due to transactional update.
 func (r *Realm) GetCurrentSigningKey(db *Database) (*SigningKey, error) {
@@ -345,6 +345,8 @@ func (r *Realm) SetActiveSigningKey(db *Database, keyID uint) (string, error) {
 	return kid, nil
 }
 
+// ListSigningKeys returns the non-deleted signing keys for a realm
+// ordered by created_at desc.
 func (r *Realm) ListSigningKeys(db *Database) ([]*SigningKey, error) {
 	var keys []*SigningKey
 	if err := db.db.

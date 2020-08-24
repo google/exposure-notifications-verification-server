@@ -82,7 +82,7 @@ resource "google_project_iam_member" "server-observability" {
 
 resource "google_kms_key_ring_iam_member" "server-verification-key-admin" {
   key_ring_id = google_kms_key_ring.verification.self_link
-  role        = "roles/roles/cloudkms.admin"
+  role        = "roles/cloudkms.admin"
   member      = "serviceAccount:${google_service_account.server.email}"
 }
 
