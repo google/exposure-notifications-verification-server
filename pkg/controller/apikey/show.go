@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
 	"github.com/gorilla/mux"
 )
 

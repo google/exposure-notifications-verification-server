@@ -180,7 +180,7 @@ func realMain(ctx context.Context) error {
 
 		{
 			sub := r.PathPrefix("").Subrouter()
-			sub.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+			sub.Handle("/health", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
 		}
 
 		{
