@@ -96,8 +96,8 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		// Max date is today (local time) and min date is AllowedTestAge ago, truncated.
-		maxDate := time.Now().Local()
+		// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+		maxDate := time.Now().UTC()
 		minDate := maxDate.Add(-1 * c.config.GetAllowedSymptomAge()).Truncate(24 * time.Hour)
 
 		var symptomDate *time.Time
@@ -107,6 +107,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				return
 			} else {
 				parsed = parsed.Local()
+				parsed = parsed.Add(time.Duration(request.TZOffset) * time.Minute) // adjust to UTC
 				if minDate.After(parsed) || parsed.After(maxDate) {
 					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v",
 						minDate.Format("2006-01-02"),
