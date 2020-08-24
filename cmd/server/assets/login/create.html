@@ -46,16 +46,15 @@
   </main>
 
   {{template "scripts" .}}
+  {{template "loginscripts" .}}
 
-  <script>
+  <script type="text/javascript">
     $(function () {
       let $form = $('#loginForm');
       let $submit = $('#submit');
       let $email = $('#email');
       let $password = $('#password');
       let $retype = $('#retype');
-
-      let auth = firebase.auth();
 
       $form.on('submit', function (event) {
         event.preventDefault();
@@ -70,23 +69,16 @@
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
-        auth.createUserWithEmailAndPassword(email, pwd)
+        firebase.auth().createUserWithEmailAndPassword(email, pwd)
           .then(function (userCredential) {
             clearExistingFlash();
-            return auth.signInWithEmailAndPassword(email, pwd);
+            return firebase.auth().signInWithEmailAndPassword(email, pwd);
           })
           .catch(function (error) {
             clearExistingFlash();
             flash(error.message, "danger")
             $submit.prop('disabled', false);
           });
-      });
-
-      firebase.auth().onAuthStateChanged(function (user) {
-        if (!user) {
-          return
-        }
-        setSession(user)
       });
     });
   </script>
