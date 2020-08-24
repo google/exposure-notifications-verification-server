@@ -157,10 +157,8 @@ firebase login
 ```
 
 Consider registering a [test-phone-number](https://cloud.google.com/identity-platform/docs/test-phone-numbers)
-for your account by visiting:
-
+for your account by visiting
 https://console.cloud.google.com//customer-identity/mfa?project=YOUR-PROJECT-123456
-
 This will skip the actual sending of SMS codes for 2-factor auth and allow you to instead
 set a static challenge response code.
 
