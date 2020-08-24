@@ -26,7 +26,11 @@
 
                 <div class="form-group">
                   <input type="password" id="password" name="password" class="form-control" placeholder="Password"
-                    required />
+                    autocomplete="new-password" required />
+                </div>
+                <div class="form-group">
+                  <input type="password" id="retype" name="retype" class="form-control" placeholder="Retype password"
+                    autocomplete="new-password" required />
                 </div>
 
                 <button type="submit" id="submit" class="btn btn-primary btn-block">Create user</button>
@@ -49,17 +53,24 @@
       let $submit = $('#submit');
       let $email = $('#email');
       let $password = $('#password');
+      let $retype = $('#retype');
 
       let auth = firebase.auth()
 
       $form.on('submit', function (event) {
         event.preventDefault();
 
+        let email = $email.val();
+        let pwd = $password.val();
+
+        if (pwd != $retype.val()) {
+          flash("Password and retyped passwords must match", "danger")
+          return
+        }
+
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
-        let email = $email.val();
-        let pwd = $password.val();
         auth.createUserWithEmailAndPassword(email, pwd)
           .then(function (userCredential) {
             clearExistingFlash();
