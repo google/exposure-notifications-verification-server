@@ -80,8 +80,9 @@ func (f *Flash) Alerts() []string {
 // Clear removes all items from the flash. It's rare to call Clear since flashes
 // are cleared automatically upon reading.
 func (f *Flash) Clear() {
-	delete(f.values, flashKeyError)
 	delete(f.values, flashKeyAlert)
+	delete(f.values, flashKeyError)
+	delete(f.values, flashKeyWarning)
 }
 
 // add inserts the message into the upcoming flash for the given key.
