@@ -31,10 +31,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
-	"github.com/google/exposure-notifications-verification-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/dgrijalva/jwt-go"
@@ -47,10 +47,10 @@ type Controller struct {
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
-	kms    keys.Manager
+	kms    keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.Manager) *Controller {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{

@@ -47,12 +47,7 @@ type APIServerConfig struct {
 	TokenIssuer               string        `env:"TOKEN_ISSUER,default=diagnosis-verification-example"`
 
 	// Verification certificate config
-	PublicKeyCacheDuration  time.Duration `env:"PUBLIC_KEY_CACHE_DURATION,default=15m"`
-	CertificateSigningKey   string        `env:"CERTIFICATE_SIGNING_KEY,required"`
-	CertificateSigningKeyID string        `env:"CERTIFICATE_SIGNING_KEY_ID,default=v1"`
-	CertificateIssuer       string        `env:"CERTIFICATE_ISSUER,default=diagnosis-verification-example"`
-	CertificateAudience     string        `env:"CERTIFICATE_AUDIENCE,default=exposure-notifications-server"`
-	CertificateDuration     time.Duration `env:"CERTIFICATE_DURATION,default=15m"`
+	VerificationSettings CertificateSigningConfig
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
@@ -74,7 +69,6 @@ func (c *APIServerConfig) Validate() error {
 		Name string
 	}{
 		{c.APIKeyCacheDuration, "API_KEY_CACHE_DURATION"},
-		{c.PublicKeyCacheDuration, "PUBLIC_KEY_CACHE_DURATION"},
 	}
 
 	for _, f := range fields {

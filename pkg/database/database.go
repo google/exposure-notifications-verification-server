@@ -41,6 +41,10 @@ type Database struct {
 	// keyManager is used to encrypt/decrypt values.
 	keyManager keys.KeyManager
 
+	// if the key manager is capable of managing per-realm signing keys
+	// this will also be set.
+	signingKeyManager keys.SigningKeyManagement
+
 	// logger is the internal logger.
 	logger *zap.SugaredLogger
 
@@ -48,9 +52,21 @@ type Database struct {
 	secretManager secrets.SecretManager
 }
 
+// SupportsPerRealmSigning returns true if the configuration supports
+// application managed signing keys.
+func (db *Database) SupportsPerRealmSigning() bool {
+	return db.signingKeyManager != nil
+}
+
+func (db *Database) KeyManager() keys.KeyManager {
+	return db.keyManager
+}
+
 // Load loads the configuration and processes any dependencies like secret and
 // key managers. It does NOT connect to the database.
 func (c *Config) Load(ctx context.Context) (*Database, error) {
+	logger := logging.FromContext(ctx).Named("database")
+
 	// Create the secret manager.
 	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
 	if err != nil {
@@ -61,6 +77,13 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 	keyManager, err := keys.KeyManagerFor(ctx, &c.Keys)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key manager: %w", err)
+	}
+
+	var signingKeyManager keys.SigningKeyManagement
+	signingKeyManager, ok := keyManager.(keys.SigningKeyManagement)
+	if !ok {
+		signingKeyManager = nil
+		logger.Errorf("key manager does not support the keys.SigningKeyManagement interface, falling back to single verification signing key")
 	}
 
 	// If the key manager is in-memory, accept the key as a base64-encoded
@@ -82,13 +105,12 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		c.EncryptionKey = "database-encryption-key"
 	}
 
-	logger := logging.FromContext(ctx).Named("database")
-
 	return &Database{
-		config:        c,
-		keyManager:    keyManager,
-		logger:        logger,
-		secretManager: secretManager,
+		config:            c,
+		keyManager:        keyManager,
+		signingKeyManager: signingKeyManager,
+		logger:            logger,
+		secretManager:     secretManager,
 	}, nil
 }
 

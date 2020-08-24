@@ -52,16 +52,22 @@
           <li class="nav-item">
             <a class="nav-link" href="/code/status">Code status</a>
           </li>
-          {{if .currentUser.CanAdminRealm .currentRealm.ID}}
-          <li class="nav-item">
-            <a class="nav-link" href="/apikeys">API keys</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/users">Users</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/realm/settings">Settings</a>
-          </li>
+          {{if .currentUser.CanAdminRealm .currentRealm.ID}}      
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
+                aria-expanded="false">
+                {{.currentRealm.Name}} Settings
+              </a>
+  
+              <div class="dropdown-menu" aria-labelledby="profile-menu">            
+                <a class="dropdown-item" href="/apikeys">API keys</a>
+                <a class="dropdown-item" href="/users">Users</a>
+                <a class="dropdown-item" href="/realm/settings">Verification Code and SMS</a>
+                <a class="dropdown-item" href="/realm/keys">Certificate Signing Keys</a>
+              </div>
+            </li>
+          </ul>
           {{end}}
           {{end}}
         </ul>
@@ -250,4 +256,12 @@
     $main.prepend($div);
   }
 </script>
+{{end}}
+
+{{define "clippy"}}
+<div class="input-group-append">
+  <a class="input-group-text" data-toggle="tooltip" title="Copy to clipboard" data-copy data-copy-target="{{.}}">
+    <span class="oi oi-clipboard" aria-hidden="true"></span>
+  </a>
+</div>
 {{end}}

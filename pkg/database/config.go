@@ -44,6 +44,10 @@ type Config struct {
 	// that are encrypted via a KMS.
 	Keys keys.Config
 
+	// The KMS managed KeyRing that per-realm certificate signing keys are
+	// created on.
+	CertificateSigningKeyRing string `env:"CERTIFICATE_SIGNING_KEYRING"`
+
 	// EncryptionKey is the reference to an encryption/decryption key to use when
 	// for application-layer encryption before values are persisted to the
 	// database.

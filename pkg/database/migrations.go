@@ -828,6 +828,24 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00033-PerlRealmSigningKeys",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding signing_keys table")
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
+				if err := tx.AutoMigrate(&SigningKey{}).Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				// SigningKeys table left in place so references to crypto keys aren't lost.
+				return nil
+			},
+		},
 	})
 }
 

@@ -43,7 +43,6 @@ require (
 	github.com/prometheus/common v0.12.0 // indirect
 	github.com/prometheus/statsd_exporter v0.17.0 // indirect
 	github.com/sethvargo/go-envconfig v0.3.1
-	github.com/sethvargo/go-gcpkms v0.1.0
 	github.com/sethvargo/go-limiter v0.4.0
 	github.com/sethvargo/go-redisstore v0.1.0
 	github.com/sethvargo/go-retry v0.1.0

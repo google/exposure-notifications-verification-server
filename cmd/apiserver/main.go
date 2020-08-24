@@ -29,12 +29,12 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -93,7 +93,7 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	// Setup signer
-	signer, err := gcpkms.New(ctx)
+	signer, err := keys.KeyManagerFor(ctx, &config.Database.Keys)
 	if err != nil {
 		return fmt.Errorf("failed to crate key manager: %w", err)
 	}
@@ -140,11 +140,6 @@ func realMain(ctx context.Context) error {
 	// Install the APIKey Auth Middleware
 	r.Use(requireAPIKey)
 
-	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
-	if err != nil {
-		return fmt.Errorf("failed to create publickey cache: %w", err)
-	}
-
 	// POST /api/verify
 	verifyChaff := chaff.New()
 	defer verifyChaff.Close()
@@ -154,7 +149,10 @@ func realMain(ctx context.Context) error {
 	// POST /api/certificate
 	certChaff := chaff.New()
 	defer certChaff.Close()
-	certapiController := certapi.New(ctx, config, db, h, signer, publicKeyCache)
+	certapiController, err := certapi.New(ctx, config, db, h, signer)
+	if err != nil {
+		return fmt.Errorf("failed to create certapi controller: %w", err)
+	}
 	r.Handle("/api/certificate", handleChaff(certChaff, certapiController.HandleCertificate())).Methods("POST")
 
 	srv, err := server.New(config.Port)

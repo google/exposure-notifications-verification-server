@@ -12,15 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package keys defines the interface for signing.
-package keys
+package realmkeys
 
 import (
-	"context"
-	"crypto"
+	"net/http"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-// Manager represents the interface to the Key Management System.
-type Manager interface {
-	NewSigner(ctx context.Context, keyID string) (crypto.Signer, error)
+func (c *Controller) HandleIndex() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		c.renderShow(ctx, w, r, realm)
+	})
 }

@@ -15,7 +15,12 @@
 package database
 
 import (
+	"errors"
 	"fmt"
+)
+
+var (
+	ErrNoSigningKeyManager = errors.New("configured key manager cannot be used to manage per-realm keys")
 )
 
 // Errorable defines an embeddable struct for managing errors on models.

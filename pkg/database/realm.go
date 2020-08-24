@@ -16,16 +16,24 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
 	"github.com/jinzhu/gorm"
 )
 
 // TestType is a test type in the database.
 type TestType int16
+
+var (
+	ErrNoSigningKeyManagement = errors.New("no signing key management")
+)
 
 const (
 	_ TestType = 1 << iota
@@ -68,6 +76,12 @@ type Realm struct {
 	// value is to allow all test types.
 	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
 
+	// Signing Key Settings
+	UseRealmCertificateKey bool            `gorm:"type:boolean; default: false"`
+	CertificateIssuer      string          `gorm:"type:varchar(150); default ''"`
+	CertificateAudience    string          `gorm:"type:varchar(150); default ''"`
+	CertificateDuration    DurationSeconds `gorm:"type:bigint; default: 900"` // 15m
+
 	// These are here for gorm to setup the association. You should NOT call them
 	// directly, ever. Use the ListUsers function instead. The have to be public
 	// for reflection.
@@ -83,14 +97,56 @@ type Realm struct {
 // and the provided name. It does NOT save the Realm to the database.
 func NewRealmWithDefaults(name string) *Realm {
 	return &Realm{
-		Name:             name,
-		CodeLength:       8,
-		CodeDuration:     DurationSeconds{Duration: 15 * time.Minute},
-		LongCodeLength:   16,
-		LongCodeDuration: DurationSeconds{Duration: 24 * time.Hour},
-		SMSTextTemplate:  "This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours",
-		AllowedTestTypes: 14,
+		Name:                name,
+		CodeLength:          8,
+		CodeDuration:        FromDuration(15 * time.Minute),
+		LongCodeLength:      16,
+		LongCodeDuration:    FromDuration(24 * time.Hour),
+		SMSTextTemplate:     "This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours",
+		AllowedTestTypes:    14,
+		CertificateDuration: FromDuration(15 * time.Minute),
 	}
+}
+
+func (r *Realm) CanUpgradeToRealmSigningKeys() bool {
+	return r.CertificateIssuer != "" && r.CertificateAudience != ""
+}
+
+func (r *Realm) SigningKeyID() string {
+	return fmt.Sprintf("realm-%d", r.ID)
+}
+
+func (r *Realm) EnsureSigningKeyExists(ctx context.Context, db *Database, keyRing string) error {
+	if db.signingKeyManager == nil {
+		return ErrNoSigningKeyManagement
+	}
+
+	logger := logging.FromContext(ctx)
+	// Ensure the realm has a signing key.
+	realmKeys, err := r.ListSigningKeys(db)
+	if err != nil {
+		return fmt.Errorf("unable to list signing keys for realm: %w", err)
+	}
+	if len(realmKeys) > 0 {
+		return nil
+	}
+
+	versions, err := db.signingKeyManager.SigningKeyVersions(ctx, keyRing, r.SigningKeyID())
+	if err != nil {
+		return fmt.Errorf("unable to list signing keys on kms: %w", err)
+	}
+	for _, v := range versions {
+		if v.DestroyedAt().IsZero() {
+			return nil
+		}
+	}
+
+	id, err := db.signingKeyManager.CreateSigningKeyVersion(ctx, keyRing, r.SigningKeyID())
+	if err != nil {
+		return fmt.Errorf("unable to create signing key for realm: %w", err)
+	}
+	logger.Infow("provisioned certificate signing key for realm", "keyID", id)
+	return nil
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -123,6 +179,21 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	// Check that we have exactly one of [code] or [longcode] as template substitutions.
 	if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
 		r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+	}
+
+	if r.UseRealmCertificateKey {
+		if r.CertificateIssuer == "" {
+			r.AddError("certificateIssuer", "cannot be blank")
+		}
+		if r.CertificateAudience == "" {
+			r.AddError("certificateAudience", "cannot be blank")
+		}
+	}
+
+	if r.CertificateDuration.AsString != "" {
+		if err := r.CertificateDuration.Update(); err != nil {
+			r.AddError("certificateDuration", "invalid certificate duration")
+		}
 	}
 
 	if len(r.Errors()) > 0 {
@@ -209,6 +280,86 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		return nil, err
 	}
 	return provider, nil
+}
+
+// GetCurrentSigningKey returns the currently active signing key, the one marked
+// active in the database. If there is more than one active, the most recently
+// crated on wins. Should not occur due to transactional update.
+func (r *Realm) GetCurrentSigningKey(db *Database) (*SigningKey, error) {
+	var signingKey SigningKey
+	if err := db.db.
+		Model(r).
+		Where("active = ?", true).
+		Order("signing_keys.created_at DESC").
+		First(&signingKey).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("unable to find signing key: %w", err)
+	}
+	return &signingKey, nil
+}
+
+// SetActiveSigningKey sets a specific signing key to active=true for the realm,
+// and tranmsactionally sets all other signing keys to active=false.
+func (r *Realm) SetActiveSigningKey(db *Database, keyID uint) (string, error) {
+	var kid string
+	err := db.db.Transaction(func(tx *gorm.DB) error {
+		var keys []*SigningKey
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where("realm_id = ?", r.Model.ID).
+			Find(&keys).
+			Error; err != nil {
+			return err
+		}
+
+		found := false
+		for _, k := range keys {
+			if k.Model.ID == keyID {
+				k.Active = true
+				found = true
+				if err := tx.Save(k).Error; err != nil {
+					return err
+				}
+				kid = k.GetKID()
+			} else {
+				if k.Active {
+					k.Active = false
+					if err := tx.Save(k).Error; err != nil {
+						return err
+					}
+				}
+			}
+		}
+		if !found {
+			return fmt.Errorf("key to activate was not found")
+		}
+		return nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+	return kid, nil
+}
+
+// ListSigningKeys returns the non-deleted signing keys for a realm
+// ordered by created_at desc.
+func (r *Realm) ListSigningKeys(db *Database) ([]*SigningKey, error) {
+	var keys []*SigningKey
+	if err := db.db.
+		Model(r).
+		Order("signing_keys.created_at DESC").
+		Related(&keys).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return keys, nil
+		}
+		return nil, err
+	}
+	return keys, nil
 }
 
 // ListAuthorizedApps gets all the authorized apps for the realm.
@@ -324,4 +475,35 @@ func (db *Database) SaveRealm(r *Realm) error {
 		return db.db.Create(r).Error
 	}
 	return db.db.Save(r).Error
+}
+
+func (r *Realm) CreateNewSigningKeyVersion(ctx context.Context, db *Database) (string, error) {
+	if db.signingKeyManager == nil {
+		return "", ErrNoSigningKeyManager
+	}
+
+	keyRing := db.config.CertificateSigningKeyRing
+
+	id, err := db.signingKeyManager.CreateSigningKeyVersion(ctx, keyRing, r.SigningKeyID())
+	if err != nil {
+		return "", fmt.Errorf("unable to create signing key for realm: %w", err)
+	}
+	db.logger.Infow("provisioned certificate signing key for realm", "keyID", id)
+
+	curKeys, err := r.ListSigningKeys(db)
+	if err != nil {
+		return "", fmt.Errorf("unable to list existing signing keys: %w", err)
+	}
+
+	// Save this SigningKey record
+	signingKey := SigningKey{
+		RealmID: r.Model.ID,
+		KeyID:   id,
+		Active:  len(curKeys) == 0,
+	}
+	if err := db.SaveSigningKey(&signingKey); err != nil {
+		return "", fmt.Errorf("failed to save reference to signing key: %w", err)
+	}
+
+	return signingKey.GetKID(), nil
 }

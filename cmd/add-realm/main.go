@@ -32,7 +32,10 @@ import (
 )
 
 var (
-	nameFlag = flag.String("name", "", "name of the realm to add")
+	nameFlag            = flag.String("name", "", "name of the realm to add")
+	useSystemSigningKey = flag.Bool("use-system-signing-key", false, "if set, the system signing key will be used, otherwise a per-realm signing key will be created.")
+	issFlag             = flag.String("iss", "", "name is the issuer (iss) for the verification certificatates for this realm")
+	audFlag             = flag.String("aud", "", "name is the audience (aud) for the verification certificatates for this realm")
 )
 
 func main() {
@@ -59,6 +62,15 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("--name must be passed and cannot be empty")
 	}
 
+	if !*useSystemSigningKey {
+		if *issFlag == "" {
+			return fmt.Errorf("-iss must be passed and cannot be empty when not using the system signing keys")
+		}
+		if *audFlag == "" {
+			return fmt.Errorf("-aud must be passed and cannot be empty when not using the system signing keys")
+		}
+	}
+
 	var cfg database.Config
 	if err := config.ProcessWith(ctx, &cfg, envconfig.OsLookuper()); err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
@@ -73,11 +85,38 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	realm := database.NewRealmWithDefaults(*nameFlag)
-	if err := db.SaveRealm(realm); err != nil {
-		return fmt.Errorf("failed to create realm: %w", err)
+	// See if realm exists.
+	realm, err := db.GetRealmByName(*nameFlag)
+	if err != nil {
+		logger.Infow("realm alredy exists, skipping create", "realm", realm)
 	}
 
-	logger.Infow("created realm", "realm", realm)
+	if realm == nil {
+		logger.Info("creating realm")
+		realm = database.NewRealmWithDefaults(*nameFlag)
+		if err := db.SaveRealm(realm); err != nil {
+			return fmt.Errorf("failed to create realm: %w", err)
+		}
+		logger.Infow("created realm", "realm", realm)
+	}
+
+	if *useSystemSigningKey {
+		logger.Info("use-system-signing-key was passed, skipping creation of per-realm key.")
+	} else {
+		// Upgrade the realm to custom keys.
+		realm.UseRealmCertificateKey = true
+		realm.CertificateIssuer = *issFlag
+		realm.CertificateAudience = *audFlag
+		if err := db.SaveRealm(realm); err != nil {
+			return fmt.Errorf("error upgrading realm to custom signing keys: %w", err)
+		}
+
+		kid, err := realm.CreateNewSigningKeyVersion(ctx, db)
+		if err != nil {
+			return fmt.Errorf("error creating signing keys for realm: %w", err)
+		}
+		logger.Info("created signing key for realm", "keyID", kid)
+	}
+
 	return nil
 }

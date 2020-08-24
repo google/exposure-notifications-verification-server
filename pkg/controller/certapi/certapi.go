@@ -22,11 +22,12 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/keys"
+	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/dgrijalva/jwt-go"
@@ -38,41 +39,33 @@ type Controller struct {
 	db          *database.Database
 	h           *render.Renderer
 	logger      *zap.SugaredLogger
-	pubKeyCache *cache.Cache
-	kms         keys.Manager
+	pubKeyCache *keyutils.PublicKeyCache // Cache of public keys for verification token verification.
+	signerCache *cache.Cache             // Cache signers on a per-realm basis.
+	kms         keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.Manager, pubKeyCache *cache.Cache) *Controller {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
 	logger := logging.FromContext(ctx)
+
+	pubKeyCache, err := keyutils.NewPublicKeyCache(config.VerificationSettings.PublicKeyCacheDuration)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create public key cache, likely invalid duration: %w", err)
+	}
+
+	signerCache, err := cache.New(config.VerificationSettings.SignerCacheDuration)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
+	}
 
 	return &Controller{
 		config:      config,
 		db:          db,
 		h:           h,
 		logger:      logger,
-		kms:         kms,
 		pubKeyCache: pubKeyCache,
-	}
-}
-
-func (c *Controller) getPublicKey(ctx context.Context, keyID string) (crypto.PublicKey, error) {
-	// Get the public key for the Token Signing Key.
-	keyCache, err := c.pubKeyCache.WriteThruLookup(keyID,
-		func() (interface{}, error) {
-			signer, err := c.kms.NewSigner(ctx, c.config.TokenSigningKey)
-			if err != nil {
-				return nil, err
-			}
-			return signer.Public(), nil
-		})
-	if err != nil {
-		return nil, fmt.Errorf("unable to get public key for keyId %v: %w", c.config.TokenSigningKey, err)
-	}
-	publicKey, ok := keyCache.(crypto.PublicKey)
-	if !ok {
-		return nil, fmt.Errorf("public key in wrong format for %v: %w", c.config.TokenSigningKey, err)
-	}
-	return publicKey, nil
+		signerCache: signerCache,
+		kms:         kms,
+	}, nil
 }
 
 // Parses and validates the token against the configured keyID and public key.

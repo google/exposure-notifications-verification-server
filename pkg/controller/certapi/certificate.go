@@ -40,17 +40,10 @@ func (c *Controller) HandleCertificate() http.Handler {
 			return
 		}
 
-		publicKey, err := c.getPublicKey(ctx, c.config.TokenSigningKey)
+		// Get the public key for the token.
+		publicKey, err := c.pubKeyCache.GetPublicKey(ctx, c.config.TokenSigningKey, c.kms)
 		if err != nil {
 			c.logger.Errorw("failed to get public key", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
-			return
-		}
-
-		// Get the signer based on Key configuration.
-		signer, err := c.kms.NewSigner(ctx, c.config.CertificateSigningKey)
-		if err != nil {
-			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
 		}
@@ -82,6 +75,14 @@ func (c *Controller) HandleCertificate() http.Handler {
 			return
 		}
 
+		// determine the correct signing key to use.
+		signerInfo, err := c.getSignerForRealm(ctx, authApp)
+		if err != nil {
+			c.logger.Errorw("failed to get signer", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
+			return
+		}
+
 		// Create the Certificate
 		now := time.Now().UTC()
 		claims := verifyapi.NewVerificationClaims()
@@ -92,15 +93,15 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		claims.SignedMAC = request.ExposureKeyHMAC
-		claims.StandardClaims.Audience = c.config.CertificateAudience
-		claims.StandardClaims.Issuer = c.config.CertificateIssuer
+		claims.StandardClaims.Audience = signerInfo.Audience
+		claims.StandardClaims.Issuer = signerInfo.Issuer
 		claims.StandardClaims.IssuedAt = now.Unix()
-		claims.StandardClaims.ExpiresAt = now.Add(c.config.CertificateDuration).Unix()
+		claims.StandardClaims.ExpiresAt = now.Add(signerInfo.Duration).Unix()
 		claims.StandardClaims.NotBefore = now.Add(-1 * time.Second).Unix()
 
 		certToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-		certToken.Header[verifyapi.KeyIDHeader] = c.config.CertificateSigningKeyID
-		certificate, err := jwthelper.SignJWT(certToken, signer)
+		certToken.Header[verifyapi.KeyIDHeader] = signerInfo.KeyID
+		certificate, err := jwthelper.SignJWT(certToken, signerInfo.Signer)
 		if err != nil {
 			c.logger.Errorw("failed to sign certificate", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
