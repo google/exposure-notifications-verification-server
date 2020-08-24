@@ -14,7 +14,7 @@
 
 resource "google_kms_key_ring" "verification" {
   project  = var.project
-  name     = "verification"
+  name     = var.kms_key_ring_name
   location = var.kms_location
 
   depends_on = [
