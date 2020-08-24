@@ -102,6 +102,7 @@ type IssueCodeRequest struct {
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 	TestDate    string `json:"testDate"`
 	TestType    string `json:"testType"`
+	TZOffset    int    `json:"tzOffset"` // offset in minutes of the user's timezone.
 	Phone       string `json:"phone"`
 }
 
