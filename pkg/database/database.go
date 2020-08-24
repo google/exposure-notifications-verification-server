@@ -58,7 +58,7 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 	}
 
 	// Create the key manager.
-	keyManager, err := keys.KeyManagerFor(ctx, c.Keys.KeyManagerType)
+	keyManager, err := keys.KeyManagerFor(ctx, &c.Keys)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key manager: %w", err)
 	}
