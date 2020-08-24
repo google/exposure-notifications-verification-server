@@ -16,7 +16,7 @@
       <div class="d-flex w-100 justify-content-center align-self-center">
         <div class="col-sm-6">
           <div class="card shadow-sm">
-            <div class="card-header">New User</div>
+            <div class="card-header">Create New User</div>
             <div class="card-body">
               <form id="loginForm" action="/" method="POST">
                 <div class="form-group mb-2">
@@ -32,10 +32,12 @@
                 <button type="submit" id="submit" class="btn btn-primary btn-block">Create user</button>
               </form>
             </div>
+            <div class="card-body">
+              <a class="card-link" href="/">&larr; Login</a>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   </main>
 
@@ -70,33 +72,11 @@
           });
       });
 
-      auth.onAuthStateChanged(function (user) {
+      firebase.auth().onAuthStateChanged(function (user) {
         if (!user) {
           return
         }
-
-        user.getIdToken().then(idToken => {
-          $.ajax({
-            type: 'POST',
-            url: '/session',
-            data: { idToken: idToken },
-            headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
-            contentType: 'application/x-www-form-urlencoded',
-            success: function (returnData) {
-              // The user successfully signed in, redirect to realm selection.
-              window.location.assign('/realm');
-            },
-            error: function (xhr, status, e) {
-              // There was an error finding the user. Redirect to the
-              // signout page to clear the firebase cookie and any session
-              // data.
-              //
-              // The flash data may have more detailed error messages, which
-              // will be displayed on the signout page.
-              window.location.assign("/signout");
-            }
-          })
-        });
+        setSession(user)
       });
     });
   </script>
