@@ -166,10 +166,12 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
-				UUID:               uuid,
-				VerificationCode:   code,
-				ExpiresAt:          expiryTime.Format(time.RFC1123),
-				ExpiresAtTimestamp: expiryTime.UTC().Unix(),
+				UUID:                   uuid,
+				VerificationCode:       code,
+				ExpiresAt:              expiryTime.Format(time.RFC1123),
+				ExpiresAtTimestamp:     expiryTime.UTC().Unix(),
+				LongExpiresAt:          longExpiryTime.Format(time.RFC1123),
+				LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
 			})
 	})
 }

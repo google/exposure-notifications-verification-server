@@ -9,30 +9,31 @@
   {{template "head" .}}
 
   <style>
-    #vercode {
+    #code {
       flex-shrink: 10;
+      font-size: 1.5em;
       line-height: 2.3em;
       max-width: 480px;
     }
 
-    #vercode span {
+    #code span {
       flex: 1;
       margin: 0 0.1em;
     }
   </style>
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Issue diagnosis verification code</h1>
+    <h1>Create verification code</h1>
     <p>
       Complete the following form to issue a single-use token to verify a
-      patient. <strong>Do not submit this form until you are prepared to relay
-      the code to the patient.</strong>
+      patient. Do not submit this form until you are prepared to relay
+      the code to the patient.
     </p>
 
     {{/* Calculate the column width based on the number of expected choices */}}
@@ -43,174 +44,269 @@
       {{$colWidth = 6}}
     {{end}}
 
-    <form id="issueForm" action="#">
-      <div class="card mb-3">
-        <div class="card-header">Diagnosis</div>
-        <div class="card-body">
-          <div class="form-row">
-            {{if $currentRealm.ValidTestType "confirmed"}}
-            <div class="form-group col-md-{{$colWidth}}">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
-                <label class="form-check-label" for="testType1">
-                  <strong>Positive</strong> test
-                  <small class="form-text text-muted">
-                    Confirmed positive test result from an official testing source
-                  </small>
-                </label>
-              </div>
-            </div>
-            {{end}}
+    <div id="errors" class="alert alert-danger d-none"></div>
 
-            {{if $currentRealm.ValidTestType "likely"}}
-            <div class="form-group col-md-{{$colWidth}}">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" />
-                <label class="form-check-label" for="testType2">
-                  Likely diagnosis
-                  <small class="form-text text-muted">
-                    Clinical diagnosis without a test
-                  </small>
-                </label>
+    <form id="issue" action="#">
+      <div id="form-area">
+        <div class="card mb-3">
+          <div class="card-header">Diagnosis</div>
+          <div class="card-body">
+            <div class="form-row">
+              {{if $currentRealm.ValidTestType "confirmed"}}
+              <div class="form-group col-md-{{$colWidth}}">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
+                  <label class="form-check-label" for="testType1">
+                    <strong>Positive</strong> test
+                    <small class="form-text text-muted">
+                      Confirmed positive test result from an official testing source
+                    </small>
+                  </label>
+                </div>
               </div>
-            </div>
-            {{end}}
+              {{end}}
 
-            {{if $currentRealm.ValidTestType "negative"}}
-            <div class="form-group col-md-{{$colWidth}}">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="testType" id="testType3" value="negative" />
-                <label class="form-check-label" for="testType3">
-                  <strong>Negative</strong> test
-                  <small class="form-text text-muted">
-                    Confirmed negative test result from an official testing source
-                  </small>
-                </label>
+              {{if $currentRealm.ValidTestType "likely"}}
+              <div class="form-group col-md-{{$colWidth}}">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" />
+                  <label class="form-check-label" for="testType2">
+                    Likely diagnosis
+                    <small class="form-text text-muted">
+                      Clinical diagnosis without a test
+                    </small>
+                  </label>
+                </div>
               </div>
-            </div>
-            {{end}}
-          </div>
-        </div>
-      </div>
+              {{end}}
 
-      <div class="card mb-3">
-        <div class="card-header">Dates</div>
-        <div class="card-body">
-          <div class="form-row">
-            <div class="form-group col-md-6">
-              <label for="testDate">Testing date</label>
-              <input type="date" id="testDate" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
-              <small class="form-text text-muted">
-                <strong>Recommended.</strong>
-                This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when the test was performed.
-                Click here to <a href="#" data-fill-target="testDate" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
-              </small>
-            </div>
-
-            <div class="form-group col-md-6">
-              <label for="symptomDate">Symptoms onset</label>
-              <div class="input-group">
-                <input type="date" id="symptomDate" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+              {{if $currentRealm.ValidTestType "negative"}}
+              <div class="form-group col-md-{{$colWidth}}">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="testType" id="testType3" value="negative" />
+                  <label class="form-check-label" for="testType3">
+                    <strong>Negative</strong> test
+                    <small class="form-text text-muted">
+                      Confirmed negative test result from an official testing source
+                    </small>
+                  </label>
+                </div>
               </div>
-              <small class="form-text text-muted">
-                <strong>Recommended.</strong>
-                This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when symptoms began. It cannot be more than {{.maxSymptomDays}} days ago.
-                Click here to <a href="#" data-fill-target="symptomDate" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
-              </small>
+              {{end}}
             </div>
           </div>
         </div>
-      </div>
 
-      {{ if $hasSMSConfig }}
-      <div class="card mb-3">
-        <div class="card-header">Notification</div>
-        <div class="card-body">
-          <div class="row form-group">
-            <label for="symptomDate" class="col-sm-3">Patient phone</label>
-            <div class="col-sm-9">
-              <div class="input-group">
-                <input type="tel" id="phone" name="phone" class="form-control" />
+        <div class="card mb-3">
+          <div class="card-header">Dates</div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="testDate">Testing date</label>
+                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+                <small class="form-text text-muted">
+                  <strong>Recommended.</strong>
+                  This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when the test was performed.
+                  Click here to <a href="#" data-fill-target="test-date" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
+                </small>
               </div>
-              <small class="form-text text-muted">
-                If provided, the system will send text containing the code to the
-                patient. This must be a phone number capable of receiving SMS text
-                messages.
-              </small>
+
+              <div class="form-group col-md-6">
+                <label for="symptomDate">Symptoms onset</label>
+                <div class="input-group">
+                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+                </div>
+                <small class="form-text text-muted">
+                  <strong>Recommended.</strong>
+                  This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when symptoms began. It cannot be more than {{.maxSymptomDays}} days ago.
+                  Click here to <a href="#" data-fill-target="symptom-date" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
+                </small>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      {{ end }}
 
-      <div class="row mb-3">
-        <div class="col">
-          <button id="submit" class="btn btn-primary btn-block">Generate code</button>
+        {{ if $hasSMSConfig }}
+        <div class="card mb-3">
+          <div class="card-header">Notification</div>
+          <div class="card-body">
+            <div class="row form-group">
+              <label for="symptomDate" class="col-sm-3">Patient phone</label>
+              <div class="col-sm-9">
+                <div class="input-group">
+                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="+1 (555) 555-5555" />
+                </div>
+                <small class="form-text text-muted">
+                  If provided, the system will send text containing the code to the
+                  patient. This must be a phone number capable of receiving SMS text
+                  messages.
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+        {{ end }}
+
+        <div class="row mb-3">
+          <div class="col">
+            <button id="submit" type="submit" class="btn btn-primary btn-block">Create verification code</button>
+          </div>
         </div>
       </div>
     </form>
 
-    <div id="codeerror" class="alert alert-danger d-none"></div>
+    <div id="long-code-confirm" class="card d-none mb-3">
+      <div class="card-header">
+        SMS verification link
+        <span id="long-code-expires-at" class="sm float-right text-danger"></span>
+      </div>
+      <div class="card-body">
+        <p class="mb-0">
+          <span class="oi oi-circle-check text-success pr-1" aria-hidden="true"></span>
+          Successfully sent SMS to <strong id="long-code-phone"></strong>.
+        </p>
+      </div>
+    </div>
 
-    <div id="codearea" class="d-none">
-      <hr>
+    <div id="code-confirm" class="card d-none mb-3">
+      <div class="card-header">
+        Generated short code
+        <span id="code-expires-at" class="sm float-right text-danger"></span>
+      </div>
+      <div class="card-body">
+        <p>
+          <span class="oi oi-warning text-warning pr-1" aria-hidden="true"></span>
+          Share this code with the patient.
+        </p>
 
-      <h2>Generated code</h2>
+        <div id="code" class="text-center text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
+      </div>
+    </div>
 
-      <p>
-        Share the follow code with the patient <strong>immediately</strong>.
-        This code expires at <span id="expiresAt"></span>.
-      </p>
+    <div id="uuid-confirm" class="card d-none mb-3">
+      <div class="card-header">Unique identifier</div>
+      <div class="card-body">
+        <p>
+          <span class="oi oi-info text-info pr-1" aria-hidden="true"></span>
+          Use this to see if the verification code has been redeemed.
+        </p>
 
-      <div id="vercode" class="text-center text-monospace d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
+        <div class="form-group row">
+          <div class="input-group col-sm-8 offset-sm-2">
+            <input type="text" id="uuid" class="form-control text-monospace">
+            <div class="input-group-append">
+              <a class="input-group-text" data-toggle="tooltip" title="Copy to clipboard" data-copy data-copy-target="uuid">
+                <span class="oi oi-clipboard" aria-hidden="true"></span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <p>
-        Track the status of this code with the following ID: <span id="codeUUID" style="font-weight: bold;"></span>
-        <br />You may use this to see if the patient has successfully claimed their code.
-      </p>
-
-      <button id="startover" class="btn btn-warning btn-block mb-3">
-        Clear and generate another code
-      </button>
+    <div class="row mb-3">
+      <div class="col">
+        <button id="reset" class="d-none btn btn-secondary btn-block">Reset and go back</button>
+      </div>
     </div>
   </main>
 
   {{template "scripts" .}}
 
   <script type="text/javascript">
-    let $codeerror, $codearea, $expiresAt, $codeUUID, $vercode, $submit;
+    let $errors;
 
-   $(function() {
-      $codeerror = $('#codeerror');
-      $codearea = $('#codearea');
-      $expiresAt = $('#expiresAt');
-      $codeUUID = $('#codeUUID');
-      $vercode = $('#vercode');
-      $submit = $('#submit');
+    let $form;
+      let $inputTestDate;
+      let $inputSymptomDate;
+      let $inputPhone;
+      let $buttonSubmit;
+      let $buttonReset;
 
-      // click on button submit
-      $submit.on('click', function(event) {
-        event.preventDefault();
+    let $formArea;
 
-        // Disable the submit button so we only issue one code.
-        $submit.prop('disabled', true);
+    let $longCodeConfirm;
+      let $longCodeExpiresAt;
+      let $longCodePhone;
+    let $codeConfirm;
+      let $codeExpiresAt;
+      let $code;
+    let $uuidConfirm;
+      let $uuid;
 
-        var data = {};
-        $($('#issueForm').serializeArray()).each(function(index, obj){
-          data[obj.name] = obj.value;
+    $(function() {
+      $errors = $('#errors');
+
+      $form = $('form#issue');
+        $inputTestDate = $('input#test-date');
+        $inputSymptomDate = $('input#symptom-date');
+        $inputPhone = $('input#phone');
+        $buttonSubmit = $('button#submit');
+        $buttonReset = $('button#reset');
+
+      $formArea = $('#form-area')
+
+      $longCodeConfirm = $('#long-code-confirm');
+        $longCodeExpiresAt = $('#long-code-expires-at');
+        $longCodePhone = $('#long-code-phone');
+      $codeConfirm = $('#code-confirm');
+        $codeExpiresAt = $('#code-expires-at');
+        $code = $('#code');
+      $uuidConfirm = $('#uuid-confirm');
+        $uuid = $('#uuid');
+
+      // Handle form submission
+      $form.on('submit', function(e) {
+        e.preventDefault();
+
+        // Disable the submit button so we only issue one code
+        $buttonSubmit.prop('disabled', true);
+
+        // Clear and hide errors
+        $errors.html('');
+        $errors.addClass('d-none');
+
+        let data = {};
+        $($form.serializeArray()).each(function(i, obj) {
+          data[obj.name] = obj.value
         });
 
         getCode(data);
       });
 
-      $('#startover').on('click', function() {
-        // Hide the previously issued code and enable the submit button.
-        $codeerror.addClass('d-none');
-        $codearea.addClass('d-none');
-        $submit.prop('disabled', false);
-        $vercode.text('');
-        $expiresAt.text('');
-        $codeUUID.text('');
+      // Handle reset
+      $buttonReset.on('click', function(e) {
+        e.preventDefault();
+
+        // Clear and hide errors
+        $errors.html('');
+        $errors.addClass('d-none');
+
+        // Clear form values
+        $inputTestDate.val('');
+        $inputSymptomDate.val('');
+        $inputPhone.val('');
+
+        // Long
+        $longCodeConfirm.addClass('d-none');
+        $longCodeExpiresAt.html('');
+        $longCodePhone.html('');
+
+        // Short
+        $codeConfirm.addClass('d-none');
+        $codeExpiresAt.html('');
+        $code.html('');
+
+        // UUID
+        $uuidConfirm.addClass('d-none');
+        $uuid.html('');
+
+        // Buttons
+        $buttonSubmit.prop('disabled', false);
+        $buttonReset.addClass('d-none');
+
+        // Show form
+        $formArea.removeClass('d-none');
       });
     });
 
@@ -229,24 +325,53 @@
           if(result.error != "") {
             showError(result.error);
           } else {
-            $expiresAt.text(result.expiresAt);
-            $codeUUID.text(result.uuid);
+            // Hide the main form
+            $formArea.addClass('d-none');
 
-            let code = result.code;
-            for(let i = 0; i < code.length; i++) {
-              let $span = $('<span class="border rounded mx-1">').text(code.charAt(i));
-              $vercode.append($span);
+            // Show reset button
+            $buttonReset.removeClass('d-none');
+
+            // If a phone was provided...
+            if ($longCodePhone && $longCodePhone.length && $inputPhone && $inputPhone.length && $inputPhone.val().length) {
+              // Start countdown
+              countdown($longCodeExpiresAt, result.longExpiresAtTimestamp);
+
+              // Update HTML
+              $longCodePhone.html($inputPhone.val());
+
+              // Show long code
+              $longCodeConfirm.removeClass('d-none');
             }
 
-            $codeerror.addClass('d-none');
-            $codearea.removeClass('d-none');
+            // Build the code - this is a collection of HTML spans
+            {
+              // Start countdown
+              countdown($codeExpiresAt, result.expiresAtTimestamp);
 
-            $codearea[0].scrollIntoView({
-              behavior: 'smooth',
-            });
+              // Update HTML
+              let code = result.code;
+              for(let i = 0; i < code.length; i++) {
+                let $span = $('<span class="border rounded ml-1 py-2 bg-light">').text(code.charAt(i));
+                $code.append($span);
+              }
+
+              $codeConfirm.removeClass('d-none');
+            }
+
+            // UUID section
+            {
+              // Fill in the UUID
+              $uuid.val(result.uuid);
+
+              // Show
+              $uuidConfirm.removeClass('d-none');
+            }
           }
         },
         error: function(xhr, resp, text) {
+          // Show reset button
+          $buttonReset.removeClass('d-none');
+
           var message = resp;
           if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
             message = message + ": " + xhr.responseJSON.error;
@@ -257,14 +382,84 @@
     }
 
     function showError(error) {
-      $codearea.addClass('d-none');
+      // Make errors
+      $errors.html(error);
+      $errors.removeClass('d-none');
 
-      $codeerror.text(error);
-      $codeerror.removeClass('d-none');
-      $codeerror[0].scrollIntoView({
+      // Scroll to errors
+      $errors[0].scrollIntoView({
         behavior: 'smooth',
       });
-      $submit.prop('disabled', false);
+
+      // Show reset button
+      $buttonReset.removeClass('d-none');
+    }
+
+    // element is expected to be a jquery element or dom query selector, ts is
+    // the number of seconds since epoch, UTC.
+    function countdown(element, ts) {
+      if (typeof (ts) === 'undefined') {
+        return;
+      }
+
+      let $element = $(element);
+      let date = new Date(ts*1000).getTime();
+
+      const formattedTime = function() {
+        let now = new Date().getTime();
+        let diff = date - now;
+
+        if (diff <= 0) {
+          return false;
+        }
+
+        let hours = Math.floor(diff / (1000 * 60 * 60));
+        let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let time;
+
+        // hours
+        if (hours < 10) {
+          time = `0${hours}`;
+        } else {
+          time = `${hours}`;
+        }
+
+        // minutes
+        if (minutes < 10) {
+          time = `${time}:0${minutes}`;
+        } else {
+          time = `${time}:${minutes}`;
+        }
+
+        // seconds
+        if (seconds < 10) {
+          time = `${time}:0${seconds}`;
+        } else {
+          time = `${time}:${seconds}`;
+        }
+
+        return time;
+      };
+
+      // Fire once so the time is displayed immediately.
+      let time = formattedTime();
+      let text = `Expires in ${time}`.trim();
+      $element.html(text);
+
+      // Set timer.
+      const fn = setInterval(function() {
+        let time = formattedTime();
+        if (!time) {
+          clearInterval(fn);
+          $element.html('<strong>EXPIRED</strong>');
+          return
+        }
+
+        let text = `Expires in ${time}`.trim();
+        $element.html(text);
+      }, 1000);
     }
   </script>
 </body>

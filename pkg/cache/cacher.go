@@ -18,8 +18,8 @@ package cache
 import (
 	"context"
 	"fmt"
+	"hash"
 	"io"
-	"reflect"
 	"time"
 )
 
@@ -31,6 +31,59 @@ var (
 
 // FetchFunc is a function used to Fetch in a cacher.
 type FetchFunc func() (interface{}, error)
+
+// KeyFunc is a function that mutates the provided cache key before storing it
+// in Redis. This can be used to hash or HMAC values to prevent their plaintext
+// from appearing in Redis. A good example might be an API key lookup that you
+// HMAC before passing along.
+//
+// The KeyFunc can also be used to add a prefix or namespace to keys in
+// multi-tenant systems.
+type KeyFunc func(string) (string, error)
+
+// MultiKeyFunc returns a KeyFunc that calls the provided KeyFuncs in order,
+// with the previous value passed to the next.
+func MultiKeyFunc(fns ...KeyFunc) KeyFunc {
+	return func(in string) (string, error) {
+		var err error
+		for _, fn := range fns {
+			in, err = fn(in)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		return in, nil
+	}
+}
+
+// PrefixKeyFunc returns a KeyFunc that prefixes the key with the given constant
+// before passing it to the cacher for storage.
+func PrefixKeyFunc(prefix string) KeyFunc {
+	return func(in string) (string, error) {
+		if prefix != "" {
+			in = prefix + in
+		}
+		return in, nil
+	}
+}
+
+// HashKeyFunc returns a KeyFunc that hashes or HMACs the provided key before
+// passing it to the cacher for storage.
+func HashKeyFunc(hasher func() hash.Hash) KeyFunc {
+	return func(in string) (string, error) {
+		h := hasher()
+		n, err := h.Write([]byte(in))
+		if err != nil {
+			return "", err
+		}
+		if got, want := n, len(in); got < want {
+			return "", fmt.Errorf("only hashed %d of %d bytes", got, want)
+		}
+		dig := h.Sum(nil)
+		return fmt.Sprintf("%x", dig), nil
+	}
+}
 
 // Cacher is an interface that defines caching.
 type Cacher interface {
@@ -55,64 +108,4 @@ type Cacher interface {
 
 	// Delete removes an item from the cache, returning any errors that occur.
 	Delete(context.Context, string) error
-}
-
-// toValue converts the given interface into it's value, making sure its a
-// concrete type.
-func toValue(i interface{}) (reflect.Value, error) {
-	v := reflect.ValueOf(i)
-
-	if !v.IsValid() {
-		return reflect.Value{}, fmt.Errorf("value is invalid")
-	}
-
-	for v.CanAddr() {
-		v = v.Addr()
-	}
-
-	for v.Type().Kind() == reflect.Ptr {
-		if v.IsNil() {
-			v.Set(reflect.New(v.Type().Elem()))
-		}
-		v = v.Elem()
-	}
-
-	return v, nil
-}
-
-// readInto reads in into out, setting the value of out to the value of in.
-func readInto(in, out interface{}) error {
-	ov, err := toValue(out)
-	if err != nil {
-		return err
-	}
-
-	if !ov.CanSet() {
-		return fmt.Errorf("cannot decode into unassignable value")
-	}
-
-	iv, err := toValue(in)
-	if err != nil {
-		return err
-	}
-
-	// Get a pointer to the in interface, since the pointer might be the thing
-	// that implements the out interface.
-	iptr := reflect.New(iv.Type())
-	iptr.Elem().Set(iv)
-
-	ovt := ov.Type()
-	ivt := iv.Type()
-	iptrt := iptr.Type()
-
-	switch {
-	case ivt.ConvertibleTo(ovt):
-		ov.Set(iv.Convert(ovt))
-	case iptrt.ConvertibleTo(ovt):
-		ov.Set(iptr.Convert(ovt))
-	default:
-		return fmt.Errorf("cannot convert from %v to %v", ivt, ovt)
-	}
-
-	return nil
 }

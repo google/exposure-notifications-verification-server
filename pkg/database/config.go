@@ -17,7 +17,6 @@ package database
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
@@ -40,10 +39,6 @@ type Config struct {
 	// Debug is a boolean that indicates whether the database should log SQL
 	// commands.
 	Debug bool `env:"DB_DEBUG,default=false"`
-
-	// CacheTTL is the amount of time to cache values. This is enabled on a
-	// per-query basis. Not all query results are cached.
-	CacheTTL time.Duration `env:"DB_CACHE_TTL, default=5m" json:",omitempty"`
 
 	// Keys is the key management configuration. This is used to resolve values
 	// that are encrypted via a KMS.

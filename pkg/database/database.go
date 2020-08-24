@@ -28,8 +28,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
-
 	// ensure the postgres dialiect is compiled in.
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -39,9 +37,6 @@ import (
 type Database struct {
 	db     *gorm.DB
 	config *Config
-
-	// cacher is a write-through cache for frequent lookups.
-	cacher cache.Cacher
 
 	// keyManager is used to encrypt/decrypt values.
 	keyManager keys.KeyManager
@@ -56,12 +51,6 @@ type Database struct {
 // Load loads the configuration and processes any dependencies like secret and
 // key managers. It does NOT connect to the database.
 func (c *Config) Load(ctx context.Context) (*Database, error) {
-	// Create the cacher.
-	cacher, err := cache.NewInMemory(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cache: %w", err)
-	}
-
 	// Create the secret manager.
 	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
 	if err != nil {
@@ -97,7 +86,6 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 
 	return &Database{
 		config:        c,
-		cacher:        cacher,
 		keyManager:    keyManager,
 		logger:        logger,
 		secretManager: secretManager,

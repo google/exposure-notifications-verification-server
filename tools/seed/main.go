@@ -53,8 +53,8 @@ func realMain(ctx context.Context) error {
 
 	// Database
 	var dbConfig database.Config
-	if err := envconfig.Process(ctx, &dbConfig); err != nil {
-		return fmt.Errorf("failed to parse database config: %w", err)
+	if err := config.ProcessWith(ctx, &dbConfig, envconfig.OsLookuper()); err != nil {
+		return fmt.Errorf("failed to process config: %w", err)
 	}
 
 	db, err := dbConfig.Load(ctx)
@@ -68,7 +68,7 @@ func realMain(ctx context.Context) error {
 
 	// Firebase
 	var fbConfig config.FirebaseConfig
-	if err := envconfig.Process(ctx, &fbConfig); err != nil {
+	if err := config.ProcessWith(ctx, &fbConfig, envconfig.OsLookuper()); err != nil {
 		return fmt.Errorf("failed to parse firebase config: %w", err)
 	}
 
@@ -87,16 +87,18 @@ func realMain(ctx context.Context) error {
 
 	// Create a realm
 	realm1 := database.NewRealmWithDefaults("Narnia")
+	realm1.RegionCode = "US-PA"
 	if err := db.SaveRealm(realm1); err != nil {
-		return fmt.Errorf("failed to create realm: %v", realm1.ErrorMessages())
+		return fmt.Errorf("failed to create realm: %w: %v", err, realm1.ErrorMessages())
 	}
 	logger.Infow("created realm", "realm", realm1)
 
 	// Create another realm
 	realm2 := database.NewRealmWithDefaults("Wonderland")
 	realm2.AllowedTestTypes = database.TestTypeLikely | database.TestTypeConfirmed
+	realm2.RegionCode = "US-WA"
 	if err := db.SaveRealm(realm2); err != nil {
-		return fmt.Errorf("failed to create realm")
+		return fmt.Errorf("failed to create realm: %w: %v", err, realm2.ErrorMessages())
 	}
 	logger.Infow("created realm", "realm", realm2)
 
@@ -105,7 +107,7 @@ func realMain(ctx context.Context) error {
 	user.AddRealm(realm1)
 	user.AddRealm(realm2)
 	if err := db.SaveUser(user); err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("failed to create user: %w: %v", err, user.ErrorMessages())
 	}
 	logger.Infow("created user", "user", user)
 
@@ -117,7 +119,7 @@ func realMain(ctx context.Context) error {
 	unverified := &database.User{Email: "unverified@example.com", Name: "Unverified User"}
 	unverified.AddRealm(realm1)
 	if err := db.SaveUser(unverified); err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("failed to create unverified: %w: %v", err, unverified.ErrorMessages())
 	}
 	logger.Infow("created user", "user", unverified)
 
@@ -125,7 +127,7 @@ func realMain(ctx context.Context) error {
 	admin.AddRealm(realm1)
 	admin.AddRealmAdmin(realm1)
 	if err := db.SaveUser(admin); err != nil {
-		return fmt.Errorf("failed to create admin: %w", err)
+		return fmt.Errorf("failed to create admin: %w: %v", err, admin.ErrorMessages())
 	}
 	logger.Infow("created admin", "admin", admin)
 
@@ -136,7 +138,7 @@ func realMain(ctx context.Context) error {
 
 	super := &database.User{Email: "super@example.com", Name: "Super User", Admin: true}
 	if err := db.SaveUser(super); err != nil {
-		return fmt.Errorf("failed to create super: %w", err)
+		return fmt.Errorf("failed to create super: %w: %v", err, super.ErrorMessages())
 	}
 	logger.Infow("created super", "super", super)
 
@@ -151,7 +153,7 @@ func realMain(ctx context.Context) error {
 		APIKeyType: database.APIUserTypeDevice,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create device api key")
+		return fmt.Errorf("failed to create device api key: %w", err)
 	}
 	logger.Infow("created device api key", "key", deviceAPIKey)
 
@@ -161,7 +163,7 @@ func realMain(ctx context.Context) error {
 		APIKeyType: database.APIUserTypeAdmin,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create admin api key")
+		return fmt.Errorf("failed to create admin api key: %w", err)
 	}
 	logger.Infow("created device api key", "key", adminAPIKey)
 

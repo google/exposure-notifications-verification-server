@@ -16,11 +16,13 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
@@ -90,6 +92,14 @@ func realMain(ctx context.Context) error {
 	sessions.Options.MaxAge = int(config.SessionDuration.Seconds())
 	sessions.Options.Secure = !config.DevMode
 	sessions.Options.SameSite = http.SameSiteStrictMode
+
+	// Setup cacher
+	// TODO(sethvargo): switch to HMAC
+	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
+		cache.HashKeyFunc(sha1.New), cache.PrefixKeyFunc("server:")))
+	if err != nil {
+		return fmt.Errorf("failed to create cacher: %w", err)
+	}
 
 	// Setup database
 	db, err := config.Database.Load(ctx)
@@ -233,7 +243,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAdmin)
 		sub.Use(rateLimit)
 
-		apikeyController := apikey.New(ctx, config, db, h)
+		apikeyController := apikey.New(ctx, config, cacher, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
 		sub.Handle("", apikeyController.HandleCreate()).Methods("POST")
 		sub.Handle("/new", apikeyController.HandleCreate()).Methods("GET")
@@ -253,7 +263,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAdmin)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, config, db, h)
+		userController := user.New(ctx, config, cacher, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")

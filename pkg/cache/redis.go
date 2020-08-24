@@ -17,9 +17,10 @@ package cache
 import (
 	"bytes"
 	"context"
-	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -32,23 +33,22 @@ var _ Cacher = (*redis)(nil)
 // redis is an shared cache implementation backed by Redis. It's ideal for
 // production installations since the cache is shared among all services.
 type redis struct {
-	pool *redigo.Pool
+	pool    *redigo.Pool
+	keyFunc KeyFunc
 
 	stopped uint32
 	stopCh  chan struct{}
 }
 
 type RedisConfig struct {
-	// Prefix is a string to prepend to all cache keys before saving. This is
-	// useful on a shared service where you don't want to clash with the wrong
-	// cache values.
-	Prefix string
-
 	// Address is the redis address and port. The default value is 127.0.0.1:6379.
 	Address string
 
 	// Username and Password are used for authentication.
 	Username, Password string
+
+	// KeyFunc is the key function.
+	KeyFunc KeyFunc
 }
 
 // NewRedis creates a new in-memory cache.
@@ -78,7 +78,8 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 			MaxIdle:   0,
 			MaxActive: 0,
 		},
-		stopCh: make(chan struct{}),
+		keyFunc: i.KeyFunc,
+		stopCh:  make(chan struct{}),
 	}
 
 	return c, nil
@@ -88,50 +89,51 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 // returns the value. If the value does not exist, it calls f and caches the
 // result of f in the cache for ttl. The ttl is calculated from the time the
 // value is inserted, not the time the function is called.
-func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) (retErr error) {
+func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
 
-	fn := func(conn redigo.Conn) error {
+	if c.keyFunc != nil {
+		var err error
+		key, err = c.keyFunc(key)
+		if err != nil {
+			return fmt.Errorf("failed to execute keyFunc: %w", err)
+		}
+	}
+
+	fn := func(conn redigo.Conn) (io.Reader, error) {
 		cached, err := redigo.String(conn.Do("GET", key))
 		if err != nil && !errors.Is(err, redigo.ErrNil) {
-			return fmt.Errorf("failed to GET key: %w", err)
+			return nil, fmt.Errorf("failed to GET key: %w", err)
 		}
 
 		// Found a value
 		if cached != "" {
-			r := strings.NewReader(cached)
-			if err := gob.NewDecoder(r).Decode(out); err != nil {
-				return fmt.Errorf("failed to decode cached value: %w", err)
-			}
-			return nil
+			return strings.NewReader(cached), nil
 		}
 
 		// No value found
 		if f == nil {
-			return ErrMissingFetchFunc
+			return nil, ErrMissingFetchFunc
 		}
 		val, err := f()
 		if err != nil {
-			return err
-		}
-		if err := readInto(val, out); err != nil {
-			return err
+			return nil, err
 		}
 
 		// Encode the value
 		var encoded bytes.Buffer
-		if err := gob.NewEncoder(&encoded).Encode(val); err != nil {
-			return fmt.Errorf("failed to encode value: %w", err)
+		if err := json.NewEncoder(&encoded).Encode(val); err != nil {
+			return nil, fmt.Errorf("failed to encode value: %w", err)
 		}
 
 		if _, err := conn.Do("WATCH", key); err != nil {
-			return fmt.Errorf("failed to WATCH key: %w", err)
+			return nil, fmt.Errorf("failed to WATCH key: %w", err)
 		}
 
 		if _, err := conn.Do("MULTI"); err != nil {
-			return fmt.Errorf("failed to MULTI: %w", err)
+			return nil, fmt.Errorf("failed to MULTI: %w", err)
 		}
 
 		if _, err := conn.Do("PSETEX", key, int64(ttl.Milliseconds()), encoded.String()); err != nil {
@@ -141,20 +143,32 @@ func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time
 				err = fmt.Errorf("failed to DISCARD: %v, original error: %w", derr, err)
 			}
 
-			return err
+			return nil, err
 		}
 
 		if _, err := conn.Do("EXEC"); err != nil {
-			return fmt.Errorf("failed to EXEC: %w", err)
+			return nil, fmt.Errorf("failed to EXEC: %w", err)
 		}
 
-		return nil
+		return &encoded, nil
 	}
 
 	// This is a CAS operation, so retry
 	var err error
 	for i := 0; i < 5; i++ {
-		err = c.withConn(fn)
+		err = c.withConn(func(c redigo.Conn) error {
+			r, err := fn(c)
+			if err != nil {
+				return err
+			}
+
+			// Decode the value into out.
+			if err := json.NewDecoder(r).Decode(out); err != nil {
+				return fmt.Errorf("failed to decode value")
+			}
+
+			return nil
+		})
 		if err == nil {
 			break
 		}
@@ -169,9 +183,17 @@ func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl ti
 		return ErrStopped
 	}
 
+	if c.keyFunc != nil {
+		var err error
+		key, err = c.keyFunc(key)
+		if err != nil {
+			return fmt.Errorf("failed to execute keyFunc: %w", err)
+		}
+	}
+
 	return c.withConn(func(conn redigo.Conn) error {
 		var encoded bytes.Buffer
-		if err := gob.NewEncoder(&encoded).Encode(value); err != nil {
+		if err := json.NewEncoder(&encoded).Encode(value); err != nil {
 			return fmt.Errorf("failed to encode value: %w", err)
 		}
 
@@ -189,6 +211,14 @@ func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
 		return ErrStopped
 	}
 
+	if c.keyFunc != nil {
+		var err error
+		key, err = c.keyFunc(key)
+		if err != nil {
+			return fmt.Errorf("failed to execute keyFunc: %w", err)
+		}
+	}
+
 	return c.withConn(func(conn redigo.Conn) error {
 		val, err := redigo.String(conn.Do("GET", key))
 		if err != nil && !errors.Is(err, redigo.ErrNil) {
@@ -199,7 +229,7 @@ func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
 		}
 
 		r := strings.NewReader(val)
-		if err := gob.NewDecoder(r).Decode(out); err != nil {
+		if err := json.NewDecoder(r).Decode(out); err != nil {
 			return fmt.Errorf("failed to decode cached value: %w", err)
 		}
 		return nil
@@ -211,6 +241,14 @@ func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
 func (c *redis) Delete(ctx context.Context, key string) error {
 	if c.isStopped() {
 		return ErrStopped
+	}
+
+	if c.keyFunc != nil {
+		var err error
+		key, err = c.keyFunc(key)
+		if err != nil {
+			return fmt.Errorf("failed to execute keyFunc: %w", err)
+		}
 	}
 
 	return c.withConn(func(conn redigo.Conn) error {
@@ -226,6 +264,7 @@ func (c *redis) Close() error {
 	if !atomic.CompareAndSwapUint32(&c.stopped, 0, 1) {
 		return nil
 	}
+
 	close(c.stopCh)
 	if err := c.pool.Close(); err != nil {
 		return fmt.Errorf("failed to close pool: %w", err)

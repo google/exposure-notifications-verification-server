@@ -15,6 +15,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -55,7 +56,7 @@ type Realm struct {
 	Name string `gorm:"type:varchar(200);unique_index"`
 
 	// Code configuration
-	RegionCode       string          `gorm:"type:varchar(5); not null; default: ''"`
+	RegionCode       string          `gorm:"type:varchar(10); not null; default: ''"`
 	CodeLength       uint            `gorm:"type:smallint; not null; default: 8"`
 	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900"` // default 15m (in seconds)
 	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16"`
@@ -100,6 +101,10 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	r.RegionCode = strings.ToUpper(strings.TrimSpace(r.RegionCode))
+
+	if len(r.RegionCode) > 10 {
+		r.AddError("regionCode", "cannot be more than 10 characters")
+	}
 
 	if r.CodeLength < 6 {
 		r.AddError("codeLength", "must be at least 6")
@@ -192,7 +197,18 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		}
 		return nil, err
 	}
-	return smsConfig.SMSProvider(db)
+
+	ctx := context.Background()
+	provider, err := sms.ProviderFor(ctx, &sms.Config{
+		ProviderType:     smsConfig.ProviderType,
+		TwilioAccountSid: smsConfig.TwilioAccountSid,
+		TwilioAuthToken:  smsConfig.TwilioAuthToken,
+		TwilioFromNumber: smsConfig.TwilioFromNumber,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return provider, nil
 }
 
 // ListAuthorizedApps gets all the authorized apps for the realm.

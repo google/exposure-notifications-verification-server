@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"hash"
 	"net/http"
 	"strconv"
 	"strings"
@@ -198,22 +199,28 @@ func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httpli
 
 	return func(r *http.Request) (string, error) {
 		// Procss the API key
-		v := r.Header.Get("X-API-Key")
+		v := r.Header.Get("x-api-key")
 		if v != "" {
 			// v2 API keys encode the realm
 			_, realmID, err := db.VerifyAPIKeySignature(v)
 			if err == nil {
 				logger.Debugw("limiting by api key v2 realm", "realm", realmID)
-				dig := sha1.Sum([]byte(fmt.Sprintf("%d", realmID)))
-				return fmt.Sprintf("apiserver:realm:%x", dig), nil
+				dig, err := digest(sha1.New, strconv.FormatUint(uint64(realmID), 10))
+				if err != nil {
+					return "", fmt.Errorf("failed to digest realm id: %w", err)
+				}
+				return fmt.Sprintf("ratelimit:%s:realm:%x", scope, dig), nil
 			}
 
 			// v1 API keys do not, fallback to the database
 			app, err := db.FindAuthorizedAppByAPIKey(v)
-			if err == nil && app != nil {
+			if err == nil {
 				logger.Debugw("limiting by api key v1 realm", "realm", app.RealmID)
-				dig := sha1.Sum([]byte(fmt.Sprintf("%d", app.RealmID)))
-				return fmt.Sprintf("%s:realm:%x", scope, dig), nil
+				dig, err := digest(sha1.New, strconv.FormatUint(uint64(app.RealmID), 10))
+				if err != nil {
+					return "", fmt.Errorf("failed to digest realm id: %w", err)
+				}
+				return fmt.Sprintf("ratelimit:%s:realm:%x", scope, dig), nil
 			}
 		}
 
@@ -234,8 +241,11 @@ func UserEmailKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
 		user := controller.UserFromContext(ctx)
 		if user != nil && user.Email != "" {
 			logger.Debugw("limiting by user", "user", user.ID)
-			dig := sha1.Sum([]byte(user.Email))
-			return fmt.Sprintf("%s:user:%x", scope, dig), nil
+			dig, err := digest(sha1.New, strconv.FormatUint(uint64(user.ID), 10))
+			if err != nil {
+				return "", fmt.Errorf("failed to digest user id: %w", err)
+			}
+			return fmt.Sprintf("ratelimit:%s:user:%x", scope, dig), nil
 		}
 
 		return ipAddrLimit(r)
@@ -258,7 +268,25 @@ func IPAddressKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
 		}
 
 		logger.Debugw("limiting by ip", "ip", ip)
-		dig := sha1.Sum([]byte(ip))
-		return fmt.Sprintf("%s:ip:%x", scope, dig), nil
+		dig, err := digest(sha1.New, ip)
+		if err != nil {
+			return "", fmt.Errorf("failed to digest ip: %w", err)
+		}
+		return fmt.Sprintf("ratelimit:%s:ip:%x", scope, dig), nil
 	}
+}
+
+// digest returns the digest of given string as a hex-encoded string, and any
+// errors that occur while hashing.
+func digest(hasher func() hash.Hash, in string) (string, error) {
+	h := hasher()
+	n, err := h.Write([]byte(in))
+	if err != nil {
+		return "", err
+	}
+	if got, want := n, len(in); got < want {
+		return "", fmt.Errorf("only hashed %d of %d bytes", got, want)
+	}
+	dig := h.Sum(nil)
+	return fmt.Sprintf("%x", dig), nil
 }

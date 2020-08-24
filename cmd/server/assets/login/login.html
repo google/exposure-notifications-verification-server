@@ -16,7 +16,7 @@
       <div class="d-flex w-100 justify-content-center align-self-center">
         <div class="col-sm-6">
           <div class="card shadow-sm">
-            <div class="card-header">Login</div>
+            <div class="card-header">COVID-19 test verification</div>
             <div class="card-body">
               <form id="loginForm" action="/" method="POST">
                 <div class="form-group mb-2">
@@ -40,12 +40,23 @@
         </div>
       </div>
     </div>
-    </div>
+
+    <div id="recaptcha-container" class="center-block"></div>
   </main>
 
   {{template "scripts" .}}
 
   <script>
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+      'recaptcha-container',
+      { 'size': 'invisible' }
+    );
+
+    recaptchaVerifier.render()
+      .then(function (widgetId) {
+        window.recaptchaWidgetId = widgetId;
+      });
+
     $(function () {
       let $form = $('#loginForm');
       let $submit = $('#submit');
@@ -63,9 +74,42 @@
             clearExistingFlash();
           })
           .catch(function (error) {
-            clearExistingFlash();
-            flash(error.message, "danger")
-            $submit.prop('disabled', false);
+            if (error.code == 'auth/multi-factor-auth-required') {
+              resolver = error.resolver;
+              let selectedIndex = 0 // TODO: show list of factors
+              if (resolver.hints[selectedIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
+
+                let phoneInfoOptions = {
+                  multiFactorHint: resolver.hints[selectedIndex],
+                  session: resolver.session
+                };
+                let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+                return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+                  .then(function (verificationId) {
+                    let verificationCode = window.prompt('Please enter the verification ' +
+                      'code that was sent to your mobile device.');
+
+                    // Ask user for the SMS verification code.
+                    let cred = firebase.auth.PhoneAuthProvider.credential(
+                      verificationId, verificationCode);
+                    let multiFactorAssertion =
+                      firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+                    // Complete sign-in.
+                    return resolver.resolveSignIn(multiFactorAssertion)
+                  }).catch(function (error) {
+                    clearExistingFlash();
+                    flash(error.message, "danger");
+                    $submit.prop('disabled', false);
+                  });
+              } else {
+                clearExistingFlash();
+                flash("unsupported 2nd factor authentication type", "danger");
+              }
+            } else {
+              clearExistingFlash();
+              flash(error.message, "danger");
+              $submit.prop('disabled', false);
+            }
           });
       });
 
@@ -73,30 +117,7 @@
         if (!user) {
           return
         }
-
-        flash("Welcome, " + user.email, "success")
-        user.getIdToken().then(idToken => {
-          $.ajax({
-            type: 'POST',
-            url: '/session',
-            data: { idToken: idToken },
-            headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
-            contentType: 'application/x-www-form-urlencoded',
-            success: function (returnData) {
-              // The user successfully signed in, redirect to realm selection.
-              window.location.assign('/realm');
-            },
-            error: function (xhr, status, e) {
-              // There was an error finding the user. Redirect to the
-              // signout page to clear the firebase cookie and any session
-              // data.
-              //
-              // The flash data may have more detailed error messages, which
-              // will be displayed on the signout page.
-              window.location.assign("/signout");
-            }
-          })
-        });
+        setSession(user)
       });
     });
   </script>

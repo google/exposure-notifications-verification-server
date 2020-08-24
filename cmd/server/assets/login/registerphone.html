@@ -17,29 +17,44 @@
     <h1>SMS auth registration</h1>
     <p id="subtitle">Use this page to register a phone number for 2-factor authentication.</p>
 
-    <div id="recaptcha-container" class="center-block"></div>
-
     <div class="card mb-3">
       <div class="card-body">
-        <div class="row form-group">
-          <label for="phone" class="col-sm-3">Phone number</label>
-          <div class="col-sm-9">
-            <div class="input-group p-0 shadow-sm">
-              <input type="tel" id="phone" name="phone" class="form-control" />
+        <form id="registerForm" action="/" method="POST">
+          <div class="row form-group">
+            <label for="display" class="col-sm-3">Display name</label>
+            <div class="col-sm-9">
+              <div class="input-group p-0 shadow-sm">
+                <input type="text" id="display" name="display" class="form-control" value="Personal phone" />
+              </div>
+              <small class="form-text text-muted">
+                Display name for this phone number
+              </small>
             </div>
-            <small class="form-text text-muted">
-              Format: +1 123-456-7890. Standard SMS rates may apply.
-            </small>
           </div>
-        </div>
+          <div class="row form-group">
+            <label for="phone" class="col-sm-3">Phone number</label>
+            <div class="col-sm-9">
+              <div class="input-group p-0 shadow-sm">
+                <input type="tel" id="phone" name="phone" class="form-control" />
+              </div>
+              <small class="form-text text-muted">
+                Fully qualified phone number beginning with '+'. Standard SMS rates may apply.
+              </small>
+            </div>
+          </div>
 
-        <div class="row form-group">
-          <div class="offset-sm-3 col-sm-9">
-            <button id="register" class="btn btn-primary btn-block">Register</button>
+          <div class="row form-group">
+            <div class="offset-sm-3 col-sm-9">
+              <button type="submit" id="register" class="btn btn-primary btn-block">Register</button>
+            </div>
           </div>
-        </div>
+        </form>
+
+        <a id="skip" class="card-link" href="/realm">Skip for now</a>
       </div>
     </div>
+
+    <div id="recaptcha-container" class="center-block"></div>
   </main>
 
   {{template "scripts" .}}
@@ -56,10 +71,20 @@
       });
 
     $(function () {
-      let $phone = $('#phone')
+      let $displayName = $('#display');
+      let $submit = $('#register');
+      let $phone = $('#phone');
+      let $form = $('#registerForm');
+      let $skip = $('#skip');
 
-      $('#register').on('click', function (event) {
-        firebase.auth().currentUser.multiFactor.getSession().then(function (multiFactorSession) {
+      $form.on('submit', function (event) {
+        event.preventDefault();
+
+        // Disable the submit button so we only attempt once.
+        $submit.prop('disabled', true);
+
+        let user = firebase.auth().currentUser
+        user.multiFactor.getSession().then(function (multiFactorSession) {
           // Specify the phone number and pass the MFA session.
           var phoneInfoOptions = {
             phoneNumber: $phone.val(),
@@ -69,16 +94,22 @@
           // Send SMS verification code.
           return phoneAuthProvider.verifyPhoneNumber(
             phoneInfoOptions, window.recaptchaVerifier);
-        }).then(
-          function (verificationId) {
-            var verificationCode = window.prompt('Please enter the verification ' +
-              'code that was sent to your mobile device.');
-            // TODO: enroll the credential
-          },
-          function (err) {
-            clearExistingFlash();
-            flash(err.message)
-          });
+        }).then(function (verificationId) {
+          var verificationCode = window.prompt('Please enter the verification ' +
+            'code that was sent to your mobile device.');
+          var cred = firebase.auth.PhoneAuthProvider.credential(verificationId, verificationCode);
+          var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+          // Complete enrollment.
+          return user.multiFactor.enroll(multiFactorAssertion, $displayName.val());
+        }).then(function () {
+          clearExistingFlash();
+          flash("SMS authentication enrolled successfully.", "success");
+          $skip.text("Continue")
+        }).catch(function (err) {
+          clearExistingFlash();
+          flash(err.message);
+        }
+        );
       });
     });
   </script>

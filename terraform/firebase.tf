@@ -12,51 +12,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "google_service_account" "firebase" {
-  project      = var.project
-  account_id   = "firebase"
-  display_name = "Firebase automation"
-}
-
-resource "google_service_account_key" "firebase" {
-  service_account_id = google_service_account.firebase.name
-}
-
-resource "google_project_iam_member" "firebase" {
-  for_each = toset([
-    "roles/firebase.admin",
-    "roles/serviceusage.serviceUsageAdmin",
-  ])
-
-  project = var.project
-  role    = each.value
-  member  = "serviceAccount:${google_service_account.firebase.email}"
-}
-
-provider "google-beta" {
-  alias       = "firebase"
-  project     = var.project
-  region      = var.region
-  credentials = base64decode(google_service_account_key.firebase.private_key)
-}
-
 resource "google_firebase_project" "default" {
-  provider = google-beta.firebase
+  provider = google-beta
   project  = var.project
 
   depends_on = [
-    google_project_iam_member.firebase,
     google_project_service.services["firebase.googleapis.com"],
   ]
 }
 
 resource "google_firebase_web_app" "default" {
-  provider     = google-beta.firebase
+  provider     = google-beta
   project      = google_firebase_project.default.project
   display_name = "Exposure Verifications"
 }
 
 data "google_firebase_web_app_config" "default" {
-  provider   = google-beta.firebase
+  provider   = google-beta
   web_app_id = google_firebase_web_app.default.app_id
+}
+
+output "firebase_app_id" {
+  value = google_firebase_web_app.default.app_id
+}
+
+output "firebase_project_id" {
+  value = google_firebase_web_app.default.project
+}
+
+output "firebase_api_key" {
+  value = data.google_firebase_web_app_config.default.api_key
+}
+
+output "firebase_auth_domain" {
+  value = data.google_firebase_web_app_config.default.auth_domain
+}
+
+output "firebase_database_url" {
+  value = data.google_firebase_web_app_config.default.database_url
+}
+
+output "firebase_measurement_id" {
+  value = data.google_firebase_web_app_config.default.measurement_id
+}
+
+output "firebase_messaging_sender_id" {
+  value = data.google_firebase_web_app_config.default.messaging_sender_id
+}
+
+output "firebase_storage_bucket" {
+  value = data.google_firebase_web_app_config.default.storage_bucket
 }

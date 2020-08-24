@@ -38,7 +38,7 @@ type Controller struct {
 
 // New creates a new login controller.
 func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
+	logger := logging.FromContext(ctx).Named("login")
 
 	return &Controller{
 		client: client,

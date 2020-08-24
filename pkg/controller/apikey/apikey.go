@@ -18,6 +18,7 @@ package apikey
 import (
 	"context"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -29,16 +30,18 @@ import (
 
 type Controller struct {
 	config *config.ServerConfig
+	cacher cache.Cacher
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("apikey")
 
 	return &Controller{
 		config: config,
+		cacher: cacher,
 		db:     db,
 		h:      h,
 		logger: logger,

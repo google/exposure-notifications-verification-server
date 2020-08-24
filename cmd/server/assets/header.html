@@ -19,6 +19,11 @@
     background-color: #0055b1;
   }
 
+  a.input-group-text:hover {
+    cursor: pointer;
+    text-decoration: none;
+  }
+
 </style>
 {{end}}
 
@@ -172,7 +177,7 @@
       $form.append($inputField);
 
       $form.appendTo('body').submit();
-    })
+    });
 
     // Add data-toggle-password to an element with the value pointing to the id
     // of an input[type="password"]. It will toggle/untoggle the value.
@@ -200,14 +205,26 @@
 
       let $this = $(e.currentTarget);
       let selector = $this.data('fillTarget');
+
       let value = $this.data('fillValue');
       let $target = $('#' + selector);
-
-      console.log($target);
-      console.log(value);
-
       $target.val(value);
-    })
+    });
+
+    $('a[data-copy]').click(function (e) {
+      e.preventDefault();
+
+      let $this = $(e.currentTarget);
+      let selector = $this.data('copyTarget');
+      let $target = $('#' + selector);
+
+      $target[0].focus();
+      $target[0].setSelectionRange(0, 99999);
+
+      document.execCommand('copy');
+      $this.tooltip('hide');
+      document.getSelection().removeAllRanges();
+    });
   });
 
   var $main = $('main');
@@ -231,6 +248,36 @@
     let $div = $('<div class="alert alert-' + errLevel + '" role="alert" />');
     $div.text(message);
     $main.prepend($div);
+  }
+
+  function setSession(user) {
+    user.getIdToken().then(idToken => {
+      $.ajax({
+        type: 'POST',
+        url: '/session',
+        data: { idToken: idToken },
+        headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
+        contentType: 'application/x-www-form-urlencoded',
+        success: function (returnData) {
+          if (user.multiFactor.enrolledFactors.length > 0) {
+            // The user successfully signed in, redirect to realm selection.
+            window.location.assign('/realm');
+          } else {
+            // The user successfully signed in, ask for multiauth.
+            window.location.assign('/login/registerphone');
+          }
+        },
+        error: function (xhr, status, e) {
+          // There was an error finding the user. Redirect to the
+          // signout page to clear the firebase cookie and any session
+          // data.
+          //
+          // The flash data may have more detailed error messages, which
+          // will be displayed on the signout page.
+          window.location.assign("/signout");
+        }
+      })
+    });
   }
 </script>
 {{end}}
