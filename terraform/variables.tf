@@ -91,6 +91,13 @@ variable "kms_location" {
   description = "Location in which to create KMS keys"
 }
 
+variable "kms_key_ring_name" {
+  type    = string
+  default = "verification"
+
+  description = "Name of the KMS key ring to create"
+}
+
 variable "redis_location" {
   type    = string
   default = "us-central1-a"
