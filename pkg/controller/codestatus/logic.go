@@ -70,7 +70,7 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 			api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth)
 	}
 
-	// The current user must have issued the code or be a realm admin.
+	// The current app must have issued the code or be a realm admin.
 	if authApp != nil && !(code.IssuingApp.ID == authApp.ID || authApp.IsAdminType()) {
 		logger.Errorw("failed to check otp code status", "error", "auth app does not match issuing app")
 		return nil, http.StatusUnauthorized,
