@@ -44,8 +44,9 @@
   </main>
 
   {{template "scripts" .}}
+  {{template "loginscripts" .}}
 
-  <script>
+  <script type="text/javascript">
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
       'recaptcha-container',
       { 'size': 'invisible' }
@@ -110,13 +111,6 @@
               $submit.prop('disabled', false);
             }
           });
-      });
-
-      firebase.auth().onAuthStateChanged(function (user) {
-        if (!user) {
-          return
-        }
-        setSession(user)
       });
     });
   </script>
