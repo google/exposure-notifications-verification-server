@@ -454,14 +454,13 @@
       setTimeOrExpired($element, formattedTime())
 
       // Set timer.
-      const fn = setInterval(function () {
+      const fn = setInterval(function() {
         let time = formattedTime();
         if (!time) {
           clearInterval(fn);
         }
         setTimeOrExpired($element, time)
       }, 1000);
-
 
       return fn
     }
