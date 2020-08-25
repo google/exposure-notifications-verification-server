@@ -49,7 +49,7 @@ func (c *Controller) HandleShow() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, "", "", "")
+			c.renderShow(ctx, w, "", "",0)
 			return
 		}
 
@@ -77,18 +77,16 @@ func (c *Controller) HandleShow() http.Handler {
 		} else {
 			status = "not yet claimed"
 		}
-		var exp string
-		if code.IsExpired() {
-			exp = "expired"
-		} else {
+		var exp int64 = 0
+		if !code.IsExpired() {
 			// TODO(whaught): This might be nicer as a formatted duration until now
-			exp = code.ExpiresAt.UTC().Format(time.RFC1123)
+			exp = code.ExpiresAt.UTC().Unix()
 		}
 		c.renderShow(ctx, w, form.UUID, status, exp)
 	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status, expires string) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status string, expires int64)
 	m := controller.TemplateMapFromContext(ctx)
 	m["uuid"] = uuid
 	m["status"] = status
