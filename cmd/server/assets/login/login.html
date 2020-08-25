@@ -3,9 +3,8 @@
 <html lang="en">
 
 <head>
+  {{template "floatingform" .}}
   {{template "head" .}}
-  <link href="https://getbootstrap.com/docs/4.5/examples/floating-labels/floating-labels.css" rel="stylesheet">
-
   {{template "firebase" .}}
 </head>
 
@@ -19,7 +18,7 @@
           <div class="card shadow-sm">
             <div class="card-header">COVID-19 test verification</div>
             <div class="card-body">
-              <form id="loginForm" class="form-signin" action="/" method="POST">
+              <form id="loginForm" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
                   <input type="email" id="email" name="email" class="form-control" placeholder="Email address" required
                     autofocus />
