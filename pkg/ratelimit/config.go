@@ -25,6 +25,7 @@ import (
 	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-limiter/noopstore"
 	"github.com/sethvargo/go-redisstore"
+	"go.opencensus.io/trace"
 )
 
 // RateLimitType represents a type of rate limiter.
@@ -72,8 +73,13 @@ func RateLimiterFor(ctx context.Context, c *Config) (limiter.Store, error) {
 
 		return redisstore.NewWithPool(config, &redis.Pool{
 			Dial: func() (redis.Conn, error) {
+				options := redis.TraceOptions{}
+				// set default attributes
+				redis.WithDefaultAttributes(trace.StringAttribute("span.type", "DB"))(&options)
+
 				return redis.DialWithContext(ctx, "tcp", addr,
 					redis.DialPassword(c.RedisPassword),
+					redis.DialTraceOptions(options),
 				)
 			},
 			TestOnBorrow: func(conn redis.Conn, _ time.Time) error {
