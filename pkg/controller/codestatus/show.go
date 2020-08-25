@@ -72,9 +72,9 @@ func (c *Controller) HandleShow() http.Handler {
 
 		var status string
 		if code.Claimed {
-			status = "claimed by user"
+			status = "Claimed by user"
 		} else {
-			status = "not yet claimed"
+			status = "Not yet claimed"
 		}
 		var exp int64 = 0
 		if !code.IsExpired() {
