@@ -204,7 +204,7 @@ destroy <resource>, after which you can remove the provider configuration again.
 It means you're upgrading from an older Terraform configuration. Try the following:
 
 ```text
-$ tf state rm google_project_iam_member.firebase
-$ tf state rm google_service_account.firebase
-$ tf state rm google_service_account_key.firebase
+$ terraform state rm google_project_iam_member.firebase
+$ terraform state rm google_service_account.firebase
+$ terraform state rm google_service_account_key.firebase
 ```
