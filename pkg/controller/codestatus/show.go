@@ -72,14 +72,12 @@ func (c *Controller) HandleShow() http.Handler {
 
 		var status string
 		if code.Claimed {
-			status = "claimed by user"
+			status = "Claimed by user"
 		} else {
-			status = "not yet claimed"
+			status = "Not yet claimed"
 		}
-		var exp int64
-		if code.IsExpired() {
-			exp = 0
-		} else {
+		var exp int64 = 0
+		if !code.IsExpired() {
 			// TODO(whaught): This might be nicer as a formatted duration until now
 			exp = code.ExpiresAt.UTC().Unix()
 		}
