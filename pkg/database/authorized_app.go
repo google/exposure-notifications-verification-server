@@ -136,8 +136,7 @@ func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp) (string, e
 	return fullAPIKey, nil
 }
 
-// FindAuthorizedAppByAPIKey located an authorized app based on API key. If no
-// app exists for the given API key, it returns nil.
+// FindAuthorizedAppByAPIKey located an authorized app based on API key.
 func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, error) {
 	// Determine if this is a v1 or v2 key. v2 keys have colons (v1 do not).
 	if strings.Contains(apiKey, ".") {
@@ -159,9 +158,6 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 			Where("realm_id = ?", realmID).
 			First(&app).
 			Error; err != nil {
-			if IsNotFound(err) {
-				return nil, nil
-			}
 			return nil, err
 		}
 		return &app, nil
@@ -180,9 +176,6 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 		Or("api_key = ?", hmacedKey).
 		First(&app).
 		Error; err != nil {
-		if IsNotFound(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return &app, nil

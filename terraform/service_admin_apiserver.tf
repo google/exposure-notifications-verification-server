@@ -103,6 +103,7 @@ resource "google_cloud_run_service" "adminapi" {
 
         dynamic "env" {
           for_each = merge(
+            local.cache_config,
             local.database_config,
             local.gcp_config,
             local.redis_config,

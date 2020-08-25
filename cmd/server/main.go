@@ -102,6 +102,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
+	defer cacher.Close()
 
 	// Setup database
 	db, err := config.Database.Load(ctx)
@@ -160,10 +161,10 @@ func realMain(ctx context.Context) error {
 	r.Use(requireSession)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
+	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionDuration)
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
-	requireRealm := middleware.RequireRealm(ctx, db, h)
+	requireRealm := middleware.RequireRealm(ctx, cacher, db, h)
 	rateLimit := httplimiter.Handle
 
 	{
@@ -269,7 +270,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAdmin)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, config, cacher, db, h)
+		userController := user.New(ctx, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
@@ -288,7 +289,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireAdmin)
 		realmSub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, config, db, h)
+		realmadminController := realmadmin.New(ctx, cacher, config, db, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 
