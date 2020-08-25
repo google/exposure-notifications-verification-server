@@ -19,7 +19,6 @@ package codestatus
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -49,7 +48,7 @@ func (c *Controller) HandleShow() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, "", "",0)
+			c.renderShow(ctx, w, "", "", 0)
 			return
 		}
 
@@ -86,7 +85,7 @@ func (c *Controller) HandleShow() http.Handler {
 	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status string, expires int64)
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status string, expires int64) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["uuid"] = uuid
 	m["status"] = status
