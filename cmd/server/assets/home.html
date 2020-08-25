@@ -451,24 +451,29 @@
       };
 
       // Fire once so the time is displayed immediately.
-      let time = formattedTime();
-      let text = `Expires in ${time}`.trim();
-      $element.html(text);
+      setTimeOrExpired($element, formattedTime())
 
       // Set timer.
-      const fn = setInterval(function() {
+      const fn = setInterval(function () {
         let time = formattedTime();
         if (!time) {
           clearInterval(fn);
-          $element.html('<strong>EXPIRED</strong>');
-          return
         }
-
-        let text = `Expires in ${time}`.trim();
-        $element.html(text);
+        setTimeOrExpired($element, time)
       }, 1000);
 
+
       return fn
+    }
+
+    function setTimeOrExpired(element, time) {
+      if (!time) {
+        element.html('<strong>EXPIRED</strong>');
+        return
+      }
+
+      let text = `Expires in ${time}`.trim();
+      element.html(text);
     }
   </script>
 </body>
