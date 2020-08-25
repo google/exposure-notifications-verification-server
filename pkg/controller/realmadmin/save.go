@@ -16,7 +16,6 @@ package realmadmin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -42,8 +41,6 @@ func init() {
 }
 
 func (c *Controller) HandleSave() http.Handler {
-	logger := c.logger.Named("HandleSave")
-
 	type FormData struct {
 		Name             string            `form:"name"`
 		RegionCode       string            `form:"regionCode"`
@@ -104,12 +101,6 @@ func (c *Controller) HandleSave() http.Handler {
 			flash.Error("Failed to update realm: %v", err)
 			c.renderShow(ctx, w, realm, nil)
 			return
-		}
-
-		// Purge the cache so new values appear for this realm
-		if err := c.cacher.Delete(ctx, fmt.Sprintf("realms:by_id:%d", realm.ID)); err != nil {
-			// Don't return an error here, just continue along
-			logger.Errorw("failed to clear cache", "error", err)
 		}
 
 		// Process SMS settings

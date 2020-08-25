@@ -16,7 +16,6 @@ package apikey
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -27,8 +26,6 @@ import (
 
 // HandleUpdate handles an update.
 func (c *Controller) HandleUpdate() http.Handler {
-	logger := c.logger.Named("HandleUpdate")
-
 	type FormData struct {
 		Name string `form:"name"`
 	}
@@ -89,11 +86,6 @@ func (c *Controller) HandleUpdate() http.Handler {
 			flash.Error("Failed to save api key: %v", err)
 			c.renderEdit(ctx, w, authApp)
 			return
-		}
-
-		// Clear the app from the cache
-		if err := c.cacher.Delete(ctx, fmt.Sprintf("authorized_apps:by_id:%d", authApp.ID)); err != nil {
-			logger.Errorw("failed to delete authorized app from cache", "error", err)
 		}
 
 		flash.Alert("Successfully updated API key!")

@@ -16,7 +16,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -26,8 +25,6 @@ import (
 )
 
 func (c *Controller) HandleUpdate() http.Handler {
-	logger := c.logger.Named("HandeUpdate")
-
 	type FormData struct {
 		Email string `form:"email"`
 		Name  string `form:"name"`
@@ -99,14 +96,6 @@ func (c *Controller) HandleUpdate() http.Handler {
 			flash.Error("Failed to update user: %v", err)
 			c.renderNew(ctx, w, user)
 			return
-		}
-
-		// Clear the user from the cache
-		if err := c.cacher.Delete(ctx, fmt.Sprintf("users:by_id:%d", user.ID)); err != nil {
-			logger.Errorw("failed to delete user from cache", "error", err)
-		}
-		if err := c.cacher.Delete(ctx, fmt.Sprintf("users:by_email:%s", user.Email)); err != nil {
-			logger.Errorw("failed to delete user from cache", "error", err)
 		}
 
 		flash.Alert("Successfully updated user '%v'", form.Name)
