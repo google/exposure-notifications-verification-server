@@ -64,14 +64,14 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 	}
 
 	// The current user must have issued the code or be a realm admin.
-	if user != nil && !(code.IssuingUser != nil && code.IssuingUser.Email == user.Email || user.CanAdminRealm(realm.ID)) {
+	if user != nil && !(code.IssuingUserID == user.ID || user.CanAdminRealm(realm.ID)) {
 		logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
 		return nil, http.StatusUnauthorized,
 			api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth)
 	}
 
 	// The current app must have issued the code or be a realm admin.
-	if authApp != nil && !(code.IssuingApp.ID == authApp.ID || authApp.IsAdminType()) {
+	if authApp != nil && !(code.IssuingAppID == authApp.ID || authApp.IsAdminType()) {
 		logger.Errorw("failed to check otp code status", "error", "auth app does not match issuing app")
 		return nil, http.StatusUnauthorized,
 			api.Errorf("failed to check otp code status: auth app does not match issuing app").WithCode(api.ErrVerifyCodeUserUnauth)
