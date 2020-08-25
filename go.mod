@@ -38,13 +38,14 @@ require (
 	github.com/mikehelmick/go-chaff v0.3.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/onsi/ginkgo v1.13.0 // indirect
+	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/prometheus/common v0.12.0 // indirect
 	github.com/prometheus/statsd_exporter v0.17.0 // indirect
 	github.com/sethvargo/go-envconfig v0.3.1
 	github.com/sethvargo/go-limiter v0.4.0
-	github.com/sethvargo/go-redisstore v0.1.0
+	github.com/sethvargo/go-redisstore v0.1.1-opencensus
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/stretchr/objx v0.3.0 // indirect

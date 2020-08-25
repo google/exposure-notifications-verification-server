@@ -1071,6 +1071,8 @@ github.com/onsi/gomega v1.9.0/go.mod h1:Ho0h+IUsWyvy1OpqCwxlQ/21gkhVunqlU8fDGcoT
 github.com/onsi/gomega v1.10.1 h1:o0+MgICZLuZ7xjH7Vx6zS/zcu93/BEp1VwkIW1mEXCE=
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/op/go-logging v0.0.0-20160315200505-970db520ece7/go.mod h1:HzydrMdWErDVzsI23lYNej1Htcns9BCg93Dk0bBINWk=
+github.com/opencensus-integrations/redigo v2.0.1+incompatible h1:1EbXlxudNBcuUYZk5EMvSswbu8jwZbxLO241AThg8xk=
+github.com/opencensus-integrations/redigo v2.0.1+incompatible/go.mod h1:iH5qq3BZppLeyPZP0Hy2qffpbcppAl58otmaERGeJaQ=
 github.com/opencontainers/go-digest v1.0.0-rc1 h1:WzifXhOVOEOuFYOJAW6aQqW0TooG2iki3E3Ii+WN7gQ=
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
@@ -1214,11 +1216,10 @@ github.com/sethvargo/go-envconfig v0.3.1 h1:OUnL02SWTz+t8XtxTO6YQuLMi3StljJHzmtP
 github.com/sethvargo/go-envconfig v0.3.1/go.mod h1:XZ2JRR7vhlBEO5zMmOpLgUhgYltqYqq4d4tKagtPUv0=
 github.com/sethvargo/go-gcpkms v0.1.0 h1:pyjDLqLwpk9pMjDSTilPpaUjgP1AfSjX9WGzitZwGUY=
 github.com/sethvargo/go-gcpkms v0.1.0/go.mod h1:33BuvqUjsYk0bpMgn+WCclCYtMLOyaqtn5j0fCo4vvk=
-github.com/sethvargo/go-limiter v0.3.2-0.20200818185929-f9ab9053588b/go.mod h1:C0kbSFbiriE5k2FFOe18M1YZbAR2Fiwf72uGu0CXCcU=
 github.com/sethvargo/go-limiter v0.4.0 h1:YrMxUpjFx3osTFT+8Yg7L7IVQJbUzHUorbEDkUO+JHE=
 github.com/sethvargo/go-limiter v0.4.0/go.mod h1:C0kbSFbiriE5k2FFOe18M1YZbAR2Fiwf72uGu0CXCcU=
-github.com/sethvargo/go-redisstore v0.1.0 h1:N5771Hwi6H2sPvxT/aBqF7wa3U32T0mRY985zCz+IUo=
-github.com/sethvargo/go-redisstore v0.1.0/go.mod h1:PQJ9OHIjpYQ/atam4JS0rFdd/8CjdBbW6F+mVhiLxXg=
+github.com/sethvargo/go-redisstore v0.1.1-opencensus h1:MlYmIQpUIxcAD9SmOfrG0AwT4cZSZBXG1mXgwas4bUE=
+github.com/sethvargo/go-redisstore v0.1.1-opencensus/go.mod h1:jHUXCIJOsmsGy4/xRg8DnZ5+0437NZ3X9bhYP8B/jGM=
 github.com/sethvargo/go-retry v0.1.0 h1:8sPqlWannzcReEcYjHSNw9becsiYudcwTD7CasGjQaI=
 github.com/sethvargo/go-retry v0.1.0/go.mod h1:JzIOdZqQDNpPkQDmcqgtteAcxFLtYpNF/zJCM1ysDg8=
 github.com/sethvargo/go-signalcontext v0.1.0 h1:3IU7HOlmRXF0PSDf85C4nJ/zjYDjF+DS+LufcKfLvyk=
