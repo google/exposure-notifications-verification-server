@@ -15,6 +15,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/google/exposure-notifications-server/pkg/keys"
 )
 
@@ -25,7 +27,22 @@ type TokenSigningConfig struct {
 	// configuration.
 	Keys keys.Config `env:",prefix=TOKEN_"`
 
-	TokenSigningKey   string `env:"TOKEN_SIGNING_KEY, required"`
-	TokenSigningKeyID string `env:"TOKEN_SIGNING_KEY_ID, default=v1"`
-	TokenIssuer       string `env:"TOKEN_ISSUER, default=diagnosis-verification-example"`
+	TokenSigningKey   []string `env:"TOKEN_SIGNING_KEY, required"`
+	TokenSigningKeyID []string `env:"TOKEN_SIGNING_KEY_ID, default=v1"`
+	TokenIssuer       string   `env:"TOKEN_ISSUER, default=diagnosis-verification-example"`
+}
+
+func (t *TokenSigningConfig) ActiveKey() string {
+	return t.TokenSigningKey[0]
+}
+
+func (t *TokenSigningConfig) ActiveKeyID() string {
+	return t.TokenSigningKeyID[0]
+}
+
+func (t *TokenSigningConfig) Validate() error {
+	if len(t.TokenSigningKey) != len(t.TokenSigningKeyID) {
+		return fmt.Errorf("TOKEN_SIGNING_KEY and TOKEN_SIGNING_KEY_ID must be lists of the same length")
+	}
+	return nil
 }

@@ -78,8 +78,9 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 }
 
 // Parses and validates the token against the configured keyID and public key.
-// If the token si valid the token id (`tid') and subject (`sub`) claims are returned.
-func (c *Controller) validateToken(ctx context.Context, verToken string, publicKey crypto.PublicKey) (string, *database.Subject, error) {
+// A map of valid 'kid' values is supported.
+// If the token is valid the token id (`tid') and subject (`sub`) claims are returned.
+func (c *Controller) validateToken(ctx context.Context, verToken string, publicKeys map[string]crypto.PublicKey) (string, *database.Subject, error) {
 	// Parse and validate the verification token.
 	token, err := jwt.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
@@ -87,10 +88,11 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		if !ok {
 			return nil, fmt.Errorf("missing 'kid' header in token")
 		}
-		if kid == c.config.TokenSigning.TokenSigningKeyID {
-			return publicKey, nil
+		publicKey, ok := publicKeys[kid]
+		if !ok {
+			return nil, fmt.Errorf("no public key for specified 'kid' not found: %v", kid)
 		}
-		return nil, fmt.Errorf("no public key for specified 'kid' not found: %v", kid)
+		return publicKey, nil
 	})
 	if err != nil {
 		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
