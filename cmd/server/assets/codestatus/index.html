@@ -6,6 +6,7 @@
 <html lang="en">
 
 <head>
+  {{template "floatingform" .}}
   {{template "head" .}}
 </head>
 
@@ -21,15 +22,16 @@
     </p>
 
     <div class="card mb-3">
+      <div class="card-header">Code status</div>
       <div class="card-body">
-        <form method="POST" action="show">
+        <form method="POST" action="show" class="floating-form">
           {{ .csrfField }}
-          <div class="row form-group">
-            <label for="uuid" class="col-sm-3">Code identifier</label>
-            <div class="col-sm-9">
+          <div class="form-group">
+            <div class="form-label-group ">
               <input type="text" id="uuid" name="uuid" class="form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}" value="{{$code.UUID}}"
                 placeholder="xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 autocomplete="off">
+                <label for="uuid">xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</label>
               {{if $code.ErrorsFor "uuid"}}
               <div class="invalid-feedback">
                 {{joinStrings ($code.ErrorsFor "uuid") ", "}}
@@ -42,7 +44,7 @@
           </div>
 
           <div class="row form-group">
-            <div class="offset-sm-3 col-sm-9">
+            <div class="col-sm-9">
               <button id="submit" class="btn btn-primary btn-block">Check status</button>
             </div>
           </div>
