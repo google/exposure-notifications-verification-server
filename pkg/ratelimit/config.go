@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
+	"github.com/opencensus-integrations/redigo/redis"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-limiter/noopstore"
@@ -71,9 +71,8 @@ func RateLimiterFor(ctx context.Context, c *Config) (limiter.Store, error) {
 		}
 
 		return redisstore.NewWithPool(config, &redis.Pool{
-			DialContext: func(ctx context.Context) (redis.Conn, error) {
-				return redis.DialContext(ctx, "tcp", addr,
-					redis.DialUsername(c.RedisUsername),
+			Dial: func() (redis.Conn, error) {
+				return redis.Dial("tcp", addr,
 					redis.DialPassword(c.RedisPassword),
 				)
 			},
