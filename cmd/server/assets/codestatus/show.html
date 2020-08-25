@@ -49,10 +49,10 @@
   {{template "codescripts" .}}
 
   <script type="text/javascript">
-    let $codeExpiresAt
-    let expires = {{.expires }}
+    let $codeExpiresAt;
+    let expires = {{.expires }};
 
-    $(function () {
+    $(function() {
       $codeExpiresAt = $('#code-expires-at');
       // Start countdown
       longCodeCountdown = countdown($codeExpiresAt, expires);
