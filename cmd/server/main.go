@@ -270,7 +270,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAdmin)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, config, cacher, db, h)
+		userController := user.New(ctx, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
@@ -289,7 +289,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireAdmin)
 		realmSub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, config, db, h)
+		realmadminController := realmadmin.New(ctx, cacher, config, db, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 
