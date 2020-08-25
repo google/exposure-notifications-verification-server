@@ -234,6 +234,9 @@
     let $uuidConfirm;
       let $uuid;
 
+    let codeCountdown;
+    let longCodeCountdown;
+
     $(function() {
       $errors = $('#errors');
 
@@ -277,6 +280,10 @@
       // Handle reset
       $buttonReset.on('click', function(e) {
         e.preventDefault();
+
+        // Stop countdown timers
+        clearInterval(codeCountdown);
+        clearInterval(longCodeCountdown);
 
         // Clear and hide errors
         $errors.html('');
@@ -334,7 +341,7 @@
             // If a phone was provided...
             if ($longCodePhone && $longCodePhone.length && $inputPhone && $inputPhone.length && $inputPhone.val().length) {
               // Start countdown
-              countdown($longCodeExpiresAt, result.longExpiresAtTimestamp);
+              longCodeCountdown = countdown($longCodeExpiresAt, result.longExpiresAtTimestamp);
 
               // Update HTML
               $longCodePhone.html($inputPhone.val());
@@ -346,7 +353,7 @@
             // Build the code - this is a collection of HTML spans
             {
               // Start countdown
-              countdown($codeExpiresAt, result.expiresAtTimestamp);
+              codeCountdown = countdown($codeExpiresAt, result.expiresAtTimestamp);
 
               // Update HTML
               let code = result.code;
@@ -460,6 +467,8 @@
         let text = `Expires in ${time}`.trim();
         $element.html(text);
       }, 1000);
+
+      return fn
     }
   </script>
 </body>
