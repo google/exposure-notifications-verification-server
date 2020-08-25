@@ -36,7 +36,7 @@ import (
 func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
 
-	cacheTTL := 30 * time.Second
+	cacheTTL := 5 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

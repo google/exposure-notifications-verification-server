@@ -17,7 +17,7 @@ var (
 	rl = rate.NewLimiter(rate.Every(time.Minute), 1)
 )
 
-func HandleHealthz(hctx context.Context, h *render.Renderer, cfg *database.Config) http.Handler {
+func HandleHealthz(hctx context.Context, cfg *database.Config, h *render.Renderer) http.Handler {
 	logger := logging.FromContext(hctx).Named("healthz")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

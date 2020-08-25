@@ -109,7 +109,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
-	if err := db.Open(ctx); err != nil {
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
@@ -181,7 +181,7 @@ func realMain(ctx context.Context) error {
 
 		{
 			sub := r.PathPrefix("").Subrouter()
-			sub.Handle("/health", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+			sub.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 		}
 
 		{
@@ -289,7 +289,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireAdmin)
 		realmSub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, cacher, config, db, h)
+		realmadminController := realmadmin.New(ctx, config, db, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 

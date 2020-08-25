@@ -83,16 +83,6 @@ func realMain(ctx context.Context) error {
 	defer oe.Close()
 	logger.Infow("observability exporter", "config", oeConfig)
 
-	// Setup database
-	db, err := config.Database.Load(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to load database config: %w", err)
-	}
-	if err := db.Open(ctx); err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
-	}
-	defer db.Close()
-
 	// Setup cacher
 	// TODO(sethvargo): switch to HMAC
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
@@ -101,6 +91,16 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
 	defer cacher.Close()
+
+	// Setup database
+	db, err := config.Database.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load database config: %w", err)
+	}
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer db.Close()
 
 	// Setup signer
 	signer, err := keys.KeyManagerFor(ctx, &config.Database.Keys)
@@ -132,7 +132,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	r.Handle("/health", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 
 	// Setup API auth
 	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{

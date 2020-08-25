@@ -38,7 +38,7 @@ import (
 func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
 
-	cacheTTL := 30 * time.Second
+	cacheTTL := 5 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
