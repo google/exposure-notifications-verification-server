@@ -18,7 +18,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -31,8 +33,10 @@ import (
 // RequireRealm requires a realm to exist in the session. It also ensures the
 // realm is set as currentRealm in the template map. It must come after
 // RequireAuth so that a user is set on the context.
-func RequireRealm(ctx context.Context, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
+func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
+
+	cacheTTL := 30 * time.Second
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -59,10 +63,20 @@ func RequireRealm(ctx context.Context, db *database.Database, h *render.Renderer
 				return
 			}
 
-			// Lookup the realm to ensure it exists (and to cache it later).
-			realm, err := db.GetRealm(realmID)
-			if err != nil {
-				logger.Errorw("failed to get realm", "error", err)
+			// Load the realm by using the cache to alleviate pressure on the database
+			// layer.
+			var realm database.Realm
+			cacheKey := fmt.Sprintf("realms:by_id:%d", realmID)
+			if err := cacher.Fetch(ctx, cacheKey, &realm, cacheTTL, func() (interface{}, error) {
+				return db.FindRealm(realmID)
+			}); err != nil {
+				if database.IsNotFound(err) {
+					logger.Debugw("realm does not exist")
+					controller.MissingRealm(w, r, h)
+					return
+				}
+
+				logger.Errorw("failed to lookup realm", "error", err)
 				controller.InternalError(w, r, h, err)
 				return
 			}
@@ -75,12 +89,8 @@ func RequireRealm(ctx context.Context, db *database.Database, h *render.Renderer
 				return
 			}
 
-			// Save the realm in the template map.
-			m := controller.TemplateMapFromContext(ctx)
-			m["currentRealm"] = realm
-
 			// Save the realm on the context.
-			ctx = controller.WithRealm(ctx, realm)
+			ctx = controller.WithRealm(ctx, &realm)
 			*r = *r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
