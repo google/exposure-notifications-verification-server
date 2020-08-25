@@ -1,0 +1,76 @@
+{{define "codescripts"}}
+<script type="text/javascript">
+  // element is expected to be a jquery element or dom query selector, ts is
+  // the number of seconds since epoch, UTC.
+  function countdown(element, ts) {
+    if (typeof (ts) === 'undefined') {
+      return;
+    }
+
+    let $element = $(element);
+    let date = new Date(ts * 1000).getTime();
+
+    const formattedTime = function() {
+      let now = new Date().getTime();
+      let diff = date - now;
+
+      if (diff <= 0) {
+        return false;
+      }
+
+      let hours = Math.floor(diff / (1000 * 60 * 60));
+      let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      let time;
+
+      // hours
+      if (hours < 10) {
+        time = `0${hours}`;
+      } else {
+        time = `${hours}`;
+      }
+
+      // minutes
+      if (minutes < 10) {
+        time = `${time}:0${minutes}`;
+      } else {
+        time = `${time}:${minutes}`;
+      }
+
+      // seconds
+      if (seconds < 10) {
+        time = `${time}:0${seconds}`;
+      } else {
+        time = `${time}:${seconds}`;
+      }
+
+      return time;
+    };
+
+    // Fire once so the time is displayed immediately.
+    setTimeOrExpired($element, formattedTime())
+
+    // Set timer.
+    const fn = setInterval(function() {
+      let time = formattedTime();
+      if (!time) {
+        clearInterval(fn);
+      }
+      setTimeOrExpired($element, time)
+    }, 1000);
+
+    return fn
+  }
+
+  function setTimeOrExpired(element, time) {
+    if (!time) {
+      element.html('<strong>EXPIRED</strong>');
+      return
+    }
+
+    let text = `Expires in ${time}`.trim();
+    element.html(text);
+  }
+</script>
+{{end}}
