@@ -386,6 +386,7 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	if err := db.db.
 		Unscoped().
 		Model(AuthorizedApp{}).
+		Order("LOWER(name)").
 		Where("id = ? AND realm_id = ?", id, r.ID).
 		First(&app).
 		Error; err != nil {
@@ -399,8 +400,8 @@ func (r *Realm) ListUsers(db *Database) ([]*User, error) {
 	var users []*User
 	if err := db.db.
 		Model(r).
+		Order("LOWER(name)").
 		Related(&users, "RealmUsers").
-		Order("email").
 		Error; err != nil {
 		return nil, err
 	}
