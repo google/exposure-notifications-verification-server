@@ -50,25 +50,8 @@
             <a class="nav-link" href="/home">Issue code</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/code/status">Code status</a>
+            <a class="nav-link" href="/code/status">Check code status</a>
           </li>
-          {{if .currentUser.CanAdminRealm .currentRealm.ID}}      
-          <ul class="navbar-nav ml-auto">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
-                aria-expanded="false">
-                {{.currentRealm.Name}} Settings
-              </a>
-  
-              <div class="dropdown-menu" aria-labelledby="profile-menu">            
-                <a class="dropdown-item" href="/apikeys">API keys</a>
-                <a class="dropdown-item" href="/users">Users</a>
-                <a class="dropdown-item" href="/realm/settings">Verification Code and SMS</a>
-                <a class="dropdown-item" href="/realm/keys">Certificate Signing Keys</a>
-              </div>
-            </li>
-          </ul>
-          {{end}}
           {{end}}
         </ul>
 
@@ -80,11 +63,21 @@
             </a>
 
             <div class="dropdown-menu" aria-labelledby="profile-menu">
+              {{if .currentRealm }}
+              {{if .currentUser.CanAdminRealm .currentRealm.ID}}
+              <h6 class="dropdown-header">Manage realm</h6>
+              <a class="dropdown-item" href="/apikeys">API keys</a>
+              <a class="dropdown-item" href="/realm/keys">Signing keys</a>
+              <a class="dropdown-item" href="/users">Users</a>
+              <a class="dropdown-item" href="/realm/settings">Settings</a>
+              <div class="dropdown-divider"></div>
+              {{end}}
+              {{end}}
+
               <h6 class="dropdown-header">Actions</h6>
               {{if gt (len .currentUser.Realms) 1}}
               <a class="dropdown-item" href="/realm">Change realm</a>
               {{end}}
-              <div class="dropdown-divider"></div>
               <a class="dropdown-item" href="/signout">Sign out</a>
             </div>
           </li>

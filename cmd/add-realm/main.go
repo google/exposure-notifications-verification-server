@@ -86,7 +86,7 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	// See if realm exists.
-	realm, err := db.GetRealmByName(*nameFlag)
+	realm, err := db.FindRealmByName(*nameFlag)
 	if err != nil {
 		logger.Infow("realm alredy exists, skipping create", "realm", realm)
 	}

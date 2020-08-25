@@ -204,7 +204,20 @@ destroy <resource>, after which you can remove the provider configuration again.
 It means you're upgrading from an older Terraform configuration. Try the following:
 
 ```text
-$ tf state rm google_project_iam_member.firebase
-$ tf state rm google_service_account.firebase
-$ tf state rm google_service_account_key.firebase
+$ terraform state rm google_project_iam_member.firebase
+$ terraform state rm google_service_account.firebase
+$ terraform state rm google_service_account_key.firebase
 ```
+
+#### Firebase Tos Not Accepted
+
+If you're getting an error like:
+
+```text
+Error: Error creating Project: googleapi: Error 403: Firebase Tos Not Accepted
+```
+
+It means the user hasn't accepted ToS(Terms of Services) of Firebase yet. Do:
+
+1. Open a browser, navigate to https://firebase.google.com
+1. Click `Add a project`, it will prompt Terms of Service agreement, agree

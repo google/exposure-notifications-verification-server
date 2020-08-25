@@ -56,7 +56,7 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 	}
 
 	// Get the realm to verify SMS configs are NOT preloaded
-	realm, err = db.GetRealm(realm.ID)
+	realm, err = db.FindRealm(realm.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

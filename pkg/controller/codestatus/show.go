@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleShow() http.Handler {
@@ -51,10 +52,21 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
+		if form.UUID == "" {
+			var code database.VerificationCode
+			code.AddError("uuid", "cannot be blank")
+
+			c.renderStatus(ctx, w, &code)
+			return
+		}
+
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
-			flash.Error("Failed to process form: %v", apiErr.Error)
-			c.renderShow(ctx, w, form.UUID, "", 0)
+			var code database.VerificationCode
+			code.UUID = form.UUID
+			code.AddError("uuid", apiErr.Error)
+
+			c.renderStatus(ctx, w, &code)
 			return
 		}
 

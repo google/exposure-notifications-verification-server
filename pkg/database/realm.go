@@ -444,7 +444,7 @@ func (db *Database) CreateRealm(name string) (*Realm, error) {
 	return realm, nil
 }
 
-func (db *Database) GetRealmByName(name string) (*Realm, error) {
+func (db *Database) FindRealmByName(name string) (*Realm, error) {
 	var realm Realm
 
 	if err := db.db.Where("name = ?", name).First(&realm).Error; err != nil {
@@ -453,10 +453,12 @@ func (db *Database) GetRealmByName(name string) (*Realm, error) {
 	return &realm, nil
 }
 
-func (db *Database) GetRealm(realmID uint) (*Realm, error) {
+func (db *Database) FindRealm(id interface{}) (*Realm, error) {
 	var realm Realm
-
-	if err := db.db.Where("id = ?", realmID).First(&realm).Error; err != nil {
+	if err := db.db.
+		Where("id = ?", id).
+		First(&realm).
+		Error; err != nil {
 		return nil, err
 	}
 	return &realm, nil

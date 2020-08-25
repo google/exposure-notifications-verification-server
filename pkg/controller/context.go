@@ -35,6 +35,10 @@ const (
 
 // WithAuthorizedApp stores the authorized app on the context.
 func WithAuthorizedApp(ctx context.Context, app *database.AuthorizedApp) context.Context {
+	m := TemplateMapFromContext(ctx)
+	m["currentAuthorizedApp"] = app
+	ctx = WithTemplateMap(ctx, m)
+
 	return context.WithValue(ctx, contextKeyAuthorizedApp, app)
 }
 
@@ -55,6 +59,10 @@ func AuthorizedAppFromContext(ctx context.Context) *database.AuthorizedApp {
 
 // WithRealm stores the current realm on the context.
 func WithRealm(ctx context.Context, r *database.Realm) context.Context {
+	m := TemplateMapFromContext(ctx)
+	m["currentRealm"] = r
+	ctx = WithTemplateMap(ctx, m)
+
 	return context.WithValue(ctx, contextKeyRealm, r)
 }
 
@@ -98,7 +106,7 @@ func SessionFromContext(ctx context.Context) *sessions.Session {
 // TemplateMap is a typemap for the HTML templates.
 type TemplateMap map[string]interface{}
 
-// WithTemplateMap sets the user in the context.
+// WithTemplateMap creates a context with the given template map.
 func WithTemplateMap(ctx context.Context, m TemplateMap) context.Context {
 	return context.WithValue(ctx, contextKeyTemplate, m)
 }
@@ -121,6 +129,10 @@ func TemplateMapFromContext(ctx context.Context) TemplateMap {
 
 // WithUser stores the current user on the context.
 func WithUser(ctx context.Context, u *database.User) context.Context {
+	m := TemplateMapFromContext(ctx)
+	m["currentUser"] = u
+	ctx = WithTemplateMap(ctx, m)
+
 	return context.WithValue(ctx, contextKeyUser, u)
 }
 

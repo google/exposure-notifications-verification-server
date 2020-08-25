@@ -18,10 +18,12 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
@@ -32,7 +34,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -89,6 +90,15 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	// Setup cacher
+	// TODO(sethvargo): switch to HMAC
+	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
+		cache.HashKeyFunc(sha1.New), cache.PrefixKeyFunc("adminapi:")))
+	if err != nil {
+		return fmt.Errorf("failed to create cacher: %w", err)
+	}
+	defer cacher.Close()
+
 	// Create the router
 	r := mux.NewRouter()
 
@@ -116,11 +126,7 @@ func realMain(ctx context.Context) error {
 	r.Handle("/health", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
 
 	// Setup API auth
-	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
-	if err != nil {
-		return fmt.Errorf("failed to create apikey cache: %w", err)
-	}
-	requireAPIKey := middleware.RequireAPIKey(ctx, apiKeyCache, db, h, []database.APIUserType{
+	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
 		database.APIUserTypeAdmin,
 	})
 
