@@ -5,7 +5,6 @@
 
 <!doctype html>
 <html lang="en">
-
 <head>
   {{template "head" .}}
 
@@ -21,7 +20,6 @@
       flex: 1;
       margin: 0 0.1em;
     }
-
   </style>
 </head>
 
@@ -41,9 +39,9 @@
     {{/* Calculate the column width based on the number of expected choices */}}
     {{$colWidth := 12}}
     {{if $currentRealm.ValidTestType "negative"}}
-    {{$colWidth = 4}}
+      {{$colWidth = 4}}
     {{else if $currentRealm.ValidTestType "likely" }}
-    {{$colWidth = 6}}
+      {{$colWidth = 6}}
     {{end}}
 
     <div id="errors" class="alert alert-danger d-none"></div>
@@ -57,8 +55,7 @@
               {{if $currentRealm.ValidTestType "confirmed"}}
               <div class="form-group col-md-{{$colWidth}}">
                 <div class="form-check">
-                  <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed"
-                    checked />
+                  <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
                   <label class="form-check-label" for="testType1">
                     <strong>Positive</strong> test
                     <small class="form-text text-muted">
@@ -106,29 +103,23 @@
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="testDate">Testing date</label>
-                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}"
-                  class="form-control" />
+                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
                 <small class="form-text text-muted">
                   <strong>Recommended.</strong>
-                  This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a>
-                  when the test was performed.
-                  Click here to <a href="#" data-fill-target="test-date" data-fill-value="{{.maxDate}}">use today's UTC
-                    date</a>.
+                  This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when the test was performed.
+                  Click here to <a href="#" data-fill-target="test-date" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
                 </small>
               </div>
 
               <div class="form-group col-md-6">
                 <label for="symptomDate">Symptoms onset</label>
                 <div class="input-group">
-                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}"
-                    class="form-control" />
+                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
                 </div>
                 <small class="form-text text-muted">
                   <strong>Recommended.</strong>
-                  This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a>
-                  when symptoms began. It cannot be more than {{.maxSymptomDays}} days ago.
-                  Click here to <a href="#" data-fill-target="symptom-date" data-fill-value="{{.maxDate}}">use today's
-                    UTC date</a>.
+                  This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when symptoms began. It cannot be more than {{.maxSymptomDays}} days ago.
+                  Click here to <a href="#" data-fill-target="symptom-date" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
                 </small>
               </div>
             </div>
@@ -143,8 +134,7 @@
               <label for="symptomDate" class="col-sm-3">Patient phone</label>
               <div class="col-sm-9">
                 <div class="input-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="+1 (555) 555-5555"
-                    autocomplete="off" />
+                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="+1 (555) 555-5555" autocomplete="off" />
                 </div>
                 <small class="form-text text-muted">
                   If provided, the system will send text containing the code to the
@@ -189,9 +179,7 @@
           Share this code with the patient.
         </p>
 
-        <div id="code"
-          class="text-center user-select-none text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3">
-        </div>
+        <div id="code" class="text-center user-select-none text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
       </div>
     </div>
 
@@ -207,8 +195,7 @@
           <div class="input-group col-sm-8 offset-sm-2">
             <input type="text" id="uuid" class="form-control text-monospace">
             <div class="input-group-append">
-              <a class="input-group-text" data-toggle="tooltip" title="Copy to clipboard" data-copy
-                data-copy-target="uuid">
+              <a class="input-group-text" data-toggle="tooltip" title="Copy to clipboard" data-copy data-copy-target="uuid">
                 <span class="oi oi-clipboard" aria-hidden="true"></span>
               </a>
             </div>
@@ -225,28 +212,27 @@
   </main>
 
   {{template "scripts" .}}
-  {{template "codescripts" .}}
 
   <script type="text/javascript">
     let $errors;
 
     let $form;
-    let $inputTestDate;
-    let $inputSymptomDate;
-    let $inputPhone;
-    let $buttonSubmit;
-    let $buttonReset;
+      let $inputTestDate;
+      let $inputSymptomDate;
+      let $inputPhone;
+      let $buttonSubmit;
+      let $buttonReset;
 
     let $formArea;
 
     let $longCodeConfirm;
-    let $longCodeExpiresAt;
-    let $longCodePhone;
+      let $longCodeExpiresAt;
+      let $longCodePhone;
     let $codeConfirm;
-    let $codeExpiresAt;
-    let $code;
+      let $codeExpiresAt;
+      let $code;
     let $uuidConfirm;
-    let $uuid;
+      let $uuid;
 
     let codeCountdown;
     let longCodeCountdown;
@@ -255,22 +241,22 @@
       $errors = $('#errors');
 
       $form = $('form#issue');
-      $inputTestDate = $('input#test-date');
-      $inputSymptomDate = $('input#symptom-date');
-      $inputPhone = $('input#phone');
-      $buttonSubmit = $('button#submit');
-      $buttonReset = $('button#reset');
+        $inputTestDate = $('input#test-date');
+        $inputSymptomDate = $('input#symptom-date');
+        $inputPhone = $('input#phone');
+        $buttonSubmit = $('button#submit');
+        $buttonReset = $('button#reset');
 
       $formArea = $('#form-area')
 
       $longCodeConfirm = $('#long-code-confirm');
-      $longCodeExpiresAt = $('#long-code-expires-at');
-      $longCodePhone = $('#long-code-phone');
+        $longCodeExpiresAt = $('#long-code-expires-at');
+        $longCodePhone = $('#long-code-phone');
       $codeConfirm = $('#code-confirm');
-      $codeExpiresAt = $('#code-expires-at');
-      $code = $('#code');
+        $codeExpiresAt = $('#code-expires-at');
+        $code = $('#code');
       $uuidConfirm = $('#uuid-confirm');
-      $uuid = $('#uuid');
+        $uuid = $('#uuid');
 
       // Handle form submission
       $form.on('submit', function(e) {
@@ -343,7 +329,7 @@
           'X-CSRF-Token': '{{.csrfToken}}',
         },
         success: function(result) {
-          if (result.error != "") {
+          if(result.error != "") {
             showError(result.error);
           } else {
             // Hide the main form
@@ -371,7 +357,7 @@
 
               // Update HTML
               let code = result.code;
-              for (let i = 0; i < code.length; i++) {
+              for(let i = 0; i < code.length; i++) {
                 let $span = $('<span class="border rounded ml-1 py-2 bg-light">').text(code.charAt(i));
                 $code.append($span);
               }
@@ -415,8 +401,80 @@
       // Show reset button
       $buttonReset.removeClass('d-none');
     }
+
+    // element is expected to be a jquery element or dom query selector, ts is
+    // the number of seconds since epoch, UTC.
+    function countdown(element, ts) {
+      if (typeof (ts) === 'undefined') {
+        return;
+      }
+
+      let $element = $(element);
+      let date = new Date(ts*1000).getTime();
+
+      const formattedTime = function() {
+        let now = new Date().getTime();
+        let diff = date - now;
+
+        if (diff <= 0) {
+          return false;
+        }
+
+        let hours = Math.floor(diff / (1000 * 60 * 60));
+        let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let time;
+
+        // hours
+        if (hours < 10) {
+          time = `0${hours}`;
+        } else {
+          time = `${hours}`;
+        }
+
+        // minutes
+        if (minutes < 10) {
+          time = `${time}:0${minutes}`;
+        } else {
+          time = `${time}:${minutes}`;
+        }
+
+        // seconds
+        if (seconds < 10) {
+          time = `${time}:0${seconds}`;
+        } else {
+          time = `${time}:${seconds}`;
+        }
+
+        return time;
+      };
+
+      // Fire once so the time is displayed immediately.
+      setTimeOrExpired($element, formattedTime())
+
+      // Set timer.
+      const fn = setInterval(function() {
+        let time = formattedTime();
+        if (!time) {
+          clearInterval(fn);
+        }
+        setTimeOrExpired($element, time)
+      }, 1000);
+
+      return fn
+    }
+
+    function setTimeOrExpired(element, time) {
+      if (!time) {
+        element.html('<strong>EXPIRED</strong>');
+        return
+      }
+
+      let text = `Expires in ${time}`.trim();
+      element.html(text);
+    }
   </script>
 </body>
-
 </html>
 {{end}}
