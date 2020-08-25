@@ -19,7 +19,6 @@ require (
 	github.com/containerd/continuity v0.0.0-20200710164510-efbc4488d8fe // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20200620013148-b91950f658ec // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/gomodule/redigo v1.8.2
 	github.com/google/exposure-notifications-server v0.5.0
 	github.com/google/go-cmp v0.5.1
@@ -39,6 +38,7 @@ require (
 	github.com/mikehelmick/go-chaff v0.3.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/onsi/ginkgo v1.13.0 // indirect
+	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/prometheus/common v0.12.0 // indirect

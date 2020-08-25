@@ -72,7 +72,7 @@ func RateLimiterFor(ctx context.Context, c *Config) (limiter.Store, error) {
 
 		return redisstore.NewWithPool(config, &redis.Pool{
 			Dial: func() (redis.Conn, error) {
-				return redis.Dial("tcp", addr,
+				return redis.DialWithContext(ctx, "tcp", addr,
 					redis.DialPassword(c.RedisPassword),
 				)
 			},
