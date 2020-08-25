@@ -716,6 +716,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00030-HMACCodes",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Debugw("db migrations: HMACing existing tokens")
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
 
 				var codes []VerificationCode
 				if err := tx.Model(VerificationCode{}).Find(&codes).Error; err != nil {
