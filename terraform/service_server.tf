@@ -80,6 +80,18 @@ resource "google_project_iam_member" "server-observability" {
   member  = "serviceAccount:${google_service_account.server.email}"
 }
 
+resource "google_kms_key_ring_iam_member" "server-verification-key-admin" {
+  key_ring_id = google_kms_key_ring.verification.self_link
+  role        = "roles/cloudkms.admin"
+  member      = "serviceAccount:${google_service_account.server.email}"
+}
+
+resource "google_kms_key_ring_iam_member" "server-verification-key-signer-verifier" {
+  key_ring_id = google_kms_key_ring.verification.self_link
+  role        = "roles/cloudkms.signerVerifier"
+  member      = "serviceAccount:${google_service_account.server.email}"
+}
+
 resource "google_kms_crypto_key_iam_member" "server-database-encrypter" {
   crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"

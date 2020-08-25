@@ -97,6 +97,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 			c.renderNew(ctx, w, user)
 			return
 		}
+
 		flash.Alert("Successfully updated user '%v'", form.Name)
 		http.Redirect(w, r, "/users", http.StatusSeeOther)
 	})

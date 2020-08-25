@@ -31,10 +31,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
-	"github.com/google/exposure-notifications-verification-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/dgrijalva/jwt-go"
@@ -47,10 +47,10 @@ type Controller struct {
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
-	kms    keys.Manager
+	kms    keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.Manager) *Controller {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
@@ -102,11 +102,11 @@ func (c *Controller) HandleVerify() http.Handler {
 			c.logger.Errorw("failed to issue verification token", "error", err)
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrTokenExpired))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
 			case errors.Is(err, database.ErrVerificationCodeUsed):
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrTokenInvalid))
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 			case errors.Is(err, database.ErrUnsupportedTestType):
 				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 			default:

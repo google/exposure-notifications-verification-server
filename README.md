@@ -156,6 +156,12 @@ brew install firebase-cli
 firebase login
 ```
 
+Also try setting your quota project:
+
+```text
+gcloud auth application-default set-quota-project PROJECT_ID
+```
+
 Consider registering a [test-phone-number](https://cloud.google.com/identity-platform/docs/test-phone-numbers)
 for your account by visiting:<br>
 https://console.cloud.google.com/customer-identity/mfa?project=YOUR-PROJECT-123456<br>

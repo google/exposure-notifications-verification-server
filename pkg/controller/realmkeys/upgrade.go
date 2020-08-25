@@ -12,31 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package codestatus defines a web controller for the code status page of the verification
-// server. This view allows users to view the status of previously-issued OTP codes.
-package codestatus
+package realmkeys
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+func (c *Controller) HandleUpgrade() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// TODO(whaught): load a list of recent codes to show
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
-		var code database.VerificationCode
-		c.renderStatus(ctx, w, &code)
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		if realm.CanUpgradeToRealmSigningKeys() {
+			realm.UseRealmCertificateKey = true
+			if err := c.db.SaveRealm(realm); err != nil {
+				flash.Error("Error upgrading realm: %v", err)
+				c.renderShow(ctx, w, r, realm)
+				return
+			} else {
+				flash.Alert("Successfully switched to realm specific signing keys.")
+			}
+		} else {
+			flash.Error("Issuer and Audience settings not complete, cannot upgrade.")
+		}
+
+		c.redirectShow(ctx, w, r)
 	})
-}
-
-func (c *Controller) renderStatus(ctx context.Context, w http.ResponseWriter, code *database.VerificationCode) {
-	m := controller.TemplateMapFromContext(ctx)
-	m["code"] = code
-	c.h.RenderHTML(w, "code/status", m)
 }

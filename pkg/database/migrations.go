@@ -716,6 +716,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00030-HMACCodes",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Debugw("db migrations: HMACing existing tokens")
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
 
 				var codes []VerificationCode
 				if err := tx.Model(VerificationCode{}).Find(&codes).Error; err != nil {
@@ -825,6 +828,24 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00033-PerlRealmSigningKeys",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding signing_keys table")
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
+				if err := tx.AutoMigrate(&SigningKey{}).Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				// SigningKeys table left in place so references to crypto keys aren't lost.
 				return nil
 			},
 		},

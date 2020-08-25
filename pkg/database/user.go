@@ -168,6 +168,15 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 	return stats, nil
 }
 
+// TouchUserRevokeCheck updates the revoke check time on the user. It updates
+// the column directly and does not invoke callbacks.
+func (db *Database) TouchUserRevokeCheck(u *User) error {
+	return db.db.
+		Model(u).
+		UpdateColumn("last_revoke_check", time.Now().UTC()).
+		Error
+}
+
 // SaveUser updates the user in the database.
 func (db *Database) SaveUser(u *User) error {
 	db.db.Model(u).Association("Realms").Replace(u.Realms)

@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
@@ -32,6 +33,7 @@ var _ IssueAPIConfig = (*AdminAPIServerConfig)(nil)
 type AdminAPIServerConfig struct {
 	Database      database.Config
 	Observability observability.Config
+	Cache         cache.Config `env:",prefix=CACHE_"`
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.

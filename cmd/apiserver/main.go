@@ -18,23 +18,24 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/gcpkms"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -82,18 +83,27 @@ func realMain(ctx context.Context) error {
 	defer oe.Close()
 	logger.Infow("observability exporter", "config", oeConfig)
 
+	// Setup cacher
+	// TODO(sethvargo): switch to HMAC
+	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
+		cache.HashKeyFunc(sha1.New), cache.PrefixKeyFunc("apiserver:")))
+	if err != nil {
+		return fmt.Errorf("failed to create cacher: %w", err)
+	}
+	defer cacher.Close()
+
 	// Setup database
 	db, err := config.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
-	if err := db.Open(ctx); err != nil {
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
 
 	// Setup signer
-	signer, err := gcpkms.New(ctx)
+	signer, err := keys.KeyManagerFor(ctx, &config.Database.Keys)
 	if err != nil {
 		return fmt.Errorf("failed to crate key manager: %w", err)
 	}
@@ -122,14 +132,10 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 
 	// Setup API auth
-	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
-	if err != nil {
-		return fmt.Errorf("failed to create apikey cache: %w", err)
-	}
-	requireAPIKey := middleware.RequireAPIKey(ctx, apiKeyCache, db, h, []database.APIUserType{
+	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
 		database.APIUserTypeDevice,
 	})
 
@@ -140,11 +146,6 @@ func realMain(ctx context.Context) error {
 	// Install the APIKey Auth Middleware
 	r.Use(requireAPIKey)
 
-	publicKeyCache, err := cache.New(config.PublicKeyCacheDuration)
-	if err != nil {
-		return fmt.Errorf("failed to create publickey cache: %w", err)
-	}
-
 	// POST /api/verify
 	verifyChaff := chaff.New()
 	defer verifyChaff.Close()
@@ -154,7 +155,10 @@ func realMain(ctx context.Context) error {
 	// POST /api/certificate
 	certChaff := chaff.New()
 	defer certChaff.Close()
-	certapiController := certapi.New(ctx, config, db, h, signer, publicKeyCache)
+	certapiController, err := certapi.New(ctx, config, db, h, signer)
+	if err != nil {
+		return fmt.Errorf("failed to create certapi controller: %w", err)
+	}
 	r.Handle("/api/certificate", handleChaff(certChaff, certapiController.HandleCertificate())).Methods("POST")
 
 	srv, err := server.New(config.Port)

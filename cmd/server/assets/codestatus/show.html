@@ -18,23 +18,24 @@
       Status of a verification code previously shared with your patient.
     </p>
 
-    <div class="table-responsive">
-      <table class="table table-bordered table-striped">
-        <thead>
-          <tr>
-            <th scope="col" width=400>UUID</th>
-            <th scope="col">Status</th>
-            <th scope="col" width=150>Expires</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="text-monospace">{{.uuid}}</td>
-            <td>{{.status}}</td>
-            <td>{{.expires}}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="card mb-3">
+      <div class="card-header">
+        Code status
+      </div>
+      <div class="card-body">
+        <div class="list-group">
+          <h5 class="mb-1">UUID</h5>
+          <p class="mb-1 text-monospace">{{.uuid}}</p>
+        </div>
+        <div class="list-group">
+          <h5 class="mb-1">Status</h5>
+          <p class="mb-1">{{.status}}</p>
+        </div>
+        <div class="list-group">
+          <h5 class="mb-1">Expiry</h5>
+          <span id="code-expires-at" class="sm text-danger"></span>
+        </div>
+      </div>
     </div>
 
     <div>
@@ -45,6 +46,18 @@
   </main>
 
   {{template "scripts" .}}
+  {{template "codescripts" .}}
+
+  <script type="text/javascript">
+    let $codeExpiresAt;
+    let expires = {{.expires }};
+
+    $(function() {
+      $codeExpiresAt = $('#code-expires-at');
+      // Start countdown
+      longCodeCountdown = countdown($codeExpiresAt, expires);
+    });
+  </script>
 </body>
 
 </html>

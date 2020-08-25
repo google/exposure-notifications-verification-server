@@ -115,5 +115,5 @@ func findRealm(db *database.Database, id uint) (*database.Realm, error) {
 	if id == 0 {
 		return nil, nil
 	}
-	return db.GetRealm(id)
+	return db.FindRealm(id)
 }

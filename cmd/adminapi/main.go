@@ -18,10 +18,12 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
@@ -32,7 +34,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -79,12 +80,21 @@ func realMain(ctx context.Context) error {
 	defer oe.Close()
 	logger.Infow("observability exporter", "config", oeConfig)
 
+	// Setup cacher
+	// TODO(sethvargo): switch to HMAC
+	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
+		cache.HashKeyFunc(sha1.New), cache.PrefixKeyFunc("adminapi:")))
+	if err != nil {
+		return fmt.Errorf("failed to create cacher: %w", err)
+	}
+	defer cacher.Close()
+
 	// Setup database
 	db, err := config.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
-	if err := db.Open(ctx); err != nil {
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
@@ -113,14 +123,10 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 
 	// Setup API auth
-	apiKeyCache, err := cache.New(config.APIKeyCacheDuration)
-	if err != nil {
-		return fmt.Errorf("failed to create apikey cache: %w", err)
-	}
-	requireAPIKey := middleware.RequireAPIKey(ctx, apiKeyCache, db, h, []database.APIUserType{
+	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
 		database.APIUserTypeAdmin,
 	})
 

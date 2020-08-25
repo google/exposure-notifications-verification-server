@@ -12,40 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package user contains web controllers for listing and adding users.
-package user
+// Package realmkeys contains web controllers for realm certificate key management.
+package realmkeys
 
 import (
 	"context"
-
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"go.uber.org/zap"
 )
 
-// Controller manages users
 type Controller struct {
-	cacher cache.Cacher
-	config *config.ServerConfig
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	config         *config.ServerConfig
+	db             *database.Database
+	h              *render.Renderer
+	logger         *zap.SugaredLogger
+	publicKeyCache *keyutils.PublicKeyCache
 }
 
-// New creates a new controller for managing users.
-func New(ctx context.Context, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
 	logger := logging.FromContext(ctx)
 
-	return &Controller{
-		cacher: cacher,
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logger,
+	publicKeyCache, err := keyutils.NewPublicKeyCache(time.Minute)
+	if err != nil {
+		return nil, err
 	}
+
+	return &Controller{
+		config:         config,
+		db:             db,
+		h:              h,
+		logger:         logger,
+		publicKeyCache: publicKeyCache,
+	}, nil
 }

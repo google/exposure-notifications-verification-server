@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
@@ -32,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
@@ -100,13 +102,14 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
+	defer cacher.Close()
 
 	// Setup database
 	db, err := config.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
-	if err := db.Open(ctx); err != nil {
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
@@ -158,10 +161,10 @@ func realMain(ctx context.Context) error {
 	r.Use(requireSession)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
+	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionDuration)
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
-	requireRealm := middleware.RequireRealm(ctx, db, h)
+	requireRealm := middleware.RequireRealm(ctx, cacher, db, h)
 	rateLimit := httplimiter.Handle
 
 	{
@@ -174,6 +177,11 @@ func realMain(ctx context.Context) error {
 			sub.Handle("/login/create", loginController.HandleLoginCreate()).Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
+		}
+
+		{
+			sub := r.PathPrefix("").Subrouter()
+			sub.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 		}
 
 		{
@@ -262,7 +270,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAdmin)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, config, cacher, db, h)
+		userController := user.New(ctx, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
@@ -274,7 +282,7 @@ func realMain(ctx context.Context) error {
 
 	// realms
 	{
-		realmSub := r.PathPrefix("/realm/settings").Subrouter()
+		realmSub := r.PathPrefix("/realm").Subrouter()
 		realmSub.Use(requireAuth)
 		realmSub.Use(requireVerified)
 		realmSub.Use(requireRealm)
@@ -282,8 +290,18 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(rateLimit)
 
 		realmadminController := realmadmin.New(ctx, config, db, h)
-		realmSub.Handle("", realmadminController.HandleIndex()).Methods("GET")
-		realmSub.Handle("/save", realmadminController.HandleSave()).Methods("POST")
+		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
+		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
+
+		realmKeysController, err := realmkeys.New(ctx, config, db, h)
+		if err != nil {
+			return fmt.Errorf("failed to create realmkeys controller: %w", err)
+		}
+		realmSub.Handle("/keys", realmKeysController.HandleIndex()).Methods("GET")
+		realmSub.Handle("/keys/create", realmKeysController.HandleCreateKey()).Methods("POST")
+		realmSub.Handle("/keys/upgrade", realmKeysController.HandleUpgrade()).Methods("POST")
+		realmSub.Handle("/keys/save", realmKeysController.HandleSave()).Methods("POST")
+		realmSub.Handle("/keys/activate", realmKeysController.HandleActivate()).Methods("POST")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be

@@ -23,7 +23,6 @@ import (
 	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-signalcontext"
@@ -90,7 +89,6 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
-	r.Handle("/healthz", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
 
 	cleanupController := cleanup.New(ctx, config, db, h)
 	r.Handle("/", cleanupController.HandleCleanup()).Methods("GET")

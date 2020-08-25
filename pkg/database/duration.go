@@ -28,6 +28,26 @@ var _ driver.Valuer = (*DurationSeconds)(nil)
 // as seconds in the database.
 type DurationSeconds struct {
 	Duration time.Duration
+
+	// AsString allows this value to be updatd and parsed using the Update() method.
+	AsString string
+}
+
+func FromDuration(d time.Duration) DurationSeconds {
+	return DurationSeconds{
+		Duration: d,
+		AsString: d.String(),
+	}
+}
+
+// Update attempts to parse the AsString value and set is as the duration
+func (d *DurationSeconds) Update() error {
+	newDuration, err := time.ParseDuration(d.AsString)
+	if err != nil {
+		return err
+	}
+	d.Duration = newDuration
+	return nil
 }
 
 // Scan takes a int64 value in seconds and converts that to a time.Duration
@@ -41,6 +61,7 @@ func (d *DurationSeconds) Scan(src interface{}) error {
 		return fmt.Errorf("invalid scan type")
 	}
 	d.Duration = time.Duration(v) * time.Second
+	d.AsString = d.Duration.String()
 	return nil
 }
 
