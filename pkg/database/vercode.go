@@ -58,10 +58,8 @@ type VerificationCode struct {
 	SymptomDate   *time.Time
 	ExpiresAt     time.Time
 	LongExpiresAt time.Time
-	IssuingUserID int
-	IssuingUser   *User
-	IssuingAppID  int
-	IssuingApp    *AuthorizedApp
+	IssuingUserID uint
+	IssuingAppID  uint
 }
 
 // TableName sets the VerificationCode table name
