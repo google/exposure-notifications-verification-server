@@ -185,3 +185,26 @@ database_tier            = "db-custom-1-3840"
 database_disk_size_gb    = 16
 database_max_connections = 256
 ```
+
+
+### Debugging
+
+#### Cannot find firebase provider
+
+If you're getting an error like:
+
+```text
+To work with <resource> its original provider configuration at
+provider["registry.terraform.io/-/google"] is required, but it has been removed.
+This occurs when a provider configuration is removed while objects created by
+that provider still exist in the state. Re-add the provider configuration to
+destroy <resource>, after which you can remove the provider configuration again.
+```
+
+It means you're upgrading from an older Terraform configuration. Try the following:
+
+```text
+$ tf state rm google_project_iam_member.firebase
+$ tf state rm google_service_account.firebase
+$ tf state rm google_service_account_key.firebase
+```
