@@ -19,7 +19,6 @@ package codestatus
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
@@ -48,14 +47,14 @@ func (c *Controller) HandleShow() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, "", "", "")
+			c.renderShow(ctx, w, "", "", 0)
 			return
 		}
 
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
 			flash.Error("Failed to process form: %v", apiErr.Error)
-			c.renderShow(ctx, w, form.UUID, "", "")
+			c.renderShow(ctx, w, form.UUID, "", 0)
 			return
 		}
 
@@ -65,18 +64,18 @@ func (c *Controller) HandleShow() http.Handler {
 		} else {
 			status = "not yet claimed"
 		}
-		var exp string
+		var exp int64
 		if code.IsExpired() {
-			exp = "expired"
+			exp = 0
 		} else {
 			// TODO(whaught): This might be nicer as a formatted duration until now
-			exp = code.ExpiresAt.UTC().Format(time.RFC1123)
+			exp = code.ExpiresAt.UTC().Unix()
 		}
 		c.renderShow(ctx, w, form.UUID, status, exp)
 	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status, expires string) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status string, expires int64) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["uuid"] = uuid
 	m["status"] = status
