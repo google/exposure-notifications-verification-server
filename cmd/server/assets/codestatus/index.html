@@ -1,5 +1,7 @@
 {{define "code/status"}}
 
+{{$code := .code}}
+
 <!doctype html>
 <html lang="en">
 
@@ -7,7 +9,7 @@
   {{template "head" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -23,12 +25,16 @@
         <form method="POST" action="show">
           {{ .csrfField }}
           <div class="row form-group">
-            <label for="uuid" class="col-sm-3">Code Identifier</label>
+            <label for="uuid" class="col-sm-3">Code identifier</label>
             <div class="col-sm-9">
-              <div class="input-group p-0 shadow-sm">
-                <input type="text" id="uuid" name="uuid" class="form-control text-monospace"
-                  placeholder="xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              <input type="text" id="uuid" name="uuid" class="form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}" value="{{$code.UUID}}"
+                placeholder="xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                autocomplete="off">
+              {{if $code.ErrorsFor "uuid"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($code.ErrorsFor "uuid") ", "}}
               </div>
+              {{end}}
               <small class="form-text text-muted">
                 Identifier given from the Issue Code form.
               </small>
