@@ -14,10 +14,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
-	"github.com/opencensus-integrations/redigo/redis"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
+	"github.com/opencensus-integrations/redigo/redis"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"go.opencensus.io/stats"
