@@ -10,6 +10,8 @@ continuous deployment.
 
 - Terraform 0.12. [Installation guide](https://www.terraform.io/downloads.html)
 
+- firebase-cli. [Installation guide](https://firebase.google.com/docs/cli)
+
 - gcloud. [Installation guide](https://cloud.google.com/sdk/install)
 
     Note: Make sure you **unset** `GOOGLE_APPLICATION_CREDENTIALS` in your
@@ -33,10 +35,32 @@ continuous deployment.
 1.  Authenticate to gcloud with:
 
     ```text
-    $ gcloud auth login && gcloud auth application-default login
+    $ gcloud auth login
     ```
 
-    This will open two authentication windows in your web browser.
+    This will open a web browser. Choose the right Google account and click
+    "allow".
+
+    ```text
+    $ gcloud auth application-default login
+    ```
+
+    Set the quota project:
+
+    ```text
+    $ gcloud auth application-default set-quota-project "${PROJECT_ID}"
+    ```
+
+    This will open a web browser. Choose the right Google account and click
+    "allow". Yes, this is nearly identical to the previous step.
+
+    ```text
+    $ firebase login
+    ```
+
+### Quick setup
+
+This is for a POC. You should **not** use this method for production.
 
 1.  Change into the `terraform/` directory. All future commands are run from the
     `terraform/` directory:
@@ -51,25 +75,81 @@ continuous deployment.
     $ echo "project = \"${PROJECT_ID}\"" >> ./terraform.tfvars
     ```
 
-1.  (Optional, but recommended) Create a Cloud Storage bucket for storing remote
-    state. This is important if you plan to have multiple people running
-    Terraform or collaborating.
+1.  Run `terraform init`. Terraform will automatically download the plugins
+    required to execute this code. You only need to do this once per machine.
 
     ```text
-    $ gsutil mb -p ${PROJECT_ID} gs://${PROJECT_ID}-tf-state
+    $ terraform init
     ```
 
-    Configure Terraform to store state in the bucket:
+1.  Execute Terraform:
 
     ```text
-    $ cat <<EOF > ./state.tf
-    terraform {
-      backend "gcs" {
-        bucket = "${PROJECT_ID}-tf-state"
+    $ terraform apply
+    ```
+
+1.  After the initial provision, go to the Firebase admin console and enable
+    your desired login (Facebook, email/password, etc).
+
+### Production setup
+
+For a production setup, create a new repo and import these configurations as a
+Terraform module.
+
+1.  Create a Cloud Storage bucket for storing remote state. This is important if
+    you plan to have multiple people running Terraform or collaborating.
+
+    ```text
+    $ gsutil mb -p ${PROJECT_ID} gs://${PROJECT_ID}-terraform
+    ```
+
+1.  Create a new source control repository dedicated to managing infrastructure.
+    This example assumes the repo is named `"en-infra"`.
+
+1.  Create a definition to import this module inside your `"en-infra"` repo:
+
+    ```text
+    $ mkdir ${PROJECT_ID}
+    ```
+
+1.  Change into that sub-directory and import this module:
+
+    ```text
+    $ cd ${PROJECT_ID}
+    ```
+
+    ```text
+    $ echo > ${PROJECT_ID}/main.tf <<EOF
+      terraform {
+        backend "gcs" {
+          bucket = "${PROJECT_ID}-terraform"
+        }
       }
-    }
+
+      module "en" {
+        source = "github.com/google/exposure-notifications-verification-server/terraform"
+
+        project = "${PROJECT_ID}"
+
+        create_env_file = true
+
+        service_environment = {
+          server = {
+            FIREBASE_PRIVACY_POLICY_URL   = "TODO"
+            FIREBASE_TERMS_OF_SERVICE_URL = "TODO"
+          }
+        }
+      }
+
+      output "en" {
+        value = module.en
+      }
     EOF
     ```
+
+    As shown above, all the variables defined in the Terraform are available as
+    inputs/parameters to the module definition. See the `variables.tf` file for
+    the full list of configuration options.
 
 1.  Run `terraform init`. Terraform will automatically download the plugins
     required to execute this code. You only need to do this once per machine.
@@ -104,4 +184,27 @@ project                  = "..."
 database_tier            = "db-custom-1-3840"
 database_disk_size_gb    = 16
 database_max_connections = 256
+```
+
+
+### Debugging
+
+#### Cannot find firebase provider
+
+If you're getting an error like:
+
+```text
+To work with <resource> its original provider configuration at
+provider["registry.terraform.io/-/google"] is required, but it has been removed.
+This occurs when a provider configuration is removed while objects created by
+that provider still exist in the state. Re-add the provider configuration to
+destroy <resource>, after which you can remove the provider configuration again.
+```
+
+It means you're upgrading from an older Terraform configuration. Try the following:
+
+```text
+$ tf state rm google_project_iam_member.firebase
+$ tf state rm google_service_account.firebase
+$ tf state rm google_service_account_key.firebase
 ```
