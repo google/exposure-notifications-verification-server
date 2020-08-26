@@ -25,12 +25,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	redigo "github.com/gomodule/redigo/redis"
+	redigo "github.com/opencensus-integrations/redigo/redis"
+	"go.opencensus.io/stats/view"
 )
 
 var _ Cacher = (*redis)(nil)
 
-// redis is an shared cache implementation backed by Redis. It's ideal for
+// redis is a shared cache implementation backed by Redis. It's ideal for
 // production installations since the cache is shared among all services.
 type redis struct {
 	pool    *redigo.Pool
@@ -66,7 +67,6 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 		pool: &redigo.Pool{
 			Dial: func() (redigo.Conn, error) {
 				return redigo.Dial("tcp", addr,
-					redigo.DialUsername(i.Username),
 					redigo.DialPassword(i.Password))
 			},
 			TestOnBorrow: func(conn redigo.Conn, _ time.Time) error {
@@ -80,6 +80,10 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 		},
 		keyFunc: i.KeyFunc,
 		stopCh:  make(chan struct{}),
+	}
+
+	if err := view.Register(redigo.ObservabilityMetricViews...); err != nil {
+		return nil, fmt.Errorf("redis view registration failure: %w", err)
 	}
 
 	return c, nil
@@ -102,8 +106,8 @@ func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time
 		}
 	}
 
-	fn := func(conn redigo.Conn) (io.Reader, error) {
-		cached, err := redigo.String(conn.Do("GET", key))
+	fn := func(conn redigo.ConnWithContext) (io.Reader, error) {
+		cached, err := redigo.String(conn.DoContext(ctx, "GET", key))
 		if err != nil && !errors.Is(err, redigo.ErrNil) {
 			return nil, fmt.Errorf("failed to GET key: %w", err)
 		}
@@ -128,25 +132,25 @@ func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time
 			return nil, fmt.Errorf("failed to encode value: %w", err)
 		}
 
-		if _, err := conn.Do("WATCH", key); err != nil {
+		if _, err := conn.DoContext(ctx, "WATCH", key); err != nil {
 			return nil, fmt.Errorf("failed to WATCH key: %w", err)
 		}
 
-		if _, err := conn.Do("MULTI"); err != nil {
+		if _, err := conn.DoContext(ctx, "MULTI"); err != nil {
 			return nil, fmt.Errorf("failed to MULTI: %w", err)
 		}
 
-		if _, err := conn.Do("PSETEX", key, int64(ttl.Milliseconds()), encoded.String()); err != nil {
+		if _, err := conn.DoContext(ctx, "PSETEX", key, int64(ttl.Milliseconds()), encoded.String()); err != nil {
 			err = fmt.Errorf("failed to PSETEX: %w", err)
 
-			if _, derr := conn.Do("DISCARD"); derr != nil {
+			if _, derr := conn.DoContext(ctx, "DISCARD"); derr != nil {
 				err = fmt.Errorf("failed to DISCARD: %v, original error: %w", derr, err)
 			}
 
 			return nil, err
 		}
 
-		if _, err := conn.Do("EXEC"); err != nil {
+		if _, err := conn.DoContext(ctx, "EXEC"); err != nil {
 			return nil, fmt.Errorf("failed to EXEC: %w", err)
 		}
 
@@ -156,7 +160,7 @@ func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time
 	// This is a CAS operation, so retry
 	var err error
 	for i := 0; i < 5; i++ {
-		err = c.withConn(func(c redigo.Conn) error {
+		err = c.withConn(func(c redigo.ConnWithContext) error {
 			r, err := fn(c)
 			if err != nil {
 				return err
@@ -191,13 +195,13 @@ func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl ti
 		}
 	}
 
-	return c.withConn(func(conn redigo.Conn) error {
+	return c.withConn(func(conn redigo.ConnWithContext) error {
 		var encoded bytes.Buffer
 		if err := json.NewEncoder(&encoded).Encode(value); err != nil {
 			return fmt.Errorf("failed to encode value: %w", err)
 		}
 
-		if _, err := redigo.String(conn.Do("PSETEX", key, int64(ttl.Milliseconds()), encoded.String())); err != nil {
+		if _, err := redigo.String(conn.DoContext(ctx, "PSETEX", key, int64(ttl.Milliseconds()), encoded.String())); err != nil {
 			return fmt.Errorf("failed to PSETEX value: %w", err)
 		}
 		return nil
@@ -219,8 +223,8 @@ func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
 		}
 	}
 
-	return c.withConn(func(conn redigo.Conn) error {
-		val, err := redigo.String(conn.Do("GET", key))
+	return c.withConn(func(conn redigo.ConnWithContext) error {
+		val, err := redigo.String(conn.DoContext(ctx, "GET", key))
 		if err != nil && !errors.Is(err, redigo.ErrNil) {
 			return fmt.Errorf("failed to GET value: %w", err)
 		}
@@ -251,8 +255,8 @@ func (c *redis) Delete(ctx context.Context, key string) error {
 		}
 	}
 
-	return c.withConn(func(conn redigo.Conn) error {
-		if _, err := conn.Do("DEL", key); err != nil && !errors.Is(err, redigo.ErrNil) {
+	return c.withConn(func(conn redigo.ConnWithContext) error {
+		if _, err := conn.DoContext(ctx, "DEL", key); err != nil && !errors.Is(err, redigo.ErrNil) {
 			return fmt.Errorf("failed to DEL: %w", err)
 		}
 		return nil
@@ -273,24 +277,30 @@ func (c *redis) Close() error {
 }
 
 // withConn runs the function with a conn, ensuring cleanup of the connection.
-func (c *redis) withConn(f func(conn redigo.Conn) error) error {
+func (c *redis) withConn(f func(conn redigo.ConnWithContext) error) error {
 	if f == nil {
 		return fmt.Errorf("missing function")
 	}
 
-	conn := c.pool.Get()
+	ctx := context.Background()
+
+	conn, ok := c.pool.GetWithContext(ctx).(redigo.ConnWithContext)
+	if !ok {
+		return fmt.Errorf("redis conn is not ConnWithContext")
+	}
+
 	if err := conn.Err(); err != nil {
 		return fmt.Errorf("connection is not usable: %w", err)
 	}
 
 	if err := f(conn); err != nil {
-		if cerr := conn.Close(); cerr != nil {
+		if cerr := conn.CloseContext(ctx); cerr != nil {
 			return fmt.Errorf("failed to close connection: %v, original error: %w", cerr, err)
 		}
 		return err
 	}
 
-	if err := conn.Close(); err != nil {
+	if err := conn.CloseContext(ctx); err != nil {
 		return fmt.Errorf("failed to close connection: %w", err)
 	}
 	return nil
