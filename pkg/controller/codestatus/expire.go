@@ -25,7 +25,7 @@ import (
 
 func (c *Controller) HandleExpire() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var request api.CheckCodeStatusRequest
+		var request api.ExpireCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
@@ -40,7 +40,7 @@ func (c *Controller) HandleExpire() http.Handler {
 		c.db.ExpireCode(code)
 
 		c.h.RenderJSON(w, http.StatusOK,
-			&api.CheckCodeStatusResponse{
+			&api.ExpireCodeResponse{
 				ExpiresAtTimestamp:     code.ExpiresAt.UTC().Unix(),
 				LongExpiresAtTimestamp: code.LongExpiresAt.UTC().Unix(),
 			})

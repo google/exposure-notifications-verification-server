@@ -155,6 +155,27 @@ type CheckCodeStatusResponse struct {
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 
+// ExpireCodeRequest defines the parameters to request that a code be expired now.
+// This is called by the Web frontend.
+type ExpireCodeRequest struct {
+	// UUID is a handle which allows the issuer to track status of the issued verification code.
+	UUID string `json:"uuid"`
+}
+
+// ExpireCodeResponse defines the response type for ExpireCodeRequest.
+type ExpireCodeResponse struct {
+	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
+
+	// LongExpiresAtTimestamp repesents the time when the long code expires, in
+	// UTC seconds since epoch.
+	LongExpiresAtTimestamp int64 `json:"longExpiresAtTimestamp,omitempty"`
+
+	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code
 // (OTP) for a long term token (a JWT) that can later be used to sign TEKs.
 //
