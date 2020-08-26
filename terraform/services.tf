@@ -31,6 +31,7 @@ locals {
   }
 
   database_config = {
+    DB_KEY_MANAGER                    = "GOOGLE_CLOUD_KMS"
     DB_APIKEY_DATABASE_KEY            = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
     DB_APIKEY_SIGNATURE_KEY           = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
     DB_ENCRYPTION_KEY                 = google_kms_crypto_key.database-encrypter.self_link
@@ -67,9 +68,12 @@ locals {
   }
 
   signing_config = {
+    CERTIFICATE_KEY_MANAGER     = "GOOGLE_CLOUD_KMS"
     CERTIFICATE_SIGNING_KEY     = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
-    TOKEN_SIGNING_KEY           = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
     CERTIFICATE_SIGNING_KEYRING = google_kms_key_ring.verification.self_link
+
+    TOKEN_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
+    TOKEN_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
   }
 }
 

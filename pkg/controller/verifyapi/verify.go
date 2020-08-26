@@ -80,7 +80,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		}
 
 		// Get the signer based on Key configuration.
-		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigningKey)
+		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.TokenSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
@@ -118,15 +118,15 @@ func (c *Controller) HandleVerify() http.Handler {
 		subject := verificationToken.Subject()
 		now := time.Now().UTC()
 		claims := &jwt.StandardClaims{
-			Audience:  c.config.TokenIssuer,
+			Audience:  c.config.TokenSigning.TokenIssuer,
 			ExpiresAt: now.Add(c.config.VerificationTokenDuration).Unix(),
 			Id:        verificationToken.TokenID,
 			IssuedAt:  now.Unix(),
-			Issuer:    c.config.TokenIssuer,
+			Issuer:    c.config.TokenSigning.TokenIssuer,
 			Subject:   subject.String(),
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigningKeyID
+		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigning.TokenSigningKeyID
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
 			c.logger.Errorw("failed to sign token", "error", err)

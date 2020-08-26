@@ -41,7 +41,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		// Get the public key for the token.
-		publicKey, err := c.pubKeyCache.GetPublicKey(ctx, c.config.TokenSigningKey, c.kms)
+		publicKey, err := c.pubKeyCache.GetPublicKey(ctx, c.config.TokenSigning.TokenSigningKey, c.kms)
 		if err != nil {
 			c.logger.Errorw("failed to get public key", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
