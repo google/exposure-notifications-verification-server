@@ -105,6 +105,42 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	}
 }
 
+func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+
+	vc := &VerificationCode{
+		Code:          "123456",
+		LongCode:      "defghijk329024",
+		TestType:      "confirmed",
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(2 * time.Hour),
+	}
+
+	if err := db.SaveVerificationCode(vc, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+
+	uuid := vc.UUID
+	if uuid == "" {
+		t.Fatal("expected uuid")
+	}
+
+	{
+		got, err := db.ExpireCode(uuid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := got.ID, vc.ID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got.ExpiresAt.After(time.Now()) {
+			t.Errorf("expected expired, got %v", got.ExpiresAt)
+		}
+	}
+}
+
 func TestVerCodeValidate(t *testing.T) {
 	maxAge := time.Hour * 24 * 14
 	oldTest := time.Now().Add(-1 * 20 * oneDay)
