@@ -57,13 +57,11 @@
   <script type="text/javascript">
     let $codeExpiresAt;
     let expires = {{ .code.Expires }};
-    let uuid = {{ .code.UUID }};
-    let codeCountdown;
 
     $(function() {
       $codeExpiresAt = $('#code-expires-at');
       // Start countdown
-      longCodeCountdown = countdown($codeExpiresAt, expires);
+      countdown($codeExpiresAt, expires);
     });
   </script>
 </body>
