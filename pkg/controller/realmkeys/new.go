@@ -37,7 +37,7 @@ func (c *Controller) HandleCreateKey() http.Handler {
 			return
 		}
 
-		kid, err := realm.CreateNewSigningKeyVersion(ctx, c.db)
+		kid, err := realm.CreateSigningKeyVersion(ctx, c.db)
 		if err != nil {
 			flash.Error("Unable to create a new signing key: %v", err)
 			c.renderShow(ctx, w, r, realm)
