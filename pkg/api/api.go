@@ -157,6 +157,7 @@ type CheckCodeStatusResponse struct {
 
 // ExpireCodeRequest defines the parameters to request that a code be expired now.
 // This is called by the Web frontend.
+// API is served at /api/expirecode
 type ExpireCodeRequest struct {
 	// UUID is a handle which allows the issuer to track status of the issued verification code.
 	UUID string `json:"uuid"`
