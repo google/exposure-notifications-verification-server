@@ -93,7 +93,7 @@
                 {{range $rk := .realmKeys}}
                 <tr>
                   <td>
-                    <span class="text-monospace">{{$rk.GetKID}}</span>
+                    <a href="/jwks/{{$rk.RealmID}}" class="text-monospace">{{$rk.GetKID}}</a>
                     {{if $rk.Active}}<span class="badge badge-success">Active</span>{{end}}
                   </td>
                   <td>
