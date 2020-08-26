@@ -31,13 +31,19 @@ func (c *Controller) HandleExpire() http.Handler {
 			return
 		}
 
-		code, errCode, err := c.CheckCodeStatus(r, request.UUID)
-		if err != nil {
-			c.h.RenderJSON(w, errCode, err)
+		// Retrieve once to check permissions.
+		_, errCode, apiErr := c.CheckCodeStatus(r, request.UUID)
+		if apiErr != nil {
+			c.h.RenderJSON(w, errCode, apiErr)
 			return
 		}
 
-		c.db.ExpireCode(code)
+		// Re-retrieve in transaction for write.
+		code, err := c.db.ExpireCode(request.UUID)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
 
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.ExpireCodeResponse{

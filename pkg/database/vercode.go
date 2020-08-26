@@ -195,6 +195,26 @@ func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, 
 	return &vc, nil
 }
 
+// ExpireCode saves a verification code as expired.
+func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
+	var vc VerificationCode
+	err := db.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("uuid = ?", uuid).Find(&vc).Error; err != nil {
+			return err
+		}
+
+		vc.ExpiresAt = time.Now()
+		vc.LongExpiresAt = vc.ExpiresAt
+
+		return tx.Save(&vc).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &vc, nil
+}
+
 // SaveVerificationCode created or updates a verification code in the database.
 // Max age represents the maximum age of the test date [optional] in the record.
 func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Duration) error {
@@ -204,13 +224,6 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 	if vc.Model.ID == 0 {
 		return db.db.Create(vc).Error
 	}
-	return db.db.Save(vc).Error
-}
-
-// ExpireCode saves a verification code as expired.
-func (db *Database) ExpireCode(vc *VerificationCode) error {
-	vc.ExpiresAt = time.Now()
-	vc.LongExpiresAt = vc.ExpiresAt
 	return db.db.Save(vc).Error
 }
 
