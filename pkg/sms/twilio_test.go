@@ -2,6 +2,7 @@ package sms
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"testing"
@@ -12,6 +13,14 @@ import (
 
 func TestTwilio_SendSMS(t *testing.T) {
 	t.Parallel()
+
+	// The only magic number that passes all Twilio validations:
+	//
+	// https://www.twilio.com/docs/iam/test-credentials#test-sms-messages-parameters-From
+	const magicNumber = "+15005550006"
+
+	// Twilio shouldn't have returned this error
+	invalidTwilioErrMsg := fmt.Sprintf("The 'To' number %s is not a valid phone number", magicNumber)
 
 	if testing.Short() {
 		t.Skipf("🚧 Skipping twilio tests (short)!")
@@ -100,7 +109,7 @@ func TestTwilio_SendSMS(t *testing.T) {
 
 			if err := retry.Do(ctx, b, func(_ context.Context) error {
 				err = twilio.SendSMS(ctx, tc.to, "testing 123")
-				if err != nil && err.Error() == "The 'To' number +15005550006 is not a valid phone number" {
+				if err != nil && err.Error() == invalidTwilioErrMsg {
 					return retry.RetryableError(err)
 				}
 				if (err != nil) != tc.err {
