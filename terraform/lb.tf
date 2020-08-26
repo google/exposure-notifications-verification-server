@@ -103,7 +103,7 @@ resource "google_compute_forwarding_rule" "https" {
   ip_address            = google_compute_global_address.verification-server.address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "443"
-  target                = google_compute_target_http_proxy.https.id
+  target                = google_compute_target_https_proxy.https.id
   network_tier          = "PREMIUM"
 }
 
