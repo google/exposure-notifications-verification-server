@@ -19,6 +19,7 @@ package codestatus
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -39,16 +40,12 @@ func (c *Controller) HandleShow() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
+		retCode := Code{}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, "", "", 0)
+			c.renderShow(ctx, w, retCode)
 			return
 		}
 
@@ -59,6 +56,7 @@ func (c *Controller) HandleShow() http.Handler {
 			c.renderStatus(ctx, w, &code)
 			return
 		}
+		retCode.UUID = form.UUID
 
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
@@ -69,26 +67,93 @@ func (c *Controller) HandleShow() http.Handler {
 			c.renderStatus(ctx, w, &code)
 			return
 		}
+		retCode.TestType = strings.Title(code.TestType)
 
-		var status string
+		if code.IssuingUserID != 0 {
+			retCode.IssuerType = "Issuing user"
+			retCode.Issuer = c.getUserName(ctx, r, code.IssuingUserID)
+		} else if code.IssuingAppID != 0 {
+			retCode.IssuerType = "Issuing app"
+			retCode.Issuer = c.getAuthAppName(ctx, r, code.IssuingAppID)
+		}
+
 		if code.Claimed {
-			status = "Claimed by user"
+			retCode.Status = "Claimed by user"
 		} else {
-			status = "Not yet claimed"
+			retCode.Status = "Not yet claimed"
 		}
-		var exp int64 = 0
 		if !code.IsExpired() {
-			// TODO(whaught): This might be nicer as a formatted duration until now
-			exp = code.ExpiresAt.UTC().Unix()
+			retCode.Expires = code.ExpiresAt.UTC().Unix()
 		}
-		c.renderShow(ctx, w, form.UUID, status, exp)
+		c.renderShow(ctx, w, retCode)
 	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, uuid, status string, expires int64) {
+func (c *Controller) getUserName(ctx context.Context, r *http.Request, id uint) (userName string) {
+	userName = "Unknown user"
+	_, user, err := c.getAuthorizationFromContext(r)
+	if err != nil {
+		return
+	}
+
+	// The current user is the issuer
+	if user != nil && user.ID == id {
+		return user.Name
+	}
+
+	// The current user is admin, issuer is someone else
+
+	realm := controller.RealmFromContext(ctx)
+	if realm == nil {
+		return
+	}
+
+	user, err = realm.FindUser(c.db, id)
+	if err != nil {
+		return
+	}
+
+	return user.Name
+}
+
+func (c *Controller) getAuthAppName(ctx context.Context, r *http.Request, id uint) (appName string) {
+	appName = "Unknown app"
+	authApp, _, err := c.getAuthorizationFromContext(r)
+	if err != nil {
+		return
+	}
+
+	// The current app is the issuer
+	if authApp != nil && authApp.ID == id {
+		return authApp.Name
+	}
+
+	// The current app is admin, issuer is a different app
+
+	realm := controller.RealmFromContext(ctx)
+	if realm == nil {
+		return
+	}
+
+	authApp, err = realm.FindAuthorizedApp(c.db, authApp.ID)
+	if err != nil {
+		return
+	}
+
+	return authApp.Name
+}
+
+type Code struct {
+	UUID       string `json:"uuid"`
+	Status     string `json:"status"`
+	TestType   string `json:"testType"`
+	IssuerType string `json:"issuerType"`
+	Issuer     string `json:"issuer"`
+	Expires    int64  `json:"expires"`
+}
+
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, code Code) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["uuid"] = uuid
-	m["status"] = status
-	m["expires"] = expires
+	m["code"] = code
 	c.h.RenderHTML(w, "code/show", m)
 }
