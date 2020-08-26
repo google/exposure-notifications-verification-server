@@ -160,6 +160,16 @@ resource "google_compute_region_network_endpoint_group" "apiserver" {
   }
 }
 
+resource "google_compute_backend_service" "apiserver" {
+  provider = google-beta
+  name     = "apiserver"
+  project  = var.project
+
+  backend {
+    group = google_compute_region_network_endpoint_group.apiserver.id
+  }
+}
+
 resource "google_cloud_run_domain_mapping" "apiserver" {
   count    = var.apiserver_custom_domain != "" ? 1 : 0
   location = var.cloudrun_location

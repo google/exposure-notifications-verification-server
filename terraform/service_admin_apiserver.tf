@@ -152,6 +152,16 @@ resource "google_compute_region_network_endpoint_group" "adminapi" {
   }
 }
 
+resource "google_compute_backend_service" "adminapi" {
+  provider = google-beta
+  name     = "adminapi"
+  project  = var.project
+
+  backend {
+    group = google_compute_region_network_endpoint_group.adminapi.id
+  }
+}
+
 resource "google_cloud_run_domain_mapping" "adminapi" {
   count    = var.adminapi_custom_domain != "" ? 1 : 0
   location = var.cloudrun_location

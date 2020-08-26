@@ -150,6 +150,21 @@ variable "server_custom_domain" {
   description = "Custom domain to map for server. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
 }
 
+variable "server-host" {
+  type        = string
+  description = "Domain web ui is hosted on."
+}
+
+variable "apiserver-host" {
+  type        = string
+  description = "Domain apiserver is hosted on."
+}
+
+variable "adminapi-host" {
+  type        = string
+  description = "Domain adminapi is hosted on."
+}
+
 terraform {
   required_version = ">= 0.13"
 

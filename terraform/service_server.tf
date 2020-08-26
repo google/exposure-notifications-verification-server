@@ -193,6 +193,16 @@ resource "google_compute_region_network_endpoint_group" "server" {
   }
 }
 
+resource "google_compute_backend_service" "server" {
+  provider = google-beta
+  name     = "server"
+  project  = var.project
+
+  backend {
+    group = google_compute_region_network_endpoint_group.server.id
+  }
+}
+
 resource "google_cloud_run_domain_mapping" "server" {
   count    = var.server_custom_domain != "" ? 1 : 0
   location = var.cloudrun_location

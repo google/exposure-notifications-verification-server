@@ -11,47 +11,93 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# TODO(icco): This is currently all setup manually.
-#resource "google_compute_backend_service" "apiserver" {
-#  provider   = google-beta
-#  name       = "apiserver"
-#  project    = var.project
-#  enable_cdn = true
-#
-#  backend {
-#    group = google_compute_region_network_endpoint_group.apiserver.id
-#  }
-#}
-
 resource "google_compute_global_address" "verification-server" {
   name    = "verification-server-address"
   project = var.project
 }
 
-#resource "google_compute_url_map" "urlmap" {
-#  name            = "verification-server"
-#  project         = var.project
-#  default_service = google_compute_backend_service.apiserver.id
-#
-# TODO(icco): Add host base routing for all four services.
-#}
-#
-#resource "google_compute_target_http_proxy" "default" {
-#  name    = "verification-server"
-#  project = var.project
-#  url_map = google_compute_url_map.urlmap.id
-#}
-#
-#resource "google_compute_forwarding_rule" "verification-server" {
-#  provider = google-beta
-#  name     = "verification-server"
-#  project  = var.project
-#
-#  ip_protocol           = "TCP"
-#  ip_address            = google_compute_global_address.verification-server.address
-#  load_balancing_scheme = "EXTERNAL"
-#  port_range            = "80"
-#  target                = google_compute_target_http_proxy.default.id
-#  network_tier          = "PREMIUM"
-#}
+# Redirects all requests to https
+resource "google_compute_url_map" "urlmap-http" {
+  name     = "https-redirect"
+  provider = google-beta
+  project  = var.project
+
+  default_url_redirect {
+    https_redirect = true
+  }
+}
+
+resource "google_compute_url_map" "urlmap-https" {
+  name            = "verification-server"
+  provider        = google-beta
+  project         = var.project
+  default_service = google_compute_backend_service.apiserver.id
+
+  host_rule {
+    hosts        = [var.server-host]
+    path_matcher = "server"
+  }
+
+  path_matcher {
+    name            = "server"
+    default_service = google_compute_backend_service.server.id
+  }
+
+  host_rule {
+    hosts        = [var.apiserver-host]
+    path_matcher = "apiserver"
+  }
+
+  path_matcher {
+    name            = "apiserver"
+    default_service = google_compute_backend_service.apiserver.id
+  }
+
+  host_rule {
+    hosts        = [var.adminapi-host]
+    path_matcher = "adminapi"
+  }
+
+  path_matcher {
+    name            = "adminapi"
+    default_service = google_compute_backend_service.adminapi.id
+  }
+}
+
+resource "google_compute_target_http_proxy" "http" {
+  provider = google-beta
+  name     = "verification-server"
+  project  = var.project
+
+  url_map          = google_compute_url_map.urlmap-http.id
+  ssl_certificates = [google_compute_managed_ssl_certificate.default.id]
+}
+
+resource "google_compute_target_https_proxy" "https" {
+  name    = "verification-server"
+  project = var.project
+  url_map = google_compute_url_map.urlmap-https.id
+}
+
+resource "google_compute_forwarding_rule" "verification-server" {
+  provider = google-beta
+  name     = "verification-server"
+  project  = var.project
+
+  ip_protocol           = "TCP"
+  ip_address            = google_compute_global_address.verification-server.address
+  load_balancing_scheme = "EXTERNAL"
+  port_range            = "80"
+  target                = google_compute_target_http_proxy.default.id
+  network_tier          = "PREMIUM"
+}
+
+resource "google_compute_managed_ssl_certificate" "default" {
+  provider = google-beta
+
+  name = "verification-cert"
+
+  managed {
+    domains = [var.server-host, var.apiserver-host, var.adminapi-host]
+  }
+}
