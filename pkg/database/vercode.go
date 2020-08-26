@@ -207,6 +207,13 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 	return db.db.Save(vc).Error
 }
 
+// ExpireCode saves a verification code as expired.
+func (db *Database) ExpireCode(vc *VerificationCode) error {
+	vc.ExpiresAt = time.Now()
+	vc.LongExpiresAt = vc.ExpiresAt
+	return db.db.Save(vc).Error
+}
+
 // DeleteVerificationCode deletes the code if it exists. This is a hard delete.
 func (db *Database) DeleteVerificationCode(code string) error {
 	hmacedCode, err := db.hmacVerificationCode(code)

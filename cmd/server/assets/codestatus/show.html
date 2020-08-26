@@ -18,21 +18,24 @@
       Status of a verification code previously shared with your patient.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3" style="max-width: 30rem">
       <div class="card-header">
         Code status
       </div>
-      <div class="card-body">
-        <div class="list-group">
+      <div class="list-group">
+        <div class="list-group-item">
           <h5 class="mb-1">UUID</h5>
           <p class="mb-1 text-monospace">{{.uuid}}</p>
         </div>
-        <div class="list-group">
+        <div class="list-group-item">
           <h5 class="mb-1">Status</h5>
           <p class="mb-1">{{.status}}</p>
         </div>
-        <div class="list-group">
-          <h5 class="mb-1">Expiry</h5>
+        <div class="list-group-item">
+          <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">Expiry</h5>
+            <button type="button" id="invalidate" class="btn btn-primary btn-sm">Invalidate code now</button>
+          </div>
           <span id="code-expires-at" class="sm text-danger"></span>
         </div>
       </div>
@@ -49,14 +52,58 @@
   {{template "codescripts" .}}
 
   <script type="text/javascript">
+    let $buttonInvalidate = $('button#invalidate');
     let $codeExpiresAt;
     let expires = {{.expires }};
+    let uuid = {{.uuid }}
+    let codeCountdown
 
     $(function() {
       $codeExpiresAt = $('#code-expires-at');
       // Start countdown
-      longCodeCountdown = countdown($codeExpiresAt, expires);
+      codeCountdown = countdown($codeExpiresAt, expires, function() {
+        // Disable the submit if already expired.
+        $buttonInvalidate.prop('disabled', true);
+      });
+
+      $buttonInvalidate.on('click', function() {
+        // Disable the submit button so we only issue one code
+        $buttonInvalidate.prop('disabled', true);
+        let data = {
+          uuid: uuid
+        };
+        invalidateCode(data);
+      });
     });
+
+    function invalidateCode(data) {
+      $.ajax({
+        url: '/code/expire',
+        type: 'POST',
+        dataType: 'json',
+        cache: false,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        headers: {
+          'X-CSRF-Token': '{{.csrfToken}}',
+        },
+        success: function(result) {
+          flash("Code marked as expired.", "success");
+          clearInterval(codeCountdown)
+          $codeExpiresAt.html(countdownExpired)
+        },
+        error: function(xhr, resp, text) {
+          $buttonInvalidate.prop('disabled', false);
+          var message = resp;
+          if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+            message = message + ": " + xhr.responseJSON.error;
+          } else {
+            message = text
+          }
+          flash(message, "danger");
+        }
+      });
+    }
   </script>
 </body>
 

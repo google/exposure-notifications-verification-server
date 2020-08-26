@@ -65,7 +65,7 @@
         let email = $email.val();
         let pwd = $password.val();
         if (pwd != $retype.val()) {
-          flash("Password and retyped passwords must match", "danger");
+          flash("Password and retyped passwords must match.", "danger");
           return;
         }
 
