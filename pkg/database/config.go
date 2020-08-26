@@ -42,7 +42,7 @@ type Config struct {
 
 	// Keys is the key management configuration. This is used to resolve values
 	// that are encrypted via a KMS.
-	Keys keys.Config
+	Keys keys.Config `env:",prefix=DB_"`
 
 	// The KMS managed KeyRing that per-realm certificate signing keys are
 	// created on.

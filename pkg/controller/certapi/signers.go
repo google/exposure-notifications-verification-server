@@ -42,16 +42,16 @@ func (c *Controller) getSignerForRealm(ctx context.Context, authApp *database.Au
 
 			if !realm.UseRealmCertificateKey {
 				// This realm is using the system key.
-				signer, err := c.kms.NewSigner(ctx, c.config.VerificationSettings.CertificateSigningKey)
+				signer, err := c.kms.NewSigner(ctx, c.config.CertificateSigning.CertificateSigningKey)
 				if err != nil {
 					return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %v: %w", sRealmID, err)
 				}
 				return &SignerInfo{
 					Signer:   signer,
-					KeyID:    c.config.VerificationSettings.CertificateSigningKeyID,
-					Issuer:   c.config.VerificationSettings.CertificateIssuer,
-					Audience: c.config.VerificationSettings.CertificateAudience,
-					Duration: c.config.VerificationSettings.CertificateDuration,
+					KeyID:    c.config.CertificateSigning.CertificateSigningKeyID,
+					Issuer:   c.config.CertificateSigning.CertificateIssuer,
+					Audience: c.config.CertificateSigning.CertificateAudience,
+					Duration: c.config.CertificateSigning.CertificateDuration,
 				}, nil
 			}
 

@@ -14,11 +14,19 @@
 
 package config
 
-import "time"
+import (
+	"time"
 
-// CertificateSigningConfig represents the settinsg for system wide certificate signing.
-// these should be used if you are managing certifiate keys externally.
+	"github.com/google/exposure-notifications-server/pkg/keys"
+)
+
+// CertificateSigningConfig represents the settings for system-wide certificate
+// signing. These should be used if you are managing certifiate keys externally.
 type CertificateSigningConfig struct {
+	// Keys determines the key manager configuration for this certificate signing
+	// configuration.
+	Keys keys.Config `env:",prefix=CERTIFICATE_"`
+
 	PublicKeyCacheDuration  time.Duration `env:"PUBLIC_KEY_CACHE_DURATION, default=15m"`
 	SignerCacheDuration     time.Duration `env:"CERTIFICATE_SIGNER_CACHE_DURATION, default=1m"`
 	CertificateSigningKey   string        `env:"CERTIFICATE_SIGNING_KEY, required"`

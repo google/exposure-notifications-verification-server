@@ -47,12 +47,12 @@ type Controller struct {
 func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
 	logger := logging.FromContext(ctx)
 
-	pubKeyCache, err := keyutils.NewPublicKeyCache(config.VerificationSettings.PublicKeyCacheDuration)
+	pubKeyCache, err := keyutils.NewPublicKeyCache(config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create public key cache, likely invalid duration: %w", err)
 	}
 
-	signerCache, err := cache.New(config.VerificationSettings.SignerCacheDuration)
+	signerCache, err := cache.New(config.CertificateSigning.SignerCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
 	}
@@ -78,7 +78,7 @@ func (c *Controller) validateToken(verToken string, publicKey crypto.PublicKey) 
 		if !ok {
 			return nil, fmt.Errorf("missing 'kid' header in token")
 		}
-		if kid == c.config.TokenSigningKeyID {
+		if kid == c.config.TokenSigning.TokenSigningKeyID {
 			return publicKey, nil
 		}
 		return nil, fmt.Errorf("no public key for specified 'kid' not found: %v", kid)
@@ -96,7 +96,7 @@ func (c *Controller) validateToken(verToken string, publicKey crypto.PublicKey) 
 		c.logger.Errorf("JWT is invalid: %v", err)
 		return "", nil, fmt.Errorf("verification token expired")
 	}
-	if !tokenClaims.VerifyIssuer(c.config.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenIssuer, true) {
+	if !tokenClaims.VerifyIssuer(c.config.TokenSigning.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenSigning.TokenIssuer, true) {
 		c.logger.Errorf("jwt contains invalid iss/aud: iss %v aud: %v", tokenClaims.Issuer, tokenClaims.Audience)
 		return "", nil, fmt.Errorf("verification token not valid")
 	}
