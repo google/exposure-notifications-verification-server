@@ -42,6 +42,10 @@
         <h5 class="mb-1">Expiry</h5>
         <span id="code-expires-at" class="sm text-danger"></span>
       </div>
+      <form id="expireForm" action="/expire" method="POST">
+        <input type="hidden" name="uuid" value="{{.code.UUID}}" />
+        <button type="submit" id="invalidate" class="btn btn-danger btn-sm">Invalidate code now</button>
+      </form>
     </div>
 
     <div>
