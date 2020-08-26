@@ -386,6 +386,7 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	if err := db.db.
 		Unscoped().
 		Model(AuthorizedApp{}).
+		Order("LOWER(name)").
 		Where("id = ? AND realm_id = ?", id, r.ID).
 		First(&app).
 		Error; err != nil {
@@ -399,8 +400,8 @@ func (r *Realm) ListUsers(db *Database) ([]*User, error) {
 	var users []*User
 	if err := db.db.
 		Model(r).
+		Order("LOWER(name)").
 		Related(&users, "RealmUsers").
-		Order("email").
 		Error; err != nil {
 		return nil, err
 	}
@@ -444,7 +445,7 @@ func (db *Database) CreateRealm(name string) (*Realm, error) {
 	return realm, nil
 }
 
-func (db *Database) GetRealmByName(name string) (*Realm, error) {
+func (db *Database) FindRealmByName(name string) (*Realm, error) {
 	var realm Realm
 
 	if err := db.db.Where("name = ?", name).First(&realm).Error; err != nil {
@@ -453,10 +454,12 @@ func (db *Database) GetRealmByName(name string) (*Realm, error) {
 	return &realm, nil
 }
 
-func (db *Database) GetRealm(realmID uint) (*Realm, error) {
+func (db *Database) FindRealm(id interface{}) (*Realm, error) {
 	var realm Realm
-
-	if err := db.db.Where("id = ?", realmID).First(&realm).Error; err != nil {
+	if err := db.db.
+		Where("id = ?", id).
+		First(&realm).
+		Error; err != nil {
 		return nil, err
 	}
 	return &realm, nil

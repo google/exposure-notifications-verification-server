@@ -151,14 +151,16 @@ variable "server_custom_domain" {
 }
 
 terraform {
+  required_version = ">= 0.13"
+
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 3.32"
+      version = "~> 3.36"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 3.35"
+      version = "~> 3.36"
     }
     local = {
       source  = "hashicorp/local"

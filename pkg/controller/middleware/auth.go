@@ -17,10 +17,11 @@ package middleware
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -29,15 +30,15 @@ import (
 
 	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
-	"github.com/jinzhu/gorm"
 )
 
 // RequireAuth requires a user to be logged in. It also ensures that currentUser
 // is set in the template map. It fetches a user from the session and stores the
 // full record in the request context.
-func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
+func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
+
+	cacheTTL := 5 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,35 +61,62 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 				return
 			}
 
-			user := VerifyCookieAndUser(ctx, client, db, session, firebaseCookie)
-			if user == nil {
+			email, err := EmailFromFirebaseCookie(ctx, fbClient, firebaseCookie)
+			if err != nil {
+				controller.ClearSessionFirebaseCookie(session)
+
+				logger.Debugw("failed to extract email from firebase cookie", "error", err)
+				flash.Error("Your credentials are invalid. Clear your cookies and try again.")
 				controller.Unauthorized(w, r, h)
+				return
+			}
+
+			// Load the user by using the cache to alleviate pressure on the database
+			// layer.
+			var user database.User
+			cacheKey := fmt.Sprintf("users:by_email:%s", email)
+			if err := cacher.Fetch(ctx, cacheKey, &user, cacheTTL, func() (interface{}, error) {
+				return db.FindUserByEmail(email)
+			}); err != nil {
+				controller.ClearSessionFirebaseCookie(session)
+
+				if database.IsNotFound(err) {
+					logger.Debugw("user does not exist")
+					controller.Unauthorized(w, r, h)
+					return
+				}
+
+				logger.Errorw("failed to lookup user", "error", err)
+				controller.InternalError(w, r, h, err)
 				return
 			}
 
 			// Check if the session is still valid.
 			if time.Now().After(user.LastRevokeCheck.Add(ttl)) {
-				if _, err := client.VerifySessionCookieAndCheckRevoked(ctx, firebaseCookie); err != nil {
+				if _, err := fbClient.VerifySessionCookieAndCheckRevoked(ctx, firebaseCookie); err != nil {
 					logger.Debugw("failed to verify firebase cookie revocation", "error", err)
 					controller.ClearSessionFirebaseCookie(session)
 					controller.Unauthorized(w, r, h)
 					return
 				}
 
-				user.LastRevokeCheck = time.Now()
-				if err := db.SaveUser(user); err != nil {
+				// Update the revoke check time.
+				if err := db.TouchUserRevokeCheck(&user); err != nil {
 					logger.Errorw("failed to update revocation check time", "error", err)
+					controller.InternalError(w, r, h, err)
+					return
+				}
+
+				// Update the user in the cache so it has the new revoke check time.
+				if err := cacher.Write(ctx, cacheKey, &user, 30*time.Second); err != nil {
+					logger.Errorw("failed to cached user revocation check time", "error", err)
 					controller.InternalError(w, r, h, err)
 					return
 				}
 			}
 
-			// Save the user in the template map.
-			m := controller.TemplateMapFromContext(ctx)
-			m["currentUser"] = user
-
 			// Save the user on the context.
-			ctx = controller.WithUser(ctx, user)
+			ctx = controller.WithUser(ctx, &user)
 			*r = *r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
@@ -96,55 +124,23 @@ func RequireAuth(ctx context.Context, client *auth.Client, db *database.Database
 	}
 }
 
-// VerifyCookieAndUser verifies the cookie from the user and then matches it against the database.User
-// to ensure both exist.
-func VerifyCookieAndUser(ctx context.Context, client *auth.Client, db *database.Database, session *sessions.Session, cookie string) *database.User {
-	var user *database.User
-	defer func() {
-		if user == nil {
-			controller.ClearSessionFirebaseCookie(session)
-		}
-	}()
-
-	flash := controller.Flash(session)
-	logger := logging.FromContext(ctx).Named("middleware.VerifyCookieAndUser")
-
-	token, err := client.VerifySessionCookie(ctx, cookie)
+// EmailFromFirebaseCookie extracts the user's email address from the provided
+// firebase cookie, if it exists.
+func EmailFromFirebaseCookie(ctx context.Context, fbClient *auth.Client, cookie string) (string, error) {
+	token, err := fbClient.VerifySessionCookie(ctx, cookie)
 	if err != nil {
-		logger.Debugw("failed to verify firebase cookie", "error", err)
-		flash.Error("An error occurred trying to verify your credentials.")
-		return nil
+		return "", fmt.Errorf("failed to verify firebase cookie: %w", err)
 	}
 
-	emailRaw, ok := token.Claims["email"]
+	if token.Claims == nil || token.Claims["email"] == nil {
+		return "", fmt.Errorf("missing token claims for email")
+	}
+
+	email, ok := token.Claims["email"].(string)
 	if !ok {
-		logger.Debugw("firebase token does not have an email")
-		flash.Error("An error occurred trying to verify your credentials.")
-		return nil
+		return "", fmt.Errorf("token claims for email are not a string")
 	}
-
-	email, ok := emailRaw.(string)
-	if !ok {
-		logger.Debugw("firebase email is not a string")
-		flash.Error("An error occurred trying to verify your credentials.")
-		return nil
-	}
-
-	user, err = db.FindUserByEmail(email)
-	if err != nil {
-		controller.ClearSessionFirebaseCookie(session)
-
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			logger.Debugw("user does not exist")
-			flash.Error("That user does not exist.")
-			return nil
-		}
-
-		logger.Errorw("failed to find user", "error", err)
-		return nil
-	}
-
-	return user
+	return email, nil
 }
 
 // RequireAdmin requires the current user is a global administrator. It must

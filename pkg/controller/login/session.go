@@ -19,7 +19,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 )
 
 func (c *Controller) HandleCreateSession() http.Handler {
@@ -51,13 +50,6 @@ func (c *Controller) HandleCreateSession() http.Handler {
 		if err != nil {
 			flash.Error("Failed to create session: %v", err)
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-			return
-		}
-
-		// Don't store the cookie if there is no database.User for it.
-		user := middleware.VerifyCookieAndUser(ctx, c.client, c.db, session, cookie)
-		if user == nil {
-			controller.Unauthorized(w, r, c.h)
 			return
 		}
 

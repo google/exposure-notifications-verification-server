@@ -17,18 +17,26 @@
 package codestatus
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		m := controller.TemplateMapFromContext(ctx)
 		// TODO(whaught): load a list of recent codes to show
 
-		c.h.RenderHTML(w, "code/status", m)
+		var code database.VerificationCode
+		c.renderStatus(ctx, w, &code)
 	})
+}
+
+func (c *Controller) renderStatus(ctx context.Context, w http.ResponseWriter, code *database.VerificationCode) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["code"] = code
+	c.h.RenderHTML(w, "code/status", m)
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 
@@ -116,6 +117,12 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 
 // Open creates a database connection. This should only be called once.
 func (db *Database) Open(ctx context.Context) error {
+	return db.OpenWithCacher(ctx, nil)
+}
+
+// OpenWithCacher creates a database connection with the cacher. This should
+// only be called once.
+func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
 	c := db.config
 
 	rawDB, err := gorm.Open("postgres", c.ConnectionString())
@@ -131,18 +138,40 @@ func (db *Database) Open(ctx context.Context) error {
 	// Enable auto-preloading.
 	rawDB = rawDB.Set("gorm:auto_preload", true)
 
+	callbacks := rawDB.Callback()
+
 	// SMS configs
-	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
-	rawDB.Callback().Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
-	rawDB.Callback().Update().Before("gorm:update").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
-	rawDB.Callback().Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Update().Before("gorm:update").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
-	rawDB.Callback().Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
 	// Verification codes
-	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.hmacVerificationCode, "verification_codes", "code"))
-	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.hmacVerificationCode, "verification_codes", "long_code"))
+	callbacks.Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.hmacVerificationCode, "verification_codes", "code"))
+	callbacks.Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.hmacVerificationCode, "verification_codes", "long_code"))
+
+	// Cache clearing
+	if cacher != nil {
+		// Apps
+		callbacks.Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
+		callbacks.Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
+
+		// Realms
+		callbacks.Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
+		callbacks.Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
+
+		// Users
+		callbacks.Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
+		callbacks.Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
+
+		// Users (by email)
+		callbacks.Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
+		callbacks.Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
+
+	}
 
 	db.db = rawDB
 	return nil
@@ -163,6 +192,43 @@ func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
 }
 
+// callbackPurgeCache purges the cache key for the given record.
+func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, keyFormat, table, column string) func(scope *gorm.Scope) {
+	return func(scope *gorm.Scope) {
+		if scope.TableName() != table {
+			return
+		}
+
+		if scope.HasError() {
+			return
+		}
+
+		field, ok := scope.FieldByName(column)
+		if !ok {
+			_ = scope.Err(fmt.Errorf("table %q has no column %q", table, column))
+			return
+		}
+
+		if !field.Field.CanInterface() {
+			_ = scope.Err(fmt.Errorf("%q.%q cannot interface", table, column))
+			return
+		}
+
+		val := field.Field.Interface()
+		if val == nil {
+			return
+		}
+
+		key := fmt.Sprintf(keyFormat, val)
+		if err := cacher.Delete(ctx, key); err != nil {
+			scope.Log(fmt.Sprintf("failed to delete cache key: %v", err))
+			return
+		}
+
+		scope.Log(fmt.Sprintf("cleared cache for %v", key))
+	}
+}
+
 // callbackKMSDecrypt decrypts the given column in the table using the key
 // manager and key id.
 func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, table, column string) func(scope *gorm.Scope) {
@@ -174,7 +240,6 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		// Do nothing if there are errors
 		if scope.HasError() {
-			scope.Log("skipping decryption, model has errors")
 			return
 		}
 
@@ -247,7 +312,6 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		// Do nothing if there are errors
 		if scope.HasError() {
-			scope.Log("skipping encryption, model has errors")
 			return
 		}
 

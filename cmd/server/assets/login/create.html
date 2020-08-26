@@ -3,8 +3,8 @@
 <html lang="en">
 
 <head>
+  {{template "floatingform" .}}
   {{template "head" .}}
-
   {{template "firebase" .}}
 </head>
 
@@ -18,19 +18,22 @@
           <div class="card shadow-sm">
             <div class="card-header">Create new user</div>
             <div class="card-body">
-              <form id="loginForm" action="/" method="POST">
-                <div class="form-group mb-2">
-                  <input type="email" id="email" name="email" class="form-control" placeholder="Email address"
-                    required />
+              <form id="loginForm" class="floating-form" action="/" method="POST">
+                <div class="form-label-group mb-2">
+                  <input type="email" id="email" name="email" class="form-control" placeholder="Email address" required
+                    autofocus />
+                  <label for="email">Email address</label>
                 </div>
 
-                <div class="form-group">
+                <div class="form-label-group">
                   <input type="password" id="password" name="password" class="form-control" placeholder="Password"
                     autocomplete="new-password" required />
+                  <label for="password">Password</label>
                 </div>
-                <div class="form-group">
+                <div class="form-label-group">
                   <input type="password" id="retype" name="retype" class="form-control" placeholder="Retype password"
                     autocomplete="new-password" required />
+                  <label for="retype">Retype password</label>
                 </div>
 
                 <button type="submit" id="submit" class="btn btn-primary btn-block">Create user</button>

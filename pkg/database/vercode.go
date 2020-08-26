@@ -49,6 +49,8 @@ var (
 // VerificationCode represents a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
+	Errorable
+
 	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
 	Code          string `gorm:"type:varchar(512);unique_index"`
 	LongCode      string `gorm:"type:varchar(512);unique_index"`
@@ -58,10 +60,8 @@ type VerificationCode struct {
 	SymptomDate   *time.Time
 	ExpiresAt     time.Time
 	LongExpiresAt time.Time
-	IssuingUserID int
-	IssuingUser   *User
-	IssuingAppID  int
-	IssuingApp    *AuthorizedApp
+	IssuingUserID uint
+	IssuingAppID  uint
 }
 
 // TableName sets the VerificationCode table name

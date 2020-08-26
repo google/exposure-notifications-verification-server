@@ -134,7 +134,7 @@
               <label for="symptomDate" class="col-sm-3">Patient phone</label>
               <div class="col-sm-9">
                 <div class="input-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="+1 (555) 555-5555" />
+                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="+1 (555) 555-5555" autocomplete="off" />
                 </div>
                 <small class="form-text text-muted">
                   If provided, the system will send text containing the code to the
@@ -179,7 +179,7 @@
           Share this code with the patient.
         </p>
 
-        <div id="code" class="text-center text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
+        <div id="code" class="text-center user-select-none text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
       </div>
     </div>
 
@@ -212,6 +212,7 @@
   </main>
 
   {{template "scripts" .}}
+  {{template "codescripts" .}}
 
   <script type="text/javascript">
     let $errors;
@@ -400,75 +401,6 @@
 
       // Show reset button
       $buttonReset.removeClass('d-none');
-    }
-
-    // element is expected to be a jquery element or dom query selector, ts is
-    // the number of seconds since epoch, UTC.
-    function countdown(element, ts) {
-      if (typeof (ts) === 'undefined') {
-        return;
-      }
-
-      let $element = $(element);
-      let date = new Date(ts*1000).getTime();
-
-      const formattedTime = function() {
-        let now = new Date().getTime();
-        let diff = date - now;
-
-        if (diff <= 0) {
-          return false;
-        }
-
-        let hours = Math.floor(diff / (1000 * 60 * 60));
-        let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        let seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        let time;
-
-        // hours
-        if (hours < 10) {
-          time = `0${hours}`;
-        } else {
-          time = `${hours}`;
-        }
-
-        // minutes
-        if (minutes < 10) {
-          time = `${time}:0${minutes}`;
-        } else {
-          time = `${time}:${minutes}`;
-        }
-
-        // seconds
-        if (seconds < 10) {
-          time = `${time}:0${seconds}`;
-        } else {
-          time = `${time}:${seconds}`;
-        }
-
-        return time;
-      };
-
-      // Fire once so the time is displayed immediately.
-      let time = formattedTime();
-      let text = `Expires in ${time}`.trim();
-      $element.html(text);
-
-      // Set timer.
-      const fn = setInterval(function() {
-        let time = formattedTime();
-        if (!time) {
-          clearInterval(fn);
-          $element.html('<strong>EXPIRED</strong>');
-          return
-        }
-
-        let text = `Expires in ${time}`.trim();
-        $element.html(text);
-      }, 1000);
-
-      return fn
     }
   </script>
 </body>

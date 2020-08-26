@@ -102,13 +102,14 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
+	defer cacher.Close()
 
 	// Setup database
 	db, err := config.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
-	if err := db.Open(ctx); err != nil {
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
@@ -160,10 +161,10 @@ func realMain(ctx context.Context) error {
 	r.Use(requireSession)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, auth, db, h, config.SessionDuration)
+	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionDuration)
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
-	requireRealm := middleware.RequireRealm(ctx, db, h)
+	requireRealm := middleware.RequireRealm(ctx, cacher, db, h)
 	rateLimit := httplimiter.Handle
 
 	{
@@ -180,7 +181,7 @@ func realMain(ctx context.Context) error {
 
 		{
 			sub := r.PathPrefix("").Subrouter()
-			sub.Handle("/health", controller.HandleHealthz(ctx, h, &config.Database)).Methods("GET")
+			sub.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 		}
 
 		{
@@ -269,7 +270,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAdmin)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, config, cacher, db, h)
+		userController := user.New(ctx, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")

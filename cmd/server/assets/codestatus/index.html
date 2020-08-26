@@ -1,13 +1,16 @@
 {{define "code/status"}}
 
+{{$code := .code}}
+
 <!doctype html>
 <html lang="en">
 
 <head>
+  {{template "floatingform" .}}
   {{template "head" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -19,16 +22,20 @@
     </p>
 
     <div class="card mb-3">
+      <div class="card-header">Code status</div>
       <div class="card-body">
-        <form method="POST" action="show">
+        <form method="POST" action="show" class="floating-form">
           {{ .csrfField }}
-          <div class="row form-group">
-            <label for="uuid" class="col-sm-3">Code Identifier</label>
-            <div class="col-sm-9">
-              <div class="input-group p-0 shadow-sm">
-                <input type="text" id="uuid" name="uuid" class="form-control"
-                  placeholder="xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+          <div class="form-group">
+            <div class="form-label-group ">
+              <input type="text" id="uuid" name="uuid" class='form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}' value="{{$code.UUID}}"
+                placeholder="UUID" maxlength="36"autocomplete="off">
+                <label for="uuid">UUID</label>
+              {{if $code.ErrorsFor "uuid"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($code.ErrorsFor "uuid") ", "}}
               </div>
+              {{end}}
               <small class="form-text text-muted">
                 Identifier given from the Issue Code form.
               </small>
@@ -36,7 +43,7 @@
           </div>
 
           <div class="row form-group">
-            <div class="offset-sm-3 col-sm-9">
+            <div class="col-sm-9">
               <button id="submit" class="btn btn-primary btn-block">Check status</button>
             </div>
           </div>
@@ -46,6 +53,30 @@
   </main>
 
   {{template "scripts" .}}
+  <script type="text/javascript">
+
+    $(function () {
+      let $uuid = $('#uuid');
+      let allowedChars = new RegExp("[0-9a-fA-F]")
+      let dashLocations = [8, 13, 18, 23];
+
+      $uuid.on('keyup', function(){
+        let s = $uuid.val();
+        let r = ""
+        for (i = 0; i < s.length && i <= 36; i++) {
+          let c = s.charAt(i)
+          if (dashLocations.includes(i)) {
+            r += '-'
+          }
+
+          if (allowedChars.test(c)) {
+            r += c
+          }
+        }
+        $uuid.val(r);
+      });
+    });
+  </script>
 </body>
 
 </html>

@@ -111,6 +111,16 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, s
 				continue
 			}
 		}
+
+		issuingUserID := uint(0)
+		if o.IssuingUser != nil {
+			issuingUserID = o.IssuingUser.ID
+		}
+		issuingAppID := uint(0)
+		if o.IssuingApp != nil {
+			issuingAppID = o.IssuingApp.ID
+		}
+
 		verificationCode = database.VerificationCode{
 			RealmID:       o.RealmID,
 			Code:          code,
@@ -119,8 +129,8 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, s
 			SymptomDate:   o.SymptomDate,
 			ExpiresAt:     o.ShortExpiresAt,
 			LongExpiresAt: o.LongExpiresAt,
-			IssuingUser:   o.IssuingUser,
-			IssuingApp:    o.IssuingApp,
+			IssuingUserID: issuingUserID,
+			IssuingAppID:  issuingAppID,
 		}
 		// If a verification code already exists, it will fail to save, and we retry.
 		if err := o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {

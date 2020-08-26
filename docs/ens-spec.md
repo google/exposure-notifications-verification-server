@@ -1,8 +1,8 @@
 # Resource Identifier (RI) Scheme name: ens
 
-# Scheme syntax
+## Scheme syntax
 
-```
+```text
 ens://v?r=[region]&c=[verification code]
 ```
 
@@ -12,14 +12,19 @@ Send COVID-19 exposure notifications verification codes into a compatible
 mobile application or operating system for verification of a diagnosis
 to share within the exposure notifications system.
 
-* `ens` : describes that the exposure notifications application to be opened.
-* `v` : verify, currently this is the only available action.
-* `r` : region, the region that this verification code is for.
-  * Regions must be [ISO_3166-2](https://en.wikipedia.org/wiki/ISO_3166-2) codes.
-  * For country level, the 2 character code is used.
-  * If sub-regions are being used, this should be 2 character country, '-' (dash)
-    followed by the 2 or 3 character subdivision code.
-* `c` : verification code to validate the diagnosis.
+-   `ens` : describes that the exposure notifications application to be opened.
+
+-   `v` : verify, currently this is the only available action.
+
+-   `r` : region, the region that this verification code is for.
+
+    -   Regions must be [ISO_3166-2](https://en.wikipedia.org/wiki/ISO_3166-2)
+        codes.
+    -   For country level, the 2 character code is used.
+    -   If sub-regions are being used, this should be 2 character country, '-'
+        (dash) followed by the 2 or 3 character subdivision code.
+
+-   `c` : verification code to validate the diagnosis.
 
 ## Encoding considerations
 
@@ -33,7 +38,7 @@ combined with the URI not exceed 160 characters in total.
 
 For Austraila:
 
-```
+```text
 ens://v?r=AU&c=1234abcd5678efgh
 ```
 
@@ -41,12 +46,12 @@ ens://v?r=AU&c=1234abcd5678efgh
 
 For the State of Washington, in the United States:
 
-```
+```text
 ens://v?r=US-WA&c=abcdefgh12345678
 ```
 
 And for State of New South Wales in Austraila:
 
-```
+```text
 ens://v?r=AU-NSW&c=abcdefgh12345678
 ```
