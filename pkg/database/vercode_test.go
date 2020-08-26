@@ -128,7 +128,8 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	}
 
 	{
-		got, err := db.ExpireCode(uuid)
+		db.ExpireCode(uuid)
+		got, err := db.FindVerificationCodeByUUID(uuid)
 		if err != nil {
 			t.Fatal(err)
 		}
