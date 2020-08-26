@@ -5,6 +5,9 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
+
+	"github.com/sethvargo/go-retry"
 )
 
 func TestTwilio_SendSMS(t *testing.T) {
@@ -88,8 +91,23 @@ func TestTwilio_SendSMS(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = twilio.SendSMS(ctx, tc.to, "testing 123")
-			if (err != nil) != tc.err {
+			// Twilio is pretty flaky, retry if it failed unexpectedly
+			b, err := retry.NewConstant(100 * time.Millisecond)
+			if err != nil {
+				t.Fatalf("failed to configure backoff: %v", err)
+			}
+			b = retry.WithMaxRetries(3, b)
+
+			if err := retry.Do(ctx, b, func(_ context.Context) error {
+				err = twilio.SendSMS(ctx, tc.to, "testing 123")
+				if err != nil && err.Error() == "The 'To' number +15005550006 is not a valid phone number" {
+					return retry.RetryableError(err)
+				}
+				if (err != nil) != tc.err {
+					return err
+				}
+				return nil
+			}); err != nil {
 				t.Fatal(err)
 			}
 		})
