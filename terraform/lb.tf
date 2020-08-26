@@ -23,6 +23,7 @@ resource "google_compute_url_map" "urlmap-http" {
   project  = var.project
 
   default_url_redirect {
+    strip_query    = false
     https_redirect = true
   }
 }
@@ -69,26 +70,40 @@ resource "google_compute_target_http_proxy" "http" {
   name     = "verification-server"
   project  = var.project
 
-  url_map          = google_compute_url_map.urlmap-http.id
-  ssl_certificates = [google_compute_managed_ssl_certificate.default.id]
+  url_map = google_compute_url_map.urlmap-http.id
 }
 
 resource "google_compute_target_https_proxy" "https" {
   name    = "verification-server"
   project = var.project
-  url_map = google_compute_url_map.urlmap-https.id
+
+  url_map          = google_compute_url_map.urlmap-https.id
+  ssl_certificates = [google_compute_managed_ssl_certificate.default.id]
 }
 
-resource "google_compute_forwarding_rule" "verification-server" {
+resource "google_compute_forwarding_rule" "http" {
   provider = google-beta
-  name     = "verification-server"
+  name     = "verification-server-http"
   project  = var.project
 
   ip_protocol           = "TCP"
   ip_address            = google_compute_global_address.verification-server.address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "80"
-  target                = google_compute_target_http_proxy.default.id
+  target                = google_compute_target_http_proxy.http.id
+  network_tier          = "PREMIUM"
+}
+
+resource "google_compute_forwarding_rule" "https" {
+  provider = google-beta
+  name     = "verification-server-https"
+  project  = var.project
+
+  ip_protocol           = "TCP"
+  ip_address            = google_compute_global_address.verification-server.address
+  load_balancing_scheme = "EXTERNAL"
+  port_range            = "443"
+  target                = google_compute_target_http_proxy.https.id
   network_tier          = "PREMIUM"
 }
 
