@@ -19,7 +19,6 @@ require (
 	github.com/containerd/continuity v0.0.0-20200710164510-efbc4488d8fe // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20200620013148-b91950f658ec // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/gomodule/redigo v1.8.2
 	github.com/google/exposure-notifications-server v0.5.0
 	github.com/google/go-cmp v0.5.1
 	github.com/google/uuid v1.1.1 // indirect
@@ -44,8 +43,8 @@ require (
 	github.com/prometheus/common v0.12.0 // indirect
 	github.com/prometheus/statsd_exporter v0.17.0 // indirect
 	github.com/sethvargo/go-envconfig v0.3.1
-	github.com/sethvargo/go-limiter v0.4.0
-	github.com/sethvargo/go-redisstore v0.1.1-opencensus
+	github.com/sethvargo/go-limiter v0.4.1
+	github.com/sethvargo/go-redisstore v0.1.2-opencensus
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/stretchr/objx v0.3.0 // indirect
