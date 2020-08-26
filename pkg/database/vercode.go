@@ -199,7 +199,10 @@ func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, 
 func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
 	var vc VerificationCode
 	err := db.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("uuid = ?", uuid).Find(&vc).Error; err != nil {
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where("uuid = ?", uuid).
+			Find(&vc).Error; err != nil {
 			return err
 		}
 
