@@ -152,6 +152,12 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
 
+	// Install HSTS headers in production
+	if !config.DevMode {
+		addHSTS := middleware.AddHSTS(ctx)
+		r.Use(addHSTS)
+	}
+
 	// Install the CSRF protection middleware.
 	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
 	r.Use(configureCSRF)
