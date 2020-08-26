@@ -2,25 +2,13 @@ package sms
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"testing"
-	"time"
-
-	"github.com/sethvargo/go-retry"
 )
 
 func TestTwilio_SendSMS(t *testing.T) {
 	t.Parallel()
-
-	// The only magic number that passes all Twilio validations:
-	//
-	// https://www.twilio.com/docs/iam/test-credentials#test-sms-messages-parameters-From
-	const magicNumber = "+15005550006"
-
-	// Twilio shouldn't have returned this error
-	invalidTwilioErrMsg := fmt.Sprintf("The 'To' number %s is not a valid phone number", magicNumber)
 
 	if testing.Short() {
 		t.Skipf("🚧 Skipping twilio tests (short)!")
@@ -83,7 +71,7 @@ func TestTwilio_SendSMS(t *testing.T) {
 		{
 			name: "sends",
 			from: "+15005550006",
-			to:   "+15005550006",
+			to:   "+18144211811", // A real phone number
 			err:  false,
 		},
 	}
@@ -100,23 +88,8 @@ func TestTwilio_SendSMS(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// Twilio is pretty flaky, retry if it failed unexpectedly
-			b, err := retry.NewConstant(100 * time.Millisecond)
-			if err != nil {
-				t.Fatalf("failed to configure backoff: %v", err)
-			}
-			b = retry.WithMaxRetries(3, b)
-
-			if err := retry.Do(ctx, b, func(_ context.Context) error {
-				err = twilio.SendSMS(ctx, tc.to, "testing 123")
-				if err != nil && err.Error() == invalidTwilioErrMsg {
-					return retry.RetryableError(err)
-				}
-				if (err != nil) != tc.err {
-					return err
-				}
-				return nil
-			}); err != nil {
+			err = twilio.SendSMS(ctx, tc.to, "testing 123")
+			if (err != nil) != tc.err {
 				t.Fatal(err)
 			}
 		})
