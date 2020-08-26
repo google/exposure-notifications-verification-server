@@ -38,13 +38,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/opencensus-integrations/redigo/redis"
-	"go.opencensus.io/stats/view"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/mikehelmick/go-chaff"
+	"github.com/opencensus-integrations/redigo/redis"
 	"github.com/sethvargo/go-signalcontext"
+	"go.opencensus.io/stats/view"
 )
 
 func main() {

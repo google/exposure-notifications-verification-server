@@ -22,6 +22,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -38,18 +41,14 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/opencensus-integrations/redigo/redis"
-	"go.opencensus.io/stats/view"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-server/pkg/server"
 
 	firebase "firebase.google.com/go"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/opencensus-integrations/redigo/redis"
 	"github.com/sethvargo/go-signalcontext"
+	"go.opencensus.io/stats/view"
 )
 
 func main() {
