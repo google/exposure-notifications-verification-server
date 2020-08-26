@@ -130,6 +130,10 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 		return fmt.Errorf("database gorm.Open: %w", err)
 	}
 
+	if c.MaxConnectionIdleTime > 0 {
+		rawDB.DB().SetConnMaxIdleTime(c.MaxConnectionIdleTime)
+	}
+
 	// Log SQL statements in debug mode.
 	if c.Debug {
 		rawDB = rawDB.LogMode(true)
