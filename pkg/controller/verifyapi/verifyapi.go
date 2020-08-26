@@ -12,52 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package issueapi implements the API handler for taking a code request, assigning
-// an OTP, saving it to the database and returning the result.
-// This is invoked over AJAX from the Web frontend.
-package issueapi
+package verifyapi
 
 import (
 	"context"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"go.uber.org/zap"
 )
 
+// Controller is a controller for the verification code verification API.
 type Controller struct {
-	config config.IssueAPIConfig
+	config *config.APIServerConfig
 	db     *database.Database
 	h      *render.Renderer
 	logger *zap.SugaredLogger
-
-	validTestType map[string]struct{}
+	kms    keys.KeyManager
 
 	metrics *Metrics
 }
 
-// New creates a new IssueAPI controller.
-func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
+	logger := logging.FromContext(ctx)
+
 	metrics, err := registerMetrics()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logging.FromContext(ctx),
-		validTestType: map[string]struct{}{
-			api.TestTypeConfirmed: {},
-			api.TestTypeLikely:    {},
-			api.TestTypeNegative:  {},
-		},
+		config:  config,
+		db:      db,
+		h:       h,
+		logger:  logger,
+		kms:     kms,
 		metrics: metrics,
 	}, nil
 }
