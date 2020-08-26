@@ -21,17 +21,17 @@
       Use an identifier to check the status of a code previously shared with your patient.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3" style="max-width: 30rem">
       <div class="card-header">Code status</div>
       <div class="card-body">
         <form method="POST" action="show" class="floating-form">
           {{ .csrfField }}
           <div class="form-group">
             <div class="form-label-group ">
-              <input type="text" id="uuid" name="uuid" class="form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}" value="{{$code.UUID}}"
-                placeholder="xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                autocomplete="off">
-                <label for="uuid">xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</label>
+              <input type="text" id="uuid" name="uuid"
+                class="form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}"
+                value="{{$code.UUID}}" placeholder="xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+              <label for="uuid">xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</label>
               {{if $code.ErrorsFor "uuid"}}
               <div class="invalid-feedback">
                 {{joinStrings ($code.ErrorsFor "uuid") ", "}}

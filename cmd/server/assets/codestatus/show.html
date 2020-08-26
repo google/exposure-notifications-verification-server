@@ -32,19 +32,15 @@
           <p class="mb-1">{{.status}}</p>
         </div>
         <div class="list-group-item">
-          <div class="d-flex w-100 justify-content-between">
-            <h5 class="mb-1">Expiry</h5>
-            <button type="button" id="invalidate" class="btn btn-danger btn-sm">Invalidate code now</button>
-          </div>
+          <h5 class="mb-1">Expiry</h5>
           <span id="code-expires-at" class="sm text-danger"></span>
         </div>
       </div>
+      <button type="button" id="invalidate" class="btn btn-danger btn-sm">Invalidate code now</button>
     </div>
 
     <div>
-      <p>
-        <a href="/code/status">&larr; Enter another code</a>
-      </p>
+      <a href="/code/status">&larr; Enter another code</a>
     </div>
   </main>
 
