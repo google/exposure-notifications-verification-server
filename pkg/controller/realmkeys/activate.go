@@ -22,7 +22,7 @@ import (
 
 func (c *Controller) HandleActivate() http.Handler {
 	type FormData struct {
-		SigningKeyID uint `form:"skid"`
+		SigningKeyID uint `form:"id"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

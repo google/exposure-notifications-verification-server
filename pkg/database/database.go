@@ -42,9 +42,9 @@ type Database struct {
 	// keyManager is used to encrypt/decrypt values.
 	keyManager keys.KeyManager
 
-	// if the key manager is capable of managing per-realm signing keys
-	// this will also be set.
-	signingKeyManager keys.SigningKeyManagement
+	// signingKeyManager is an optional interface that's implemented to support
+	// per-realm signing keys. This could be nil.
+	signingKeyManager keys.SigningKeyManager
 
 	// logger is the internal logger.
 	logger *zap.SugaredLogger
@@ -80,11 +80,11 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		return nil, fmt.Errorf("failed to create key manager: %w", err)
 	}
 
-	var signingKeyManager keys.SigningKeyManagement
-	signingKeyManager, ok := keyManager.(keys.SigningKeyManagement)
+	var signingKeyManager keys.SigningKeyManager
+	signingKeyManager, ok := keyManager.(keys.SigningKeyManager)
 	if !ok {
 		signingKeyManager = nil
-		logger.Errorf("key manager does not support the keys.SigningKeyManagement interface, falling back to single verification signing key")
+		logger.Errorf("key manager does not support the SigningKeyManager interface, falling back to single verification signing key")
 	}
 
 	// If the key manager is in-memory, accept the key as a base64-encoded
