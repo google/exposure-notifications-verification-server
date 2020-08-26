@@ -49,7 +49,7 @@
     };
 
     // Fire once so the time is displayed immediately.
-    timeOrExpired($element,formattedTime(), expiredCallback);
+    setTimeOrExpired($element,formattedTime(), expiredCallback);
 
     // Set timer.
     const fn = setInterval(function() {
@@ -57,7 +57,7 @@
       if (!time) {
         clearInterval(fn);
       }
-      timeOrExpired($element, time, expiredCallback);
+      setTimeOrExpired($element, time, expiredCallback);
     }, 1000);
 
     return fn;
@@ -65,7 +65,7 @@
 
   const countdownExpired = '<strong>EXPIRED</strong>';
 
-  function timeOrExpired(element, time, expiredCallback) {
+  function setTimeOrExpired(element, time, expiredCallback) {
     if (!time) {
       if (typeof expiredCallback === 'function') {
         expiredCallback();
