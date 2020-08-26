@@ -38,7 +38,6 @@ func (c *Controller) HandleExpire() http.Handler {
 			return
 		}
 
-		// Re-retrieve in transaction for write.
 		expiredAt, err := c.db.ExpireCode(request.UUID)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
