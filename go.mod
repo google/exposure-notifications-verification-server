@@ -19,7 +19,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20200710164510-efbc4488d8fe // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20200620013148-b91950f658ec // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/google/exposure-notifications-server v0.5.0
+	github.com/google/exposure-notifications-server v0.5.1-0.20200826202139-97593035a752
 	github.com/google/go-cmp v0.5.1
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/csrf v1.7.0
@@ -61,5 +61,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.5
 )
-
-replace github.com/google/exposure-notifications-server => ../exposure-notifications-server
