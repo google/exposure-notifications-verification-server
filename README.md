@@ -71,8 +71,8 @@ for a verification system:
 
 ## More resources
 
--   [API Guide](../docs/api.md)
--   [Development](../docs/development.md)
--   [Using the Cloud SQL Proxy](../docs/using-cloud-sql-proxy.md)
--   [Production](../docs/production.md)
--   [Testing](../docs/testing.md)
+-   [API Guide](docs/api.md)
+-   [Development](docs/development.md)
+-   [Using the Cloud SQL Proxy](docs/using-cloud-sql-proxy.md)
+-   [Production](docs/production.md)
+-   [Testing](docs/testing.md)
