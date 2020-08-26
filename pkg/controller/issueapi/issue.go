@@ -118,7 +118,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		// Add realm so that
+		// Add realm so that metrics are groupable on a per-realm basis.
 		ctx, err = tag.New(ctx,
 			tag.Upsert(observability.RealmTagKey, realm.Name))
 		if err != nil {
