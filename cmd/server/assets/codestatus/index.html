@@ -30,7 +30,7 @@
             <div class="form-label-group ">
               <input type="text" id="uuid" name="uuid"
                 class='form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}'
-                value="{{$code.UUID}}" placeholder="UUID" maxlength="36" autocomplete="off">
+                value="{{$code.UUID}}" placeholder="UUID" autocomplete="off">
               <label for="uuid">UUID</label>
               {{if $code.ErrorsFor "uuid"}}
               <div class="invalid-feedback">
