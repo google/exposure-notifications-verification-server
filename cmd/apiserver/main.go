@@ -153,7 +153,10 @@ func realMain(ctx context.Context) error {
 	// POST /api/verify
 	verifyChaff := chaff.New()
 	defer verifyChaff.Close()
-	verifyapiController := verifyapi.New(ctx, config, db, h, tokenSigner)
+	verifyapiController, err := verifyapi.New(ctx, config, db, h, tokenSigner)
+	if err != nil {
+		return fmt.Errorf("failed to create verify api controller: %w", err)
+	}
 	r.Handle("/api/verify", handleChaff(verifyChaff, verifyapiController.HandleVerify())).Methods("POST")
 
 	// POST /api/certificate

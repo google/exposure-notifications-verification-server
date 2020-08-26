@@ -134,7 +134,10 @@ func realMain(ctx context.Context) error {
 	r.Use(requireAPIKey)
 	r.Use(rateLimit)
 
-	issueapiController := issueapi.New(ctx, config, db, h)
+	issueapiController, err := issueapi.New(ctx, config, db, h)
+	if err != nil {
+		return fmt.Errorf("issueapi.New: %w", err)
+	}
 	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")
 
 	codeStatusController := codestatus.NewAPI(ctx, config, db, h)

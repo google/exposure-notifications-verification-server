@@ -24,8 +24,12 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 )
 
 // Cache the UTC time.Location, to speed runtime.
@@ -79,6 +83,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
@@ -90,6 +95,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
@@ -98,6 +104,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		if authApp != nil {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				return
 			}
@@ -106,13 +113,23 @@ func (c *Controller) HandleIssue() http.Handler {
 			realm = controller.RealmFromContext(ctx)
 		}
 		if realm == nil {
+			stats.Record(ctx, c.metrics.IssueAttempts.M(1), c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			return
 		}
 
+		// Add realm so that metrics are groupable on a per-realm basis.
+		ctx, err = tag.New(ctx,
+			tag.Upsert(observability.RealmTagKey, realm.Name))
+		if err != nil {
+			logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
+		}
+		stats.Record(ctx, c.metrics.IssueAttempts.M(1))
+
 		// Validate that the request with the provided test type is valid for this
 		// realm.
 		if !realm.ValidTestType(request.TestType) {
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("unsupported test type: %v", request.TestType))
 			return
@@ -124,18 +141,22 @@ func (c *Controller) HandleIssue() http.Handler {
 			smsProvider, err = realm.SMSProvider(c.db)
 			if err != nil {
 				logger.Errorw("failed to get sms provider", "error", err)
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
 				return
 			}
 			if smsProvider == nil {
 				err := fmt.Errorf("phone provided, but no sms provider is configured")
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+				return
 			}
 		}
 
 		// Verify the test type
 		request.TestType = strings.ToLower(request.TestType)
 		if _, ok := c.validTestType[request.TestType]; !ok {
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid test type"))
 			return
 		}
@@ -143,6 +164,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		var symptomDate *time.Time
 		if request.SymptomDate != "" {
 			if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process symptom onset date: %v", err))
 				return
 			} else {
@@ -157,6 +179,7 @@ func (c *Controller) HandleIssue() http.Handler {
 						maxDate.Format("2006-01-02"),
 						parsed.Format("2006-01-02"),
 					)
+					stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 					return
 				}
@@ -190,6 +213,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			return
 		}
@@ -204,11 +228,14 @@ func (c *Controller) HandleIssue() http.Handler {
 				}
 
 				logger.Errorw("failed to send sms", "error", err)
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1), c.metrics.SMSSendErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 				return
 			}
+			stats.Record(ctx, c.metrics.SMSSent.M(1))
 		}
 
+		stats.Record(ctx, c.metrics.CodesIssued.M(1))
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
 				UUID:                   uuid,

@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.opencensus.io/stats"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/cache"
@@ -42,6 +43,8 @@ type Controller struct {
 	pubKeyCache *keyutils.PublicKeyCache // Cache of public keys for verification token verification.
 	signerCache *cache.Cache             // Cache signers on a per-realm basis.
 	kms         keys.KeyManager
+
+	metrics *Metrics
 }
 
 func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
@@ -57,6 +60,11 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
 	}
 
+	metrics, err := registerMetrics()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Controller{
 		config:      config,
 		db:          db,
@@ -65,12 +73,13 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 		pubKeyCache: pubKeyCache,
 		signerCache: signerCache,
 		kms:         kms,
+		metrics:     metrics,
 	}, nil
 }
 
 // Parses and validates the token against the configured keyID and public key.
 // If the token si valid the token id (`tid') and subject (`sub`) claims are returned.
-func (c *Controller) validateToken(verToken string, publicKey crypto.PublicKey) (string, *database.Subject, error) {
+func (c *Controller) validateToken(ctx context.Context, verToken string, publicKey crypto.PublicKey) (string, *database.Subject, error) {
 	// Parse and validate the verification token.
 	token, err := jwt.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
@@ -84,24 +93,29 @@ func (c *Controller) validateToken(verToken string, publicKey crypto.PublicKey) 
 		return nil, fmt.Errorf("no public key for specified 'kid' not found: %v", kid)
 	})
 	if err != nil {
+		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
 		c.logger.Errorf("invalid verification token: %v", err)
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	tokenClaims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
+		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
 		c.logger.Errorf("invalid claims in verification token")
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	if err := tokenClaims.Valid(); err != nil {
+		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
 		c.logger.Errorf("JWT is invalid: %v", err)
 		return "", nil, fmt.Errorf("verification token expired")
 	}
 	if !tokenClaims.VerifyIssuer(c.config.TokenSigning.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenSigning.TokenIssuer, true) {
+		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
 		c.logger.Errorf("jwt contains invalid iss/aud: iss %v aud: %v", tokenClaims.Issuer, tokenClaims.Audience)
 		return "", nil, fmt.Errorf("verification token not valid")
 	}
 	subject, err := database.ParseSubject(tokenClaims.Subject)
 	if err != nil {
+		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
 		return "", nil, fmt.Errorf("invalid subject: %w", err)
 	}
 	return tokenClaims.Id, subject, nil
