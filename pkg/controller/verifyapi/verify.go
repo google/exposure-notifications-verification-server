@@ -64,8 +64,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.logger.Errorw("bad request", "error", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
 		}
 
@@ -73,8 +73,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.TokenSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
 		}
 
@@ -82,8 +82,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		acceptTypes, err := request.GetAcceptedTestTypes()
 		if err != nil {
 			c.logger.Errorf("invalid accept test types", "error", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			return
 		}
 

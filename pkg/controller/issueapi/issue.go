@@ -83,8 +83,8 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
