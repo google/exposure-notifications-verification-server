@@ -130,6 +130,12 @@ func realMain(ctx context.Context) error {
 	}
 	rateLimit := httplimiter.Handle
 
+	// Install HSTS headers in production
+	if !config.DevMode {
+		addHSTS := middleware.AddHSTS(ctx)
+		r.Use(addHSTS)
+	}
+
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
 	if err != nil {
