@@ -24,10 +24,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/google/exposure-notifications-server/pkg/keys"
-	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -38,8 +34,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/opencensus-integrations/redigo/redis"
-	"go.opencensus.io/stats/view"
+
+	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -78,11 +77,6 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
-
-	if err := view.Register(redis.ObservabilityMetricViews...); err != nil {
-		return fmt.Errorf("redis view registration failure: %w", err)
-	}
-
 	if err := oe.StartExporter(); err != nil {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}

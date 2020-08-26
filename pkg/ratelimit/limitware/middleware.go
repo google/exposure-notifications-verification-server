@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
+	"github.com/opencensus-integrations/redigo/redis"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"go.opencensus.io/stats"
@@ -108,6 +109,10 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc, op
 		TagKeys:     []tag.Key{},
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
+	if err := view.Register(redis.ObservabilityMetricViews...); err != nil {
+		return nil, fmt.Errorf("redis view registration failure: %w", err)
 	}
 
 	m := &Middleware{
