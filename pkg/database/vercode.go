@@ -202,7 +202,7 @@ func (db *Database) ExpireCode(uuid string) (time.Time, error) {
 		ExpiresAt:     now,
 		LongExpiresAt: now,
 	}
-	return now, db.db.Model(&vc).Where("uuid = ?", uuid).Debug().Update(&vc).Error
+	return now, db.db.Model(&vc).Where("uuid = ?", uuid).Update(&vc).Error
 }
 
 // SaveVerificationCode created or updates a verification code in the database.
