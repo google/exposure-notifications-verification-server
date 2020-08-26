@@ -196,13 +196,13 @@ func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, 
 }
 
 // ExpireCode saves a verification code as expired.
-func (db *Database) ExpireCode(uuid string) error {
+func (db *Database) ExpireCode(uuid string) (time.Time, error) {
 	now := time.Now().UTC()
 	vc := VerificationCode{
 		ExpiresAt:     now,
 		LongExpiresAt: now,
 	}
-	return db.db.Model(&vc).Where("uuid = ?", uuid).Debug().Update(&vc).Error
+	return now, db.db.Model(&vc).Where("uuid = ?", uuid).Debug().Update(&vc).Error
 }
 
 // SaveVerificationCode created or updates a verification code in the database.

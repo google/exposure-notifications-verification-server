@@ -39,7 +39,7 @@ func (c *Controller) HandleExpire() http.Handler {
 		}
 
 		// Re-retrieve in transaction for write.
-		code, err := c.db.ExpireCode(request.UUID)
+		expiredAt, err := c.db.ExpireCode(request.UUID)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -47,8 +47,8 @@ func (c *Controller) HandleExpire() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.ExpireCodeResponse{
-				ExpiresAtTimestamp:     code.ExpiresAt.UTC().Unix(),
-				LongExpiresAtTimestamp: code.LongExpiresAt.UTC().Unix(),
+				ExpiresAtTimestamp:     expiredAt.UTC().Unix(),
+				LongExpiresAtTimestamp: expiredAt.UTC().Unix(),
 			})
 	})
 }
