@@ -151,7 +151,7 @@ type CheckCodeStatusResponse struct {
 	// UTC seconds since epoch.
 	LongExpiresAtTimestamp int64 `json:"longExpiresAtTimestamp,omitempty"`
 
-	Error     string `json:"error"`
+	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 
@@ -172,7 +172,7 @@ type ExpireCodeResponse struct {
 	// UTC seconds since epoch.
 	LongExpiresAtTimestamp int64 `json:"longExpiresAtTimestamp,omitempty"`
 
-	Error     string `json:"error"`
+	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 
