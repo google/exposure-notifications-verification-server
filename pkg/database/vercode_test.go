@@ -128,8 +128,7 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	}
 
 	{
-		db.ExpireCode(uuid)
-		got, err := db.FindVerificationCodeByUUID(uuid)
+		got, err := db.ExpireCode(uuid)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -139,6 +138,10 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 		if got.ExpiresAt.After(time.Now()) {
 			t.Errorf("expected expired, got %v", got.ExpiresAt)
 		}
+	}
+
+	if _, err := db.ExpireCode(uuid); err == nil {
+		t.Errorf("Expected code already expired, got %v", err)
 	}
 }
 

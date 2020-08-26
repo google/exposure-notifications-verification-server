@@ -38,7 +38,7 @@ func (c *Controller) HandleExpire() http.Handler {
 			return
 		}
 
-		expiredAt, err := c.db.ExpireCode(request.UUID)
+		code, err := c.db.ExpireCode(request.UUID)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -46,8 +46,8 @@ func (c *Controller) HandleExpire() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.ExpireCodeResponse{
-				ExpiresAtTimestamp:     expiredAt.UTC().Unix(),
-				LongExpiresAtTimestamp: expiredAt.UTC().Unix(),
+				ExpiresAtTimestamp:     code.ExpiresAt.UTC().Unix(),
+				LongExpiresAtTimestamp: code.ExpiresAt.UTC().Unix(),
 			})
 	})
 }

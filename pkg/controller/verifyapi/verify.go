@@ -21,46 +21,22 @@
 package verifyapi
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
-	"github.com/google/exposure-notifications-server/pkg/keys"
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/dgrijalva/jwt-go"
-	"go.uber.org/zap"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 )
-
-// Controller is a controller for the verification code verification API.
-type Controller struct {
-	config *config.APIServerConfig
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
-	kms    keys.KeyManager
-}
-
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) *Controller {
-	logger := logging.FromContext(ctx)
-
-	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logger,
-		kms:    kms,
-	}
-}
 
 func (c *Controller) HandleVerify() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -72,17 +48,32 @@ func (c *Controller) HandleVerify() http.Handler {
 			return
 		}
 
+		// This is a non terminal error, as we're only using the realm for stats.
+		realm, err := authApp.Realm(c.db)
+		if err != nil {
+			c.logger.Errorf("unable to load realm", "error", err)
+		} else {
+			ctx, err = tag.New(ctx,
+				tag.Upsert(observability.RealmTagKey, realm.Name))
+			if err != nil {
+				c.logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
+			}
+		}
+		stats.Record(ctx, c.metrics.CodeVerifyAttempts.M(1))
+
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.logger.Errorw("bad request", "error", err)
+			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
 		}
 
 		// Get the signer based on Key configuration.
-		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigningKey)
+		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.TokenSigningKey)
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
+			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
 		}
@@ -91,6 +82,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		acceptTypes, err := request.GetAcceptedTestTypes()
 		if err != nil {
 			c.logger.Errorf("invalid accept test types", "error", err)
+			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			return
 		}
@@ -102,14 +94,19 @@ func (c *Controller) HandleVerify() http.Handler {
 			c.logger.Errorw("failed to issue verification token", "error", err)
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
+				stats.Record(ctx, c.metrics.CodeVerifyExpired.M(1), c.metrics.CodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
 			case errors.Is(err, database.ErrVerificationCodeUsed):
+				stats.Record(ctx, c.metrics.CodeVerifyCodeUsed.M(1), c.metrics.CodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
+				stats.Record(ctx, c.metrics.CodeVerifyInvalid.M(1), c.metrics.CodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 			case errors.Is(err, database.ErrUnsupportedTestType):
+				stats.Record(ctx, c.metrics.CodeVerifyInvalid.M(1), c.metrics.CodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 			default:
+				stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			}
 			return
@@ -118,22 +115,24 @@ func (c *Controller) HandleVerify() http.Handler {
 		subject := verificationToken.Subject()
 		now := time.Now().UTC()
 		claims := &jwt.StandardClaims{
-			Audience:  c.config.TokenIssuer,
+			Audience:  c.config.TokenSigning.TokenIssuer,
 			ExpiresAt: now.Add(c.config.VerificationTokenDuration).Unix(),
 			Id:        verificationToken.TokenID,
 			IssuedAt:  now.Unix(),
-			Issuer:    c.config.TokenIssuer,
+			Issuer:    c.config.TokenSigning.TokenIssuer,
 			Subject:   subject.String(),
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigningKeyID
+		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigning.TokenSigningKeyID
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
+			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
 			c.logger.Errorw("failed to sign token", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			return
 		}
 
+		stats.Record(ctx, c.metrics.CodeVerified.M(1))
 		c.h.RenderJSON(w, http.StatusOK, api.VerifyCodeResponse{
 			TestType:          verificationToken.TestType,
 			SymptomDate:       verificationToken.FormatSymptomDate(),

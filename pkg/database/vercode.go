@@ -196,13 +196,30 @@ func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, 
 }
 
 // ExpireCode saves a verification code as expired.
-func (db *Database) ExpireCode(uuid string) (time.Time, error) {
-	now := time.Now().UTC()
-	vc := VerificationCode{
-		ExpiresAt:     now,
-		LongExpiresAt: now,
+func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
+	var vc VerificationCode
+	err := db.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where("uuid = ?", uuid).
+			Find(&vc).Error; err != nil {
+			return err
+		}
+		if vc.IsExpired() {
+			return errors.New("code already expired")
+		}
+		if vc.Claimed {
+			return errors.New("code already caimed")
+		}
+
+		vc.ExpiresAt = time.Now()
+		vc.LongExpiresAt = vc.ExpiresAt
+		return tx.Save(&vc).Error
+	})
+	if err != nil {
+		return nil, err
 	}
-	return now, db.db.Model(&vc).Where("uuid = ?", uuid).Debug().Update(&vc).Error
+	return &vc, nil
 }
 
 // SaveVerificationCode created or updates a verification code in the database.

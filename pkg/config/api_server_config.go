@@ -44,12 +44,12 @@ type APIServerConfig struct {
 	// Verification Token Config
 	// Currently this does not easily support rotation. TODO(mikehelmick) - add support.
 	VerificationTokenDuration time.Duration `env:"VERIFICATION_TOKEN_DURATION,default=24h"`
-	TokenSigningKey           string        `env:"TOKEN_SIGNING_KEY,required"`
-	TokenSigningKeyID         string        `env:"TOKEN_SIGNING_KEY_ID,default=v1"`
-	TokenIssuer               string        `env:"TOKEN_ISSUER,default=diagnosis-verification-example"`
 
-	// Verification certificate config
-	VerificationSettings CertificateSigningConfig
+	// Token signing
+	TokenSigning TokenSigningConfig
+
+	// Certificate signing
+	CertificateSigning CertificateSigningConfig
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
