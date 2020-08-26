@@ -22,19 +22,25 @@
       <div class="card-header">
         Code status
       </div>
-      <div class="card-body">
-        <div class="list-group">
-          <h5 class="mb-1">UUID</h5>
-          <p class="mb-1 text-monospace">{{.uuid}}</p>
-        </div>
-        <div class="list-group">
-          <h5 class="mb-1">Status</h5>
-          <p class="mb-1">{{.status}}</p>
-        </div>
-        <div class="list-group">
-          <h5 class="mb-1">Expiry</h5>
-          <span id="code-expires-at" class="sm text-danger"></span>
-        </div>
+      <div class="list-group-item">
+        <h5 class="mb-1">UUID</h5>
+        <p class="mb-1 text-monospace">{{.code.UUID}}</p>
+      </div>
+      <div class="list-group-item">
+        <h5 class="mb-1">{{.code.IssuerType}}</h5>
+        <p class="mb-1">{{.code.Issuer}}</p>
+      </div>
+      <div class="list-group-item">
+        <h5 class="mb-1">Test type</h5>
+        <p class="mb-1">{{.code.TestType}}</p>
+      </div>
+      <div class="list-group-item">
+        <h5 class="mb-1">Status</h5>
+        <p class="mb-1">{{.code.Status}}</p>
+      </div>
+      <div class="list-group-item">
+        <h5 class="mb-1">Expiry</h5>
+        <span id="code-expires-at" class="sm text-danger"></span>
       </div>
     </div>
 
@@ -50,12 +56,12 @@
 
   <script type="text/javascript">
     let $codeExpiresAt;
-    let expires = {{.expires }};
+    let expires = {{ .code.Expires }};
 
     $(function() {
       $codeExpiresAt = $('#code-expires-at');
       // Start countdown
-      longCodeCountdown = countdown($codeExpiresAt, expires);
+      countdown($codeExpiresAt, expires);
     });
   </script>
 </body>
