@@ -15,6 +15,7 @@
 package issueapi
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -26,6 +27,49 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
+
+// Cache the UTC time.Location, to speed runtime.
+var utc *time.Location
+
+func init() {
+	var err error
+	utc, err = time.LoadLocation("UTC")
+	if err != nil {
+		panic("should have found UTC")
+	}
+}
+
+// validateDate validates the date given -- returning the time or an error.
+func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, error) {
+	// Check that all our dates are utc.
+	if date.Location() != utc || minDate.Location() != utc || maxDate.Location() != utc {
+		return nil, errors.New("dates weren't in UTC")
+	}
+
+	// If we're dealing with a timezone where the offset is earlier than this one,
+	// we loosen up the lower bound. We might have the following circumstance:
+	//
+	//    Server time: UTC Aug 1, 12:01 AM
+	//    Client time: UTC July 30, 11:01 PM (ie, tzOffset = -30)
+	//
+	// In this circumstance, we'll have the following:
+	//
+	//    minTime: UTC July 31, maxTime: Aug 1, clientTime: July 30.
+	//
+	// which would be an error. Loosening up the lower bound, by a day, keeps us
+	// all ok.
+	if tzOffset < 0 {
+		if m := minDate.Add(-24 * time.Hour); m.After(date) {
+			return nil, fmt.Errorf("date %v before min %v", date, m)
+		}
+	} else if minDate.After(date) {
+		return nil, fmt.Errorf("date %v before min %v", date, minDate)
+	}
+	if date.After(maxDate) {
+		return nil, fmt.Errorf("date %v after max %v", date, maxDate)
+	}
+	return &date, nil
+}
 
 func (c *Controller) HandleIssue() http.Handler {
 	logger := c.logger.Named("issueapi.HandleIssue")
@@ -96,25 +140,26 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		// Max date is today (local time) and min date is AllowedTestAge ago, truncated.
-		maxDate := time.Now().Local()
-		minDate := maxDate.Add(-1 * c.config.GetAllowedSymptomAge()).Truncate(24 * time.Hour)
-
 		var symptomDate *time.Time
 		if request.SymptomDate != "" {
 			if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process symptom onset date: %v", err))
 				return
 			} else {
-				parsed = parsed.Local()
-				if minDate.After(parsed) || parsed.After(maxDate) {
-					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v",
+				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+				maxDate := time.Now().UTC().Truncate(24 * time.Hour)
+				minDate := maxDate.Add(-1 * c.config.GetAllowedSymptomAge()).Truncate(24 * time.Hour)
+
+				symptomDate, err = validateDate(parsed, minDate, maxDate, request.TZOffset)
+				if err != nil {
+					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v %v",
 						minDate.Format("2006-01-02"),
-						maxDate.Format("2006-01-02"))
+						maxDate.Format("2006-01-02"),
+						parsed.Format("2006-01-02"),
+					)
 					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 					return
 				}
-				symptomDate = &parsed
 			}
 		}
 
