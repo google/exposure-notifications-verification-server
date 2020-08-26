@@ -26,6 +26,7 @@ import (
 	"time"
 
 	redigo "github.com/opencensus-integrations/redigo/redis"
+	"go.opencensus.io/stats/view"
 )
 
 var _ Cacher = (*redis)(nil)
@@ -79,6 +80,10 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 		},
 		keyFunc: i.KeyFunc,
 		stopCh:  make(chan struct{}),
+	}
+
+	if err := view.Register(redigo.ObservabilityMetricViews...); err != nil {
+		return nil, fmt.Errorf("redis view registration failure: %w", err)
 	}
 
 	return c, nil
@@ -278,7 +283,11 @@ func (c *redis) withConn(f func(conn redigo.ConnWithContext) error) error {
 	}
 
 	ctx := context.Background()
-	conn := c.pool.GetWithContext(ctx).(redigo.ConnWithContext)
+
+	conn, ok := c.pool.GetWithContext(ctx).(redigo.ConnWithContext)
+	if !ok {
+		return fmt.Errorf("redis conn is not ConnWithContext")
+	}
 
 	if err := conn.Err(); err != nil {
 		return fmt.Errorf("connection is not usable: %w", err)
