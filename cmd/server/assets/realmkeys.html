@@ -12,35 +12,40 @@
     <div class="form-group row">
       <label for="name" class="col-sm-3">Issuer (iss):</label>
       <div class="input-group col-sm-9">
-        <input type="text" id="systemiss" class="form-control" value="{{.certIssuer}}" readonly/>
+        <input type="text" id="systemiss" class="form-control text-monospace" value="{{.systemCertIssuer}}" readonly/>
         {{template "clippy" "systemiss"}}
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Audience (aud):</label>
       <div class="input-group col-sm-9">
-        <input type="text" id="systemaud" class="form-control" value="{{.certAudience}}" readonly/>
+        <input type="text" id="systemaud" class="form-control text-monospace" value="{{.systemCertAudience}}" readonly/>
         {{template "clippy" "systemaud"}}
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Certificate duration:</label>
       <div class="input-group col-sm-9">
-        <input type="text" id="certDuration" class="form-control" value="{{.certDuration}}" readonly/>
+        <input type="text" id="certDuration" class="form-control text-monospace" value="{{.systemCertDuration}}" readonly/>
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Key ID (kid):</label>
       <div class="input-group col-sm-9">
-        <input type="text" id="systemCertKeyID" class="form-control" value="{{.certKeyID}}" readonly/>
+        <input type="text" id="systemCertKeyID" class="form-control text-monospace" value="{{.systemCertKeyID}}" readonly/>
         {{template "clippy" "systemCertKeyID"}}
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Public key:</label>
       <div class="input-group col-sm-9">
-        <textarea class="form-control" rows="4" id="systemPublicKey" readonly>{{if .certPublicKey}}{{.certPublicKey}}{{else}}{{.certPublicKeyError}}{{end}}</textarea>
+        <textarea class="form-control text-monospace{{if .systemCertPublicKeyError}} is-invalid{{end}}" rows="4" id="systemPublicKey" readonly>{{.systemCertPublicKey}}</textarea>
         {{template "clippy" "systemPublicKey"}}
+        {{if .systemCertPublicKeyError}}
+        <div class="invalid-feedback">
+          {{.systemCertPublicKeyError}}
+        </div>
+        {{end}}
       </div>
     </div>
   </div>
@@ -58,8 +63,8 @@
           {{ .csrfField }}
           <div class="form-group row">
             <div class="col-sm-12">
-              <span class="form-text text-muted">
-                You can rotate your verification certificate signing key by:
+              <span class="form-text">
+                <p>Rotate your verification certificate signing key by:</p>
                 <ol>
                   <li>Creating a new key.</li>
                   <li>Communicating that key version and public key to your <em>exposure notifications key server</em> operator.</li>
@@ -78,9 +83,8 @@
             <table class="table table-bordered table-striped">
               <thead>
                 <tr>
-                  <th scope="col" width="30">KeyID</th>
-                  <th scope="col">Public Key</th>
-                  <th scope="col" width="30">Controls</th>
+                  <th scope="col" width="75">Key ID</th>
+                  <th scope="col">Public key</th>
                 </tr>
               </thead>
               <tbody>
@@ -88,26 +92,48 @@
                 {{$publicKeys := .publicKeys}}
                 {{range $rk := .realmKeys}}
                 <tr>
-                  <td>{{$rk.GetKID}}
-                    {{if $rk.Active}}<h4><span class="badge badge-success">Active</span></h4>{{end}}
+                  <td>
+                    <span class="text-monospace">{{$rk.GetKID}}</span>
+                    {{if $rk.Active}}<span class="badge badge-success">Active</span>{{end}}
                   </td>
                   <td>
                     <div class="input-group">
-                      <textarea class="form-control" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID}}</textarea>
+                      <textarea class="form-control text-monospace" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID}}</textarea>
                       {{template "clippy" $rk.GetKID}}
                     </div>
-                    Backed by (your server operator may ask you for this information):<br/>
-                    <code>{{$rk.KeyID}}</code>
-                  </td>
-                  <td>
-                    {{if not $rk.Active}}
-                      <form method="POST" action="/realm/keys/activate">
-                        {{ $csrfField }}
-                        <input type="hidden" name="id" value="{{$rk.ID}}" />
-                        <a href="#" class="btn btn-primary btn-block" data-confirm="Have you already shared the new certificate key version and public key with your 'key server' operator?" data-submit-form>Make Active</a>
-                      </form>
 
-                      <!-- TODO - implement destroy -->
+                    <p class="mt-3">Backed by:</p>
+                    <div class="input-group">
+                      <input type="text" id="key-{{$rk.ID}}" class="form-control text-monospace" value="{{$rk.KeyID}}" readonly/>
+                      {{template "clippy" (printf "key-%d" $rk.ID)}}
+                    </div>
+                    <small class="form-text text-muted">
+                      Your server operator may ask for this.
+                    </small>
+
+                    {{if not $rk.Active}}
+                    <div class="row mt-3 align-items-end h-100">
+                      <div class="col">
+                        <a href="/realm/keys/{{$rk.ID}}"
+                          class="text-danger"
+                          data-method="DELETE"
+                          data-confirm="Are you sure you want to destroy this key? This action is irreversible!"
+                          data-toggle="tooltip"
+                          title="Destroy this key version">
+                          <span class="oi oi-trash" aria-hidden="true"></span>
+                        </a>
+                      </div>
+
+                      <div class="col">
+                        <form method="POST" action="/realm/keys/activate">
+                          {{ $csrfField }}
+                          <input type="hidden" name="id" value="{{$rk.ID}}" />
+                          <a href="#" class="btn btn-primary float-right" data-confirm="Have you already shared the new certificate key version and public key with your 'key server' operator?" data-submit-form>
+                            Activate
+                          </a>
+                        </form>
+                      </div>
+                    </div>
                     {{end}}
                   </td>
                 </tr>
@@ -180,7 +206,7 @@
             <div class="form-group row">
               <label for="name" class="col-sm-3">Issuer (iss):</label>
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">
-                <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control" value="{{$realm.CertificateIssuer}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
+                <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control text-monospace" value="{{$realm.CertificateIssuer}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
                 {{if $realm.UseRealmCertificateKey}}
                   {{template "clippy" "certificateIssuer"}}
                 {{else}}
@@ -198,7 +224,7 @@
             <div class="form-group row">
               <label for="name" class="col-sm-3">Audience (aud):</label>
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">
-                <input type="text" id="certificateAudience" name="certificateAudience" class="form-control" value="{{$realm.CertificateAudience}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
+                <input type="text" id="certificateAudience" name="certificateAudience" class="form-control text-monospace" value="{{$realm.CertificateAudience}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
                 {{if $realm.UseRealmCertificateKey}}
                   {{template "clippy" "certificateAudience"}}
                 {{else}}
@@ -217,7 +243,7 @@
             <div class="form-group row">
               <label for="name" class="col-sm-3">Certificate duration:</label>
               <div class="col-sm-9">
-                <input type="text" id="certificateDuration" name="certificateDuration" class="form-control" value="{{$realm.CertificateDuration.Duration}}" />
+                <input type="text" id="certificateDuration" name="certificateDuration" class="form-control text-monospace" value="{{$realm.CertificateDuration.Duration}}" />
                 {{if $realm.ErrorsFor "certificateDuration"}}
                   <div class="invalid-feedback">
                     {{joinStrings ($realm.ErrorsFor "certificateDuration") ", "}}

@@ -39,6 +39,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -113,6 +114,12 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
+
+	// Setup signers
+	certificateSigner, err := keys.KeyManagerFor(ctx, &config.CertificateSigning.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create certificate key manager: %w", err)
+	}
 
 	// Setup firebase
 	app, err := firebase.NewApp(ctx, config.FirebaseConfig())
@@ -302,11 +309,12 @@ func realMain(ctx context.Context) error {
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 
-		realmKeysController, err := realmkeys.New(ctx, config, db, h)
+		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, h)
 		if err != nil {
 			return fmt.Errorf("failed to create realmkeys controller: %w", err)
 		}
 		realmSub.Handle("/keys", realmKeysController.HandleIndex()).Methods("GET")
+		realmSub.Handle("/keys/{id}", realmKeysController.HandleDestroy()).Methods("DELETE")
 		realmSub.Handle("/keys/create", realmKeysController.HandleCreateKey()).Methods("POST")
 		realmSub.Handle("/keys/upgrade", realmKeysController.HandleUpgrade()).Methods("POST")
 		realmSub.Handle("/keys/save", realmKeysController.HandleSave()).Methods("POST")
