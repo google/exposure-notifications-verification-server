@@ -25,11 +25,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func (c *Controller) HandleShow() http.Handler {
-	type FormData struct {
-		UUID string `form:"uuid"`
-	}
+type FormData struct {
+	UUID string `form:"uuid"`
+}
 
+func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -56,7 +56,6 @@ func (c *Controller) HandleShow() http.Handler {
 			c.renderStatus(ctx, w, &code)
 			return
 		}
-		retCode.UUID = form.UUID
 
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
@@ -67,26 +66,32 @@ func (c *Controller) HandleShow() http.Handler {
 			c.renderStatus(ctx, w, &code)
 			return
 		}
-		retCode.TestType = strings.Title(code.TestType)
 
-		if code.IssuingUserID != 0 {
-			retCode.IssuerType = "Issuing user"
-			retCode.Issuer = c.getUserName(ctx, r, code.IssuingUserID)
-		} else if code.IssuingAppID != 0 {
-			retCode.IssuerType = "Issuing app"
-			retCode.Issuer = c.getAuthAppName(ctx, r, code.IssuingAppID)
-		}
-
-		if code.Claimed {
-			retCode.Status = "Claimed by user"
-		} else {
-			retCode.Status = "Not yet claimed"
-		}
-		if !code.IsExpired() {
-			retCode.Expires = code.ExpiresAt.UTC().Unix()
-		}
+		c.responseCode(ctx, r, code, &retCode)
 		c.renderShow(ctx, w, retCode)
 	})
+}
+
+func (c *Controller) responseCode(ctx context.Context, r *http.Request, code *database.VerificationCode, retCode *Code) {
+	retCode.UUID = code.UUID
+	retCode.TestType = strings.Title(code.TestType)
+
+	if code.IssuingUserID != 0 {
+		retCode.IssuerType = "Issuing user"
+		retCode.Issuer = c.getUserName(ctx, r, code.IssuingUserID)
+	} else if code.IssuingAppID != 0 {
+		retCode.IssuerType = "Issuing app"
+		retCode.Issuer = c.getAuthAppName(ctx, r, code.IssuingAppID)
+	}
+
+	if code.Claimed {
+		retCode.Status = "Claimed by user"
+	} else {
+		retCode.Status = "Not yet claimed"
+	}
+	if !code.IsExpired() {
+		retCode.Expires = code.ExpiresAt.UTC().Unix()
+	}
 }
 
 func (c *Controller) getUserName(ctx context.Context, r *http.Request, id uint) (userName string) {

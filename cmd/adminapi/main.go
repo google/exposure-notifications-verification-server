@@ -142,7 +142,7 @@ func realMain(ctx context.Context) error {
 
 	codeStatusController := codestatus.NewAPI(ctx, config, db, h)
 	r.Handle("/api/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
-	r.Handle("/api/expirecode", codeStatusController.HandleExpire()).Methods("POST")
+	r.Handle("/api/expirecode", codeStatusController.HandleExpireAPI()).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {
