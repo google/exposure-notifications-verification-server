@@ -17,6 +17,8 @@ package cache
 import (
 	"context"
 	"fmt"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/redis"
 )
 
 // CacherType represents a type of cacher.
@@ -32,10 +34,8 @@ const (
 type Config struct {
 	Type CacherType `env:"TYPE, default=IN_MEMORY"`
 
-	// Redis options
-	RedisAddress  string `env:"REDIS_ADDRESS"`
-	RedisUsername string `env:"REDIS_USERNAME"`
-	RedisPassword string `env:"REDIS_PASSWORD"`
+	// Redis configuration
+	Redis redis.Config `env:",prefix=CACHE_"`
 }
 
 func CacherFor(ctx context.Context, c *Config, keyFunc KeyFunc) (Cacher, error) {
@@ -48,10 +48,13 @@ func CacherFor(ctx context.Context, c *Config, keyFunc KeyFunc) (Cacher, error) 
 		})
 	case TypeRedis:
 		return NewRedis(&RedisConfig{
-			KeyFunc:  keyFunc,
-			Address:  c.RedisAddress,
-			Username: c.RedisUsername,
-			Password: c.RedisPassword,
+			KeyFunc:     keyFunc,
+			Address:     fmt.Sprintf("%s:%s", c.Redis.Host, c.Redis.Port),
+			Username:    c.Redis.Username,
+			Password:    c.Redis.Password,
+			IdleTimeout: c.Redis.IdleTimeout,
+			MaxIdle:     c.Redis.MaxIdle,
+			MaxActive:   c.Redis.MaxActive,
 		})
 	default:
 		return nil, fmt.Errorf("unknown cacher type: %v", typ)
