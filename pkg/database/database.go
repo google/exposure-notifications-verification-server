@@ -20,6 +20,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"sync/atomic"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
@@ -51,6 +53,9 @@ type Database struct {
 
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
+
+	keepAliveStarted int32
+	keepAliveStopCh  chan struct{}
 }
 
 // SupportsPerRealmSigning returns true if the configuration supports
@@ -112,6 +117,8 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		signingKeyManager: signingKeyManager,
 		logger:            logger,
 		secretManager:     secretManager,
+		keepAliveStarted:  0,
+		keepAliveStopCh:   make(chan struct{}),
 	}, nil
 }
 
@@ -177,13 +184,53 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	}
 
+	if c.ConnectionPingInterval > 0 {
+		db.KeepAlive(ctx, c.ConnectionPingInterval)
+	}
+
 	db.db = rawDB
 	return nil
 }
 
 // Close will close the database connection. Should be deferred right after Open.
 func (db *Database) Close() error {
+	if db.keepAliveStarted > 0 {
+		db.keepAliveStopCh <- struct{}{}
+	}
 	return db.db.Close()
+}
+
+// KeepAlive will ping database connections at the specified itnterval, reconnecting
+// if needed.
+func (db *Database) KeepAlive(ctx context.Context, interval time.Duration) {
+	if atomic.CompareAndSwapInt32(&db.keepAliveStarted, 0, 1) {
+		go func() {
+			logger := logging.FromContext(ctx).Named("dbkeepalive")
+
+			logger.Infow("starting background DB keepalive", "interval", interval.String())
+			var status string
+			ticker := time.NewTicker(interval)
+			for {
+				select {
+				case <-db.keepAliveStopCh:
+					logger.Info("stopping DB keepalive")
+					ticker.Stop()
+					break
+				case <-ticker.C:
+					logger.Debugw("pinging DB connections")
+					ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+					defer cancel()
+					if err := db.db.DB().PingContext(ctx); err != nil {
+						status = "down"
+					} else {
+						status = "up"
+					}
+					logger.Debugw("finished pinging DB connections", "status", status)
+				}
+			}
+			logger.Infow("keepalive stopped")
+		}()
+	}
 }
 
 // Ping attempts a connection and closes it to the database.
