@@ -12,35 +12,40 @@
     <div class="form-group row">
       <label for="name" class="col-sm-3">Issuer (iss):</label>
       <div class="input-group col-sm-9">
-        <input type="text" id="systemiss" class="form-control" value="{{.certIssuer}}" readonly/>
+        <input type="text" id="systemiss" class="form-control text-monospace" value="{{.systemCertIssuer}}" readonly/>
         {{template "clippy" "systemiss"}}
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Audience (aud):</label>
       <div class="input-group col-sm-9">
-        <input type="text" id="systemaud" class="form-control" value="{{.certAudience}}" readonly/>
+        <input type="text" id="systemaud" class="form-control text-monospace" value="{{.systemCertAudience}}" readonly/>
         {{template "clippy" "systemaud"}}
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Certificate duration:</label>
       <div class="input-group col-sm-9">
-        <input type="text" id="certDuration" class="form-control" value="{{.certDuration}}" readonly/>
+        <input type="text" id="certDuration" class="form-control text-monospace" value="{{.systemCertDuration}}" readonly/>
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Key ID (kid):</label>
       <div class="input-group col-sm-9">
-        <input type="text" id="systemCertKeyID" class="form-control" value="{{.certKeyID}}" readonly/>
+        <input type="text" id="systemCertKeyID" class="form-control text-monospace" value="{{.systemCertKeyID}}" readonly/>
         {{template "clippy" "systemCertKeyID"}}
       </div>
     </div>
     <div class="form-group row">
       <label for="name" class="col-sm-3">Public key:</label>
       <div class="input-group col-sm-9">
-        <textarea class="form-control" rows="4" id="systemPublicKey" readonly>{{if .certPublicKey}}{{.certPublicKey}}{{else}}{{.certPublicKeyError}}{{end}}</textarea>
+        <textarea class="form-control text-monospace{{if .systemCertPublicKeyError}} is-invalid{{end}}" rows="4" id="systemPublicKey" readonly>{{.systemCertPublicKey}}</textarea>
         {{template "clippy" "systemPublicKey"}}
+        {{if .systemCertPublicKeyError}}
+        <div class="invalid-feedback">
+          {{.systemCertPublicKeyError}}
+        </div>
+        {{end}}
       </div>
     </div>
   </div>
@@ -58,8 +63,8 @@
           {{ .csrfField }}
           <div class="form-group row">
             <div class="col-sm-12">
-              <span class="form-text text-muted">
-                You can rotate your verification certificate signing key by:
+              <span class="form-text">
+                <p>Rotate your verification certificate signing key by:</p>
                 <ol>
                   <li>Creating a new key.</li>
                   <li>Communicating that key version and public key to your <em>exposure notifications key server</em> operator.</li>
@@ -180,7 +185,7 @@
             <div class="form-group row">
               <label for="name" class="col-sm-3">Issuer (iss):</label>
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">
-                <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control" value="{{$realm.CertificateIssuer}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
+                <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control text-monospace" value="{{$realm.CertificateIssuer}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
                 {{if $realm.UseRealmCertificateKey}}
                   {{template "clippy" "certificateIssuer"}}
                 {{else}}
@@ -198,7 +203,7 @@
             <div class="form-group row">
               <label for="name" class="col-sm-3">Audience (aud):</label>
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">
-                <input type="text" id="certificateAudience" name="certificateAudience" class="form-control" value="{{$realm.CertificateAudience}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
+                <input type="text" id="certificateAudience" name="certificateAudience" class="form-control text-monospace" value="{{$realm.CertificateAudience}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
                 {{if $realm.UseRealmCertificateKey}}
                   {{template "clippy" "certificateAudience"}}
                 {{else}}
@@ -217,7 +222,7 @@
             <div class="form-group row">
               <label for="name" class="col-sm-3">Certificate duration:</label>
               <div class="col-sm-9">
-                <input type="text" id="certificateDuration" name="certificateDuration" class="form-control" value="{{$realm.CertificateDuration.Duration}}" />
+                <input type="text" id="certificateDuration" name="certificateDuration" class="form-control text-monospace" value="{{$realm.CertificateDuration.Duration}}" />
                 {{if $realm.ErrorsFor "certificateDuration"}}
                   <div class="invalid-feedback">
                     {{joinStrings ($realm.ErrorsFor "certificateDuration") ", "}}
