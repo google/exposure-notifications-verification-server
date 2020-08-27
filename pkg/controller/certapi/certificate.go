@@ -72,7 +72,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 
 		var request api.VerificationCertificateRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.logger.Errorf("failed to parse json request", "error", err)
+			c.logger.Errorw("failed to parse json request", "error", err)
 			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			return
