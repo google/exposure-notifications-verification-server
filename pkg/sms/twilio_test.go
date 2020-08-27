@@ -71,7 +71,7 @@ func TestTwilio_SendSMS(t *testing.T) {
 		{
 			name: "sends",
 			from: "+15005550006",
-			to:   "+15005550006",
+			to:   "+18144211811", // A real phone number
 			err:  false,
 		},
 	}
