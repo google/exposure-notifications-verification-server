@@ -253,7 +253,6 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 func (r *Realm) GetCurrentSigningKey(db *Database) (*SigningKey, error) {
 	var signingKey SigningKey
 	if err := db.db.
-		Model(r).
 		Where("realm_id = ?", r.ID).
 		Where("active = ?", true).
 		Order("signing_keys.created_at DESC").
