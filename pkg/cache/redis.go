@@ -29,11 +29,11 @@ import (
 	"go.opencensus.io/stats/view"
 )
 
-var _ Cacher = (*redis)(nil)
+var _ Cacher = (*redisCacher)(nil)
 
-// redis is a shared cache implementation backed by Redis. It's ideal for
+// redisCacher is a shared cache implementation backed by Redis. It's ideal for
 // production installations since the cache is shared among all services.
-type redis struct {
+type redisCacher struct {
 	pool    *redigo.Pool
 	keyFunc KeyFunc
 
@@ -47,6 +47,11 @@ type RedisConfig struct {
 
 	// Username and Password are used for authentication.
 	Username, Password string
+
+	// IdleTimeout, MaxIdle, and MaxActive control connection handling.
+	IdleTimeout time.Duration
+	MaxIdle     int
+	MaxActive   int
 
 	// KeyFunc is the key function.
 	KeyFunc KeyFunc
@@ -63,7 +68,7 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 		addr = i.Address
 	}
 
-	c := &redis{
+	c := &redisCacher{
 		pool: &redigo.Pool{
 			Dial: func() (redigo.Conn, error) {
 				return redigo.Dial("tcp", addr,
@@ -74,9 +79,9 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 				return err
 			},
 
-			// TODO: make configurable
-			MaxIdle:   0,
-			MaxActive: 0,
+			IdleTimeout: i.IdleTimeout,
+			MaxIdle:     i.MaxIdle,
+			MaxActive:   i.MaxActive,
 		},
 		keyFunc: i.KeyFunc,
 		stopCh:  make(chan struct{}),
@@ -93,7 +98,7 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 // returns the value. If the value does not exist, it calls f and caches the
 // result of f in the cache for ttl. The ttl is calculated from the time the
 // value is inserted, not the time the function is called.
-func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
+func (c *redisCacher) Fetch(ctx context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
@@ -182,7 +187,7 @@ func (c *redis) Fetch(ctx context.Context, key string, out interface{}, ttl time
 }
 
 // Write adds a new item to the cache with the given TTL.
-func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (c *redisCacher) Write(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
@@ -210,7 +215,7 @@ func (c *redis) Write(ctx context.Context, key string, value interface{}, ttl ti
 
 // Read fetches the value at the key. If the value does not exist, it returns
 // ErrNotFound.
-func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
+func (c *redisCacher) Read(ctx context.Context, key string, out interface{}) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
@@ -242,7 +247,7 @@ func (c *redis) Read(ctx context.Context, key string, out interface{}) error {
 }
 
 // Delete removes an item from the cache, if it exists, regardless of TTL.
-func (c *redis) Delete(ctx context.Context, key string) error {
+func (c *redisCacher) Delete(ctx context.Context, key string) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
@@ -264,7 +269,7 @@ func (c *redis) Delete(ctx context.Context, key string) error {
 }
 
 // Close completely stops the cacher. It is not safe to use after closing.
-func (c *redis) Close() error {
+func (c *redisCacher) Close() error {
 	if !atomic.CompareAndSwapUint32(&c.stopped, 0, 1) {
 		return nil
 	}
@@ -277,7 +282,7 @@ func (c *redis) Close() error {
 }
 
 // withConn runs the function with a conn, ensuring cleanup of the connection.
-func (c *redis) withConn(f func(conn redigo.ConnWithContext) error) error {
+func (c *redisCacher) withConn(f func(conn redigo.ConnWithContext) error) error {
 	if f == nil {
 		return fmt.Errorf("missing function")
 	}
@@ -307,6 +312,6 @@ func (c *redis) withConn(f func(conn redigo.ConnWithContext) error) error {
 }
 
 // isStopped returns true if the cacher is stopped.
-func (c *redis) isStopped() bool {
+func (c *redisCacher) isStopped() bool {
 	return atomic.LoadUint32(&c.stopped) == 1
 }
