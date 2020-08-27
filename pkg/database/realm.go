@@ -558,7 +558,8 @@ func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id i
 
 		// Successfully deleted from the key manager, now remove the record.
 		if err := tx.Delete(&signingKey).Error; err != nil {
-			return fmt.Errorf("failed to delete signing key from database: %w", err)
+			return fmt.Errorf("successfully destroyed signing key in key manager, "+
+				"but failed to delete signing key from database: %w", err)
 		}
 
 		return nil
