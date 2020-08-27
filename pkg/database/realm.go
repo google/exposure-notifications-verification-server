@@ -458,7 +458,14 @@ func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database) (stri
 	}
 
 	parent := db.config.CertificateSigningKeyRing
+	if parent == "" {
+		return "", fmt.Errorf("missing CERTIFICATE_SIGNING_KEYRING")
+	}
+
 	name := r.SigningKeyID()
+	if name == "" {
+		return "", fmt.Errorf("missing key name")
+	}
 
 	// Create the parent key - this interface does not return an error if the key
 	// already exists, so this is safe to run each time.
