@@ -56,7 +56,7 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 func (c *Controller) HandleExpirePage() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		var code *database.VerificationCode
+		var code database.VerificationCode
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -70,7 +70,7 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v.", err)
-			c.renderStatus(ctx, w, code)
+			c.renderStatus(ctx, w, &code)
 			return
 		}
 
@@ -79,14 +79,14 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
 			flash.Error("failed to expire code", apiErr.Error)
-			c.renderStatus(ctx, w, code)
+			c.renderStatus(ctx, w, &code)
 			return
 		}
 
 		expiredCode, err := c.db.ExpireCode(form.UUID)
 		if err != nil {
 			flash.Error("Failed to process form: %v.", err)
-			expiredCode = code
+			expiredCode = &code
 		} else {
 			flash.Alert("Expired code.")
 		}
