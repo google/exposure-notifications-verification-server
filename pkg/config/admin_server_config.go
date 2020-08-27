@@ -33,7 +33,7 @@ var _ IssueAPIConfig = (*AdminAPIServerConfig)(nil)
 type AdminAPIServerConfig struct {
 	Database      database.Config
 	Observability observability.Config
-	Cache         cache.Config `env:",prefix=CACHE_"`
+	Cache         cache.Config
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
