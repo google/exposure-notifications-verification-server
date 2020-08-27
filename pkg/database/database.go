@@ -207,17 +207,16 @@ func (db *Database) KeepAlive(ctx context.Context, interval time.Duration) {
 		go func() {
 			logger := logging.FromContext(ctx).Named("dbkeepalive")
 
-			logger.Infow("starting background DB keepalive", "interval", interval.String())
+			logger.Infow("started", "interval", interval.String())
 			var status string
 			ticker := time.NewTicker(interval)
 			for {
 				select {
 				case <-db.keepAliveStopCh:
-					logger.Info("stopping DB keepalive")
+					logger.Info("stopping")
 					ticker.Stop()
 					break
 				case <-ticker.C:
-					logger.Debugw("pinging DB connections")
 					ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 					defer cancel()
 					if err := db.db.DB().PingContext(ctx); err != nil {
@@ -225,10 +224,10 @@ func (db *Database) KeepAlive(ctx context.Context, interval time.Duration) {
 					} else {
 						status = "up"
 					}
-					logger.Debugw("finished pinging DB connections", "status", status)
+					logger.Debugw("finished ping", "status", status)
 				}
 			}
-			logger.Infow("keepalive stopped")
+			logger.Infow("stopped")
 		}()
 	}
 }
