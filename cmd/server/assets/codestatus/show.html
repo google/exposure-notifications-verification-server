@@ -43,9 +43,9 @@
         <span id="code-expires-at" class="sm text-danger"></span>
       </div>
       <div class="card-body">
-        <form action="/code/expire" method="POST">
+        <form action="/code/{{.code.UUID}}/expire" method="POST">
+          <input type="hidden" name="_method" value="PATCH">
           {{ .csrfField }}
-          <input type="hidden" id="uuid" name="uuid" value="{{.code.UUID}}" />
           <button type="submit" id="invalidate" class="btn btn-danger btn-sm">Invalidate code now</button>
         </form>
       </div>

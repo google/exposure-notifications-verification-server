@@ -22,6 +22,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/gorilla/mux"
 )
 
 func (c *Controller) HandleExpireAPI() http.Handler {
@@ -54,13 +55,9 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 }
 
 func (c *Controller) HandleExpirePage() http.Handler {
-	type FormData struct {
-		UUID string `form:"uuid"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		var code *database.VerificationCode = &database.VerificationCode{}
+		vars := mux.Vars(r)
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -69,25 +66,19 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		}
 		flash := controller.Flash(session)
 
+		code := &database.VerificationCode{}
 		retCode := Code{}
-
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v.", err)
-			c.renderStatus(ctx, w, code)
-			return
-		}
 
 		// Retrieve once to check permissions.
 
-		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
+		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
 			flash.Error("failed to expire code", apiErr.Error)
 			c.renderStatus(ctx, w, code)
 			return
 		}
 
-		expiredCode, err := c.db.ExpireCode(form.UUID)
+		expiredCode, err := c.db.ExpireCode(vars["uuid"])
 		if err != nil {
 			flash.Error("Failed to process form: %v.", err)
 			expiredCode = code
