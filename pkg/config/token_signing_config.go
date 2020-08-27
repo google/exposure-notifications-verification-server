@@ -27,21 +27,30 @@ type TokenSigningConfig struct {
 	// configuration.
 	Keys keys.Config `env:",prefix=TOKEN_"`
 
-	TokenSigningKey   []string `env:"TOKEN_SIGNING_KEY, required"`
-	TokenSigningKeyID []string `env:"TOKEN_SIGNING_KEY_ID, default=v1"`
-	TokenIssuer       string   `env:"TOKEN_ISSUER, default=diagnosis-verification-example"`
+	TokenSigningKeys   []string `env:"TOKEN_SIGNING_KEY, required"`
+	TokenSigningKeyIDs []string `env:"TOKEN_SIGNING_KEY_ID, default=v1"`
+	TokenIssuer        string   `env:"TOKEN_ISSUER, default=diagnosis-verification-example"`
 }
 
 func (t *TokenSigningConfig) ActiveKey() string {
-	return t.TokenSigningKey[0]
+	// Validation prevents this slice from being empty.
+	return t.TokenSigningKeys[0]
 }
 
 func (t *TokenSigningConfig) ActiveKeyID() string {
-	return t.TokenSigningKeyID[0]
+	// Validation prevents this slice from being empty.
+	return t.TokenSigningKeyIDs[0]
 }
 
 func (t *TokenSigningConfig) Validate() error {
-	if len(t.TokenSigningKey) != len(t.TokenSigningKeyID) {
+	if len(t.TokenSigningKeys) == 0 {
+		return fmt.Errorf("TOKEN_SIGNING_KEY must have at least one entry")
+	}
+	if len(t.TokenSigningKeyIDs) == 0 {
+		return fmt.Errorf("TOKEN_SIGNING_KEY_ID must have at least one entry")
+	}
+
+	if len(t.TokenSigningKeys) != len(t.TokenSigningKeyIDs) {
 		return fmt.Errorf("TOKEN_SIGNING_KEY and TOKEN_SIGNING_KEY_ID must be lists of the same length")
 	}
 	return nil
