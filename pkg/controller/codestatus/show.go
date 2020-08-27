@@ -25,11 +25,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-type FormData struct {
-	UUID string `form:"uuid"`
-}
-
 func (c *Controller) HandleShow() http.Handler {
+	type FormData struct {
+		UUID string `form:"uuid"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
