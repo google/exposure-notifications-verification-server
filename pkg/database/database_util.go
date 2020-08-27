@@ -28,7 +28,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/ory/dockertest"
-	"github.com/sethvargo/go-retry"
 )
 
 var (
@@ -112,16 +111,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 
 	// Wait for the container to start - we'll retry connections in a loop below,
 	// but there's no point in trying immediately.
-	time.Sleep(1 * time.Second)
-
-	// Establish a connection to the database. Use a Fibonacci backoff instead of
-	// exponential so wait times scale appropriately.
-	b, err := retry.NewFibonacci(500 * time.Millisecond)
-	if err != nil {
-		tb.Fatalf("failed to configure backoff: %v", err)
-	}
-	b = retry.WithMaxRetries(10, b)
-	b = retry.WithCappedDuration(10*time.Second, b)
+	time.Sleep(250 * time.Millisecond)
 
 	// Load the configuration
 	db, err := config.Load(ctx)
@@ -129,16 +119,10 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		tb.Fatal(err)
 	}
 
-	if err := retry.Do(ctx, b, func(_ context.Context) error {
-		if err := db.Open(ctx); err != nil {
-			tb.Logf("retrying error: %v", err)
-			return retry.RetryableError(err)
-		}
-		db.db.LogMode(false)
-		return nil
-	}); err != nil {
-		tb.Fatalf("failed to start postgres: %s", err)
+	if err := db.Open(ctx); err != nil {
+		tb.Fatal(err)
 	}
+	db.db.LogMode(false)
 
 	if err := db.RunMigrations(ctx); err != nil {
 		tb.Fatalf("failed to migrate database: %v", err)
