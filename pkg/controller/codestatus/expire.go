@@ -68,7 +68,7 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		// Retrieve once to check permissions.
 		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
-			flash.Error("failed to expire code", apiErr.Error)
+			flash.Error("Failed to expire code: %v.", apiErr.Error)
 			c.renderStatus(ctx, w, code)
 			return
 		}
