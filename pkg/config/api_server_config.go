@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -32,7 +33,7 @@ import (
 type APIServerConfig struct {
 	Database      database.Config
 	Observability observability.Config
-	Cache         cache.Config `env:",prefix=CACHE_"`
+	Cache         cache.Config
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
@@ -73,13 +74,16 @@ func NewAPIServerConfig(ctx context.Context) (*APIServerConfig, error) {
 // This represents the keys that are allowed to be used to verify tokens,
 // the TokenSigningKey/TokenSigningKeyID.
 func (c *APIServerConfig) AllowedTokenPublicKeys() map[string]string {
-	{
+	result, err := func() (map[string]string, error) {
 		c.mu.RLock()
-		if len(c.allowedTokenPublicKeys) != 0 {
-			c.mu.RUnlock()
-			return c.allowedTokenPublicKeys
+		defer c.mu.RUnlock()
+		if len(c.allowedTokenPublicKeys) > 0 {
+			return c.allowedTokenPublicKeys, nil
 		}
-		c.mu.RUnlock()
+		return nil, fmt.Errorf("missing")
+	}()
+	if err == nil {
+		return result
 	}
 
 	c.mu.Lock()
@@ -89,10 +93,10 @@ func (c *APIServerConfig) AllowedTokenPublicKeys() map[string]string {
 		return c.allowedTokenPublicKeys
 	}
 
-	c.allowedTokenPublicKeys = make(map[string]string)
+	c.allowedTokenPublicKeys = make(map[string]string, len(c.TokenSigning.TokenSigningKeyIDs))
 
-	for i, kid := range c.TokenSigning.TokenSigningKeyID {
-		c.allowedTokenPublicKeys[kid] = c.TokenSigning.TokenSigningKey[i]
+	for i, kid := range c.TokenSigning.TokenSigningKeyIDs {
+		c.allowedTokenPublicKeys[kid] = c.TokenSigning.TokenSigningKeys[i]
 	}
 	return c.allowedTokenPublicKeys
 }
@@ -112,7 +116,7 @@ func (c *APIServerConfig) Validate() error {
 	}
 
 	if err := c.TokenSigning.Validate(); err != nil {
-		return err
+		return fmt.Errorf("failed to validate signing token configuration: %w", err)
 	}
 
 	return nil

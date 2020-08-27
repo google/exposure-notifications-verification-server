@@ -36,7 +36,7 @@ type ServerConfig struct {
 	Firebase      FirebaseConfig
 	Database      database.Config
 	Observability observability.Config
-	Cache         cache.Config `env:",prefix=CACHE_"`
+	Cache         cache.Config
 
 	Port string `env:"PORT,default=8080"`
 

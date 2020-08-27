@@ -29,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/jinzhu/gorm"
+	"github.com/sethvargo/go-retry"
 	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
@@ -142,28 +143,46 @@ func stringInSlice(a string, list []string) bool {
 func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
 	c := db.config
 
-	driver := ocsql.Wrap(&postgres.Driver{})
-	if !stringInSlice(driverName, sql.Drivers()) {
-		ocsql.RegisterAllViews()
-		sql.Register(driverName, driver)
-	}
-	dbSQL, err := sql.Open(driverName, c.ConnectionString())
+	// Establish a connection to the database.
+	b, err := retry.NewFibonacci(250 * time.Millisecond)
 	if err != nil {
-		return fmt.Errorf("failed to open the SQL database: %v", err)
+		return fmt.Errorf("failed to configure database backoff: %w", err)
 	}
-	// enable periodic recording of sql.DBStats
-	db.statsCloser = ocsql.RecordStats(dbSQL, 5*time.Second)
+	b = retry.WithMaxRetries(10, b)
+	b = retry.WithCappedDuration(2*time.Second, b)
 
-	//Need to give postgres dialect as otherwise gorm starts running
-	//in compatibility mode
-	rawDB, err := gorm.Open("postgres", dbSQL)
-	if err != nil {
-		return fmt.Errorf("database gorm.Open: %w", err)
+	var rawDB *gorm.DB
+	if err := retry.Do(ctx, b, func(ctx context.Context) error {
+		var err error
+		driver := ocsql.Wrap(&postgres.Driver{})
+		if !stringInSlice(driverName, sql.Drivers()) {
+			ocsql.RegisterAllViews()
+			sql.Register(driverName, driver)
+		}
+		dbSQL, err := sql.Open(driverName, c.ConnectionString())
+		if err != nil {
+			return fmt.Errorf("failed to open the SQL database: %v", err)
+		}
+		// enable periodic recording of sql.DBStats
+		db.statsCloser = ocsql.RecordStats(dbSQL, 5*time.Second)
+
+		//Need to give postgres dialect as otherwise gorm starts running
+		//in compatibility mode
+		rawDB, err = gorm.Open("postgres", dbSQL)
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	if rawDB == nil {
+		return fmt.Errorf("failed to create database connection")
 	}
 
-	if c.MaxConnectionIdleTime > 0 {
-		rawDB.DB().SetConnMaxIdleTime(c.MaxConnectionIdleTime)
-	}
+	// Set connection configuration.
+	rawDB.DB().SetConnMaxLifetime(c.MaxConnectionLifetime)
+	rawDB.DB().SetConnMaxIdleTime(c.MaxConnectionIdleTime)
 
 	// Log SQL statements in debug mode.
 	if c.Debug {
