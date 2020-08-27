@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
@@ -27,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/jinzhu/gorm"
+	"github.com/sethvargo/go-retry"
 	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
@@ -125,14 +127,32 @@ func (db *Database) Open(ctx context.Context) error {
 func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
 	c := db.config
 
-	rawDB, err := gorm.Open("postgres", c.ConnectionString())
+	// Establish a connection to the database.
+	b, err := retry.NewFibonacci(250 * time.Millisecond)
 	if err != nil {
-		return fmt.Errorf("database gorm.Open: %w", err)
+		return fmt.Errorf("failed to configure database backoff: %w", err)
+	}
+	b = retry.WithMaxRetries(10, b)
+	b = retry.WithCappedDuration(2*time.Second, b)
+
+	var rawDB *gorm.DB
+	if err := retry.Do(ctx, b, func(ctx context.Context) error {
+		var err error
+		rawDB, err = gorm.Open("postgres", c.ConnectionString())
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	if rawDB == nil {
+		return fmt.Errorf("failed to create database connection")
 	}
 
-	if c.MaxConnectionIdleTime > 0 {
-		rawDB.DB().SetConnMaxIdleTime(c.MaxConnectionIdleTime)
-	}
+	// Set connection configuration.
+	rawDB.DB().SetConnMaxLifetime(c.MaxConnectionLifetime)
+	rawDB.DB().SetConnMaxIdleTime(c.MaxConnectionIdleTime)
 
 	// Log SQL statements in debug mode.
 	if c.Debug {
