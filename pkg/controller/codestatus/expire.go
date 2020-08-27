@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
 )
 
@@ -66,11 +65,7 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		code := &database.VerificationCode{}
-		retCode := Code{}
-
 		// Retrieve once to check permissions.
-
 		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
 			flash.Error("failed to expire code", apiErr.Error)
@@ -86,6 +81,7 @@ func (c *Controller) HandleExpirePage() http.Handler {
 			flash.Alert("Expired code.")
 		}
 
+		retCode := Code{}
 		c.responseCode(ctx, r, expiredCode, &retCode)
 		c.renderShow(ctx, w, retCode)
 	})
