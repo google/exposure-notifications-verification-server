@@ -58,20 +58,20 @@
 
     $(function() {
       let $uuid = $('#uuid');
-      let allowedChars = new RegExp("[0-9a-fA-F]")
+      let allowedChars = new RegExp("[0-9a-fA-F]");
       let dashLocations = [8, 13, 18, 23];
 
       $uuid.on('keyup', function() {
         let s = $uuid.val();
-        let r = ""
+        let r = "";
         for (i = 0; i < s.length && i <= 36; i++) {
-          let c = s.charAt(i)
+          let c = s.charAt(i);
           if (dashLocations.includes(i)) {
-            r += '-'
+            r += '-';
           }
 
           if (allowedChars.test(c)) {
-            r += c
+            r += c;
           }
         }
         $uuid.val(r);
