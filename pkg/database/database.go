@@ -17,9 +17,11 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
@@ -30,7 +32,9 @@ import (
 	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"contrib.go.opencensus.io/integrations/ocsql"
+	postgres "github.com/lib/pq"
+	"github.com/sagikazarmark/go-gin-gorm-opencensus/pkg/ocgorm"
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -51,6 +55,8 @@ type Database struct {
 
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
+
+	statsCloser func()
 }
 
 // SupportsPerRealmSigning returns true if the configuration supports
@@ -120,12 +126,37 @@ func (db *Database) Open(ctx context.Context) error {
 	return db.OpenWithCacher(ctx, nil)
 }
 
+const driverName = "ocsql"
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
 // OpenWithCacher creates a database connection with the cacher. This should
 // only be called once.
 func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
 	c := db.config
 
-	rawDB, err := gorm.Open("postgres", c.ConnectionString())
+	driver := ocsql.Wrap(&postgres.Driver{}, ocsql.WithAllTraceOptions())
+	if !stringInSlice(driverName, sql.Drivers()) {
+		ocsql.RegisterAllViews()
+		sql.Register(driverName, driver)
+	}
+	dbSql, err := sql.Open(driverName, c.ConnectionString())
+	if err != nil {
+		return fmt.Errorf("Failed to open the SQL database: %v", err)
+	}
+	// enable periodic recording of sql.DBStats
+	db.statsCloser = ocsql.RecordStats(dbSql, 5*time.Second)
+
+	//Need to give postgres dialect as otherwise gorm starts running
+	//in compatibility mode
+	rawDB, err := gorm.Open("postgres", dbSql)
 	if err != nil {
 		return fmt.Errorf("database gorm.Open: %w", err)
 	}
@@ -141,6 +172,8 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	// Enable auto-preloading.
 	rawDB = rawDB.Set("gorm:auto_preload", true)
+
+	ocgorm.RegisterCallbacks(rawDB)
 
 	callbacks := rawDB.Callback()
 
@@ -183,6 +216,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 // Close will close the database connection. Should be deferred right after Open.
 func (db *Database) Close() error {
+	db.statsCloser()
 	return db.db.Close()
 }
 

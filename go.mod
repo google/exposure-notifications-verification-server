@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.63.0
 	cloud.google.com/go/firestore v1.3.0 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.3 // indirect
+	contrib.go.opencensus.io/integrations/ocsql v0.1.6
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Azure/azure-sdk-for-go v45.1.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.4 // indirect
@@ -31,7 +32,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.14.7 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
 	github.com/jinzhu/gorm v1.9.16
-	github.com/lib/pq v1.8.0 // indirect
+	github.com/lib/pq v1.8.0
 	github.com/lstoll/awskms v0.0.0-20200603175638-a388516467f1 // indirect
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mikehelmick/go-chaff v0.3.0
@@ -42,6 +43,7 @@ require (
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/prometheus/common v0.12.0 // indirect
 	github.com/prometheus/statsd_exporter v0.17.0 // indirect
+	github.com/sagikazarmark/go-gin-gorm-opencensus v0.0.0-20190530122219-5cd3c9b414a5
 	github.com/sethvargo/go-envconfig v0.3.1
 	github.com/sethvargo/go-limiter v0.4.1
 	github.com/sethvargo/go-redisstore v0.1.2-opencensus
