@@ -15,6 +15,7 @@
 package certapi
 
 import (
+	"crypto"
 	"errors"
 	"net/http"
 	"time"
@@ -58,12 +59,15 @@ func (c *Controller) HandleCertificate() http.Handler {
 		stats.Record(ctx, c.metrics.Attempts.M(1))
 
 		// Get the public key for the token.
-		publicKey, err := c.pubKeyCache.GetPublicKey(ctx, c.config.TokenSigning.TokenSigningKey, c.kms)
-		if err != nil {
-			c.logger.Errorw("failed to get public key", "error", err)
-			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
-			return
+		allowedPublicKeys := make(map[string]crypto.PublicKey)
+		for kid, keyRef := range c.config.AllowedTokenPublicKeys() {
+			publicKey, err := c.pubKeyCache.GetPublicKey(ctx, keyRef, c.kms)
+			if err != nil {
+				c.logger.Errorw("failed to get public key", "error", err)
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
+				return
+			}
+			allowedPublicKeys[kid] = publicKey
 		}
 
 		var request api.VerificationCertificateRequest
@@ -75,7 +79,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		// Parse and validate the verification token.
-		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken, publicKey)
+		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken, allowedPublicKeys)
 		if err != nil {
 			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
