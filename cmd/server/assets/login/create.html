@@ -52,14 +52,14 @@
   {{template "loginscripts" .}}
 
   <script type="text/javascript">
-    $(function () {
+    $(function() {
       let $form = $('#loginForm');
       let $submit = $('#submit');
       let $email = $('#email');
       let $password = $('#password');
       let $retype = $('#retype');
 
-      $form.on('submit', function (event) {
+      $form.on('submit', function(event) {
         event.preventDefault();
 
         let email = $email.val();
@@ -73,11 +73,11 @@
         $submit.prop('disabled', true);
 
         firebase.auth().createUserWithEmailAndPassword(email, pwd)
-          .then(function (userCredential) {
+          .then(function(userCredential) {
             clearExistingFlash();
             return firebase.auth().signInWithEmailAndPassword(email, pwd);
           })
-          .catch(function (error) {
+          .catch(function(error) {
             clearExistingFlash();
             flash(error.message, "danger")
             $submit.prop('disabled', false);

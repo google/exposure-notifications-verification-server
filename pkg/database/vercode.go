@@ -117,7 +117,7 @@ func (v *VerificationCode) FormatSymptomDate() string {
 }
 
 // IsCodeExpired checks to see if the actual code provides is the
-// short or long code and deteriminies if it is expired based on that.
+// short or long code and determines if it is expired based on that.
 func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error) {
 	// it's possible that this could be called with the already HMACd version.
 	hmacedCode, err := db.hmacVerificationCode(code)

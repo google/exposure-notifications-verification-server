@@ -55,27 +55,27 @@
     );
 
     recaptchaVerifier.render()
-      .then(function (widgetId) {
+      .then(function(widgetId) {
         window.recaptchaWidgetId = widgetId;
       });
 
-    $(function () {
+    $(function() {
       let $form = $('#loginForm');
       let $submit = $('#submit');
       let $email = $('#email');
       let $password = $('#password');
 
-      $form.on('submit', function (event) {
+      $form.on('submit', function(event) {
         event.preventDefault();
 
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
-          .then(function (userCredential) {
+          .then(function(userCredential) {
             clearExistingFlash();
           })
-          .catch(function (error) {
+          .catch(function(error) {
             if (error.code == 'auth/multi-factor-auth-required') {
               resolver = error.resolver;
               let selectedIndex = 0 // TODO: show list of factors
@@ -87,7 +87,7 @@
                 };
                 let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
                 return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
-                  .then(function (verificationId) {
+                  .then(function(verificationId) {
                     let verificationCode = window.prompt('Please enter the verification ' +
                       'code that was sent to your mobile device.');
 
@@ -98,7 +98,7 @@
                       firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
                     // Complete sign-in.
                     return resolver.resolveSignIn(multiFactorAssertion)
-                  }).catch(function (error) {
+                  }).catch(function(error) {
                     clearExistingFlash();
                     flash(error.message, "danger");
                     $submit.prop('disabled', false);

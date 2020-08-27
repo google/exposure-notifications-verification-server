@@ -3,7 +3,7 @@
 <div class="card mb-3">
   <div class="card-header">
     System verification certificate information
-  </div>      
+  </div>
   <div class="card-body">
     <div class="alert alert-info" role="alert">
       Share these values with your <em>key server</em> operator so they can add your certificate to the trust store.
@@ -33,7 +33,7 @@
       <label for="name" class="col-sm-3">Key ID (kid):</label>
       <div class="input-group col-sm-9">
         <input type="text" id="systemCertKeyID" class="form-control" value="{{.certKeyID}}" readonly/>
-        {{template "clippy" "systemCertKeyID"}}        
+        {{template "clippy" "systemCertKeyID"}}
       </div>
     </div>
     <div class="form-group row">
@@ -92,8 +92,8 @@
                     {{if $rk.Active}}<h4><span class="badge badge-success">Active</span></h4>{{end}}
                   </td>
                   <td>
-                    <div class="input-group">                      
-                      <textarea class="form-control" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID}}</textarea>                          
+                    <div class="input-group">
+                      <textarea class="form-control" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID}}</textarea>
                       {{template "clippy" $rk.GetKID}}
                     </div>
                     Backed by (your server operator may ask you for this information):<br/>
@@ -103,7 +103,7 @@
                     {{if not $rk.Active}}
                       <form method="POST" action="/realm/keys/activate">
                         {{ $csrfField }}
-                        <input type="hidden" name="skid" value="{{$rk.Model.ID}}" />
+                        <input type="hidden" name="id" value="{{$rk.ID}}" />
                         <a href="#" class="btn btn-primary btn-block" data-confirm="Have you already shared the new certificate key version and public key with your 'key server' operator?" data-submit-form>Make Active</a>
                       </form>
 
@@ -143,17 +143,17 @@
     <p>
       View or edit the verification certificate signing keys for <strong>{{$realm.Name}}</strong> below.
     </p>
-    
+
     {{if not $realm.UseRealmCertificateKey}}
       {{template "systemkeys" .}}
     {{end}}
-    
+
     <div class="card mb-3">
       <div class="card-header">
         Realm signing key configuration
       </div>
       <div class="card-body">
-        {{if .supportsPerRealmSigning}}            
+        {{if .supportsPerRealmSigning}}
           {{if not $realm.UseRealmCertificateKey}}
             {{if and $realm.CanUpgradeToRealmSigningKeys .activePublicKey}}
             <form method="POST" action="/realm/keys/upgrade">
@@ -212,7 +212,7 @@
                     After upgrading to use realm specific keys, this field cannot be changed.
                   </small>
                 {{end}}
-              </div>                
+              </div>
             </div>
             <div class="form-group row">
               <label for="name" class="col-sm-3">Certificate duration:</label>
@@ -252,7 +252,7 @@
               </div>
             </div>
           </form>
-        
+
         {{else}}
         <div class="alert alert-danger" role="alert">
             This server is not configured to support per-realm certificate
