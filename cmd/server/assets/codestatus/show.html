@@ -42,24 +42,32 @@
         <h5 class="mb-1">Expiry</h5>
         <span id="code-expires-at" class="sm text-danger"></span>
       </div>
+      <div class="card-body">
+        <form action="/code/{{.code.UUID}}/expire" method="POST">
+          <input type="hidden" name="_method" value="PATCH">
+          {{ .csrfField }}
+          <button type="submit" id="invalidate" class="btn btn-danger btn-sm">Invalidate code now</button>
+        </form>
+      </div>
     </div>
 
-    <div>
-      <a href="/code/status">&larr; Enter another code</a>
-    </div>
+    <a href="/code/status" class="card-link">&larr; Enter another code</a>
   </main>
 
   {{template "scripts" .}}
   {{template "codescripts" .}}
 
   <script type="text/javascript">
-    let $codeExpiresAt;
+    let $buttonInvalidate = $('button#invalidate');
     let expires = {{ .code.Expires }};
 
     $(function() {
-      $codeExpiresAt = $('#code-expires-at');
+      let $codeExpiresAt = $('#code-expires-at');
       // Start countdown
-      countdown($codeExpiresAt, expires);
+      countdown($codeExpiresAt, expires, function() {
+        // Disable the submit if already expired.
+        $buttonInvalidate.prop('disabled', true);
+      });
     });
   </script>
 </body>
