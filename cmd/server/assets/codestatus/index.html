@@ -28,10 +28,9 @@
           {{ .csrfField }}
           <div class="form-group">
             <div class="form-label-group ">
-              <input type="text" id="uuid" name="uuid"
-                class='form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}'
-                value="{{$code.UUID}}" placeholder="UUID" autocomplete="off">
-              <label for="uuid">UUID</label>
+              <input type="text" id="uuid" name="uuid" class='form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}' value="{{$code.UUID}}"
+                placeholder="UUID" maxlength="36"autocomplete="off">
+                <label for="uuid">UUID</label>
               {{if $code.ErrorsFor "uuid"}}
               <div class="invalid-feedback">
                 {{joinStrings ($code.ErrorsFor "uuid") ", "}}
@@ -56,12 +55,12 @@
   {{template "scripts" .}}
   <script type="text/javascript">
 
-    $(function() {
+    $(function () {
       let $uuid = $('#uuid');
       let allowedChars = new RegExp("[0-9a-fA-F]")
       let dashLocations = [8, 13, 18, 23];
 
-      $uuid.on('keyup', function() {
+      $uuid.on('keyup', function(){
         let s = $uuid.val();
         let r = ""
         for (i = 0; i < s.length && i <= 36; i++) {
