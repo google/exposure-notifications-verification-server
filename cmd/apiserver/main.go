@@ -131,7 +131,7 @@ func realMain(ctx context.Context) error {
 	rateLimit := httplimiter.Handle
 
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, config, "json"))
+	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "json"))
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)

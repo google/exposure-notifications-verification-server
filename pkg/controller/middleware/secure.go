@@ -23,15 +23,15 @@ import (
 	"github.com/unrolled/secure"
 )
 
-func SecureHeaders(ctx context.Context, config *config.ServerConfig, serverType string) mux.MiddlewareFunc {
+func SecureHeaders(ctx context.Context, devMode bool, serverType string) mux.MiddlewareFunc {
 	options := secure.Options{
-		BrowserXssFilter:     true,
+		BrowserXssFilter:     serverType == "html",
 		ContentTypeNosniff:   true,
-		FrameDeny:            true,
+		FrameDeny:            serverType == "html",
 		HostsProxyHeaders:    []string{"X-Forwarded-Host"},
-		IsDevelopment:        config.Development,
+		IsDevelopment:        devMode,
 		SSLProxyHeaders:      map[string]string{"X-Forwarded-Proto": "https"},
-		SSLRedirect:          !config.Development,
+		SSLRedirect:          !devMode,
 		STSIncludeSubdomains: true,
 		STSPreload:           true,
 		STSSeconds:           315360000,
