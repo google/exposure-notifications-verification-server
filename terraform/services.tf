@@ -26,8 +26,9 @@ locals {
   }
 
   cache_config = {
-    CACHE_TYPE          = "REDIS"
-    CACHE_REDIS_ADDRESS = "${google_redis_instance.cache.host}:${google_redis_instance.cache.port}"
+    CACHE_TYPE       = "REDIS"
+    CACHE_REDIS_HOST = google_redis_instance.cache.host
+    CACHE_REDIS_PORT = google_redis_instance.cache.port
   }
 
   database_config = {
@@ -57,14 +58,12 @@ locals {
     FIREBASE_STORAGE_BUCKET    = lookup(data.google_firebase_web_app_config.default, "storage_bucket")
   }
 
-  redis_config = {
-    RATE_LIMIT_TYPE     = "REDIS"
-    RATE_LIMIT_TOKENS   = "60"
-    RATE_LIMIT_INTERVAL = "1m"
-    REDIS_HOST          = google_redis_instance.cache.host
-    REDIS_PORT          = google_redis_instance.cache.port
-    REDIS_MIN_POOL      = 32
-    REDIS_MAX_POOL      = 128
+  rate_limit_config = {
+    RATE_LIMIT_TYPE       = "REDIS"
+    RATE_LIMIT_TOKENS     = "60"
+    RATE_LIMIT_INTERVAL   = "1m"
+    RATE_LIMIT_REDIS_HOST = google_redis_instance.cache.host
+    RATE_LIMIT_REDIS_PORT = google_redis_instance.cache.port
   }
 
   signing_config = {

@@ -19,6 +19,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -33,9 +34,13 @@ type Controller struct {
 	h              *render.Renderer
 	logger         *zap.SugaredLogger
 	publicKeyCache *keyutils.PublicKeyCache
+
+	// systemCertificateKeyManager is the key manager used for system
+	// certificates. It is not used with per-realm keys.
+	systemCertificateKeyManager keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, h *render.Renderer) (*Controller, error) {
 	logger := logging.FromContext(ctx)
 
 	publicKeyCache, err := keyutils.NewPublicKeyCache(time.Minute)
@@ -49,5 +54,7 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 		h:              h,
 		logger:         logger,
 		publicKeyCache: publicKeyCache,
+
+		systemCertificateKeyManager: systemCertificationKeyManager,
 	}, nil
 }

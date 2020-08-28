@@ -70,7 +70,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		}
 
 		// Get the signer based on Key configuration.
-		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.TokenSigningKey)
+		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.ActiveKey())
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
 			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
@@ -123,7 +123,7 @@ func (c *Controller) HandleVerify() http.Handler {
 			Subject:   subject.String(),
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigning.TokenSigningKeyID
+		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigning.ActiveKeyID()
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
 			stats.Record(ctx, c.metrics.CodeVerificationError.M(1))

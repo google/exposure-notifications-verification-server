@@ -47,8 +47,8 @@ func (db *Database) CreateCleanup(cType string) (*CleanupStatus, error) {
 		NotBefore:  time.Now().UTC(),
 	}
 	if err := db.db.
-		Set("gorm:insert_option", "ON CONFLICT (uix_cleanup_statuses_type) DO NOTHING RETURNING *").
-		Create(cstat).
+		Set("gorm:insert_option", "ON CONFLICT (type) DO NOTHING").
+		FirstOrCreate(cstat).
 		Error; err != nil {
 		return nil, err
 	}

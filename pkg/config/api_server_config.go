@@ -16,6 +16,8 @@ package config
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -31,7 +33,7 @@ import (
 type APIServerConfig struct {
 	Database      database.Config
 	Observability observability.Config
-	Cache         cache.Config `env:",prefix=CACHE_"`
+	Cache         cache.Config
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
@@ -42,7 +44,6 @@ type APIServerConfig struct {
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 
 	// Verification Token Config
-	// Currently this does not easily support rotation. TODO(mikehelmick) - add support.
 	VerificationTokenDuration time.Duration `env:"VERIFICATION_TOKEN_DURATION,default=24h"`
 
 	// Token signing
@@ -53,6 +54,10 @@ type APIServerConfig struct {
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
+
+	// cached allowed public keys
+	allowedTokenPublicKeys map[string]string
+	mu                     sync.RWMutex
 }
 
 // NewAPIServerConfig returns the environment config for the API server.
@@ -63,6 +68,37 @@ func NewAPIServerConfig(ctx context.Context) (*APIServerConfig, error) {
 		return nil, err
 	}
 	return &config, nil
+}
+
+// AllowedTokenPublicKeys returns a map of 'kid' to the KMS KeyID reference.
+// This represents the keys that are allowed to be used to verify tokens,
+// the TokenSigningKey/TokenSigningKeyID.
+func (c *APIServerConfig) AllowedTokenPublicKeys() map[string]string {
+	result, err := func() (map[string]string, error) {
+		c.mu.RLock()
+		defer c.mu.RUnlock()
+		if len(c.allowedTokenPublicKeys) > 0 {
+			return c.allowedTokenPublicKeys, nil
+		}
+		return nil, fmt.Errorf("missing")
+	}()
+	if err == nil {
+		return result
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	// handle race condition that could occur between lock upgrade.
+	if len(c.allowedTokenPublicKeys) != 0 {
+		return c.allowedTokenPublicKeys
+	}
+
+	c.allowedTokenPublicKeys = make(map[string]string, len(c.TokenSigning.TokenSigningKeyIDs))
+
+	for i, kid := range c.TokenSigning.TokenSigningKeyIDs {
+		c.allowedTokenPublicKeys[kid] = c.TokenSigning.TokenSigningKeys[i]
+	}
+	return c.allowedTokenPublicKeys
 }
 
 func (c *APIServerConfig) Validate() error {
@@ -77,6 +113,10 @@ func (c *APIServerConfig) Validate() error {
 		if err := checkPositiveDuration(f.Var, f.Name); err != nil {
 			return err
 		}
+	}
+
+	if err := c.TokenSigning.Validate(); err != nil {
+		return fmt.Errorf("failed to validate signing token configuration: %w", err)
 	}
 
 	return nil

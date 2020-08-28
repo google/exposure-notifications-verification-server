@@ -249,11 +249,11 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 
 // GetCurrentSigningKey returns the currently active signing key, the one marked
 // active in the database. If there is more than one active, the most recently
-// crated on wins. Should not occur due to transactional update.
+// created one wins. Should not occur due to transactional update.
 func (r *Realm) GetCurrentSigningKey(db *Database) (*SigningKey, error) {
 	var signingKey SigningKey
 	if err := db.db.
-		Model(r).
+		Where("realm_id = ?", r.ID).
 		Where("active = ?", true).
 		Order("signing_keys.created_at DESC").
 		First(&signingKey).
@@ -458,7 +458,14 @@ func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database) (stri
 	}
 
 	parent := db.config.CertificateSigningKeyRing
+	if parent == "" {
+		return "", fmt.Errorf("missing CERTIFICATE_SIGNING_KEYRING")
+	}
+
 	name := r.SigningKeyID()
+	if name == "" {
+		return "", fmt.Errorf("missing key name")
+	}
 
 	// Create the parent key - this interface does not return an error if the key
 	// already exists, so this is safe to run each time.
@@ -512,4 +519,53 @@ func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database) (stri
 	}
 
 	return signingKey.GetKID(), nil
+}
+
+// DestroySigningKeyVersion destroys the given key version in both the database
+// and the key manager. ID is the primary key ID from the database. If the id
+// does not exist, it does nothing.
+func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id interface{}) error {
+	manager := db.signingKeyManager
+	if manager == nil {
+		return ErrNoSigningKeyManager
+	}
+
+	if err := db.db.Transaction(func(tx *gorm.DB) error {
+		// Load the signing key to ensure it actually exists.
+		var signingKey SigningKey
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Table("signing_keys").
+			Where("id = ?", id).
+			Where("realm_id = ?", r.ID).
+			First(&signingKey).
+			Error; err != nil {
+			if IsNotFound(err) {
+				return nil
+			}
+			return fmt.Errorf("failed to load signing key: %w", err)
+		}
+
+		if signingKey.Active {
+			return fmt.Errorf("cannot destroy active signing key")
+		}
+
+		// Delete the signing key from the key manager - we want to do this in the
+		// transaction so, if it fails, we can rollback and try again.
+		if err := manager.DestroyKeyVersion(ctx, signingKey.KeyID); err != nil {
+			return fmt.Errorf("failed to destroy signing key in key manager: %w", err)
+		}
+
+		// Successfully deleted from the key manager, now remove the record.
+		if err := tx.Delete(&signingKey).Error; err != nil {
+			return fmt.Errorf("successfully destroyed signing key in key manager, "+
+				"but failed to delete signing key from database: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to destroy signing key version: %w", err)
+	}
+
+	return nil
 }
