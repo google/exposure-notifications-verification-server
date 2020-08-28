@@ -1312,8 +1312,12 @@ github.com/ultraware/funlen v0.0.2 h1:Av96YVBwwNSe4MLR7iI/BIa3VyI7/djnto/pK3Uxbd
 github.com/ultraware/funlen v0.0.2/go.mod h1:Dp4UiAus7Wdb9KUZsYWZEWiRzGuM2kXM1lPbfaF6xhA=
 github.com/ultraware/whitespace v0.0.4 h1:If7Va4cM03mpgrNH9k49/VOicWpGoG70XPBFFODYDsg=
 github.com/ultraware/whitespace v0.0.4/go.mod h1:aVMh/gQve5Maj9hQ/hg+F75lr/X5A89uZnzAmWSineA=
+github.com/unrolled/secure v1.0.8 h1:JaMvKbe4CRt8oyxVXn+xY+6jlqd7pyJNSVkmsBxxQsM=
+github.com/unrolled/secure v1.0.8/go.mod h1:fO+mEan+FLB0CdEnHf6Q4ZZVNqG+5fuLFnP8p0BXDPI=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
+github.com/urfave/negroni v1.0.0 h1:kIimOitoypq34K7TG7DUaJ9kq/N4Ofuwi1sjz0KipXc=
+github.com/urfave/negroni v1.0.0/go.mod h1:Meg73S6kFm/4PpbYdq35yYWoCZ9mS/YSx+lKnmiohz4=
 github.com/uudashr/gocognit v0.0.0-20190926065955-1655d0de0517 h1:ChMKTho2hWKpks/nD/FL2KqM1wuVt62oJeiE8+eFpGs=
 github.com/uudashr/gocognit v0.0.0-20190926065955-1655d0de0517/go.mod h1:j44Ayx2KW4+oB6SWMv8KsmHzZrOInQav7D3cQMJ5JUM=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
