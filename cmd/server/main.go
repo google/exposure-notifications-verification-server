@@ -29,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
@@ -320,6 +321,18 @@ func realMain(ctx context.Context) error {
 		realmSub.Handle("/keys/upgrade", realmKeysController.HandleUpgrade()).Methods("POST")
 		realmSub.Handle("/keys/save", realmKeysController.HandleSave()).Methods("POST")
 		realmSub.Handle("/keys/activate", realmKeysController.HandleActivate()).Methods("POST")
+	}
+
+	// jwks
+	{
+		jwksSub := r.PathPrefix("/jwks").Subrouter()
+		jwksSub.Use(rateLimit)
+
+		jwksController, err := jwks.New(ctx, db, cacher, h)
+		if err != nil {
+			return fmt.Errorf("failed to create jwks controller: %w", err)
+		}
+		jwksSub.Handle("/{realm}", jwksController.HandleIndex()).Methods("GET")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be
