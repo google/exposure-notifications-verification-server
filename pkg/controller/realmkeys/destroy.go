@@ -18,15 +18,13 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleActivate() http.Handler {
-	type FormData struct {
-		SigningKeyID uint `form:"id"`
-	}
-
+func (c *Controller) HandleDestroy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -41,21 +39,13 @@ func (c *Controller) HandleActivate() http.Handler {
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
+		if err := realm.DestroySigningKeyVersion(ctx, c.db, vars["id"]); err != nil {
+			flash.Error("Failed to destroy signing key version: %v", err)
 			c.renderShow(ctx, w, r, realm)
 			return
 		}
 
-		kid, err := realm.SetActiveSigningKey(c.db, form.SigningKeyID)
-		if err != nil {
-			flash.Error("Unable to set active signing key: %v", err)
-			c.renderShow(ctx, w, r, realm)
-			return
-		}
-		flash.Alert("Updated active signing key to %q", kid)
-
+		flash.Alert("Successfully destroyed signing key!")
 		c.redirectShow(ctx, w, r)
 	})
 }

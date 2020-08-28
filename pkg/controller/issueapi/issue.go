@@ -15,6 +15,7 @@
 package issueapi
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -23,9 +24,56 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 )
+
+// Cache the UTC time.Location, to speed runtime.
+var utc *time.Location
+
+func init() {
+	var err error
+	utc, err = time.LoadLocation("UTC")
+	if err != nil {
+		panic("should have found UTC")
+	}
+}
+
+// validateDate validates the date given -- returning the time or an error.
+func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, error) {
+	// Check that all our dates are utc.
+	if date.Location() != utc || minDate.Location() != utc || maxDate.Location() != utc {
+		return nil, errors.New("dates weren't in UTC")
+	}
+
+	// If we're dealing with a timezone where the offset is earlier than this one,
+	// we loosen up the lower bound. We might have the following circumstance:
+	//
+	//    Server time: UTC Aug 1, 12:01 AM
+	//    Client time: UTC July 30, 11:01 PM (ie, tzOffset = -30)
+	//
+	// In this circumstance, we'll have the following:
+	//
+	//    minTime: UTC July 31, maxTime: Aug 1, clientTime: July 30.
+	//
+	// which would be an error. Loosening up the lower bound, by a day, keeps us
+	// all ok.
+	if tzOffset < 0 {
+		if m := minDate.Add(-24 * time.Hour); m.After(date) {
+			return nil, fmt.Errorf("date %v before min %v", date, m)
+		}
+	} else if minDate.After(date) {
+		return nil, fmt.Errorf("date %v before min %v", date, minDate)
+	}
+	if date.After(maxDate) {
+		return nil, fmt.Errorf("date %v after max %v", date, maxDate)
+	}
+	return &date, nil
+}
 
 func (c *Controller) HandleIssue() http.Handler {
 	logger := c.logger.Named("issueapi.HandleIssue")
@@ -35,6 +83,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
@@ -46,6 +95,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
@@ -54,6 +104,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		if authApp != nil {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				return
 			}
@@ -62,13 +113,23 @@ func (c *Controller) HandleIssue() http.Handler {
 			realm = controller.RealmFromContext(ctx)
 		}
 		if realm == nil {
+			stats.Record(ctx, c.metrics.IssueAttempts.M(1), c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			return
 		}
 
+		// Add realm so that metrics are groupable on a per-realm basis.
+		ctx, err = tag.New(ctx,
+			tag.Upsert(observability.RealmTagKey, realm.Name))
+		if err != nil {
+			logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
+		}
+		stats.Record(ctx, c.metrics.IssueAttempts.M(1))
+
 		// Validate that the request with the provided test type is valid for this
 		// realm.
 		if !realm.ValidTestType(request.TestType) {
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("unsupported test type: %v", request.TestType))
 			return
@@ -80,41 +141,48 @@ func (c *Controller) HandleIssue() http.Handler {
 			smsProvider, err = realm.SMSProvider(c.db)
 			if err != nil {
 				logger.Errorw("failed to get sms provider", "error", err)
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
 				return
 			}
 			if smsProvider == nil {
 				err := fmt.Errorf("phone provided, but no sms provider is configured")
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+				return
 			}
 		}
 
 		// Verify the test type
 		request.TestType = strings.ToLower(request.TestType)
 		if _, ok := c.validTestType[request.TestType]; !ok {
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid test type"))
 			return
 		}
 
-		// Max date is today (local time) and min date is AllowedTestAge ago, truncated.
-		maxDate := time.Now().Local()
-		minDate := maxDate.Add(-1 * c.config.GetAllowedSymptomAge()).Truncate(24 * time.Hour)
-
 		var symptomDate *time.Time
 		if request.SymptomDate != "" {
 			if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process symptom onset date: %v", err))
 				return
 			} else {
-				parsed = parsed.Local()
-				if minDate.After(parsed) || parsed.After(maxDate) {
-					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v",
+				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+				maxDate := time.Now().UTC().Truncate(24 * time.Hour)
+				minDate := maxDate.Add(-1 * c.config.GetAllowedSymptomAge()).Truncate(24 * time.Hour)
+
+				symptomDate, err = validateDate(parsed, minDate, maxDate, request.TZOffset)
+				if err != nil {
+					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v %v",
 						minDate.Format("2006-01-02"),
-						maxDate.Format("2006-01-02"))
+						maxDate.Format("2006-01-02"),
+						parsed.Format("2006-01-02"),
+					)
+					stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 					return
 				}
-				symptomDate = &parsed
 			}
 		}
 
@@ -145,6 +213,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			return
 		}
@@ -159,11 +228,14 @@ func (c *Controller) HandleIssue() http.Handler {
 				}
 
 				logger.Errorw("failed to send sms", "error", err)
+				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1), c.metrics.SMSSendErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 				return
 			}
+			stats.Record(ctx, c.metrics.SMSSent.M(1))
 		}
 
+		stats.Record(ctx, c.metrics.CodesIssued.M(1))
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
 				UUID:                   uuid,

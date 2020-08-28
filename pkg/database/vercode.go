@@ -117,7 +117,7 @@ func (v *VerificationCode) FormatSymptomDate() string {
 }
 
 // IsCodeExpired checks to see if the actual code provides is the
-// short or long code and deteriminies if it is expired based on that.
+// short or long code and determines if it is expired based on that.
 func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error) {
 	// it's possible that this could be called with the already HMACd version.
 	hmacedCode, err := db.hmacVerificationCode(code)
@@ -190,6 +190,33 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, error) {
 	var vc VerificationCode
 	if err := db.db.Where("uuid = ?", uuid).Find(&vc).Error; err != nil {
+		return nil, err
+	}
+	return &vc, nil
+}
+
+// ExpireCode saves a verification code as expired.
+func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
+	var vc VerificationCode
+	err := db.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where("uuid = ?", uuid).
+			Find(&vc).Error; err != nil {
+			return err
+		}
+		if vc.IsExpired() {
+			return errors.New("code already expired")
+		}
+		if vc.Claimed {
+			return errors.New("code already caimed")
+		}
+
+		vc.ExpiresAt = time.Now()
+		vc.LongExpiresAt = vc.ExpiresAt
+		return tx.Save(&vc).Error
+	})
+	if err != nil {
 		return nil, err
 	}
 	return &vc, nil

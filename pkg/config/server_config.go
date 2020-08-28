@@ -36,7 +36,7 @@ type ServerConfig struct {
 	Firebase      FirebaseConfig
 	Database      database.Config
 	Observability observability.Config
-	Cache         cache.Config `env:",prefix=CACHE_"`
+	Cache         cache.Config
 
 	Port string `env:"PORT,default=8080"`
 
@@ -64,7 +64,7 @@ type ServerConfig struct {
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
 	// Certificate signing key settings, needed for public key / settings display.
-	VerificationSettings CertificateSigningConfig
+	CertificateSigning CertificateSigningConfig
 
 	// If Dev mode is true, cookies aren't required to be sent over secure channels.
 	// This includes CSRF protection base cookie. You want this false in production (the default).

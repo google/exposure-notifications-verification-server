@@ -145,7 +145,7 @@ resource "google_cloud_run_service" "server" {
             local.database_config,
             local.firebase_config,
             local.gcp_config,
-            local.redis_config,
+            local.rate_limit_config,
             local.session_config,
             local.signing_config,
 

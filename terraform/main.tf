@@ -164,11 +164,15 @@ export FIREBASE_MESSAGE_SENDER_ID="${data.google_firebase_web_app_config.default
 export FIREBASE_PROJECT_ID="${google_firebase_web_app.default.project}"
 export FIREBASE_STORAGE_BUCKET="${data.google_firebase_web_app_config.default.storage_bucket}"
 
+export CACHE_TYPE="REDIS"
+export CACHE_REDIS_HOST="${google_redis_instance.cache.host}"
+export CACHE_REDIS_PORT="${google_redis_instance.cache.port}"
+
 export RATE_LIMIT_TYPE="REDIS"
 export RATE_LIMIT_TOKENS="60"
 export RATE_LIMIT_INTERVAL="1m"
-export REDIS_HOST="${google_redis_instance.cache.host}"
-export REDIS_PORT="${google_redis_instance.cache.port}"
+export RATE_LIMIT_REDIS_HOST="${google_redis_instance.cache.host}"
+export RATE_LIMIT_REDIS_PORT="${google_redis_instance.cache.port}"
 
 export CERTIFICATE_SIGNING_KEY="${trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
 export TOKEN_SIGNING_KEY="${trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")}"

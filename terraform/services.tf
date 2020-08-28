@@ -26,11 +26,13 @@ locals {
   }
 
   cache_config = {
-    CACHE_TYPE          = "REDIS"
-    CACHE_REDIS_ADDRESS = "${google_redis_instance.cache.host}:${google_redis_instance.cache.port}"
+    CACHE_TYPE       = "REDIS"
+    CACHE_REDIS_HOST = google_redis_instance.cache.host
+    CACHE_REDIS_PORT = google_redis_instance.cache.port
   }
 
   database_config = {
+    DB_KEY_MANAGER                    = "GOOGLE_CLOUD_KMS"
     DB_APIKEY_DATABASE_KEY            = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
     DB_APIKEY_SIGNATURE_KEY           = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
     DB_ENCRYPTION_KEY                 = google_kms_crypto_key.database-encrypter.self_link
@@ -56,20 +58,21 @@ locals {
     FIREBASE_STORAGE_BUCKET    = lookup(data.google_firebase_web_app_config.default, "storage_bucket")
   }
 
-  redis_config = {
-    RATE_LIMIT_TYPE     = "REDIS"
-    RATE_LIMIT_TOKENS   = "60"
-    RATE_LIMIT_INTERVAL = "1m"
-    REDIS_HOST          = google_redis_instance.cache.host
-    REDIS_PORT          = google_redis_instance.cache.port
-    REDIS_MIN_POOL      = 32
-    REDIS_MAX_POOL      = 128
+  rate_limit_config = {
+    RATE_LIMIT_TYPE       = "REDIS"
+    RATE_LIMIT_TOKENS     = "60"
+    RATE_LIMIT_INTERVAL   = "1m"
+    RATE_LIMIT_REDIS_HOST = google_redis_instance.cache.host
+    RATE_LIMIT_REDIS_PORT = google_redis_instance.cache.port
   }
 
   signing_config = {
+    CERTIFICATE_KEY_MANAGER     = "GOOGLE_CLOUD_KMS"
     CERTIFICATE_SIGNING_KEY     = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
-    TOKEN_SIGNING_KEY           = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
     CERTIFICATE_SIGNING_KEYRING = google_kms_key_ring.verification.self_link
+
+    TOKEN_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
+    TOKEN_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
   }
 }
 

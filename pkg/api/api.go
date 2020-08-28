@@ -102,7 +102,10 @@ type IssueCodeRequest struct {
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 	TestDate    string `json:"testDate"`
 	TestType    string `json:"testType"`
-	Phone       string `json:"phone"`
+	// Offset in minutes of the user's timezone. Positive, negative, 0, or omitted
+	// (using the default of 0) are all valid. 0 is considered to be UTC.
+	TZOffset int    `json:"tzOffset"`
+	Phone    string `json:"phone"`
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
@@ -151,7 +154,29 @@ type CheckCodeStatusResponse struct {
 	// UTC seconds since epoch.
 	LongExpiresAtTimestamp int64 `json:"longExpiresAtTimestamp,omitempty"`
 
-	Error     string `json:"error"`
+	Error     string `json:"error,omitempty"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
+// ExpireCodeRequest defines the parameters to request that a code be expired now.
+// This is called by the Web frontend.
+// API is served at /api/expirecode
+type ExpireCodeRequest struct {
+	// UUID is a handle which allows the issuer to track status of the issued verification code.
+	UUID string `json:"uuid"`
+}
+
+// ExpireCodeResponse defines the response type for ExpireCodeRequest.
+type ExpireCodeResponse struct {
+	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
+
+	// LongExpiresAtTimestamp repesents the time when the long code expires, in
+	// UTC seconds since epoch.
+	LongExpiresAtTimestamp int64 `json:"longExpiresAtTimestamp,omitempty"`
+
+	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 

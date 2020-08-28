@@ -102,10 +102,14 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	// Setup signer
-	signer, err := keys.KeyManagerFor(ctx, &config.Database.Keys)
+	// Setup signers
+	tokenSigner, err := keys.KeyManagerFor(ctx, &config.TokenSigning.Keys)
 	if err != nil {
-		return fmt.Errorf("failed to crate key manager: %w", err)
+		return fmt.Errorf("failed to create token key manager: %w", err)
+	}
+	certificateSigner, err := keys.KeyManagerFor(ctx, &config.CertificateSigning.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create certificate key manager: %w", err)
 	}
 
 	// Create the router
@@ -125,6 +129,12 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
 	rateLimit := httplimiter.Handle
+
+	// Install HSTS headers in production
+	if !config.DevMode {
+		addHSTS := middleware.AddHSTS(ctx)
+		r.Use(addHSTS)
+	}
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
@@ -149,13 +159,16 @@ func realMain(ctx context.Context) error {
 	// POST /api/verify
 	verifyChaff := chaff.New()
 	defer verifyChaff.Close()
-	verifyapiController := verifyapi.New(ctx, config, db, h, signer)
+	verifyapiController, err := verifyapi.New(ctx, config, db, h, tokenSigner)
+	if err != nil {
+		return fmt.Errorf("failed to create verify api controller: %w", err)
+	}
 	r.Handle("/api/verify", handleChaff(verifyChaff, verifyapiController.HandleVerify())).Methods("POST")
 
 	// POST /api/certificate
 	certChaff := chaff.New()
 	defer certChaff.Close()
-	certapiController, err := certapi.New(ctx, config, db, h, signer)
+	certapiController, err := certapi.New(ctx, config, db, h, certificateSigner)
 	if err != nil {
 		return fmt.Errorf("failed to create certapi controller: %w", err)
 	}

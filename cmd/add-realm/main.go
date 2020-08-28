@@ -111,7 +111,7 @@ func realMain(ctx context.Context) error {
 			return fmt.Errorf("error upgrading realm to custom signing keys: %w", err)
 		}
 
-		kid, err := realm.CreateNewSigningKeyVersion(ctx, db)
+		kid, err := realm.CreateSigningKeyVersion(ctx, db)
 		if err != nil {
 			return fmt.Errorf("error creating signing keys for realm: %w", err)
 		}

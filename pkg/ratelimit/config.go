@@ -20,7 +20,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/opencensus-integrations/redigo/redis"
+	"github.com/google/exposure-notifications-verification-server/pkg/redis"
+	redigo "github.com/opencensus-integrations/redigo/redis"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-limiter/noopstore"
@@ -40,16 +41,12 @@ const (
 // Config represents rate limiting configuration
 type Config struct {
 	// Common configuration
-	Type     RateLimitType `env:"RATE_LIMIT_TYPE,default=NOOP"`
-	Tokens   uint64        `env:"RATE_LIMIT_TOKENS,default=60"`
-	Interval time.Duration `env:"RATE_LIMIT_INTERVAL,default=1m"`
+	Type     RateLimitType `env:"RATE_LIMIT_TYPE, default=NOOP"`
+	Tokens   uint64        `env:"RATE_LIMIT_TOKENS, default=60"`
+	Interval time.Duration `env:"RATE_LIMIT_INTERVAL, default=1m"`
 
 	// Redis configuration
-	RedisHost     string `env:"REDIS_HOST,default=127.0.0.1"`
-	RedisPort     string `env:"REDIS_PORT,default=6379"`
-	RedisUsername string `env:"REDIS_USERNAME"`
-	RedisPassword string `env:"REDIS_PASSWORD"`
-	RedisMaxPool  uint64 `env:"REDIS_MAX_POOL,default=64"`
+	Redis redis.Config `env:",prefix=RATE_LIMIT_"`
 }
 
 // RateLimiterFor returns the rate limiter for the given type, or an error
@@ -64,29 +61,32 @@ func RateLimiterFor(ctx context.Context, c *Config) (limiter.Store, error) {
 			Interval: c.Interval,
 		})
 	case RateLimiterTypeRedis:
-		addr := c.RedisHost + ":" + c.RedisPort
+		addr := c.Redis.Host + ":" + c.Redis.Port
 
 		config := &redisstore.Config{
 			Tokens:   c.Tokens,
 			Interval: c.Interval,
 		}
 
-		return redisstore.NewWithPool(config, &redis.Pool{
-			Dial: func() (redis.Conn, error) {
-				options := redis.TraceOptions{}
+		return redisstore.NewWithPool(config, &redigo.Pool{
+			Dial: func() (redigo.Conn, error) {
+				options := redigo.TraceOptions{}
 				// set default attributes
-				redis.WithDefaultAttributes(trace.StringAttribute("span.type", "DB"))(&options)
+				redigo.WithDefaultAttributes(trace.StringAttribute("span.type", "DB"))(&options)
 
-				return redis.DialWithContext(ctx, "tcp", addr,
-					redis.DialPassword(c.RedisPassword),
-					redis.DialTraceOptions(options),
+				return redigo.DialWithContext(ctx, "tcp", addr,
+					redigo.DialPassword(c.Redis.Password),
+					redigo.DialTraceOptions(options),
 				)
 			},
-			TestOnBorrow: func(conn redis.Conn, _ time.Time) error {
+			TestOnBorrow: func(conn redigo.Conn, _ time.Time) error {
 				_, err := conn.Do("PING")
 				return err
 			},
-			MaxActive: int(c.RedisMaxPool),
+
+			IdleTimeout: c.Redis.IdleTimeout,
+			MaxIdle:     c.Redis.MaxIdle,
+			MaxActive:   c.Redis.MaxActive,
 		})
 	}
 

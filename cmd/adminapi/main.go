@@ -117,6 +117,12 @@ func realMain(ctx context.Context) error {
 	}
 	rateLimit := httplimiter.Handle
 
+	// Install HSTS headers in production
+	if !config.DevMode {
+		addHSTS := middleware.AddHSTS(ctx)
+		r.Use(addHSTS)
+	}
+
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
 	if err != nil {
@@ -134,11 +140,15 @@ func realMain(ctx context.Context) error {
 	r.Use(requireAPIKey)
 	r.Use(rateLimit)
 
-	issueapiController := issueapi.New(ctx, config, db, h)
+	issueapiController, err := issueapi.New(ctx, config, db, h)
+	if err != nil {
+		return fmt.Errorf("issueapi.New: %w", err)
+	}
 	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")
 
 	codeStatusController := codestatus.NewAPI(ctx, config, db, h)
 	r.Handle("/api/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
+	r.Handle("/api/expirecode", codeStatusController.HandleExpireAPI()).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {

@@ -102,25 +102,15 @@
           <div class="card-body">
             <div class="form-row">
               <div class="form-group col-md-6">
-                <label for="testDate">Testing date</label>
+                <label for="testDate">Testing date (local time)</label>
                 <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
-                <small class="form-text text-muted">
-                  <strong>Recommended.</strong>
-                  This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when the test was performed.
-                  Click here to <a href="#" data-fill-target="test-date" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
-                </small>
               </div>
 
               <div class="form-group col-md-6">
-                <label for="symptomDate">Symptoms onset</label>
+                <label for="symptomDate">Symptoms onset (local time)</label>
                 <div class="input-group">
                   <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
                 </div>
-                <small class="form-text text-muted">
-                  <strong>Recommended.</strong>
-                  This is the <a href="https://www.timeanddate.com/worldclock/timezone/utc" target="_blank">UTC date</a> when symptoms began. It cannot be more than {{.maxSymptomDays}} days ago.
-                  Click here to <a href="#" data-fill-target="symptom-date" data-fill-value="{{.maxDate}}">use today's UTC date</a>.
-                </small>
               </div>
             </div>
           </div>
@@ -274,6 +264,7 @@
         $($form.serializeArray()).each(function(i, obj) {
           data[obj.name] = obj.value
         });
+        data.tzOffset = new Date().getTimezoneOffset();
 
         getCode(data);
       });

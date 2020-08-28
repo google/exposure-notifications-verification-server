@@ -106,7 +106,7 @@ resource "google_cloud_run_service" "adminapi" {
             local.cache_config,
             local.database_config,
             local.gcp_config,
-            local.redis_config,
+            local.rate_limit_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "adminapi", {}),

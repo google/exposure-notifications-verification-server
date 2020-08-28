@@ -34,12 +34,12 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	if c.db.SupportsPerRealmSigning() {
-		c.logger.Infof("listing signing keys")
 		keys, err := realm.ListSigningKeys(c.db)
-		c.logger.Infow("list result", "error", err, "keys", keys)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
+
 		m["realmKeys"] = keys
 
 		publicKeys := make(map[string]string)
@@ -67,22 +67,25 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		m["publicKeys"] = publicKeys
 	}
 
+	// Fallback to the system signing keys and present them in the UI.
 	if !realm.UseRealmCertificateKey {
-		// load the system information.
-		m["certIssuer"] = c.config.VerificationSettings.CertificateIssuer
-		m["certAudience"] = c.config.VerificationSettings.CertificateAudience
-		m["certDuration"] = c.config.VerificationSettings.CertificateDuration
-		m["certKeyID"] = c.config.VerificationSettings.CertificateSigningKeyID
+		signing := c.config.CertificateSigning
+
+		m["systemCertIssuer"] = signing.CertificateIssuer
+		m["systemCertAudience"] = signing.CertificateAudience
+		m["systemCertDuration"] = signing.CertificateDuration
+		m["systemCertKeyID"] = signing.CertificateSigningKeyID
+
 		// Download and PEM encode the public key.
-		publicKey, err := c.publicKeyCache.GetPublicKey(ctx, c.config.VerificationSettings.CertificateSigningKey, c.db.KeyManager())
+		publicKey, err := c.publicKeyCache.GetPublicKey(ctx, signing.CertificateSigningKey, c.systemCertificateKeyManager)
 		if err != nil {
-			m["certPublicKeyError"] = fmt.Sprintf("Error loading public key: %v", err)
+			m["systemCertPublicKeyError"] = fmt.Sprintf("Failed to load public key: %v", err)
 		} else {
 			pem, err := keyutils.EncodePublicKey(publicKey)
 			if err != nil {
-				m["certPublicKeyError"] = err.Error()
+				m["systemCertPublicKeyError"] = fmt.Sprintf("Failed to encode public key: %v", err)
 			} else {
-				m["certPublicKey"] = pem
+				m["systemCertPublicKey"] = pem
 			}
 		}
 	}

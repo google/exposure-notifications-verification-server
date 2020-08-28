@@ -17,6 +17,7 @@ package database
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
@@ -36,13 +37,19 @@ type Config struct {
 	SSLKeyPath        string `env:"DB_SSLKEY" json:",omitempty"`
 	SSLRootCertPath   string `env:"DB_SSLROOTCERT" json:",omitempty"`
 
+	// MaxConnectionLifetime and MaxConnectionIdleTime determine the connection
+	// configuration. Note that MaxConnectionIdleTime must be less than
+	// MaxConnectionLifetime.
+	MaxConnectionLifetime time.Duration `env:"DB_MAX_CONN_LIFETIME, default=5m" json:",omitempty"`
+	MaxConnectionIdleTime time.Duration `env:"DB_MAX_CONN_IDLE_TIME, default=1m" json:",omitempty"`
+
 	// Debug is a boolean that indicates whether the database should log SQL
 	// commands.
 	Debug bool `env:"DB_DEBUG,default=false"`
 
 	// Keys is the key management configuration. This is used to resolve values
 	// that are encrypted via a KMS.
-	Keys keys.Config
+	Keys keys.Config `env:",prefix=DB_"`
 
 	// The KMS managed KeyRing that per-realm certificate signing keys are
 	// created on.

@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
@@ -27,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/jinzhu/gorm"
+	"github.com/sethvargo/go-retry"
 	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
@@ -42,9 +44,9 @@ type Database struct {
 	// keyManager is used to encrypt/decrypt values.
 	keyManager keys.KeyManager
 
-	// if the key manager is capable of managing per-realm signing keys
-	// this will also be set.
-	signingKeyManager keys.SigningKeyManagement
+	// signingKeyManager is an optional interface that's implemented to support
+	// per-realm signing keys. This could be nil.
+	signingKeyManager keys.SigningKeyManager
 
 	// logger is the internal logger.
 	logger *zap.SugaredLogger
@@ -80,11 +82,11 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		return nil, fmt.Errorf("failed to create key manager: %w", err)
 	}
 
-	var signingKeyManager keys.SigningKeyManagement
-	signingKeyManager, ok := keyManager.(keys.SigningKeyManagement)
+	var signingKeyManager keys.SigningKeyManager
+	signingKeyManager, ok := keyManager.(keys.SigningKeyManager)
 	if !ok {
 		signingKeyManager = nil
-		logger.Errorf("key manager does not support the keys.SigningKeyManagement interface, falling back to single verification signing key")
+		logger.Errorf("key manager does not support the SigningKeyManager interface, falling back to single verification signing key")
 	}
 
 	// If the key manager is in-memory, accept the key as a base64-encoded
@@ -125,10 +127,32 @@ func (db *Database) Open(ctx context.Context) error {
 func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
 	c := db.config
 
-	rawDB, err := gorm.Open("postgres", c.ConnectionString())
+	// Establish a connection to the database.
+	b, err := retry.NewFibonacci(250 * time.Millisecond)
 	if err != nil {
-		return fmt.Errorf("database gorm.Open: %w", err)
+		return fmt.Errorf("failed to configure database backoff: %w", err)
 	}
+	b = retry.WithMaxRetries(10, b)
+	b = retry.WithCappedDuration(2*time.Second, b)
+
+	var rawDB *gorm.DB
+	if err := retry.Do(ctx, b, func(ctx context.Context) error {
+		var err error
+		rawDB, err = gorm.Open("postgres", c.ConnectionString())
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	if rawDB == nil {
+		return fmt.Errorf("failed to create database connection")
+	}
+
+	// Set connection configuration.
+	rawDB.DB().SetConnMaxLifetime(c.MaxConnectionLifetime)
+	rawDB.DB().SetConnMaxIdleTime(c.MaxConnectionIdleTime)
 
 	// Log SQL statements in debug mode.
 	if c.Debug {

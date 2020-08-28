@@ -113,7 +113,7 @@ resource "google_cloud_run_service" "apiserver" {
             local.database_config,
             local.firebase_config,
             local.gcp_config,
-            local.redis_config,
+            local.rate_limit_config,
             local.signing_config,
 
             // This MUST come last to allow overrides!
