@@ -57,14 +57,3 @@ func NewE2ERunnerConfig(ctx context.Context) (*E2ERunnerConfig, error) {
 func (c *E2ERunnerConfig) Validate() error {
 	return nil
 }
-
-func (c *E2ERunnerConfig) ToEnv() []string {
-	return []string{
-		"VERIFICATION_ADMIN_API=" + c.VerificationAdminAPIServer,
-		"VERIFICATION_ADMIN_API_KEY=" + c.VerificationAdminAPIKey,
-		"VERIFICATION_SERVER_API=" + c.VerificationAPIServer,
-		"VERIFICATION_SERVER_API_KEY=" + c.VerificationAPIServerKey,
-		"KEY_SERVER=" + c.KeyServer,
-		"HEALTH_AUTHORITY_CODE=" + c.HealthAuthorityCode,
-	}
-}
