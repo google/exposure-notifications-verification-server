@@ -80,10 +80,11 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 		} else if code.Error != "" {
 			return fmt.Errorf("issue API Error: %+v", code)
 		}
-		if config.Verbose {
-			logger.Infof("Code Request: %+v", codeRequest)
-			logger.Infof("Code Response: %+v", code)
-		}
+
+		logger.Debugw("Issue Code",
+			"request", codeRequest,
+			"response", code,
+		)
 
 		// Get the verification token
 		logger.Infof("Verifying code and getting token")
@@ -93,10 +94,10 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 		} else if token.Error != "" {
 			return fmt.Errorf("verification API Error %+v", token)
 		}
-		if config.Verbose {
-			logger.Infof("Token Request: %+v", tokenRequest)
-			logger.Infof("Token Response: %+v", token)
-		}
+		logger.Debugw("getting token",
+			"request", tokenRequest,
+			"response", token,
+		)
 
 		logger.Infof("Check code status")
 		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
@@ -105,10 +106,10 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 		} else if codeStatus.Error != "" {
 			return fmt.Errorf("check code status Error: %+v", codeStatus)
 		}
-		if config.Verbose {
-			logger.Infof("Code Status Request: %+v", statusReq)
-			logger.Infof("Code Status Response: %+v", codeStatus)
-		}
+		logger.Debugw("check code status",
+			"request", statusReq,
+			"response", codeStatus,
+		)
 		if !codeStatus.Claimed {
 			return fmt.Errorf("expected claimed OTP code for %s", statusReq.UUID)
 		}
@@ -127,10 +128,10 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 		} else if certificate.Error != "" {
 			return fmt.Errorf("certificate API Error: %+v", certificate)
 		}
-		if config.Verbose {
-			logger.Infof("Certificate Request: %+v", certRequest)
-			logger.Infof("Certificate Response: %+v", certificate)
-		}
+		logger.Debugw("get certificate",
+			"request", certRequest,
+			"response", certificate,
+		)
 
 		// Upload the TEKs
 		publish := verifyapi.Publish{
@@ -147,18 +148,18 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 		client := &http.Client{
 			Timeout: timeout,
 		}
-		if config.Verbose {
-			logger.Infof("Publish request: %+v", publish)
-		}
+		logger.Debugw("publish",
+			"request", publish,
+		)
 		if err := jsonclient.MakeRequest(ctx, client, config.KeyServer, http.Header{}, &publish, &response); err != nil {
 			return fmt.Errorf("error publishing teks: %w", err)
 		} else if response.ErrorMessage != "" {
 			return fmt.Errorf("publish API error: %+v", response)
 		}
 		logger.Infof("Inserted %v exposures", response.InsertedExposures)
-		if config.Verbose {
-			logger.Infof("Publish response: %+v", response)
-		}
+		logger.Debugw("publish",
+			"response", response,
+		)
 
 		if config.DoRevise {
 			testType = "confirmed"

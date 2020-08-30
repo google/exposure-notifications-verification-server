@@ -41,7 +41,6 @@ type E2ERunnerConfig struct {
 
 	// e2e-test config
 	DoRevise bool
-	Verbose  bool
 }
 
 // NewE2ERunnerConfig returns the environment config for the e2e-runner server.
