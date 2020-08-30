@@ -17,23 +17,87 @@
 #
 
 substitutions:
-  _PERCENTAGE: '100'
+  _PERCENTAGE:
   _REGION:
-  _REVISION: 'LATEST'
-  _SERVICE:
+  _REVISION:
 
 steps:
-- id: 'export'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:303.0.0-alpine'
+#
+# adminapi
+#
+- id: 'deploy-adminapi'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
   - 'pipefail'
   - '-c'
   - |-
-    gcloud run services update-traffic ${_SERVICE} \
+    gcloud run services update-traffic "adminapi" \
       --quiet \
       --project "${PROJECT_ID}" \
       --platform "managed" \
       --region "${_REGION}" \
       --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
+# apiserver
+#
+- id: 'deploy-apiserver'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "apiserver" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
+# cleanup
+#
+- id: 'deploy-cleanup'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "cleanup" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
+# server
+#
+- id: 'deploy-server'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "server" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'

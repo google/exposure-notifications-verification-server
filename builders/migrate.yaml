@@ -19,28 +19,31 @@
 substitutions:
   _DB_APIKEY_DATABASE_KEY:
   _DB_APIKEY_SIGNATURE_KEY:
-  _DB_CONN:
-  _DB_DEBUG: 'false'
+  _DB_DEBUG:
   _DB_ENCRYPTION_KEY:
-  _DB_HOST: 'localhost'
-  _DB_NAME: 'verification'
+  _DB_HOST:
+  _DB_INSTANCE:
+  _DB_NAME:
   _DB_PASSWORD:
-  _DB_PORT: '5432'
-  _DB_SSLMODE: 'disable'
-  _DB_USER: 'verification'
+  _DB_PORT:
+  _DB_SSLMODE:
+  _DB_USER:
   _DB_VERIFICATION_CODE_DATABASE_KEY:
-  _KEY_MANAGER: 'GOOGLE_CLOUD_KMS'
-  _LOG_DEBUG: 'false'
+  _KEY_MANAGER:
+  _LOG_DEBUG:
+  _REPO: 'github.com/google/exposure-notifications-verification-server'
+  _TAG:
 
 steps:
 - id: 'migrate'
-  name: 'golang:1.15'
+  name: 'gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
   env:
   - 'DB_APIKEY_DATABASE_KEY=${_DB_APIKEY_DATABASE_KEY}'
   - 'DB_APIKEY_SIGNATURE_KEY=${_DB_APIKEY_SIGNATURE_KEY}'
   - 'DB_DEBUG=${_DB_DEBUG}'
   - 'DB_ENCRYPTION_KEY=${_DB_ENCRYPTION_KEY}'
   - 'DB_HOST=${_DB_HOST}'
+  - 'DB_INSTANCE=${_DB_INSTANCE}'
   - 'DB_NAME=${_DB_NAME}'
   - 'DB_PASSWORD=${_DB_PASSWORD}'
   - 'DB_PORT=${_DB_PORT}'
@@ -49,17 +52,3 @@ steps:
   - 'DB_VERIFICATION_CODE_DATABASE_KEY=${_DB_VERIFICATION_CODE_DATABASE_KEY}'
   - 'KEY_MANAGER=${_KEY_MANAGER}'
   - 'LOG_DEBUG=${_LOG_DEBUG}'
-  entrypoint: '/bin/bash'
-  args:
-  - '-eEuo'
-  - 'pipefail'
-  - '-c'
-  - |-
-    echo "==> Configuring proxy"
-    wget -q https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O /bin/cloud_sql_proxy
-    chmod +x /bin/cloud_sql_proxy
-    /bin/cloud_sql_proxy -quiet -instances=${_DB_CONN}=tcp:${_DB_PORT} &
-    sleep 5
-
-    echo "==> Running migrations"
-    go run cmd/migrate/main.go
