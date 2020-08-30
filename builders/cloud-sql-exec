@@ -18,8 +18,8 @@ set -eEuo pipefail
 
 DB_PORT=${DB_PORT:-5432}
 
-if [ -z "${DB_INSTANCE:-}" ]; then
-  echo "missing DB_INSTANCE"
+if [ -z "${DB_CONN:-}" ]; then
+  echo "missing DB_CONN"
   exit 1
 fi
 
@@ -31,7 +31,7 @@ function cleanup {
 }
 
 echo "==> Staring Cloud SQL Proxy"
-/cloud_sql_proxy -instances=${DB_INSTANCE}=tcp:${DB_PORT} &
+/cloud_sql_proxy -instances=${DB_CONN}=tcp:${DB_PORT} &
 CLOUD_SQL_PID=$!
 trap cleanup EXIT
 
