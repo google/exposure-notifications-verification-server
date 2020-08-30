@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/server"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -84,12 +85,12 @@ func realMain(ctx context.Context) error {
 	realm, err := db.FindRealmByName(realmName)
 	if err != nil {
 		if !database.IsNotFound(err) {
-			return fmt.Errorf("error when finding the realm: %w", err)
+			return fmt.Errorf("error when finding the realm %q: %w", realmName, err)
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
 		if err := db.SaveRealm(realm); err != nil {
-			return fmt.Errorf("failed to create realm: %w: %v", err, realm.ErrorMessages())
+			return fmt.Errorf("failed to create realm %+v: %w: %v", realm, err, realm.ErrorMessages())
 		}
 	}
 
