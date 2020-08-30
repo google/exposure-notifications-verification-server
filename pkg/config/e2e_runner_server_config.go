@@ -17,13 +17,15 @@ package config
 import (
 	"context"
 
+	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/sethvargo/go-envconfig"
 )
 
 // E2ERunnerConfig represents the environment based configuration for the e2e-runner server.
 type E2ERunnerConfig struct {
-	Database database.Config
+	Database      database.Config
+	Observability *observability.Config
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
