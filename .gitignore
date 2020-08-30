@@ -8,21 +8,6 @@
 # Test binary, built with `go test -c`
 *.test
 
-# Local built binaries, built with `go build .` in the folder.
-cmd/add-realm/add-realm
-cmd/add-users/add-users
-cmd/adminapi/adminapi
-cmd/apiserver/apiserver
-cmd/cleanup/cleanup
-cmd/e2e-runner/e2e-runner
-cmd/get-certificate/get-certificate
-cmd/get-code/get-code
-cmd/get-token/get-token
-cmd/migrate/migrate
-cmd/server/server
-tools/gen-secret/gen-secret
-tools/seed/seed
-
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
@@ -35,6 +20,7 @@ tools/seed/seed
 *.tfvars
 terraform/state.tf
 
-# Testing things
+# Local things
+bin/
 local/
 .env
