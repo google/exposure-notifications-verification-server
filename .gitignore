@@ -14,12 +14,12 @@ cmd/add-users/add-users
 cmd/adminapi/adminapi
 cmd/apiserver/apiserver
 cmd/cleanup/cleanup
+cmd/e2e-runner/e2e-runner
 cmd/get-certificate/get-certificate
 cmd/get-code/get-code
 cmd/get-token/get-token
 cmd/migrate/migrate
 cmd/server/server
-tools/e2e-test/e2e-test
 tools/gen-secret/gen-secret
 tools/seed/seed
 
