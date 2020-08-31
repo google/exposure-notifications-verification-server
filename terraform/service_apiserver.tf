@@ -173,6 +173,12 @@ resource "google_cloud_run_domain_mapping" "apiserver" {
     route_name     = google_cloud_run_service.apiserver.name
     force_override = true
   }
+
+  lifecycle {
+    ignore_changes = [
+      spec[0].force_override
+    ]
+  }
 }
 
 resource "google_cloud_run_service_iam_member" "apiserver-public" {
