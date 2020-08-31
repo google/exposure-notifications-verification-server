@@ -1,0 +1,53 @@
+{{define "admin/realms"}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Realms</h1>
+    <p>
+       These are the currently available realms. You can also <a href="/admin/realms/create">create a new realm</a>.
+    </p>
+    
+    {{if .realms}}
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col" width="25">Region Code</th>
+            <th scope="col" width="50">Signing Key</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{range .realms}}
+          <tr>
+              <td>{{.Name}}</td>
+              <td>{{.RegionCode}}</td>
+              <td>
+                  {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
+              </td>
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="text-center">
+      <em>There are no realms.</em>
+    </p>
+    {{end}}
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

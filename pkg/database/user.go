@@ -35,6 +35,11 @@ type User struct {
 	AdminRealms     []*Realm `gorm:"many2many:admin_realms"`
 }
 
+// CacheKey returns the key for this user in the distributed cache.
+func (u *User) CacheKey() string {
+	return fmt.Sprintf("users:by_email:%s", u.Email)
+}
+
 // BeforeSave runs validations. If there are errors, the save fails.
 func (u *User) BeforeSave(tx *gorm.DB) error {
 	u.Email = strings.TrimSpace(u.Email)
