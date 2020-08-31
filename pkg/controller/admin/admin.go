@@ -37,7 +37,7 @@ type Controller struct {
 }
 
 func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
+	logger := logging.FromContext(ctx).Named("admin")
 
 	return &Controller{
 		config: config,

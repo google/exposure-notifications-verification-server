@@ -102,5 +102,6 @@ func (c *Controller) HandleCreateRealm() http.Handler {
 func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["realm"] = realm
+	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	c.h.RenderHTML(w, "admin/newrealm", m)
 }
