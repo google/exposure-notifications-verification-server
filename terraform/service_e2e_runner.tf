@@ -90,7 +90,7 @@ resource "google_cloud_run_service" "e2e-runner" {
       service_account_name = google_service_account.e2e-runner.email
 
       containers {
-        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cmd/e2e-runner:initial"
+        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/e2e-runner:initial"
 
         resources {
           limits = {
