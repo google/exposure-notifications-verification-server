@@ -222,5 +222,6 @@ images:
 - 'gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}'
+- 'gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'
