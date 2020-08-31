@@ -51,6 +51,7 @@ resource "google_project_service" "services" {
     "servicenetworking.googleapis.com",
     "sql-component.googleapis.com",
     "sqladmin.googleapis.com",
+    "storage.googleapis.com",
     "vpcaccess.googleapis.com",
   ])
   service            = each.value
@@ -108,6 +109,7 @@ resource "null_resource" "build" {
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
+    google_storage_bucket_iam_member.cloudbuild-cache,
   ]
 }
 

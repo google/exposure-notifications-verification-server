@@ -15,24 +15,212 @@
 #
 # Builds a container image.
 #
+options:
+  # N1_HIGHCPU_32 builds faster, but takes much longer to provision.
+  machineType: 'N1_HIGHCPU_8'
+  env:
+  - 'GOPATH=/go'
+  - 'GO111MODULE=on'
+  - 'GOPROXY=https://proxy.golang.org,direct'
+  - 'CGO_ENABLED=0'
+  - 'GOOS=linux'
+  - 'GOARCH=amd64'
+  volumes:
+  - name: 'go-modules'
+    path: '/go/pkg'
 
 substitutions:
-  _SERVICE:
+  _REPO: 'github.com/google/exposure-notifications-verification-server'
   _TAG:
 
 steps:
-- id: 'build'
-  name: 'registry.hub.docker.com/library/docker:18'
-  args: [
-    'build',
-    '--tag', 'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${_SERVICE}:${_TAG}',
-    '--build-arg', 'SERVICE=${_SERVICE}',
-    '.',
-  ]
+- id: 'restore-cache'
+  name: 'us-docker.pkg.dev/vargolabs/gcs-cacher/gcs-cacher:0.1'
+  args:
+  - '-bucket=${PROJECT_ID}-cloudbuild-cache'
+  - '-restore=go-{{ hashGlob "go.mod" }}'
+  - '-restore=go-'
+  - '-dir=/go/pkg'
+  - '-allow-failure'
 
-- id: 'publish'
-  name: 'registry.hub.docker.com/library/docker:18'
-  args: [
-    'push',
-    'gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${_SERVICE}:${_TAG}',
-  ]
+- id: 'download-modules'
+  name: 'golang:1.15'
+  args:
+  - 'go'
+  - 'mod'
+  - 'download'
+  - '-x'
+  waitFor:
+  - 'restore-cache'
+
+- id: 'save-cache'
+  name: 'us-docker.pkg.dev/vargolabs/gcs-cacher/gcs-cacher:0.1'
+  args:
+  - '-bucket=${PROJECT_ID}-cloudbuild-cache'
+  - '-cache=go-{{ hashGlob "go.mod" }}'
+  - '-dir=/go/pkg'
+  waitFor:
+  - 'download-modules'
+
+#
+# adminapi
+#
+- id: 'build-adminapi'
+  name: 'golang:1.15'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/adminapi'
+  - './cmd/adminapi'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-adminapi'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG}'
+  - '--build-arg=SERVICE=adminapi'
+  - '.'
+  waitFor:
+  - 'build-adminapi'
+
+#
+# apiserver
+#
+- id: 'build-apiserver'
+  name: 'golang:1.15'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/apiserver'
+  - './cmd/apiserver'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-apiserver'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}'
+  - '--build-arg=SERVICE=apiserver'
+  - '.'
+  waitFor:
+  - 'build-apiserver'
+
+#
+# cleanup
+#
+- id: 'build-cleanup'
+  name: 'golang:1.15'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/cleanup'
+  - './cmd/cleanup'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-cleanup'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}'
+  - '--build-arg=SERVICE=cleanup'
+  - '.'
+  waitFor:
+  - 'build-cleanup'
+
+#
+# e2e-runner
+#
+- id: 'build-e2e-runner'
+  name: 'golang:1.15'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/e2e-runner'
+  - './cmd/e2e-runner'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-e2e-runner'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}'
+  - '--build-arg=SERVICE=e2e-runner'
+  - '.'
+  waitFor:
+  - 'build-e2e-runner'
+
+#
+# migrate
+#
+- id: 'build-migrate'
+  name: 'golang:1.15'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/migrate'
+  - './cmd/migrate'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-migrate'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/migrate.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
+  - '--build-arg=SERVICE=migrate'
+  - '.'
+  waitFor:
+  - 'build-migrate'
+
+#
+# server
+#
+- id: 'build-server'
+  name: 'golang:1.15'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/server'
+  - './cmd/server'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-server'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'
+  - '--build-arg=SERVICE=server'
+  - '.'
+  waitFor:
+  - 'build-server'
+
+images:
+- 'gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG}'
+- 'gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}'
+- 'gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}'
+- 'gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
+- 'gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'

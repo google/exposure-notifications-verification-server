@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 
@@ -33,14 +34,10 @@ func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig)
 			ctx := r.Context()
 
 			m := controller.TemplateMapFromContext(ctx)
-
-			// Set initial variables if they are not set.
-			if _, ok := m["server"]; !ok {
-				m["server"] = config.ServerName
-			}
-			if _, ok := m["title"]; !ok {
-				m["title"] = config.ServerName
-			}
+			m["server"] = config.ServerName
+			m["title"] = config.ServerName
+			m["build_id"] = buildinfo.BuildID
+			m["build_tag"] = buildinfo.BuildTag
 
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)
