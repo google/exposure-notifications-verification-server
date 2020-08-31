@@ -83,6 +83,26 @@ steps:
   - '-'
 
 #
+# e2e-runner
+#
+- id: 'deploy-e2e-runner'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "e2e-runner" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
 # server
 #
 - id: 'deploy-server'

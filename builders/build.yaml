@@ -141,6 +141,32 @@ steps:
   - 'build-cleanup'
 
 #
+# e2e-runner
+#
+- id: 'build-e2e-runner'
+  name: 'golang:1.15'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/e2e-runner'
+  - './cmd/e2e-runner'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-e2e-runner'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}'
+  - '--build-arg=SERVICE=e2e-runner'
+  - '.'
+  waitFor:
+  - 'build-e2e-runner'
+
+#
 # migrate
 #
 - id: 'build-migrate'
