@@ -313,6 +313,8 @@ func realMain(ctx context.Context) error {
 		realmadminController := realmadmin.New(ctx, config, db, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
+		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
+		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
 
 		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, h)
 		if err != nil {

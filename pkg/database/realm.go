@@ -44,11 +44,12 @@ const (
 	maxCodeDuration     = time.Hour
 	maxLongCodeDuration = 24 * time.Hour
 
-	SMSRegion      = "[region]"
-	SMSCode        = "[code]"
-	SMSExpires     = "[expires]"
-	SMSLongCode    = "[longcode]"
-	SMSLongExpires = "[longexpires]"
+	SMSRegion        = "[region]"
+	SMSCode          = "[code]"
+	SMSExpires       = "[expires]"
+	SMSLongCode      = "[longcode]"
+	SMSLongExpires   = "[longexpires]"
+	SMSENExpressLink = "[enslink]"
 )
 
 // Realm represents a tenant in the system. Typically this corresponds to a
@@ -79,6 +80,9 @@ type Realm struct {
 	CertificateIssuer      string          `gorm:"type:varchar(150); default ''"`
 	CertificateAudience    string          `gorm:"type:varchar(150); default ''"`
 	CertificateDuration    DurationSeconds `gorm:"type:bigint; default: 900"` // 15m
+
+	// EN Express
+	EnableENExpress bool `gorm:"type:boolean; default: false"`
 
 	// These are here for gorm to setup the association. You should NOT call them
 	// directly, ever. Use the ListUsers function instead. The have to be public
@@ -127,6 +131,24 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("regionCode", "cannot be more than 10 characters")
 	}
 
+	if r.EnableENExpress {
+		if r.RegionCode == "" {
+			r.AddError("regionCode", "cannot be blank when using EN Express")
+		} else {
+			parts := strings.Split(r.RegionCode, "-")
+			if len(parts) != 2 {
+				r.AddError("regionCode", "must be formated like 'region-subregion', 2 characters dash 2 or 3 characters")
+			} else {
+				if len(parts[0]) != 2 {
+					r.AddError("regionCode", "first part must be exactly 2 characters in length")
+				}
+				if l := len(parts[1]); !(l == 2 || l == 3) {
+					r.AddError("regionCode", "second part must be exactly 2 or 3 characters in length")
+				}
+			}
+		}
+	}
+
 	if r.CodeLength < 6 {
 		r.AddError("codeLength", "must be at least 6")
 	}
@@ -141,9 +163,28 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("longCodeDuration", "must be no more than 24 hours")
 	}
 
-	// Check that we have exactly one of [code] or [longcode] as template substitutions.
-	if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
-		r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+	if r.EnableENExpress {
+		if !strings.Contains(r.SMSTextTemplate, SMSENExpressLink) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
+		}
+		if strings.Contains(r.SMSTextTemplate, SMSRegion) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
+		}
+		if strings.Contains(r.SMSTextTemplate, SMSCode) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSCode, SMSENExpressLink))
+		}
+		if strings.Contains(r.SMSTextTemplate, SMSExpires) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allwoed for expiration", SMSExpires, SMSLongExpires))
+		}
+		if strings.Contains(r.SMSTextTemplate, SMSLongCode) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
+		}
+
+	} else {
+		// Check that we have exactly one of [code] or [longcode] as template substitutions.
+		if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
+			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+		}
 	}
 
 	if r.UseRealmCertificateKey {
@@ -183,6 +224,7 @@ func (r *Realm) GetLongCodeDurationHours() int {
 func (r *Realm) BuildSMSText(code, longCode string) string {
 	text := r.SMSTextTemplate
 
+	text = strings.ReplaceAll(text, SMSENExpressLink, fmt.Sprintf("ens://v?r=%s&c=%s", SMSRegion, SMSLongCode))
 	text = strings.ReplaceAll(text, SMSRegion, r.RegionCode)
 	text = strings.ReplaceAll(text, SMSCode, code)
 	text = strings.ReplaceAll(text, SMSExpires, fmt.Sprintf("%d", r.GetCodeDurationMinutes()))
