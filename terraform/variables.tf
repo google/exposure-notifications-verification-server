@@ -139,25 +139,25 @@ variable "redis_cache_size" {
   description = "Size of the Redis instance in GB."
 }
 
-variable "adminapi_custom_domain" {
-  type    = string
-  default = ""
+variable "adminapi_custom_domains" {
+  type    = set(string)
+  default = []
 
-  description = "Custom domain to map for adminapi. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+  description = "Custom domains to map for adminapi. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
 }
 
-variable "apiserver_custom_domain" {
-  type    = string
-  default = ""
+variable "apiserver_custom_domains" {
+  type    = set(string)
+  default = []
 
-  description = "Custom domain to map for apiserver. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+  description = "Custom domains to map for apiserver. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
 }
 
-variable "server_custom_domain" {
-  type    = string
-  default = ""
+variable "server_custom_domains" {
+  type    = set(string)
+  default = []
 
-  description = "Custom domain to map for server. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+  description = "Custom domains to map for server. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
 }
 
 variable "server-host" {

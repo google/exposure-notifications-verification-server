@@ -207,9 +207,10 @@ resource "google_compute_backend_service" "server" {
 }
 
 resource "google_cloud_run_domain_mapping" "server" {
-  count    = var.server_custom_domain != "" ? 1 : 0
+  for_each = var.server_custom_domains
+
   location = var.cloudrun_location
-  name     = var.server_custom_domain
+  name     = each.key
 
   metadata {
     namespace = var.project

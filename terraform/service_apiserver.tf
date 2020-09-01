@@ -174,9 +174,10 @@ resource "google_compute_backend_service" "apiserver" {
 }
 
 resource "google_cloud_run_domain_mapping" "apiserver" {
-  count    = var.apiserver_custom_domain != "" ? 1 : 0
+  for_each = var.apiserver_custom_domains
+
   location = var.cloudrun_location
-  name     = var.apiserver_custom_domain
+  name     = each.key
 
   metadata {
     namespace = var.project
