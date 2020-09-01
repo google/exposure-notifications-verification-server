@@ -90,7 +90,7 @@ resource "google_compute_target_https_proxy" "https" {
   ssl_certificates = [google_compute_managed_ssl_certificate.default[0].id]
 }
 
-resource "google_compute_forwarding_rule" "http" {
+resource "google_compute_global_forwarding_rule" "http" {
   count    = local.enable_lb ? 1 : 0
   provider = google-beta
   name     = "verification-server-http"
@@ -101,10 +101,9 @@ resource "google_compute_forwarding_rule" "http" {
   load_balancing_scheme = "EXTERNAL"
   port_range            = "80"
   target                = google_compute_target_http_proxy.http[0].id
-  network_tier          = "PREMIUM"
 }
 
-resource "google_compute_forwarding_rule" "https" {
+resource "google_compute_global_forwarding_rule" "https" {
   count    = local.enable_lb ? 1 : 0
   provider = google-beta
   name     = "verification-server-https"
@@ -115,7 +114,6 @@ resource "google_compute_forwarding_rule" "https" {
   load_balancing_scheme = "EXTERNAL"
   port_range            = "443"
   target                = google_compute_target_https_proxy.https[0].id
-  network_tier          = "PREMIUM"
 }
 
 resource "google_compute_managed_ssl_certificate" "default" {
