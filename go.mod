@@ -19,7 +19,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20200710164510-efbc4488d8fe // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20200620013148-b91950f658ec // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/google/exposure-notifications-server v0.5.1
+	github.com/google/exposure-notifications-server v0.6.0
 	github.com/google/go-cmp v0.5.1
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/csrf v1.7.0
@@ -29,13 +29,11 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.14.7 // indirect
-	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/lib/pq v1.8.0 // indirect
 	github.com/lstoll/awskms v0.0.0-20200603175638-a388516467f1 // indirect
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mikehelmick/go-chaff v0.3.0
-	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/onsi/ginkgo v1.13.0 // indirect
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -53,8 +51,6 @@ require (
 	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
-	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect
 	golang.org/x/sys v0.0.0-20200817155316-9781c653f443 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.0.0-20200818005847-188abfa75333
