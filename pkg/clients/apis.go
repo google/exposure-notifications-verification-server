@@ -31,7 +31,7 @@ func IssueCode(ctx context.Context, hostname string, apiKey, testType, symptomDa
 	request := api.IssueCodeRequest{
 		TestType:    testType,
 		SymptomDate: symptomDate,
-		TZOffset:    tzMinOffset,
+		TZOffset:    float32(tzMinOffset),
 	}
 	client := &http.Client{
 		Timeout: timeout,

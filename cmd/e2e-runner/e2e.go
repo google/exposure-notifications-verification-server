@@ -12,45 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command line test that exercises the verification and key server,
-// simulating a mobile device uploading TEKs.
-//
+// E2E test code that exercises the verification and key server, simulating a
+// mobile device uploading TEKs.
 //
 package main
 
 import (
 	"context"
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/util"
 	"github.com/google/exposure-notifications-server/pkg/verification"
-
-	"github.com/sethvargo/go-envconfig"
-	"github.com/sethvargo/go-signalcontext"
 )
-
-type Config struct {
-	VerificationAdminAPIServer string `env:"VERIFICATION_ADMIN_API, default=http://localhost:8081"`
-	VerificationAdminAPIKey    string `env:"VERIFICATION_ADMIN_API_KEY,required"`
-	VerificationAPIServer      string `env:"VERIFICATION_SERVER_API, default=http://localhost:8082"`
-	VerificationAPIServerKey   string `env:"VERIFICATION_SERVER_API_KEY,required"`
-	KeyServer                  string `env:"KEY_SERVER, default=http://localhost:8080"`
-	HealthAuthorityCode        string `env:"HEALTH_AUTHORITY_CODE,required"`
-
-	// Publish config
-	Region string `env:"REGION,default=US"`
-}
 
 const (
 	timeout        = 2 * time.Second
@@ -63,36 +45,12 @@ func timeToInterval(t time.Time) int32 {
 	return int32(t.UTC().Truncate(oneDay).Unix() / int64(intervalLength.Seconds()))
 }
 
-func main() {
-	ctx, done := signalcontext.OnInterrupt()
-
-	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
-	logger := logging.NewLogger(debug)
-	ctx = logging.WithLogger(ctx, logger)
-
-	err := realMain(ctx)
-	done()
-
-	if err != nil {
-		logger.Fatal(err)
-	}
-	logger.Info("successful shutdown")
-}
-
-func realMain(ctx context.Context) error {
+func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 	logger := logging.FromContext(ctx)
-	var config Config
-	if err := envconfig.ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
-		return fmt.Errorf("unable to process environment: %w", err)
-	}
-
-	doRevision := flag.Bool("revise", false, "--revise means to do a likely diagnosis and then revise to confirmed. one new key is added in between.")
-	verbose := flag.Bool("v", false, "ALL THE MESSAGES!")
-	flag.Parse()
 
 	testType := "confirmed"
 	iterations := 1
-	if *doRevision {
+	if config.DoRevise {
 		testType = "likely"
 		iterations++
 	}
@@ -122,10 +80,11 @@ func realMain(ctx context.Context) error {
 		} else if code.Error != "" {
 			return fmt.Errorf("issue API Error: %+v", code)
 		}
-		if *verbose {
-			logger.Infof("Code Request: %+v", codeRequest)
-			logger.Infof("Code Response: %+v", code)
-		}
+
+		logger.Debugw("Issue Code",
+			"request", codeRequest,
+			"response", code,
+		)
 
 		// Get the verification token
 		logger.Infof("Verifying code and getting token")
@@ -135,10 +94,10 @@ func realMain(ctx context.Context) error {
 		} else if token.Error != "" {
 			return fmt.Errorf("verification API Error %+v", token)
 		}
-		if *verbose {
-			logger.Infof("Token Request: %+v", tokenRequest)
-			logger.Infof("Token Response: %+v", token)
-		}
+		logger.Debugw("getting token",
+			"request", tokenRequest,
+			"response", token,
+		)
 
 		logger.Infof("Check code status")
 		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
@@ -147,10 +106,10 @@ func realMain(ctx context.Context) error {
 		} else if codeStatus.Error != "" {
 			return fmt.Errorf("check code status Error: %+v", codeStatus)
 		}
-		if *verbose {
-			logger.Infof("Code Status Request: %+v", statusReq)
-			logger.Infof("Code Status Response: %+v", codeStatus)
-		}
+		logger.Debugw("check code status",
+			"request", statusReq,
+			"response", codeStatus,
+		)
 		if !codeStatus.Claimed {
 			return fmt.Errorf("expected claimed OTP code for %s", statusReq.UUID)
 		}
@@ -169,10 +128,10 @@ func realMain(ctx context.Context) error {
 		} else if certificate.Error != "" {
 			return fmt.Errorf("certificate API Error: %+v", certificate)
 		}
-		if *verbose {
-			logger.Infof("Certificate Request: %+v", certRequest)
-			logger.Infof("Certificate Response: %+v", certificate)
-		}
+		logger.Debugw("get certificate",
+			"request", certRequest,
+			"response", certificate,
+		)
 
 		// Upload the TEKs
 		publish := verifyapi.Publish{
@@ -189,20 +148,20 @@ func realMain(ctx context.Context) error {
 		client := &http.Client{
 			Timeout: timeout,
 		}
-		if *verbose {
-			logger.Infof("Publish request: %+v", publish)
-		}
+		logger.Debugw("publish",
+			"request", publish,
+		)
 		if err := jsonclient.MakeRequest(ctx, client, config.KeyServer, http.Header{}, &publish, &response); err != nil {
 			return fmt.Errorf("error publishing teks: %w", err)
 		} else if response.ErrorMessage != "" {
 			return fmt.Errorf("publish API error: %+v", response)
 		}
 		logger.Infof("Inserted %v exposures", response.InsertedExposures)
-		if *verbose {
-			logger.Infof("Publish response: %+v", response)
-		}
+		logger.Debugw("publish",
+			"response", response,
+		)
 
-		if *doRevision {
+		if config.DoRevise {
 			testType = "confirmed"
 			revisionToken = response.RevisionToken
 

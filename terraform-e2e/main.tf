@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eEuo pipefail
+variable "project" {
+  type = string
+}
 
-ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
+resource "random_string" "suffix" {
+  length  = 5
+  special = false
+  number  = false
+  upper   = false
+}
 
-if [ -z "${PROJECT_ID:-}" ]; then
-  echo "✋ Missing PROJECT_ID!" >&2
-  exit 1
-fi
+module "en" {
+  source = "../terraform"
 
-SUBS="_PERCENTAGE=${PERCENTAGE:-"100"}"
-SUBS="${SUBS},_REGION=${REGION:-"us-central1"}"
-SUBS="${SUBS},_REVISION=${REVISION:-"LATEST"}"
+  project = var.project
+  database_name = "en-verification-${random_string.suffix.result}"
+  kms_key_ring_name = "verification-${random_string.suffix.result}"
 
-gcloud builds submit --no-source \
-  --project "${PROJECT_ID}" \
-  --config "${ROOT}/builders/promote.yaml" \
-  --substitutions "${SUBS}"
+  create_env_file = true
+
+  service_environment = {
+    server = {
+      FIREBASE_PRIVACY_POLICY_URL   = "TODO"
+      FIREBASE_TERMS_OF_SERVICE_URL = "TODO"
+    }
+  }
+}
+
+output "en" {
+  value = module.en
+}

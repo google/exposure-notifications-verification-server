@@ -74,6 +74,13 @@ locals {
     TOKEN_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
     TOKEN_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
   }
+
+  e2e_runner_config = {
+    HEALTH_AUTHORITY_CODE = "com.example"
+    KEY_SERVER = "https://example.com/v1/publish"
+    VERIFICATION_ADMIN_API = google_cloud_run_service.adminapi.status.0.url
+    VERIFICATION_SERVER_API = google_cloud_run_service.apiserver.status.0.url
+  }
 }
 
 output "cookie_keys" {

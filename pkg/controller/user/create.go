@@ -68,6 +68,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		// See if the user already exists by email - they may be a member of another
 		// realm.
 		user, err := c.db.FindUserByEmail(form.Email)
+		alreadyExists := true
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
@@ -75,11 +76,14 @@ func (c *Controller) HandleCreate() http.Handler {
 			}
 
 			user = new(database.User)
+			alreadyExists = false
 		}
 
-		// Build the user struct
-		user.Email = form.Email
-		user.Name = form.Name
+		// Build the user struct - keeping email and name if user already exists in another realm.
+		if !alreadyExists {
+			user.Email = form.Email
+			user.Name = form.Name
+		}
 		user.Realms = append(user.Realms, realm)
 
 		if form.Admin {

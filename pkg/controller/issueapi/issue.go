@@ -172,7 +172,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				maxDate := time.Now().UTC().Truncate(24 * time.Hour)
 				minDate := maxDate.Add(-1 * c.config.GetAllowedSymptomAge()).Truncate(24 * time.Hour)
 
-				symptomDate, err = validateDate(parsed, minDate, maxDate, request.TZOffset)
+				symptomDate, err = validateDate(parsed, minDate, maxDate, int(request.TZOffset))
 				if err != nil {
 					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v %v",
 						minDate.Format("2006-01-02"),

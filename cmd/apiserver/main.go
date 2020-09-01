@@ -24,6 +24,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -51,6 +52,9 @@ func main() {
 
 	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
 	logger := logging.NewLogger(debug)
+	logger = logger.With("build_id", buildinfo.BuildID)
+	logger = logger.With("build_tag", buildinfo.BuildTag)
+
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -130,11 +134,8 @@ func realMain(ctx context.Context) error {
 	}
 	rateLimit := httplimiter.Handle
 
-	// Install HSTS headers in production
-	if !config.DevMode {
-		addHSTS := middleware.AddHSTS(ctx)
-		r.Use(addHSTS)
-	}
+	// Install common security headers
+	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "json"))
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)

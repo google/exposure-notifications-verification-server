@@ -42,6 +42,7 @@ require (
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/prometheus/common v0.12.0 // indirect
 	github.com/prometheus/statsd_exporter v0.17.0 // indirect
+	github.com/rakutentech/jwk-go v1.0.1
 	github.com/sethvargo/go-envconfig v0.3.1
 	github.com/sethvargo/go-limiter v0.4.1
 	github.com/sethvargo/go-redisstore v0.1.2-opencensus
@@ -49,6 +50,7 @@ require (
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
+	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
