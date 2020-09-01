@@ -24,13 +24,23 @@
     {{if not $realm.EnableENExpress}}
       <div class="card mb-3">
         <div class="card-header">
-          ENX - Exposure Notifications Express
+          Exposure Notifications Express
         </div>
         <div class="card-body">
+          <p>
+            Click the button below to enable Exposure Notifications Express (EN
+            Express). You should only do this if you have confirmed
+            participation with Apple and Google.
+          </p>
+
+          <p class="text-danger">
+            This will override the settings and force the EN Express defaults.
+          </p>
+
           <form method="POST" action="/realm/settings/enable-express">
             {{ .csrfField }}
             <a href="#" class="btn btn-primary btn-block" data-confirm="Are you sure you want to enable EN Express? You should only do this if you have confirmed participation with Apple and Google." data-submit-form>Enable EN Express</a>
-          </form>          
+          </form>
         </div>
       </div>
     {{end}}
@@ -161,7 +171,7 @@
                   {{range $scm := .shortCodeMinutes}}
                   <option value="{{$scm}}" {{if (eq $scm $current)}}selected{{end}}>{{$scm}}</option>
                   {{end}}
-                </select>              
+                </select>
                 <small class="form-text text-muted">
                   The short code can be valid from anywhere between <code>5</code> and <code>60</code>
                   minutes. If you are using SMS deeplinks, it is recommended to keep this duration
@@ -188,7 +198,7 @@
                 The 'long' verification code is only delivered over SMS{{if not $realm.EnableENExpress}}, is more complex with <code>12</code> -
                 <code>16</code> alphanumeric characters, and is never shown to a human. It is recommended
                 to leave this at the default of <code>16</code> digits{{end}}.
-              </small>              
+              </small>
             </div>
           </div>
 
@@ -225,7 +235,7 @@
                 The SMS message will be constructed based on the template you provide. The overall
                 length of of the SMS message should not exceede 160 characters, or your message will need to be split
                 in transit and may not be joined correctly. There are some special strings that you can use
-                to substitute items. 
+                to substitute items.
                 {{if $realm.EnableENExpress}}
                   Your SMS template <em>MUST</em> contain <code>[enslink]</code>.
                   <ul>
@@ -341,13 +351,22 @@
     {{if $realm.EnableENExpress}}
     <div class="card mb-3">
       <div class="card-header">
-        ENX - Exposure Notifications Express
+        Exposure Notifications Express
       </div>
       <div class="card-body">
+        <p>
+          Click the button below to disable Exposure Notifications Express (EN
+          Express). This will enable you to control all the settings.
+        </p>
+
+        <p class="text-danger">
+          This could cause your iOS and Android integrations to stop working!
+        </p>
+
         <form method="POST" action="/realm/settings/disable-express">
           {{ .csrfField }}
           <a href="#" class="btn btn-danger btn-block" data-confirm="Are you sure you want to disable EN Express? This could cause your iOS and Android integrations to stop working." data-submit-form>Disable EN Express</a>
-        </form>       
+        </form>
       </div>
     </div>
   {{end}}
