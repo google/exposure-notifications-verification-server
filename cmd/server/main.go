@@ -346,7 +346,7 @@ func realMain(ctx context.Context) error {
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
-		adminController := admin.New(ctx, config, cacher, db, h)
+		adminController := admin.New(ctx, config, db, h)
 		adminSub.Handle("/realms", adminController.HandleIndex()).Methods("GET")
 		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("GET")
 		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("POST")
