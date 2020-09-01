@@ -147,8 +147,20 @@ resource "google_compute_region_network_endpoint_group" "adminapi" {
   project  = var.project
   region   = var.region
 
+  network_endpoint_type = "SERVERLESS"
+
   cloud_run {
     service = google_cloud_run_service.adminapi.name
+  }
+}
+
+resource "google_compute_backend_service" "adminapi" {
+  provider = google-beta
+  name     = "adminapi"
+  project  = var.project
+
+  backend {
+    group = google_compute_region_network_endpoint_group.adminapi.id
   }
 }
 
