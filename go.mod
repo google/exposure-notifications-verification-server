@@ -52,7 +52,6 @@ require (
 	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.15.0
-	golang.org/x/sys v0.0.0-20200831180312-196b9ba8737a // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.0.0-20200831203904-5a2aa26beb65
 	google.golang.org/genproto v0.0.0-20200831141814-d751682dd103

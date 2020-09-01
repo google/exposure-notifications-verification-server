@@ -155,6 +155,7 @@ resource "google_compute_region_network_endpoint_group" "adminapi" {
 }
 
 resource "google_compute_backend_service" "adminapi" {
+  count    = local.enable_lb ? 1 : 0
   provider = google-beta
   name     = "adminapi"
   project  = var.project
