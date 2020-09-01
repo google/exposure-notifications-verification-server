@@ -28,6 +28,7 @@ module "en" {
 
   project = var.project
   database_name = "en-verification-${random_string.suffix.result}"
+  redis_name = "verification-cache-${random_string.suffix.result}"
   kms_key_ring_name = "verification-${random_string.suffix.result}"
 
   create_env_file = true

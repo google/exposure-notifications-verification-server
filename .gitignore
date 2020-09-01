@@ -19,6 +19,7 @@
 *.terraform/
 *.tfvars
 terraform/state.tf
+terraform-e2e/state.tf
 
 # Local things
 bin/

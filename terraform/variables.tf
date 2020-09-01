@@ -66,6 +66,11 @@ variable "storage_location" {
   default = "US"
 }
 
+variable "redis_name" {
+  type = string
+  default = "verification-cache"
+}
+
 # The location for the app engine; this implicitly defines the region for
 # scheduler jobs as specified by the cloudscheduler_location variable but the
 # values are sometimes different (as in the default values) so they are kept as

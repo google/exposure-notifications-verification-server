@@ -13,7 +13,7 @@
 # limitations under the License.
 
 resource "google_redis_instance" "cache" {
-  name           = "verification-cache"
+  name           = var.redis_name
   tier           = "STANDARD_HA"
   memory_size_gb = var.redis_cache_size
 
