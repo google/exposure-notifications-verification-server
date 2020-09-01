@@ -48,7 +48,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
 			var user database.User
-			c.renderNew(ctx, w, &user)
+			c.renderNew(ctx, w, &user, false)
 			return
 		}
 
@@ -61,7 +61,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			}
 
 			flash.Error("Failed to process form: %v", err)
-			c.renderNew(ctx, w, user)
+			c.renderNew(ctx, w, user, false)
 			return
 		}
 
@@ -88,17 +88,21 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		if err := c.db.SaveUser(user); err != nil {
 			flash.Error("Failed to create user: %v", err)
-			c.renderNew(ctx, w, user)
+			c.renderNew(ctx, w, user, false)
 			return
 		}
 
 		flash.Alert("Successfully created user '%v'", form.Name)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		c.renderNew(ctx, w, user, true)
 	})
 }
 
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User) {
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, success bool) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
+	if success {
+		m["firebase"] = c.config.Firebase
+	}
+	m["created"] = success
 	c.h.RenderHTML(w, "users/new", m)
 }

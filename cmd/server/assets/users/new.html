@@ -4,8 +4,12 @@
 
 <!doctype html>
 <html lang="en">
+
 <head>
   {{template "head" .}}
+  {{if .created}}
+  {{template "firebase" .}}
+  {{end}}
 </head>
 
 <body>
@@ -28,6 +32,29 @@
   </main>
 
   {{template "scripts" .}}
+  {{if .created}}
+  <script type="text/javascript">
+    let email = {{.user.Email }};
+    let pwd = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15); // do not submit
+
+    flash("Inviting new user with: " + pwd, "success");
+
+    firebase.auth().createUserWithEmailAndPassword(email, pwd)
+      .then(function(userCredential) {
+        clearExistingFlash();
+        return firebase.auth().sendPasswordResetEmail(email);
+      }).then(function() {
+        clearExistingFlash();
+        flash("New user invite sent.", "success");
+      })
+      .catch(function(error) {
+        clearExistingFlash();
+        flash(error.message, "danger")
+        $submit.prop('disabled', false);
+      });
+  </script>
+  {{end}}
 </body>
+
 </html>
 {{end}}
