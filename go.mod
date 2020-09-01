@@ -30,13 +30,11 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.14.7 // indirect
-	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/lib/pq v1.8.0 // indirect
 	github.com/lstoll/awskms v0.0.0-20200603175638-a388516467f1 // indirect
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mikehelmick/go-chaff v0.3.0
-	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/onsi/ginkgo v1.13.0 // indirect
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/opencontainers/go-digest v1.0.0 // indirect
