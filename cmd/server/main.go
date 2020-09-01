@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
@@ -180,6 +181,7 @@ func realMain(ctx context.Context) error {
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	requireRealm := middleware.RequireRealm(ctx, cacher, db, h)
+	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
 	rateLimit := httplimiter.Handle
 
 	{
@@ -334,6 +336,20 @@ func realMain(ctx context.Context) error {
 			return fmt.Errorf("failed to create jwks controller: %w", err)
 		}
 		jwksSub.Handle("/{realm}", jwksController.HandleIndex()).Methods("GET")
+	}
+
+	// System admin.
+	{
+		adminSub := r.PathPrefix("/admin").Subrouter()
+		adminSub.Use(requireAuth)
+		adminSub.Use(requireVerified)
+		adminSub.Use(requireSystemAdmin)
+		adminSub.Use(rateLimit)
+
+		adminController := admin.New(ctx, config, db, h)
+		adminSub.Handle("/realms", adminController.HandleIndex()).Methods("GET")
+		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("GET")
+		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("POST")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be
