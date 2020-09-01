@@ -166,9 +166,10 @@ resource "google_compute_backend_service" "adminapi" {
 }
 
 resource "google_cloud_run_domain_mapping" "adminapi" {
-  count    = var.adminapi_custom_domain != "" ? 1 : 0
+  for_each = var.adminapi_custom_domains
+
   location = var.cloudrun_location
-  name     = var.adminapi_custom_domain
+  name     = each.key
 
   metadata {
     namespace = var.project
