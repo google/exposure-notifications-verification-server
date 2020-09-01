@@ -41,7 +41,7 @@ module.en.provider["registry.terraform.io/hashicorp/google"] depends on values
 that cannot be determined until apply.
 ```
 
-This can be mitigated by commenting out [project = var.project](https://github.com/google/exposure-notifications-verification-server/blob/86a05f09dabfeddbce73c9d628ec01d3738782ed/terraform/main.tf#L16), as well as [project = var.project](https://github.com/google/exposure-notifications-verification-server/blob/86a05f09dabfeddbce73c9d628ec01d3738782ed/terraform/main.tf#L23). This is similar to the issue described in https://github.com/hashicorp/terraform/issues/25816, and might be fixed in 0.13.1 release of terraform.
+This can be mitigated by updating terraform to version equal or greater than 1.13.1
 
 ## Terraform Destroy
 
