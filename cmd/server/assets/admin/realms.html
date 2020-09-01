@@ -16,25 +16,25 @@
     <p>
        These are the currently available realms. You can also <a href="/admin/realms/create">create a new realm</a>.
     </p>
-    
+
     {{if .realms}}
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
         <thead>
           <tr>
             <th scope="col">Name</th>
-            <th scope="col" width="25">Region code</th>
-            <th scope="col" width="50">Signing key</th>
+            <th scope="col" width="125">Region code</th>
+            <th scope="col" width="125">Signing key</th>
           </tr>
         </thead>
         <tbody>
         {{range .realms}}
           <tr>
-              <td>{{.Name}}</td>
-              <td>{{.RegionCode}}</td>
-              <td>
-                  {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
-              </td>
+            <td>{{.Name}}</td>
+            <td>{{.RegionCode}}</td>
+            <td>
+              {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
+            </td>
           </tr>
         {{end}}
         </tbody>
