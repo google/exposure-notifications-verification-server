@@ -38,6 +38,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmstats"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
@@ -328,6 +329,9 @@ func realMain(ctx context.Context) error {
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
+
+		realmStatsController := realmstats.New(ctx, db, h)
+		realmSub.Handle("/stats", realmStatsController.HandleIndex()).Methods("GET")
 
 		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, h)
 		if err != nil {

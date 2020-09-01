@@ -868,6 +868,31 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_mode").Error
 			},
 		},
+		{
+			ID: "00036-AddRealmStats",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding realm stats")
+				if err := tx.AutoMigrate(&RealmStats{}).Error; err != nil {
+					return err
+				}
+				statements := []string{
+					"CREATE UNIQUE INDEX IF NOT EXISTS idx_realm_stats_stats_date_realm_id ON realm_stats (date, realm_id)",
+					"CREATE INDEX IF NOT EXISTS idx_realm_stats_date ON realm_stats (date)",
+				}
+				for _, sql := range statements {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.DropTable(&RealmStats{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	})
 }
 

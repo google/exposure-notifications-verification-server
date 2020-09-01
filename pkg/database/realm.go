@@ -623,3 +623,27 @@ func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id i
 
 	return nil
 }
+
+// Stats returns the usage statistics for this realm. If no stats exist,
+// returns an empty array.
+func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error) {
+	var stats []*RealmStats
+
+	start = start.Truncate(24 * time.Hour)
+	stop = stop.Truncate(24 * time.Hour)
+
+	if err := db.db.
+		Model(&RealmStats{}).
+		Where("realm_id = ?", r.ID).
+		Where("(date >= ? AND date <= ?)", start, stop).
+		Order("date ASC").
+		Find(&stats).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+
+	return stats, nil
+}

@@ -175,23 +175,16 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			return err
 		}
 
-		if expired, err := db.IsCodeExpired(&vc, verCode); err != nil {
-			db.logger.Debugw("error checking code expiration", "error", err)
-			return ErrVerificationCodeExpired
-		} else if expired {
-			return ErrVerificationCodeExpired
-		}
-
-		if vc.Claimed {
-			return ErrVerificationCodeUsed
-		}
-
 		if _, ok := acceptTypes[vc.TestType]; !ok {
 			return ErrUnsupportedTestType
 		}
 
+		// And mark as claimed.
+		if err := vc.claim(db, tx, verCode, realmID); err != nil {
+			return err
+		}
+
 		// Mark claimed. Transactional update.
-		vc.Claimed = true
 		if err := tx.Save(&vc).Error; err != nil {
 			return err
 		}
