@@ -4,6 +4,8 @@ This directory contains terraform configuration to be used for deploying verific
 
 ## Prerequisite
 
+Terraform version > 1.13.1
+
 Follow steps from [Terrafrom instructions](https://github.com/google/exposure-notifications-verification-server/tree/main/terraform), going through from top until finishing `Instructions` section, then change into `terraform-e2e` directory:
 
 ```shell

@@ -24,12 +24,10 @@ if [[ -z "${PROJECT_ID:-}" ]]; then
 fi
 
 if [[ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-  if [[ ! -f "${HOME}/.config/gcloud/application_default_credentials.json" ]]; then
-    echo "This is local development, authenticate using gcloud"
-    gcloud auth login
-    gcloud auth application-default login
-    gcloud auth application-default set-quota-project "${PROJECT_ID}"
-  fi
+  echo "This is local development, authenticate using gcloud"
+  echo "gcloud auth login"
+  echo "gcloud auth application-default login"
+  echo "gcloud auth application-default set-quota-project "${PROJECT_ID}""
 else
   echo "GOOGLE_APPLCIATION_CREDENTIALS defined, use it for authentication."
   echo "For local development, run 'unset GOOGLE_APPLCIATION_CREDENTIALS', "
@@ -55,12 +53,20 @@ EOF
   # if this project already has it created then terraform apply will fail,
   # importing it can solve this problem
   terraform init
+  terraform get --update
   terraform import module.en.google_app_engine_application.app ${PROJECT_ID} || true
   terraform import module.en.google_firebase_project.default ${PROJECT_ID} || true
+  for networkEndpointGroups in adminapi apiserver server; do
+    terraform import module.en.google_compute_region_network_endpoint_group.${networkEndpointGroups} \
+      projects/${PROJECT_ID}/regions/us-central1/networkEndpointGroups/${networkEndpointGroups} || true
+  done
+  terraform import module.en.google_cloud_scheduler_job.cleanup-worker \
+    projects/${PROJECT_ID}/locations/us-central1/jobs/cleanup-worker || true
+
   # Terraform deployment might fail intermittently with certain cloud run 
   # services not up, retry to make it more resilient
   local failed=1
-  for i in 1 2 3; do
+  for i in 1; do
     if [[ "${failed}" == "0" ]]; then
       break
     fi
@@ -74,21 +80,22 @@ EOF
 
 function destroy() {
   pushd "${ROOT}/terraform-e2e" > /dev/null
+  terraform get --update
   local db_inst_name
-  db_inst_name="$(terraform output 'db_inst_name')"
+  db_inst_name="$(terraform output -json 'en' | jq '. | .db_inst_name' | tr -d \")"
   # DB often failed to be destroyed by terraform due to "used by other process",
   # so delete it manually
-  gcloud sql instances delete ${db_inst_name} -q --project=chao-en-e2e-exp
+  gcloud sql instances delete ${db_inst_name} -q --project=${PROJECT_ID} || true
   # Clean up states after manual DB delete
-  terraform state rm google_sql_user.user
-  terraform state rm google_sql_ssl_cert.db-cert
+  terraform state rm module.en.google_sql_user.user || true
+  terraform state rm module.en.google_sql_ssl_cert.db-cert || true
   terraform destroy -auto-approve
   popd > /dev/null
 }
 
 function smoke() {
   # Best effort destroy before applying
-  destroy 2>/dev/null || true
+  destroy || true
   deploy
   trap "destroy || true" EXIT
 }

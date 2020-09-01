@@ -20,6 +20,7 @@
 *.tfvars
 terraform/state.tf
 terraform-e2e/state.tf
+*/crash.log
 
 # Local things
 bin/
