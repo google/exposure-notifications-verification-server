@@ -11,7 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+locals {
+  enable_lb = var.server-host != "" && var.apiserver-host != "" && var.adminapi-host != ""
+}
+
 resource "google_compute_global_address" "verification-server" {
+  count   = local.enable_lb ? 1 : 0
   name    = "verification-server-address"
   project = var.project
 }
@@ -29,10 +35,11 @@ resource "google_compute_url_map" "urlmap-http" {
 }
 
 resource "google_compute_url_map" "urlmap-https" {
+  count           = local.enable_lb ? 1 : 0
   name            = "verification-server"
   provider        = google-beta
   project         = var.project
-  default_service = google_compute_backend_service.apiserver.id
+  default_service = google_compute_backend_service.apiserver[0].id
 
   host_rule {
     hosts        = [var.server-host]
@@ -41,7 +48,7 @@ resource "google_compute_url_map" "urlmap-https" {
 
   path_matcher {
     name            = "server"
-    default_service = google_compute_backend_service.server.id
+    default_service = google_compute_backend_service.server[0].id
   }
 
   host_rule {
@@ -51,7 +58,7 @@ resource "google_compute_url_map" "urlmap-https" {
 
   path_matcher {
     name            = "apiserver"
-    default_service = google_compute_backend_service.apiserver.id
+    default_service = google_compute_backend_service.apiserver[0].id
   }
 
   host_rule {
@@ -61,11 +68,12 @@ resource "google_compute_url_map" "urlmap-https" {
 
   path_matcher {
     name            = "adminapi"
-    default_service = google_compute_backend_service.adminapi.id
+    default_service = google_compute_backend_service.adminapi[0].id
   }
 }
 
 resource "google_compute_target_http_proxy" "http" {
+  count    = local.enable_lb ? 1 : 0
   provider = google-beta
   name     = "verification-server"
   project  = var.project
@@ -74,40 +82,44 @@ resource "google_compute_target_http_proxy" "http" {
 }
 
 resource "google_compute_target_https_proxy" "https" {
+  count   = local.enable_lb ? 1 : 0
   name    = "verification-server"
   project = var.project
 
-  url_map          = google_compute_url_map.urlmap-https.id
-  ssl_certificates = [google_compute_managed_ssl_certificate.default.id]
+  url_map          = google_compute_url_map.urlmap-https[0].id
+  ssl_certificates = [google_compute_managed_ssl_certificate.default[0].id]
 }
 
 resource "google_compute_forwarding_rule" "http" {
+  count    = local.enable_lb ? 1 : 0
   provider = google-beta
   name     = "verification-server-http"
   project  = var.project
 
   ip_protocol           = "TCP"
-  ip_address            = google_compute_global_address.verification-server.address
+  ip_address            = google_compute_global_address.verification-server[0].address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "80"
-  target                = google_compute_target_http_proxy.http.id
+  target                = google_compute_target_http_proxy.http[0].id
   network_tier          = "PREMIUM"
 }
 
 resource "google_compute_forwarding_rule" "https" {
+  count    = local.enable_lb ? 1 : 0
   provider = google-beta
   name     = "verification-server-https"
   project  = var.project
 
   ip_protocol           = "TCP"
-  ip_address            = google_compute_global_address.verification-server.address
+  ip_address            = google_compute_global_address.verification-server[0].address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "443"
-  target                = google_compute_target_https_proxy.https.id
+  target                = google_compute_target_https_proxy.https[0].id
   network_tier          = "PREMIUM"
 }
 
 resource "google_compute_managed_ssl_certificate" "default" {
+  count    = local.enable_lb ? 1 : 0
   provider = google-beta
 
   name = "verification-cert"

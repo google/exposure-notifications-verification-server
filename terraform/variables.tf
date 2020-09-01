@@ -157,16 +157,19 @@ variable "server_custom_domain" {
 
 variable "server-host" {
   type        = string
+  default     = ""
   description = "Domain web ui is hosted on."
 }
 
 variable "apiserver-host" {
   type        = string
+  default     = ""
   description = "Domain apiserver is hosted on."
 }
 
 variable "adminapi-host" {
   type        = string
+  default     = ""
   description = "Domain adminapi is hosted on."
 }
 

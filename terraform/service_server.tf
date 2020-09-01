@@ -196,6 +196,7 @@ resource "google_compute_region_network_endpoint_group" "server" {
 }
 
 resource "google_compute_backend_service" "server" {
+  count    = local.enable_lb ? 1 : 0
   provider = google-beta
   name     = "server"
   project  = var.project
