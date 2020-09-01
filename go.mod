@@ -44,7 +44,7 @@ require (
 	github.com/rakutentech/jwk-go v1.0.1
 	github.com/sethvargo/go-envconfig v0.3.1
 	github.com/sethvargo/go-limiter v0.4.1
-	github.com/sethvargo/go-redisstore v0.1.2
+	github.com/sethvargo/go-redisstore v0.1.2-opencensus
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/stretchr/objx v0.3.0 // indirect
