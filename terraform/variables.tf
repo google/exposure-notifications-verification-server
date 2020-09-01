@@ -67,7 +67,7 @@ variable "storage_location" {
 }
 
 variable "redis_name" {
-  type = string
+  type    = string
   default = "verification-cache"
 }
 
@@ -179,7 +179,7 @@ variable "adminapi-host" {
 }
 
 terraform {
-  required_version = ">= 0.13"
+  required_version = ">= 0.13.1"
 
   required_providers {
     google = {
