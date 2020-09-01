@@ -440,9 +440,6 @@ func (db *Database) GetRealms() ([]*Realm, error) {
 }
 
 func (db *Database) SaveRealm(r *Realm) error {
-	if r.Model.ID == 0 {
-		return db.db.Create(r).Error
-	}
 	return db.db.Save(r).Error
 }
 

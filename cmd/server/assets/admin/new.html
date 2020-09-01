@@ -28,7 +28,7 @@
           <div class="form-group row">
             <label for="name" class="col-sm-3">Name:</label>
             <div class="col-sm-9">
-              <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}">
+              <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}" />
               {{if $realm.ErrorsFor "name"}}
               <div class="invalid-feedback">
                 {{joinStrings ($realm.ErrorsFor "name") ", "}}
@@ -40,7 +40,7 @@
           <div class="form-group row">
             <label for="name" class="col-sm-3">Region code:</label>
             <div class="col-sm-9">
-              <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}">
+              <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}" />
               {{if $realm.ErrorsFor "regionCode"}}
               <div class="invalid-feedback">
                 {{joinStrings ($realm.ErrorsFor "regionCode") ", "}}
@@ -74,30 +74,37 @@
               </small>
             </div>
           </div>
-          {{end}}
-
+          
           <div class="form-group row">
             <label for="name" class="col-sm-3">Issuer (iss):</label>
-            <div class="input-group col-sm-9">
-              <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control text-monospace" value="{{$realm.CertificateIssuer}}" />
+            <div class="col-sm-9">
+              <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}" value="{{$realm.CertificateIssuer}}" />
               {{if $realm.ErrorsFor "certificateIssuer"}}
                 <div class="invalid-feedback">
                   {{joinStrings ($realm.ErrorsFor "certificateIssuer") ", "}}
                 </div>
               {{end}}
+              <small class="form-text text-muted">
+                This value is specific to the health authority.<br/>After created using realm specific keys, this field cannot be changed.
+              </small>
             </div>
           </div>
           <div class="form-group row">
             <label for="name" class="col-sm-3">Audience (aud):</label>
-            <div class="input-group col-sm-9">
-              <input type="text" id="certificateAudiance" name="certificateAudiance" class="form-control text-monospace" value="{{$realm.CertificateAudience}}" />
+            <div class="col-sm-9">
+              <input type="text" id="certificateAudiance" name="certificateAudiance" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" />
               {{if $realm.ErrorsFor "certificateAudience"}}
                 <div class="invalid-feedback">
                   {{joinStrings ($realm.ErrorsFor "certificateAudience") ", "}}
                 </div>
               {{end}}
+              <small class="form-text text-muted">
+                The audience (<tt>aud</tt>) value is provided the <em>key server</em> operator.<br/>
+                After upgrading to use realm specific keys, this field cannot be changed.
+              </small>
             </div>
           </div>
+          {{end}}
 
           <div class="form-group row">
             <div class="offset-sm-3 col-sm-9">

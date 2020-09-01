@@ -95,7 +95,6 @@ func (c *Controller) HandleCreate() http.Handler {
 			c.renderNew(ctx, w, user)
 			return
 		}
-		c.cacher.Delete(ctx, user.CacheKey())
 
 		flash.Alert("Successfully created user '%v'", form.Name)
 		http.Redirect(w, r, "/users", http.StatusSeeOther)

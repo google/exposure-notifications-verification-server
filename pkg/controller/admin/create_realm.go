@@ -16,6 +16,7 @@ package admin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -70,19 +71,21 @@ func (c *Controller) HandleCreateRealm() http.Handler {
 		realm.UseRealmCertificateKey = form.UseRealmCertificateKey
 		realm.CertificateIssuer = form.CertificateIssuer
 		realm.CertificateAudience = form.CertificateAudience
-
-		user.Realms = append(user.Realms, realm)
-		user.AdminRealms = append(user.AdminRealms, realm)
-
-		if err := c.db.SaveUser(user); err != nil {
+		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to create realm: %v", err)
 			c.renderNew(ctx, w, realm)
 			return
 		}
-		flash.Alert("Created realm: %q. You have been made an admin of the realm.", realm.Name)
+		flash.Alert("Created realm: %q.", realm.Name)
 
-		// Remove this user from the cache so that the allowed realms will be reloaded.
-		c.cacher.Delete(ctx, user.CacheKey())
+		user.Realms = append(user.Realms, realm)
+		user.AdminRealms = append(user.AdminRealms, realm)
+		if err := c.db.SaveUser(user); err != nil {
+			flash.Error("Failed to add you as an admin to the realm: %v", err)
+			c.renderNew(ctx, w, realm)
+			return
+		}
+		flash.Alert("Added you as a user and admin to the realm.")
 
 		if realm.UseRealmCertificateKey {
 			// If we are using realm specific keys - we need to create the first one.
@@ -101,6 +104,7 @@ func (c *Controller) HandleCreateRealm() http.Handler {
 
 func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
+	fmt.Printf("errors %+v", realm.Errors())
 	m["realm"] = realm
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	c.h.RenderHTML(w, "admin/newrealm", m)
