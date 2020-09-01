@@ -101,7 +101,7 @@ steps:
       --project "${PROJECT_ID}" \
       --platform "managed" \
       --region "${_REGION}" \
-      --image "gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}" \
       --no-traffic
   waitFor:
   - '-'
