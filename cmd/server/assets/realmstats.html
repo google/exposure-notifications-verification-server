@@ -1,0 +1,64 @@
+{{define "realmstats"}}
+
+{{$realm := .realm}}
+{{$stats := .stats}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Realm stats</h1>
+
+    <div class="card mb-3">
+      <div class="card-header">Statistics</div>
+      <div class="card-body table-responsive">
+        {{if $stats}}
+        <div id="chart" style="height: 300px;">
+          <span>Loading chart...</span>
+        </div>
+        {{else}}
+          <p>No codes have been issued in this realm.</p>
+        {{end}}
+      </div>
+    </div>
+
+  </main>
+
+  {{template "scripts" .}}
+
+  {{if $stats}}
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script>
+    google.charts.load('current', {packages: ['line']});
+    google.charts.setOnLoadCallback(drawChart)
+
+    function drawChart() {
+      var data = google.visualization.arrayToDataTable([
+        ['Date', 'Issued', "Claimed"],
+        {{range $stat := $stats}}
+        ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}, {{$stat.CodesClaimed}}],
+        {{end}}
+      ]);
+
+      var options = {
+        colors: ['#007bff', '#ff7b00'],
+        legend: {position: 'left'},
+        tooltip: {trigger: 'focus'},
+      };
+
+      var chart = new google.charts.Line(document.getElementById('chart'));
+      chart.draw(data, options);
+    }
+  </script>
+  {{end}}
+</body>
+</html>
+{{end}}
