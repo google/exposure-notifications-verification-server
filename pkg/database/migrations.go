@@ -849,6 +849,20 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00034-AddENExpressSettings",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding EN Express settings")
+				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 
