@@ -8,7 +8,7 @@ continuous deployment.
 
 ## Requirements
 
-- Terraform 0.12. [Installation guide](https://www.terraform.io/downloads.html)
+- Terraform 0.13.1 [Installation guide](https://www.terraform.io/downloads.html)
 
 - firebase-cli. [Installation guide](https://firebase.google.com/docs/cli)
 
@@ -112,11 +112,6 @@ Terraform module.
     $ mkdir ${PROJECT_ID}
     ```
 
-1.  Change into that sub-directory and import this module:
-
-    ```text
-    $ cd ${PROJECT_ID}
-    ```
 
     ```text
     $ echo > ${PROJECT_ID}/main.tf <<EOF
@@ -129,7 +124,7 @@ Terraform module.
       module "en" {
         source = "github.com/google/exposure-notifications-verification-server/terraform"
 
-        project = "${PROJECT_ID}"
+        project = var.project
 
         create_env_file = true
 
