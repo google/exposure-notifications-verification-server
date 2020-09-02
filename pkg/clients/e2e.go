@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// E2E test code that exercises the verification and key server, simulating a
-// mobile device uploading TEKs.
 package clients
 
 import (
@@ -43,6 +41,8 @@ func timeToInterval(t time.Time) int32 {
 	return int32(t.UTC().Truncate(oneDay).Unix() / int64(intervalLength.Seconds()))
 }
 
+// RunEndToEnd - code that exercises the verification and key server, simulating a
+// mobile device uploading TEKs.
 func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 	logger := logging.FromContext(ctx)
 
