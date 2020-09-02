@@ -61,6 +61,11 @@ const (
 type ErrorReturn struct {
 	Error     string `json:"error"`
 	ErrorCode string `json:"errorCode"`
+
+	// ErrorCodeLegacy exists to populate the JSON with a deprecated error_code
+	// key. This will be removed in a future version. Consumers should use
+	// `errorCode` instead.
+	ErrorCodeLegacy string `json:"error_code"`
 }
 
 // InternalError constructs a generic internal error.
@@ -85,6 +90,7 @@ func Error(err error) *ErrorReturn {
 // WithCode adds an error code to an ErrorReturn
 func (e *ErrorReturn) WithCode(code string) *ErrorReturn {
 	e.ErrorCode = code
+	e.ErrorCodeLegacy = code
 	return e
 }
 
