@@ -32,6 +32,7 @@ if [ -z "${TAG:-}" ]; then
   TAG="$(git describe --dirty)"
   echo "🎈 Using ${TAG}!" >&2
 fi
+echo "🎉 Building all services in ${PROJECT_ID}"
 
 SUBS="_TAG=${TAG}"
 

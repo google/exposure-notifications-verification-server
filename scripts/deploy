@@ -27,6 +27,7 @@ if [ -z "${TAG:-}" ]; then
   TAG="$(git describe --dirty)"
   echo "🎈 Using ${TAG}!" >&2
 fi
+echo "🎉 Deploying all services in ${PROJECT_ID} with 0% traffic"
 
 SUBS="_TAG=${TAG}"
 SUBS="${SUBS},_REGION=${REGION:-"us-central1"}"
