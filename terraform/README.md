@@ -162,11 +162,49 @@ Terraform module.
 1.  After the initial provision, go to the Firebase admin console and enable
     your desired login (Facebook, email/password, etc).
 
+1.  Moving forward, instruct Terraform to download new modules before you apply:
+
+    ```text
+    $ terraform get -update
+    ```
+
+    Then execute Terraform as normal. Note that without this command, you are
+    "pinned" to the previous module version.
+
 Terraform will create the required infrastructure including the database,
 service accounts, keys, and secrets. **As a one-time operation**, Terraform will
 also migrate the database schema and build/deploy the initial set of services on
 Cloud Run. Terraform does not manage the lifecycle of those resources beyond
 their initial creation.
+
+
+### Migrating from quick to production
+
+If you previously used the quick setup and want to migration to a production
+setup, the process is somewhat meticulous. Since Terraform resources are keyed
+off of their ID, you'll need to manually move the resource IDs using the
+[`terraform state
+mv`](https://www.terraform.io/docs/commands/state/mv.html#example-move-a-resource-into-a-module)
+command.
+
+1.  Update your configurations to import the configuration as a module using the
+    instructions from the production setup above.
+
+1.  List all of the current resources in your state:
+
+    ```text
+    $ terraform state list
+    ```
+
+1.  For each of those resources, run `terraform state mv`, prefixing their new
+    value with `module.en`, for example:
+
+    ```text
+    $ terraform state mv thing.name module.en.thing.name
+    ```
+
+1.  Continue planning until you have no diff.
+
 
 ### Local development and testing example deployment
 
@@ -204,7 +242,7 @@ $ terraform state rm google_service_account.firebase
 $ terraform state rm google_service_account_key.firebase
 ```
 
-#### Firebase Tos Not Accepted
+#### Firebase TOS Not Accepted
 
 If you're getting an error like:
 
