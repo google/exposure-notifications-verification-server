@@ -44,9 +44,8 @@ type ServerConfig struct {
 	SessionDuration   time.Duration `env:"SESSION_DURATION,default=24h"`
 	RevokeCheckPeriod time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
 
-	// CookieKeys is a slice of bytes. The odd values are hash keys to HMAC the
-	// cookies. The even values are block keys to encrypt the cookie. Both keys
-	// should be 64 bytes. The value's should be specified as base64 encoded.
+	// CookieKeys is a slice of bytes. Tthe first is 64 bytes, the second is 32.
+	// They should be base64-encoded.
 	CookieKeys Base64ByteSlice `env:"COOKIE_KEYS,required"`
 
 	// CookieDomain is the domain for which cookie should be valid.
