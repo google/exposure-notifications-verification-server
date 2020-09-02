@@ -67,11 +67,11 @@ Exchange a verification code for a long term verification token.
 
 ```json
 {
-  "TestType": "<test type string>",
-  "SymptomDate": "YYYY-MM-DD",
-  "VerificationToken": "<JWT verification token>",
-  "Error": "",
-  "ErrorCode": "",
+  "testtype": "<test type string>",
+  "symptomDate": "YYYY-MM-DD",
+  "token": "<JWT verification token>",
+  "error": "",
+  "errorCode": "",
 }
 ```
 
@@ -112,9 +112,9 @@ Exchange a verification token for a verification certificate (for sending to a k
 
  ```json
 {
-  "Certificate": "<JWT verification certificate>",
-  "Error": "",
-  "ErrorCode": ""
+  "certificate": "<JWT verification certificate>",
+  "error": "",
+  "errorCode": ""
 }
 ```
 
