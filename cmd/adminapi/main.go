@@ -140,7 +140,7 @@ func realMain(ctx context.Context) error {
 
 		// Setup API auth
 		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
-			database.APIUserTypeDevice,
+			database.APIUserTypeAdmin,
 		})
 		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
