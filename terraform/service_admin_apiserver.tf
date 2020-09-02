@@ -91,7 +91,7 @@ resource "google_cloud_run_service" "adminapi" {
       timeout_seconds      = 25
 
       containers {
-        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cmd/adminapi:initial"
+        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/adminapi:initial"
 
         resources {
           limits = {

@@ -97,7 +97,7 @@ resource "google_cloud_run_service" "apiserver" {
       timeout_seconds      = 25
 
       containers {
-        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cmd/apiserver:initial"
+        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/apiserver:initial"
 
         resources {
           limits = {
