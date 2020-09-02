@@ -141,6 +141,10 @@ func (v *VerificationCode) IsExpired() bool {
 	return v.ExpiresAt.Before(now) && v.LongExpiresAt.Before(now)
 }
 
+func (v *VerificationCode) HasLongExpiration() bool {
+	return v.LongExpiresAt.After(v.ExpiresAt)
+}
+
 // Validate validates a verification code before save.
 func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	now := time.Now()

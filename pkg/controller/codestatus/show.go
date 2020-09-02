@@ -91,6 +91,8 @@ func (c *Controller) responseCode(ctx context.Context, r *http.Request, code *da
 	}
 	if !code.IsExpired() {
 		retCode.Expires = code.ExpiresAt.UTC().Unix()
+		retCode.LongExpires = code.LongExpiresAt.UTC().Unix()
+		retCode.HasLongExpires = retCode.LongExpires > retCode.Expires
 	}
 }
 
@@ -149,12 +151,14 @@ func (c *Controller) getAuthAppName(ctx context.Context, r *http.Request, id uin
 }
 
 type Code struct {
-	UUID       string `json:"uuid"`
-	Status     string `json:"status"`
-	TestType   string `json:"testType"`
-	IssuerType string `json:"issuerType"`
-	Issuer     string `json:"issuer"`
-	Expires    int64  `json:"expires"`
+	UUID           string `json:"uuid"`
+	Status         string `json:"status"`
+	TestType       string `json:"testType"`
+	IssuerType     string `json:"issuerType"`
+	Issuer         string `json:"issuer"`
+	Expires        int64  `json:"expires"`
+	LongExpires    int64  `json:"longExpires"`
+	HasLongExpires bool   `json:"hasLongExpires"`
 }
 
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, code Code) {
