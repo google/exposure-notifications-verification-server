@@ -44,7 +44,7 @@
       </div>
       {{if .code.HasLongExpires}}
       <div class="list-group-item">
-        <h5 class="mb-1">Long code expiry</h5>
+        <h5 class="mb-1">SMS link expiry</h5>
         <span id="long-code-expires-at" class="sm text-danger"></span>
       </div>
       {{end}}
@@ -71,15 +71,15 @@
       let $codeExpiresAt = $('#code-expires-at');
       // Start countdown
       countdown($codeExpiresAt, expires, function() {
+        {{if not .code.HasLongExpires}}
         // Disable the submit if already expired.
         $buttonInvalidate.prop('disabled', true);
+        {{end}}
       });
 
       {{if .code.HasLongExpires}}
       let $longCodeExpiresAt = $('#long-code-expires-at');
-      // Start countdown
       countdown($longCodeExpiresAt, longExpires, function() {
-        // Disable the submit if already expired.
         $buttonInvalidate.prop('disabled', true);
       });
       {{end}}
