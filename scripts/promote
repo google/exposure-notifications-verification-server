@@ -22,6 +22,7 @@ if [ -z "${PROJECT_ID:-}" ]; then
   echo "✋ Missing PROJECT_ID!" >&2
   exit 1
 fi
+echo "🎈 Promoting all services in ${PROJECT_ID}"
 
 SUBS="_PERCENTAGE=${PERCENTAGE:-"100"}"
 SUBS="${SUBS},_REGION=${REGION:-"us-central1"}"
