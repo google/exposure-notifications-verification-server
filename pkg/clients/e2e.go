@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// E2E test code that exercises the verification and key server, simulating a
-// mobile device uploading TEKs.
-//
-package main
+package clients
 
 import (
 	"context"
@@ -24,7 +21,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
 
@@ -45,7 +41,9 @@ func timeToInterval(t time.Time) int32 {
 	return int32(t.UTC().Truncate(oneDay).Unix() / int64(intervalLength.Seconds()))
 }
 
-func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
+// RunEndToEnd - code that exercises the verification and key server, simulating a
+// mobile device uploading TEKs.
+func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 	logger := logging.FromContext(ctx)
 
 	testType := "confirmed"
@@ -74,7 +72,7 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 	for i := 0; i < iterations; i++ {
 		// Issue the verification code.
 		logger.Infof("Issuing verification code, iteration %d", i)
-		codeRequest, code, err := clients.IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, 0, timeout)
+		codeRequest, code, err := IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, 0, timeout)
 		if err != nil {
 			return fmt.Errorf("error issuing verification code: %w", err)
 		} else if code.Error != "" {
@@ -88,7 +86,7 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 
 		// Get the verification token
 		logger.Infof("Verifying code and getting token")
-		tokenRequest, token, err := clients.GetToken(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, code.VerificationCode, timeout)
+		tokenRequest, token, err := GetToken(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, code.VerificationCode, timeout)
 		if err != nil {
 			return fmt.Errorf("error verifying code: %w", err)
 		} else if token.Error != "" {
@@ -100,7 +98,7 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 		)
 
 		logger.Infof("Check code status")
-		statusReq, codeStatus, err := clients.CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
+		statusReq, codeStatus, err := CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
 		if err != nil {
 			return fmt.Errorf("error check code status: %w", err)
 		} else if codeStatus.Error != "" {
@@ -122,7 +120,7 @@ func e2e(ctx context.Context, config config.E2ERunnerConfig) error {
 			return fmt.Errorf("error calculating tek HMAC: %w", err)
 		}
 		hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
-		certRequest, certificate, err := clients.GetCertificate(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, token.VerificationToken, hmacB64, timeout)
+		certRequest, certificate, err := GetCertificate(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, token.VerificationToken, hmacB64, timeout)
 		if err != nil {
 			return fmt.Errorf("error getting verification certificate: %w", err)
 		} else if certificate.Error != "" {

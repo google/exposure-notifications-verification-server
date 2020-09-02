@@ -29,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
+	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -152,13 +153,13 @@ func realMain(ctx context.Context) error {
 		logger.Info("successfully cleaned up e2e test device key")
 	}()
 
-	e2eConfig.VerificationAdminAPIKey = adminKey
-	e2eConfig.VerificationAPIServerKey = deviceKey
+	e2eConfig.TestConfig.VerificationAdminAPIKey = adminKey
+	e2eConfig.TestConfig.VerificationAPIServerKey = deviceKey
 
 	// Create the router
 	r := mux.NewRouter()
-	r.HandleFunc("/default", defaultHandler(ctx, *e2eConfig))
-	r.HandleFunc("/revise", reviseHandler(ctx, *e2eConfig))
+	r.HandleFunc("/default", defaultHandler(ctx, &e2eConfig.TestConfig))
+	r.HandleFunc("/revise", reviseHandler(ctx, &e2eConfig.TestConfig))
 
 	srv, err := server.New(e2eConfig.Port)
 	if err != nil {
@@ -168,10 +169,10 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func defaultHandler(ctx context.Context, c config.E2ERunnerConfig) func(http.ResponseWriter, *http.Request) {
+func defaultHandler(ctx context.Context, c *config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.DoRevise = false
-		if err := e2e(ctx, c); err != nil {
+		if err := clients.RunEndToEnd(ctx, c); err != nil {
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
 		} else {
 			fmt.Fprint(w, "ok")
@@ -179,10 +180,10 @@ func defaultHandler(ctx context.Context, c config.E2ERunnerConfig) func(http.Res
 	}
 }
 
-func reviseHandler(ctx context.Context, c config.E2ERunnerConfig) func(http.ResponseWriter, *http.Request) {
+func reviseHandler(ctx context.Context, c *config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.DoRevise = true
-		if err := e2e(ctx, c); err != nil {
+		if err := clients.RunEndToEnd(ctx, c); err != nil {
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
 		} else {
 			fmt.Fprint(w, "ok")
