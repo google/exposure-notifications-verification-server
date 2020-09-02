@@ -39,7 +39,7 @@ resource "google_compute_url_map" "urlmap-https" {
   name            = "verification-server"
   provider        = google-beta
   project         = var.project
-  default_service = google_compute_backend_service.apiserver[0].id
+  default_service = google_compute_backend_service.server[0].id
 
   host_rule {
     hosts        = [var.server-host]
