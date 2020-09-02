@@ -130,26 +130,31 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
-
-	// Setup API auth
-	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
-		database.APIUserTypeAdmin,
-	})
-
-	// Install the APIKey Auth Middleware
-	r.Use(requireAPIKey)
+	// Install the rate limiting first. In this case, we want to limit by key
+	// first to reduce the chance of a database lookup.
 	r.Use(rateLimit)
 
-	issueapiController, err := issueapi.New(ctx, config, db, h)
-	if err != nil {
-		return fmt.Errorf("issueapi.New: %w", err)
-	}
-	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")
+	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
+	{
+		sub := r.PathPrefix("/api").Subrouter()
 
-	codeStatusController := codestatus.NewAPI(ctx, config, db, h)
-	r.Handle("/api/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
-	r.Handle("/api/expirecode", codeStatusController.HandleExpireAPI()).Methods("POST")
+		// Setup API auth
+		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
+			database.APIUserTypeDevice,
+		})
+		// Install the APIKey Auth Middleware
+		sub.Use(requireAPIKey)
+
+		issueapiController, err := issueapi.New(ctx, config, db, h)
+		if err != nil {
+			return fmt.Errorf("issueapi.New: %w", err)
+		}
+		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
+
+		codeStatusController := codestatus.NewAPI(ctx, config, db, h)
+		sub.Handle("/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
+		sub.Handle("/expirecode", codeStatusController.HandleExpireAPI()).Methods("POST")
+	}
 
 	srv, err := server.New(config.Port)
 	if err != nil {
