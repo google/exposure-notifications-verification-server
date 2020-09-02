@@ -34,4 +34,5 @@ require (
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.5
+	knative.dev/pkg v0.0.0-20200901225315-2ee0e988033c
 )
