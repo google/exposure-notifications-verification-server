@@ -64,7 +64,7 @@ openssl rand -base64 64 | tr -d "\n" # or 32
 ```
 
 If you are using a secret manager, put this value in the secret manager and
-provie its _reference_ in the environment. If you are not using a secret
+provide its _reference_ in the environment. If you are not using a secret
 manager, provide this value directly in the environment.
 
 
