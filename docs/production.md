@@ -24,17 +24,18 @@ This section describes how to rotate secrets in the system.
 
 The cookie keys are an array. The items at odd indicies are HMAC keys and the
 items at even indicies are encryption keys. The HMAC key should be 64 bytes and
-the encryption key should be 32. Both keys are supplied to this system in
-base64, for example:
-
-```sh
-export COOKIE_KEYS="ARLaFwAqBGIkm5pLjAveJuahtCnX2NLoAUz2kCZKrScUaUkEaxHSvJLVYb5yAPCc441Cho5n5yp8jdEmy6hyig==,RLjcRZeqc07s6dh3OK4CM1POjHDZHC+usNU1w/XNTjM="
-```
-
-Even though the array is flat, each even/odd pairing is actually a tuple:
+the encryption key should be 32. Even though the array is flat, each even/odd
+pairing is actually a tuple:
 
 ```text
 [<hmac_key_1>, <encryption_key_1>, <hmac_key_2>, <encryption_key_2>]
+```
+
+Each key is supplied to this system as base64, for example:
+
+```sh
+# "<base64_hmac_key_1>,<base64_encryption_key_1>"
+export COOKIE_KEYS="ARLaFwAqBGIkm5pLjAveJuahtCnX2NLoAUz2kCZKrScUaUkEaxHSvJLVYb5yAPCc441Cho5n5yp8jdEmy6hyig==,RLjcRZeqc07s6dh3OK4CM1POjHDZHC+usNU1w/XNTjM="
 ```
 
 To rotate the cookie keys, generate two new keys of the correct lengths as
@@ -49,6 +50,7 @@ existing sessions.
 Just as before, the new values should be base64-encoded:
 
 ```sh
+# "<base64_hmac_key_1>,<base64_encryption_key_1>,<base64_hmac_key_2>,<base64_encryption_key_2>"
 export COOKIE_KEYS="c8+OD0vpvT/FrtGAtHc1nYhtkYMhjEEHCLgzuIiKJbskAbMI7bJxSnlBMKmc2AQmo8QVAViJuKoopuSuXE7tYw==,KRN9OK/lcs/uBWKQ2/1I0g9KR/iL3/MHuCn6esI02fs=,ARLaFwAqBGIkm5pLjAveJuahtCnX2NLoAUz2kCZKrScUaUkEaxHSvJLVYb5yAPCc441Cho5n5yp8jdEmy6hyig==,RLjcRZeqc07s6dh3OK4CM1POjHDZHC+usNU1w/XNTjM="
 ```
 
