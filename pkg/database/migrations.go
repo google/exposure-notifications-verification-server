@@ -474,7 +474,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					}
 
 					apiKeyPreview := app.APIKey[:6]
-					newAPIKey, err := db.hmacAPIKey(app.APIKey)
+					newAPIKey, err := db.GenerateAPIKeyHMAC(app.APIKey)
 					if err != nil {
 						return fmt.Errorf("failed to hmac %v: %w", app.Name, err)
 					}
@@ -730,7 +730,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 
 					// Sanity
 					if len(code.Code) < 20 {
-						h, err := db.hmacVerificationCode(code.Code)
+						h, err := db.GenerateVerificationCodeHMAC(code.Code)
 						if err != nil {
 							return err
 						}
@@ -740,7 +740,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 
 					// Sanity
 					if len(code.LongCode) < 20 {
-						h, err := db.hmacVerificationCode(code.LongCode)
+						h, err := db.GenerateVerificationCodeHMAC(code.LongCode)
 						if err != nil {
 							return err
 						}

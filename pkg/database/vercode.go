@@ -116,19 +116,34 @@ func (v *VerificationCode) FormatSymptomDate() string {
 	return v.SymptomDate.Format("2006-01-02")
 }
 
-// IsCodeExpired checks to see if the actual code provides is the
-// short or long code and determines if it is expired based on that.
+// IsCodeExpired checks to see if the actual code provided is the short or long
+// code, and determines if it is expired based on that.
 func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error) {
-	// it's possible that this could be called with the already HMACd version.
-	hmacedCode, err := db.hmacVerificationCode(code)
+	if v == nil {
+		return false, fmt.Errorf("provided code is nil")
+	}
+
+	// It's possible that this could be called with the already HMACd version.
+	possibles, err := db.generateVerificationCodeHMACs(code)
 	if err != nil {
 		return false, fmt.Errorf("failed to create hmac: %w", err)
 	}
+	possibles = append(possibles, code)
+
+	inList := func(needle string, haystack []string) bool {
+		for _, hay := range haystack {
+			if hay == needle {
+				return true
+			}
+		}
+		return false
+	}
+
 	now := time.Now().UTC()
 	switch {
-	case v.Code == code || v.Code == hmacedCode:
+	case inList(v.Code, possibles):
 		return !v.ExpiresAt.After(now), nil
-	case v.LongCode == code || v.LongCode == hmacedCode:
+	case inList(v.LongCode, possibles):
 		return !v.LongExpiresAt.After(now), nil
 	default:
 		return true, fmt.Errorf("not found")
@@ -174,15 +189,14 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 // FindVerificationCode find a verification code by the code number (can be short
 // code or long code).
 func (db *Database) FindVerificationCode(code string) (*VerificationCode, error) {
-	hmacedCode, err := db.hmacVerificationCode(code)
+	hmacedCodes, err := db.generateVerificationCodeHMACs(code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
 	}
 
 	var vc VerificationCode
 	if err := db.db.
-		// TODO(sethvargo): remove non-hmaced lookup after migrations
-		Where("code = ? OR code = ? OR long_code = ? OR long_code = ?", hmacedCode, code, hmacedCode, code).
+		Where("code IN (?) OR long_code IN (?)", hmacedCodes, hmacedCodes).
 		First(&vc).
 		Error; err != nil {
 		return nil, err
@@ -240,14 +254,13 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Durat
 
 // DeleteVerificationCode deletes the code if it exists. This is a hard delete.
 func (db *Database) DeleteVerificationCode(code string) error {
-	hmacedCode, err := db.hmacVerificationCode(code)
+	hmacedCodes, err := db.generateVerificationCodeHMACs(code)
 	if err != nil {
 		return fmt.Errorf("failed to create hmac: %w", err)
 	}
 
 	return db.db.Unscoped().
-		// TODO(sethvargo): remove non-hmaced lookup after migrations
-		Where("code = ? OR code = ? OR long_code = ? OR long_code = ?", hmacedCode, code, hmacedCode, code).
+		Where("code IN (?) OR long_code IN (?)", hmacedCodes, hmacedCodes).
 		Delete(&VerificationCode{}).
 		Error
 }
@@ -265,12 +278,30 @@ func (db *Database) PurgeVerificationCodes(maxAge time.Duration) (int64, error) 
 	return rtn.RowsAffected, rtn.Error
 }
 
-// hmacVerificationCode is a helper for generating the HMAC of a token. It returns the
-// hex-encoded HMACed value, suitable for insertion into the database.
-func (db *Database) hmacVerificationCode(v string) (string, error) {
-	sig := hmac.New(sha512.New, db.config.VerificationCodeDatabaseHMAC)
-	if _, err := sig.Write([]byte(v)); err != nil {
-		return "", nil
+// GenerateVerificationCodeHMAC generates the HMAC of the code using the latest
+// key.
+func (db *Database) GenerateVerificationCodeHMAC(verCode string) (string, error) {
+	keys := db.config.VerificationCodeDatabaseHMAC
+	if len(keys) < 1 {
+		return "", fmt.Errorf("expected at least 1 hmac key")
+	}
+	sig := hmac.New(sha512.New, keys[0])
+	if _, err := sig.Write([]byte(verCode)); err != nil {
+		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(sig.Sum(nil)), nil
+}
+
+// generateVerificationCodeHMACs is a helper for generating all possible HMACs of a
+// token.
+func (db *Database) generateVerificationCodeHMACs(v string) ([]string, error) {
+	sigs := make([]string, 0, len(db.config.VerificationCodeDatabaseHMAC))
+	for _, key := range db.config.VerificationCodeDatabaseHMAC {
+		sig := hmac.New(sha512.New, key)
+		if _, err := sig.Write([]byte(v)); err != nil {
+			return nil, err
+		}
+		sigs = append(sigs, base64.RawURLEncoding.EncodeToString(sig.Sum(nil)))
+	}
+	return sigs, nil
 }

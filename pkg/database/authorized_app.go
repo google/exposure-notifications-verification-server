@@ -121,7 +121,7 @@ func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp) (string, e
 	}
 	apiKey := parts[0]
 
-	hmacedKey, err := db.hmacAPIKey(apiKey)
+	hmacedKey, err := db.GenerateAPIKeyHMAC(apiKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to create hmac: %w", err)
 	}
@@ -146,7 +146,7 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 			return nil, err
 		}
 
-		hmacedKey, err := db.hmacAPIKey(apiKey)
+		hmacedKeys, err := db.generateAPIKeyHMACs(apiKey)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create hmac: %w", err)
 		}
@@ -154,7 +154,7 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 		// Find the API key that matches the constraints.
 		var app AuthorizedApp
 		if err := db.db.
-			Where("api_key = ?", hmacedKey).
+			Where("api_key IN (?)", hmacedKeys).
 			Where("realm_id = ?", realmID).
 			First(&app).
 			Error; err != nil {
@@ -163,17 +163,15 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 		return &app, nil
 	}
 
-	// The API key is either invalid or a v1 API key. We need to check both the
-	// HMACed value and the plaintext value since earlier versions of the API keys
-	// were not HMACed.
-	hmacedKey, err := db.hmacAPIKey(apiKey)
+	// The API key is either invalid or a v1 API key.
+	hmacedKeys, err := db.generateAPIKeyHMACs(apiKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
 	}
 
 	var app AuthorizedApp
 	if err := db.db.
-		Or("api_key = ?", hmacedKey).
+		Or("api_key IN (?)", hmacedKeys).
 		First(&app).
 		Error; err != nil {
 		return nil, err
@@ -229,14 +227,33 @@ func (db *Database) SaveAuthorizedApp(r *AuthorizedApp) error {
 	return db.db.Save(r).Error
 }
 
-// hmacAPIKey is a helper for generating the HMAC of an API key. It returns the
-// hex-encoded HMACed value, suitable for insertion into the database.
-func (db *Database) hmacAPIKey(v string) (string, error) {
-	sig := hmac.New(sha512.New, db.config.APIKeyDatabaseHMAC)
-	if _, err := sig.Write([]byte(v)); err != nil {
-		return "", nil
+// GenerateAPIKeyHMAC generates the HMAC of the provided API key using the
+// latest HMAC key.
+func (db *Database) GenerateAPIKeyHMAC(apiKey string) (string, error) {
+	keys := db.config.APIKeyDatabaseHMAC
+	if len(keys) < 1 {
+		return "", fmt.Errorf("expected at least 1 hmac key")
+	}
+
+	sig := hmac.New(sha512.New, keys[0])
+	if _, err := sig.Write([]byte(apiKey)); err != nil {
+		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(sig.Sum(nil)), nil
+}
+
+// generateAPIKeyHMACs creates a permutation of all possible API keys based on
+// the provided HMACs. It's primarily used to find an API key in the database.
+func (db *Database) generateAPIKeyHMACs(apiKey string) ([]string, error) {
+	sigs := make([]string, 0, len(db.config.APIKeyDatabaseHMAC))
+	for _, key := range db.config.APIKeyDatabaseHMAC {
+		sig := hmac.New(sha512.New, key)
+		if _, err := sig.Write([]byte(apiKey)); err != nil {
+			return nil, err
+		}
+		sigs = append(sigs, base64.RawURLEncoding.EncodeToString(sig.Sum(nil)))
+	}
+	return sigs, nil
 }
 
 // GenerateAPIKey generates a new API key that is bound to the given realm. This
@@ -267,13 +284,30 @@ func (db *Database) GenerateAPIKey(realmID uint) (string, error) {
 	return key, nil
 }
 
-// GenerateAPIKeySignature signs the given API key using an HMAC shared secret.
-func (db *Database) GenerateAPIKeySignature(key string) ([]byte, error) {
-	sig := hmac.New(sha512.New, db.config.APIKeySignatureHMAC)
-	if _, err := sig.Write([]byte(key)); err != nil {
+// GenerateAPIKeySignature returns all possible signatures of the given key.
+func (db *Database) GenerateAPIKeySignature(apiKey string) ([]byte, error) {
+	keys := db.config.APIKeySignatureHMAC
+	if len(keys) < 1 {
+		return nil, fmt.Errorf("expected at least 1 hmac key")
+	}
+	sig := hmac.New(sha512.New, keys[0])
+	if _, err := sig.Write([]byte(apiKey)); err != nil {
 		return nil, err
 	}
 	return sig.Sum(nil), nil
+}
+
+// generateAPIKeySignatures returns all possible signatures of the given key.
+func (db *Database) generateAPIKeySignatures(apiKey string) ([][]byte, error) {
+	sigs := make([][]byte, 0, len(db.config.APIKeySignatureHMAC))
+	for _, key := range db.config.APIKeySignatureHMAC {
+		sig := hmac.New(sha512.New, key)
+		if _, err := sig.Write([]byte(apiKey)); err != nil {
+			return nil, err
+		}
+		sigs = append(sigs, sig.Sum(nil))
+	}
+	return sigs, nil
 }
 
 // VerifyAPIKeySignature verifies the signature matches the expected value for
@@ -292,13 +326,21 @@ func (db *Database) VerifyAPIKeySignature(key string) (string, uint, error) {
 	}
 
 	// Generate the expected signature.
-	expSig, err := db.GenerateAPIKeySignature(parts[0] + "." + parts[1])
+	expSigs, err := db.generateAPIKeySignatures(parts[0] + "." + parts[1])
 	if err != nil {
 		return "", 0, fmt.Errorf("invalid API key format: signature invalid")
 	}
 
-	// Compare (this is an equal-time algorithm).
-	if !hmac.Equal(gotSig, expSig) {
+	found := false
+	for _, expSig := range expSigs {
+		// Compare (this is an equal-time algorithm).
+		if hmac.Equal(gotSig, expSig) {
+			found = true
+			// break // No! Don't break - we want constant time!
+		}
+	}
+
+	if !found {
 		return "", 0, fmt.Errorf("invalid API key format: signature invalid")
 	}
 
