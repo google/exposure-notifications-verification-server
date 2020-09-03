@@ -44,7 +44,7 @@ type ServerConfig struct {
 	SessionDuration   time.Duration `env:"SESSION_DURATION,default=24h"`
 	RevokeCheckPeriod time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
 
-	// CookieKeys is a slice of bytes. Tthe first is 64 bytes, the second is 32.
+	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.
 	// They should be base64-encoded.
 	CookieKeys Base64ByteSlice `env:"COOKIE_KEYS,required"`
 
