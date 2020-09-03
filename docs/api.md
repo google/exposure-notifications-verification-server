@@ -127,6 +127,111 @@ Possible error code responses. New error codes may be added in future releases.
 | `hmac_invalid`          | 400         | No    | The `ekeyhmac` field, when base64 decoded is not the right size (32 bytes) |
 |                         | 500         | Yes   | Internal processing error, may be successful on retry. |
 
+# Admin APIs
+
+These APIs are available on the admin server and require and `ADMIN` level API key.
+
+## `/api/issue`
+
+Request a verification code to be issued. Accepts [optional] symptom date and test dates in ISO 8601 format. These can be in local time, if a timezone offset is provided. If a phone number is provided and the realm is configured with SMS credentials, then an SMS will be dispatched according to the realm's settings.
+
+```json
+{
+	"symptomDate": "YYYY-MM-DD",
+	"testDate": "YYYY-MM-DD",
+	"testType": "<valid test type>",
+	"tzOffset": 0,
+	"phone": "+1NPANXXLINE",
+}
+```
+
+* `sypmtomDate` and `testDate` are both optional.
+  * only one will be encoded into the eventually issued certificate
+  * symptom date is always preferred to test date
+* `testType`
+  * Must be `confirmed`, `likely`, `negative`
+  * valid values depends on your realm's settings
+* `tzOffset`
+  * Offset in minutes of the user's timezone. Positive, negative, 0, or omitted (using the default of 0) are all valid. 0 is considered to be UTC.
+* `phone`
+  * Phone number to send the SMS too, 
+
+The response consists of:
+
+```json
+{
+  "uuid": "string UUID",
+  "code": "short verification code",
+  "expiresAt": "RFC1123 formatted string timestamp",
+  "expiresAtTimestamp": 0,
+  "expiresAt": "RFC1123 UTC timestamp",
+  "expiresAtTimestamp": 0,
+  "longExpiresAt": "RFC1123 UTC timestamp",
+  "longExpiresAtTimestamp": 0,
+  "error": "descriptive error message",
+  "errorCode": "well defined error code from api.go",
+}
+```
+
+* `uuid`
+  * UUID is a handle which allows the issuer to track status of the issued verification code.
+* `code`
+  * The OTP code which may be exchanged by the user for a signing token.
+* `expiresAt`
+  * RFC1123 formatted string timestamp, in UTC.
+	After this time the code will no longer be accepted and is eligible for deletion.
+* `expiresAtTimestamp`
+  * represents Unix, seconds since the epoch. Still UTC.
+	After this time the code will no longer be accepted and is eligible for deletion.
+* `longExpiresAt`
+  * represents the time that the link containing a 'long' verification code expires (if one was issued)
+* `longExpiresAtTimestamp`
+  * Unix, seconds since the epoch for `longExpiresAt`
+
+## `/api/checkcodestatus`
+
+Checks the status of a previous issued code, looking up by UUID.
+
+```json
+{
+  "uuid": "UUID for code to check"
+}
+```
+
+Returns the status of that code, if found.
+
+```json
+{
+  "claimed": false,
+  "expiresAtTimestamp": 0,
+  "longExpiresAtTimestamp": 0,
+  "error": "descriptive error message",
+  "errorCode": "well defined error code from api.go",
+}
+```
+
+* `claimed`
+  * boolean indicating if the code was used or not
+* `expiresAtTimestamp`
+  * seconds since the epoch indicating expiry time in UTC
+* `longExpiresAtTimestamp`
+  * seconds since the epoch for the SMS link expiry time in UTC
+
+## `/api/expirecode`
+
+Expires an unclaimed code. IF the code has been claimed an error is returned.
+
+```json
+{
+  "uuid": "UUID of the code to expire",
+  "expiresAtTimestamp": 0,
+  "longExpiresAtTimestamp": 0,
+  "error": "descriptive error message",
+  "errorCode": "well defined error code from api.go",
+}
+
+The timestamps are updated to the new expiration time (which will be in the past).
+
 # Chaffing requests
 
 In addition to "real" requests, the server also accepts chaff (fake) requests.
