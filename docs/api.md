@@ -137,11 +137,11 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
 
 ```json
 {
-	"symptomDate": "YYYY-MM-DD",
-	"testDate": "YYYY-MM-DD",
-	"testType": "<valid test type>",
-	"tzOffset": 0,
-	"phone": "+1NPANXXLINE",
+  "symptomDate": "YYYY-MM-DD",
+  "testDate": "YYYY-MM-DD",
+  "testType": "<valid test type>",
+  "tzOffset": 0,
+  "phone": "+CC Phone number",
 }
 ```
 
