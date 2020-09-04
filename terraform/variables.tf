@@ -178,6 +178,12 @@ variable "adminapi-host" {
   description = "Domain adminapi is hosted on."
 }
 
+variable "notification-email" {
+  type        = string
+  default     = "nobody@example.com"
+  description = "Email address for alerts"
+}
+
 terraform {
   required_version = ">= 0.13.1"
 
