@@ -33,22 +33,33 @@ type E2ERunnerConfig struct {
 
 	Port string `env:"PORT,default=8080"`
 
-	// e2e-runner config
+	// Share config between server and command line versions.
+	TestConfig E2ETestConfig
+}
+
+type E2ETestConfig struct {
 	VerificationAdminAPIServer string `env:"VERIFICATION_ADMIN_API, default=http://localhost:8081"`
-	VerificationAdminAPIKey    string
+	VerificationAdminAPIKey    string `env:"VERIFICATION_ADMIN_API_KEY"`
 	VerificationAPIServer      string `env:"VERIFICATION_SERVER_API, default=http://localhost:8082"`
-	VerificationAPIServerKey   string
+	VerificationAPIServerKey   string `env:"VERIFICATION_SERVER_API_KEY"`
 	KeyServer                  string `env:"KEY_SERVER, default=http://localhost:8080"`
 	HealthAuthorityCode        string `env:"HEALTH_AUTHORITY_CODE,required"`
-
-	// e2e-test config
-	DoRevise bool
+	DoRevise                   bool   `env:"DO_REVISIONS"`
 }
 
 // NewE2ERunnerConfig returns the environment config for the e2e-runner server.
 // Only needs to be called once per instance, but may be called multiple times.
 func NewE2ERunnerConfig(ctx context.Context) (*E2ERunnerConfig, error) {
 	var config E2ERunnerConfig
+	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
+
+// NewE2ETestConfig contains just the necessary elements for command line execution.
+func NewE2ETestConfig(ctx context.Context) (*E2ETestConfig, error) {
+	var config E2ETestConfig
 	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
 		return nil, err
 	}

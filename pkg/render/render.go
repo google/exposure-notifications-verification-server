@@ -116,6 +116,10 @@ func loadTemplates(tmpl *template.Template, root string) error {
 			return nil
 		}
 
+		if !strings.HasSuffix(info.Name(), ".html") {
+			return nil
+		}
+
 		if _, err := tmpl.ParseFiles(path); err != nil {
 			return fmt.Errorf("failed to parse %s: %w", path, err)
 		}

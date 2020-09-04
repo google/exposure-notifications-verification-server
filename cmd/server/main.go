@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
@@ -183,6 +184,12 @@ func realMain(ctx context.Context) error {
 	requireRealm := middleware.RequireRealm(ctx, cacher, db, h)
 	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
 	rateLimit := httplimiter.Handle
+
+	{
+		static := filepath.Join(config.AssetsPath, "static")
+		fs := http.FileServer(http.Dir(static))
+		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+	}
 
 	{
 		loginController := login.New(ctx, auth, config, db, h)

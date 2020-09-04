@@ -219,11 +219,21 @@ func TestIssueToken(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
+		tc := tc
 
-			realm, err := db.CreateRealm(fmt.Sprintf("test realm - %s", tc.Name))
-			if err != nil {
-				t.Fatalf("unable to create test realm")
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
+			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
+			if err := db.SaveRealm(realm); err != nil {
+				t.Fatal(err)
+			}
+
+			// Extract the code before saving. After saving, the code on the struct
+			// will be the HMAC.
+			code := tc.Verification.Code
+			if tc.UseLongCode {
+				code = tc.Verification.LongCode
 			}
 
 			tc.Verification.RealmID = realm.ID
@@ -233,11 +243,6 @@ func TestIssueToken(t *testing.T) {
 
 			if tc.Delay > 0 {
 				time.Sleep(tc.Delay)
-			}
-
-			code := tc.Verification.Code
-			if tc.UseLongCode {
-				code = tc.Verification.LongCode
 			}
 
 			tok, err := db.VerifyCodeAndIssueToken(realm.ID, code, tc.Accept, tc.TokenAge)
