@@ -43,27 +43,31 @@ The `ErrorCodes` are defined in [api.go](https://github.com/google/exposure-noti
 
 # API Methods
 
-## `/api/verify` 
+## `/api/verify`
 
 Exchange a verification code for a long term verification token.
 
-**VerifyCodeRequest:**
+**VerifyCodeRequest**
 
 ```json
 {
   "code": "<the code>",
-  "accept": ["confirmed"]
+  "accept": ["confirmed"],
+  "padding": "<bytes>"
 }
 ```
 
 * `accept` is an _optional_ list of the diagnosis types that the client is willing to process. Accepted values are
   * `["confirmed"]`
-  * `["confirmed", "likely"]` 
+  * `["confirmed", "likely"]`
   * `["confirmed", "likely", "negative"]`
   * It is not possible to get just `likely` or just `negative` - if a client
         passes `likely` they are indiciating they can process both `confirmed` and `likely`.
+* `padding` is a _recommended_ field that obfuscates the size of the request
+  body to a network observer. The client should generate and insert a random
+  number of bytes into this field. The server does not process the padding.
 
-**VerifyCodeResponse:**
+**VerifyCodeResponse**
 
 ```json
 {
@@ -72,8 +76,13 @@ Exchange a verification code for a long term verification token.
   "token": "<JWT verification token>",
   "error": "",
   "errorCode": "",
+  "padding": "<bytes>"
 }
 ```
+
+* `padding` is a field that obfuscates the size of the response body to a
+  network observer. The server _may_ generate and insert a random number of
+  bytes into this field. The client should not process the padding.
 
 Possible error code responses. New error codes may be added in future releases.
 
@@ -91,12 +100,13 @@ Possible error code responses. New error codes may be added in future releases.
 
 Exchange a verification token for a verification certificate (for sending to a key server)
 
-**VerificationCertificateRequest:**
+**VerificationCertificateRequest**
 
 ```json
 {
   "token": "token from verifyCodeResponse",
-  "ekeyhmac": "hmac of exposure keys, base64 encoded"
+  "ekeyhmac": "hmac of exposure keys, base64 encoded",
+  "padding": "<bytes>"
 }
 ```
 
@@ -106,17 +116,25 @@ Exchange a verification token for a verification certificate (for sending to a k
   * [Plaintext generation algorithm](https://github.com/google/exposure-notifications-server/blob/main/docs/design/verification_protocol.md)
   * [Sample HMAC generation (Go)](https://github.com/google/exposure-notifications-server/blob/main/pkg/verification/utils.go)
   * The key server will re-calculate this HMAC and it MUST match what is presented here.
+* `padding` is a _recommended_ field that obfuscates the size of the request
+  body to a network observer. The client should generate and insert a random
+  number of bytes into this field. The server does not process the padding.
 
 
-**VerificationCertificateResponse:**
+**VerificationCertificateResponse**
 
  ```json
 {
   "certificate": "<JWT verification certificate>",
   "error": "",
-  "errorCode": ""
+  "errorCode": "",
+  "padding": "<bytes>"
 }
 ```
+
+* `padding` is a field that obfuscates the size of the response body to a
+  network observer. The server _may_ generate and insert a random number of
+  bytes into this field. The client should not process the padding.
 
 Possible error code responses. New error codes may be added in future releases.
 
@@ -135,6 +153,8 @@ These APIs are available on the admin server and require and `ADMIN` level API k
 
 Request a verification code to be issued. Accepts [optional] symptom date and test dates in ISO 8601 format. These can be in local time, if a timezone offset is provided. If a phone number is provided and the realm is configured with SMS credentials, then an SMS will be dispatched according to the realm's settings.
 
+**IssueCodeRequest**
+
 ```json
 {
   "symptomDate": "YYYY-MM-DD",
@@ -142,6 +162,7 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   "testType": "<valid test type>",
   "tzOffset": 0,
   "phone": "+CC Phone number",
+  "padding": "<bytes>"
 }
 ```
 
@@ -154,9 +175,12 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
 * `tzOffset`
   * Offset in minutes of the user's timezone. Positive, negative, 0, or omitted (using the default of 0) are all valid. 0 is considered to be UTC.
 * `phone`
-  * Phone number to send the SMS too, 
+  * Phone number to send the SMS too
+* `padding` is a _recommended_ field that obfuscates the size of the request
+  body to a network observer. The client should generate and insert a random
+  number of bytes into this field. The server does not process the padding.
 
-The response consists of:
+**IssueCodeResponse**
 
 ```json
 {
@@ -187,18 +211,28 @@ The response consists of:
   * represents the time that the link containing a 'long' verification code expires (if one was issued)
 * `longExpiresAtTimestamp`
   * Unix, seconds since the epoch for `longExpiresAt`
+* `padding` is a field that obfuscates the size of the response body to a
+  network observer. The server _may_ generate and insert a random number of
+  bytes into this field. The client should not process the padding.
 
 ## `/api/checkcodestatus`
 
 Checks the status of a previous issued code, looking up by UUID.
 
+**CheckCodeStatusRequest**
+
 ```json
 {
-  "uuid": "UUID for code to check"
+  "uuid": "UUID for code to check",
+  "padding": "<bytes>"
 }
 ```
 
-Returns the status of that code, if found.
+* `padding` is a _recommended_ field that obfuscates the size of the request
+  body to a network observer. The client should generate and insert a random
+  number of bytes into this field. The server does not process the padding.
+
+**CheckCodeStatusResponse**
 
 ```json
 {
@@ -207,6 +241,7 @@ Returns the status of that code, if found.
   "longExpiresAtTimestamp": 0,
   "error": "descriptive error message",
   "errorCode": "well defined error code from api.go",
+  "padding": "<bytes>"
 }
 ```
 
@@ -216,10 +251,15 @@ Returns the status of that code, if found.
   * seconds since the epoch indicating expiry time in UTC
 * `longExpiresAtTimestamp`
   * seconds since the epoch for the SMS link expiry time in UTC
+* `padding` is a field that obfuscates the size of the response body to a
+  network observer. The server _may_ generate and insert a random number of
+  bytes into this field. The client should not process the padding.
 
 ## `/api/expirecode`
 
 Expires an unclaimed code. IF the code has been claimed an error is returned.
+
+**ExpireCodeRequest**
 
 ```json
 {
@@ -228,9 +268,16 @@ Expires an unclaimed code. IF the code has been claimed an error is returned.
   "longExpiresAtTimestamp": 0,
   "error": "descriptive error message",
   "errorCode": "well defined error code from api.go",
+  "padding": "<bytes>"
 }
+```
 
-The timestamps are updated to the new expiration time (which will be in the past).
+* `padding` is a _recommended_ field that obfuscates the size of the request
+  body to a network observer. The client should generate and insert a random
+  number of bytes into this field. The server does not process the padding.
+
+The timestamps are updated to the new expiration time (which will be in the
+past).
 
 # Chaffing requests
 
