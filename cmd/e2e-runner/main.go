@@ -17,12 +17,12 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
@@ -64,9 +64,12 @@ func main() {
 	logger.Info("successful shutdown")
 }
 
-func randomString() string {
-	rand.Seed(time.Now().Unix())
-	return fmt.Sprintf("%x", rand.Int63())
+func randomString() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(10000))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%04x", n), nil
 }
 
 func realMain(ctx context.Context) error {
@@ -113,7 +116,10 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Create new API keys
-	suffix := randomString()
+	suffix, err := randomString()
+	if err != nil {
+		return fmt.Errorf("failed to create suffix string for API keys: %w", err)
+	}
 
 	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       adminKeyName + suffix,
