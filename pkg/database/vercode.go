@@ -180,7 +180,7 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 			return ErrTestTooOld
 		}
 	}
-	if !v.ExpiresAt.After(now) || !v.LongExpiresAt.After(now) {
+	if now.After(v.ExpiresAt) || now.After(v.LongExpiresAt) {
 		return ErrCodeAlreadyExpired
 	}
 	return nil
