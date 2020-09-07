@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/firestore v1.3.0 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.7.1-0.20200615190824-f8c219d2d895 // indirect
 	contrib.go.opencensus.io/exporter/prometheus v0.2.1-0.20200609204449-6bcf6f8577f0 // indirect
-	contrib.go.opencensus.io/integrations/ocsql v0.1.6
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
@@ -24,13 +23,11 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/jinzhu/now v1.1.1 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
-	github.com/lib/pq v1.8.0
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/mikehelmick/go-chaff v0.3.0
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/rakutentech/jwk-go v1.0.1
-	github.com/sagikazarmark/go-gin-gorm-opencensus v0.0.0-20190530122219-5cd3c9b414a5
 	github.com/sethvargo/go-envconfig v0.3.1
 	github.com/sethvargo/go-limiter v0.4.1
 	github.com/sethvargo/go-redisstore v0.1.2-opencensus
