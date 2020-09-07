@@ -2,6 +2,8 @@ module github.com/google/exposure-notifications-verification-server
 
 go 1.14
 
+replace github.com/google/exposure-notifications-server => ../exposure-notifications-server
+
 require (
 	cloud.google.com/go v0.65.0
 	cloud.google.com/go/firestore v1.3.0 // indirect

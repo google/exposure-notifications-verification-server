@@ -33,47 +33,36 @@ represent best practices.
 
     Use the same Google credentials as you used in the previous steps.
 
-1.  Create a Google Cloud KMS key ring and two signing keys:
+1.  Change directory into this repository:
 
-    ```sh
-    gcloud kms keyrings create "signing" \
-      --location "us"
-
-    gcloud kms keys create "token-signing" \
-      --location "us" \
-      --keyring "signing" \
-      --purpose "asymmetric-signing" \
-      --default-algorithm "ec-sign-p256-sha256"
-
-    gcloud kms keys create "certificate-signing" \
-      --location "us" \
-      --keyring "signing" \
-      --purpose "asymmetric-signing"  \
-      --default-algorithm "ec-sign-p256-sha256" \
+    ```text
+    cd /path/to/exposure-notifications-verification-server
     ```
 
-    To get the resource names to the keys (for use below):
+1.  Bootstrap the local key management system:
 
-    ```sh
-    gcloud kms keys describe "token-signing" \
-      --location "us" \
-      --keyring "signing"
-
-    gcloud kms keys describe "certificate-signing" \
-      --location "us" \
-      --keyring "signing"
+    ```text
+    go run ./tools/gen-keys
     ```
+
+    This will output some environment variables. **Save these environment
+    variables for the next step!**
+
+    The default development setup uses a local, on-disk key manager to persist
+    across server restarts. The production installation recommends a hosted key
+    management service like Google Cloud KMS. It is possible to use Google Cloud
+    KMS locally by following the instructions in the production setup guide.
 
 1.  Create a `.env` file with your configuration. This will aid future
     development since you can `source` this file instead of trying to find all
     these values again.
 
     ```sh
-    # Create a file named .env with these contents
-    export PROJECT_ID="YOUR_PROJECT_ID" # TODO: replace
+    # Google project configuration.
+    export PROJECT_ID="TODO"
     export GOOGLE_CLOUD_PROJECT="${PROJECT_ID}"
 
-    # Get these values from the firebase console
+    # Get these values from the firebase console.
     export FIREBASE_API_KEY="TODO"
     export FIREBASE_PROJECT_ID="${PROJECT_ID}"
     export FIREBASE_MESSAGE_SENDER_ID="TODO"
@@ -85,35 +74,58 @@ represent best practices.
     export FIREBASE_PRIVACY_POLICY_URL="TODO"
     export FIREBASE_TERMS_OF_SERVICE_URL="TODO"
 
-    # Populate these with the resource IDs from above. These values will be of
-    # the format:
-    #
-    # projects/ID/locations/us/keyRings/signing/cryptoKeys/token-signing/cryptoKeyVersions/1Z
-    export TOKEN_SIGNING_KEY="TODO"
-    export CERTIFICATE_SIGNING_KEY="TODO"
-
-    # Disable local observability
+    # Disable local observability.
     export OBSERVABILITY_EXPORTER="NOOP"
 
-    # Configure a CSRF auth key. Create your own with `openssl rand -base64 32`.
+    # Configure CSRF for preventing request forgery. Create your own with:
+    #
+    #     openssl rand -base64 32
+    #
     export CSRF_AUTH_KEY="RcCNhTkS9tSDMSGcl4UCa1FUg9GmctkJpdI+eqZ+3v4="
 
     # Configure cookie encryption, the first is 64 bytes, the second is 32.
-    # Create your own with `openssl rand -base64 NUM` where NUM is 32 or 64
+    # Create your own values with:
+    #
+    #     openssl rand -base64 NUM
+    #
+    # where NUM is 32 or 64, respectively.
     export COOKIE_KEYS="ARLaFwAqBGIkm5pLjAveJuahtCnX2NLoAUz2kCZKrScUaUkEaxHSvJLVYb5yAPCc441Cho5n5yp8jdEmy6hyig==,RLjcRZeqc07s6dh3OK4CM1POjHDZHC+usNU1w/XNTjM="
+
+    # Configure certificate key management. The CERTIFICATE_SIGNING_KEY should
+    # be the value output in the previous step.
+    export CERTIFICATE_KEY_MANAGER="FILESYSTEM"
+    export CERTIFICATE_KEY_FILESYSTEM_ROOT="$(pwd)/local"
+    export CERTIFICATE_SIGNING_KEY="TODO" # (e.g. "/system/certificate-signing/1122334455")
+
+    # Configure token key management. The TOKEN_SIGNING_KEY should be the value
+    # output in the previous step.
+    export TOKEN_KEY_MANAGER="FILESYSTEM"
+    export TOKEN_KEY_FILESYSTEM_ROOT="$(pwd)/local"
+    export TOKEN_SIGNING_KEY="TODO" # (e.g. "/system/token-signing/1122334455")
+
+    # Configure the database key manager. The CERTIFICATE_SIGNING_KEYRING and
+    # DB_ENCRYPTION_KEY should be the values output in the previous step.
+    export DB_KEY_MANAGER="FILESYSTEM"
+    export DB_KEY_FILESYSTEM_ROOT="$(pwd)/local"
+    export CERTIFICATE_SIGNING_KEYRING="TODO" # (e.g. "/realm")
+    export DB_ENCRYPTION_KEY="TODO" # (e.g. "/system/database-encryption")
 
     # Use an in-memory key manager for encrypting values in the database. Create
     # your own encryption key with `openssl rand -base64 64`.
     export KEY_MANAGER="IN_MEMORY"
     export DB_ENCRYPTION_KEY="O04ZjG4WuoceRd0k2pTqDN0r8omr6sbFL0U3T5b12Lo="
 
-    # Database HMAC keys - these should be at least 64 bytes, preferably 128
-    # Create your own with `openssl rand -base64 128`.
+    # Database HMAC keys - these should be at least 64 bytes, preferably 128.
+    # Create your own with:
+    #
+    #     openssl rand -base64 128
+    #
     export DB_APIKEY_DATABASE_KEY="RlV/RBEt0lDeK54r8U9Zi7EDFZid3fiKM2HFgjR9sZGMb+duuQomjGdNKYnzrNyKgeTBcc1V4qVs6fBrN6IFTLbgkp/u52MGhSooAQI4EuZ6JFuyxQBeu54Ia3mihF111BMcCWpHDg2MAh8k8f669plEQaqoQFg3GThP/Lx1OY0="
     export DB_APIKEY_SIGNATURE_KEY="HFeglmupbtv/I2X04OQRl1V7mcvfAXuv8XtmIFYV6aYsPuwQVFtXDlfFrjouYT2Z6kYln7B90RcutHJNjpPDRkyBQ28HtWmid3dr0tpJ1KiiK5NGG7JS9mU8fCvEYklw5RV+1f8qN13nWzHpW8/RQw9rR/vQGy90yL5/aydBuVA="
     export DB_VERIFICATION_CODE_DATABASE_KEY="YEN4+tnuf1DzQPryRzrPVilqT0Q2TO8IIg3C8prvXWGAaoABOWACl79hS40OneuaU8GsQHwhJ13wM2A5ooyOq+uqxCjrqVJZZXPU5xzl/6USEYAp4z2b0ZYrfkx2SRk1o9HfFi1RMqpaBf1TRIbsNOK9hNRG3nS2It49y6mR1ho="
 
-    # Enable dev mode
+    # Enable dev mode. Do not enable dev mode or database dev mode in production
+    # environments.
     export DEV_MODE=1
     export DB_DEBUG=1
     ```
