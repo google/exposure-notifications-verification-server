@@ -114,7 +114,7 @@ Terraform module.
 
 
     ```text
-    $ echo > ${PROJECT_ID}/main.tf <<EOF
+    $ cat <<EOF > ${PROJECT_ID}/main.tf
       terraform {
         backend "gcs" {
           bucket = "${PROJECT_ID}-terraform"
