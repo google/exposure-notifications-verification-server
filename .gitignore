@@ -25,3 +25,4 @@ terraform-e2e/state.tf
 bin/
 local/
 .env
+.env.*

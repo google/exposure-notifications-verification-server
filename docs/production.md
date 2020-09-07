@@ -99,7 +99,7 @@ provide its _reference_ in the environment. If you are not using a secret
 manager, provide this value directly in the environment.
 
 
-### Cross-site request forgery (CSRF) key
+### Cross-site request forgery (CSRF) keys
 
 **Recommended frequency:** 90 days, on breach
 
@@ -134,7 +134,7 @@ While unlikely, this may require you to update the `DB_ENCRYPTION_KEY`
 environment variable.
 
 
-### API Key Signature HMAC keys
+### API Key signature HMAC keys
 
 **Recommended frequency:** 90 days
 
@@ -160,7 +160,7 @@ Note: Removing any of the keys from this list will invalidate API keys signed by
 that version.
 
 
-### API Key Database HMAC keys
+### API Key database HMAC keys
 
 **Recommended frequency:** 90 days
 
@@ -186,7 +186,7 @@ Note: Removing any of the keys from this list will invalidate API keys HMACed by
 that version.
 
 
-### Verification Code Database HMAC Key
+### Verification Code database HMAC keys
 
 **Recommended frequency:** 30 days
 
