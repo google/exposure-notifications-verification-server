@@ -7,6 +7,7 @@ require (
 	cloud.google.com/go/firestore v1.3.0 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.7.1-0.20200615190824-f8c219d2d895 // indirect
 	contrib.go.opencensus.io/exporter/prometheus v0.2.1-0.20200609204449-6bcf6f8577f0 // indirect
+	contrib.go.opencensus.io/integrations/ocsql v0.1.6
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect

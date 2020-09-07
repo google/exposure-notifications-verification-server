@@ -127,16 +127,10 @@ func (db *Database) Open(ctx context.Context) error {
 func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
 	c := db.config
 
-	// Establish a connection to the database.
-	b, err := retry.NewFibonacci(250 * time.Millisecond)
-	if err != nil {
-		return fmt.Errorf("failed to configure database backoff: %w", err)
-	}
-	b = retry.WithMaxRetries(10, b)
-	b = retry.WithCappedDuration(2*time.Second, b)
-
+	// Establish a connection to the database. We use this later to register
+	// opencenusus stats.
 	var rawDB *gorm.DB
-	if err := retry.Do(ctx, b, func(ctx context.Context) error {
+	if err := withRetries(ctx, func(ctx context.Context) error {
 		var err error
 		rawDB, err = gorm.Open("postgres", c.ConnectionString())
 		if err != nil {
@@ -448,4 +442,17 @@ func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) 
 	}
 
 	return field, typ, true
+}
+
+// withRetries is a helper for creating a fibonacci backoff with capped retries,
+// useful for retrying database queries.
+func withRetries(ctx context.Context, f retry.RetryFunc) error {
+	b, err := retry.NewFibonacci(50 * time.Millisecond)
+	if err != nil {
+		return fmt.Errorf("failed to configure backoff: %w", err)
+	}
+	b = retry.WithMaxRetries(10, b)
+	b = retry.WithCappedDuration(1*time.Second, b)
+
+	return retry.Do(ctx, b, f)
 }
