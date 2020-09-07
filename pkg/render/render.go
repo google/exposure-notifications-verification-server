@@ -131,6 +131,7 @@ func loadTemplates(tmpl *template.Template, root string) error {
 func templateFuncs() template.FuncMap {
 	return map[string]interface{}{
 		"joinStrings": strings.Join,
+		"trimSpace":   strings.TrimSpace,
 	}
 }
 

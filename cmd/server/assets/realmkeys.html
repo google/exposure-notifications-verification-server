@@ -39,7 +39,7 @@
     <div class="form-group row">
       <label for="name" class="col-sm-3">Public key:</label>
       <div class="input-group col-sm-9">
-        <textarea class="form-control text-monospace{{if .systemCertPublicKeyError}} is-invalid{{end}}" rows="4" id="systemPublicKey" readonly>{{.systemCertPublicKey}}</textarea>
+        <textarea class="form-control text-monospace{{if .systemCertPublicKeyError}} is-invalid{{end}}" rows="4" id="systemPublicKey" readonly>{{.systemCertPublicKey | trimSpace}}</textarea>
         {{template "clippy" "systemPublicKey"}}
         {{if .systemCertPublicKeyError}}
         <div class="invalid-feedback">
@@ -98,7 +98,7 @@
                   </td>
                   <td>
                     <div class="input-group">
-                      <textarea class="form-control text-monospace" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID}}</textarea>
+                      <textarea class="form-control text-monospace" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID | trimSpace}}</textarea>
                       {{template "clippy" $rk.GetKID}}
                     </div>
 
@@ -269,7 +269,7 @@
             <div class="form-group row">
               <label for="name" class="col-sm-3">Public key:</label>
               <div class="input-group col-sm-9">
-                <textarea class="form-control" rows="4" id="activePublicKey" readonly>{{if .activePublicKey}}{{.activePublicKey}}{{else}}Temporarily unable to show public key{{end}}</textarea>
+                <textarea class="form-control" rows="4" id="activePublicKey" readonly>{{if .activePublicKey}}{{.activePublicKey | trimSpace}}{{else}}Temporarily unable to show public key{{end}}</textarea>
                 {{template "clippy" "activePublicKey"}}
               </div>
             </div>
