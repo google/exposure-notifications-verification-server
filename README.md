@@ -71,7 +71,7 @@ for a verification system:
 
 ## More resources
 
--   [API Guide](docs/api.md)
+-   [API guide](docs/api.md)
 -   [Realm admin guide](docs/realm_guide.md)
 -   [User guide](docs/user_guide.md)
 -   [Development](docs/development.md)
