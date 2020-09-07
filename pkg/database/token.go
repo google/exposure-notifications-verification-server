@@ -153,14 +153,7 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 //
 // The long term token can be used later to sign keys when they are submitted.
 func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, acceptTypes api.AcceptTypes, expireAfter time.Duration) (*Token, error) {
-	buffer := make([]byte, tokenBytes)
-	_, err := rand.Read(buffer)
-	if err != nil {
-		return nil, fmt.Errorf("rand.Read: %v", err)
-	}
-	tokenID := base64.RawStdEncoding.EncodeToString(buffer)
-
-	hmacedCode, err := db.hmacVerificationCode(verCode)
+	hmacedCodes, err := db.generateVerificationCodeHMACs(verCode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
 	}
@@ -173,8 +166,7 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where("realm_id = ?", realmID).
-			// TODO(sethvargo): remove plaintext token check after migrations.
-			Where("(code = ? OR code = ? OR long_code = ? OR long_code = ?)", hmacedCode, verCode, hmacedCode, verCode).
+			Where("(code IN (?) OR long_code IN (?))", hmacedCodes, hmacedCodes).
 			First(&vc).
 			Error; err != nil {
 			if gorm.IsRecordNotFoundError(err) {
@@ -203,6 +195,12 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 		if err := tx.Save(&vc).Error; err != nil {
 			return err
 		}
+
+		buffer := make([]byte, tokenBytes)
+		if _, err := rand.Read(buffer); err != nil {
+			return fmt.Errorf("failed to create token: %w", err)
+		}
+		tokenID := base64.RawStdEncoding.EncodeToString(buffer)
 
 		// Issue the token. Take the generated value and create a new long term token.
 		tok = &Token{

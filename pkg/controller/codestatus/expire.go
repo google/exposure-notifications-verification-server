@@ -21,9 +21,10 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleExpire() http.Handler {
+func (c *Controller) HandleExpireAPI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request api.ExpireCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
@@ -49,5 +50,39 @@ func (c *Controller) HandleExpire() http.Handler {
 				ExpiresAtTimestamp:     code.ExpiresAt.UTC().Unix(),
 				LongExpiresAtTimestamp: code.ExpiresAt.UTC().Unix(),
 			})
+	})
+}
+
+func (c *Controller) HandleExpirePage() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		// Retrieve once to check permissions.
+		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
+		if apiErr != nil {
+			flash.Error("Failed to expire code: %v.", apiErr.Error)
+			c.renderStatus(ctx, w, code)
+			return
+		}
+
+		expiredCode, err := c.db.ExpireCode(vars["uuid"])
+		if err != nil {
+			flash.Error("Failed to process form: %v.", err)
+			expiredCode = code
+		} else {
+			flash.Alert("Expired code.")
+		}
+
+		retCode := Code{}
+		c.responseCode(ctx, r, expiredCode, &retCode)
+		c.renderShow(ctx, w, retCode)
 	})
 }

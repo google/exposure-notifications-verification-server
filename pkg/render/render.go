@@ -39,6 +39,7 @@ var allowedResponseCodes = map[int]struct{}{
 	401: {},
 	404: {},
 	405: {},
+	412: {},
 	413: {},
 	429: {},
 	500: {},
@@ -112,6 +113,10 @@ func loadTemplates(tmpl *template.Template, root string) error {
 		}
 
 		if info.IsDir() {
+			return nil
+		}
+
+		if !strings.HasSuffix(info.Name(), ".html") {
 			return nil
 		}
 

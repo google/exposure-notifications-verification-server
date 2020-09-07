@@ -20,15 +20,19 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
@@ -56,6 +60,9 @@ func main() {
 
 	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
 	logger := logging.NewLogger(debug)
+	logger = logger.With("build_id", buildinfo.BuildID)
+	logger = logger.With("build_tag", buildinfo.BuildTag)
+
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -159,11 +166,8 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
 
-	// Install HSTS headers in production
-	if !config.DevMode {
-		addHSTS := middleware.AddHSTS(ctx)
-		r.Use(addHSTS)
-	}
+	// Install common security headers
+	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "html"))
 
 	// Install the CSRF protection middleware.
 	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
@@ -178,7 +182,14 @@ func realMain(ctx context.Context) error {
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	requireRealm := middleware.RequireRealm(ctx, cacher, db, h)
+	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
 	rateLimit := httplimiter.Handle
+
+	{
+		static := filepath.Join(config.AssetsPath, "static")
+		fs := http.FileServer(http.Dir(static))
+		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+	}
 
 	{
 		loginController := login.New(ctx, auth, config, db, h)
@@ -188,6 +199,7 @@ func realMain(ctx context.Context) error {
 
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
 			sub.Handle("/login/create", loginController.HandleLoginCreate()).Methods("GET")
+			sub.Handle("/login/resetpassword", loginController.HandleResetPassword()).Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 		}
@@ -255,6 +267,7 @@ func realMain(ctx context.Context) error {
 		codeStatusController := codestatus.NewServer(ctx, config, db, h)
 		sub.Handle("/status", codeStatusController.HandleIndex()).Methods("GET")
 		sub.Handle("/show", codeStatusController.HandleShow()).Methods("POST")
+		sub.Handle("/{uuid}/expire", codeStatusController.HandleExpirePage()).Methods("PATCH")
 	}
 
 	// apikeys
@@ -308,6 +321,8 @@ func realMain(ctx context.Context) error {
 		realmadminController := realmadmin.New(ctx, config, db, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
+		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
+		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
 
 		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, h)
 		if err != nil {
@@ -319,6 +334,32 @@ func realMain(ctx context.Context) error {
 		realmSub.Handle("/keys/upgrade", realmKeysController.HandleUpgrade()).Methods("POST")
 		realmSub.Handle("/keys/save", realmKeysController.HandleSave()).Methods("POST")
 		realmSub.Handle("/keys/activate", realmKeysController.HandleActivate()).Methods("POST")
+	}
+
+	// jwks
+	{
+		jwksSub := r.PathPrefix("/jwks").Subrouter()
+		jwksSub.Use(rateLimit)
+
+		jwksController, err := jwks.New(ctx, db, cacher, h)
+		if err != nil {
+			return fmt.Errorf("failed to create jwks controller: %w", err)
+		}
+		jwksSub.Handle("/{realm}", jwksController.HandleIndex()).Methods("GET")
+	}
+
+	// System admin.
+	{
+		adminSub := r.PathPrefix("/admin").Subrouter()
+		adminSub.Use(requireAuth)
+		adminSub.Use(requireVerified)
+		adminSub.Use(requireSystemAdmin)
+		adminSub.Use(rateLimit)
+
+		adminController := admin.New(ctx, config, db, h)
+		adminSub.Handle("/realms", adminController.HandleIndex()).Methods("GET")
+		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("GET")
+		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("POST")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be

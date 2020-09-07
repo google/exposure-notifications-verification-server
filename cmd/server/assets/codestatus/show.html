@@ -42,24 +42,47 @@
         <h5 class="mb-1">Expiry</h5>
         <span id="code-expires-at" class="sm text-danger"></span>
       </div>
+      {{if .code.HasLongExpires}}
+      <div class="list-group-item">
+        <h5 class="mb-1">SMS link expiry</h5>
+        <span id="long-code-expires-at" class="sm text-danger"></span>
+      </div>
+      {{end}}
+      <div class="card-body">
+        <a href="/code/{{.code.UUID}}/expire" class="d-block text-danger" data-method="PATCH"
+          data-confirm="Are you sure you want to expire this code?" data-toggle="tooltip" title="Expire code">
+          <button type="submit" id="invalidate" class="btn btn-danger btn-sm">Invalidate code now</button>
+        </a>
+      </div>
     </div>
 
-    <div>
-      <a href="/code/status">&larr; Enter another code</a>
-    </div>
+    <a href="/code/status" class="card-link">&larr; Enter another code</a>
   </main>
 
   {{template "scripts" .}}
   {{template "codescripts" .}}
 
   <script type="text/javascript">
-    let $codeExpiresAt;
+    let $buttonInvalidate = $('button#invalidate');
     let expires = {{ .code.Expires }};
+    let longExpires = {{ .code.LongExpires }}
 
     $(function() {
-      $codeExpiresAt = $('#code-expires-at');
+      let $codeExpiresAt = $('#code-expires-at');
       // Start countdown
-      countdown($codeExpiresAt, expires);
+      countdown($codeExpiresAt, expires, function() {
+        {{if not .code.HasLongExpires}}
+        // Disable the submit if already expired.
+        $buttonInvalidate.prop('disabled', true);
+        {{end}}
+      });
+
+      {{if .code.HasLongExpires}}
+      let $longCodeExpiresAt = $('#long-code-expires-at');
+      countdown($longCodeExpiresAt, longExpires, function() {
+        $buttonInvalidate.prop('disabled', true);
+      });
+      {{end}}
     });
   </script>
 </body>

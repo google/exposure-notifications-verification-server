@@ -93,7 +93,7 @@
                 {{range $rk := .realmKeys}}
                 <tr>
                   <td>
-                    <span class="text-monospace">{{$rk.GetKID}}</span>
+                    <a href="/jwks/{{$rk.RealmID}}" class="text-monospace">{{$rk.GetKID}}</a>
                     {{if $rk.Active}}<span class="badge badge-success">Active</span>{{end}}
                   </td>
                   <td>
@@ -203,6 +203,9 @@
 
           <form method="POST" action="/realm/keys/save">
             {{ .csrfField }}
+            <p>View this realm's <a href="/jwks/{{$realm.ID}}" class="text-monospace">public key discovery</a>.</p>
+
+
             <div class="form-group row">
               <label for="name" class="col-sm-3">Issuer (iss):</label>
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">

@@ -61,6 +61,16 @@ variable "database_backup_location" {
   description = "Location in which to backup the database."
 }
 
+variable "storage_location" {
+  type    = string
+  default = "US"
+}
+
+variable "redis_name" {
+  type    = string
+  default = "verification-cache"
+}
+
 # The location for the app engine; this implicitly defines the region for
 # scheduler jobs as specified by the cloudscheduler_location variable but the
 # values are sometimes different (as in the default values) so they are kept as
@@ -129,38 +139,56 @@ variable "redis_cache_size" {
   description = "Size of the Redis instance in GB."
 }
 
-variable "adminapi_custom_domain" {
-  type    = string
-  default = ""
+variable "adminapi_custom_domains" {
+  type    = set(string)
+  default = []
 
-  description = "Custom domain to map for adminapi. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+  description = "Custom domains to map for adminapi. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
 }
 
-variable "apiserver_custom_domain" {
-  type    = string
-  default = ""
+variable "apiserver_custom_domains" {
+  type    = set(string)
+  default = []
 
-  description = "Custom domain to map for apiserver. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+  description = "Custom domains to map for apiserver. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
 }
 
-variable "server_custom_domain" {
-  type    = string
-  default = ""
+variable "server_custom_domains" {
+  type    = set(string)
+  default = []
 
-  description = "Custom domain to map for server. This domain must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance. If not provided, no domain mapping is created."
+  description = "Custom domains to map for server. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
+}
+
+variable "server-host" {
+  type        = string
+  default     = ""
+  description = "Domain web ui is hosted on."
+}
+
+variable "apiserver-host" {
+  type        = string
+  default     = ""
+  description = "Domain apiserver is hosted on."
+}
+
+variable "adminapi-host" {
+  type        = string
+  default     = ""
+  description = "Domain adminapi is hosted on."
 }
 
 terraform {
-  required_version = ">= 0.13"
+  required_version = ">= 0.13.1"
 
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 3.36"
+      version = "~> 3.37"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 3.36"
+      version = "~> 3.37"
     }
     local = {
       source  = "hashicorp/local"

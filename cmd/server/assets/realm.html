@@ -21,6 +21,31 @@
       Find or edit the settings for <strong>{{$realm.Name}}</strong> below.
     </p>
 
+    {{if not $realm.EnableENExpress}}
+      <div class="card mb-3">
+        <div class="card-header">
+          Exposure Notifications Express
+        </div>
+        <div class="card-body">
+          <p>
+            Click the button below to enable Exposure Notifications Express (EN
+            Express). You should only do this if you have confirmed
+            participation with Apple and Google.
+          </p>
+
+          <p class="text-danger">
+            This will override the settings and force the EN Express defaults.
+          </p>
+
+          <form method="POST" action="/realm/settings/enable-express">
+            {{ .csrfField }}
+            <a href="#" class="btn btn-primary btn-block" data-confirm="Are you sure you want to enable EN Express? You should only do this if you have confirmed participation with Apple and Google." data-submit-form>Enable EN Express</a>
+          </form>
+        </div>
+      </div>
+    {{end}}
+
+
     <form method="POST" action="/realm/settings/save">
       {{ .csrfField }}
 
@@ -61,6 +86,7 @@
           <div class="form-group row mb-0">
             <label class="col-sm-3">Allowed tests:</label>
             <div class="col-sm-9">
+              {{if not $realm.EnableENExpress}}
               <div class="form-group mb-0">
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="allowedTestTypes" id="negative" value="{{$testTypes.negative}}"{{if eq $realm.AllowedTestTypes $testTypes.negative}} checked{{end}}/>
@@ -87,6 +113,7 @@
                   </label>
                 </div>
               </div>
+              {{end}}
 
               <div class="form-group">
                 <div class="form-check">
@@ -96,6 +123,10 @@
                     <small class="form-text text-muted">
                       Only permit confirmed positive tests from an official
                       testing source.
+                      {{if $realm.EnableENExpress}} <br/>
+                      You are enrolled in EN Express which only supports the sharing of
+                      positive tests.
+                      {{end}}
                     </small>
                   </label>
                 </div>
@@ -113,6 +144,9 @@
           <div class="form-group row">
             <label for="codeLength" class="col-sm-3">Short code characters:</label>
             <div class="col-sm-9">
+              {{if $realm.EnableENExpress}}
+                <input class="form-control{{if $realm.ErrorsFor "codeLength"}} is-invalid{{end}}" name="codeLength" id="codeLength" type="text" value="{{$realm.CodeLength}}" readonly />
+              {{else}}
               <select class="form-control{{if $realm.ErrorsFor "codeLength"}} is-invalid{{end}}" name="codeLength" id="codeLength">
                 {{range $cl := .shortCodeLengths}}
                 <option value="{{$cl}}" {{if (eq $cl $realm.CodeLength)}}selected{{end}}>{{$cl}}</option>
@@ -122,23 +156,28 @@
                 The short verification code is intended to be dictated over the phone to the
                 person and is <code>6</code>, <code>7</code>, or <code>8</code> digits in length.
               </small>
+              {{end}}
             </div>
           </div>
 
           <div class="form-group row">
             <label for="codeLength" class="col-sm-3">Code expires after:</label>
             <div class="col-sm-8">
-              <select class="form-control{{if $realm.ErrorsFor "CodeDurationSeconds"}} is-invalid{{end}}" name="codeDuration" id="codeDuration">
-                {{$current := $realm.GetCodeDurationMinutes}}
-                {{range $scm := .shortCodeMinutes}}
-                <option value="{{$scm}}" {{if (eq $scm $current)}}selected{{end}}>{{$scm}}</option>
-                {{end}}
-              </select>
-              <small class="form-text text-muted">
-                The short code can be valid from anywhere between <code>5</code> and <code>60</code>
-                minutes. If you are using SMS deeplinks, it is recommended to keep this duration
-                short and let the long code be valid for a longer period (up to <code>24</code> hours).
-              </small>
+              {{if $realm.EnableENExpress}}
+                <input class="form-control{{if $realm.ErrorsFor "CodeDurationSeconds"}} is-invalid{{end}}" name="codeDuration" id="codeDuration" type="text" value="{{$realm.GetCodeDurationMinutes}}" readonly />
+              {{else}}
+                <select class="form-control{{if $realm.ErrorsFor "CodeDurationSeconds"}} is-invalid{{end}}" name="codeDuration" id="codeDuration">
+                  {{$current := $realm.GetCodeDurationMinutes}}
+                  {{range $scm := .shortCodeMinutes}}
+                  <option value="{{$scm}}" {{if (eq $scm $current)}}selected{{end}}>{{$scm}}</option>
+                  {{end}}
+                </select>
+                <small class="form-text text-muted">
+                  The short code can be valid from anywhere between <code>5</code> and <code>60</code>
+                  minutes. If you are using SMS deeplinks, it is recommended to keep this duration
+                  short and let the long code be valid for a longer period (up to <code>24</code> hours).
+                </small>
+              {{end}}
             </div>
             <div class="col-sm-1">minutes</div>
           </div>
@@ -146,15 +185,19 @@
           <div class="form-group row">
             <label for="codeLength" class="col-sm-3">Long code characters:</label>
             <div class="col-sm-9">
-              <select class="form-control{{if $realm.ErrorsFor "longCodeLength"}} is-invalid{{end}}" name="longCodeLength" id="longCodeLength">
-                {{range $cl := .longCodeLengths}}
-                <option value="{{$cl}}" {{if (eq $cl $realm.LongCodeLength)}}selected{{end}}>{{$cl}}</option>
-                {{end}}
-              </select>
+              {{if $realm.EnableENExpress}}
+                <input class="form-control{{if $realm.ErrorsFor "longCodeLength"}} is-invalid{{end}}" name="longCodeLength" id="longCodeLength" type="text" value="{{$realm.LongCodeLength}}" readonly />
+              {{else}}
+                <select class="form-control{{if $realm.ErrorsFor "longCodeLength"}} is-invalid{{end}}" name="longCodeLength" id="longCodeLength">
+                  {{range $cl := .longCodeLengths}}
+                  <option value="{{$cl}}" {{if (eq $cl $realm.LongCodeLength)}}selected{{end}}>{{$cl}}</option>
+                  {{end}}
+                </select>
+              {{end}}
               <small class="form-text text-muted">
-                The 'long' verification code is only delivered over SMS, is more complex with <code>12</code> -
+                The 'long' verification code is only delivered over SMS{{if not $realm.EnableENExpress}}, is more complex with <code>12</code> -
                 <code>16</code> alphanumeric characters, and is never shown to a human. It is recommended
-                to leave this at the default of <code>16</code> digits.
+                to leave this at the default of <code>16</code> digits{{end}}.
               </small>
             </div>
           </div>
@@ -162,15 +205,19 @@
           <div class="form-group row">
             <label for="codeLength" class="col-sm-3">Long code expires after:</label>
             <div class="col-sm-8">
-              <select class="form-control{{if $realm.ErrorsFor "LongCodeDurationSeconds"}} is-invalid{{end}}" name="longCodeDuration" id="longCodeDuration">
-                {{$current := $realm.GetLongCodeDurationHours}}
-                {{range $lch := .longCodeHours}}
-                <option value="{{$lch}}" {{if (eq $lch $current)}}selected{{end}}>{{$lch}}</option>
-                {{end}}
-              </select>
-              <small class="form-text text-muted">
-                The long code can be valid between <code>1</code> and <code>24</code> hours.
-              </small>
+              {{if $realm.EnableENExpress}}
+                <input class="form-control{{if $realm.ErrorsFor "LongCodeDurationSeconds"}} is-invalid{{end}}" name="longCodeDuration" id="longCodeDuration" type="text" value="{{$realm.GetLongCodeDurationHours}}" readonly />
+              {{else}}
+                <select class="form-control{{if $realm.ErrorsFor "LongCodeDurationSeconds"}} is-invalid{{end}}" name="longCodeDuration" id="longCodeDuration">
+                  {{$current := $realm.GetLongCodeDurationHours}}
+                  {{range $lch := .longCodeHours}}
+                    <option value="{{$lch}}" {{if (eq $lch $current)}}selected{{end}}>{{$lch}}</option>
+                  {{end}}
+                </select>
+                <small class="form-text text-muted">
+                  The long code can be valid between <code>1</code> and <code>24</code> hours.
+                </small>
+              {{end}}
             </div>
             <div class="col-sm-1">hours</div>
           </div>
@@ -188,7 +235,38 @@
                 The SMS message will be constructed based on the template you provide. The overall
                 length of of the SMS message should not exceede 160 characters, or your message will need to be split
                 in transit and may not be joined correctly. There are some special strings that you can use
-                to substitute items. Your SMS template <em>MUST</em> contain either the <code>[code]</code> or
+                to substitute items.
+                {{if $realm.EnableENExpress}}
+                  Your SMS template <em>MUST</em> contain <code>[enslink]</code>.
+                  <ul>
+                    <li><code>[enslink]</code> Inserts the required EN Express link of: <code>ens://v?r=[region]&c=[longcode]</code></li>
+                    <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
+                  </ul>
+
+                  Here is an example SMS template using EN Express.
+
+                  <ul>
+                    <li>
+                      <p>Custom greeting before the EN Express link and showing expiration.
+                         This is <code>145</code> characters when expanded.</p>
+                      <p>
+                        <samp class="text-dark">
+                          State of Wonder Dept. of Health. Click to share anonymous data for exposure notifications [enslink] Expires in [longexpires] hours
+                        </samp>
+                      </p>
+                    </li>
+                    <li>
+                      <p>This results in a SMS message that looks like:</p>
+                      <p>
+                        <samp class="text-dark">
+                          State of Wonder Dept. of Health. Click to share anonymous data for exposure notifications ens://v?r=US-XX&c=12345678abcd1234 Expires in 24 hours
+                        </samp>
+                      </p>
+                    </li>
+                  </ul>
+
+                {{else}}
+                Your SMS template <em>MUST</em> contain either the <code>[code]</code> or
                 <code>[longcode]</code>.
                 <ul>
                   <li><code>[region]</code>The region setting (set on this page).</li>
@@ -222,6 +300,7 @@
                     </p>
                   </li>
                 </ul>
+                {{end}}
               </small>
             </div>
           </div>
@@ -268,6 +347,29 @@
         </div>
       </div>
     </form>
+
+    {{if $realm.EnableENExpress}}
+    <div class="card mb-3">
+      <div class="card-header">
+        Exposure Notifications Express
+      </div>
+      <div class="card-body">
+        <p>
+          Click the button below to disable Exposure Notifications Express (EN
+          Express). This will enable you to control all the settings.
+        </p>
+
+        <p class="text-danger">
+          This could cause your iOS and Android integrations to stop working!
+        </p>
+
+        <form method="POST" action="/realm/settings/disable-express">
+          {{ .csrfField }}
+          <a href="#" class="btn btn-danger btn-block" data-confirm="Are you sure you want to disable EN Express? This could cause your iOS and Android integrations to stop working." data-submit-form>Disable EN Express</a>
+        </form>
+      </div>
+    </div>
+  {{end}}
   </main>
 
   {{template "scripts" .}}

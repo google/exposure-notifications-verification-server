@@ -23,6 +23,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -48,6 +49,9 @@ func main() {
 
 	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
 	logger := logging.NewLogger(debug)
+	logger = logger.With("build_id", buildinfo.BuildID)
+	logger = logger.With("build_tag", buildinfo.BuildTag)
+
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -117,11 +121,8 @@ func realMain(ctx context.Context) error {
 	}
 	rateLimit := httplimiter.Handle
 
-	// Install HSTS headers in production
-	if !config.DevMode {
-		addHSTS := middleware.AddHSTS(ctx)
-		r.Use(addHSTS)
-	}
+	// Install common security headers
+	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "json"))
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
@@ -129,26 +130,31 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
-
-	// Setup API auth
-	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
-		database.APIUserTypeAdmin,
-	})
-
-	// Install the APIKey Auth Middleware
-	r.Use(requireAPIKey)
+	// Install the rate limiting first. In this case, we want to limit by key
+	// first to reduce the chance of a database lookup.
 	r.Use(rateLimit)
 
-	issueapiController, err := issueapi.New(ctx, config, db, h)
-	if err != nil {
-		return fmt.Errorf("issueapi.New: %w", err)
-	}
-	r.Handle("/api/issue", issueapiController.HandleIssue()).Methods("POST")
+	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
+	{
+		sub := r.PathPrefix("/api").Subrouter()
 
-	codeStatusController := codestatus.NewAPI(ctx, config, db, h)
-	r.Handle("/api/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
-	r.Handle("/api/expirecode", codeStatusController.HandleExpire()).Methods("POST")
+		// Setup API auth
+		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
+			database.APIUserTypeAdmin,
+		})
+		// Install the APIKey Auth Middleware
+		sub.Use(requireAPIKey)
+
+		issueapiController, err := issueapi.New(ctx, config, db, h)
+		if err != nil {
+			return fmt.Errorf("issueapi.New: %w", err)
+		}
+		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
+
+		codeStatusController := codestatus.NewAPI(ctx, config, db, h)
+		sub.Handle("/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
+		sub.Handle("/expirecode", codeStatusController.HandleExpireAPI()).Methods("POST")
+	}
 
 	srv, err := server.New(config.Port)
 	if err != nil {

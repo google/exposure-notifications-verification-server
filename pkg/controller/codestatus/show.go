@@ -56,7 +56,6 @@ func (c *Controller) HandleShow() http.Handler {
 			c.renderStatus(ctx, w, &code)
 			return
 		}
-		retCode.UUID = form.UUID
 
 		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
 		if apiErr != nil {
@@ -67,26 +66,34 @@ func (c *Controller) HandleShow() http.Handler {
 			c.renderStatus(ctx, w, &code)
 			return
 		}
-		retCode.TestType = strings.Title(code.TestType)
 
-		if code.IssuingUserID != 0 {
-			retCode.IssuerType = "Issuing user"
-			retCode.Issuer = c.getUserName(ctx, r, code.IssuingUserID)
-		} else if code.IssuingAppID != 0 {
-			retCode.IssuerType = "Issuing app"
-			retCode.Issuer = c.getAuthAppName(ctx, r, code.IssuingAppID)
-		}
-
-		if code.Claimed {
-			retCode.Status = "Claimed by user"
-		} else {
-			retCode.Status = "Not yet claimed"
-		}
-		if !code.IsExpired() {
-			retCode.Expires = code.ExpiresAt.UTC().Unix()
-		}
+		c.responseCode(ctx, r, code, &retCode)
 		c.renderShow(ctx, w, retCode)
 	})
+}
+
+func (c *Controller) responseCode(ctx context.Context, r *http.Request, code *database.VerificationCode, retCode *Code) {
+	retCode.UUID = code.UUID
+	retCode.TestType = strings.Title(code.TestType)
+
+	if code.IssuingUserID != 0 {
+		retCode.IssuerType = "Issuing user"
+		retCode.Issuer = c.getUserName(ctx, r, code.IssuingUserID)
+	} else if code.IssuingAppID != 0 {
+		retCode.IssuerType = "Issuing app"
+		retCode.Issuer = c.getAuthAppName(ctx, r, code.IssuingAppID)
+	}
+
+	if code.Claimed {
+		retCode.Status = "Claimed by user"
+	} else {
+		retCode.Status = "Not yet claimed"
+	}
+	if !code.IsExpired() {
+		retCode.Expires = code.ExpiresAt.UTC().Unix()
+		retCode.LongExpires = code.LongExpiresAt.UTC().Unix()
+		retCode.HasLongExpires = retCode.LongExpires > retCode.Expires
+	}
 }
 
 func (c *Controller) getUserName(ctx context.Context, r *http.Request, id uint) (userName string) {
@@ -144,12 +151,14 @@ func (c *Controller) getAuthAppName(ctx context.Context, r *http.Request, id uin
 }
 
 type Code struct {
-	UUID       string `json:"uuid"`
-	Status     string `json:"status"`
-	TestType   string `json:"testType"`
-	IssuerType string `json:"issuerType"`
-	Issuer     string `json:"issuer"`
-	Expires    int64  `json:"expires"`
+	UUID           string `json:"uuid"`
+	Status         string `json:"status"`
+	TestType       string `json:"testType"`
+	IssuerType     string `json:"issuerType"`
+	Issuer         string `json:"issuer"`
+	Expires        int64  `json:"expires"`
+	LongExpires    int64  `json:"longExpires"`
+	HasLongExpires bool   `json:"hasLongExpires"`
 }
 
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, code Code) {

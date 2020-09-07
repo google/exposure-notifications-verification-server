@@ -18,22 +18,112 @@
 
 substitutions:
   _REGION:
-  _SERVICE:
+  _REPO: 'github.com/google/exposure-notifications-verification-server'
   _TAG:
 
 steps:
-- id: 'deploy'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:303.0.0-alpine'
+#
+# adminapi
+#
+- id: 'deploy-adminapi'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
   - 'pipefail'
   - '-c'
   - |-
-    gcloud run deploy "${_SERVICE}" \
+    gcloud run deploy "adminapi" \
       --quiet \
       --project "${PROJECT_ID}" \
       --platform "managed" \
       --region "${_REGION}" \
-      --image "gcr.io/${PROJECT_ID}/github.com/google/exposure-notifications-verification-server/cmd/${_SERVICE}:${_TAG}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG}" \
       --no-traffic
+  waitFor:
+  - '-'
+
+#
+# apiserver
+#
+- id: 'deploy-apiserver'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run deploy "apiserver" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}" \
+      --no-traffic
+  waitFor:
+  - '-'
+
+#
+# cleanup
+#
+- id: 'deploy-cleanup'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run deploy "cleanup" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}" \
+      --no-traffic
+  waitFor:
+  - '-'
+
+#
+# e2e-runner
+#
+- id: 'deploy-e2e-runner'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run deploy "e2e-runner" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}" \
+      --no-traffic
+  waitFor:
+  - '-'
+
+
+#
+# server
+#
+- id: 'deploy-server'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run deploy "server" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}" \
+      --no-traffic
+  waitFor:
+  - '-'

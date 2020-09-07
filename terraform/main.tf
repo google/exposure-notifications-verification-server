@@ -51,6 +51,7 @@ resource "google_project_service" "services" {
     "servicenetworking.googleapis.com",
     "sql-component.googleapis.com",
     "sqladmin.googleapis.com",
+    "storage.googleapis.com",
     "vpcaccess.googleapis.com",
   ])
   service            = each.value
@@ -108,6 +109,7 @@ resource "null_resource" "build" {
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
+    google_storage_bucket_iam_member.cloudbuild-cache,
   ]
 }
 
@@ -146,11 +148,13 @@ export COOKIE_KEYS="secret://${google_secret_manager_secret_version.cookie-hmac-
 # Note: these configurations assume you're using the Cloud SQL proxy!
 export DB_APIKEY_DATABASE_KEY="secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
 export DB_APIKEY_SIGNATURE_KEY="secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
+export DB_CONN="${google_sql_database_instance.db-inst.connection_name}"
+export DB_DEBUG="true"
 export DB_ENCRYPTION_KEY="${google_kms_crypto_key.database-encrypter.self_link}"
 export DB_HOST="127.0.0.1"
-export DB_PORT="5432"
 export DB_NAME="${google_sql_database.db.name}"
 export DB_PASSWORD="secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
+export DB_PORT="5432"
 export DB_SSLMODE="disable"
 export DB_USER="${google_sql_user.user.name}"
 export DB_VERIFICATION_CODE_DATABASE_KEY="secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
