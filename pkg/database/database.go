@@ -17,6 +17,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -32,7 +33,8 @@ import (
 	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"contrib.go.opencensus.io/integrations/ocsql"
+	postgres "github.com/lib/pq"
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -53,6 +55,20 @@ type Database struct {
 
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
+
+	statsCloser func()
+}
+
+// Overrides the postgresql driver with
+func init() {
+	const driverName = "ocsql"
+	for _, v := range sql.Drivers() {
+		if v == driverName {
+			return
+		}
+	}
+	ocsql.RegisterAllViews()
+	sql.Register(driverName, ocsql.Wrap(&postgres.Driver{}))
 }
 
 // SupportsPerRealmSigning returns true if the configuration supports
@@ -129,19 +145,37 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	// Establish a connection to the database. We use this later to register
 	// opencenusus stats.
+	var rawSQL *sql.DB
+	if err := withRetries(ctx, func(ctx context.Context) error {
+		var err error
+		rawSQL, err = sql.Open("ocsql", c.ConnectionString())
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		db.statsCloser = ocsql.RecordStats(rawSQL, 5*time.Second)
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to create sql connection: %w", err)
+	}
+	if rawSQL == nil {
+		return fmt.Errorf("failed to create database connection")
+	}
+
 	var rawDB *gorm.DB
 	if err := withRetries(ctx, func(ctx context.Context) error {
 		var err error
-		rawDB, err = gorm.Open("postgres", c.ConnectionString())
+		// Need to give postgres dialect as otherwise gorm starts running
+		// in compatibility mode
+		rawDB, err = gorm.Open("postgres", rawSQL)
 		if err != nil {
 			return retry.RetryableError(err)
 		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		return fmt.Errorf("failed to initialize gorm: %w", err)
 	}
 	if rawDB == nil {
-		return fmt.Errorf("failed to create database connection")
+		return fmt.Errorf("failed to initialize gorm")
 	}
 
 	// Set connection configuration.
@@ -194,6 +228,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 // Close will close the database connection. Should be deferred right after Open.
 func (db *Database) Close() error {
+	db.statsCloser()
 	return db.db.Close()
 }
 
