@@ -20,6 +20,9 @@ resource "google_monitoring_uptime_check_config" "https" {
       host       = each.key
     }
   }
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
+  ]
 }
 
 resource "google_monitoring_alert_policy" "probers" {
@@ -62,5 +65,8 @@ EOT
 
   notification_channels = [
     google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
   ]
 }
