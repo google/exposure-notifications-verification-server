@@ -59,6 +59,18 @@ type Database struct {
 	statsCloser func()
 }
 
+// Overrides the postgresql driver with
+func init() {
+	const driverName = "ocsql"
+	for _, v := range sql.Drivers() {
+		if v == driverName {
+			return
+		}
+	}
+	ocsql.RegisterAllViews()
+	sql.Register(driverName, ocsql.Wrap(&postgres.Driver{}))
+}
+
 // SupportsPerRealmSigning returns true if the configuration supports
 // application managed signing keys.
 func (db *Database) SupportsPerRealmSigning() bool {
@@ -126,17 +138,6 @@ func (db *Database) Open(ctx context.Context) error {
 	return db.OpenWithCacher(ctx, nil)
 }
 
-const driverName = "ocsql"
-
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
 // OpenWithCacher creates a database connection with the cacher. This should
 // only be called once.
 func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
@@ -144,33 +145,36 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	// Establish a connection to the database. We use this later to register
 	// opencenusus stats.
+	var dbSQL *sql.DB
+	if err := withRetries(ctx, func(ctx context.Context) error {
+		var err error
+		dbSQL, err = sql.Open("ocsql", c.ConnectionString())
+		if err != nil {
+			return retry.RetryableError(err)
+		} // enable periodic recording of sql.DBStats
+		db.statsCloser = ocsql.RecordStats(dbSQL, 5*time.Second)
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to open connection to database: %w", err)
+	}
+	if dbSQL == nil {
+		return fmt.Errorf("failed to create database connection")
+	}
 	var rawDB *gorm.DB
 	if err := withRetries(ctx, func(ctx context.Context) error {
 		var err error
-		driver := ocsql.Wrap(&postgres.Driver{})
-		if !stringInSlice(driverName, sql.Drivers()) {
-			ocsql.RegisterAllViews()
-			sql.Register(driverName, driver)
-		}
-		dbSQL, err := sql.Open(driverName, c.ConnectionString())
-		if err != nil {
-			return fmt.Errorf("failed to open the SQL database: %v", err)
-		}
-		// enable periodic recording of sql.DBStats
-		db.statsCloser = ocsql.RecordStats(dbSQL, 5*time.Second)
-
-		//Need to give postgres dialect as otherwise gorm starts running
-		//in compatibility mode
+		// Need to give postgres dialect as otherwise gorm starts running
+		// in compatibility mode
 		rawDB, err = gorm.Open("postgres", dbSQL)
 		if err != nil {
 			return retry.RetryableError(err)
 		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		return fmt.Errorf("failed to initialize gorm: %w", err)
 	}
 	if rawDB == nil {
-		return fmt.Errorf("failed to create database connection")
+		return fmt.Errorf("failed to initialize gorm")
 	}
 
 	// Set connection configuration.
