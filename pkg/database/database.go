@@ -145,27 +145,28 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	// Establish a connection to the database. We use this later to register
 	// opencenusus stats.
-	var dbSQL *sql.DB
+	var rawSQL *sql.DB
 	if err := withRetries(ctx, func(ctx context.Context) error {
 		var err error
-		dbSQL, err = sql.Open("ocsql", c.ConnectionString())
+		rawSQL, err = sql.Open("ocsql", c.ConnectionString())
 		if err != nil {
 			return retry.RetryableError(err)
-		} // enable periodic recording of sql.DBStats
-		db.statsCloser = ocsql.RecordStats(dbSQL, 5*time.Second)
+		}
+		db.statsCloser = ocsql.RecordStats(rawSQL, 5*time.Second)
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to open connection to database: %w", err)
+		return fmt.Errorf("failed to create sql connection: %w", err)
 	}
-	if dbSQL == nil {
+	if rawSQL == nil {
 		return fmt.Errorf("failed to create database connection")
 	}
+
 	var rawDB *gorm.DB
 	if err := withRetries(ctx, func(ctx context.Context) error {
 		var err error
 		// Need to give postgres dialect as otherwise gorm starts running
 		// in compatibility mode
-		rawDB, err = gorm.Open("postgres", dbSQL)
+		rawDB, err = gorm.Open("postgres", rawSQL)
 		if err != nil {
 			return retry.RetryableError(err)
 		}
