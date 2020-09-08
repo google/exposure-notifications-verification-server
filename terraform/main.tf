@@ -53,6 +53,8 @@ resource "google_project_service" "services" {
     "sqladmin.googleapis.com",
     "storage.googleapis.com",
     "vpcaccess.googleapis.com",
+    "monitoring.googleapis.com",
+    "stackdriver.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false
