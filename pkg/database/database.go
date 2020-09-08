@@ -91,21 +91,17 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 
 	// If the key manager is in-memory, accept the key as a base64-encoded
 	// in-memory key.
-	if c.Keys.KeyManagerType == keys.KeyManagerTypeInMemory {
-		typ, ok := keyManager.(keys.EncryptionKeyAdder)
+	if c.Keys.KeyManagerType == keys.KeyManagerTypeFilesystem {
+		typ, ok := keyManager.(keys.EncryptionKeyManager)
 		if !ok {
 			return nil, fmt.Errorf("key manager does not support adding keys")
 		}
 
-		key, err := base64util.DecodeString(c.EncryptionKey)
+		keyName, err := typ.CreateEncryptionKey(ctx, "", "database-encryption-key")
 		if err != nil {
-			return nil, fmt.Errorf("encryption key is invalid: %w", err)
-		}
-
-		if err := typ.AddEncryptionKey("database-encryption-key", key); err != nil {
 			return nil, fmt.Errorf("failed to add encryption key: %w", err)
 		}
-		c.EncryptionKey = "database-encryption-key"
+		c.EncryptionKey = keyName
 	}
 
 	return &Database{

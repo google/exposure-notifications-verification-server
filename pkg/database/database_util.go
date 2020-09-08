@@ -106,7 +106,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		},
 
 		Keys: keys.Config{
-			KeyManagerType: keys.KeyManagerTypeInMemory,
+			KeyManagerType: keys.KeyManagerTypeFilesystem,
 		},
 		EncryptionKey: base64.RawStdEncoding.EncodeToString(generateKeys(tb, 1, 32)[0]),
 	}
