@@ -13,7 +13,7 @@ require (
 	github.com/client9/misspell v0.3.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/frankban/quicktest v1.8.1 // indirect
-	github.com/google/exposure-notifications-server v0.6.2-0.20200901223640-ce4572602269
+	github.com/google/exposure-notifications-server v0.7.0
 	github.com/google/go-cmp v0.5.2
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/handlers v1.5.0
