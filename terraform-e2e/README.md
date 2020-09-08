@@ -47,7 +47,7 @@ This can be mitigated by updating terraform to version equal or greater than 1.1
 
 ## Terraform Destroy
 
-Terraform destroy often fails while trying to delete db instance. To be reliably successfully destroy, run these ahead:
+Terraform destroy always fails while trying to delete db instance. To be reliably successfully destroy, run these ahead:
 
 ```shell
 db_inst_name="$(terraform output 'db_inst_name')"
