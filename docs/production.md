@@ -2,6 +2,81 @@
 
 This page includes helpful tips for configuring things in production:
 
+## Key management
+
+The default production key management solution is [Google Cloud KMS][gcp-kms].
+If you are using the Terraform configurations, the system will automatically
+bootstrap and create the key rings and keys in Cloud KMS. If you are not using
+the Terraform configurations, follow this guide to create the keys manually:
+
+1.  Create a Google Cloud KMS key ring
+
+    ```sh
+    gcloud kms keyrings create "en-verification" \
+      --location "us"
+    ```
+
+    Note that the "us" location is configurable. If you choose a different
+    location, substitute it in all future commands.
+
+1.  Create two signing keys - one for tokens and one for certificates:
+
+    ```sh
+    gcloud kms keys create "token-signing" \
+      --location "us" \
+      --keyring "en-verification" \
+      --purpose "asymmetric-signing" \
+      --default-algorithm "ec-sign-p256-sha256" \
+      --protection-level "hsm"
+    ```
+
+    ```sh
+    gcloud kms keys create "certificate-signing" \
+      --location "us" \
+      --keyring "en-verification" \
+      --purpose "asymmetric-signing" \
+      --default-algorithm "ec-sign-p256-sha256" \
+      --protection-level "hsm"
+    ```
+
+    Note the "us" location is configurable, but the key purpose and algorithm
+    must be the same as above.
+
+1.  Create an encryption key for encrypting values in the database:
+
+    ```sh
+    gcloud kms keys create "database-encrypter" \
+      --location "us" \
+      --keyring "en-verification" \
+      --purpose "encryption" \
+      --rotation-period "30d" \
+      --protection-level "hsm"
+    ```
+
+1.  Get the resource names to the keys:
+
+    ```sh
+    gcloud kms keys describe "token-signing" \
+      --location "us" \
+      --keyring "en-verification"
+    ```
+
+    ```sh
+    gcloud kms keys describe "certificate-signing" \
+      --location "us" \
+      --keyring "en-verification"
+    ```
+
+    ```sh
+    gcloud kms keys describe "database-encrypter" \
+      --location "us" \
+      --keyring "en-verification"
+    ```
+
+1.  Provide these values as the `TOKEN_SIGNING_KEY`, `CERTIFICATE_SIGNING_KEY`,
+    and `DB_ENCRYPTION_KEY` respectively in the environment where the services
+    will run. You also need to grant the service permission to use the keys.
+
 
 ## Observability (tracing and metrics)
 
@@ -220,3 +295,5 @@ lifetime is short, it is probably safe to remove the key beyond 30 days.
 
 If you are using system keys, the system administrator will handle rotation. If
 you are using realm keys, you can generate new keys in the UI.
+
+[gcp-kms]: https://cloud.google.com/kms
