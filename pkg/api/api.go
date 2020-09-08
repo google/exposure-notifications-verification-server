@@ -106,13 +106,15 @@ func (e *ErrorReturn) WithCode(code string) *ErrorReturn {
 type Padding []byte
 
 // MarshalJSON is a custom JSON marshaler for padding. It generates and returns
-// a random number of base64-encoded bytes.
+// 1-2kb (random) of base64-encoded bytes.
 func (p Padding) MarshalJSON() ([]byte, error) {
-	bi, err := rand.Int(rand.Reader, big.NewInt(256))
+	bi, err := rand.Int(rand.Reader, big.NewInt(1024))
 	if err != nil {
 		return nil, fmt.Errorf("padding: failed to generate random number: %w", err)
 	}
-	i := int(bi.Int64())
+
+	// rand.Int is [0, max), so add 1kb to set the range from 1-2kb.
+	i := int(bi.Int64() + 1024)
 
 	b := make([]byte, i)
 	n, err := rand.Read(b)
@@ -123,10 +125,8 @@ func (p Padding) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("padding: wrote less bytes than expected")
 	}
 
-	x := base64.StdEncoding.EncodeToString(b)
-	x = fmt.Sprintf(`%q`, x)
-
-	return []byte(x), nil
+	s := fmt.Sprintf("%q", base64.StdEncoding.EncodeToString(b))
+	return []byte(s), nil
 }
 
 // CSRFResponse is the return type when requesting an AJAX CSRF token.
