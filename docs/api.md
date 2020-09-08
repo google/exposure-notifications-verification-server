@@ -65,7 +65,8 @@ Exchange a verification code for a long term verification token.
         passes `likely` they are indiciating they can process both `confirmed` and `likely`.
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
-  number of bytes into this field. The server does not process the padding.
+  number of base64-encoded bytes into this field. The server does not process
+  the padding.
 
 **VerifyCodeResponse**
 
@@ -82,7 +83,8 @@ Exchange a verification code for a long term verification token.
 
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
-  bytes into this field. The client should not process the padding.
+  base64-encoded bytes into this field. The client should not process the
+  padding.
 
 Possible error code responses. New error codes may be added in future releases.
 
@@ -118,7 +120,8 @@ Exchange a verification token for a verification certificate (for sending to a k
   * The key server will re-calculate this HMAC and it MUST match what is presented here.
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
-  number of bytes into this field. The server does not process the padding.
+  number of base64-encoded bytes into this field. The server does not process
+  the padding.
 
 
 **VerificationCertificateResponse**
@@ -134,7 +137,8 @@ Exchange a verification token for a verification certificate (for sending to a k
 
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
-  bytes into this field. The client should not process the padding.
+  base64-encoded bytes into this field. The client should not process the
+  padding.
 
 Possible error code responses. New error codes may be added in future releases.
 
@@ -178,7 +182,8 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   * Phone number to send the SMS too
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
-  number of bytes into this field. The server does not process the padding.
+  number of base64-encoded bytes into this field. The server does not process
+  the padding.
 
 **IssueCodeResponse**
 
@@ -213,7 +218,8 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   * Unix, seconds since the epoch for `longExpiresAt`
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
-  bytes into this field. The client should not process the padding.
+  base64-encoded bytes into this field. The client should not process the
+  padding.
 
 ## `/api/checkcodestatus`
 
@@ -230,7 +236,8 @@ Checks the status of a previous issued code, looking up by UUID.
 
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
-  number of bytes into this field. The server does not process the padding.
+  number of base64-encoded bytes into this field. The server does not process
+  the padding.
 
 **CheckCodeStatusResponse**
 
@@ -253,7 +260,8 @@ Checks the status of a previous issued code, looking up by UUID.
   * seconds since the epoch for the SMS link expiry time in UTC
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
-  bytes into this field. The client should not process the padding.
+  base64-encoded bytes into this field. The client should not process the
+  padding.
 
 ## `/api/expirecode`
 
@@ -274,7 +282,8 @@ Expires an unclaimed code. IF the code has been claimed an error is returned.
 
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
-  number of bytes into this field. The server does not process the padding.
+  number of base64-encoded bytes into this field. The server does not process
+  the padding.
 
 The timestamps are updated to the new expiration time (which will be in the
 past).

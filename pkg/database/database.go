@@ -35,7 +35,6 @@ import (
 	// ensure the postgres dialiect is compiled in.
 	"contrib.go.opencensus.io/integrations/ocsql"
 	postgres "github.com/lib/pq"
-	"github.com/sagikazarmark/go-gin-gorm-opencensus/pkg/ocgorm"
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -143,16 +142,10 @@ func stringInSlice(a string, list []string) bool {
 func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
 	c := db.config
 
-	// Establish a connection to the database.
-	b, err := retry.NewFibonacci(250 * time.Millisecond)
-	if err != nil {
-		return fmt.Errorf("failed to configure database backoff: %w", err)
-	}
-	b = retry.WithMaxRetries(10, b)
-	b = retry.WithCappedDuration(2*time.Second, b)
-
+	// Establish a connection to the database. We use this later to register
+	// opencenusus stats.
 	var rawDB *gorm.DB
-	if err := retry.Do(ctx, b, func(ctx context.Context) error {
+	if err := withRetries(ctx, func(ctx context.Context) error {
 		var err error
 		driver := ocsql.Wrap(&postgres.Driver{})
 		if !stringInSlice(driverName, sql.Drivers()) {
@@ -192,41 +185,36 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	// Enable auto-preloading.
 	rawDB = rawDB.Set("gorm:auto_preload", true)
 
-	ocgorm.RegisterCallbacks(rawDB)
-
-	callbacks := rawDB.Callback()
-
 	// SMS configs
-	callbacks.Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
-	callbacks.Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	rawDB.Callback().Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
-	callbacks.Update().Before("gorm:update").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
-	callbacks.Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	rawDB.Callback().Update().Before("gorm:update").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	rawDB.Callback().Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
-	callbacks.Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	rawDB.Callback().Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
 	// Verification codes
-	callbacks.Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
-	callbacks.Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
+	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
+	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
 
 	// Cache clearing
 	if cacher != nil {
 		// Apps
-		callbacks.Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
-		callbacks.Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
 
 		// Realms
-		callbacks.Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
-		callbacks.Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
 
 		// Users
-		callbacks.Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
-		callbacks.Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
 
 		// Users (by email)
-		callbacks.Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
-		callbacks.Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
-
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
 	}
 
 	db.db = rawDB
@@ -481,4 +469,17 @@ func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) 
 	}
 
 	return field, typ, true
+}
+
+// withRetries is a helper for creating a fibonacci backoff with capped retries,
+// useful for retrying database queries.
+func withRetries(ctx context.Context, f retry.RetryFunc) error {
+	b, err := retry.NewFibonacci(50 * time.Millisecond)
+	if err != nil {
+		return fmt.Errorf("failed to configure backoff: %w", err)
+	}
+	b = retry.WithMaxRetries(10, b)
+	b = retry.WithCappedDuration(1*time.Second, b)
+
+	return retry.Do(ctx, b, f)
 }

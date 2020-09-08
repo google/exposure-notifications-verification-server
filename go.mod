@@ -30,7 +30,6 @@ require (
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/rakutentech/jwk-go v1.0.1
-	github.com/sagikazarmark/go-gin-gorm-opencensus v0.0.0-20190530122219-5cd3c9b414a5
 	github.com/sethvargo/go-envconfig v0.3.1
 	github.com/sethvargo/go-limiter v0.4.1
 	github.com/sethvargo/go-redisstore v0.1.2-opencensus
