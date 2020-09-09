@@ -296,4 +296,34 @@ lifetime is short, it is probably safe to remove the key beyond 30 days.
 If you are using system keys, the system administrator will handle rotation. If
 you are using realm keys, you can generate new keys in the UI.
 
+
+### Cacher HMAC keys
+
+**Recommended frequency:** 90 days, on breach
+
+This key is used as the HMAC key to named values in the cacher. For example, API
+keys are cached in the cacher for a few minutes to reduce load on the database.
+We do not want the cacher to have plaintext API keys, so the values are HMACed
+before being written (and HMACed on lookup). This prevents a server operator
+with access to the cacher (e.g. Redis) from seeing plaintext data about the
+system. The data is hashed instead of encrypted because we only need a
+deterministic value to lookup.
+
+To generate a new key:
+
+```sh
+openssl rand -base64 128 | tr -d "\n"
+```
+
+Use this value as of the `CACHE_HMAC_KEY` environment variable:
+
+```sh
+CACHE_HMAC_KEY="RBwXRppIqscSWxSsP/e52AsPsab4jW7lL5DJSw3uZfTbwgGXj3IV/iWx0ZGjyvY0GB3kupK7qbaDZBGsxxqABT4thujJkx6kAiAabH4kz5qPwoPNGK2M9KW9TX5jM3dnX7smPzlL+Hg8ijxczceDCeQF44cys+3rdWaDdC6kHec="
+```
+
+Note: Changing this value will invalidate any existing caches. Most caches are
+small and are automatically re-built on demand, so occassional rotation is
+likely fine for this system.
+
+
 [gcp-kms]: https://cloud.google.com/kms
