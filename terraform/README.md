@@ -8,11 +8,12 @@ continuous deployment.
 
 ## Requirements
 
-- Terraform 0.13.1 [Installation guide](https://www.terraform.io/downloads.html)
+-   Terraform 0.13.1
+    [Installation guide](https://www.terraform.io/downloads.html)
 
-- firebase-cli. [Installation guide](https://firebase.google.com/docs/cli)
+-   firebase-cli. [Installation guide](https://firebase.google.com/docs/cli)
 
-- gcloud. [Installation guide](https://cloud.google.com/sdk/install)
+-   gcloud. [Installation guide](https://cloud.google.com/sdk/install)
 
     Note: Make sure you **unset** `GOOGLE_APPLICATION_CREDENTIALS` in your
     environment:
@@ -112,7 +113,6 @@ Terraform module.
     $ mkdir ${PROJECT_ID}
     ```
 
-
     ```text
     $ cat <<EOF > ${PROJECT_ID}/main.tf
       terraform {
@@ -136,6 +136,18 @@ Terraform module.
         }
       }
 
+      # Enable optional alerting.
+      module "en-alerting" {
+        source  = "github.com/google/exposure-notifications-verification-server/terraform/alerting"
+          project = "example"
+
+          adminapi-host  = "adminapi.example.org"
+          apiserver-host = "apiserver.example.org"
+          server-host    = "example.org"
+
+          notification-email = "example+alert@google.com"
+      }
+
       output "en" {
         value = module.en
       }
@@ -145,6 +157,12 @@ Terraform module.
     As shown above, all the variables defined in the Terraform are available as
     inputs/parameters to the module definition. See the `variables.tf` file for
     the full list of configuration options.
+
+1.  (Optional if alerting is enabled): Manually create Google Cloud Monitoring
+    workspace: Go to
+    https://console.cloud.google.com/monitoring/signup?project=${PROJECT_ID}&nextPath=monitoring
+    and create the first workspace for the project. NOTE: as of Sep 2020 this
+    can only be done on Google Cloud Console.
 
 1.  Run `terraform init`. Terraform will automatically download the plugins
     required to execute this code. You only need to do this once per machine.
@@ -177,14 +195,12 @@ also migrate the database schema and build/deploy the initial set of services on
 Cloud Run. Terraform does not manage the lifecycle of those resources beyond
 their initial creation.
 
-
 ### Migrating from quick to production
 
 If you previously used the quick setup and want to migration to a production
 setup, the process is somewhat meticulous. Since Terraform resources are keyed
 off of their ID, you'll need to manually move the resource IDs using the
-[`terraform state
-mv`](https://www.terraform.io/docs/commands/state/mv.html#example-move-a-resource-into-a-module)
+[`terraform state mv`](https://www.terraform.io/docs/commands/state/mv.html#example-move-a-resource-into-a-module)
 command.
 
 1.  Update your configurations to import the configuration as a module using the
@@ -205,7 +221,6 @@ command.
 
 1.  Continue planning until you have no diff.
 
-
 ### Local development and testing example deployment
 
 The default Terraform deployment is a production-ready, high traffic deployment.
@@ -218,7 +233,6 @@ database_tier            = "db-custom-1-3840"
 database_disk_size_gb    = 16
 database_max_connections = 256
 ```
-
 
 ### Debugging
 
@@ -234,7 +248,8 @@ that provider still exist in the state. Re-add the provider configuration to
 destroy <resource>, after which you can remove the provider configuration again.
 ```
 
-It means you're upgrading from an older Terraform configuration. Try the following:
+It means you're upgrading from an older Terraform configuration. Try the
+following:
 
 ```text
 $ terraform state rm google_project_iam_member.firebase
@@ -252,5 +267,5 @@ Error: Error creating Project: googleapi: Error 403: Firebase Tos Not Accepted
 
 It means the user hasn't accepted ToS(Terms of Services) of Firebase yet. Do:
 
-1. Open a browser, navigate to https://firebase.google.com
-1. Click `Add a project`, it will prompt Terms of Service agreement, agree
+1.  Open a browser, navigate to https://firebase.google.com
+1.  Click `Add a project`, it will prompt Terms of Service agreement, agree
