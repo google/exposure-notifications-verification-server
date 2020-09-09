@@ -22,7 +22,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const HeaderDebug = "x-debug"
+const (
+	HeaderDebug         = "x-debug"
+	HeaderDebugBuildID  = "x-build-id"
+	HeaderDebugBuildTag = "x-build-tag"
+)
 
 // ProcessDebug adds additional debugging information to the response if the
 // request included the "X-Debug" header with any value.
@@ -30,8 +34,8 @@ func ProcessDebug(ctx context.Context) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Header.Get(HeaderDebug) != "" {
-				w.Header().Set("x-build-id", buildinfo.BuildID)
-				w.Header().Set("x-build-tag", buildinfo.BuildTag)
+				w.Header().Set(HeaderDebugBuildID, buildinfo.BuildID)
+				w.Header().Set(HeaderDebugBuildTag, buildinfo.BuildTag)
 			}
 
 			next.ServeHTTP(w, r)
