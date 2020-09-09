@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -35,6 +36,12 @@ import (
 	// ensure the postgres dialiect is compiled in.
 	"contrib.go.opencensus.io/integrations/ocsql"
 	postgres "github.com/lib/pq"
+)
+
+var (
+	// callbackLock prevents multiple callbacks from being registered
+	// simultaneously because that's a data race in gorm.
+	callbackLock sync.Mutex
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -170,6 +177,11 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	// Enable auto-preloading.
 	rawDB = rawDB.Set("gorm:auto_preload", true)
+
+	// Prevent multiple simultaneous callback registrations due to a data race in
+	// gorm.
+	callbackLock.Lock()
+	defer callbackLock.Unlock()
 
 	// SMS configs
 	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))

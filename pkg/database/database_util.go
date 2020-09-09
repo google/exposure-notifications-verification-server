@@ -89,7 +89,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	port := container.GetPort("5432/tcp")
 
 	// build database config.
-	config := Config{
+	config := &Config{
 		APIKeyDatabaseHMAC:           generateKeys(tb, 3, 128),
 		APIKeySignatureHMAC:          generateKeys(tb, 3, 128),
 		VerificationCodeDatabaseHMAC: generateKeys(tb, 3, 128),
@@ -136,7 +136,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		db.db.Close()
 	})
 
-	return db, &config
+	return db, config
 }
 
 func NewTestDatabase(tb testing.TB) *Database {
