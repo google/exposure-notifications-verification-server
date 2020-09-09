@@ -4,6 +4,8 @@ This directory contains terraform configuration to be used for deploying verific
 
 ## Prerequisite
 
+Terraform version > 1.13.1
+
 Follow steps from [Terrafrom instructions](https://github.com/google/exposure-notifications-verification-server/tree/main/terraform), going through from top until finishing `Instructions` section, then change into `terraform-e2e` directory:
 
 ```shell
@@ -45,7 +47,7 @@ This can be mitigated by updating terraform to version equal or greater than 1.1
 
 ## Terraform Destroy
 
-Terraform destroy often fails while trying to delete db instance. To be reliably successfully destroy, run these ahead:
+Terraform destroy always fails while trying to delete db instance. To be reliably successfully destroy, run these ahead:
 
 ```shell
 db_inst_name="$(terraform output 'db_inst_name')"

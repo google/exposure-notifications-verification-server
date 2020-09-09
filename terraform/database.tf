@@ -271,6 +271,7 @@ resource "null_resource" "migrate" {
       DB_USER                           = google_sql_user.user.name
       DB_VERIFICATION_CODE_DATABASE_KEY = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
       LOG_DEBUG                         = true
+      TAG                               = "initial"
     }
 
     command = "${path.module}/../scripts/migrate"
@@ -291,6 +292,10 @@ output "db_conn" {
 
 output "db_host" {
   value = google_sql_database_instance.db-inst.private_ip_address
+}
+
+output "db_inst_name" {
+  value = google_sql_database_instance.db-inst.name
 }
 
 output "db_name" {
