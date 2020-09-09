@@ -65,11 +65,13 @@
     left: 0;
     display: block;
     width: 100%;
-    margin-bottom: 0; /* Override default `<label>` margin */
+    margin-bottom: 0;
+    /* Override default `<label>` margin */
     line-height: 1.5;
     color: #495057;
     pointer-events: none;
-    cursor: text; /* Match the input under the label */
+    cursor: text;
+    /* Match the input under the label */
     border: 1px solid transparent;
     border-radius: .25rem;
     transition: all .1s ease-in-out;
@@ -110,21 +112,22 @@
     padding-bottom: .25rem;
   }
 
-  .form-label-group input:not(:-moz-placeholder-shown) ~ label {
+  .form-label-group input:not(:-moz-placeholder-shown)~label {
     padding-top: .25rem;
     padding-bottom: .25rem;
     font-size: 12px;
     color: #777;
   }
 
-  .form-label-group input:not(:-ms-input-placeholder) ~ label {
+  .form-label-group input:not(:-ms-input-placeholder)~label {
     padding-top: .25rem;
     padding-bottom: .25rem;
     font-size: 12px;
     color: #777;
   }
 
-  .form-label-group input:not(:placeholder-shown) ~ label {
+  .form-label-group input:-webkit-autofill~label,
+  .form-label-group input:not(:placeholder-shown)~label {
     padding-top: .25rem;
     padding-bottom: .25rem;
     font-size: 12px;
@@ -149,7 +152,8 @@
       color: #777;
     }
   }
-  </style>
+
+</style>
 {{end}}
 
 {{define "navbar"}}
@@ -256,14 +260,14 @@
   integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
 
 <script type="text/javascript">
-  $(function () {
+  $(function() {
     // Add data-toogle="tooltop" to toggle tooltips!
     $('[data-toggle="tooltip"]').tooltip();
 
     // Add data-submit-form properties to a link to have it act as a submit
     // button. You can also add a data-confirm attribute with a confirmation
     // prompt.
-    $('a[data-submit-form]').click(function (e) {
+    $('a[data-submit-form]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -280,7 +284,7 @@
     // Add data-method to a link and make the resulting href submit as that
     // method. You can also add a data-confirm attribute with a confirmation
     // prompt.
-    $('a[data-method]').click(function (e) {
+    $('a[data-method]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -311,7 +315,7 @@
 
     // Add data-toggle-password to an element with the value pointing to the id
     // of an input[type="password"]. It will toggle/untoggle the value.
-    $('a[data-toggle-password]').click(function (e) {
+    $('a[data-toggle-password]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -330,7 +334,7 @@
       }
     });
 
-    $('a[data-fill-target]').click(function (e) {
+    $('a[data-fill-target]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -341,7 +345,7 @@
       $target.val(value);
     });
 
-    $('a[data-copy]').click(function (e) {
+    $('a[data-copy]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
