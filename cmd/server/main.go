@@ -169,6 +169,10 @@ func realMain(ctx context.Context) error {
 	// Install common security headers
 	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "html"))
 
+	// Enable debug headers
+	processDebug := middleware.ProcessDebug(ctx)
+	r.Use(processDebug)
+
 	// Install the CSRF protection middleware.
 	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
 	r.Use(configureCSRF)

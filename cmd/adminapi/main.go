@@ -124,6 +124,10 @@ func realMain(ctx context.Context) error {
 	// Install common security headers
 	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "json"))
 
+	// Enable debug headers
+	processDebug := middleware.ProcessDebug(ctx)
+	r.Use(processDebug)
+
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
 	if err != nil {
