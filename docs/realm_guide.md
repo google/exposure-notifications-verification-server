@@ -14,7 +14,7 @@ We provide a base level of account protection measures that we urge you to share
 * Two factor authentication (2FA) is available, we strongly suggest you require your users to enroll in 2FA
   using a mobile device under their sole control.
 * Users should not share logins to the verification system.
-* Users should only issue codes to people that have a verified COVID-19 diagnosis with.
+* Users should only issue codes to people who have a verified COVID-19 diagnosis.
 
 Realm administrators should monitor the number of codes issued and take corrective acction if needed (suspend a user's access to issue codes)
 
