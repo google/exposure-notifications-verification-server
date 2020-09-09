@@ -1,6 +1,6 @@
 module github.com/google/exposure-notifications-verification-server
 
-go 1.14
+go 1.15
 
 require (
 	cloud.google.com/go v0.65.0
