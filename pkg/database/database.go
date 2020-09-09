@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -57,6 +58,10 @@ type Database struct {
 	secretManager secrets.SecretManager
 
 	statsCloser func()
+
+	// callbackLock prevents multiple callbacks from being registered
+	// simultaneously because that's a data race in gorm.
+	callbackLock sync.Mutex
 }
 
 // Overrides the postgresql driver with
@@ -170,6 +175,11 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	// Enable auto-preloading.
 	rawDB = rawDB.Set("gorm:auto_preload", true)
+
+	// Prevent multiple simultaneous callback registrations due to a data race in
+	// gorm.
+	db.callbackLock.Lock()
+	defer db.callbackLock.Unlock()
 
 	// SMS configs
 	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
