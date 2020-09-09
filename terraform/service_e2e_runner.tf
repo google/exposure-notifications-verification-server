@@ -79,6 +79,12 @@ resource "google_secret_manager_secret_iam_member" "e2e-runner-db-verification-c
   member    = "serviceAccount:${google_service_account.e2e-runner.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "e2e-runner-cache-hmac-key" {
+  secret_id = google_secret_manager_secret.cache-hmac-key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.e2e-runner.email}"
+}
+
 resource "google_cloud_run_service" "e2e-runner" {
   name     = "e2e-runner"
   location = var.region
