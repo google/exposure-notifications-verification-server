@@ -88,9 +88,10 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
-	// TODO(sethvargo): switch to HMAC
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
-		cache.HashKeyFunc(sha1.New), cache.PrefixKeyFunc("apiserver:")))
+		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
+		cache.PrefixKeyFunc("apiserver:"),
+	))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
