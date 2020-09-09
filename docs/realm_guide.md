@@ -10,7 +10,7 @@ If you are not a realm administrator, you will not have access to these screens.
 
 We provide a base level of account protection measures that we urge you to share with your case workers that are issuing verification codes.
 
-* All user accounts must vertify ownership of their email address before using the system.
+* All user accounts must verify ownership of their email address before using the system.
 * Two factor authentication (2FA) is available, we strongly suggest you require your users to enroll in 2FA
   using a mobile device under their sole control.
 * Users should not share logins to the verification system.
