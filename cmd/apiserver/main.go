@@ -24,6 +24,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -51,6 +52,9 @@ func main() {
 
 	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
 	logger := logging.NewLogger(debug)
+	logger = logger.With("build_id", buildinfo.BuildID)
+	logger = logger.With("build_tag", buildinfo.BuildTag)
+
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -130,11 +134,8 @@ func realMain(ctx context.Context) error {
 	}
 	rateLimit := httplimiter.Handle
 
-	// Install HSTS headers in production
-	if !config.DevMode {
-		addHSTS := middleware.AddHSTS(ctx)
-		r.Use(addHSTS)
-	}
+	// Install common security headers
+	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "json"))
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
@@ -142,37 +143,40 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
-
-	// Setup API auth
-	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
-		database.APIUserTypeDevice,
-	})
-
 	// Install the rate limiting first. In this case, we want to limit by key
 	// first to reduce the chance of a database lookup.
 	r.Use(rateLimit)
 
-	// Install the APIKey Auth Middleware
-	r.Use(requireAPIKey)
+	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 
-	// POST /api/verify
-	verifyChaff := chaff.New()
-	defer verifyChaff.Close()
-	verifyapiController, err := verifyapi.New(ctx, config, db, h, tokenSigner)
-	if err != nil {
-		return fmt.Errorf("failed to create verify api controller: %w", err)
-	}
-	r.Handle("/api/verify", handleChaff(verifyChaff, verifyapiController.HandleVerify())).Methods("POST")
+	{
+		sub := r.PathPrefix("/api").Subrouter()
 
-	// POST /api/certificate
-	certChaff := chaff.New()
-	defer certChaff.Close()
-	certapiController, err := certapi.New(ctx, config, db, h, certificateSigner)
-	if err != nil {
-		return fmt.Errorf("failed to create certapi controller: %w", err)
+		// Setup API auth
+		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
+			database.APIUserTypeDevice,
+		})
+		// Install the APIKey Auth Middleware
+		sub.Use(requireAPIKey)
+
+		// POST /api/verify
+		verifyChaff := chaff.New()
+		defer verifyChaff.Close()
+		verifyapiController, err := verifyapi.New(ctx, config, db, h, tokenSigner)
+		if err != nil {
+			return fmt.Errorf("failed to create verify api controller: %w", err)
+		}
+		sub.Handle("/verify", handleChaff(verifyChaff, verifyapiController.HandleVerify())).Methods("POST")
+
+		// POST /api/certificate
+		certChaff := chaff.New()
+		defer certChaff.Close()
+		certapiController, err := certapi.New(ctx, config, db, h, certificateSigner)
+		if err != nil {
+			return fmt.Errorf("failed to create certapi controller: %w", err)
+		}
+		sub.Handle("/certificate", handleChaff(certChaff, certapiController.HandleCertificate())).Methods("POST")
 	}
-	r.Handle("/api/certificate", handleChaff(certChaff, certapiController.HandleCertificate())).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {

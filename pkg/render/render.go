@@ -39,6 +39,7 @@ var allowedResponseCodes = map[int]struct{}{
 	401: {},
 	404: {},
 	405: {},
+	412: {},
 	413: {},
 	429: {},
 	500: {},
@@ -115,6 +116,10 @@ func loadTemplates(tmpl *template.Template, root string) error {
 			return nil
 		}
 
+		if !strings.HasSuffix(info.Name(), ".html") {
+			return nil
+		}
+
 		if _, err := tmpl.ParseFiles(path); err != nil {
 			return fmt.Errorf("failed to parse %s: %w", path, err)
 		}
@@ -126,6 +131,7 @@ func loadTemplates(tmpl *template.Template, root string) error {
 func templateFuncs() template.FuncMap {
 	return map[string]interface{}{
 		"joinStrings": strings.Join,
+		"trimSpace":   strings.TrimSpace,
 	}
 }
 

@@ -128,7 +128,7 @@ resource "google_cloud_run_service" "server" {
       timeout_seconds      = 25
 
       containers {
-        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cmd/server:initial"
+        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/server:initial"
 
         resources {
           limits = {
@@ -188,15 +188,29 @@ resource "google_compute_region_network_endpoint_group" "server" {
   project  = var.project
   region   = var.region
 
+  network_endpoint_type = "SERVERLESS"
+
   cloud_run {
     service = google_cloud_run_service.server.name
   }
 }
 
+resource "google_compute_backend_service" "server" {
+  count    = local.enable_lb ? 1 : 0
+  provider = google-beta
+  name     = "server"
+  project  = var.project
+
+  backend {
+    group = google_compute_region_network_endpoint_group.server.id
+  }
+}
+
 resource "google_cloud_run_domain_mapping" "server" {
-  count    = var.server_custom_domain != "" ? 1 : 0
+  for_each = var.server_custom_domains
+
   location = var.cloudrun_location
-  name     = var.server_custom_domain
+  name     = each.key
 
   metadata {
     namespace = var.project
@@ -205,6 +219,12 @@ resource "google_cloud_run_domain_mapping" "server" {
   spec {
     route_name     = google_cloud_run_service.server.name
     force_override = true
+  }
+
+  lifecycle {
+    ignore_changes = [
+      spec[0].force_override
+    ]
   }
 }
 

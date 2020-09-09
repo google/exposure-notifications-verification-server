@@ -1,6 +1,17 @@
 {{define "head"}}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta data-build-id="{{.build_id}}" data-build-tag="{{.build_tag}}">
+
+<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+<link rel="manifest" href="/static/site.webmanifest">
+<link rel="mask-icon" href="/static/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="shortcut icon" href="/static/favicon.ico">
+<meta name="msapplication-TileColor" content="#ff0554">
+<meta name="msapplication-config" content="/static/browserconfig.xml">
+<meta name="theme-color" content="#ffffff">
 
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
   integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
@@ -186,6 +197,12 @@
               <a class="dropdown-item" href="/realm/settings">Settings</a>
               <div class="dropdown-divider"></div>
               {{end}}
+              {{end}}
+
+              {{if .currentUser.Admin}}
+              <h6 class="dropdown-header">System admin</h6>
+              <a class="dropdown-item" href="/admin/realms">Realms</a>
+              <div class="dropdown-divider"></div>
               {{end}}
 
               <h6 class="dropdown-header">Actions</h6>

@@ -17,7 +17,6 @@ package database
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"os"
 	"strconv"
 	"testing"
@@ -28,6 +27,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/ory/dockertest"
+	"github.com/sethvargo/go-envconfig"
 )
 
 var (
@@ -90,8 +90,9 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 
 	// build database config.
 	config := Config{
-		APIKeyDatabaseHMAC:  generateKey(tb, 128),
-		APIKeySignatureHMAC: generateKey(tb, 128),
+		APIKeyDatabaseHMAC:           generateKeys(tb, 3, 128),
+		APIKeySignatureHMAC:          generateKeys(tb, 3, 128),
+		VerificationCodeDatabaseHMAC: generateKeys(tb, 3, 128),
 
 		User:     username,
 		Port:     port,
@@ -104,9 +105,8 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		},
 
 		Keys: keys.Config{
-			KeyManagerType: keys.KeyManagerTypeInMemory,
+			KeyManagerType: keys.KeyManagerTypeFilesystem,
 		},
-		EncryptionKey: base64.RawStdEncoding.EncodeToString(generateKey(tb, 32)),
 	}
 
 	// Wait for the container to start - we'll retry connections in a loop below,
@@ -118,6 +118,9 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	if err != nil {
 		tb.Fatal(err)
 	}
+
+	db.keyManager = keys.TestKeyManager(tb)
+	db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
 
 	if err := db.Open(ctx); err != nil {
 		tb.Fatal(err)
@@ -143,17 +146,21 @@ func NewTestDatabase(tb testing.TB) *Database {
 	return db
 }
 
-func generateKey(tb testing.TB, length int) []byte {
+func generateKeys(tb testing.TB, qty, length int) []envconfig.Base64Bytes {
 	tb.Helper()
 
-	buf := make([]byte, length)
-	n, err := rand.Read(buf)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	if n < length {
-		tb.Fatalf("insufficient bytes read: %v, expected %v", n, length)
+	keys := make([]envconfig.Base64Bytes, 0, qty)
+	for i := 0; i < qty; i++ {
+		buf := make([]byte, length)
+		n, err := rand.Read(buf)
+		if err != nil {
+			tb.Fatal(err)
+		}
+		if n < length {
+			tb.Fatalf("insufficient bytes read: %v, expected %v", n, length)
+		}
+		keys = append(keys, buf)
 	}
 
-	return buf
+	return keys
 }
