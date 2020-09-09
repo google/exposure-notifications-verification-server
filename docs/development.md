@@ -91,6 +91,13 @@ represent best practices.
     # where NUM is 32 or 64, respectively.
     export COOKIE_KEYS="ARLaFwAqBGIkm5pLjAveJuahtCnX2NLoAUz2kCZKrScUaUkEaxHSvJLVYb5yAPCc441Cho5n5yp8jdEmy6hyig==,RLjcRZeqc07s6dh3OK4CM1POjHDZHC+usNU1w/XNTjM="
 
+    # Configure cache and cache HMAC. Create your own values with:
+    #
+    #     openssl rand -base64 128
+    #
+    export CACHE_TYPE="IN_MEMORY"
+    export CACHE_HMAC_KEY="/wC2dki5Z+To9iFwUamINtHIMOH/dME7e5Gy+9h3WTDBhqeeSYkqduZRjcZWwG3kPMdiWAdBxxop5wB+BHTBnSlfVVmy8qKVNv+Wf5ywgxV7SbB8bjNQBHSpn7aC5RxR6nkEsZ2w2fUhTJwD9q+MDo6TQvf+8OXEPrV1SXWNHrs="
+
     # Configure certificate key management. The CERTIFICATE_SIGNING_KEY should
     # be the value output in the previous step.
     export CERTIFICATE_KEY_MANAGER="FILESYSTEM"

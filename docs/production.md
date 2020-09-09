@@ -322,8 +322,8 @@ CACHE_HMAC_KEY="RBwXRppIqscSWxSsP/e52AsPsab4jW7lL5DJSw3uZfTbwgGXj3IV/iWx0ZGjyvY0
 ```
 
 Note: Changing this value will invalidate any existing caches. Most caches are
-small and are automatically re-built on demand, so occassional rotation is
-likely fine for this system.
+small and are automatically re-built on demand, so occasional rotation is likely
+fine for this system.
 
 
 [gcp-kms]: https://cloud.google.com/kms
