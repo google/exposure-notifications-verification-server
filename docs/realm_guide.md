@@ -16,7 +16,7 @@ We provide a base level of account protection measures that we urge you to share
 * Users should not share logins to the verification system.
 * Users should only issue codes to people who have a verified COVID-19 diagnosis.
 
-Realm administrators should monitor the number of codes issued and take corrective acction if needed (suspend a user's access to issue codes)
+Realm administrators should monitor the number of codes issued and take corrective action if needed (suspend a user's access to issue codes)
 
 ### API key protection
 
