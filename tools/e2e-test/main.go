@@ -52,6 +52,6 @@ func realMain(ctx context.Context) error {
 	if err := clients.RunEndToEnd(ctx, config); err != nil {
 		return fmt.Errorf("clients.RunEndToEnd: %w", err)
 	}
-	logger.Info("completed end to end run")
+	logger.Debugf("completed end to end run")
 	return nil
 }
