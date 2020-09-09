@@ -59,7 +59,7 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully removed user '%v from realm'", user.Email)
+		flash.Alert("Successfully removed user '%v' from realm", user.Email)
 		http.Redirect(w, r, "/users", http.StatusSeeOther)
 	})
 }
