@@ -44,7 +44,7 @@ steps:
   - '-allow-failure'
 
 - id: 'download-modules'
-  name: 'golang:1.15'
+  name: 'golang:1.15.1'
   args:
   - 'go'
   - 'mod'
@@ -66,7 +66,7 @@ steps:
 # adminapi
 #
 - id: 'build-adminapi'
-  name: 'golang:1.15'
+  name: 'golang:1.15.1'
   args:
   - 'go'
   - 'build'
@@ -92,7 +92,7 @@ steps:
 # apiserver
 #
 - id: 'build-apiserver'
-  name: 'golang:1.15'
+  name: 'golang:1.15.1'
   args:
   - 'go'
   - 'build'
@@ -118,7 +118,7 @@ steps:
 # cleanup
 #
 - id: 'build-cleanup'
-  name: 'golang:1.15'
+  name: 'golang:1.15.1'
   args:
   - 'go'
   - 'build'
@@ -144,7 +144,7 @@ steps:
 # e2e-runner
 #
 - id: 'build-e2e-runner'
-  name: 'golang:1.15'
+  name: 'golang:1.15.1'
   args:
   - 'go'
   - 'build'
@@ -170,7 +170,7 @@ steps:
 # migrate
 #
 - id: 'build-migrate'
-  name: 'golang:1.15'
+  name: 'golang:1.15.1'
   args:
   - 'go'
   - 'build'
@@ -196,7 +196,7 @@ steps:
 # server
 #
 - id: 'build-server'
-  name: 'golang:1.15'
+  name: 'golang:1.15.1'
   args:
   - 'go'
   - 'build'
