@@ -367,20 +367,30 @@
     $main.find('div.alert').remove();
   }
 
-  function flash(message, errLevel) {
+  function flash(message, errLevel, dismissible = undefined) {
     switch (errLevel) {
       case "warning":
       case "danger":
-        break;
       case "success":
-        errLevel += " alert-dismissible"
+        if (dismissible === undefined) {
+          dismissible = true
+        }
         break;
       default:
         errLevel = "warning"
     }
 
-    let $div = $('<div class="alert alert-' + errLevel + '" role="alert" />');
+    let $div = $('<div class="alert alert-' + errLevel + '" role="alert">');
     $div.text(message);
+
+    if (dismissible) {
+      $div.addClass("alert-dismissible fade show");
+      $div.append(
+        '<button type="button" class="close" data-dismiss="alert" aria-label="Close"> \
+      <span aria-hidden="true">&times;</span> \
+      </button>');
+    }
+
     $main.prepend($div);
   }
 </script>
