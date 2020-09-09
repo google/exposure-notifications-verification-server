@@ -38,6 +38,12 @@ import (
 	postgres "github.com/lib/pq"
 )
 
+var (
+	// callbackLock prevents multiple callbacks from being registered
+	// simultaneously because that's a data race in gorm.
+	callbackLock sync.Mutex
+)
+
 // Database is a handle to the database layer for the Exposure Notifications
 // Verification Server.
 type Database struct {
@@ -58,10 +64,6 @@ type Database struct {
 	secretManager secrets.SecretManager
 
 	statsCloser func()
-
-	// callbackLock prevents multiple callbacks from being registered
-	// simultaneously because that's a data race in gorm.
-	callbackLock sync.Mutex
 }
 
 // Overrides the postgresql driver with
@@ -178,8 +180,8 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	// Prevent multiple simultaneous callback registrations due to a data race in
 	// gorm.
-	db.callbackLock.Lock()
-	defer db.callbackLock.Unlock()
+	callbackLock.Lock()
+	defer callbackLock.Unlock()
 
 	// SMS configs
 	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
