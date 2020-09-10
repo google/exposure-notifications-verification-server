@@ -28,7 +28,7 @@ resource "google_monitoring_dashboard" "e2e" {
   ]
 }
 
-resource "google_monitoring_alert_policy" "5xx" {
+resource "google_monitoring_alert_policy" "five_xx" {
   project      = var.project
   display_name = "Elevated 5xx"
 
