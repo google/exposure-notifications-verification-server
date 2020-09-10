@@ -21,13 +21,8 @@
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/x-www-form-urlencoded',
         success: function(returnData) {
-          if (factorCount > 0) {
-            // The user successfully signed in, redirect to realm selection.
-            window.location.assign('/realm');
-          } else {
-            // The user successfully signed in, ask for multi-auth.
-            window.location.assign('/login/registerphone');
-          }
+          // The user successfully signed in, redirect to realm selection.
+          window.location.assign('/realm');
         },
         error: function(xhr, status, e) {
           // There was an error finding the user. Redirect to the

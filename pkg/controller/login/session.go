@@ -24,7 +24,7 @@ import (
 func (c *Controller) HandleCreateSession() http.Handler {
 	type FormData struct {
 		IDToken     string `form:"idToken,required"`
-		FactorCount int    `form:"factorCount"`
+		FactorCount uint   `form:"factorCount"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +45,7 @@ func (c *Controller) HandleCreateSession() http.Handler {
 			return
 		}
 
-		session.Values["factorCount"] = form.FactorCount
+		controller.StoreSessionFactorCount(session, form.FactorCount)
 
 		// Get the session cookie from firebase.
 		ttl := c.config.SessionDuration

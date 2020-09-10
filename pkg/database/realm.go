@@ -52,6 +52,21 @@ const (
 	SMSENExpressLink = "[enslink]"
 )
 
+// MFAMode represents Multi Factor Authentication requirements for the realm
+type MFAMode string
+
+const (
+	// Required will not allow users to proceed without MFA on their account
+	MFARequired MFAMode = "Required"
+	// OptionalPrompt will allow users to proceed, but prompts for MFA on login
+	MFAOptionalPrompt MFAMode = "OptionalPrompt"
+	// OptionalNoPrompt will allow users to proceed and allows MFA registration in a menu
+	// if a user seeks that out.
+	MFAOptionalNoPrompt MFAMode = "OptionalNoPrompt"
+	// Disabled does not allow MFA auth
+	MFADisabled MFAMode = "Disabled"
+)
+
 // Realm represents a tenant in the system. Typically this corresponds to a
 // geography or a public health authority scope.
 // This is used to manage user logins.
@@ -70,6 +85,8 @@ type Realm struct {
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
 	// SMS Content
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours'"`
+
+	MFAMode MFAMode `gorm:"type:varchar(150); default: 'OptionalPrompt'"`
 
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.

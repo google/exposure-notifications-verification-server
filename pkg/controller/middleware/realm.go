@@ -89,6 +89,18 @@ func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Databas
 				return
 			}
 
+			factors := 0
+			if session.Values != nil {
+				if f := session.Values["factorCount"]; f != nil {
+					if fi, ok := f.(int); ok {
+						factors = fi
+					}
+				}
+			}
+			if realm.MFAMode == database.MFARequired && factors == 0 {
+				http.Redirect(w, r, "/login/registerphone", http.StatusSeeOther)
+			}
+
 			// Save the realm on the context.
 			ctx = controller.WithRealm(ctx, &realm)
 			*r = *r.WithContext(ctx)

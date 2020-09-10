@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -44,12 +45,26 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		factors := 0
+		if session.Values != nil {
+			if f := session.Values["factorCount"]; f != nil {
+				if fi, ok := f.(int); ok {
+					factors = fi
+				}
+			}
+		}
+
 		// If the user is only a member of one realm, set that and bypass selection.
 		if len(userRealms) == 1 {
 			realm := userRealms[0]
 
 			controller.StoreSessionRealm(session, realm)
 			flash.Alert("Logged into verification system for '%s'", realm.Name)
+
+			if realm.MFAMode == database.MFAOptionalPrompt && factors == 0 {
+				http.Redirect(w, r, "/login/registerphone", http.StatusSeeOther)
+			}
+
 			http.Redirect(w, r, "/home", http.StatusFound)
 			return
 		}
