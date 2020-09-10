@@ -16,7 +16,6 @@
         url: '/session',
         data: {
           idToken: idToken,
-          email: user.email,
           factorCount: factorCount,
         },
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
