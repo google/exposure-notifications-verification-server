@@ -45,15 +45,6 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		factors := 0
-		if session.Values != nil {
-			if f := session.Values["factorCount"]; f != nil {
-				if fi, ok := f.(int); ok {
-					factors = fi
-				}
-			}
-		}
-
 		// If the user is only a member of one realm, set that and bypass selection.
 		if len(userRealms) == 1 {
 			realm := userRealms[0]
@@ -61,8 +52,10 @@ func (c *Controller) HandleIndex() http.Handler {
 			controller.StoreSessionRealm(session, realm)
 			flash.Alert("Logged into verification system for '%s'", realm.Name)
 
-			if realm.MFAMode == database.MFAOptionalPrompt && factors == 0 {
-				http.Redirect(w, r, "/login/registerphone", http.StatusSeeOther)
+			if realm.MFAMode == database.MFAOptionalPrompt {
+				if factors := controller.FactorCountFromSession(session); factors == 0 {
+					http.Redirect(w, r, "/login/registerphone", http.StatusSeeOther)
+				}
 			}
 
 			http.Redirect(w, r, "/home", http.StatusFound)
