@@ -23,7 +23,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/sessions"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 )
@@ -116,13 +115,9 @@ func MissingUser(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingUser)
 }
 
-// RedirectToMFA redirects to MFA if multifactor has not been enabled.
-func RedirectToMFA(session *sessions.Session, w http.ResponseWriter, r *http.Request, h *render.Renderer) bool {
-	if factors := FactorCountFromSession(session); factors == 0 {
-		http.Redirect(w, r, "/login/registerphone", http.StatusSeeOther)
-		return true
-	}
-	return false
+// RedirectToMFA redirects to the MFA registration.
+func RedirectToMFA(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	http.Redirect(w, r, "/login/registerphone", http.StatusSeeOther)
 }
 
 func prefixInList(list []string, prefix string) bool {
