@@ -45,16 +45,16 @@ resource "google_project_service" "services" {
     "firebase.googleapis.com",
     "iam.googleapis.com",
     "identitytoolkit.googleapis.com",
+    "monitoring.googleapis.com",
     "redis.googleapis.com",
     "run.googleapis.com",
     "secretmanager.googleapis.com",
     "servicenetworking.googleapis.com",
     "sql-component.googleapis.com",
     "sqladmin.googleapis.com",
+    "stackdriver.googleapis.com",
     "storage.googleapis.com",
     "vpcaccess.googleapis.com",
-    "monitoring.googleapis.com",
-    "stackdriver.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false
