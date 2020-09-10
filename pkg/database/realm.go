@@ -56,15 +56,12 @@ const (
 type MFAMode string
 
 const (
-	// Required will not allow users to proceed without MFA on their account
+	// MFARequired will not allow users to proceed without MFA on their account.
 	MFARequired MFAMode = "Required"
-	// OptionalPrompt will allow users to proceed, but prompts for MFA on login
+	// MFAOptionalPrompt will prompt users for MFA on login.
 	MFAOptionalPrompt MFAMode = "OptionalPrompt"
-	// OptionalNoPrompt will allow users to proceed and allows MFA registration in a menu
-	// if a user seeks that out.
-	MFAOptionalNoPrompt MFAMode = "OptionalNoPrompt"
-	// Disabled does not allow MFA auth
-	MFADisabled MFAMode = "Disabled"
+	// MFAOptional will not prompt users to enable MFA.
+	MFAOptional MFAMode = "Optional"
 )
 
 // Realm represents a tenant in the system. Typically this corresponds to a
