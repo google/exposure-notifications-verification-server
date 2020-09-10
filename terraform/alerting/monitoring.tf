@@ -36,7 +36,7 @@ resource "google_monitoring_alert_policy" "five_xx" {
     display_name = "Elevated 5xx on Verification Server"
     condition_threshold {
       duration        = "300s"
-      threshold_value = 0.2
+      threshold_value = 2
       comparison      = "COMPARISON_GT"
       filter          = "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" metric.label.\"response_code_class\"=\"5xx\" resource.label.\"service_name\"!=\"e2e-runner\""
 
