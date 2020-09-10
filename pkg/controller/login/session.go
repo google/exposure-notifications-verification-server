@@ -15,19 +15,27 @@
 package login
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleCreateSession() http.Handler {
 	type FormData struct {
-		IDToken string `form:"idToken,required"`
+		IDToken     string `form:"idToken,required"`
+		Email       string `form:"email"`
+		FactorCount int    `form:"factorCount"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		logger := logging.FromContext(ctx).Named("session.HandleCreateSession")
+		cacheTTL := 5 * time.Minute
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -41,6 +49,25 @@ func (c *Controller) HandleCreateSession() http.Handler {
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			return
+		}
+
+		// Require user to exist for login session.
+		var user database.User
+		cacheKey := fmt.Sprintf("users:by_email:%s", form.Email)
+		if err := c.cacher.Fetch(ctx, cacheKey, &user, cacheTTL, func() (interface{}, error) {
+			return c.db.FindUserByEmail(form.Email)
+		}); err != nil {
+			if database.IsNotFound(err) {
+				logger.Debugw("user does not exist")
+				flash.Error("User does not exist: %v", form.Email)
+				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
+				return
+			}
+
+			logger.Errorw("failed to lookup user", "error", err)
+			flash.Error("Failed to look up user: %v", form.Email)
+			c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 			return
 		}
 

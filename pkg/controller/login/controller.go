@@ -18,6 +18,7 @@ package login
 import (
 	"context"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -29,6 +30,7 @@ import (
 )
 
 type Controller struct {
+	cacher cache.Cacher
 	client *auth.Client
 	config *config.ServerConfig
 	db     *database.Database
@@ -37,10 +39,11 @@ type Controller struct {
 }
 
 // New creates a new login controller.
-func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, cacher cache.Cacher, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("login")
 
 	return &Controller{
+		cacher: cacher,
 		client: client,
 		config: config,
 		db:     db,
