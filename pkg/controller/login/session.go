@@ -45,6 +45,8 @@ func (c *Controller) HandleCreateSession() http.Handler {
 			return
 		}
 
+		// TODO: when the Identity Platform go client supports MFA, switch to directly
+		// grabbing this from the auth user struct
 		controller.StoreSessionFactorCount(session, form.FactorCount)
 
 		// Get the session cookie from firebase.
