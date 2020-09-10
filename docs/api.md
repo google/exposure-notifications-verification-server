@@ -95,6 +95,7 @@ Possible error code responses. New error codes may be added in future releases.
 | `code_expired`          | 400         | No    | Code has expired, user may need to obtain a new code. |
 | `code_not_found`        | 400         | No    | The server has no record of that code. |
 | `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecgonized test type |
+| `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided. |
 | `unsupported_test_type` | 412         | No    | The code may be valid, but represents a test type the client cannot process. User may need to upgrade software. |
 |                         | 500         | Yes   | Internal processing error, may be successful on retry. |
 

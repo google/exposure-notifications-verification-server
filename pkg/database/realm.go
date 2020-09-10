@@ -90,6 +90,10 @@ type Realm struct {
 	// value is to allow all test types.
 	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
 
+	// RequireDate requires that verifications on this realm require a test or
+	// symptom date (either). The default behavior is to not require a date.
+	RequireDate bool `gorm:"type:boolean; not null; default:false"`
+
 	// Signing Key Settings
 	UseRealmCertificateKey bool            `gorm:"type:boolean; default: false"`
 	CertificateIssuer      string          `gorm:"type:varchar(150); default: ''"`

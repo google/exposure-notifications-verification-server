@@ -52,6 +52,8 @@ const (
 	// ErrInvalidTestType indicates the client says it supports a test type this server doesn't
 	// know about.
 	ErrInvalidTestType = "invalid_test_type"
+	// ErrMissingDate indicates the realm requires a date, but none was supplied.
+	ErrMissingDate = "missing_date"
 
 	// Certificate API responses
 	// ErrTokenInvalid indicates the token provided is unknown or already used

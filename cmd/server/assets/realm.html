@@ -87,7 +87,7 @@
             <label class="col-sm-3">Allowed tests:</label>
             <div class="col-sm-9">
               {{if not $realm.EnableENExpress}}
-              <div class="form-group mb-0">
+              <div class="form-group">
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="allowedTestTypes" id="negative" value="{{$testTypes.negative}}"{{if eq $realm.AllowedTestTypes $testTypes.negative}} checked{{end}}/>
                   <label class="form-check-label" for="negative">
@@ -152,6 +152,38 @@
           Verification code configuration
         </div>
         <div class="card-body">
+          <div class="form-group row">
+            <label for="require_date" class="col-sm-3">Date configuration:</label>
+            <div class="col-sm-9">
+              <div class="form-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="requireDate" id="requireDateFalse" value="false"{{if not $realm.RequireDate }} checked{{end}}/>
+                  <label class="form-check-label" for="requireDateFalse">
+                    Optional date
+                    <small class="form-text text-muted">
+                      Do not require a test date when generating a verification
+                      code. Users and app can still optionally provide a date.
+                    </small>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="requireDate" id="requireDateTrue" value="true"{{if $realm.RequireDate }} checked{{end}} />
+                  <label class="form-check-label" for="requireDateTrue">
+                    Required date
+                    <small class="form-text text-muted">
+                      Require a symptom date or test date when generating a
+                      verification code. Attempting to generate a verification
+                      code without a date will return an error.
+                    </small>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group row">
             <label for="codeLength" class="col-sm-3">Short code characters:</label>
             <div class="col-sm-9">

@@ -46,6 +46,7 @@ func (c *Controller) HandleSave() http.Handler {
 		RegionCode       string            `form:"regionCode"`
 		AllowedTestTypes database.TestType `form:"allowedTestTypes"`
 		MFAMode          int16             `form:"MFAMode"`
+		RequireDate      bool              `form:"requireDate"`
 
 		CodeLength          uint   `form:"codeLength"`
 		CodeDurationMinutes int64  `form:"codeDuration"`
@@ -93,6 +94,7 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.Name = form.Name
 		realm.RegionCode = form.RegionCode
 		realm.AllowedTestTypes = form.AllowedTestTypes
+		realm.RequireDate = form.RequireDate
 		realm.CodeLength = form.CodeLength
 		realm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
 		realm.LongCodeLength = form.LongCodeLength
