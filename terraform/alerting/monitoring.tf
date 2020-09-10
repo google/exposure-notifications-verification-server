@@ -104,6 +104,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
   documentation {
     content   = <<-EOT
 ## $${policy.display_name}
+
 [$${resource.label.host}](https://$${resource.label.host}) request
 throttled by ratelimit middleware. This could indicate a bad behaving
 client app, or a potential DoS attack.

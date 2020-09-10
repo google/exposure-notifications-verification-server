@@ -1,0 +1,32 @@
+combiner: OR
+conditions:
+- conditionThreshold:
+    aggregations:
+    - alignmentPeriod: 60s
+      crossSeriesReducer: REDUCE_SUM
+      groupByFields:
+      - resource.label.job
+      perSeriesAligner: ALIGN_RATE
+    comparison: COMPARISON_GT
+    duration: 300s
+    filter: >
+        metric.type="custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/rate_limited_count"
+        resource.type="generic_task"
+    thresholdValue: 1.0
+    trigger:
+      count: 1
+  displayName: /rate_limited_count
+displayName: ElevatedRateLimitedCount
+documentation:
+  content: >
+      ## $${policy.display_name}
+
+      [$${resource.label.host}](https://$${resource.label.host}) request
+      throttled by ratelimit middleware. This could indicate a bad behaving
+      client app, or a potential DoS attack.
+
+      View the metric here
+
+      https://console.cloud.google.com/monitoring/dashboards/custom/
+      ${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.project}
+  mimeType: text/markdown
