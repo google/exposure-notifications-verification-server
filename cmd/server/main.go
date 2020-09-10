@@ -323,11 +323,12 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireAdmin)
 		realmSub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, config, db, h)
+		realmadminController := realmadmin.New(ctx, cacher, config, db, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
+		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
 
 		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, h)
 		if err != nil {
