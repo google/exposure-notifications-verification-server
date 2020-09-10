@@ -133,6 +133,17 @@
               </div>
             </div>
           </div>
+
+          <div class="form-group row">
+            <label for="MFAMode" class="col-sm-3">Multi factor auth:</label>
+            <div class="col-sm-9">
+              <select name="MFAMode" id="MFAMode" class="form-control">
+                <option value=1 {{if eq $realm.MFAMode 1}}selected{{end}}>Required</option>
+                <option value=0 {{if eq $realm.MFAMode 0}}selected{{end}}>Prompt after login</option>
+                <option value=2 {{if eq $realm.MFAMode 2}}selected{{end}}>Optional</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -323,7 +334,7 @@
           <div class="form-group row">
             <label for="twilio_auth_token" class="col-sm-3">Twilio auth token:</label>
             <div class="input-group col-sm-9">
-              <input type="password" id="twilio_auth_token" name="twilio_auth_token" class="form-control" value="{{if $smsConfig}}{{$smsConfig.TwilioAuthToken}}{{end}}">
+              <input type="password" id="twilio_auth_token" name="twilio_auth_token" class="form-control" autocomplete="new-password" value="{{if $smsConfig}}{{$smsConfig.TwilioAuthToken}}{{end}}">
               <div class="input-group-append">
                 <a class="input-group-text" data-toggle-password="twilio_auth_token">
                   <span class="oi oi-lock-locked" aria-hidden="true"></span>
