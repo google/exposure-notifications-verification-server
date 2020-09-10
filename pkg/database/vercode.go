@@ -106,11 +106,11 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 	// Update the per-realm stats.
 	if v.RealmID != 0 {
 		sql := `
-		INSERT INTO realm_stats(date, realm_id, codes_issued)
-			VALUES ($1, $2, 1)
-		ON CONFLICT (date, realm_id) DO UPDATE
-			SET codes_issued = realm_stats.codes_issued + 1
-	`
+			INSERT INTO realm_stats(date, realm_id, codes_issued)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET codes_issued = realm_stats.codes_issued + 1
+		`
 
 		if err := scope.DB().Exec(sql, date, v.RealmID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))

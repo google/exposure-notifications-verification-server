@@ -175,16 +175,21 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			return err
 		}
 
-		if _, ok := acceptTypes[vc.TestType]; !ok {
-			return ErrUnsupportedTestType
-		}
-
 		// Validation
-		if vc.IsExpired() {
+		expired, err := db.IsCodeExpired(&vc, verCode)
+		if err != nil {
+			db.logger.Errorw("failed to check code expiration", "error", err)
+			return ErrVerificationCodeExpired
+		}
+		if expired {
 			return ErrVerificationCodeExpired
 		}
 		if vc.Claimed {
 			return ErrVerificationCodeUsed
+		}
+
+		if _, ok := acceptTypes[vc.TestType]; !ok {
+			return ErrUnsupportedTestType
 		}
 
 		// Mark as claimed
