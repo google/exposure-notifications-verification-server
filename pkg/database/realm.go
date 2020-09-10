@@ -53,15 +53,15 @@ const (
 )
 
 // MFAMode represents Multi Factor Authentication requirements for the realm
-type MFAMode string
+type MFAMode int16
 
 const (
-	// MFARequired will not allow users to proceed without MFA on their account.
-	MFARequired MFAMode = "Required"
 	// MFAOptionalPrompt will prompt users for MFA on login.
-	MFAOptionalPrompt MFAMode = "OptionalPrompt"
+	MFAOptionalPrompt = iota
+	// MFARequired will not allow users to proceed without MFA on their account.
+	MFARequired
 	// MFAOptional will not prompt users to enable MFA.
-	MFAOptional MFAMode = "Optional"
+	MFAOptional
 )
 
 // Realm represents a tenant in the system. Typically this corresponds to a
@@ -83,7 +83,7 @@ type Realm struct {
 	// SMS Content
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours'"`
 
-	MFAMode MFAMode `gorm:"type:varchar(150); default: 'OptionalPrompt'"`
+	MFAMode MFAMode `gorm:"type:smallint; not null; default: 0"`
 
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
