@@ -115,6 +115,11 @@ func MissingUser(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingUser)
 }
 
+// RedirectToMFA redirects to the MFA registration.
+func RedirectToMFA(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	http.Redirect(w, r, "/login/registerphone", http.StatusSeeOther)
+}
+
 func prefixInList(list []string, prefix string) bool {
 	for _, v := range list {
 		if strings.HasPrefix(v, prefix) {

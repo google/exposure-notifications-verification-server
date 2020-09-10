@@ -45,6 +45,7 @@ func (c *Controller) HandleSave() http.Handler {
 		Name             string            `form:"name"`
 		RegionCode       string            `form:"regionCode"`
 		AllowedTestTypes database.TestType `form:"allowedTestTypes"`
+		MFAMode          int16             `form:"MFAMode"`
 
 		CodeLength          uint   `form:"codeLength"`
 		CodeDurationMinutes int64  `form:"codeDuration"`
@@ -97,6 +98,7 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.LongCodeLength = form.LongCodeLength
 		realm.LongCodeDuration.Duration = time.Hour * time.Duration(form.LongCodeHours)
 		realm.SMSTextTemplate = form.SMSTextTemplate
+		realm.MFAMode = database.MFAMode(form.MFAMode)
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to update realm: %v", err)
 			c.renderShow(ctx, w, r, realm, nil)

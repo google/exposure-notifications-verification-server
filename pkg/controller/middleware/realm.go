@@ -89,6 +89,11 @@ func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Databas
 				return
 			}
 
+			if realm.MFAMode == database.MFARequired && controller.FactorCountFromSession(session) == 0 {
+				controller.RedirectToMFA(w, r, h)
+				return
+			}
+
 			// Save the realm on the context.
 			ctx = controller.WithRealm(ctx, &realm)
 			*r = *r.WithContext(ctx)
