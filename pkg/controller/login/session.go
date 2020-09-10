@@ -15,15 +15,10 @@
 package login
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleCreateSession() http.Handler {
@@ -34,8 +29,6 @@ func (c *Controller) HandleCreateSession() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		logger := logging.FromContext(ctx).Named("session.HandleCreateSession")
-		cacheTTL := 5 * time.Minute
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -52,39 +45,14 @@ func (c *Controller) HandleCreateSession() http.Handler {
 			return
 		}
 
+		session.Values["factorCount"] = form.FactorCount
+
 		// Get the session cookie from firebase.
 		ttl := c.config.SessionDuration
 		cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
 		if err != nil {
 			flash.Error("Failed to create session: %v", err)
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-			return
-		}
-
-		// Verify the cookie and extract email.
-		email, err := middleware.EmailFromFirebaseCookie(ctx, c.client, cookie)
-		if err != nil {
-			logger.Debugw("failed to verify cookie and extract email")
-			flash.Error("Failed to verify session for user: %v", email)
-			c.h.RenderJSON(w, http.StatusUnauthorized, nil)
-		}
-
-		// Require user to exist for login session.
-		var user database.User
-		cacheKey := fmt.Sprintf("users:by_email:%s", email)
-		if err := c.cacher.Fetch(ctx, cacheKey, &user, cacheTTL, func() (interface{}, error) {
-			return c.db.FindUserByEmail(email)
-		}); err != nil {
-			if database.IsNotFound(err) {
-				logger.Debugw("user does not exist")
-				flash.Error("User does not exist: %v", email)
-				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
-				return
-			}
-
-			logger.Errorw("failed to lookup user", "error", err)
-			flash.Error("Failed to look up user: %v", email)
-			c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 			return
 		}
 
