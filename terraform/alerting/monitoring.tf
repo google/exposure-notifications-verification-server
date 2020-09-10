@@ -27,3 +27,26 @@ resource "google_monitoring_dashboard" "e2e" {
     null_resource.manual-step-to-enable-workspace
   ]
 }
+
+resource "google_monitoring_alert_policy" "5xx" {
+  project      = var.project
+  display_name = "Elevated 5xx"
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+
+[$${resource.label.host}](https://$${resource.label.host}/) is reporting elevated 5xx errors.
+
+See [docs/5xx.md](https://github.com/sethvargo/exposure-notifications-server-infra/blob/main/docs/5xx.md) for information about debugging.
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
+  ]
+}
