@@ -1,0 +1,30 @@
+displayName: e2e
+gridLayout:
+  columns: 2
+  widgets:
+    - title: /api/issue/code_issued_count rate by job
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                generic_task ::
+                custom.googleapis.com/opencensus/en-verification-server/api/issue/codes_issued_count
+                | align rate()
+                | every 1m
+                | [resource.job]
+    - title: /api/verify/attempt_count rate by job
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                generic_task ::
+                custom.googleapis.com/opencensus/en-verification-server/api/verify/attempt_count
+                | align rate()
+                | every 1m
+                | [resource.job]
