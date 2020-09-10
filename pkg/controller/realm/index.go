@@ -57,10 +57,9 @@ func (c *Controller) HandleIndex() http.Handler {
 			controller.StoreSessionRealm(session, realm)
 			flash.Alert("Logged into verification system for '%s'", realm.Name)
 
-			if realm.MFAMode == database.MFAOptionalPrompt {
-				if factors := controller.FactorCountFromSession(session); factors == 0 {
-					http.Redirect(w, r, "/login/registerphone", http.StatusSeeOther)
-				}
+			if realm.MFAMode == database.MFAOptionalPrompt &&
+				controller.RedirectToMFA(session, w, r, c.h) {
+				return
 			}
 
 			http.Redirect(w, r, "/home", http.StatusFound)

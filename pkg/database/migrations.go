@@ -862,17 +862,10 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00035-AddMFARequiredToRealms",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Debugw("adding MFA required to realm")
-
-				if err := tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_mode INTEGER DEFAULT 0").Error; err != nil {
-					return err
-				}
-				return nil
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_mode INTEGER DEFAULT 0").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_mode").Error; err != nil {
-					return err
-				}
-				return nil
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_mode").Error
 			},
 		},
 	})

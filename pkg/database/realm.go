@@ -83,6 +83,7 @@ type Realm struct {
 	// SMS Content
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours'"`
 
+	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode MFAMode `gorm:"type:smallint; not null; default: 0"`
 
 	// AllowedTestTypes is the type of tests that this realm permits. The default
