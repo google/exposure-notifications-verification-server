@@ -283,6 +283,7 @@ resource "null_resource" "migrate" {
     google_project_service.services["cloudbuild.googleapis.com"],
     google_secret_manager_secret_iam_member.cloudbuild-db-pwd,
     google_project_iam_member.cloudbuild-sql,
+    null_resource.build,
   ]
 }
 
