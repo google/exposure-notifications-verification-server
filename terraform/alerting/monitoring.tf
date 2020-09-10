@@ -73,3 +73,52 @@ EOT
     null_resource.manual-step-to-enable-workspace
   ]
 }
+
+resource "google_monitoring_alert_policy" "rate_limited_count" {
+  project      = var.project
+  display_name = "ElevatedRateLimitedCount"
+  combiner     = "OR"
+  conditions {
+    display_name = "/rate_limited_count"
+    condition_threshold {
+      duration        = "300s"
+      threshold_value = 1
+      comparison      = "COMPARISON_GT"
+      filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/rate_limited_count\" resource.type=\"generic_task\""
+
+      aggregations {
+        alignment_period     = "60s"
+        cross_series_reducer = "REDUCE_SUM"
+        group_by_fields = [
+          "resource.label.service_name",
+        ]
+        per_series_aligner = "ALIGN_RATE"
+      }
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+[$${resource.label.host}](https://$${resource.label.host}) request
+throttled by ratelimit middleware. This could indicate a bad behaving
+client app, or a potential DoS attack.
+
+View the metric here
+
+https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.project}
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
+  ]
+}
