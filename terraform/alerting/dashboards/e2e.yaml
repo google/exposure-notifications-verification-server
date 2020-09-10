@@ -15,10 +15,6 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.job]
-        timeshiftDuration: 0s
-        yAxis:
-          label: y1Axis
-          scale: LINEAR
     - title: /api/verify/attempt_count rate by job
       xyChart:
         chartOptions:
@@ -32,7 +28,3 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.job]
-        timeshiftDuration: 0s
-        yAxis:
-          label: y1Axis
-          scale: LINEAR

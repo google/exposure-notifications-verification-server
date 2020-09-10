@@ -15,10 +15,6 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.service_name, metric.response_code_class]
-        timeshiftDuration: 0s
-        yAxis:
-          label: y1Axis
-          scale: LINEAR
     - title: OpenCensus/en-verification-server/api/issue/attempt_count by label.job [SUM]
       xyChart:
         chartOptions:
@@ -32,7 +28,3 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.job]
-        timeshiftDuration: 0s
-        yAxis:
-          label: y1Axis
-          scale: LINEAR
