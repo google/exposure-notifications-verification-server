@@ -33,20 +33,20 @@ resource "google_monitoring_alert_policy" "five_xx" {
   display_name = "Elevated 5xx"
   combiner     = "OR"
   conditions {
-    display_name = "Host is unreachable"
+    display_name = "Elevated 5xx on Verification Server"
     condition_threshold {
       duration        = "300s"
       threshold_value = 0.2
-      comparison      = "COMPARISON_LT"
-      filter          = "metric.type=\"monitoring.googleapis.com/uptime_check/check_passed\" resource.type=\"uptime_url\""
+      comparison      = "COMPARISON_GT"
+      filter          = "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" metric.label.\"response_code_class\"=\"5xx\" resource.label.\"service_name\"!=\"e2e-runner\""
 
       aggregations {
         alignment_period     = "60s"
-        cross_series_reducer = "REDUCE_FRACTION_TRUE"
+        cross_series_reducer = "REDUCE_SUM"
         group_by_fields = [
-          "resource.label.host",
+          "resource.label.service_name",
         ]
-        per_series_aligner = "ALIGN_NEXT_OLDER"
+        per_series_aligner = "ALIGN_RATE"
       }
 
       trigger {
