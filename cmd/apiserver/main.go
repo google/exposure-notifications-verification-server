@@ -90,7 +90,7 @@ func realMain(ctx context.Context) error {
 	// Setup cacher
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
 		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
-		cache.PrefixKeyFunc("apiserver:"),
+		cache.PrefixKeyFunc("apiserver:cache:"),
 	))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
@@ -128,7 +128,7 @@ func realMain(ctx context.Context) error {
 	defer limiterStore.Close()
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
-		limitware.APIKeyFunc(ctx, "apiserver", db),
+		limitware.APIKeyFunc(ctx, "apiserver:ratelimit:", config.RateLimit.HMACKey),
 		limitware.AllowOnError(false))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)

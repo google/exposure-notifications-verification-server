@@ -3,16 +3,15 @@ package limitware
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/sha1"
 	"fmt"
-	"hash"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -197,60 +196,46 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 }
 
 // APIKeyFunc returns a default key function for ratelimiting on our API key
-// header. It falls back to rate limiting by the client ip.
-func APIKeyFunc(ctx context.Context, scope string, db *database.Database) httplimit.KeyFunc {
+// header. Since APIKeys are assumed to be "public" at some point, they are
+// rate limited by [api-key,ip].
+func APIKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
 	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
-	ipAddrLimit := IPAddressKeyFunc(ctx, scope)
+	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
 		// Procss the API key
 		v := r.Header.Get("x-api-key")
 		if v != "" {
-			// v2 API keys encode the realm
-			_, realmID, err := db.VerifyAPIKeySignature(v)
-			if err == nil {
-				logger.Debugw("limiting by api key v2 realm", "realm", realmID)
-				dig, err := digest(sha1.New, strconv.FormatUint(uint64(realmID), 10))
-				if err != nil {
-					return "", fmt.Errorf("failed to digest realm id: %w", err)
-				}
-				return fmt.Sprintf("ratelimit:%s:realm:%x", scope, dig), nil
+			logger.Debugw("limiting by apikey")
+			dig, err := digest(fmt.Sprintf("%s:%s", v, remoteIP(r)), hmacKey)
+			if err != nil {
+				return "", fmt.Errorf("failed to digest api key: %w", err)
 			}
-
-			// v1 API keys do not, fallback to the database
-			app, err := db.FindAuthorizedAppByAPIKey(v)
-			if err == nil {
-				logger.Debugw("limiting by api key v1 realm", "realm", app.RealmID)
-				dig, err := digest(sha1.New, strconv.FormatUint(uint64(app.RealmID), 10))
-				if err != nil {
-					return "", fmt.Errorf("failed to digest realm id: %w", err)
-				}
-				return fmt.Sprintf("ratelimit:%s:realm:%x", scope, dig), nil
-			}
+			return fmt.Sprintf("%sapikey:%s", scope, dig), nil
 		}
 
 		return ipAddrLimit(r)
 	}
 }
 
-// UserEmailKeyFunc pulls the user out of the request context and uses that to
+// UserIDKeyFunc pulls the user out of the request context and uses that to
 // ratelimit. It falls back to rate limiting by the client ip.
-func UserEmailKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
+func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
 	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
-	ipAddrLimit := IPAddressKeyFunc(ctx, scope)
+	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
 		ctx := r.Context()
 
 		// See if a user exists on the context
 		user := controller.UserFromContext(ctx)
-		if user != nil && user.Email != "" {
+		if user != nil {
 			logger.Debugw("limiting by user", "user", user.ID)
-			dig, err := digest(sha1.New, strconv.FormatUint(uint64(user.ID), 10))
+			dig, err := digest(fmt.Sprintf("%d", user.ID), hmacKey)
 			if err != nil {
 				return "", fmt.Errorf("failed to digest user id: %w", err)
 			}
-			return fmt.Sprintf("ratelimit:%s:user:%x", scope, dig), nil
+			return fmt.Sprintf("%suser:%x", scope, dig), nil
 		}
 
 		return ipAddrLimit(r)
@@ -258,33 +243,41 @@ func UserEmailKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
 }
 
 // IPAddressKeyFunc uses the client IP to rate limit.
-func IPAddressKeyFunc(ctx context.Context, scope string) httplimit.KeyFunc {
+func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
 	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
 
 	return func(r *http.Request) (string, error) {
 		// Get the remote addr
-		ip := r.RemoteAddr
-
-		// Check if x-forwarded-for exists, the load balancer sets this, and the
-		// first entry is the real client IP
-		xff := r.Header.Get("x-forwarded-for")
-		if xff != "" {
-			ip = strings.Split(xff, ",")[0]
-		}
+		ip := remoteIP(r)
 
 		logger.Debugw("limiting by ip", "ip", ip)
-		dig, err := digest(sha1.New, ip)
+		dig, err := digest(ip, hmacKey)
 		if err != nil {
 			return "", fmt.Errorf("failed to digest ip: %w", err)
 		}
-		return fmt.Sprintf("ratelimit:%s:ip:%x", scope, dig), nil
+		return fmt.Sprintf("%sip:%x", scope, dig), nil
 	}
+}
+
+// remoteIP returns the "real" remote IP.
+func remoteIP(r *http.Request) string {
+	// Get the remote addr
+	ip := r.RemoteAddr
+
+	// Check if x-forwarded-for exists, the load balancer sets this, and the
+	// first entry is the real client IP
+	xff := r.Header.Get("x-forwarded-for")
+	if xff != "" {
+		ip = strings.Split(xff, ",")[0]
+	}
+
+	return ip
 }
 
 // digest returns the digest of given string as a hex-encoded string, and any
 // errors that occur while hashing.
-func digest(hasher func() hash.Hash, in string) (string, error) {
-	h := hasher()
+func digest(in string, key []byte) (string, error) {
+	h := hmac.New(sha1.New, key)
 	n, err := h.Write([]byte(in))
 	if err != nil {
 		return "", err
