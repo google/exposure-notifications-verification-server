@@ -64,7 +64,7 @@
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}
-        <div id="chart" style="height: 300px;" class="m-3">
+        <div id="chart" class="mb-3" style="height: 300px;">
           <span>Loading chart...</span>
         </div>
         <table class="table table-bordered table-striped">
@@ -122,7 +122,7 @@
       };
 
       var chart = new google.charts.Line(document.getElementById('chart'));
-      chart.draw(data, options);
+      chart.draw(data, google.charts.Line.convertOptions(options));
     }
   </script>
   {{end}}

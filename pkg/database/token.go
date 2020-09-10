@@ -179,14 +179,30 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			return ErrUnsupportedTestType
 		}
 
-		// And mark as claimed.
-		if err := vc.claim(db, tx, verCode, realmID); err != nil {
-			return err
+		// Validation
+		if vc.IsExpired() {
+			return ErrVerificationCodeExpired
+		}
+		if vc.Claimed {
+			return ErrVerificationCodeUsed
 		}
 
-		// Mark claimed. Transactional update.
+		// Mark as claimed
+		vc.Claimed = true
 		if err := tx.Save(&vc).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to claim token: %w", err)
+		}
+
+		// Update statistics
+		now := time.Now().Truncate(24 * time.Hour)
+		sql := `
+			INSERT INTO realm_stats(date, realm_id, codes_claimed)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET codes_claimed = realm_stats.codes_claimed + 1
+		`
+		if err := tx.Exec(sql, now, vc.RealmID).Error; err != nil {
+			return fmt.Errorf("failed to update stats: %w", err)
 		}
 
 		buffer := make([]byte, tokenBytes)

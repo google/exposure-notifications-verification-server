@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realmstats
+package realmadmin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -23,7 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -33,23 +34,25 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		today := time.Now().Truncate(24 * time.Hour)
-		nago := today.Add(-30 * 24 * time.Hour).Truncate(24 * time.Hour)
-		stats, err := realm.Stats(c.db, nago, today)
-		if err != nil {
+		// Get and cache the stats for this user.
+		var stats []*database.RealmStats
+		cacheKey := fmt.Sprintf("stats:realm:%d", realm.ID)
+		if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
+			now := time.Now().UTC()
+			past := now.Add(-30 * 24 * time.Hour)
+			return realm.Stats(c.db, past, now)
+		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderShow(ctx, w, realm, stats)
+		c.renderStats(ctx, w, realm, stats)
 	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats) {
+func (c *Controller) renderStats(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["realm"] = realm
+	m["user"] = realm
 	m["stats"] = stats
-
-	// Valid settings for code parameters.
 	c.h.RenderHTML(w, "realmstats", m)
 }

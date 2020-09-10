@@ -21,8 +21,29 @@
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}
-        <div id="chart" style="height: 300px;">
+        <div id="chart" class="mb-3" style="height: 300px;">
           <span>Loading chart...</span>
+        </div>
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col" width="125">Issued</th>
+              <th scope="col" width="125">Claimed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range $stat := $stats}}
+            <tr>
+              <td>{{$stat.Date.Format "2006-01-02"}}</td>
+              <td>{{$stat.CodesIssued}}</td>
+              <td>{{$stat.CodesClaimed}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+        <div class="font-italic">
+          This data is refreshed every 5 minutes.
         </div>
         {{else}}
           <p>No codes have been issued in this realm.</p>
@@ -50,12 +71,12 @@
 
       var options = {
         colors: ['#007bff', '#ff7b00'],
-        legend: {position: 'left'},
+        legend: {position: 'bottom'},
         tooltip: {trigger: 'focus'},
       };
 
       var chart = new google.charts.Line(document.getElementById('chart'));
-      chart.draw(data, options);
+      chart.draw(data, google.charts.Line.convertOptions(options));
     }
   </script>
   {{end}}

@@ -74,6 +74,7 @@ func (VerificationCode) TableName() string {
 // but the transaction continues. This is called automatically by gorm.
 func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 	date := v.CreatedAt.Truncate(24 * time.Hour)
+
 	// If the issuer was a user, update the user stats for the day.
 	if v.IssuingUserID != 0 {
 		sql := `
@@ -103,44 +104,18 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 	}
 
 	// Update the per-realm stats.
-	sql := `
+	if v.RealmID != 0 {
+		sql := `
 		INSERT INTO realm_stats(date, realm_id, codes_issued)
 			VALUES ($1, $2, 1)
 		ON CONFLICT (date, realm_id) DO UPDATE
 			SET codes_issued = realm_stats.codes_issued + 1
 	`
 
-	if err := scope.DB().Exec(sql, date, v.RealmID).Error; err != nil {
-		scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		if err := scope.DB().Exec(sql, date, v.RealmID).Error; err != nil {
+			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		}
 	}
-}
-
-// claim checks the VerificationCode, marks as claimed, and updates the
-// per-realm stats. If any of that fails, an error code is returned.
-func (v *VerificationCode) claim(db *Database, tx *gorm.DB, verCode string, realmID uint) error {
-	if expired, err := db.IsCodeExpired(v, verCode); err != nil {
-		return err
-	} else if expired {
-		return ErrVerificationCodeExpired
-	}
-
-	if v.Claimed {
-		return ErrVerificationCodeUsed
-	}
-
-	now := time.Now().Truncate(24 * time.Hour)
-	sql := `
-		INSERT INTO realm_stats(date, realm_id, codes_claimed)
-			VALUES ($1, $2, 1)
-		ON CONFLICT (date, realm_id) DO UPDATE
-			SET codes_claimed = realm_stats.codes_claimed + 1
-	`
-	if err := tx.Exec(sql, now, v.RealmID).Error; err != nil {
-		return err
-	}
-
-	v.Claimed = true
-	return nil
 }
 
 // TODO(mikehelmick) - Add method to soft delete expired codes
