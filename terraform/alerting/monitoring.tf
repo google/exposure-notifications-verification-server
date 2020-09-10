@@ -31,6 +31,29 @@ resource "google_monitoring_dashboard" "e2e" {
 resource "google_monitoring_alert_policy" "five_xx" {
   project      = var.project
   display_name = "Elevated 5xx"
+  combiner     = "OR"
+  conditions {
+    display_name = "Host is unreachable"
+    condition_threshold {
+      duration        = "300s"
+      threshold_value = 0.2
+      comparison      = "COMPARISON_LT"
+      filter          = "metric.type=\"monitoring.googleapis.com/uptime_check/check_passed\" resource.type=\"uptime_url\""
+
+      aggregations {
+        alignment_period     = "60s"
+        cross_series_reducer = "REDUCE_FRACTION_TRUE"
+        group_by_fields = [
+          "resource.label.host",
+        ]
+        per_series_aligner = "ALIGN_NEXT_OLDER"
+      }
+
+      trigger {
+        count = 1
+      }
+    }
+  }
 
   documentation {
     content   = <<-EOT
