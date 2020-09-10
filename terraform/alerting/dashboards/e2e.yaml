@@ -34,5 +34,5 @@ gridLayout:
                 | [resource.job]
         timeshiftDuration: 0s
         yAxis:
-          label: "y1Axis"
-          scale: "LINEAR"
+          label: y1Axis
+          scale: LINEAR
