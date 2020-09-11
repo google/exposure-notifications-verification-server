@@ -49,6 +49,8 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 			realmID := controller.RealmIDFromSession(session)
 			if realmID == 0 {
 				logger.Debugw("realm does not exist in session")
+				// If no realm on session, continue serving.
+				// If realm is non-optional the caller should RequireRealm or RequireAdmin.
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -81,8 +83,11 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 }
 
 // RequireRealm requires a realm to exist in the session. It also ensures the
-// realm is set as currentRealm in the template map. It must come after
-// RequireAuth so that a user is set on the context.
+// realm is set as currentRealm in the template map.
+//
+// Must come after:
+//   LoadCurrentRealm to populate the current realm.
+//   RequireAuth so that a user is set on the context.
 func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
 
@@ -115,9 +120,11 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 	}
 }
 
-// RequireRealmAdmin verifies the user is an admin of the current realm.  It
-// must come after RequireAuth and RequireRealm so that a user and realm are set
-// on the context.
+// RequireRealmAdmin verifies the user is an admin of the current realm.
+//
+// Must come after:
+//   LoadCurrentRealm to populate the current realm.
+//   RequireAuth so that a user is set on the context.
 func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireRealmAdmin")
 
