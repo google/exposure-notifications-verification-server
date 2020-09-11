@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -196,9 +197,9 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 }
 
 // APIKeyFunc returns a default key function for ratelimiting on our API key
-// header. Since APIKeys are assumed to be "public" at some point, they are
-// rate limited by [api-key,ip].
-func APIKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
+// header. Since APIKeys are assumed to be "public" at some point, they are rate
+// limited by [realm,ip], and API keys have a 1-1 mapping to a realm.
+func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKey []byte) httplimit.KeyFunc {
 	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
@@ -206,12 +207,15 @@ func APIKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.Key
 		// Procss the API key
 		v := r.Header.Get("x-api-key")
 		if v != "" {
-			logger.Debugw("limiting by apikey")
-			dig, err := digest(fmt.Sprintf("%s:%s", v, remoteIP(r)), hmacKey)
-			if err != nil {
-				return "", fmt.Errorf("failed to digest api key: %w", err)
+			realmID := realmIDFromAPIKey(db, v)
+			if realmID != 0 {
+				logger.Debugw("limiting by realm from apikey")
+				dig, err := digest(fmt.Sprintf("%d:%s", realmID, remoteIP(r)), hmacKey)
+				if err != nil {
+					return "", fmt.Errorf("failed to digest api key: %w", err)
+				}
+				return fmt.Sprintf("%srealm:%s", scope, dig), nil
 			}
-			return fmt.Sprintf("%sapikey:%s", scope, dig), nil
 		}
 
 		return ipAddrLimit(r)
@@ -287,4 +291,22 @@ func digest(in string, key []byte) (string, error) {
 	}
 	dig := h.Sum(nil)
 	return fmt.Sprintf("%x", dig), nil
+}
+
+// realmIDFromAPIKey extracts the realmID from the provided API key, handling v1
+// and v2 API key formats.
+func realmIDFromAPIKey(db *database.Database, apiKey string) uint {
+	// v2 API keys encode in the realm to limit the db calls
+	_, realmID, err := db.VerifyAPIKeySignature(apiKey)
+	if err == nil {
+		return realmID
+	}
+
+	// v1 API keys are more expensive
+	app, err := db.FindAuthorizedAppByAPIKey(apiKey)
+	if err == nil {
+		return app.RealmID
+	}
+
+	return 0
 }
