@@ -913,6 +913,57 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec("ALTER TABLE realms ALTER COLUMN require_date SET NULL").Error
 			},
 		},
+		{
+			ID: "00039-RealmStatsToDate",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: changing realm stats to date")
+				return tx.Exec("ALTER TABLE realm_stats ALTER COLUMN date TYPE date").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realm_stats ALTER COLUMN date TYPE timestamp with time zone").Error
+			},
+		},
+		{
+			ID: "00040-BackfillRealmStats",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: back-filling realm stats")
+				sqls := []string{
+					`
+					INSERT INTO realm_stats (
+						SELECT date, realm_id, SUM(codes_issued) AS codes_issued
+  					FROM user_stats
+						WHERE user_stats.date < date('2020-09-15')
+  					GROUP BY 1, 2
+  					ORDER BY 1 DESC
+					) ON CONFLICT(date, realm_id) DO UPDATE
+						SET codes_issued = realm_stats.codes_issued + excluded.codes_issued
+					`,
+					`
+					INSERT INTO realm_stats (
+						SELECT date, authorized_apps.realm_id AS realm_id, SUM(codes_issued) AS codes_issued
+						FROM authorized_app_stats
+						JOIN authorized_apps
+						ON authorized_app_stats.authorized_app_id = authorized_apps.id
+						WHERE authorized_app_stats.date < date('2020-09-15')
+						GROUP BY 1, 2
+						ORDER BY 1 DESC
+					) ON CONFLICT(date, realm_id) DO UPDATE
+						SET codes_issued = realm_stats.codes_issued + excluded.codes_issued
+					`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 
