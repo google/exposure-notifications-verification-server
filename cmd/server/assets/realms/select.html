@@ -2,6 +2,7 @@
 
 {{$csrfField := .csrfField}}
 {{$realms := .realms}}
+{{$currentRealm := .currentRealm}}
 
 <!doctype html>
 <html lang="en">
@@ -26,7 +27,7 @@
       <form action="/realm/select" method="POST">
         {{$csrfField}}
         <input type="hidden" name="realm" value="{{$realm.ID}}" />
-        <a href="#" class="w-100 d-flex flex-row justify-content-between align-items-center align-self-center list-group-item list-group-item-action" data-submit-form>
+        <a href="#" class="w-100 d-flex flex-row justify-content-between align-items-center align-self-center list-group-item list-group-item-action {{if $currentRealm }}{{if eq $currentRealm.Name $realm.Name}}active{{end}}{{end}}" data-submit-form>
           <div>
             <h5 class="mb-1">{{$realm.Name}}</h5>
             {{if $realm.RegionCode}}

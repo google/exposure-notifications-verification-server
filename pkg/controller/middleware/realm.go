@@ -30,10 +30,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// RequireRealm requires a realm to exist in the session. It also ensures the
-// realm is set as currentRealm in the template map. It must come after
-// RequireAuth so that a user is set on the context.
-func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
+// LoadCurrentRealm loads the selected realm from the cache to the context
+func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
 
 	cacheTTL := 5 * time.Minute
@@ -41,12 +39,6 @@ func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Databas
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-
-			user := controller.UserFromContext(ctx)
-			if user == nil {
-				controller.MissingUser(w, r, h)
-				return
-			}
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
@@ -57,7 +49,7 @@ func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Databas
 			realmID := controller.RealmIDFromSession(session)
 			if realmID == 0 {
 				logger.Debugw("realm does not exist in session")
-				controller.MissingRealm(w, r, h)
+				next.ServeHTTP(w, r)
 				return
 			}
 
@@ -79,6 +71,37 @@ func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Databas
 				return
 			}
 
+			// Save the realm on the context.
+			ctx = controller.WithRealm(ctx, &realm)
+			*r = *r.WithContext(ctx)
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// RequireRealm requires a realm to exist in the session. It also ensures the
+// realm is set as currentRealm in the template map. It must come after
+// RequireAuth so that a user is set on the context.
+func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
+	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			user := controller.UserFromContext(ctx)
+			if user == nil {
+				controller.MissingUser(w, r, h)
+				return
+			}
+
+			realm := controller.RealmFromContext(ctx)
+			if realm == nil {
+				controller.MissingRealm(w, r, h)
+				return
+			}
+
 			if !user.CanViewRealm(realm.ID) {
 				logger.Debugw("user cannot view realm")
 				// Technically this is unauthorized, but we don't want to leak the
@@ -86,10 +109,6 @@ func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Databas
 				controller.MissingRealm(w, r, h)
 				return
 			}
-
-			// Save the realm on the context.
-			ctx = controller.WithRealm(ctx, &realm)
-			*r = *r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
 		})
