@@ -137,6 +137,18 @@ func (r *Realm) SigningKeyID() string {
 	return fmt.Sprintf("realm-%d", r.ID)
 }
 
+func (r *Realm) MFAModeString() string {
+	switch r.MFAMode {
+	case MFAOptionalPrompt:
+		return "prompt"
+	case MFARequired:
+		return "required"
+	case MFAOptional:
+		return "optional"
+	}
+	return ""
+}
+
 // BeforeSave runs validations. If there are errors, the save fails.
 func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	r.Name = strings.TrimSpace(r.Name)

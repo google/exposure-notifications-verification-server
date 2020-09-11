@@ -138,9 +138,9 @@
             <label for="MFAMode" class="col-sm-3">Multi factor auth:</label>
             <div class="col-sm-9">
               <select name="MFAMode" id="MFAMode" class="form-control">
-                <option value=1 {{if eq $realm.MFAMode 1}}selected{{end}}>Required</option>
-                <option value=0 {{if eq $realm.MFAMode 0}}selected{{end}}>Prompt after login</option>
-                <option value=2 {{if eq $realm.MFAMode 2}}selected{{end}}>Optional</option>
+                <option value=1 {{if eq $realm.MFAModeString "required"}}selected{{end}}>Required</option>
+                <option value=0 {{if eq $realm.MFAModeString "prompt"}}selected{{end}}>Prompt after login</option>
+                <option value=2 {{if eq $realm.MFAModeString "optional"}}selected{{end}}>Optional</option>
               </select>
             </div>
           </div>

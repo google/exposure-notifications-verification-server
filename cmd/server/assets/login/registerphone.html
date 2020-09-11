@@ -50,7 +50,9 @@
           </div>
         </form>
 
-        <a id="skip" class="card-link" href="/realm">Skip for now</a>
+        {{if ne .currentRealm.MFAModeString "required"}}
+        <a id="skip" class="card-link" href="/home">Skip for now</a>
+        {{end}}
       </div>
     </div>
 
@@ -60,6 +62,10 @@
   {{template "scripts" .}}
 
   <script>
+        {{if eq .currentRealm.MFAModeString "required"}}
+        flash("This realm requires multi-factor authorization.","warning")
+        {{end}}
+
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
       'recaptcha-container',
       { 'size': 'invisible' }
