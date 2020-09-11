@@ -30,6 +30,7 @@ import (
 )
 
 // RequireMFA checks the realm's MFA requirements and enforces them.
+// Use requireRealm before requireMFA to ensure the currently selected realm is on context.
 // If no realm is selected, this assumes MFA is required.
 func RequireMFA(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireMFA")
