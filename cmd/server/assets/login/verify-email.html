@@ -1,4 +1,4 @@
-{{define "login/verifyemail"}}
+{{define "login/verify-email"}}
 <!doctype html>
 <html lang="en">
 
@@ -8,24 +8,27 @@
   {{template "firebase" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <div class="card mb-3">
+    <h1>Email verification</h1>
+    <p>
+      You must verify your email address to continue.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Email verification</div>
       <div class="card-body">
-        <h1>Email verification</h1>
-        <p id="subtitle">Use this page to verify your login email address</p>
+        <p>
+          Click the button below to send a verification email, then check your
+          inbox for the message.
+        </p>
+        <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
 
-        <div class="row form-group">
-          <div class="col-sm-9">
-            <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
-          </div>
-        </div>
-
-        <a id="skip" class="card-link" href="/">Continue</a>
+        <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
       </div>
     </div>
   </main>
@@ -34,7 +37,6 @@
 
   <script>
     let $verify = $('#verify');
-    let $subtitle = $('#subtitle');
     let $skip = $('#skip');
 
     $(function () {
@@ -45,8 +47,7 @@
             clearExistingFlash();
             flash("Verification email sent.", "success");
             $verify.prop('disabled', true);
-          }
-          );
+          });
         }
       });
     });
@@ -54,14 +55,13 @@
     firebase.auth().onAuthStateChanged(function (user) {
       if (!user) {
         window.location.assign("/signout");
-        return
+        return;
       }
 
       if (user.emailVerified) {
-        $subtitle.text("Welcome, " + user.email + ". Your email has already been verified.");
-        $skip.text("Continue")
+        window.location.assign('/home');
+        return;
       } else {
-        $subtitle.text("Welcome, " + user.email + ". Please verify your email to continue.");
         $verify.prop('disabled', false);
       }
     });

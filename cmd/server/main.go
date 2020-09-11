@@ -35,7 +35,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
@@ -199,6 +198,11 @@ func realMain(ctx context.Context) error {
 	}
 
 	{
+		sub := r.PathPrefix("").Subrouter()
+		sub.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
+	}
+
+	{
 		loginController := login.New(ctx, auth, config, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
@@ -206,46 +210,34 @@ func realMain(ctx context.Context) error {
 
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
 			sub.Handle("/login/create", loginController.HandleLoginCreate()).Methods("GET")
-			sub.Handle("/login/resetpassword", loginController.HandleResetPassword()).Methods("GET")
+			sub.Handle("/login/reset-password", loginController.HandleResetPassword()).Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
-		}
 
-		{
-			sub := r.PathPrefix("").Subrouter()
-			sub.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
-		}
-
-		{
-			sub := r.PathPrefix("/login/verifyemail").Subrouter()
-			sub.Use(rateLimit)
+			// Verifying email requires the user is logged in
+			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
-
-			sub.Handle("", loginController.HandleVerifyEmail()).Methods("GET")
-		}
-
-		{
-			sub := r.PathPrefix("/login").Subrouter()
 			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
+			sub.Handle("/login/verify-email", loginController.HandleVerifyEmail()).Methods("GET")
+
+			// Realm selection
+			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
 			sub.Use(requireVerified)
+			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
+
+			// SMS auth registration is realm-specific, so it needs to load the current realm.
+			sub = r.PathPrefix("").Subrouter()
+			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
 			sub.Use(requireRealm)
-
-			sub.Handle("/registerphone", loginController.HandleRegisterPhone()).Methods("GET")
+			sub.Use(requireVerified)
+			sub.Handle("/login/register-phone", loginController.HandleRegisterPhone()).Methods("GET")
 		}
-	}
-
-	{
-		sub := r.PathPrefix("/realm").Subrouter()
-		sub.Use(requireAuth)
-		sub.Use(requireVerified)
-		sub.Use(loadCurrentRealm)
-		sub.Use(rateLimit)
-
-		// Realms - list and select.
-		realmController := realm.New(ctx, config, db, h)
-		sub.Handle("", realmController.HandleIndex()).Methods("GET")
-		sub.Handle("/select", realmController.HandleSelect()).Methods("POST")
 	}
 
 	{

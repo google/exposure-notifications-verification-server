@@ -21,7 +21,7 @@
       Use an identifier to check the status of a code previously shared with your patient.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Code status</div>
       <div class="card-body">
         <form method="POST" action="show" class="floating-form">
@@ -30,7 +30,7 @@
             <div class="form-label-group ">
               <input type="text" id="uuid" name="uuid"
                 class='form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}'
-                value="{{$code.UUID}}" placeholder="UUID" autocomplete="off">
+                value="{{$code.UUID}}" placeholder="UUID" autocomplete="off" required autofocus>
               <label for="uuid">UUID</label>
               {{if $code.ErrorsFor "uuid"}}
               <div class="invalid-feedback">
@@ -43,11 +43,7 @@
             </div>
           </div>
 
-          <div class="row form-group">
-            <div class="col-sm-9">
-              <button id="submit" class="btn btn-primary btn-block">Check status</button>
-            </div>
-          </div>
+          <button id="submit" class="btn btn-primary btn-block">Check status</button>
         </form>
       </div>
     </div>

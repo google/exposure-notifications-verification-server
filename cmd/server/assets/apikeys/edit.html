@@ -6,9 +6,10 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+  {{template "floatingform" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -19,46 +20,38 @@
       Use the form below to edit the API key.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
         <form method="POST" action="/apikeys/{{$authApp.ID}}">
           <input type="hidden" name="_method" value="PATCH">
           {{ .csrfField }}
 
-          <div class="form-group row">
-            <label for="name" class="col-sm-3">App name:</label>
-            <div class="col-sm-9">
-              <input type="text" id="name" name="name" class="form-control{{if $authApp.ErrorsFor "name"}} is-invalid{{end}}" value="{{$authApp.Name}}">
-              {{if $authApp.ErrorsFor "name"}}
-              <div class="invalid-feedback">
-                {{joinStrings ($authApp.ErrorsFor "name") ", "}}
-              </div>
-              {{end}}
+          <div class="form-label-group">
+            <input type="text" id="name" name="name" class="form-control{{if $authApp.ErrorsFor "name"}} is-invalid{{end}}" value="{{$authApp.Name}}" placeholder="Application name" autofocus>
+            <label for="name">Application name</label>
+            {{if $authApp.ErrorsFor "name"}}
+            <div class="invalid-feedback">
+              {{joinStrings ($authApp.ErrorsFor "name") ", "}}
             </div>
-          </div>
-          <div class="form-group row">
-            <label for="type" class="col-sm-3">Type:</label>
-            <div class="col-sm-9">
-              <select class="form-control" name="type" id="type" disabled>
-                <option selected>
-                  {{if (eq $authApp.APIKeyType 0)}}
-                    Device (can verify codes)
-                  {{else if (eq $authApp.APIKeyType 1)}}
-                    Admin (can issue codes)
-                  {{else}}
-                    Unknown
-                  {{end}}
-                </option>
-              </select>
-            </div>
+            {{end}}
           </div>
 
-          <div class="form-group row">
-            <div class="offset-sm-3 col-sm-9">
-              <button type="submit" class="btn btn-primary btn-block">Update API key</button>
-            </div>
+          <div class="form-group">
+            <select class="form-control" name="type" id="type" disabled>
+              <option selected>
+                {{if (eq $authApp.APIKeyType 0)}}
+                  Device (can verify codes)
+                {{else if (eq $authApp.APIKeyType 1)}}
+                  Admin (can issue codes)
+                {{else}}
+                  Unknown
+                {{end}}
+              </option>
+            </select>
           </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Update API key</button>
         </form>
       </div>
     </div>

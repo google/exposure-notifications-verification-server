@@ -12,15 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realm
+package login
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+func (c *Controller) HandleSelectRealm() http.Handler {
+	type FormData struct {
+		RealmID uint `form:"realm,required"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -37,31 +43,65 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		userRealms := user.Realms
-		if len(userRealms) == 0 {
-			flash.Error("No realms enabled. Contact your administrator.")
-			http.Redirect(w, r, "/signout", http.StatusSeeOther)
-			return
-		}
-
 		// If the user is only a member of one realm, set that and bypass selection.
-		if len(userRealms) == 1 {
-			realm := userRealms[0]
+		if len(user.Realms) == 1 {
+			realm := user.Realms[0]
 
+			// The user is already logged in and the current realm matches the
+			// expected realm - just redirect.
 			if controller.RealmIDFromSession(session) == realm.ID {
-				http.Redirect(w, r, "/home", http.StatusFound)
+				http.Redirect(w, r, "/home", http.StatusSeeOther)
 				return
 			}
 
+			// Clear any flashes. It's possible that the user was redirected via a
+			// "missing realm" because their session expired, but then we auto logged
+			// them in and they are only a member of one realm. In that case, they'd
+			// get an error that says "please select a realm" and a success message
+			// that they successfully logged in.
+			flash.Clear()
+
 			controller.StoreSessionRealm(session, realm)
-			flash.Alert("Logged into verification system for '%s'", realm.Name)
-			http.Redirect(w, r, "/home", http.StatusFound)
+			http.Redirect(w, r, "/home", http.StatusSeeOther)
 			return
 		}
 
-		// User must select their realm.
-		m := controller.TemplateMapFromContext(ctx)
-		m["realms"] = userRealms
-		c.h.RenderHTML(w, "realms/select", m)
+		// Requested form, stop processing.
+		if r.Method == http.MethodGet {
+			c.renderSelect(ctx, w, user.Realms)
+			return
+		}
+
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			flash.Error(err.Error())
+			c.renderSelect(ctx, w, user.Realms)
+			return
+		}
+
+		realm := user.GetRealm(form.RealmID)
+		if realm == nil {
+			flash.Error("Please select a realm to continue.")
+			c.renderSelect(ctx, w, user.Realms)
+			return
+		}
+
+		// Verify that the user has access to the realm.
+		if !user.CanViewRealm(realm.ID) {
+			flash.Error("Invalid realm selection.")
+			c.renderSelect(ctx, w, user.Realms)
+			return
+		}
+
+		controller.StoreSessionRealm(session, realm)
+		flash.Alert("Successfully selected realm '%s'", realm.Name)
+		http.Redirect(w, r, "/home", http.StatusSeeOther)
 	})
+}
+
+// renderSelect renders the realm selection page.
+func (c *Controller) renderSelect(ctx context.Context, w http.ResponseWriter, realms []*database.Realm) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["realms"] = realms
+	c.h.RenderHTML(w, "login/select-realm", m)
 }

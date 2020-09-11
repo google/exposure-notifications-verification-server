@@ -10,7 +10,7 @@
   {{template "head" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -24,7 +24,7 @@
       Here is information about the user.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
         <strong>Name</strong>
@@ -38,13 +38,13 @@
         </div>
 
         <strong>Admin</strong>
-        <div class="mb-3">
+        <div>
           {{$user.CanAdminRealm $currentRealm.ID}}
         </div>
       </div>
     </div>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}

@@ -9,15 +9,18 @@
   {{template "head" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
 
     <h1>Realm stats</h1>
+    <p>
+      The data below shows realm statistics.
+    </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}

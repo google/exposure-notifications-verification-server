@@ -1,6 +1,6 @@
 {{define "systemkeys"}}
 {{/* This is only shown if the realm is NOT set to use per-realm signing keys */}}
-<div class="card mb-3">
+<div class="card mb-3 shadow-sm">
   <div class="card-header">
     System verification certificate information
   </div>
@@ -54,7 +54,7 @@
 
 {{define "realmpublickeys"}}
   {{if .supportsPerRealmSigning}}
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">
         Realm public keys
       </div>
@@ -159,7 +159,7 @@
   {{template "head" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -174,7 +174,7 @@
       {{template "systemkeys" .}}
     {{end}}
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">
         Realm signing key configuration
       </div>
@@ -293,9 +293,8 @@
     </div>
 
     {{template "realmpublickeys" .}}
-
-
   </main>
+
   {{template "scripts" .}}
 </body>
 </html>

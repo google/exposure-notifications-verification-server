@@ -10,7 +10,7 @@
   {{template "head" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -22,7 +22,7 @@
     </p>
 
     {{if not $realm.EnableENExpress}}
-      <div class="card mb-3">
+      <div class="card mb-3 shadow-sm">
         <div class="card-header">
           Exposure Notifications Express
         </div>
@@ -49,7 +49,7 @@
     <form method="POST" action="/realm/settings/save">
       {{ .csrfField }}
 
-      <div class="card mb-3">
+      <div class="card mb-3 shadow-sm">
         <div class="card-header">
           General settings
         </div>
@@ -147,7 +147,7 @@
         </div>
       </div>
 
-      <div class="card mb-3">
+      <div class="card mb-3 shadow-sm">
         <div class="card-header">
           Verification code configuration
         </div>
@@ -351,7 +351,7 @@
         </div>
       </div>
 
-      <div class="card mb-3">
+      <div class="card mb-3 shadow-sm">
         <div class="card-header">
           SMS configuration
         </div>
@@ -392,7 +392,7 @@
     </form>
 
     {{if $realm.EnableENExpress}}
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">
         Exposure Notifications Express
       </div>

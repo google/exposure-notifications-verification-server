@@ -34,7 +34,6 @@
     cursor: pointer;
     text-decoration: none;
   }
-
 </style>
 {{end}}
 
@@ -43,8 +42,6 @@
   .floating-form {
     width: 100%;
     height: 100%;
-    max-width: 420px;
-    padding: 15px;
     margin: auto;
   }
 
@@ -212,7 +209,7 @@
 
               <h6 class="dropdown-header">Actions</h6>
               {{if gt (len .currentUser.Realms) 1}}
-              <a class="dropdown-item" href="/realm">Change realm</a>
+              <a class="dropdown-item" href="/login/select-realm">Change realm</a>
               {{end}}
               <a class="dropdown-item" href="/signout">Sign out</a>
             </div>
