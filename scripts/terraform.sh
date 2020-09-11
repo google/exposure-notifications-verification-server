@@ -34,7 +34,7 @@ else
   echo "then rerun this script"
 fi
 
-function deploy() {
+function init() {
   pushd "${ROOT}/terraform-e2e" > /dev/null
 
   # Preparing for deployment
@@ -49,11 +49,20 @@ terraform {
 }
 EOF
 
+  terraform init -upgrade
+  terraform get --update
+
+  popd > /dev/null
+}
+
+function deploy() {
+  pushd "${ROOT}/terraform-e2e" > /dev/null
+  
+  init
+
   # google_app_engine_application.app is global, cannot be deleted once created,
   # if this project already has it created then terraform apply will fail,
   # importing it can solve this problem
-  terraform init -upgrade
-  terraform get --update
   terraform import module.en.google_app_engine_application.app ${PROJECT_ID} || true
   terraform import module.en.google_firebase_project.default ${PROJECT_ID} || true
   for networkEndpointGroups in adminapi apiserver server; do
@@ -80,7 +89,9 @@ EOF
 
 function destroy() {
   pushd "${ROOT}/terraform-e2e" > /dev/null
-  terraform get --update
+
+  init
+
   local db_inst_name
   db_inst_name="$(terraform output -json 'en' | jq '. | .db_inst_name' | tr -d \")"
   # DB often failed to be destroyed by terraform due to "used by other process",
