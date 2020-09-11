@@ -42,7 +42,6 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		m["mfamode"] = realm.MFAMode
 		c.h.RenderHTML(w, "login/register", m)
 	})
 }

@@ -50,7 +50,7 @@
           </div>
         </form>
 
-        {{ if ne .mfamode 1}}
+        {{if ne .currentRealm.MFAModeString "required"}}
         <a id="skip" class="card-link" href="/home">Skip for now</a>
         {{end}}
       </div>
@@ -62,7 +62,7 @@
   {{template "scripts" .}}
 
   <script>
-        {{ if eq .mfamode 1 }}
+        {{if eq .currentRealm.MFAModeString "required"}}
         flash("This realm requires multi-factor authorization.","warning")
         {{end}}
 
