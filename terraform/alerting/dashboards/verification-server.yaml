@@ -28,3 +28,16 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.job, metric.realm]
+    - title: /ratelimit/limitware/rate_limited_count by label.job [SUM]
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                generic_task ::
+                custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/rate_limited_count
+                | align rate()
+                | every 1m
+                | [resource.job]
