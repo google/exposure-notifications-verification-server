@@ -239,7 +239,7 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 			if err != nil {
 				return "", fmt.Errorf("failed to digest user id: %w", err)
 			}
-			return fmt.Sprintf("%suser:%x", scope, dig), nil
+			return fmt.Sprintf("%suser:%s", scope, dig), nil
 		}
 
 		return ipAddrLimit(r)
@@ -259,7 +259,7 @@ func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplim
 		if err != nil {
 			return "", fmt.Errorf("failed to digest ip: %w", err)
 		}
-		return fmt.Sprintf("%sip:%x", scope, dig), nil
+		return fmt.Sprintf("%sip:%s", scope, dig), nil
 	}
 }
 
