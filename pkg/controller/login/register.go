@@ -42,6 +42,6 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/register", m)
+		c.h.RenderHTML(w, "login/register-phone", m)
 	})
 }

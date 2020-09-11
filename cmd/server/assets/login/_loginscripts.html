@@ -22,7 +22,7 @@
         contentType: 'application/x-www-form-urlencoded',
         success: function(returnData) {
           // The user successfully signed in, redirect to realm selection.
-          window.location.assign('/realm');
+          window.location.assign('/login/select-realm');
         },
         error: function(xhr, status, e) {
           // There was an error finding the user. Redirect to the

@@ -7,9 +7,10 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+  {{template "floatingform" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -20,7 +21,7 @@
       Use the form below to edit the user.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
         {{template "users/_form" .}}

@@ -48,7 +48,7 @@
 
     <form id="issue" action="#">
       <div id="form-area">
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Diagnosis</div>
           <div class="card-body">
             <div class="form-row">
@@ -97,7 +97,7 @@
           </div>
         </div>
 
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Dates</div>
           <div class="card-body">
             <div class="form-row">
@@ -128,7 +128,7 @@
         </div>
 
         {{ if $hasSMSConfig }}
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Notification</div>
           <div class="card-body">
             <div class="row form-group">
@@ -156,7 +156,7 @@
       </div>
     </form>
 
-    <div id="long-code-confirm" class="card d-none mb-3">
+    <div id="long-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
         SMS verification link
         <span id="long-code-expires-at" class="sm float-right text-danger"></span>
@@ -169,7 +169,7 @@
       </div>
     </div>
 
-    <div id="code-confirm" class="card d-none mb-3">
+    <div id="code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
         Generated short code
         <span id="code-expires-at" class="sm float-right text-danger"></span>
@@ -184,7 +184,7 @@
       </div>
     </div>
 
-    <div id="uuid-confirm" class="card d-none mb-3">
+    <div id="uuid-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">Unique identifier</div>
       <div class="card-body">
         <p>

@@ -72,7 +72,7 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 				delete(m, "currentUser") // Remove user from the template map.
 				logger.Debugw("user email not verified")
 				flash.Error("User email not verified.")
-				http.Redirect(w, r, "/login/verifyemail", http.StatusSeeOther)
+				http.Redirect(w, r, "/login/verify-email", http.StatusSeeOther)
 				return
 			}
 

@@ -6,9 +6,10 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+  {{template "floatingform" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -19,98 +20,90 @@
       Use the form below to create a new realm.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
         <form method="POST" action="/admin/realms/create">
           {{ .csrfField }}
 
-          <div class="form-group row">
-            <label for="name" class="col-sm-3">Name:</label>
-            <div class="col-sm-9">
-              <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}" />
-              {{if $realm.ErrorsFor "name"}}
-              <div class="invalid-feedback">
-                {{joinStrings ($realm.ErrorsFor "name") ", "}}
-              </div>
-              {{end}}
+          <div class="form-label-group">
+            <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}" placeholder="Realm name" />
+            <label for="name">Realm name</label>
+            {{if $realm.ErrorsFor "name"}}
+            <div class="invalid-feedback">
+              {{joinStrings ($realm.ErrorsFor "name") ", "}}
             </div>
+            {{end}}
+            <small class="form-text text-muted">
+              The realm name should be descriptive. It must also be globally
+              unique.
+            </small>
           </div>
 
-          <div class="form-group row">
-            <label for="name" class="col-sm-3">Region code:</label>
-            <div class="col-sm-9">
-              <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}" />
-              {{if $realm.ErrorsFor "regionCode"}}
-              <div class="invalid-feedback">
-                {{joinStrings ($realm.ErrorsFor "regionCode") ", "}}
-              </div>
-              {{end}}
-              <small class="form-text text-muted">
-                Used in creating deep link SMS for multi-helath authority apps. Region should
-                be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and ISO 3166-2 subdivision codes</a> where applicable.
-                For example, Washington State would be <code>US-WA</code>.
-              </small>
+          <div class="form-label-group">
+            <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}" placeholder="Region code" />
+            <label for="name">Region code</label>
+            {{if $realm.ErrorsFor "regionCode"}}
+            <div class="invalid-feedback">
+              {{joinStrings ($realm.ErrorsFor "regionCode") ", "}}
             </div>
+            {{end}}
+            <small class="form-text text-muted">
+              Used in creating deep link SMS for multi-helath authority apps. Region should
+              be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and ISO 3166-2 subdivision codes</a> where applicable.
+              For example, Washington State would be <code>US-WA</code>.
+            </small>
           </div>
 
           {{if .supportsPerRealmSigning}}
-          <div class="form-group row">
-            <label for="type" class="col-sm-3">Certificate signing keys:</label>
-            <div class="col-sm-9">
-              <select class="form-control{{if $realm.ErrorsFor "UseRealmCertificateKey"}} is-invalid{{end}}" name="useRealmCertificateKey" id="useRealmCertificateKey">
-                <option value="true" {{if $realm.UseRealmCertificateKey}}selected{{end}}>Create realm specific signing key</option>
-                <option value="false" {{if not $realm.UseRealmCertificateKey}}selected{{end}}>Use system signing key</option>
-              </select>
-              {{if $realm.ErrorsFor "UseRealmCertificateKey"}}
+          <div class="form-group">
+            <select class="form-control{{if $realm.ErrorsFor "UseRealmCertificateKey"}} is-invalid{{end}}" name="useRealmCertificateKey" id="useRealmCertificateKey">
+              <option value="true" {{if $realm.UseRealmCertificateKey}}selected{{end}}>Create realm-specific signing key</option>
+              <option value="false" {{if not $realm.UseRealmCertificateKey}}selected{{end}}>Use system signing key</option>
+            </select>
+            {{if $realm.ErrorsFor "UseRealmCertificateKey"}}
+            <div class="invalid-feedback">
+              {{joinStrings ($realm.ErrorsFor "UseRealmCertificateKey") ", "}}
+            </div>
+            {{end}}
+            <small class="form-text text-muted">
+              It is recommended that you create a realm-specific signing key when creating a new realm. However, it
+              is important to note that this once a realm is created, you cannot switch back to using the system
+              signing key.
+            </small>
+          </div>
+
+          <div class="form-label-group">
+            <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}" value="{{$realm.CertificateIssuer}}" placeholder="Issuer (iss)" />
+            <label for="name">Issuer (iss)</label>
+            {{if $realm.ErrorsFor "certificateIssuer"}}
               <div class="invalid-feedback">
-                {{joinStrings ($realm.ErrorsFor "UseRealmCertificateKey") ", "}}
+                {{joinStrings ($realm.ErrorsFor "certificateIssuer") ", "}}
               </div>
-              {{end}}
-              <small class="form-text text-muted">
-                It is recommended that you create a realm specific signing key when creating a new realm. However, it
-                is important to note that this once a realm is created, you cannot switch back to using the system
-                signing key.
-              </small>
-            </div>
+            {{end}}
+            <small class="form-text text-muted">
+              This value is specific to the health authority. After created
+              using realm-specific keys, this field cannot be changed.
+            </small>
           </div>
-          
-          <div class="form-group row">
-            <label for="name" class="col-sm-3">Issuer (iss):</label>
-            <div class="col-sm-9">
-              <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}" value="{{$realm.CertificateIssuer}}" />
-              {{if $realm.ErrorsFor "certificateIssuer"}}
-                <div class="invalid-feedback">
-                  {{joinStrings ($realm.ErrorsFor "certificateIssuer") ", "}}
-                </div>
-              {{end}}
-              <small class="form-text text-muted">
-                This value is specific to the health authority.<br/>After created using realm specific keys, this field cannot be changed.
-              </small>
-            </div>
-          </div>
-          <div class="form-group row">
-            <label for="name" class="col-sm-3">Audience (aud):</label>
-            <div class="col-sm-9">
-              <input type="text" id="certificateAudiance" name="certificateAudiance" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" />
-              {{if $realm.ErrorsFor "certificateAudience"}}
-                <div class="invalid-feedback">
-                  {{joinStrings ($realm.ErrorsFor "certificateAudience") ", "}}
-                </div>
-              {{end}}
-              <small class="form-text text-muted">
-                The audience (<tt>aud</tt>) value is provided the <em>key server</em> operator.<br/>
-                After upgrading to use realm specific keys, this field cannot be changed.
-              </small>
-            </div>
+
+          <div class="form-label-group">
+            <input type="text" id="certificateAudiance" name="certificateAudiance" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" placeholder="Audience (aud)" />
+            <label for="name">Audience (aud)</label>
+            {{if $realm.ErrorsFor "certificateAudience"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($realm.ErrorsFor "certificateAudience") ", "}}
+              </div>
+            {{end}}
+            <small class="form-text text-muted">
+              The audience (<code>aud</code>) value is provided the <em>key
+              server</em> operator. After upgrading to use realm-specific keys,
+              this field cannot be changed.
+            </small>
           </div>
           {{end}}
 
-          <div class="form-group row">
-            <div class="offset-sm-3 col-sm-9">
-              <button type="submit" class="btn btn-primary btn-block">Create realm</button>
-            </div>
-          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create realm</button>
         </form>
       </div>
     </div>
