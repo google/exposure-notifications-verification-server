@@ -58,8 +58,12 @@ func RequireMFA(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 }
 
 func NeedsMFARedirect(session *sessions.Session, realm *database.Realm) bool {
-	if (realm.MFAMode == database.MFARequired) && controller.FactorCountFromSession(session) == 0 {
+	if (realm == nil || realm.MFAMode == database.MFARequired) && controller.FactorCountFromSession(session) == 0 {
 		return true
+	}
+
+	if realm == nil {
+		return false
 	}
 
 	if realm.MFAMode == database.MFAOptionalPrompt && !controller.MFAPromptedFromSession(session) &&
