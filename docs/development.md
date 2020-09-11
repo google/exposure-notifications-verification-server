@@ -98,6 +98,13 @@ represent best practices.
     export CACHE_TYPE="IN_MEMORY"
     export CACHE_HMAC_KEY="/wC2dki5Z+To9iFwUamINtHIMOH/dME7e5Gy+9h3WTDBhqeeSYkqduZRjcZWwG3kPMdiWAdBxxop5wB+BHTBnSlfVVmy8qKVNv+Wf5ywgxV7SbB8bjNQBHSpn7aC5RxR6nkEsZ2w2fUhTJwD9q+MDo6TQvf+8OXEPrV1SXWNHrs="
 
+    # Configure rate limiter. Create your own values with:
+    #
+    #     openssl rand -base64 128
+    #
+    export RATE_LIMIT_TYPE="MEMORY"
+    export RATE_LIMIT_HMAC_KEY="/wC2dki5Z+To9iFwUamINtHIMOH/dME7e5Gy+9h3WTDBhqeeSYkqduZRjcZWwG3kPMdiWAdBxxop5wB+BHTBnSlfVVmy8qKVNv+Wf5ywgxV7SbB8bjNQBHSpn7aC5RxR6nkEsZ2w2fUhTJwD9q+MDo6TQvf+8OXEPrV1SXWNHrs="
+
     # Configure certificate key management. The CERTIFICATE_SIGNING_KEY should
     # be the value output in the previous step.
     export CERTIFICATE_KEY_MANAGER="FILESYSTEM"
