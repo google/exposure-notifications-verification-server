@@ -367,7 +367,6 @@ func realMain(ctx context.Context) error {
 		adminSub.Use(requireAuth)
 		adminSub.Use(requireVerified)
 		adminSub.Use(requireSystemAdmin)
-		adminSub.Use(requireMFA)
 		adminSub.Use(rateLimit)
 
 		adminController := admin.New(ctx, config, db, h)
