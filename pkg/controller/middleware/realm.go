@@ -50,9 +50,7 @@ func RequireRealm(ctx context.Context, cacher cache.Cacher, db *database.Databas
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
-				err := fmt.Errorf("session does not exist in context")
-				logger.Errorw("failed to get session", "error", err)
-				controller.InternalError(w, r, h, err)
+				controller.MissingSession(w, r, h)
 				return
 			}
 

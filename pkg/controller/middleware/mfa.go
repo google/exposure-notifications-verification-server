@@ -16,14 +16,11 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -33,17 +30,13 @@ import (
 // Use requireRealm before requireMFA to ensure the currently selected realm is on context.
 // If no realm is selected, this assumes MFA is required.
 func RequireMFA(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireMFA")
-
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
-				err := fmt.Errorf("session does not exist in context")
-				logger.Errorw("failed to get session", "error", err)
-				controller.InternalError(w, r, h, err)
+				controller.MissingSession(w, r, h)
 				return
 			}
 
