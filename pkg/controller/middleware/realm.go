@@ -50,7 +50,7 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 			if realmID == 0 {
 				logger.Debugw("realm does not exist in session")
 				// If no realm on session, continue serving.
-				// If realm is non-optional the caller should RequireRealm orRequireAdmin.
+				// If realm is non-optional the caller should RequireRealm or RequireAdmin.
 				next.ServeHTTP(w, r)
 				return
 			}
