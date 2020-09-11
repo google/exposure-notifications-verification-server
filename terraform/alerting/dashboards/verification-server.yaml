@@ -27,4 +27,4 @@ gridLayout:
                 custom.googleapis.com/opencensus/en-verification-server/api/issue/attempt_count
                 | align rate()
                 | every 1m
-                | [resource.job]
+                | [resource.job, metric.realm]
