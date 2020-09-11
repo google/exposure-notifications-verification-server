@@ -1,6 +1,6 @@
 displayName: e2e
 gridLayout:
-  columns: 2
+  columns: "2"
   widgets:
     - title: /api/issue/code_issued_count rate by job
       xyChart:

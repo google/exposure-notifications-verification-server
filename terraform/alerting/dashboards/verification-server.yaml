@@ -1,6 +1,6 @@
 displayName: Verification Server
 gridLayout:
-  columns: 2
+  columns: "2"
   widgets:
     - title: Cloud Run Revision - Request Count (grouped) [SUM]
       xyChart:

@@ -103,16 +103,27 @@
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="testDate">Testing date (local time)</label>
-                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
               </div>
 
               <div class="form-group col-md-6">
                 <label for="symptomDate">Symptoms onset (local time)</label>
                 <div class="input-group">
-                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
                 </div>
               </div>
             </div>
+
+            {{if $currentRealm.RequireDate}}
+            <div class="form-row">
+              <div class="col">
+                <small class="form-text text-muted">
+                  {{$currentRealm.Name}} requires at least one date to be
+                  provided.
+                </small>
+              </div>
+            </div>
+            {{end}}
           </div>
         </div>
 
@@ -307,6 +318,13 @@
         // Show form
         $formArea.removeClass('d-none');
       });
+
+      {{if $currentRealm.RequireDate}}
+      let $dates = $('input#test-date,input#symptom-date');
+      $dates.on('input', function() {
+        $dates.not(this).prop('required', !$(this).val().length);
+      });
+      {{end}}
     });
 
     function getCode(data) {
