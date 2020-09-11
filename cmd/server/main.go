@@ -289,9 +289,8 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAuth)
 		sub.Use(requireVerified)
 		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
-		sub.Use(requireMFA)
 		sub.Use(requireAdmin)
+		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
 		apikeyController := apikey.New(ctx, config, cacher, db, h)
@@ -311,9 +310,8 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAuth)
 		userSub.Use(requireVerified)
 		userSub.Use(loadCurrentRealm)
-		userSub.Use(requireRealm)
-		userSub.Use(requireMFA)
 		userSub.Use(requireAdmin)
+		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
 		userController := user.New(ctx, cacher, config, db, h)
@@ -332,9 +330,8 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireAuth)
 		realmSub.Use(requireVerified)
 		realmSub.Use(loadCurrentRealm)
-		realmSub.Use(requireRealm)
-		realmSub.Use(requireMFA)
 		realmSub.Use(requireAdmin)
+		realmSub.Use(requireMFA)
 		realmSub.Use(rateLimit)
 
 		realmadminController := realmadmin.New(ctx, cacher, config, db, h)
