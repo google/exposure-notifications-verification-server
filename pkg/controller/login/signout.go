@@ -32,6 +32,7 @@ func (c *Controller) HandleSignOut() http.Handler {
 
 		// Set MaxAge to -1 to expire the session.
 		session.Options.MaxAge = -1
+		controller.ClearMFAPrompted(session)
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase

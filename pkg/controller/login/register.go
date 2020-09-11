@@ -16,17 +16,38 @@
 package login
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
 func (c *Controller) HandleRegisterPhone() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		logger := logging.FromContext(ctx).Named("login.HandleRegisterPhone")
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			err := fmt.Errorf("session does not exist in context")
+			logger.Errorw("failed to get session", "error", err)
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		// Mark prompted so we only prompt once.
+		controller.StoreSessionMFAPrompted(session, true)
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
+		m["mfamode"] = realm.MFAMode
 		c.h.RenderHTML(w, "login/register", m)
 	})
 }

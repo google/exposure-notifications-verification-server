@@ -188,6 +188,7 @@ func realMain(ctx context.Context) error {
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	requireRealm := middleware.RequireRealm(ctx, cacher, db, h)
 	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
+	requireMFA := middleware.RequireMFA(ctx, h)
 	rateLimit := httplimiter.Handle
 
 	{
@@ -227,6 +228,7 @@ func realMain(ctx context.Context) error {
 			sub.Use(rateLimit)
 			sub.Use(requireAuth)
 			sub.Use(requireVerified)
+			sub.Use(requireRealm)
 
 			sub.Handle("/registerphone", loginController.HandleRegisterPhone()).Methods("GET")
 		}
@@ -249,6 +251,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAuth)
 		sub.Use(requireVerified)
 		sub.Use(requireRealm)
+		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
 		homeController := home.New(ctx, config, db, h)
@@ -267,6 +270,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAuth)
 		sub.Use(requireVerified)
 		sub.Use(requireRealm)
+		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
 		codeStatusController := codestatus.NewServer(ctx, config, db, h)
@@ -281,6 +285,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAuth)
 		sub.Use(requireVerified)
 		sub.Use(requireRealm)
+		sub.Use(requireMFA)
 		sub.Use(requireAdmin)
 		sub.Use(rateLimit)
 
@@ -301,6 +306,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireAuth)
 		userSub.Use(requireVerified)
 		userSub.Use(requireRealm)
+		userSub.Use(requireMFA)
 		userSub.Use(requireAdmin)
 		userSub.Use(rateLimit)
 
@@ -320,6 +326,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireAuth)
 		realmSub.Use(requireVerified)
 		realmSub.Use(requireRealm)
+		realmSub.Use(requireMFA)
 		realmSub.Use(requireAdmin)
 		realmSub.Use(rateLimit)
 
@@ -360,6 +367,7 @@ func realMain(ctx context.Context) error {
 		adminSub.Use(requireAuth)
 		adminSub.Use(requireVerified)
 		adminSub.Use(requireSystemAdmin)
+		adminSub.Use(requireMFA)
 		adminSub.Use(rateLimit)
 
 		adminController := admin.New(ctx, config, db, h)

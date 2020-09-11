@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -56,12 +55,6 @@ func (c *Controller) HandleIndex() http.Handler {
 
 			controller.StoreSessionRealm(session, realm)
 			flash.Alert("Logged into verification system for '%s'", realm.Name)
-
-			if realm.MFAMode == database.MFAOptionalPrompt && controller.FactorCountFromSession(session) == 0 {
-				controller.RedirectToMFA(w, r, c.h)
-				return
-			}
-
 			http.Redirect(w, r, "/home", http.StatusFound)
 			return
 		}
