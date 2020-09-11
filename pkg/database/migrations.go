@@ -893,6 +893,26 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00037-AddRealmRequireDate",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding require_date to realms")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS require_date bool DEFAULT false").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS require_date").Error
+			},
+		},
+		{
+			ID: "00038-AddRealmRequireDateNotNull",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding not null requirement to require_date on realms")
+				return tx.Exec("ALTER TABLE realms ALTER COLUMN require_date SET NOT NULL").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms ALTER COLUMN require_date SET NULL").Error
+			},
+		},
 	})
 }
 
