@@ -94,6 +94,7 @@ function destroy() {
 
   local db_inst_name
   db_inst_name="$(terraform output -json 'en' | jq '. | .db_inst_name' | tr -d \")"
+  echo "Delete db inst name '${db_inst_name}'"
   # DB often failed to be destroyed by terraform due to "used by other process",
   # so delete it manually
   gcloud sql instances delete ${db_inst_name} -q --project=${PROJECT_ID} || true
