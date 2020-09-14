@@ -69,9 +69,9 @@
           <li class="page-item {{if eq $pages.Previous -1}}disabled{{end}}"><a class="page-link"
               href="?offset={{$pages.Previous}}">Previous</a>
           </li>
-          {{range $index, $pageOffset := $pages.Offsets}}
-          <li class="page-item {{if eq $pages.Current $pageOffset}}active{{end}}"><a class="page-link"
-              href="?offset={{$pageOffset}}">{{$index}}</a></li>
+          {{range $pageOffset := $pages.Offsets}}
+          <li class="page-item {{if eq $pages.Current $pageOffset.Offset}}active{{end}}"><a class="page-link"
+              href="?offset={{$pageOffset.Offset}}">{{$pageOffset.Label}}</a></li>
           {{end}}
           <li class="page-item {{if eq $pages.Next -1}}disabled{{end}}"><a class="page-link"
               href="?offset={{$pages.Next}}">Next</a></li>

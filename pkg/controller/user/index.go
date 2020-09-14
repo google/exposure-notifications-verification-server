@@ -26,11 +26,16 @@ import (
 // pageSize is const for now, could provide options in UX
 const pageSize = 25
 
+type PageLabel struct {
+	Offset int
+	Label  string
+}
+
 type Pages struct {
 	Previous int
 	Current  int
 	Next     int
-	Offsets  []int
+	Offsets  []PageLabel
 }
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -59,31 +64,55 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		var pages *Pages
 		if count > pageSize {
-			pages = &Pages{
-				Current:  offset,
-				Offsets:  []int{},
-				Previous: -1,
-				Next:     -1,
-			}
-			for i := 0; i < count; i += pageSize {
-				pages.Offsets = append(pages.Offsets, i)
-			}
-			if offset != 0 {
-				pages.Previous = offset - pageSize
-				if pages.Previous < 0 {
-					pages.Previous = 0
-				}
-			}
-			if offset != count-pageSize {
-				pages.Next = offset + pageSize
-				if pages.Next > count-pageSize {
-					pages.Next = count - pageSize
-				}
-			}
+			pages = populatePageStrip(offset, count)
 		}
 
 		c.renderIndex(ctx, w, users, pages)
 	})
+}
+
+func populatePageStrip(offset, count int) *Pages {
+	pages := &Pages{
+		Current:  offset,
+		Offsets:  []PageLabel{},
+		Previous: -1,
+		Next:     -1,
+	}
+
+	// Calc start and end for paging as +/- 5 pages from current
+	iStart := offset - pageSize*5
+	if iStart <= 0 {
+		iStart = 0
+	}
+	iEnd := iStart + pageSize*11
+	if iEnd > count-pageSize {
+		iEnd = count - pageSize
+	}
+
+	// Page number series
+	for i := iStart; i < iEnd; i += pageSize {
+		pl := PageLabel{
+			Offset: i,
+			Label:  strconv.Itoa((i / pageSize) + 1),
+		}
+		pages.Offsets = append(pages.Offsets, pl)
+	}
+
+	// Previous button data
+	if offset != 0 {
+		pages.Previous = offset - pageSize
+		if pages.Previous < 0 {
+			pages.Previous = 0
+		}
+	}
+	// Next button data
+	if offset != count-pageSize {
+		pages.Next = offset + pageSize
+		if pages.Next > count-pageSize {
+			pages.Next = count - pageSize
+		}
+	}
+	return pages
 }
 
 func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, users []*database.User, pages *Pages) {
