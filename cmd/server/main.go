@@ -308,6 +308,7 @@ func realMain(ctx context.Context) error {
 
 		userController := user.New(ctx, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
+		userSub.Handle("", userController.HandleIndex()).Queries("offset", "{[0-9]*?}").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
 		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")

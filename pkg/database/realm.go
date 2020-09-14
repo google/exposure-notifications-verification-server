@@ -434,10 +434,28 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	return &app, nil
 }
 
+// CountUsers returns the count users on this realm.
+func (r *Realm) CountUsers(db *Database) (int, error) {
+	var count int
+	if err := db.db.
+		Model(&User{}).
+		Joins("INNER JOIN user_realms ON user_realms.user_id = users.id and realm_id = ?", r.ID).
+		Count(&count).
+		Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // ListUsers returns the list of users on this realm.
-func (r *Realm) ListUsers(db *Database) ([]*User, error) {
+func (r *Realm) ListUsers(db *Database, offset, limit int) ([]*User, error) {
+	if limit > 100 {
+		limit = 100
+	}
+
 	var users []*User
 	if err := db.db.
+		Offset(offset).Limit(limit).
 		Model(r).
 		Order("LOWER(name)").
 		Related(&users, "RealmUsers").
