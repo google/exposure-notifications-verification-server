@@ -24,7 +24,7 @@ import (
 )
 
 // pageSize is const for now, could provide options in UX
-const pageSize = 1
+const pageSize = 25
 
 type Pages struct {
 	Previous int
