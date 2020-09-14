@@ -6,6 +6,7 @@
 
 <!doctype html>
 <html lang="en">
+
 <head>
   {{template "head" .}}
 </head>
@@ -25,7 +26,7 @@
     </p>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
+      <div class="card-header">User details</div>
       <div class="card-body">
         <strong>Name</strong>
         <div class="mb-3">
@@ -71,16 +72,12 @@
           This data is refreshed every 5 minutes.
         </div>
         {{else}}
-          <p>This user has not recently issued any codes.</p>
+        <p>This user has not recently issued any codes.</p>
         {{end}}
       </div>
     </div>
 
-    <div>
-      <p>
-        <a href="/apikeys">&larr; Back to all API keys</a>
-      </p>
-    </div>
+    <a class="card-link" href="/users">&larr; All users</a>
   </main>
 
   {{template "scripts" .}}
@@ -88,28 +85,29 @@
   {{if $stats}}
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
-    google.charts.load('current', {packages: ['line']});
+    google.charts.load('current', { packages: ['line'] });
     google.charts.setOnLoadCallback(drawChart)
 
     function drawChart() {
       var data = google.visualization.arrayToDataTable([
         ['Date', 'Codes issued'],
-        {{range $stat := $stats}}
-        ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}],
-        {{end}}
+        {{ range $stat:= $stats }}
+    ['{{$stat.Date.Format "Jan 2"}}', {{ $stat.CodesIssued }}],
+      {{ end }}
       ]);
 
-      var options = {
-        colors: ['#007bff'],
-        legend: {position: 'none'},
-        tooltip: {trigger: 'focus'},
-      };
+    var options = {
+      colors: ['#007bff'],
+      legend: { position: 'none' },
+      tooltip: { trigger: 'focus' },
+    };
 
-      var chart = new google.charts.Line(document.getElementById('chart'));
-      chart.draw(data, google.charts.Line.convertOptions(options));
+    var chart = new google.charts.Line(document.getElementById('chart'));
+    chart.draw(data, google.charts.Line.convertOptions(options));
     }
   </script>
   {{end}}
 </body>
+
 </html>
 {{end}}

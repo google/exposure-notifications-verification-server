@@ -1,0 +1,38 @@
+{{define "users/import"}}
+
+{{$csrfField := .csrfField}}
+{{$currentUser := .currentUser}}
+{{$currentRealm := .currentRealm}}
+{{$users := .users}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="bg-light">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Import users</h1>
+    <p>Bulk import a list of users to <strong>{{.currentRealm.Name}}</strong>.</p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Import options</div>
+      <div class="card-body">
+        Not implemented yet
+        <small class="form-text text-muted">Coming soon</small>
+      </div>
+    </div>
+    <a class="card-link" href="/users">&larr; All users</a>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+
+</html>
+{{end}}
