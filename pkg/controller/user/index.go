@@ -41,8 +41,12 @@ type Pages struct {
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		qvar := r.FormValue("offset")
-		offset, _ := strconv.Atoi(qvar)
+
+		offset, err := strconv.Atoi(r.FormValue("offset"))
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -90,12 +94,29 @@ func populatePageStrip(offset, count int) *Pages {
 	}
 
 	// Page number series
-	for i := iStart; i < iEnd; i += pageSize {
+	for i := iStart; i <= iEnd; i += pageSize {
 		pl := PageLabel{
 			Offset: i,
 			Label:  strconv.Itoa((i / pageSize) + 1),
 		}
 		pages.Offsets = append(pages.Offsets, pl)
+	}
+
+	// Fast forward halfway to the start
+	if iStart > pageSize*5 {
+		pages.Offsets[0] = PageLabel{
+			Offset: iStart/2 - (iStart / 2 % pageSize),
+			Label:  "<<",
+		}
+	}
+
+	// Fast forward halfway to the end
+	if iEnd < count-pageSize*5 {
+		halfway := (count - iEnd) / 2
+		pages.Offsets[len(pages.Offsets)-1] = PageLabel{
+			Offset: halfway + iEnd - halfway%pageSize,
+			Label:  ">>",
+		}
 	}
 
 	// Previous button data
