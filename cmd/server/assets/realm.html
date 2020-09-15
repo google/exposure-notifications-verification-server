@@ -8,6 +8,7 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+  {{template "floatingform" .}}
 </head>
 
 <body class="bg-light">
@@ -46,7 +47,7 @@
     {{end}}
 
 
-    <form method="POST" action="/realm/settings/save">
+    <form method="POST" class="floating-form" action="/realm/settings/save">
       {{ .csrfField }}
 
       <div class="card mb-3 shadow-sm">
@@ -347,7 +348,66 @@
               </small>
             </div>
           </div>
+        </div>
+      </div>
 
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          Abuse prevention
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning">
+            <span class="oi oi-beaker"></span> This feature is still under
+            active development.
+          </div>
+
+          <p>
+            Abuse prevention uses the historical record of your realm's past
+            daily code issuances to build a predictive model of future use,
+            rejecting requests that fall outside of the predicted model.
+          </p>
+
+          <div class="form-group form-check">
+            <input class="form-check-input" type="checkbox" name="abuse_prevention_enabled" id="abuse_prevention_enabled" value="1" {{if $realm.AbusePreventionEnabled}} checked{{end}}>
+            <label class="form-check-label" for="abuse_prevention_enabled">
+              Enable abuse prevention
+            </label>
+          </div>
+
+          <div id="abuse_prevention_configuration" class="{{if not $realm.AbusePreventionEnabled}}d-none{{end}}">
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_limit" name="abuse_prevention_limit" class="form-control" placeholder="Computed limit" value="{{$realm.AbusePreventionLimit}}" readonly />
+              <label for="abuse_prevention_limit">Computed limit</label>
+              <small class="form-text text-muted">
+                This value is computed by the historical daily model and applies
+                for the next 24h block of rolling UTC time.
+              </small>
+            </div>
+
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_limit_factor" name="abuse_prevention_limit_factor" class="form-control" placeholder="Limit factor" value="{{printf "%.3f" $realm.AbusePreventionLimitFactor}}" />
+              <label for="abuse_prevention_limit_factor">Limit factor</label>
+              <small class="form-text text-muted">
+                This value is factored against the predicted daily model to
+                determine the total number of codes that {{$realm.Name}} can issue
+                in a day. For example, to enable 25% more codes to be issued than
+                predicted by the model model, set this value to <code>1.25</code>.
+              </small>
+              <small class="form-text text-danger font-weight-bold">
+                Setting this value too low will prevent case workers from issuing
+                codes for legitimate uses!
+              </small>
+            </div>
+
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_effective_limit" class="form-control" placeholder="Effective limit" value="{{$realm.AbusePreventionEffectiveLimit}}" readonly />
+              <label for="abuse_prevention_effective_limit">Effective limit</label>
+              <small class="form-text text-muted">
+                This is the effective daily limit for {{$realm.Name}} after
+                applying your limit factor.
+              </small>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -416,6 +476,35 @@
   </main>
 
   {{template "scripts" .}}
+
+  <script type="text/javascript">
+    $(function() {
+      let $abusePreventionEnabled = $('#abuse_prevention_enabled');
+      let $abusePreventionConfiguration = $('#abuse_prevention_configuration');
+      let $abusePreventionLimit = $('#abuse_prevention_limit');
+      let $abusePreventionLimitFactor = $('#abuse_prevention_limit_factor');
+      let $abusePreventionEffectiveLimit = $('#abuse_prevention_effective_limit');
+
+      $abusePreventionEnabled.change(function(e) {
+        if (this.checked) {
+          $abusePreventionConfiguration.removeClass('d-none');
+        } else {
+          $abusePreventionConfiguration.addClass('d-none');
+        }
+      });
+
+      $abusePreventionLimitFactor.keyup(function(e){
+        let $this = $(e.currentTarget);
+        let current = $this.val();
+
+        if (current && current.length) {
+          let effective = parseFloat(current) * parseFloat($abusePreventionLimit.val());
+          effective = Math.ceil(effective);
+          $abusePreventionEffectiveLimit.val(effective);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
 {{end}}

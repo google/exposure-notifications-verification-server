@@ -57,6 +57,9 @@ func (c *Controller) HandleSave() http.Handler {
 		TwilioAccountSid string `form:"twilio_account_sid"`
 		TwilioAuthToken  string `form:"twilio_auth_token"`
 		TwilioFromNumber string `form:"twilio_from_number"`
+
+		AbusePreventionEnabled     bool    `form:"abuse_prevention_enabled"`
+		AbusePreventionLimitFactor float32 `form:"abuse_prevention_limit_factor"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +104,8 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.LongCodeDuration.Duration = time.Hour * time.Duration(form.LongCodeHours)
 		realm.SMSTextTemplate = form.SMSTextTemplate
 		realm.MFAMode = database.MFAMode(form.MFAMode)
+		realm.AbusePreventionEnabled = form.AbusePreventionEnabled
+		realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to update realm: %v", err)
 			c.renderShow(ctx, w, r, realm, nil)

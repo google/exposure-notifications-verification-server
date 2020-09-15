@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -104,6 +105,22 @@ type Realm struct {
 
 	// EN Express
 	EnableENExpress bool `gorm:"type:boolean; default: false"`
+
+	// AbusePreventionEnabled determines if abuse protection is enabled.
+	AbusePreventionEnabled bool `gorm:"type:boolean; not null; default:false"`
+
+	// AbusePreventionLimit is the configured daily limit for the realm. This value is populated
+	// by the nightly aggregation job and is based on a statistical model from
+	// historical code issuance data.
+	AbusePreventionLimit uint `gorm:"type:integer; not null; default:100"`
+
+	// AbusePreventionLimitFactor is the factor against the predicted model for the day which
+	// determines the total number of codes that can be issued for the realm on
+	// the day. For example, if the predicted value was 50 and this value was 1.5,
+	// the realm could generate 75 codes today before triggering abuse prevention.
+	// Similarly, if this value was 0.5, the realm could only generate 25 codes
+	// before triggering abuse protections.
+	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0"`
 
 	// These are here for gorm to setup the association. You should NOT call them
 	// directly, ever. Use the ListUsers function instead. The have to be public
@@ -320,6 +337,15 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		return nil, err
 	}
 	return provider, nil
+}
+
+// AbusePreventionEffectiveLimit returns the effective limit, multiplying the limit by the
+// limit factor and rounding up.
+func (r *Realm) AbusePreventionEffectiveLimit() uint {
+	// Only maintain 3 digits of precision, since that's all we do in the
+	// database.
+	factor := math.Floor(float64(r.AbusePreventionLimitFactor)*100) / 100
+	return uint(math.Ceil(float64(r.AbusePreventionLimit) * float64(factor)))
 }
 
 // GetCurrentSigningKey returns the currently active signing key, the one marked
