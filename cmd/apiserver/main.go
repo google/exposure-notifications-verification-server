@@ -125,7 +125,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer limiterStore.Close()
+	defer limiterStore.Close(ctx)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.APIKeyFunc(ctx, db, "apiserver:ratelimit:", config.RateLimit.HMACKey),
