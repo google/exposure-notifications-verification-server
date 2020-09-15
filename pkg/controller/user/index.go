@@ -42,10 +42,14 @@ func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		offset, err := strconv.Atoi(r.FormValue("offset"))
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
+		offset := 0
+		var err error
+		if qvar := r.FormValue("offset"); qvar != "" {
+			offset, err = strconv.Atoi(qvar)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
 		}
 
 		realm := controller.RealmFromContext(ctx)
