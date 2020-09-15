@@ -65,6 +65,22 @@
               {{end}}
             </tbody>
           </table>
+          {{if .pages}}
+          <nav>
+            {{$pages := .pages}}
+            <ul class="pagination">
+              <li class="page-item {{if eq $pages.Previous -1}}disabled{{end}}"><a class="page-link"
+                  href="?offset={{$pages.Previous}}">Previous</a>
+              </li>
+              {{range $pageOffset := $pages.Offsets}}
+              <li class="page-item {{if eq $pages.Current $pageOffset.Offset}}active{{end}}"><a class="page-link"
+                  href="?offset={{$pageOffset.Offset}}">{{$pageOffset.Label}}</a></li>
+              {{end}}
+              <li class="page-item {{if eq $pages.Next -1}}disabled{{end}}"><a class="page-link"
+                  href="?offset={{$pages.Next}}">Next</a></li>
+            </ul>
+          </nav>
+          {{end}}
         </div>
         {{else}}
         <p>There are no users. Create one above.</p>
