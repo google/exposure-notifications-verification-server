@@ -48,7 +48,7 @@
 
     <form id="issue" action="#">
       <div id="form-area">
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Diagnosis</div>
           <div class="card-body">
             <div class="form-row">
@@ -97,27 +97,38 @@
           </div>
         </div>
 
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Dates</div>
           <div class="card-body">
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="testDate">Testing date (local time)</label>
-                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
               </div>
 
               <div class="form-group col-md-6">
                 <label for="symptomDate">Symptoms onset (local time)</label>
                 <div class="input-group">
-                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
                 </div>
               </div>
             </div>
+
+            {{if $currentRealm.RequireDate}}
+            <div class="form-row">
+              <div class="col">
+                <small class="form-text text-muted">
+                  {{$currentRealm.Name}} requires at least one date to be
+                  provided.
+                </small>
+              </div>
+            </div>
+            {{end}}
           </div>
         </div>
 
         {{ if $hasSMSConfig }}
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Notification</div>
           <div class="card-body">
             <div class="row form-group">
@@ -145,7 +156,7 @@
       </div>
     </form>
 
-    <div id="long-code-confirm" class="card d-none mb-3">
+    <div id="long-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
         SMS verification link
         <span id="long-code-expires-at" class="sm float-right text-danger"></span>
@@ -158,7 +169,7 @@
       </div>
     </div>
 
-    <div id="code-confirm" class="card d-none mb-3">
+    <div id="code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
         Generated short code
         <span id="code-expires-at" class="sm float-right text-danger"></span>
@@ -173,7 +184,7 @@
       </div>
     </div>
 
-    <div id="uuid-confirm" class="card d-none mb-3">
+    <div id="uuid-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">Unique identifier</div>
       <div class="card-body">
         <p>
@@ -307,6 +318,13 @@
         // Show form
         $formArea.removeClass('d-none');
       });
+
+      {{if $currentRealm.RequireDate}}
+      let $dates = $('input#test-date,input#symptom-date');
+      $dates.on('input', function() {
+        $dates.not(this).prop('required', !$(this).val().length);
+      });
+      {{end}}
     });
 
     function getCode(data) {

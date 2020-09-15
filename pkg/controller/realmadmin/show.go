@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package login defines the controller for the login page.
-package login
+package realmadmin
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func (c *Controller) HandleRegisterPhone() http.Handler {
+func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -37,11 +34,25 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 			return
 		}
 
-		// Mark prompted so we only prompt once.
-		controller.StoreSessionMFAPrompted(session, true)
+		// Get and cache the stats for this user.
+		var stats []*database.RealmStats
+		cacheKey := fmt.Sprintf("stats:realm:%d", realm.ID)
+		if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
+			now := time.Now().UTC()
+			past := now.Add(-30 * 24 * time.Hour)
+			return realm.Stats(c.db, past, now)
+		}); err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
 
-		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/register-phone", m)
+		c.renderStats(ctx, w, realm, stats)
 	})
+}
+
+func (c *Controller) renderStats(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["user"] = realm
+	m["stats"] = stats
+	c.h.RenderHTML(w, "realmstats", m)
 }

@@ -1,7 +1,6 @@
-{{define "users/show"}}
+{{define "realmstats"}}
 
-{{$currentRealm := .currentRealm}}
-{{$user := .user}}
+{{$realm := .realm}}
 {{$stats := .stats}}
 
 <!doctype html>
@@ -16,33 +15,10 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>{{$user.Name}}</h1>
-    <p class="float-right">
-      <a href="/users/{{$user.ID}}/edit">Edit</a>
-    </p>
+    <h1>Realm stats</h1>
     <p>
-      Here is information about the user.
+      The data below shows realm statistics.
     </p>
-
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
-      <div class="card-body">
-        <strong>Name</strong>
-        <div class="mb-3">
-          {{$user.Name}}
-        </div>
-
-        <strong>Email</strong>
-        <div class="mb-3">
-          {{$user.Email}}
-        </div>
-
-        <strong>Admin</strong>
-        <div>
-          {{$user.CanAdminRealm $currentRealm.ID}}
-        </div>
-      </div>
-    </div>
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Statistics</div>
@@ -54,8 +30,9 @@
         <table class="table table-bordered table-striped">
           <thead>
             <tr>
-              <th scope="col" width="125px">Date</th>
-              <th scope="col">Keys issued</th>
+              <th scope="col">Date</th>
+              <th scope="col" width="125">Issued</th>
+              <th scope="col" width="125">Claimed</th>
             </tr>
           </thead>
           <tbody>
@@ -63,6 +40,7 @@
             <tr>
               <td>{{$stat.Date.Format "2006-01-02"}}</td>
               <td>{{$stat.CodesIssued}}</td>
+              <td>{{$stat.CodesClaimed}}</td>
             </tr>
             {{end}}
           </tbody>
@@ -71,16 +49,11 @@
           This data is refreshed every 5 minutes.
         </div>
         {{else}}
-          <p>This user has not recently issued any codes.</p>
+          <p>No codes have been issued in this realm.</p>
         {{end}}
       </div>
     </div>
 
-    <div>
-      <p>
-        <a href="/apikeys">&larr; Back to all API keys</a>
-      </p>
-    </div>
   </main>
 
   {{template "scripts" .}}
@@ -93,15 +66,15 @@
 
     function drawChart() {
       var data = google.visualization.arrayToDataTable([
-        ['Date', 'Codes issued'],
+        ['Date', 'Issued', "Claimed"],
         {{range $stat := $stats}}
-        ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}],
+        ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}, {{$stat.CodesClaimed}}],
         {{end}}
       ]);
 
       var options = {
-        colors: ['#007bff'],
-        legend: {position: 'none'},
+        colors: ['#007bff', '#ff7b00'],
+        legend: {position: 'bottom'},
         tooltip: {trigger: 'focus'},
       };
 

@@ -35,7 +35,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/realm"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
@@ -106,7 +105,7 @@ func realMain(ctx context.Context) error {
 	// Setup cacher
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
 		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
-		cache.PrefixKeyFunc("server:"),
+		cache.PrefixKeyFunc("server:cache:"),
 	))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
@@ -161,7 +160,7 @@ func realMain(ctx context.Context) error {
 	defer limiterStore.Close()
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
-		limitware.UserEmailKeyFunc(ctx, "server"),
+		limitware.UserIDKeyFunc(ctx, "server:ratelimit:", config.RateLimit.HMACKey),
 		limitware.AllowOnError(false))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
@@ -186,14 +185,21 @@ func realMain(ctx context.Context) error {
 	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionDuration)
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
-	requireRealm := middleware.RequireRealm(ctx, cacher, db, h)
+	loadCurrentRealm := middleware.LoadCurrentRealm(ctx, cacher, db, h)
+	requireRealm := middleware.RequireRealm(ctx, h)
 	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
+	requireMFA := middleware.RequireMFA(ctx, h)
 	rateLimit := httplimiter.Handle
 
 	{
 		static := filepath.Join(config.AssetsPath, "static")
 		fs := http.FileServer(http.Dir(static))
 		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+	}
+
+	{
+		sub := r.PathPrefix("").Subrouter()
+		sub.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 	}
 
 	{
@@ -204,51 +210,43 @@ func realMain(ctx context.Context) error {
 
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
 			sub.Handle("/login/create", loginController.HandleLoginCreate()).Methods("GET")
-			sub.Handle("/login/resetpassword", loginController.HandleResetPassword()).Methods("GET")
+			sub.Handle("/login/reset-password", loginController.HandleResetPassword()).Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
-		}
 
-		{
-			sub := r.PathPrefix("").Subrouter()
-			sub.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
-		}
-
-		{
-			sub := r.PathPrefix("/login/verifyemail").Subrouter()
-			sub.Use(rateLimit)
+			// Verifying email requires the user is logged in
+			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
-
-			sub.Handle("", loginController.HandleVerifyEmail()).Methods("GET")
-		}
-
-		{
-			sub := r.PathPrefix("/login").Subrouter()
 			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
+			sub.Handle("/login/verify-email", loginController.HandleVerifyEmail()).Methods("GET")
+
+			// Realm selection
+			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
 			sub.Use(requireVerified)
+			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
 
-			sub.Handle("/registerphone", loginController.HandleRegisterPhone()).Methods("GET")
+			// SMS auth registration is realm-specific, so it needs to load the current realm.
+			sub = r.PathPrefix("").Subrouter()
+			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
+			sub.Use(requireRealm)
+			sub.Use(requireVerified)
+			sub.Handle("/login/register-phone", loginController.HandleRegisterPhone()).Methods("GET")
 		}
-	}
-
-	{
-		sub := r.PathPrefix("/realm").Subrouter()
-		sub.Use(requireAuth)
-		sub.Use(requireVerified)
-		sub.Use(rateLimit)
-
-		// Realms - list and select.
-		realmController := realm.New(ctx, config, db, h)
-		sub.Handle("", realmController.HandleIndex()).Methods("GET")
-		sub.Handle("/select", realmController.HandleSelect()).Methods("POST")
 	}
 
 	{
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(requireVerified)
+		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
+		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
 		homeController := home.New(ctx, config, db, h)
@@ -266,7 +264,9 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("/code").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(requireVerified)
+		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
+		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
 		codeStatusController := codestatus.NewServer(ctx, config, db, h)
@@ -280,8 +280,9 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("/apikeys").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(requireVerified)
-		sub.Use(requireRealm)
+		sub.Use(loadCurrentRealm)
 		sub.Use(requireAdmin)
+		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
 		apikeyController := apikey.New(ctx, config, cacher, db, h)
@@ -300,12 +301,14 @@ func realMain(ctx context.Context) error {
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(requireAuth)
 		userSub.Use(requireVerified)
-		userSub.Use(requireRealm)
+		userSub.Use(loadCurrentRealm)
 		userSub.Use(requireAdmin)
+		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
 		userController := user.New(ctx, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
+		userSub.Handle("", userController.HandleIndex()).Queries("offset", "{[0-9]*?}").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
 		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")
@@ -319,15 +322,17 @@ func realMain(ctx context.Context) error {
 		realmSub := r.PathPrefix("/realm").Subrouter()
 		realmSub.Use(requireAuth)
 		realmSub.Use(requireVerified)
-		realmSub.Use(requireRealm)
+		realmSub.Use(loadCurrentRealm)
 		realmSub.Use(requireAdmin)
+		realmSub.Use(requireMFA)
 		realmSub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, config, db, h)
+		realmadminController := realmadmin.New(ctx, cacher, config, db, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
+		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
 
 		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, h)
 		if err != nil {
@@ -358,6 +363,7 @@ func realMain(ctx context.Context) error {
 		adminSub := r.PathPrefix("/admin").Subrouter()
 		adminSub.Use(requireAuth)
 		adminSub.Use(requireVerified)
+		adminSub.Use(loadCurrentRealm)
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 

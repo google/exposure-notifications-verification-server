@@ -118,6 +118,13 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
+		// If this realm requires a date but no date was specified, return an error.
+		if request.SymptomDate == "" && realm.RequireDate {
+			stats.Record(ctx, c.metrics.IssueAttempts.M(1), c.metrics.CodeIssueErrors.M(1))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate))
+			return
+		}
+
 		// Add realm so that metrics are groupable on a per-realm basis.
 		ctx, err = tag.New(ctx,
 			tag.Upsert(observability.RealmTagKey, realm.Name))

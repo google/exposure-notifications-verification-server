@@ -27,6 +27,8 @@ type sessionKey string
 const (
 	sessionKeyFirebaseCookie = sessionKey("firebaseCookie")
 	sessionKeyRealmID        = sessionKey("realmID")
+	factorCount              = sessionKey("factorCount")
+	mfaPrompted              = sessionKey("mfaPrompted")
 )
 
 // StoreSessionFirebaseCookie stores the firebase cookie in the session. If the
@@ -86,6 +88,64 @@ func RealmIDFromSession(session *sessions.Session) uint {
 	}
 
 	return t
+}
+
+// StoreSessionFactorCount stores count of MFA factors to session.
+func StoreSessionFactorCount(session *sessions.Session, count uint) {
+	if session == nil {
+		return
+	}
+	session.Values[factorCount] = count
+}
+
+// ClearSessionFactorCount clears the MFA factor count from the session.
+func ClearSessionFactorCount(session *sessions.Session) {
+	sessionClear(session, factorCount)
+}
+
+// FactorCountFromSession extracts the number of MFA factors from the session.
+func FactorCountFromSession(session *sessions.Session) uint {
+	v := sessionGet(session, factorCount)
+	if v == nil {
+		return 0
+	}
+
+	f, ok := v.(uint)
+	if !ok {
+		delete(session.Values, factorCount)
+		return 0
+	}
+
+	return f
+}
+
+// StoreSessionMFAPrompted stores if the user was prompted for MFA.
+func StoreSessionMFAPrompted(session *sessions.Session, prompted bool) {
+	if session == nil {
+		return
+	}
+	session.Values[mfaPrompted] = prompted
+}
+
+// ClearMFAPrompted clears the MFA prompt bit.
+func ClearMFAPrompted(session *sessions.Session) {
+	sessionClear(session, mfaPrompted)
+}
+
+// MFAPromptedFromSession extracts if the user was prompted from MFA.
+func MFAPromptedFromSession(session *sessions.Session) bool {
+	v := sessionGet(session, mfaPrompted)
+	if v == nil {
+		return false
+	}
+
+	f, ok := v.(bool)
+	if !ok {
+		delete(session.Values, mfaPrompted)
+		return false
+	}
+
+	return f
 }
 
 func sessionGet(session *sessions.Session, key sessionKey) interface{} {

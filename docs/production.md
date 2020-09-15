@@ -326,4 +326,29 @@ small and are automatically re-built on demand, so occasional rotation is likely
 fine for this system.
 
 
+### Rate limit HMAC keys
+
+**Recommended frequency:** 90 days, on breach
+
+This key is used as the HMAC key to named values in the rate limit. For example,
+API keys and IP addresses are rate limited. We do not want the rate limiter to
+have those values in plaintext, so the values are HMACed before being written
+(and HMACed on lookup). This prevents a server operator with access to the rate
+limiter (e.g. Redis) from seeing plaintext data about the system. The data is
+hashed instead of encrypted because we only need a deterministic value to
+lookup.
+
+To generate a new key:
+
+```sh
+openssl rand -base64 128 | tr -d "\n"
+```
+
+Use this value as of the `RATE_LIMIT_HMAC_KEY` environment variable:
+
+```sh
+RATE_LIMIT_HMAC_KEY="43+ViAkv7uHYKjsXhU468NGBZrtlJWtZqTORIiY8V6OMsLAZ+XmUF5He/wIhRlislnteTmChNi+BHveSgkxky81tpZSw45HKdK+XW3X5P7H6092I0u7H31C0NaInrxNxIRAbSw0NxSIKNbfKwucDu1Y36XjJC0pi0wlJHxkdGes="
+```
+
+
 [gcp-kms]: https://cloud.google.com/kms

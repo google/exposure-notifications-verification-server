@@ -858,6 +858,112 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00035-AddMFARequiredToRealms",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding MFA required to realm")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_mode INTEGER DEFAULT 0").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_mode").Error
+			},
+		},
+		{
+			ID: "00036-AddRealmStats",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding realm stats")
+				if err := tx.AutoMigrate(&RealmStats{}).Error; err != nil {
+					return err
+				}
+				statements := []string{
+					"CREATE UNIQUE INDEX IF NOT EXISTS idx_realm_stats_stats_date_realm_id ON realm_stats (date, realm_id)",
+					"CREATE INDEX IF NOT EXISTS idx_realm_stats_date ON realm_stats (date)",
+				}
+				for _, sql := range statements {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.DropTable(&RealmStats{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			ID: "00037-AddRealmRequireDate",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding require_date to realms")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS require_date bool DEFAULT false").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS require_date").Error
+			},
+		},
+		{
+			ID: "00038-AddRealmRequireDateNotNull",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding not null requirement to require_date on realms")
+				return tx.Exec("ALTER TABLE realms ALTER COLUMN require_date SET NOT NULL").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms ALTER COLUMN require_date SET NULL").Error
+			},
+		},
+		{
+			ID: "00039-RealmStatsToDate",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: changing realm stats to date")
+				return tx.Exec("ALTER TABLE realm_stats ALTER COLUMN date TYPE date").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realm_stats ALTER COLUMN date TYPE timestamp with time zone").Error
+			},
+		},
+		{
+			ID: "00040-BackfillRealmStats",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: back-filling realm stats")
+				sqls := []string{
+					`
+					INSERT INTO realm_stats (
+						SELECT date, realm_id, SUM(codes_issued) AS codes_issued
+  					FROM user_stats
+						WHERE user_stats.date < date('2020-09-15')
+  					GROUP BY 1, 2
+  					ORDER BY 1 DESC
+					) ON CONFLICT(date, realm_id) DO UPDATE
+						SET codes_issued = realm_stats.codes_issued + excluded.codes_issued
+					`,
+					`
+					INSERT INTO realm_stats (
+						SELECT date, authorized_apps.realm_id AS realm_id, SUM(codes_issued) AS codes_issued
+						FROM authorized_app_stats
+						JOIN authorized_apps
+						ON authorized_app_stats.authorized_app_id = authorized_apps.id
+						WHERE authorized_app_stats.date < date('2020-09-15')
+						GROUP BY 1, 2
+						ORDER BY 1 DESC
+					) ON CONFLICT(date, realm_id) DO UPDATE
+						SET codes_issued = realm_stats.codes_issued + excluded.codes_issued
+					`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 

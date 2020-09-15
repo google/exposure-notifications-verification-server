@@ -73,6 +73,8 @@ func (VerificationCode) TableName() string {
 // to update statistics about usage. If the executions fail, an error is logged
 // but the transaction continues. This is called automatically by gorm.
 func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
+	date := v.CreatedAt.Truncate(24 * time.Hour)
+
 	// If the issuer was a user, update the user stats for the day.
 	if v.IssuingUserID != 0 {
 		sql := `
@@ -82,8 +84,7 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 				SET codes_issued = user_stats.codes_issued + 1
 		`
 
-		day := time.Now().UTC().Truncate(24 * time.Hour)
-		if err := scope.DB().Exec(sql, day, v.RealmID, v.IssuingUserID).Error; err != nil {
+		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
 		}
 	}
@@ -97,8 +98,21 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 				SET codes_issued = authorized_app_stats.codes_issued + 1
 		`
 
-		day := time.Now().UTC().Truncate(24 * time.Hour)
-		if err := scope.DB().Exec(sql, day, v.IssuingAppID).Error; err != nil {
+		if err := scope.DB().Exec(sql, date, v.IssuingAppID).Error; err != nil {
+			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		}
+	}
+
+	// Update the per-realm stats.
+	if v.RealmID != 0 {
+		sql := `
+			INSERT INTO realm_stats(date, realm_id, codes_issued)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET codes_issued = realm_stats.codes_issued + 1
+		`
+
+		if err := scope.DB().Exec(sql, date, v.RealmID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
 		}
 	}

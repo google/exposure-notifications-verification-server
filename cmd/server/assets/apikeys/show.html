@@ -11,7 +11,7 @@
   {{template "head" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -26,7 +26,7 @@
     </p>
 
     {{if $apiKey}}
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">API key</div>
       <div class="card-body">
         <div class="alert alert-danger" role="alert">
@@ -39,7 +39,7 @@
     </div>
     {{end}}
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
         <strong>App name</strong>
@@ -60,11 +60,11 @@
       </div>
     </div>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}
-        <div id="chart" style="height: 300px;" class="m-3">
+        <div id="chart" class="mb-3" style="height: 300px;">
           <span>Loading chart...</span>
         </div>
         <table class="table table-bordered table-striped">
@@ -122,7 +122,7 @@
       };
 
       var chart = new google.charts.Line(document.getElementById('chart'));
-      chart.draw(data, options);
+      chart.draw(data, google.charts.Line.convertOptions(options));
     }
   </script>
   {{end}}

@@ -4,6 +4,26 @@ This guide provides high level steps for realm administrators to follow.
 
 If you are not a realm administrator, you will not have access to these screens.
 
+## Access protection recommendations
+
+### Account protection
+
+We provide a base level of account protection measures that we urge you to share with your case workers that are issuing verification codes.
+
+* All user accounts must verify ownership of their email address before using the system.
+* Two factor authentication (2FA) is available, we strongly suggest you require your users to enroll in 2FA
+  using a mobile device under their sole control.
+* Users should not share logins to the verification system.
+* Users should only issue codes to people who have a verified COVID-19 diagnosis.
+
+Realm administrators should monitor the number of codes issued and take corrective action if needed (suspend a user's access to issue codes)
+
+### API key protection
+
+* API keys should not be checked into source code.
+* ADMIN level API Keys have the ability to issue codes, these should be closely guarded and their access should be monitored. Periodically, the API key should be rotated.
+
+
 ## Settings, enabling EN Express
 
 Go to realm setting by selecting the `settings` drop down menu (shown under your name).

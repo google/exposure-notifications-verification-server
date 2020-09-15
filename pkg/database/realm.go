@@ -52,6 +52,20 @@ const (
 	SMSENExpressLink = "[enslink]"
 )
 
+// MFAMode represents Multi Factor Authentication requirements for the realm
+type MFAMode int16
+
+const (
+	// MFAOptionalPrompt will prompt users for MFA on login.
+	MFAOptionalPrompt = iota
+	// MFARequired will not allow users to proceed without MFA on their account.
+	MFARequired
+	// MFAOptional will not prompt users to enable MFA.
+	MFAOptional
+	// MaxPageSize is the maximum allowed page size for a list query.
+	MaxPageSize = 1000
+)
+
 // Realm represents a tenant in the system. Typically this corresponds to a
 // geography or a public health authority scope.
 // This is used to manage user logins.
@@ -71,9 +85,16 @@ type Realm struct {
 	// SMS Content
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours'"`
 
+	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
+	MFAMode MFAMode `gorm:"type:smallint; not null; default: 0"`
+
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
 	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
+
+	// RequireDate requires that verifications on this realm require a test or
+	// symptom date (either). The default behavior is to not require a date.
+	RequireDate bool `gorm:"type:boolean; not null; default:false"`
 
 	// Signing Key Settings
 	UseRealmCertificateKey bool            `gorm:"type:boolean; default: false"`
@@ -116,6 +137,18 @@ func (r *Realm) CanUpgradeToRealmSigningKeys() bool {
 
 func (r *Realm) SigningKeyID() string {
 	return fmt.Sprintf("realm-%d", r.ID)
+}
+
+func (r *Realm) MFAModeString() string {
+	switch r.MFAMode {
+	case MFAOptionalPrompt:
+		return "prompt"
+	case MFARequired:
+		return "required"
+	case MFAOptional:
+		return "optional"
+	}
+	return ""
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -403,10 +436,28 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	return &app, nil
 }
 
+// CountUsers returns the count users on this realm.
+func (r *Realm) CountUsers(db *Database) (int, error) {
+	var count int
+	if err := db.db.
+		Model(&User{}).
+		Joins("INNER JOIN user_realms ON user_realms.user_id = users.id and realm_id = ?", r.ID).
+		Count(&count).
+		Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // ListUsers returns the list of users on this realm.
-func (r *Realm) ListUsers(db *Database) ([]*User, error) {
+func (r *Realm) ListUsers(db *Database, offset, limit int) ([]*User, error) {
+	if limit > MaxPageSize {
+		limit = MaxPageSize
+	}
+
 	var users []*User
 	if err := db.db.
+		Offset(offset).Limit(limit).
 		Model(r).
 		Order("LOWER(name)").
 		Related(&users, "RealmUsers").
@@ -607,4 +658,28 @@ func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id i
 	}
 
 	return nil
+}
+
+// Stats returns the usage statistics for this realm. If no stats exist,
+// returns an empty array.
+func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error) {
+	var stats []*RealmStats
+
+	start = start.Truncate(24 * time.Hour)
+	stop = stop.Truncate(24 * time.Hour)
+
+	if err := db.db.
+		Model(&RealmStats{}).
+		Where("realm_id = ?", r.ID).
+		Where("(date >= ? AND date <= ?)", start, stop).
+		Order("date ASC").
+		Find(&stats).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+
+	return stats, nil
 }

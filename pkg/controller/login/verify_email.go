@@ -27,6 +27,6 @@ func (c *Controller) HandleVerifyEmail() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/verifyemail", m)
+		c.h.RenderHTML(w, "login/verify-email", m)
 	})
 }

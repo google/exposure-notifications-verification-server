@@ -1,56 +1,60 @@
-{{define "login/register"}}
+{{define "login/register-phone"}}
+
+{{$currentRealm := .currentRealm}}
+
 <!doctype html>
 <html lang="en">
 
 <head>
   {{template "head" .}}
-
+  {{template "floatingform" .}}
   {{template "firebase" .}}
 </head>
 
-<body>
+<body class="bg-light">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>SMS auth registration</h1>
-    <p id="subtitle">Use this page to register a phone number for 2-factor authentication.</p>
+    <h1>Configure enhanced security</h1>
+    <p class="mb-3">
+      Use the form below to configure advanced security settings for your
+      account on {{$currentRealm.Name}}.
+    </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Multi-factor authentication</div>
       <div class="card-body">
-        <form id="registerForm" action="/" method="POST">
-          <div class="row form-group">
-            <label for="display" class="col-sm-3">Display name</label>
-            <div class="col-sm-9">
-              <div class="input-group p-0 shadow-sm">
-                <input type="text" id="display" name="display" class="form-control" value="Personal phone" />
-              </div>
-              <small class="form-text text-muted">
-                Display name for this phone number
-              </small>
-            </div>
-          </div>
-          <div class="row form-group">
-            <label for="phone" class="col-sm-3">Phone number</label>
-            <div class="col-sm-9">
-              <div class="input-group p-0 shadow-sm">
-                <input type="tel" id="phone" name="phone" class="form-control" />
-              </div>
-              <small class="form-text text-muted">
-                Fully qualified phone number beginning with '+'. Standard SMS rates may apply.
-              </small>
-            </div>
+        <p class="mb-3">
+          {{$currentRealm.Name}} {{if eq .currentRealm.MFAModeString "required"}}requires{{else}}recommends{{end}}
+          enhanced security via SMS-based 2-factor authentication. Please
+          provide your information below.
+        </p>
+
+        <form id="registerForm" class="floating-form" action="/" method="POST">
+          <div class="form-label-group">
+            <input type="tel" id="phone" name="phone" class="form-control" placeholder="Phone number" required autofocus />
+            <label for="phone">Phone number</label>
+            <small class="form-text text-muted">
+              Fully qualified phone number beginning with '+'. Standard SMS rates may apply.
+            </small>
           </div>
 
-          <div class="row form-group">
-            <div class="offset-sm-3 col-sm-9">
-              <button type="submit" id="register" class="btn btn-primary btn-block">Register</button>
-            </div>
+          <div class="form-label-group">
+            <input type="text" id="display" name="display" class="form-control" placeholder="Display name" />
+            <label for="display">Display name</label>
+            <small class="form-text text-muted">
+              Name for this phone.
+            </small>
           </div>
+
+          <button type="submit" id="register" class="btn btn-primary btn-block">Register</button>
         </form>
 
-        <a id="skip" class="card-link" href="/realm">Skip for now</a>
+        {{if ne .currentRealm.MFAModeString "required"}}
+          <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
+        {{end}}
       </div>
     </div>
 
@@ -60,6 +64,10 @@
   {{template "scripts" .}}
 
   <script>
+    {{if eq .currentRealm.MFAModeString "required"}}
+    flash("This realm requires multi-factor authorization.","warning")
+    {{end}}
+
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
       'recaptcha-container',
       { 'size': 'invisible' }
@@ -107,7 +115,7 @@
           $skip.text("Continue")
         }).catch(function (err) {
           clearExistingFlash();
-          flash(err.message);
+          flash(err.message, "danger");
           $submit.prop('disabled', false);
         }
         );

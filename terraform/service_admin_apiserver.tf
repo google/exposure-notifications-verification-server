@@ -85,6 +85,12 @@ resource "google_secret_manager_secret_iam_member" "adminapi-cache-hmac-key" {
   member    = "serviceAccount:${google_service_account.adminapi.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "adminapi-ratelimit-hmac-key" {
+  secret_id = google_secret_manager_secret.ratelimit-hmac-key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.adminapi.email}"
+}
+
 resource "google_cloud_run_service" "adminapi" {
   name     = "adminapi"
   location = var.region

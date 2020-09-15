@@ -91,6 +91,12 @@ resource "google_secret_manager_secret_iam_member" "apiserver-cache-hmac-key" {
   member    = "serviceAccount:${google_service_account.apiserver.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "apiserver-ratelimit-hmac-key" {
+  secret_id = google_secret_manager_secret.ratelimit-hmac-key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.apiserver.email}"
+}
+
 resource "google_cloud_run_service" "apiserver" {
   name     = "apiserver"
   location = var.region
