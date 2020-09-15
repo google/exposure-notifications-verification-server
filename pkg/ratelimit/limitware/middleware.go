@@ -155,7 +155,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		}
 
 		// Take from the store.
-		limit, remaining, reset, ok, err := m.store.Take(key)
+		limit, remaining, reset, ok, err := m.store.Take(ctx, key)
 		if err != nil {
 			m.logger.Errorw("failed to take", "error", err)
 			stats.Record(ctx, m.takeErrors.M(1))
