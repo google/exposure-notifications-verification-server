@@ -62,6 +62,8 @@ const (
 	MFARequired
 	// MFAOptional will not prompt users to enable MFA.
 	MFAOptional
+	// MaxPageSize is the maximum allowed page size for a list query.
+	MaxPageSize = 1000
 )
 
 // Realm represents a tenant in the system. Typically this corresponds to a
@@ -449,8 +451,8 @@ func (r *Realm) CountUsers(db *Database) (int, error) {
 
 // ListUsers returns the list of users on this realm.
 func (r *Realm) ListUsers(db *Database, offset, limit int) ([]*User, error) {
-	if limit > 100 {
-		limit = 100
+	if limit > MaxPageSize {
+		limit = MaxPageSize
 	}
 
 	var users []*User
