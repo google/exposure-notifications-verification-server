@@ -21,10 +21,10 @@
     <h1>Users</h1>
     <p>Manage users of <strong>{{.currentRealm.Name}}</strong>.</p>
 
-    <div class="card mb-3 shadow-sm">
+    <div class="card mb-3 shadow-sm" style="min-width:550px;">
       <div class="card-header">Users</div>
       <div class="card-body">
-        <a class="btn btn-primary" href="/users/new">Create a new user</a>
+        <a class=" btn btn-primary" href="/users/new">Create a new user</a>
         <a class="btn btn-primary disabled" href="/users/import">Import users</a>
         {{if $users}}
         <div class="table-responsive mt-3">
