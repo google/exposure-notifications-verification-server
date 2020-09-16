@@ -112,7 +112,7 @@ type Realm struct {
 	// AbusePreventionLimit is the configured daily limit for the realm. This value is populated
 	// by the nightly aggregation job and is based on a statistical model from
 	// historical code issuance data.
-	AbusePreventionLimit uint `gorm:"type:integer; not null; default:100"`
+	AbusePreventionLimit uint `gorm:"type:integer; not null; default:10"`
 
 	// AbusePreventionLimitFactor is the factor against the predicted model for the day which
 	// determines the total number of codes that can be issued for the realm on
