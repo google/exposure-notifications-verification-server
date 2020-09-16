@@ -211,7 +211,7 @@ func vandermonde(a []float64, degree int) *mat64.Dense {
 	return x
 }
 
-// digest returns the digest of given string as a hex-encoded string, and any
+// digest returns the digest of a given string as a hex-encoded string, and any
 // errors that occur while hashing.
 func digest(in string, key []byte) (string, error) {
 	h := hmac.New(sha1.New, key)
