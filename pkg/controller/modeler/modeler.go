@@ -76,8 +76,8 @@ func (c *Controller) HandleModel() http.Handler {
 	})
 }
 
-// rebuildModels iterates over all models with abuse prevention enabled and
-// calculates the new limits.
+// rebuildModels iterates over all models with abuse prevention enabled,
+// calculates the new limits, and updates the new limits.
 func (c *Controller) rebuildModels(ctx context.Context) error {
 	logger := c.logger.Named("rebuildModels")
 	db := c.db.RawDB()
@@ -105,7 +105,7 @@ func (c *Controller) rebuildModels(ctx context.Context) error {
 	return merr.ErrorOrNil()
 }
 
-// rebuildModel rebuilds the model for a single model.
+// rebuildModel rebuilds and updates the model for a single model.
 func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 	logger := c.logger.Named("rebuildModel").With("id", id)
 	db := c.db.RawDB()
