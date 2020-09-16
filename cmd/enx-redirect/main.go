@@ -31,7 +31,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-signalcontext"
 )
@@ -92,21 +91,19 @@ func realMain(ctx context.Context) error {
 	processDebug := middleware.ProcessDebug(ctx)
 	r.Use(processDebug)
 
-	{
-		redirectController := redirect.New(ctx, config, h)
-		r.Handle("/v", redirectController.HandleIndex()).Methods("GET")
+	redirectController, err := redirect.New(ctx, config, h)
+	if err != nil {
+		return err
 	}
+	r.Handle("/", redirectController.HandleIndex()).Methods("GET")
 
-	// Wrap the main router in the mutating middleware method. This cannot be
-	// inserted as middleware because gorilla processes the method before
-	// middleware.
 	mux := http.NewServeMux()
-	mux.Handle("/", middleware.MutateMethod(ctx)(r))
+	mux.Handle("/", r)
 
 	srv, err := server.New(config.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 	logger.Infow("server listening", "port", config.Port)
-	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
+	return srv.ServeHTTPHandler(ctx, mux)
 }

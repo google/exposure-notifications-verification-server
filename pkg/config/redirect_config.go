@@ -16,6 +16,8 @@ package config
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
@@ -30,14 +32,25 @@ type RedirectConfig struct {
 
 	Port string `env:"PORT,default=8080"`
 
-	AssetsPath string `env:"KO_DATA_PATH"`
+	AssetsPath string `env:"ASSETS_PATH,default=./cmd/enx-redirect/assets"`
 
-	// If Dev mode is true, cookies aren't required to be sent over secure channels.
-	// This includes CSRF protection base cookie. You want this false in production (the default).
+	// If Dev mode is true, extended logging is enabled and tempalte
+	// auto-reload is enabled.
 	DevMode bool `env:"DEV_MODE"`
 
-	RedirectFrom []string `env:"REDIRECT_FROM"`
-	RedirectTo   []string `env:"REDIRECT_TO"`
+	// A list of prefixes to match.
+	// "region.example.com,otherregion.example.com"
+	// all prefixes are redirected to
+	// "ens://"
+	// The append region is added to the end
+	// "US-AA,US-BB"
+	//
+	// As an example, if the redirect service receives a request like
+	//  https://region.example.com/v?c=1234
+	// Will result in a redict to (based on the above configuration)
+	//  ens://v?c=1234&r=US-AA
+	Hostnames   []string `env:"HOSTNAME"`
+	RegionCodes []string `env:"REGION_CODE"`
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
@@ -54,4 +67,16 @@ func NewRedirectConfig(ctx context.Context) (*RedirectConfig, error) {
 
 func (c *RedirectConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
+}
+
+func (c *RedirectConfig) HostnameToRegion() (map[string]string, error) {
+	if len(c.Hostnames) != len(c.RegionCodes) {
+		return nil, fmt.Errorf("HOSTNAME and REGION_CODE must be lists of the same length")
+	}
+
+	hostnameToRegion := make(map[string]string, len(c.Hostnames))
+	for i, prefix := range c.Hostnames {
+		hostnameToRegion[prefix] = strings.ToUpper(c.RegionCodes[i])
+	}
+	return hostnameToRegion, nil
 }

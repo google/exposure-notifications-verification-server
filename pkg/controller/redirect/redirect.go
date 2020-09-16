@@ -17,6 +17,7 @@ package redirect
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -27,18 +28,25 @@ import (
 )
 
 type Controller struct {
-	config *config.RedirectConfig
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	config           *config.RedirectConfig
+	h                *render.Renderer
+	logger           *zap.SugaredLogger
+	hostnameToRegion map[string]string
 }
 
 // New creates a new login controller.
-func New(ctx context.Context, config *config.RedirectConfig, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.RedirectConfig, h *render.Renderer) (*Controller, error) {
 	logger := logging.FromContext(ctx).Named("login")
 
-	return &Controller{
-		config: config,
-		h:      h,
-		logger: logger,
+	cfgMap, err := config.HostnameToRegion()
+	if err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
 	}
+
+	return &Controller{
+		config:           config,
+		h:                h,
+		logger:           logger,
+		hostnameToRegion: cfgMap,
+	}, nil
 }

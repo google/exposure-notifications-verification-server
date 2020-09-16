@@ -23,16 +23,27 @@ import (
 
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//ctx := r.Context()
 
-		idx := strings.Index(r.RequestURI, "/v?")
-		if idx < 0 {
-			controller.InternalError(w, r, c.h, fmt.Errorf("don't do that."))
-			return
+		path := r.URL.RequestURI()
+		host := r.Host
+		// Strip of the port if that was passed along in the host header.
+		if i := strings.Index(host, ":"); i > 0 {
+			host = host[0:i]
 		}
-		keep := r.RequestURI[idx:]
-		sendTo := fmt.Sprintf("ens:/%s", keep)
 
-		http.Redirect(w, r, sendTo, http.StatusSeeOther)
+		for hostname, region := range c.hostnameToRegion {
+			if host == hostname {
+				sendTo := fmt.Sprintf("ens:/%s&r=%s", path, region)
+				http.Redirect(w, r, sendTo, http.StatusSeeOther)
+				return
+			}
+		}
+
+		c.logger.Warnw("unknown host", "host", host)
+
+		ctx := r.Context()
+		m := controller.TemplateMapFromContext(ctx)
+		m["requestURI"] = fmt.Sprintf("https://%s%s", host, path)
+		c.h.RenderHTMLStatus(w, http.StatusNotFound, "404", m)
 	})
 }
