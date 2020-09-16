@@ -30,9 +30,9 @@ import (
 type RedirectConfig struct {
 	Observability observability.Config
 
-	Port string `env:"PORT,default=8080"`
+	Port string `env:"PORT, default=8080"`
 
-	AssetsPath string `env:"ASSETS_PATH,default=./cmd/enx-redirect/assets"`
+	AssetsPath string `env:"ASSETS_PATH, default=./cmd/enx-redirect/assets"`
 
 	// If Dev mode is true, extended logging is enabled and tempalte
 	// auto-reload is enabled.
