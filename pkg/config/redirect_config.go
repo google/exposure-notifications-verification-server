@@ -34,7 +34,7 @@ type RedirectConfig struct {
 
 	AssetsPath string `env:"ASSETS_PATH, default=./cmd/enx-redirect/assets"`
 
-	// If Dev mode is true, extended logging is enabled and tempalte
+	// If Dev mode is true, extended logging is enabled and template
 	// auto-reload is enabled.
 	DevMode bool `env:"DEV_MODE"`
 
