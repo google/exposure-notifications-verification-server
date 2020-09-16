@@ -1,0 +1,21 @@
+{{define "404"}}
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  <main role="main" class="container mt-5">
+    <h1>Not found.</h1>
+    <p>
+      <code>{{.requestURI}}</code> was not found on this server.
+    </p>
+    <p>
+      If you are trying to submit your anonymous data for exposure notifications,
+      please contact the public health authority that issued your verification code.
+    </p>
+  </main>
+</body>
+</html>
+{{end}}
