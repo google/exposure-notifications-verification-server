@@ -25,8 +25,14 @@
       <div class="card-header">Users</div>
       <div class="card-body">
         <div class="mb-3">
-          <a class="btn btn-primary" href="/users/new">Create a new user</a>
-          <a class="btn btn-primary disabled" href="/users/import">Import users</a>
+          <a class="btn btn-sm" href="/users/new" data-toggle="tooltip" title="Create a new user">
+            <span class="oi oi-plus" aria-hidden="true"></span>
+            New user
+          </a>
+          <a class="btn btn-sm disabled" href="/users/import" data-toggle="tooltip" title="Bulk import users">
+            <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
+            Import
+          </a>
         </div>
         {{if $users}}
         <table class="table table-bordered table-striped bg-white">
