@@ -17,17 +17,15 @@ package modeler
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha1"
 	"fmt"
 	"math"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gonum/matrix/mat64"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
 
@@ -188,7 +186,7 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 	}
 
 	// Update the limiter to use the new value.
-	dig, err := digest(strconv.FormatUint(id, 10), c.config.RateLimit.HMACKey)
+	dig, err := digest.HMACUint64(id, c.config.RateLimit.HMACKey)
 	if err != nil {
 		return fmt.Errorf("failed to digest realm id: %w", err)
 	}
@@ -209,19 +207,4 @@ func vandermonde(a []float64, degree int) *mat64.Dense {
 		}
 	}
 	return x
-}
-
-// digest returns the digest of a given string as a hex-encoded string, and any
-// errors that occur while hashing.
-func digest(in string, key []byte) (string, error) {
-	h := hmac.New(sha1.New, key)
-	n, err := h.Write([]byte(in))
-	if err != nil {
-		return "", err
-	}
-	if got, want := n, len(in); got < want {
-		return "", fmt.Errorf("only hashed %d of %d bytes", got, want)
-	}
-	dig := h.Sum(nil)
-	return fmt.Sprintf("%x", dig), nil
 }
