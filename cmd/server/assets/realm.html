@@ -404,6 +404,17 @@
                 applying your limit factor.
               </small>
             </div>
+
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_burst" name="abuse_prevention_burst" class="form-control" placeholder="Temporary burst" value="0" />
+              <label for="abuse_prevention_burst">Temporary burst</label>
+              <small class="form-text text-muted">
+                Set this value to temporarily add quota to your realm. You
+                should only do this when you've exceeded your daily quota and
+                still need to issue new codes. After 00:00 UTC, the quota will
+                reset back to the predicted model automatically.
+              </small>
+            </div>
           </div>
         </div>
       </div>
