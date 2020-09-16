@@ -311,6 +311,7 @@ func realMain(ctx context.Context) error {
 		userSub.Handle("", userController.HandleIndex()).Queries("offset", "{[0-9]*?}").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
+		userSub.Handle("/import", userController.HandleImport()).Methods("GET")
 		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")
 		userSub.Handle("/{id}", userController.HandleShow()).Methods("GET")
 		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
