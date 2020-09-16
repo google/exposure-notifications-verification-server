@@ -5,6 +5,7 @@
 
 <!doctype html>
 <html lang="en">
+
 <head>
   {{template "head" .}}
 </head>
@@ -20,7 +21,7 @@
       The data below shows realm statistics.
     </p>
 
-    <div class="card mb-3 shadow-sm" style="min-width:950px;">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}
@@ -49,7 +50,7 @@
           This data is refreshed every 5 minutes.
         </div>
         {{else}}
-          <p>No codes have been issued in this realm.</p>
+        <p>No codes have been issued in this realm.</p>
         {{end}}
       </div>
     </div>
@@ -61,28 +62,29 @@
   {{if $stats}}
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
-    google.charts.load('current', {packages: ['line']});
+    google.charts.load('current', { packages: ['line'] });
     google.charts.setOnLoadCallback(drawChart)
 
     function drawChart() {
       var data = google.visualization.arrayToDataTable([
         ['Date', 'Issued', "Claimed"],
-        {{range $stat := $stats}}
-        ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}, {{$stat.CodesClaimed}}],
-        {{end}}
+        {{ range $stat:= $stats }}
+    ['{{$stat.Date.Format "Jan 2"}}', {{ $stat.CodesIssued }}, {{ $stat.CodesClaimed }}],
+      {{ end }}
       ]);
 
-      var options = {
-        colors: ['#007bff', '#ff7b00'],
-        legend: {position: 'bottom'},
-        tooltip: {trigger: 'focus'},
-      };
+    var options = {
+      colors: ['#007bff', '#ff7b00'],
+      legend: { position: 'bottom' },
+      tooltip: { trigger: 'focus' },
+    };
 
-      var chart = new google.charts.Line(document.getElementById('chart'));
-      chart.draw(data, google.charts.Line.convertOptions(options));
+    var chart = new google.charts.Line(document.getElementById('chart'));
+    chart.draw(data, google.charts.Line.convertOptions(options));
     }
   </script>
   {{end}}
 </body>
+
 </html>
 {{end}}
