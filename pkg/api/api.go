@@ -155,7 +155,7 @@ type BatchUser struct {
 
 // UserBatchResponse defines the response type for UserBatchRequest.
 type UserBatchResponse struct {
-	NewUsers []BatchUser `json:"newUsers"`
+	NewUsers []*BatchUser `json:"newUsers"`
 
 	Error     string `json:"error"`
 	ErrorCode string `json:"errorCode,omitempty"`

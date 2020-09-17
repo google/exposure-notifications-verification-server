@@ -130,7 +130,7 @@
     function uploadBatch(data) {
       $.ajax({
         type: 'POST',
-        url: '/users/import/userbatch',
+        url: '/users/import',
         data: JSON.stringify({ "users": data }),
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/json',

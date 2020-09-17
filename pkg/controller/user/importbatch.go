@@ -41,9 +41,9 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			return
 		}
 
-		newUsers := []api.BatchUser{}
+		newUsers := make([]*api.BatchUser, 0, len(request.Users))
 
-		var batchErr error
+		var batchErr *multierror.Error
 		for _, batchUser := range request.Users {
 			// See if the user already exists by email - they may be a member of another
 			// realm.
@@ -62,7 +62,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 			// Build the user struct - keeping email and name if user already exists in another realm.
 			if !alreadyExists {
-				newUsers = append(newUsers, batchUser)
+				newUsers = append(newUsers, &batchUser)
 				user.Email = batchUser.Email
 				user.Name = batchUser.Name
 			}
@@ -75,11 +75,12 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			}
 		}
 
-		if batchErr != nil {
-			controller.InternalError(w, r, c.h, batchErr)
+		if err := batchErr.ErrorOrNil(); err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
-		c.h.RenderJSON(w, http.StatusOK, api.UserBatchResponse{
+		c.h.RenderJSON(w, http.StatusOK, &api.UserBatchResponse{
 			NewUsers: newUsers,
 		})
 	})
