@@ -14,21 +14,27 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Email verification</h1>
-    <p>
-      You must verify your email address to continue.
-    </p>
+    <div class="d-flex vh-100">
+      <div class="d-flex w-100 justify-content-center">
+        <div class="col-sm-6">
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Email verification</div>
-      <div class="card-body">
-        <p>
-          Click the button below to send a verification email, then check your
-          inbox for the message.
-        </p>
-        <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header">Email verification</div>
+            <div class="card-body">
+              <div class="alert alert-warning">
+                <span class="oi oi-warning"></span>You must verify your email address to continue.
+              </div>
 
-        <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
+              <small class="form-text text-muted">
+                Click the button below to send a verification email, then check your
+                inbox for the message.
+              </small>
+              <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
+
+              <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -39,11 +45,11 @@
     let $verify = $('#verify');
     let $skip = $('#skip');
 
-    $(function () {
-      $verify.on('click', function (event) {
+    $(function() {
+      $verify.on('click', function(event) {
         let user = firebase.auth().currentUser
         if (!user.emailVerified) {
-          user.sendEmailVerification().then(function () {
+          user.sendEmailVerification().then(function() {
             clearExistingFlash();
             flash("Verification email sent.", "success");
             $verify.prop('disabled', true);
@@ -52,7 +58,7 @@
       });
     });
 
-    firebase.auth().onAuthStateChanged(function (user) {
+    firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
         window.location.assign("/signout");
         return;

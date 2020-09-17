@@ -214,20 +214,19 @@ func realMain(ctx context.Context) error {
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 
+			// Realm selection
+			sub = r.PathPrefix("").Subrouter()
+			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
+			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
+
 			// Verifying email requires the user is logged in
 			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
 			sub.Handle("/login/verify-email", loginController.HandleVerifyEmail()).Methods("GET")
-
-			// Realm selection
-			sub = r.PathPrefix("").Subrouter()
-			sub.Use(requireAuth)
-			sub.Use(rateLimit)
-			sub.Use(loadCurrentRealm)
-			sub.Use(requireVerified)
-			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
 
 			// SMS auth registration is realm-specific, so it needs to load the current realm.
 			sub = r.PathPrefix("").Subrouter()
