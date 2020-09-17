@@ -92,9 +92,6 @@ type Realm struct {
 	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
 	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
 
-	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
-	EmailVerifiedMode MFAMode `gorm:"type:smallint; not null; default: 0"`
-
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
 	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
