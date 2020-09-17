@@ -41,7 +41,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		c.logger.Warnw("unknown host", "host", host)
-
 		ctx := r.Context()
 		m := controller.TemplateMapFromContext(ctx)
 		m["requestURI"] = fmt.Sprintf("https://%s%s", host, path)
