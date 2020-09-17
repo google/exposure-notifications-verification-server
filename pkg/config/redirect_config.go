@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/observability"
@@ -62,9 +63,18 @@ func (c *RedirectConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }
 
+// HostnameToRegion returns a normalized map of the HOSTNAME_TO_REGION config value.
+// Hostnames (key) are lowercased
+// Regions (value) are uppercased
 func (c *RedirectConfig) HostnameToRegion() (map[string]string, error) {
 	hostnameToRegion := make(map[string]string, len(c.HostnameConfig))
 	for hostname, region := range c.HostnameConfig {
+		if hostname == "" {
+			return nil, fmt.Errorf("hostname empty for region value: %v", region)
+		}
+		if region == "" {
+			return nil, fmt.Errorf("hostname %v is missing region", hostname)
+		}
 		hostnameToRegion[strings.ToLower(hostname)] = strings.ToUpper(region)
 	}
 	return hostnameToRegion, nil

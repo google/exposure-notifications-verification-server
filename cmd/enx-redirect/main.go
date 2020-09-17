@@ -96,8 +96,6 @@ func realMain(ctx context.Context) error {
 		return err
 	}
 	r.PathPrefix("/").Handler(redirectController.HandleIndex()).Methods("GET")
-	//s.Handle("/", redirectController.HandleIndex()).Methods("GET")
-	//r.Handle("/v", redirectController.HandleIndex()).Methods("GET")
 
 	mux := http.NewServeMux()
 	mux.Handle("/", r)
