@@ -85,7 +85,8 @@ locals {
   }
 
   redirect_config = {
-    REDIRECT_MAP = var.redirect_domain_map
+    # TODO(icco): Is there a better way to do this?
+    REDIRECT_MAP = jsonencode(var.redirect_domain_map)
   }
 }
 
