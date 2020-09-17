@@ -98,7 +98,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		if !alreadyExists {
+		if _, err := c.client.GetUserByEmail(ctx, user.Email); auth.IsUserNotFound(err) {
 			pwd, err := password.Generate(24, 8, 8, false, true)
 			if err != nil {
 				flash.Alert("Failed to generate password for '%v'", form.Email)
@@ -113,10 +113,13 @@ func (c *Controller) HandleCreate() http.Handler {
 				c.renderNew(ctx, w, user, false)
 				return
 			}
+
+			flash.Alert("Successfully created user '%v'", form.Name)
+			c.renderNew(ctx, w, user, true)
+			return
 		}
 
-		flash.Alert("Successfully created user '%v'", form.Name)
-		c.renderNew(ctx, w, user, !alreadyExists)
+		c.renderNew(ctx, w, user, false)
 	})
 }
 
