@@ -13,48 +13,59 @@
 
 <body class="bg-light">
   {{template "navbar" .}}
-
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Configure enhanced security</h1>
-    <p class="mb-3">
-      Use the form below to configure advanced security settings for your
-      account on {{$currentRealm.Name}}.
-    </p>
+    <div class="d-flex vh-100">
+      <div class="d-flex w-100 justify-content-center">
+        <div class="col-sm-6">
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Multi-factor authentication</div>
-      <div class="card-body">
-        <p class="mb-3">
-          {{$currentRealm.Name}} {{if eq .currentRealm.MFAModeString "required"}}requires{{else}}recommends{{end}}
-          enhanced security via SMS-based 2-factor authentication. Please
-          provide your information below.
-        </p>
+          <div class="card shadow-sm" id="register-div">
+            <div class="card-header">Multi-factor authentication</div>
+            <div class="card-body">
+              {{if eq .currentRealm.MFAModeString "required"}}
+              <div class="alert alert-warning">
+                <span class="oi oi-warning"></span> This realm <strong>requires</strong> multi-factor authorization.
+              </div>
+              {{end}}
 
-        <form id="registerForm" class="floating-form" action="/" method="POST">
-          <div class="form-label-group">
-            <input type="tel" id="phone" name="phone" class="form-control" placeholder="Phone number" required autofocus />
-            <label for="phone">Phone number</label>
-            <small class="form-text text-muted">
-              Fully qualified phone number beginning with '+'. Standard SMS rates may apply.
-            </small>
+              <p>
+                <strong>{{$currentRealm.Name}}</strong>
+                {{if eq .currentRealm.MFAModeString "required"}}requires{{else}}recommends{{end}}
+                enhanced security via SMS-based 2-factor authentication. Please
+                provide your information below.
+              </p>
+
+              <form id="register-form" class="floating-form" action="/" method="POST">
+                <div class="form-label-group">
+                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="Phone number" required
+                    autofocus />
+                  <label for="phone">Phone number</label>
+                  <small class="form-text text-muted">
+                    Fully qualified phone number beginning with '+'. Standard SMS rates may apply.
+                  </small>
+                </div>
+
+                <div class="form-label-group">
+                  <input type="text" id="display" name="display" class="form-control" placeholder="Display name" />
+                  <label for="display">Display name</label>
+                  <small class="form-text text-muted">
+                    Name for this phone.
+                  </small>
+                </div>
+
+                <button type="submit" id="submit-register" class="btn btn-primary btn-block">Register</button>
+              </form>
+
+              {{if ne .currentRealm.MFAModeString "required"}}
+              <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
+              {{end}}
+            </div>
           </div>
 
-          <div class="form-label-group">
-            <input type="text" id="display" name="display" class="form-control" placeholder="Display name" />
-            <label for="display">Display name</label>
-            <small class="form-text text-muted">
-              Name for this phone.
-            </small>
-          </div>
+          {{template "login/pindiv" .}}
 
-          <button type="submit" id="register" class="btn btn-primary btn-block">Register</button>
-        </form>
-
-        {{if ne .currentRealm.MFAModeString "required"}}
-          <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
-        {{end}}
+        </div>
       </div>
     </div>
 
@@ -62,37 +73,42 @@
   </main>
 
   {{template "scripts" .}}
-
   <script>
-    {{if eq .currentRealm.MFAModeString "required"}}
-    flash("This realm requires multi-factor authorization.","warning")
-    {{end}}
-
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
       'recaptcha-container',
       { 'size': 'invisible' }
     );
 
     recaptchaVerifier.render()
-      .then(function (widgetId) {
+      .then(function(widgetId) {
         window.recaptchaWidgetId = widgetId;
       });
 
-    $(function () {
+    $(function() {
+      let $registerDiv = $('#register-div');
       let $displayName = $('#display');
-      let $submit = $('#register');
+      let $submit = $('#submit-register');
       let $phone = $('#phone');
-      let $form = $('#registerForm');
+      let $registerForm = $('#register-form');
       let $skip = $('#skip');
 
-      $form.on('submit', function (event) {
+      let $pinDiv = $('#sms-code-div');
+      let $pinClose = $('#sms-code-close');
+      let $pinForm = $('#sms-code-form');
+      let $pin = $('#sms-code');
+      let $submitPin = $('#sms-code-submit');
+      let $resendPin = $('#sms-code-resend');
+
+      let verId = ""
+
+      $registerForm.on('submit', function(event) {
         event.preventDefault();
 
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
         let user = firebase.auth().currentUser
-        user.multiFactor.getSession().then(function (multiFactorSession) {
+        user.multiFactor.getSession().then(function(multiFactorSession) {
           // Specify the phone number and pass the MFA session.
           var phoneInfoOptions = {
             phoneNumber: $phone.val(),
@@ -102,23 +118,63 @@
           // Send SMS verification code.
           return phoneAuthProvider.verifyPhoneNumber(
             phoneInfoOptions, window.recaptchaVerifier);
-        }).then(function (verificationId) {
-          var verificationCode = window.prompt('Please enter the verification ' +
-            'code that was sent to your mobile device.');
-          var cred = firebase.auth.PhoneAuthProvider.credential(verificationId, verificationCode);
-          var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
-          // Complete enrollment.
-          return user.multiFactor.enroll(multiFactorAssertion, $displayName.val());
-        }).then(function () {
-          clearExistingFlash();
-          flash("SMS authentication enrolled successfully.", "success");
-          $skip.text("Continue")
-        }).catch(function (err) {
+        }).then(function(verificationId) {
+          verId = verificationId
+          setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+          $registerDiv.hide();
+          $pinDiv.show();
+        }).catch(function(err) {
           clearExistingFlash();
           flash(err.message, "danger");
           $submit.prop('disabled', false);
-        }
-        );
+        });
+      });
+
+      $pinForm.on('submit', function(event) {
+        event.preventDefault();
+
+        // Disable the submit button so we only attempt once.
+        $submitPin.prop('disabled', true);
+
+        var cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
+        var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+
+        // Complete enrollment.
+        let user = firebase.auth().currentUser
+        user.multiFactor.enroll(multiFactorAssertion, $displayName.val()).then(function() {
+          clearExistingFlash();
+          flash("SMS authentication enrolled successfully.", "success");
+          $skip.text("Continue")
+        }).catch(function(err) {
+          clearExistingFlash();
+          flash(err.message, "danger");
+          $submit.prop('disabled', false);
+        });
+      });
+
+      $pinClose.on('click', function(event) {
+        $submit.prop('disabled', false);
+        $registerDiv.show();
+        $pinDiv.hide();
+      });
+
+      $resendPin.on('click', function(event) {
+        $resendPin.addClass('disabled');
+        setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+
+        let phoneInfoOptions = {
+          multiFactorHint: resolver.hints[0],
+          session: resolver.session
+        };
+        let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+        phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+          .then(function(verificationId) {
+            verId = verificationId;
+          }).catch(function(error) {
+            clearExistingFlash();
+            flash(error.message, "danger");
+            $submit.prop('disabled', false);
+          });
       });
     });
   </script>
