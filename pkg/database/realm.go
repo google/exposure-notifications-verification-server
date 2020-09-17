@@ -348,6 +348,20 @@ func (r *Realm) AbusePreventionEffectiveLimit() uint {
 	return uint(math.Ceil(float64(r.AbusePreventionLimit) * float64(factor)))
 }
 
+// AbusePreventionEnabledRealmIDs returns the list of realm IDs that have abuse
+// prevention enabled.
+func (db *Database) AbusePreventionEnabledRealmIDs() ([]uint64, error) {
+	var ids []uint64
+	if err := db.db.
+		Model(&Realm{}).
+		Where("abuse_prevention_enabled IS true").
+		Pluck("id", &ids).
+		Error; err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 // GetCurrentSigningKey returns the currently active signing key, the one marked
 // active in the database. If there is more than one active, the most recently
 // created one wins. Should not occur due to transactional update.

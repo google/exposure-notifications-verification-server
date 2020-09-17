@@ -64,6 +64,12 @@ func (c *Controller) HandleModel() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		if err := c.db.ClaimModelerStatus(); err != nil {
+			logger.Errorw("failed to claim modeler status", "error", err)
+			c.h.JSON500(w, err)
+			return
+		}
+
 		if err := c.rebuildModels(ctx); err != nil {
 			logger.Errorw("failed to build models", "error", err)
 			c.h.JSON500(w, err)
@@ -78,16 +84,10 @@ func (c *Controller) HandleModel() http.Handler {
 // calculates the new limits, and updates the new limits.
 func (c *Controller) rebuildModels(ctx context.Context) error {
 	logger := c.logger.Named("rebuildModels")
-	db := c.db.RawDB()
-
 	// Get all realm IDs in a single operation so we can iterate realm-by-realm to
 	// avoid a full table lock during stats calculation.
-	var ids []uint64
-	if err := db.
-		Model(&database.Realm{}).
-		Where("abuse_prevention_enabled IS true").
-		Pluck("id", &ids).
-		Error; err != nil {
+	ids, err := c.db.AbusePreventionEnabledRealmIDs()
+	if err != nil {
 		return fmt.Errorf("failed to fetch ids: %w", err)
 	}
 	logger.Debugw("building models", "count", len(ids))
@@ -106,41 +106,42 @@ func (c *Controller) rebuildModels(ctx context.Context) error {
 // rebuildModel rebuilds and updates the model for a single model.
 func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 	logger := c.logger.Named("rebuildModel").With("id", id)
-	db := c.db.RawDB()
+
+	// Lookup the realm.
+	realm, err := c.db.FindRealm(id)
+	if err != nil {
+		return fmt.Errorf("failed to find realm: %w", err)
+	}
 
 	// Get 21 days of historical data for the realm.
-	var ys []float64
-	if err := db.
-		Model(&database.RealmStats{}).
-		Where("realm_id = ?", id).
-		Order("date DESC").
-		Limit(21).
-		Pluck("codes_issued", &ys).
-		Error; err != nil {
+	stats, err := realm.HistoricalCodesIssued(c.db, 21)
+	if err != nil {
 		return fmt.Errorf("failed to get stats: %w", err)
 	}
 
 	// Require some reasonable number of days of history before attempting to
 	// build a model.
-	if l := len(ys); l < 14 {
+	if l := len(stats); l < 14 {
 		logger.Warnw("skipping, not enough data", "points", l)
 		return nil
 	}
 
 	// Exclude the most recent record. Depending on timezones, the "day" might not
 	// be over at 00:00 UTC, and we don't want to generate a partial model.
-	ys = ys[:len(ys)-1]
+	stats = stats[:len(stats)-1]
 
 	// Reverse the list - it came in reversed because we sorted by date DESC, but
 	// the model expects the date to be in ascending order.
-	for i, j := 0, len(ys)-1; i < j; i, j = i+1, j-1 {
-		ys[i], ys[j] = ys[j], ys[i]
+	for i, j := 0, len(stats)-1; i < j; i, j = i+1, j-1 {
+		stats[i], stats[j] = stats[j], stats[i]
 	}
 
 	// Build the list of Xs and Ys.
-	xs := make([]float64, len(ys))
-	for i := range ys {
+	xs := make([]float64, len(stats))
+	ys := make([]float64, len(stats))
+	for i, v := range stats {
 		xs[i] = float64(i)
+		ys[i] = float64(v)
 	}
 
 	// This is probably overkill, but it enables us to pick a different curve in
@@ -177,11 +178,8 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 	}
 
 	// Save the new value back, bypassing any validation.
-	if err := db.
-		Model(&database.Realm{}).
-		Where("id = ?", id).
-		UpdateColumn("abuse_prevention_limit", uint(next)).
-		Error; err != nil {
+	realm.AbusePreventionLimit = uint(next)
+	if err := c.db.SaveRealm(realm); err != nil {
 		return fmt.Errorf("failed to save model: %w", err)
 	}
 

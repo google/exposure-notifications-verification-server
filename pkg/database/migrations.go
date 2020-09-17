@@ -1026,6 +1026,21 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00043-CreateModelerStatus",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&ModelerStatus{}).Error; err != nil {
+					return err
+				}
+				if err := tx.Create(&ModelerStatus{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("modeler_statuses").Error
+			},
+		},
 	})
 }
 

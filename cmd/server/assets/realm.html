@@ -364,6 +364,12 @@
             rejecting requests that fall outside of the predicted model.
           </p>
 
+          <p>
+            Without abuse protection, an attacker with a compromised credential
+            could generate many fake codes and then use those codes to
+            subsequently upload many fake keys to the system.
+          </p>
+
           <div class="form-group form-check">
             <input class="form-check-input" type="checkbox" name="abuse_prevention_enabled" id="abuse_prevention_enabled" value="1" {{if $realm.AbusePreventionEnabled}} checked{{end}}>
             <label class="form-check-label" for="abuse_prevention_enabled">
