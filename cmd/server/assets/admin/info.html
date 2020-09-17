@@ -1,0 +1,33 @@
+{{define "admin/info"}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="bg-light">
+  {{template "navbar" .}}
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Info</div>
+      <div class="card-body">
+        <dl>
+          <dt>Build ID</dt>
+          <dd>{{.buildID}}</dd>
+
+          <dt>Build Tag</dt>
+          <dd>{{.buildTag}}</dd>
+        </dl>
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}
