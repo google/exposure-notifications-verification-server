@@ -37,9 +37,10 @@
   {{if .created}}
   <script type="text/javascript">
   $(function() {
-    let email = {{.user.Email}};
     let $allUsers = $('#all-users');
     let $submit = $('#submit-user');
+
+    let email = {{.user.Email}};
 
     firebase.auth().sendPasswordResetEmail(email)
       .then(function() {
