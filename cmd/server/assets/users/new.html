@@ -36,6 +36,7 @@
   {{template "scripts" .}}
   {{if .created}}
   <script type="text/javascript">
+  $(function() {
     let email = {{.user.Email}};
     let $allUsers = $('#all-users');
     let $submit = $('#submit-user');
@@ -49,6 +50,7 @@
         $submit.prop('disabled', false);
         $allUsers.removeClass('disabled');
       });
+  });
   </script>
   {{end}}
 </body>
