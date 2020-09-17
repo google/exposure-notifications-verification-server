@@ -46,7 +46,7 @@
       .then(function() {
         flash("Successfully created user '" + {{.user.Name}} + "'.", "success");
       }).catch(function(error) {
-        flash(error.message, "danger")
+        flash(error.message, "danger");
       }).then(function() {
         $submit.prop('disabled', false);
         $allUsers.removeClass('disabled');
