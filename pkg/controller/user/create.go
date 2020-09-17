@@ -18,8 +18,10 @@ import (
 	"context"
 	"net/http"
 
+	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -96,17 +98,35 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
+		if !alreadyExists {
+			pwd, err := otp.GenerateAlphanumericCode(24)
+			if err != nil {
+				flash.Alert("Error generating password for '%v'", form.Email)
+				c.renderNew(ctx, w, user, false)
+				return
+			}
+
+			fbUser := &auth.UserToCreate{}
+			fbUser.Email(user.Email).DisplayName(user.Name).Password(pwd)
+			_, err = c.client.CreateUser(ctx, fbUser)
+			if err != nil {
+				flash.Alert("Error creating user '%v'", form.Email)
+				c.renderNew(ctx, w, user, false)
+				return
+			}
+		}
+
 		flash.Alert("Successfully created user '%v'", form.Name)
-		c.renderNew(ctx, w, user, true)
+		c.renderNew(ctx, w, user, !alreadyExists)
 	})
 }
 
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, success bool) {
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, createdNewUser bool) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
-	if success {
+	if createdNewUser {
 		m["firebase"] = c.config.Firebase
 	}
-	m["created"] = success
+	m["created"] = createdNewUser
 	c.h.RenderHTML(w, "users/new", m)
 }
