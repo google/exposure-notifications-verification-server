@@ -100,9 +100,7 @@
                 return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
                   .then(function(verificationId) {
                     verId = verificationId;
-
                     setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
-
                     $submitPin.prop('disabled', false);
                     $loginDiv.hide();
                     $pinDiv.show();
