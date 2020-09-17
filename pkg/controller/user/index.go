@@ -66,15 +66,10 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		users, err := realm.ListUsers(c.db, 0, pageSize)
+		users, err := realm.ListUsers(c.db, offset, pageSize)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
-		}
-
-		count = 2000
-		for i := 0; i < 25; i++ {
-			users = append(users, users[0])
 		}
 
 		var pages *Pages
