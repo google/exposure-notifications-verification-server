@@ -372,6 +372,8 @@ func realMain(ctx context.Context) error {
 		adminSub.Handle("/realms", adminController.HandleIndex()).Methods("GET")
 		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("GET")
 		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("POST")
+
+		adminSub.Handle("/info", adminController.HandleInfoShow()).Methods("GET")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be
