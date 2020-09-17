@@ -34,6 +34,11 @@
     cursor: pointer;
     text-decoration: none;
   }
+
+  a.disabled {
+    color: lightgray;
+    pointer-events: none;
+  }
 </style>
 {{end}}
 
@@ -229,24 +234,26 @@
 {{end}}
 
 {{define "flash"}}
-{{range $msg := .flash.Errors}}
-<div class="alert alert-danger" role="alert">
-  {{$msg}}
+<div id="alerts-container">
+  {{range $msg := .flash.Errors}}
+  <div class="alert alert-danger" role="alert">
+    {{$msg}}
+  </div>
+  {{end}}
+  {{range $msg := .flash.Warnings}}
+  <div class="alert alert-warning" role="alert">
+    {{$msg}}
+  </div>
+  {{end}}
+  {{range $msg := .flash.Alerts}}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{$msg}}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  {{end}}
 </div>
-{{end}}
-{{range $msg := .flash.Warnings}}
-<div class="alert alert-warning" role="alert">
-  {{$msg}}
-</div>
-{{end}}
-{{range $msg := .flash.Alerts}}
-<div class="alert alert-success alert-dismissible fade show" role="alert">
-  {{$msg}}
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
-</div>
-{{end}}
 {{end}}
 
 {{define "scripts"}}
@@ -359,10 +366,10 @@
     });
   });
 
-  var $main = $('main');
+  var $alerts = $('#alerts-container');
 
   function clearExistingFlash() {
-    $main.find('div.alert').remove();
+    $alerts.empty();
   }
 
   function flash(message, errLevel, dismissible = undefined) {
@@ -380,7 +387,7 @@
     }
 
     let $div = $('<div class="alert alert-' + errLevel + '" role="alert">');
-    $div.text(message);
+    $div.html(message);
 
     if (dismissible) {
       $div.addClass("alert-dismissible fade show");
@@ -390,7 +397,7 @@
       </button>');
     }
 
-    $main.prepend($div);
+    $alerts.append($div);
   }
 </script>
 {{end}}

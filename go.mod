@@ -33,6 +33,7 @@ require (
 	github.com/rakutentech/jwk-go v1.0.1
 	github.com/sethvargo/go-envconfig v0.3.1
 	github.com/sethvargo/go-limiter v0.5.1
+	github.com/sethvargo/go-password v0.2.0
 	github.com/sethvargo/go-redisstore v0.2.0-opencensus
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sethvargo/go-signalcontext v0.1.0

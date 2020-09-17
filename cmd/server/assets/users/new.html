@@ -30,25 +30,28 @@
         {{template "users/_form" .}}
       </div>
     </div>
-    <a class="card-link" href="/users">&larr; All users</a>
+    <a class="card-link {{if .created}}disabled{{end}}" href="/users" id="all-users">&larr; All users</a>
   </main>
 
   {{template "scripts" .}}
   {{if .created}}
   <script type="text/javascript">
-    let email = {{.user.Email }};
-    let pwd = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  $(function() {
+    let $allUsers = $('#all-users');
+    let $submit = $('#submit-user');
 
-    firebase.auth().createUserWithEmailAndPassword(email, pwd)
-      .then(function(userCredential) {
-        return firebase.auth().sendPasswordResetEmail(email);
+    let email = {{.user.Email}};
+
+    firebase.auth().sendPasswordResetEmail(email)
+      .then(function() {
+        flash("Successfully created user '" + {{.user.Name}} + "'.", "success");
+      }).catch(function(error) {
+        flash(error.message, "danger");
       }).then(function() {
-        flash("New user invite sent.", "success");
-      })
-      .catch(function(error) {
-        flash(error.message, "danger")
         $submit.prop('disabled', false);
+        $allUsers.removeClass('disabled');
       });
+  });
   </script>
   {{end}}
 </body>

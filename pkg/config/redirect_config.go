@@ -76,7 +76,7 @@ func (c *RedirectConfig) HostnameToRegion() (map[string]string, error) {
 
 	hostnameToRegion := make(map[string]string, len(c.Hostnames))
 	for i, prefix := range c.Hostnames {
-		hostnameToRegion[prefix] = strings.ToUpper(c.RegionCodes[i])
+		hostnameToRegion[strings.ToLower(prefix)] = strings.ToUpper(c.RegionCodes[i])
 	}
 	return hostnameToRegion, nil
 }
