@@ -21,20 +21,22 @@
           <div class="card mb-3 shadow-sm">
             <div class="card-header">Email verification</div>
             <div class="card-body">
-              {{if eq .currentRealm.MFAModeString "required"}}
+              {{if eq .currentRealm.EmailVerifiedMode.String "required"}}
               <div class="alert alert-warning">
                 <span class="oi oi-warning"></span>
                 This realm <strong>requires</strong> email address verification.
               </div>
               {{end}}
 
-              <small class="form-text text-muted">
-                Click the button below to send a verification email, then check your
-                inbox for the message.
-              </small>
+              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong>not</strong> confirmed.
+              </p>
+
               <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
 
-              {{if ne .currentRealm.MFAModeString "required"}}
+              <small class="form-text text-muted">Click to send an email containing a verification
+                link.</small>
+
+              {{if ne .currentRealm.EmailVerifiedMode.String "required"}}
               <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
               {{end}}
             </div>

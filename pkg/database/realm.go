@@ -53,8 +53,8 @@ const (
 	SMSENExpressLink = "[enslink]"
 )
 
-// MFAMode represents Multi Factor Authentication requirements for the realm
-type MFAMode int16
+// AuthRequirement represents authentication requirements for the realm
+type AuthRequirement int16
 
 const (
 	// MFAOptionalPrompt will prompt users for MFA on login.
@@ -87,7 +87,10 @@ type Realm struct {
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours'"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
-	MFAMode MFAMode `gorm:"type:smallint; not null; default: 0"`
+	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
+
+	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
+	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
 
 	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
 	EmailVerifiedMode MFAMode `gorm:"type:smallint; not null; default: 0"`
@@ -136,6 +139,18 @@ type Realm struct {
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 }
 
+func (mode *AuthRequirement) String() string {
+	switch *mode {
+	case MFAOptionalPrompt:
+		return "prompt"
+	case MFARequired:
+		return "required"
+	case MFAOptional:
+		return "optional"
+	}
+	return ""
+}
+
 // NewRealmWithDefaults initializes a new Realm with the default settings populated,
 // and the provided name. It does NOT save the Realm to the database.
 func NewRealmWithDefaults(name string) *Realm {
@@ -157,26 +172,6 @@ func (r *Realm) CanUpgradeToRealmSigningKeys() bool {
 
 func (r *Realm) SigningKeyID() string {
 	return fmt.Sprintf("realm-%d", r.ID)
-}
-
-func (r *Realm) MFAModeString() string {
-	return r.MFAMode.modeString()
-}
-
-func (r *Realm) EmailVerifiedString() string {
-	return r.MFAMode.modeString()
-}
-
-func (mode *MFAMode) modeString() string {
-	switch *mode {
-	case MFAOptionalPrompt:
-		return "prompt"
-	case MFARequired:
-		return "required"
-	case MFAOptional:
-		return "optional"
-	}
-	return ""
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.

@@ -107,8 +107,8 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.LongCodeLength = form.LongCodeLength
 		realm.LongCodeDuration.Duration = time.Hour * time.Duration(form.LongCodeHours)
 		realm.SMSTextTemplate = form.SMSTextTemplate
-		realm.MFAMode = database.MFAMode(form.MFAMode)
-		realm.EmailVerifiedMode = database.MFAMode(form.EmailVerifiedMode)
+		realm.MFAMode = database.AuthRequirement(form.MFAMode)
+		realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
 		realm.AbusePreventionEnabled = form.AbusePreventionEnabled
 		realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
 		if err := c.db.SaveRealm(realm); err != nil {

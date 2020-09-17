@@ -59,12 +59,19 @@
                 {{end}}
               </td>
               <td class="text-center">
-                {{- /* cannot delete yourself */ -}}
                 {{if not (eq .ID $currentUser.ID)}}
+                {{- /* cannot delete yourself */ -}}
                 <a href="/users/{{.ID}}" class="d-block text-danger" data-method="DELETE"
                   data-confirm="Are you sure you want to remove '{{.Name}}'?" data-toggle="tooltip"
                   title="Remove this user">
                   <span class="oi oi-trash" aria-hidden="true"></span>
+                </a>
+                {{else if $currentUser.Admin}}
+                {{- /* system admins can remove themselves */ -}}
+                <a href="/users/{{.ID}}" class="d-block text-danger" data-method="DELETE"
+                  data-confirm="Are you sure you want to leave {{.Name}}?" data-toggle="tooltip"
+                  title="Leave this realm">
+                  <span class="oi oi-account-logout" aria-hidden="true"></span>
                 </a>
                 {{end}}
               </td>
