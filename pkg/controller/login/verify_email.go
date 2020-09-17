@@ -32,7 +32,7 @@ func (c *Controller) HandleVerifyEmail() http.Handler {
 		}
 
 		// Mark prompted so we only prompt once.
-		controller.StoreSessionMFAPrompted(session, true)
+		controller.StoreSessionEmailVerPrompted(session, true)
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase

@@ -87,7 +87,7 @@ func NeedsEmailVerification(session *sessions.Session, realm *database.Realm, fb
 		return true
 	}
 
-	if realm.MFAMode == database.MFAOptionalPrompt && !controller.EmailVerificationPromptedFromSession(session) &&
+	if realm.MFAMode == database.MFAOptionalPrompt && !controller.EmailVerPromptedFromSession(session) &&
 		!fbUser.EmailVerified {
 		return true
 	}
