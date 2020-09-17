@@ -69,7 +69,7 @@
   {{template "scripts" .}}
   <script>
     {{if eq .currentRealm.MFAModeString "required"}}
-    flash("This realm requires multi-factor authorization.", "warning")
+    flash("This realm <strong>requires</strong> multi-factor authorization.", "warning")
     {{end}}
 
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
@@ -105,6 +105,10 @@
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
+        $registerDiv.hide();
+        $pinDiv.show();
+        return // for testing
+
         let user = firebase.auth().currentUser
         user.multiFactor.getSession().then(function(multiFactorSession) {
           // Specify the phone number and pass the MFA session.
@@ -133,6 +137,8 @@
 
         // Disable the submit button so we only attempt once.
         $submitPin.prop('disabled', true);
+
+        return // for testing
 
         var cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
         var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);

@@ -94,7 +94,6 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 		}
 
 		controller.StoreSessionRealm(session, realm)
-		flash.Alert("Successfully selected realm '%s'", realm.Name)
 		http.Redirect(w, r, "/home", http.StatusSeeOther)
 	})
 }
