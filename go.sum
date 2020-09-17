@@ -1166,6 +1166,8 @@ github.com/sethvargo/go-gcpkms v0.1.0 h1:pyjDLqLwpk9pMjDSTilPpaUjgP1AfSjX9WGzitZ
 github.com/sethvargo/go-gcpkms v0.1.0/go.mod h1:33BuvqUjsYk0bpMgn+WCclCYtMLOyaqtn5j0fCo4vvk=
 github.com/sethvargo/go-limiter v0.5.1 h1:3Ss4/AC1hXrHwQv75xMjGYJDCeMGeHv8B5tqKIi5+Pc=
 github.com/sethvargo/go-limiter v0.5.1/go.mod h1:C0kbSFbiriE5k2FFOe18M1YZbAR2Fiwf72uGu0CXCcU=
+github.com/sethvargo/go-password v0.2.0 h1:BTDl4CC/gjf/axHMaDQtw507ogrXLci6XRiLc7i/UHI=
+github.com/sethvargo/go-password v0.2.0/go.mod h1:Ym4Mr9JXLBycr02MFuVQ/0JHidNetSgbzutTr3zsYXE=
 github.com/sethvargo/go-redisstore v0.2.0-opencensus h1:GoKpIA/d0KDotrHhk18syOoDthgbBMzdhe0iguvyXbQ=
 github.com/sethvargo/go-redisstore v0.2.0-opencensus/go.mod h1:ovmJaSVc9yhiG+7is6gf3uSTC92kzAbrJsx6L0vnPZU=
 github.com/sethvargo/go-retry v0.1.0 h1:8sPqlWannzcReEcYjHSNw9becsiYudcwTD7CasGjQaI=

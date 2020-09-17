@@ -41,7 +41,7 @@
       </div>
     </div>
 
-    <button type="submit" class="btn btn-primary btn-block">
+    <button type="submit" id="submit-user" class="btn btn-primary btn-block" {{if .created}}disabled{{end}}>
       {{if $user.ID}}
       Update user
       {{else}}

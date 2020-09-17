@@ -18,8 +18,10 @@ import (
 	"context"
 	"net/http"
 
+	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/sethvargo/go-password/password"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -96,17 +98,36 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully created user '%v'", form.Name)
-		c.renderNew(ctx, w, user, true)
+		if _, err := c.client.GetUserByEmail(ctx, user.Email); auth.IsUserNotFound(err) {
+			pwd, err := password.Generate(24, 8, 8, false, true)
+			if err != nil {
+				flash.Alert("Failed to generate password for '%v'", form.Email)
+				c.renderNew(ctx, w, user, false)
+				return
+			}
+
+			fbUser := &auth.UserToCreate{}
+			fbUser.Email(user.Email).DisplayName(user.Name).Password(pwd)
+			if _, err = c.client.CreateUser(ctx, fbUser); err != nil {
+				flash.Alert("Error creating user '%v'", form.Email)
+				c.renderNew(ctx, w, user, false)
+				return
+			}
+
+			c.renderNew(ctx, w, user, true)
+			return
+		}
+
+		c.renderNew(ctx, w, user, false)
 	})
 }
 
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, success bool) {
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, createdNewUser bool) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
-	if success {
+	if createdNewUser {
 		m["firebase"] = c.config.Firebase
 	}
-	m["created"] = success
+	m["created"] = createdNewUser
 	c.h.RenderHTML(w, "users/new", m)
 }
