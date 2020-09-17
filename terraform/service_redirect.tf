@@ -129,28 +129,6 @@ resource "google_compute_backend_service" "redirect" {
   }
 }
 
-resource "google_cloud_run_domain_mapping" "redirect" {
-  for_each = var.redirect_custom_domains
-
-  location = var.cloudrun_location
-  name     = each.key
-
-  metadata {
-    namespace = var.project
-  }
-
-  spec {
-    route_name     = google_cloud_run_service.redirect.name
-    force_override = true
-  }
-
-  lifecycle {
-    ignore_changes = [
-      spec[0].force_override
-    ]
-  }
-}
-
 resource "google_cloud_run_service_iam_member" "redirect-public" {
   location = google_cloud_run_service.redirect.location
   project  = google_cloud_run_service.redirect.project

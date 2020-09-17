@@ -178,7 +178,7 @@ variable "adminapi-host" {
   description = "Domain adminapi is hosted on."
 }
 
-variable "redirector_map" {
+variable "redirect_domain_map" {
   type        = map(string)
   default     = {}
   description = "Redirect domains and environments."

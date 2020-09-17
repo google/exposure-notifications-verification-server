@@ -85,7 +85,7 @@ locals {
   }
 
   redirect_config = {
-    REDIRECT_MAP = var.redirector_map
+    REDIRECT_MAP = var.redirect_domain_map
   }
 }
 
