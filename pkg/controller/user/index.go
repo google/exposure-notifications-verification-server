@@ -16,6 +16,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -36,6 +37,7 @@ type Pages struct {
 	Current  int
 	Next     int
 	Offsets  []PageLabel
+	Footer   string
 }
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -64,10 +66,15 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		users, err := realm.ListUsers(c.db, offset, pageSize)
+		users, err := realm.ListUsers(c.db, 0, pageSize)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
+		}
+
+		count = 2000
+		for i := 0; i < 25; i++ {
+			users = append(users, users[0])
 		}
 
 		var pages *Pages
@@ -85,6 +92,7 @@ func populatePageStrip(offset, count int) *Pages {
 		Offsets:  []PageLabel{},
 		Previous: -1,
 		Next:     -1,
+		Footer:   fmt.Sprintf("%d-%d of %d", offset, offset+pageSize, count),
 	}
 
 	// Calc start and end for paging as +/- 5 pages from current
