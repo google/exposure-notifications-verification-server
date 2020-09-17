@@ -18,6 +18,7 @@ package admin
 import (
 	"context"
 
+	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -30,16 +31,18 @@ import (
 type Controller struct {
 	config *config.ServerConfig
 	db     *database.Database
+	fbAuth *auth.Client
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, fbAuth *auth.Client, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("admin")
 
 	return &Controller{
 		config: config,
 		db:     db,
+		fbAuth: fbAuth,
 		h:      h,
 		logger: logger,
 	}

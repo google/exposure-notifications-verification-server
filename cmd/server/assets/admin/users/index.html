@@ -1,0 +1,68 @@
+{{define "admin/users/index"}}
+
+{{$currentUser := .currentUser}}
+{{$admins := .admins}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="bg-light">
+  {{template "navbar" .}}
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">System admins</div>
+      <div class="card-body">
+        <div class="clearfix mb-3">
+          <a class="btn btn-outline-secondary btn-sm float-right" href="/admin/users/new">
+            <span class="oi oi-plus" aria-hidden="true"></span>
+            New system admin
+          </a>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped mb-0">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col" width="300">Email</th>
+                <th scope="col" width="40"></th>
+              </tr>
+            </thead>
+            <tbody>
+            {{range $admins}}
+              <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Email}}</td>
+                <td class="text-center">
+                  {{- /* cannot delete yourself */ -}}
+                  {{if not (eq .ID $currentUser.ID)}}
+                  <a href="/admin/users/{{.ID}}"
+                    class="d-block text-danger"
+                    data-method="DELETE"
+                    data-confirm="Are you sure you want to remove this system admin?"
+                    data-toggle="tooltip"
+                    title="Remove this system admin">
+                    <span class="oi oi-trash" aria-hidden="true"></span>
+                  </a>
+                  {{end}}
+                </td>
+              </tr>
+            {{end}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

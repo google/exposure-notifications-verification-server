@@ -1042,13 +1042,43 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 		},
 		{
-			ID: "00035-AddEmailVerifiedRequiredToRealms",
+			ID: "00044-AddEmailVerifiedRequiredToRealms",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Debugw("adding email verification required to realm")
 				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verified_mode INTEGER DEFAULT 0").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS email_verified_mode").Error
+			},
+		},
+		{
+			ID: "00045-BootstrapSystemAdmin",
+			Migrate: func(tx *gorm.DB) error {
+				// Only create the default system admin if there are no users. This
+				// ensures people who are already running a system don't get a random
+				// admin user.
+				var user User
+				if err := db.db.Model(&User{}).First(&user).Error; err == nil {
+					return nil
+				} else {
+					if !IsNotFound(err) {
+						return err
+					}
+				}
+
+				user = User{
+					Name:  "System admin",
+					Email: "super@example.com",
+					Admin: true,
+				}
+
+				if err := db.SaveUser(&user); err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
 			},
 		},
 	})

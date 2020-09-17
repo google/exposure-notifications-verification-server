@@ -23,7 +23,23 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func (c *Controller) HandleCreateRealm() http.Handler {
+func (c *Controller) HandleRealmsIndex() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		realms, err := c.db.GetRealms()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		m := controller.TemplateMapFromContext(ctx)
+		m["realms"] = realms
+		c.h.RenderHTML(w, "admin/realms/index", m)
+	})
+}
+
+func (c *Controller) HandleRealmsCreate() http.Handler {
 	type FormData struct {
 		Name                   string `form:"name"`
 		RegionCode             string `form:"regionCode"`
@@ -53,7 +69,7 @@ func (c *Controller) HandleCreateRealm() http.Handler {
 		if r.Method == http.MethodGet {
 			var realm database.Realm
 			realm.UseRealmCertificateKey = true
-			c.renderNew(ctx, w, &realm)
+			c.renderNewRealm(ctx, w, &realm)
 			return
 		}
 
@@ -62,7 +78,7 @@ func (c *Controller) HandleCreateRealm() http.Handler {
 			var realm database.Realm
 			realm.UseRealmCertificateKey = true
 			flash.Error("Failed to process form: %v", err)
-			c.renderNew(ctx, w, &realm)
+			c.renderNewRealm(ctx, w, &realm)
 			return
 		}
 
@@ -73,7 +89,7 @@ func (c *Controller) HandleCreateRealm() http.Handler {
 		realm.CertificateAudience = form.CertificateAudience
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to create realm: %v", err)
-			c.renderNew(ctx, w, realm)
+			c.renderNewRealm(ctx, w, realm)
 			return
 		}
 		flash.Alert("Created realm: %q.", realm.Name)
@@ -82,7 +98,7 @@ func (c *Controller) HandleCreateRealm() http.Handler {
 		user.AdminRealms = append(user.AdminRealms, realm)
 		if err := c.db.SaveUser(user); err != nil {
 			flash.Error("Failed to add you as an admin to the realm: %v", err)
-			c.renderNew(ctx, w, realm)
+			c.renderNewRealm(ctx, w, realm)
 			return
 		}
 		flash.Alert("Added you as a user and admin to the realm.")
@@ -102,10 +118,10 @@ func (c *Controller) HandleCreateRealm() http.Handler {
 	})
 }
 
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, realm *database.Realm) {
+func (c *Controller) renderNewRealm(ctx context.Context, w http.ResponseWriter, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
 	fmt.Printf("errors %+v", realm.Errors())
 	m["realm"] = realm
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
-	c.h.RenderHTML(w, "admin/newrealm", m)
+	c.h.RenderHTML(w, "admin/realms/new", m)
 }
