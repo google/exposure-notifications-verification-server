@@ -38,3 +38,28 @@
   }
 </script>
 {{end}}
+
+{{define "pindiv"}}
+<div class="card mb-3 shadow-sm" style="display:none;" id="pinDiv">
+  <div class="card-header">
+    SMS Pin
+    <button type="button" class="close" aria-label="Close" id="pinClose">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="card-body">
+    <form id="pinForm" class="floating-form" action="/" method="POST">
+      <div class="form-label-group">
+        <input type="text" id="pin" name="pin" class="form-control" placeholder="Pin" required autofocus />
+        <label for="pin">Pin</label>
+        <small class="form-text text-muted">
+          Please enter the numerical pin that was sent via SMS.
+        </small>
+      </div>
+
+      <button type="submit" id="submitPin" class="btn btn-primary btn-block">Confirm pin</button>
+      <button id="resendPin" class="btn btn-primary btn-block" disabled>Resend SMS</button>
+    </form>
+  </div>
+</div>
+{{end}}
