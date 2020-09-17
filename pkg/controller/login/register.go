@@ -31,12 +31,6 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 			return
 		}
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
-
 		// Mark prompted so we only prompt once.
 		controller.StoreSessionMFAPrompted(session, true)
 

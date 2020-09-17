@@ -89,6 +89,9 @@ type Realm struct {
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode MFAMode `gorm:"type:smallint; not null; default: 0"`
 
+	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
+	EmailVerifiedMode MFAMode `gorm:"type:smallint; not null; default: 0"`
+
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
 	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
@@ -157,7 +160,15 @@ func (r *Realm) SigningKeyID() string {
 }
 
 func (r *Realm) MFAModeString() string {
-	switch r.MFAMode {
+	return r.MFAMode.modeString()
+}
+
+func (r *Realm) EmailVerifiedString() string {
+	return r.MFAMode.modeString()
+}
+
+func (mode *MFAMode) modeString() string {
+	switch *mode {
 	case MFAOptionalPrompt:
 		return "prompt"
 	case MFARequired:
