@@ -33,9 +33,7 @@ require (
 	github.com/lib/pq v1.8.0
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/mikehelmick/go-chaff v0.3.0
-	github.com/mozilla/tls-observatory v0.0.0-20200317151703-4fa42e1c2dee
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
-	github.com/oracle/oci-go-sdk v19.3.0+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/rakutentech/jwk-go v1.0.1
 	github.com/sethvargo/go-envconfig v0.3.1
