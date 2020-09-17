@@ -136,6 +136,18 @@ type Realm struct {
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 }
 
+func (mode *MFAMode) String() string {
+	switch *mode {
+	case MFAOptionalPrompt:
+		return "prompt"
+	case MFARequired:
+		return "required"
+	case MFAOptional:
+		return "optional"
+	}
+	return ""
+}
+
 // NewRealmWithDefaults initializes a new Realm with the default settings populated,
 // and the provided name. It does NOT save the Realm to the database.
 func NewRealmWithDefaults(name string) *Realm {
@@ -157,26 +169,6 @@ func (r *Realm) CanUpgradeToRealmSigningKeys() bool {
 
 func (r *Realm) SigningKeyID() string {
 	return fmt.Sprintf("realm-%d", r.ID)
-}
-
-func (r *Realm) MFAModeString() string {
-	return r.MFAMode.modeString()
-}
-
-func (r *Realm) EmailVerifiedString() string {
-	return r.MFAMode.modeString()
-}
-
-func (mode *MFAMode) modeString() string {
-	switch *mode {
-	case MFAOptionalPrompt:
-		return "prompt"
-	case MFARequired:
-		return "required"
-	case MFAOptional:
-		return "optional"
-	}
-	return ""
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.

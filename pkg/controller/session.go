@@ -25,11 +25,11 @@ import (
 type sessionKey string
 
 const (
-	sessionKeyFirebaseCookie = sessionKey("firebaseCookie")
-	sessionKeyRealmID        = sessionKey("realmID")
-	factorCount              = sessionKey("factorCount")
-	mfaPrompted              = sessionKey("mfaPrompted")
-	emailVerPrompted         = sessionKey("emailVerPrompted")
+	sessionKeyFirebaseCookie  = sessionKey("firebaseCookie")
+	sessionKeyRealmID         = sessionKey("realmID")
+	factorCount               = sessionKey("factorCount")
+	mfaPrompted               = sessionKey("mfaPrompted")
+	emailVerificationPrompted = sessionKey("emailVerificationPrompted")
 )
 
 // StoreSessionFirebaseCookie stores the firebase cookie in the session. If the
@@ -149,29 +149,29 @@ func MFAPromptedFromSession(session *sessions.Session) bool {
 	return f
 }
 
-// StoreSessionEmailVerPrompted stores if the user was prompted for email verification.
-func StoreSessionEmailVerPrompted(session *sessions.Session, prompted bool) {
+// StoreSessionEmailVerificationPrompted stores if the user was prompted for email verification.
+func StoreSessionEmailVerificationPrompted(session *sessions.Session, prompted bool) {
 	if session == nil {
 		return
 	}
-	session.Values[emailVerPrompted] = prompted
+	session.Values[emailVerificationPrompted] = prompted
 }
 
-// ClearEmailVerPrompted clears the MFA prompt bit.
-func ClearEmailVerPrompted(session *sessions.Session) {
-	sessionClear(session, emailVerPrompted)
+// ClearEmailVerificationPrompted clears the MFA prompt bit.
+func ClearEmailVerificationPrompted(session *sessions.Session) {
+	sessionClear(session, emailVerificationPrompted)
 }
 
-// EmailVerPromptedFromSession extracts if the user was prompted for email verification.
-func EmailVerPromptedFromSession(session *sessions.Session) bool {
-	v := sessionGet(session, emailVerPrompted)
+// EmailVerificationPromptedFromSession extracts if the user was prompted for email verification.
+func EmailVerificationPromptedFromSession(session *sessions.Session) bool {
+	v := sessionGet(session, emailVerificationPrompted)
 	if v == nil {
 		return false
 	}
 
 	f, ok := v.(bool)
 	if !ok {
-		delete(session.Values, emailVerPrompted)
+		delete(session.Values, emailVerificationPrompted)
 		return false
 	}
 
