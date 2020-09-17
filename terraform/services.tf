@@ -83,6 +83,10 @@ locals {
     VERIFICATION_ADMIN_API  = google_cloud_run_service.adminapi.status.0.url
     VERIFICATION_SERVER_API = google_cloud_run_service.apiserver.status.0.url
   }
+
+  redirect_config = {
+    REDIRECT_MAP = var.redirector_map
+  }
 }
 
 output "cookie_keys" {

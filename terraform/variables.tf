@@ -178,6 +178,12 @@ variable "adminapi-host" {
   description = "Domain adminapi is hosted on."
 }
 
+variable "redirector_map" {
+  type        = map(string)
+  default     = {}
+  description = "Redirect domains and environments."
+}
+
 terraform {
   required_version = ">= 0.13.1"
 

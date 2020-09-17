@@ -71,6 +71,7 @@ resource "google_cloud_run_service" "enx-redirect" {
             local.gcp_config,
             local.rate_limit_config,
             local.session_config,
+            local.redirect_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "enx-redirect", {}),
