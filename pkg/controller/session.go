@@ -25,10 +25,11 @@ import (
 type sessionKey string
 
 const (
-	sessionKeyFirebaseCookie = sessionKey("firebaseCookie")
-	sessionKeyRealmID        = sessionKey("realmID")
-	factorCount              = sessionKey("factorCount")
-	mfaPrompted              = sessionKey("mfaPrompted")
+	sessionKeyFirebaseCookie  = sessionKey("firebaseCookie")
+	sessionKeyRealmID         = sessionKey("realmID")
+	factorCount               = sessionKey("factorCount")
+	mfaPrompted               = sessionKey("mfaPrompted")
+	emailVerificationPrompted = sessionKey("emailVerificationPrompted")
 )
 
 // StoreSessionFirebaseCookie stores the firebase cookie in the session. If the
@@ -132,7 +133,7 @@ func ClearMFAPrompted(session *sessions.Session) {
 	sessionClear(session, mfaPrompted)
 }
 
-// MFAPromptedFromSession extracts if the user was prompted from MFA.
+// MFAPromptedFromSession extracts if the user was prompted for MFA.
 func MFAPromptedFromSession(session *sessions.Session) bool {
 	v := sessionGet(session, mfaPrompted)
 	if v == nil {
@@ -142,6 +143,35 @@ func MFAPromptedFromSession(session *sessions.Session) bool {
 	f, ok := v.(bool)
 	if !ok {
 		delete(session.Values, mfaPrompted)
+		return false
+	}
+
+	return f
+}
+
+// StoreSessionEmailVerificationPrompted stores if the user was prompted for email verification.
+func StoreSessionEmailVerificationPrompted(session *sessions.Session, prompted bool) {
+	if session == nil {
+		return
+	}
+	session.Values[emailVerificationPrompted] = prompted
+}
+
+// ClearEmailVerificationPrompted clears the MFA prompt bit.
+func ClearEmailVerificationPrompted(session *sessions.Session) {
+	sessionClear(session, emailVerificationPrompted)
+}
+
+// EmailVerificationPromptedFromSession extracts if the user was prompted for email verification.
+func EmailVerificationPromptedFromSession(session *sessions.Session) bool {
+	v := sessionGet(session, emailVerificationPrompted)
+	if v == nil {
+		return false
+	}
+
+	f, ok := v.(bool)
+	if !ok {
+		delete(session.Values, emailVerificationPrompted)
 		return false
 	}
 

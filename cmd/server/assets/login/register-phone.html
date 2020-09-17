@@ -23,15 +23,16 @@
           <div class="card shadow-sm" id="register-div">
             <div class="card-header">Multi-factor authentication</div>
             <div class="card-body">
-              {{if eq .currentRealm.MFAModeString "required"}}
+              {{if eq .currentRealm.MFAMode.String "required"}}
               <div class="alert alert-warning">
-                <span class="oi oi-warning"></span> This realm <strong>requires</strong> multi-factor authorization.
+                <span class="oi oi-warning"></span>
+                This realm <strong>requires</strong> multi-factor authorization.
               </div>
               {{end}}
 
               <p>
                 <strong>{{$currentRealm.Name}}</strong>
-                {{if eq .currentRealm.MFAModeString "required"}}requires{{else}}recommends{{end}}
+                {{if eq .currentRealm.MFAMode.String "required"}}requires{{else}}recommends{{end}}
                 enhanced security via SMS-based 2-factor authentication. Please
                 provide your information below.
               </p>
@@ -57,7 +58,7 @@
                 <button type="submit" id="submit-register" class="btn btn-primary btn-block">Register</button>
               </form>
 
-              {{if ne .currentRealm.MFAModeString "required"}}
+              {{if ne .currentRealm.MFAMode.String "required"}}
               <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
               {{end}}
             </div>

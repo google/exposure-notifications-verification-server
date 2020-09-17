@@ -44,11 +44,12 @@ func init() {
 
 func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
-		Name             string            `form:"name"`
-		RegionCode       string            `form:"regionCode"`
-		AllowedTestTypes database.TestType `form:"allowedTestTypes"`
-		MFAMode          int16             `form:"MFAMode"`
-		RequireDate      bool              `form:"requireDate"`
+		Name              string            `form:"name"`
+		RegionCode        string            `form:"regionCode"`
+		AllowedTestTypes  database.TestType `form:"allowedTestTypes"`
+		MFAMode           int16             `form:"MFAMode"`
+		EmailVerifiedMode int16             `form:"emailVerifiedMode"`
+		RequireDate       bool              `form:"requireDate"`
 
 		CodeLength          uint   `form:"codeLength"`
 		CodeDurationMinutes int64  `form:"codeDuration"`
@@ -106,7 +107,8 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.LongCodeLength = form.LongCodeLength
 		realm.LongCodeDuration.Duration = time.Hour * time.Duration(form.LongCodeHours)
 		realm.SMSTextTemplate = form.SMSTextTemplate
-		realm.MFAMode = database.MFAMode(form.MFAMode)
+		realm.MFAMode = database.AuthRequirement(form.MFAMode)
+		realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
 		realm.AbusePreventionEnabled = form.AbusePreventionEnabled
 		realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
 		if err := c.db.SaveRealm(realm); err != nil {
