@@ -114,7 +114,6 @@ func (c *Controller) HandleCreate() http.Handler {
 				return
 			}
 
-			flash.Alert("Successfully created user '%v'", form.Name)
 			c.renderNew(ctx, w, user, true)
 			return
 		}
