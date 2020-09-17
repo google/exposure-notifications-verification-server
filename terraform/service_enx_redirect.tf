@@ -94,7 +94,6 @@ resource "google_cloud_run_service" "redirect" {
 
   depends_on = [
     google_project_service.services["run.googleapis.com"],
-    google_secret_manager_secret_iam_member.redirect-db,
     null_resource.build,
   ]
 
