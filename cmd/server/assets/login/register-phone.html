@@ -23,6 +23,12 @@
           <div class="card shadow-sm" id="registerDiv">
             <div class="card-header">Multi-factor authentication</div>
             <div class="card-body">
+              {{if eq .currentRealm.MFAModeString "required"}}
+              <div class="alert alert-warning">
+                <span class="oi oi-warning"></span> This realm <strong>requires</strong> multi-factor authorization.
+              </div>
+              {{end}}
+
               <p>
                 <strong>{{$currentRealm.Name}}</strong>
                 {{if eq .currentRealm.MFAModeString "required"}}requires{{else}}recommends{{end}}
@@ -68,10 +74,6 @@
 
   {{template "scripts" .}}
   <script>
-    {{if eq .currentRealm.MFAModeString "required"}}
-    flash("This realm <strong>requires</strong> multi-factor authorization.", "warning")
-    {{end}}
-
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
       'recaptcha-container',
       { 'size': 'invisible' }
