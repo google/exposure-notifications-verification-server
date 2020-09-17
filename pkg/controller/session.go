@@ -29,6 +29,7 @@ const (
 	sessionKeyRealmID        = sessionKey("realmID")
 	factorCount              = sessionKey("factorCount")
 	mfaPrompted              = sessionKey("mfaPrompted")
+	emailVerPrompted         = sessionKey("emailVerPrompted")
 )
 
 // StoreSessionFirebaseCookie stores the firebase cookie in the session. If the
@@ -132,7 +133,7 @@ func ClearMFAPrompted(session *sessions.Session) {
 	sessionClear(session, mfaPrompted)
 }
 
-// MFAPromptedFromSession extracts if the user was prompted from MFA.
+// MFAPromptedFromSession extracts if the user was prompted for MFA.
 func MFAPromptedFromSession(session *sessions.Session) bool {
 	v := sessionGet(session, mfaPrompted)
 	if v == nil {
@@ -142,6 +143,35 @@ func MFAPromptedFromSession(session *sessions.Session) bool {
 	f, ok := v.(bool)
 	if !ok {
 		delete(session.Values, mfaPrompted)
+		return false
+	}
+
+	return f
+}
+
+// StoreSessionEmailVerPrompted stores if the user was prompted for email verification.
+func StoreSessionEmailVerPrompted(session *sessions.Session, prompted bool) {
+	if session == nil {
+		return
+	}
+	session.Values[emailVerPrompted] = prompted
+}
+
+// ClearEmailVerPrompted clears the MFA prompt bit.
+func ClearEmailVerPrompted(session *sessions.Session) {
+	sessionClear(session, emailVerPrompted)
+}
+
+// EmailVerPromptedFromSession extracts if the user was prompted for email verification.
+func EmailVerPromptedFromSession(session *sessions.Session) bool {
+	v := sessionGet(session, emailVerPrompted)
+	if v == nil {
+		return false
+	}
+
+	f, ok := v.(bool)
+	if !ok {
+		delete(session.Values, emailVerPrompted)
 		return false
 	}
 

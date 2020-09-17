@@ -25,6 +25,15 @@ func (c *Controller) HandleVerifyEmail() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
+		// Mark prompted so we only prompt once.
+		controller.StoreSessionMFAPrompted(session, true)
+
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
 		c.h.RenderHTML(w, "login/verify-email", m)

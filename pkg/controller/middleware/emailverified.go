@@ -28,6 +28,7 @@ import (
 
 	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 // RequireVerified requires a user to have verified their login email.
@@ -68,8 +69,9 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 				controller.Unauthorized(w, r, h)
 				return
 			}
-			if !fbUser.EmailVerified {
-				delete(m, "currentUser") // Remove user from the template map.
+
+			realm := controller.RealmFromContext(ctx)
+			if NeedsEmailVerification(session, realm, fbUser) {
 				logger.Debugw("user email not verified")
 				http.Redirect(w, r, "/login/verify-email", http.StatusSeeOther)
 				return
@@ -78,4 +80,17 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func NeedsEmailVerification(session *sessions.Session, realm *database.Realm, fbUser *auth.UserRecord) bool {
+	if (realm == nil || realm.MFAMode == database.MFARequired) && !fbUser.EmailVerified {
+		return true
+	}
+
+	if realm.MFAMode == database.MFAOptionalPrompt && !controller.EmailVerificationPromptedFromSession(session) &&
+		!fbUser.EmailVerified {
+		return true
+	}
+
+	return false
 }

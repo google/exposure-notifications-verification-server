@@ -1041,6 +1041,16 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.DropTable("modeler_statuses").Error
 			},
 		},
+		{
+			ID: "00035-AddEmailVerifiedRequiredToRealms",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email verification required to realm")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verified_mode INTEGER DEFAULT 0").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS email_verified_mode").Error
+			},
+		},
 	})
 }
 
