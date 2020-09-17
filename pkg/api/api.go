@@ -140,6 +140,22 @@ type CSRFResponse struct {
 	ErrorCode string `json:"errorCode"`
 }
 
+type UserBatchRequest struct {
+	Users []BatchUser `json:"users"`
+}
+
+type BatchUser struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+type UserBatchResponse struct {
+	NewUsers []BatchUser `json:"newUsers"`
+
+	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
 // IssueCodeRequest defines the parameters to request an new OTP (short term)
 // code. This is called by the Web frontend.
 // API is served at /api/issue
