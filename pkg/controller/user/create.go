@@ -101,7 +101,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		if !alreadyExists {
 			pwd, err := otp.GenerateAlphanumericCode(24)
 			if err != nil {
-				flash.Alert("Error generating password for '%v'", form.Email)
+				flash.Alert("Failed to generate password for '%v'", form.Email)
 				c.renderNew(ctx, w, user, false)
 				return
 			}
