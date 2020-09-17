@@ -30,3 +30,19 @@ type RealmStats struct {
 func (RealmStats) TableName() string {
 	return "realm_stats"
 }
+
+// HistoricalCodesIssued returns a slice of the historical codes issued for
+// this realm by date descending.
+func (r *Realm) HistoricalCodesIssued(db *Database, limit uint64) ([]uint64, error) {
+	var stats []uint64
+	if err := db.db.
+		Model(&RealmStats{}).
+		Where("realm_id = ?", r.ID).
+		Order("date DESC").
+		Limit(limit).
+		Pluck("codes_issued", &stats).
+		Error; err != nil {
+		return nil, err
+	}
+	return stats, nil
+}

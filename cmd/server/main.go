@@ -328,7 +328,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireMFA)
 		realmSub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, cacher, config, db, h)
+		realmadminController := realmadmin.New(ctx, cacher, config, db, limiterStore, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")

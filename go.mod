@@ -14,6 +14,11 @@ require (
 	github.com/client9/misspell v0.3.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/frankban/quicktest v1.8.1 // indirect
+	github.com/gonum/blas v0.0.0-20181208220705-f22b278b28ac // indirect
+	github.com/gonum/floats v0.0.0-20181209220543-c233463c7e82 // indirect
+	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
+	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
+	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
 	github.com/google/exposure-notifications-server v0.8.0
 	github.com/google/go-cmp v0.5.2
 	github.com/gorilla/csrf v1.7.0
@@ -21,6 +26,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
 	github.com/gorilla/sessions v1.2.1
+	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/jinzhu/now v1.1.1 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
@@ -31,9 +37,9 @@ require (
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/rakutentech/jwk-go v1.0.1
 	github.com/sethvargo/go-envconfig v0.3.1
-	github.com/sethvargo/go-limiter v0.5.1
+	github.com/sethvargo/go-limiter v0.5.2
 	github.com/sethvargo/go-password v0.2.0
-	github.com/sethvargo/go-redisstore v0.2.0-opencensus
+	github.com/sethvargo/go-redisstore v0.2.1-opencensus
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/smartystreets/assertions v1.0.0 // indirect
