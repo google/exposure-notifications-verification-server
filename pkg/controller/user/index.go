@@ -16,6 +16,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -36,6 +37,7 @@ type Pages struct {
 	Current  int
 	Next     int
 	Offsets  []PageLabel
+	Footer   string
 }
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -85,6 +87,7 @@ func populatePageStrip(offset, count int) *Pages {
 		Offsets:  []PageLabel{},
 		Previous: -1,
 		Next:     -1,
+		Footer:   fmt.Sprintf("%d-%d of %d", offset, offset+pageSize, count),
 	}
 
 	// Calc start and end for paging as +/- 5 pages from current
