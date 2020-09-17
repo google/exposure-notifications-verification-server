@@ -136,11 +136,8 @@
         contentType: 'application/json',
         success: function(result) {
           for (user of result.newUsers) {
-            let pwd = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            firebase.auth().createUserWithEmailAndPassword(user.email, pwd)
-              .then(function(userCredential) {
-                return firebase.auth().sendPasswordResetEmail(user.email);
-              }).catch(function(error) {
+            firebase.auth().sendPasswordResetEmail(user.email)
+              .catch(function(error) {
                 flash(error.message, "danger")
               });
           }

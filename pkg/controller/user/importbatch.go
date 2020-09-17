@@ -17,10 +17,12 @@ package user
 import (
 	"net/http"
 
+	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/hashicorp/go-multierror"
+	"github.com/sethvargo/go-password/password"
 )
 
 func (c *Controller) HandleImportBatch() http.Handler {
@@ -72,6 +74,26 @@ func (c *Controller) HandleImportBatch() http.Handler {
 				logger.Errorw("Error saving user", "error", err)
 				batchErr = multierror.Append(batchErr, err)
 				continue
+			}
+
+			if _, err := c.client.GetUserByEmail(ctx, user.Email); auth.IsUserNotFound(err) {
+				pwd, err := password.Generate(24, 8, 8, false, true)
+				if err != nil {
+					logger.Errorw("Failed to generate password", "error", err)
+					batchErr = multierror.Append(batchErr, err)
+					continue
+				}
+
+				fbUser := &auth.UserToCreate{}
+				fbUser.Email(user.Email).DisplayName(user.Name).Password(pwd)
+				if _, err = c.client.CreateUser(ctx, fbUser); err != nil {
+					logger.Errorw("Error creating firebase user", "error", err)
+					batchErr = multierror.Append(batchErr, err)
+					continue
+				}
+
+				c.renderNew(ctx, w, user, true)
+				return
 			}
 		}
 
