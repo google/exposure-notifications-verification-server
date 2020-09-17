@@ -20,6 +20,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/hashicorp/go-multierror"
 )
 
 func (c *Controller) HandleImportBatch() http.Handler {
@@ -42,6 +43,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		newUsers := []api.BatchUser{}
 
+		var batchErr error
 		for _, batchUser := range request.Users {
 			// See if the user already exists by email - they may be a member of another
 			// realm.
@@ -49,9 +51,8 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			alreadyExists := true
 			if err != nil {
 				if !database.IsNotFound(err) {
-					// TODO(whaught): batch up the errors
 					logger.Errorw("Error finding user", "error", err)
-					controller.InternalError(w, r, c.h, err)
+					batchErr = multierror.Append(batchErr, err)
 					continue
 				}
 
@@ -68,11 +69,14 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			user.Realms = append(user.Realms, realm)
 
 			if err := c.db.SaveUser(user); err != nil {
-				// TODO(whaught): batch up the errors
 				logger.Errorw("Error saving user", "error", err)
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+				batchErr = multierror.Append(batchErr, err)
 				continue
 			}
+		}
+
+		if batchErr != nil {
+			controller.InternalError(w, r, c.h, batchErr)
 		}
 
 		c.h.RenderJSON(w, http.StatusOK, api.UserBatchResponse{

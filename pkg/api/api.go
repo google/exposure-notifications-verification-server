@@ -140,15 +140,20 @@ type CSRFResponse struct {
 	ErrorCode string `json:"errorCode"`
 }
 
+// UserBatchRequest is a request for bulk creation of users.
+// This is called by the Web frontend.
+// API is served at /users/import/userbatch
 type UserBatchRequest struct {
 	Users []BatchUser `json:"users"`
 }
 
+// BatchUser represents a single user's email/name.
 type BatchUser struct {
 	Email string `json:"email"`
 	Name  string `json:"name"`
 }
 
+// UserBatchResponse defines the response type for UserBatchRequest.
 type UserBatchResponse struct {
 	NewUsers []BatchUser `json:"newUsers"`
 
