@@ -21,7 +21,7 @@ import (
 	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/otp"
+	"github.com/sethvargo/go-password/password"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -99,7 +99,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		if !alreadyExists {
-			pwd, err := otp.GenerateAlphanumericCode(24)
+			pwd, err := password.Generate(24, 8, 8, false, true)
 			if err != nil {
 				flash.Alert("Failed to generate password for '%v'", form.Email)
 				c.renderNew(ctx, w, user, false)
@@ -108,8 +108,7 @@ func (c *Controller) HandleCreate() http.Handler {
 
 			fbUser := &auth.UserToCreate{}
 			fbUser.Email(user.Email).DisplayName(user.Name).Password(pwd)
-			_, err = c.client.CreateUser(ctx, fbUser)
-			if err != nil {
+			if _, err = c.client.CreateUser(ctx, fbUser); err != nil {
 				flash.Alert("Error creating user '%v'", form.Email)
 				c.renderNew(ctx, w, user, false)
 				return
