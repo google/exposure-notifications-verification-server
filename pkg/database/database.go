@@ -230,6 +230,11 @@ func (db *Database) Ping(ctx context.Context) error {
 	return db.db.DB().PingContext(ctx)
 }
 
+// RawDB returns the underlying gorm database.
+func (db *Database) RawDB() *gorm.DB {
+	return db.db
+}
+
 // IsNotFound determines if an error is a record not found.
 func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)

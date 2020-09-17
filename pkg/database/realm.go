@@ -112,7 +112,7 @@ type Realm struct {
 	// AbusePreventionLimit is the configured daily limit for the realm. This value is populated
 	// by the nightly aggregation job and is based on a statistical model from
 	// historical code issuance data.
-	AbusePreventionLimit uint `gorm:"type:integer; not null; default:100"`
+	AbusePreventionLimit uint `gorm:"type:integer; not null; default:10"`
 
 	// AbusePreventionLimitFactor is the factor against the predicted model for the day which
 	// determines the total number of codes that can be issued for the realm on
@@ -346,6 +346,20 @@ func (r *Realm) AbusePreventionEffectiveLimit() uint {
 	// database.
 	factor := math.Floor(float64(r.AbusePreventionLimitFactor)*100) / 100
 	return uint(math.Ceil(float64(r.AbusePreventionLimit) * float64(factor)))
+}
+
+// AbusePreventionEnabledRealmIDs returns the list of realm IDs that have abuse
+// prevention enabled.
+func (db *Database) AbusePreventionEnabledRealmIDs() ([]uint64, error) {
+	var ids []uint64
+	if err := db.db.
+		Model(&Realm{}).
+		Where("abuse_prevention_enabled IS true").
+		Pluck("id", &ids).
+		Error; err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 // GetCurrentSigningKey returns the currently active signing key, the one marked
