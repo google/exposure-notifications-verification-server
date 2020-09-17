@@ -1,6 +1,7 @@
 {{define "users/_form"}}
 
-{{$currentRealm := .currentRealm}} {{$user := .user}}
+{{$currentRealm := .currentRealm}}
+{{$user := .user}}
 
 {{if $user.ID}}
 <form method="POST" action="/users/{{$user.ID}}">
