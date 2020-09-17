@@ -18,10 +18,8 @@ import (
 	"context"
 	"net/http"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/sethvargo/go-password/password"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -98,27 +96,13 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		if _, err := c.client.GetUserByEmail(ctx, user.Email); auth.IsUserNotFound(err) {
-			pwd, err := password.Generate(24, 8, 8, false, true)
-			if err != nil {
-				flash.Alert("Failed to generate password for '%v'", form.Email)
-				c.renderNew(ctx, w, user, false)
-				return
-			}
-
-			fbUser := &auth.UserToCreate{}
-			fbUser.Email(user.Email).DisplayName(user.Name).Password(pwd)
-			if _, err = c.client.CreateUser(ctx, fbUser); err != nil {
-				flash.Alert("Error creating user '%v'", form.Email)
-				c.renderNew(ctx, w, user, false)
-				return
-			}
-
-			c.renderNew(ctx, w, user, true)
-			return
+		created, err := user.CreateFirebaseUser(ctx, c.client)
+		if err != nil {
+			flash.Alert("Failed to create user: %v", err)
+			c.renderNew(ctx, w, user, false)
 		}
 
-		c.renderNew(ctx, w, user, false)
+		c.renderNew(ctx, w, user, created)
 	})
 }
 

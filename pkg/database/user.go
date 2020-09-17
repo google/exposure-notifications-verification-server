@@ -15,11 +15,14 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
+	"firebase.google.com/go/auth"
 	"github.com/jinzhu/gorm"
+	"github.com/sethvargo/go-password/password"
 )
 
 // User represents a user of the system
@@ -175,6 +178,34 @@ func (db *Database) TouchUserRevokeCheck(u *User) error {
 		Model(u).
 		UpdateColumn("last_revoke_check", time.Now().UTC()).
 		Error
+}
+
+// CreateFirebaseUser creates the associated Firebase user for this database
+// user. It does nothing if the firebase user already exists. If the firebase
+// user does not exist, it generates a random password. The returned boolean
+// indicates if the user was created.
+func (u *User) CreateFirebaseUser(ctx context.Context, fbAuth *auth.Client) (bool, error) {
+	if _, err := fbAuth.GetUserByEmail(ctx, u.Email); err != nil {
+		if !auth.IsUserNotFound(err) {
+			return false, fmt.Errorf("failed lookup firebase user: %w", err)
+		}
+
+		pwd, err := password.Generate(24, 8, 8, false, true)
+		if err != nil {
+			return false, fmt.Errorf("failed to generate password: %w", err)
+		}
+
+		fbUser := &auth.UserToCreate{}
+		fbUser = fbUser.Email(u.Email)
+		fbUser = fbUser.Password(pwd)
+		fbUser = fbUser.DisplayName(u.Name)
+		if _, err := fbAuth.CreateUser(ctx, fbUser); err != nil {
+			return false, fmt.Errorf("failed to create firebase user: %w", err)
+		}
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // SaveUser updates the user in the database.
