@@ -42,14 +42,14 @@
           <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
             aria-valuemax="100"></div>
         </div>
-        <table class="table table-bordered" id="csvtable" style="display:none;">
+        <table class="table table-bordered" id="csv-table" style="display:none;">
           <thead>
             <tr>
               <th>Email</th>
               <th>Name</th>
             </tr>
           </thead>
-          <tbody id="csvtablebody"></tbody>
+          <tbody id="csv-table-body"></tbody>
         </table>
       </div>
     </div>
@@ -63,8 +63,8 @@
       let $csv = $('#csv');
       let $fileLabel = $('#fileLabel');
       let $import = $('#import');
-      let $table = $('#csvtable');
-      let $tableBody = $('#csvtablebody');
+      let $table = $('#csv-table');
+      let $tableBody = $('#csv-table-body');
       let $progress = $('#progress');
 
       if (typeof (FileReader) == "undefined") {
