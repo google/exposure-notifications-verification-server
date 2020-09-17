@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
-
 	"github.com/google/exposure-notifications-server/pkg/observability"
 
 	"github.com/sethvargo/go-envconfig"
@@ -38,22 +36,18 @@ type RedirectConfig struct {
 	// auto-reload is enabled.
 	DevMode bool `env:"DEV_MODE"`
 
-	// A list of prefixes to match.
-	// "region.example.com,otherregion.example.com"
-	// all prefixes are redirected to
+	// A map of hostnames to redirect to ens:// and a mapping to the region.
+	// For example to redirect
+	//   region.example.com to region US-AA
+	//   otherregion.example.com to region US-BB
+	// all matched hostnames are redirected to
 	// "ens://"
 	// The append region is added to the end
 	// "US-AA,US-BB"
 	//
-	// As an example, if the redirect service receives a request like
-	//  https://region.example.com/v?c=1234
-	// Will result in a redict to (based on the above configuration)
-	//  ens://v?c=1234&r=US-AA
-	Hostnames   []string `env:"HOSTNAME"`
-	RegionCodes []string `env:"REGION_CODE"`
-
-	// Rate limiting configuration
-	RateLimit ratelimit.Config
+	// The config for this is passed as a map, example:
+	// HOSTNAME_TO_REGION="region.example.com:US-AA,otherregion.example.com:US-BB"
+	HostnameConfig map[string]string `env:"HOSTNAME_TO_REGION"`
 }
 
 // NewRedirectConfig initializes and validates a RedirectConfig struct.
@@ -69,14 +63,19 @@ func (c *RedirectConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }
 
+// HostnameToRegion returns a normalized map of the HOSTNAME_TO_REGION config value.
+// Hostnames (key) are lowercased
+// Regions (value) are uppercased
 func (c *RedirectConfig) HostnameToRegion() (map[string]string, error) {
-	if len(c.Hostnames) != len(c.RegionCodes) {
-		return nil, fmt.Errorf("HOSTNAME and REGION_CODE must be lists of the same length")
-	}
-
-	hostnameToRegion := make(map[string]string, len(c.Hostnames))
-	for i, prefix := range c.Hostnames {
-		hostnameToRegion[strings.ToLower(prefix)] = strings.ToUpper(c.RegionCodes[i])
+	hostnameToRegion := make(map[string]string, len(c.HostnameConfig))
+	for hostname, region := range c.HostnameConfig {
+		if hostname == "" {
+			return nil, fmt.Errorf("hostname empty for region value: %v", region)
+		}
+		if region == "" {
+			return nil, fmt.Errorf("hostname %v is missing region", hostname)
+		}
+		hostnameToRegion[strings.ToLower(hostname)] = strings.ToUpper(region)
 	}
 	return hostnameToRegion, nil
 }
