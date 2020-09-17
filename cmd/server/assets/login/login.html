@@ -33,10 +33,8 @@
                 </div>
 
                 <button type="submit" id="submit" class="btn btn-primary btn-block">Login</button>
+                <a class="card-link btn-block" href="login/reset-password">Forgot password</a>
               </form>
-              <div class="card-body">
-                <a class="card-link" href="login/reset-password">Forgot password</a>
-              </div>
             </div>
           </div>
 
@@ -103,7 +101,7 @@
                   .then(function(verificationId) {
                     verId = verificationId;
 
-                    setTimeout(function() { $resendPin.prop('disabled', false); }, 15000);
+                    setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
 
                     $submitPin.prop('disabled', false);
                     $loginDiv.hide();
@@ -150,8 +148,8 @@
       });
 
       $resendPin.on('click', function(event) {
-        $resendPin.prop('disabled', true);
-        setTimeout(function() { $resendPin.prop('disabled', false); }, 15000);
+        $resendPin.addClass('disabled');
+        setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
 
         let phoneInfoOptions = {
           multiFactorHint: resolver.hints[0],
