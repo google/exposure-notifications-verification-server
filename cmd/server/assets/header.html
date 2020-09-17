@@ -36,9 +36,9 @@
   }
 
   a.disabled {
-  color: lightgray;
-  pointer-events: none;
-}
+    color: lightgray;
+    pointer-events: none;
+  }
 </style>
 {{end}}
 
@@ -234,7 +234,7 @@
 {{end}}
 
 {{define "flash"}}
-<div id="alerts">
+<div id="alerts-container">
   {{range $msg := .flash.Errors}}
   <div class="alert alert-danger" role="alert">
     {{$msg}}
@@ -366,7 +366,7 @@
     });
   });
 
-  var $alerts = $('#alerts');
+  var $alerts = $('#alerts-container');
 
   function clearExistingFlash() {
     $alerts.empty();

@@ -20,7 +20,7 @@
       <div class="d-flex w-100 justify-content-center">
         <div class="col-sm-6">
 
-          <div class="card shadow-sm" id="registerDiv">
+          <div class="card shadow-sm" id="register-div">
             <div class="card-header">Multi-factor authentication</div>
             <div class="card-body">
               {{if eq .currentRealm.MFAModeString "required"}}
@@ -36,7 +36,7 @@
                 provide your information below.
               </p>
 
-              <form id="registerForm" class="floating-form" action="/" method="POST">
+              <form id="register-form" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
                   <input type="tel" id="phone" name="phone" class="form-control" placeholder="Phone number" required
                     autofocus />
@@ -54,7 +54,7 @@
                   </small>
                 </div>
 
-                <button type="submit" id="submitRegister" class="btn btn-primary btn-block">Register</button>
+                <button type="submit" id="submit-register" class="btn btn-primary btn-block">Register</button>
               </form>
 
               {{if ne .currentRealm.MFAModeString "required"}}
@@ -63,7 +63,7 @@
             </div>
           </div>
 
-          {{template "pindiv" .}}
+          {{template "login/pindiv" .}}
 
         </div>
       </div>
@@ -85,19 +85,19 @@
       });
 
     $(function() {
-      let $registerDiv = $('#registerDiv');
+      let $registerDiv = $('#register-div');
       let $displayName = $('#display');
-      let $submit = $('#submitRegister');
+      let $submit = $('#submit-register');
       let $phone = $('#phone');
-      let $registerForm = $('#registerForm');
+      let $registerForm = $('#register-form');
       let $skip = $('#skip');
 
-      let $pinDiv = $('#pinDiv');
-      let $pinClose = $('#pinClose');
-      let $pinForm = $('#pinForm');
+      let $pinDiv = $('#pin-div');
+      let $pinClose = $('#pin-close');
+      let $pinForm = $('#pin-form');
       let $pin = $('#pin');
-      let $submitPin = $('#submitPin');
-      let $resendPin = $('#resendPin');
+      let $submitPin = $('#submit-pin');
+      let $resendPin = $('#resend-pin');
 
       let verId = ""
 
