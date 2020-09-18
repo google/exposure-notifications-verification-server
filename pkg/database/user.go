@@ -230,10 +230,11 @@ func (u *User) CreateFirebaseUser(ctx context.Context, fbAuth *auth.Client) (boo
 }
 
 // PasswordChanged updates the last password change timestamp of the user.
-func (db *Database) PasswordChanged(email string) error {
-	if err := db.db.Model(&User{}).
-		Update("last_pwd_change", time.Now().UTC()).
+func (db *Database) PasswordChanged(email string, t time.Time) error {
+	if err := db.db.
+		Model(&User{}).
 		Where("email = ?", email).
+		Update("last_pwd_change", t.UTC()).
 		Error; err != nil {
 		return err
 	}

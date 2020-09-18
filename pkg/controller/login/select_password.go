@@ -17,6 +17,7 @@ package login
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
@@ -50,7 +51,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 			return
 		}
 
-		if err := c.db.PasswordChanged(form.Email); err != nil {
+		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
 			controller.InternalError(w, r, c.h, err)
 			return

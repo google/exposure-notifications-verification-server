@@ -16,6 +16,7 @@ package database
 
 import (
 	"testing"
+	"time"
 )
 
 func TestUserLifecycle(t *testing.T) {
@@ -32,10 +33,6 @@ func TestUserLifecycle(t *testing.T) {
 
 	if err := db.SaveUser(&user); err != nil {
 		t.Fatalf("error creating user: %v", err)
-	}
-
-	if err := db.PasswordChanged(email); err != nil {
-		t.Fatalf("error updating password changed time user: %v", err)
 	}
 
 	// Find user by ID
@@ -76,6 +73,12 @@ func TestUserLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Update password changed
+	now := time.Now()
+	if err := db.PasswordChanged(email, now); err != nil {
+		t.Fatalf("error updating password changed time: %v", err)
+	}
+
 	// Verify updated attribute saved
 	{
 		got, err := db.FindUserByEmail(email)
@@ -84,6 +87,10 @@ func TestUserLifecycle(t *testing.T) {
 		}
 
 		if got, want := got.Admin, true; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+
+		if got, want := got.LastPasswordChange, now.UTC(); got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 	}
