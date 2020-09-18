@@ -23,8 +23,10 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/jinzhu/gorm"
+	"github.com/russross/blackfriday/v2"
 )
 
 // TestType is a test type in the database.
@@ -85,6 +87,11 @@ type Realm struct {
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
 	// SMS Content
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours'"`
+
+	// WelcomeMessage is arbitrary realm-defined data to display to users after
+	// selecting this realm. If empty, nothing is displayed. The format is
+	// markdown.
+	WelcomeMessage string `gorm:"type:text"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
@@ -725,4 +732,15 @@ func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error
 	}
 
 	return stats, nil
+}
+
+// RenderWelcomeMessage message renders the realm's welcome message.
+func (r *Realm) RenderWelcomeMessage() string {
+	msg := strings.TrimSpace(r.WelcomeMessage)
+	if msg == "" {
+		return ""
+	}
+
+	raw := blackfriday.Run([]byte(msg))
+	return string(bluemonday.UGCPolicy().SanitizeBytes(raw))
 }
