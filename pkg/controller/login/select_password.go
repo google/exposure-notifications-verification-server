@@ -35,7 +35,7 @@ func (c *Controller) HandleSelectNewPassword() http.Handler {
 }
 
 func (c *Controller) HandleSubmitNewPassword() http.Handler {
-	logger := c.logger.Named("HandleSubmitNewPassword")
+	logger := c.logger.Named("login.HandleSubmitNewPassword")
 
 	type FormData struct {
 		Email string `form:"email"`
