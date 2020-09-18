@@ -13,8 +13,8 @@
 # limitations under the License.
 
 locals {
-  enable_lb         = var.server-host != "" && var.apiserver-host != "" && var.adminapi-host != ""
-  enable_redirector = length(var.redirect_domain_map) > 0
+  enable_lb       = var.server-host != "" && var.apiserver-host != "" && var.adminapi-host != ""
+  enable_redirect = length(var.redirect_domain_map) > 0
 }
 
 resource "google_compute_global_address" "verification-server" {
@@ -24,7 +24,7 @@ resource "google_compute_global_address" "verification-server" {
 }
 
 resource "google_compute_global_address" "verification-redirect" {
-  count   = local.enable_redirector ? 1 : 0
+  count   = local.enable_redirect ? 1 : 0
   name    = "verification-redirect-address"
   project = var.project
 }
