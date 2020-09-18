@@ -253,7 +253,7 @@ func realMain(ctx context.Context) error {
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
-		issueapiController, err := issueapi.New(ctx, config, db, h)
+		issueapiController, err := issueapi.New(ctx, config, db, limiterStore, h)
 		if err != nil {
 			return fmt.Errorf("issueapi.New: %w", err)
 		}

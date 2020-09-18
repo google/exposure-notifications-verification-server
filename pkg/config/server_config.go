@@ -59,6 +59,7 @@ type ServerConfig struct {
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
+	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=false"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
@@ -109,6 +110,14 @@ func (c *ServerConfig) GetCollisionRetryCount() uint {
 
 func (c *ServerConfig) GetAllowedSymptomAge() time.Duration {
 	return c.AllowedSymptomAge
+}
+
+func (c *ServerConfig) GetEnforceRealmQuotas() bool {
+	return c.EnforceRealmQuotas
+}
+
+func (c *ServerConfig) GetRateLimitConfig() *ratelimit.Config {
+	return &c.RateLimit
 }
 
 func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {

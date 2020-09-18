@@ -30,6 +30,8 @@ var (
 
 type Metrics struct {
 	IssueAttempts   *stats.Int64Measure
+	QuotaErrors     *stats.Int64Measure
+	QuotaExceeded   *stats.Int64Measure
 	CodesIssued     *stats.Int64Measure
 	CodeIssueErrors *stats.Int64Measure
 	SMSSent         *stats.Int64Measure
@@ -42,6 +44,28 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/attempt_count",
 		Measure:     mIssueAttempts,
 		Description: "The count of the number of attempts to issue codes",
+		TagKeys:     []tag.Key{observability.RealmTagKey},
+		Aggregation: view.Count(),
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
+	mQuotaErrors := stats.Int64(MetricPrefix+"/quota_errors", "The number of errors when taking from the limiter", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/quota_errors_count",
+		Measure:     mQuotaErrors,
+		Description: "The count of the number of errors to the limiter",
+		TagKeys:     []tag.Key{observability.RealmTagKey},
+		Aggregation: view.Count(),
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
+	mQuotaExceeded := stats.Int64(MetricPrefix+"/quota_exceeded", "The number of times quota has been exceeded", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/quota_exceeded_count",
+		Measure:     mQuotaExceeded,
+		Description: "The count of the number of times quota has been exceeded",
 		TagKeys:     []tag.Key{observability.RealmTagKey},
 		Aggregation: view.Count(),
 	}); err != nil {
@@ -94,6 +118,8 @@ func registerMetrics() (*Metrics, error) {
 
 	return &Metrics{
 		IssueAttempts:   mIssueAttempts,
+		QuotaErrors:     mQuotaErrors,
+		QuotaExceeded:   mQuotaExceeded,
 		CodesIssued:     mCodesIssued,
 		CodeIssueErrors: mCodesIssued,
 		SMSSent:         mSMSSent,
