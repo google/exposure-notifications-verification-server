@@ -57,9 +57,9 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 		u.AddError("name", "cannot be blank")
 	}
 
-	//if len(u.Errors()) > 0 {
-	//	return fmt.Errorf("validation failed")
-	//}
+	if len(u.Errors()) > 0 {
+		return fmt.Errorf("validation failed")
+	}
 	return nil
 }
 
