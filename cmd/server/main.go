@@ -363,15 +363,19 @@ func realMain(ctx context.Context) error {
 	{
 		adminSub := r.PathPrefix("/admin").Subrouter()
 		adminSub.Use(requireAuth)
-		adminSub.Use(loadCurrentRealm)
 		adminSub.Use(requireVerified)
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
-		adminController := admin.New(ctx, config, db, h)
-		adminSub.Handle("/realms", adminController.HandleIndex()).Methods("GET")
-		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("GET")
-		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("POST")
+		adminController := admin.New(ctx, config, db, auth, h)
+		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
+		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
+		adminSub.Handle("/realms/new", adminController.HandleRealmsCreate()).Methods("GET")
+
+		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
+		adminSub.Handle("/users", adminController.HandleUsersCreate()).Methods("POST")
+		adminSub.Handle("/users/new", adminController.HandleUsersCreate()).Methods("GET")
+		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUsersDelete()).Methods("DELETE")
 
 		adminSub.Handle("/info", adminController.HandleInfoShow()).Methods("GET")
 	}

@@ -1,0 +1,15 @@
+{{define "admin/navbar"}}
+<ul class="nav nav-pills justify-content-center mb-3">
+  <li class="nav-item">
+    <a class="nav-link{{if stringContains .currentPath "/admin/realms"}} active{{end}}" href="/admin/realms">Realms</a>
+  </li>
+
+  <li class="nav-item">
+    <a class="nav-link{{if stringContains .currentPath "/admin/users"}} active{{end}}" href="/admin/users">System admins</a>
+  </li>
+
+  <li class="nav-item">
+    <a class="nav-link{{if stringContains .currentPath "/admin/info"}} active{{end}}" href="/admin/info">Info</a>
+  </li>
+</ul>
+{{end}}

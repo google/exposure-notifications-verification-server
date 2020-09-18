@@ -1,4 +1,4 @@
-{{define "admin/newrealm"}}
+{{define "admin/realms/new"}}
 
 {{$realm := .realm}}
 
@@ -11,6 +11,7 @@
 
 <body class="bg-light">
   {{template "navbar" .}}
+  {{template "admin/navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
@@ -23,7 +24,7 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <form method="POST" action="/admin/realms/create">
+        <form method="POST" action="/admin/realms">
           {{ .csrfField }}
 
           <div class="form-label-group">
