@@ -96,7 +96,7 @@
 
       $cancel.on('click', function(event) {
         upload.cancel();
-        flash.error("Cancelled batch upload.");
+        flash.error("Canceled batch upload.");
       })
 
       $form.on('submit', function(event) {
@@ -115,7 +115,7 @@
       const batchSize = 10;
 
       function readFile() {
-        // State for managing cleanup and cancelling
+        // State for managing cleanup and canceling
         let cancelUpload = false;
         let cancel = () => {
           cancelUpload = true;
