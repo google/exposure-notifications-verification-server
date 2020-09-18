@@ -1100,6 +1100,37 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec("ALTER TABLE users DROP COLUMN IF EXISTS last_password_change").Error
 			},
 		},
+		{
+			ID: "00048-AddPasswordRotateToRealm",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS password_rotation_period_days integer NOT NULL DEFAULT 0`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS password_rotation_warning_days integer NOT NULL DEFAULT 0`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms DROP COLUMN IF EXISTS password_rotation_period_days`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS password_rotation_warning_days `,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 
