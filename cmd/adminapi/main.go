@@ -150,7 +150,7 @@ func realMain(ctx context.Context) error {
 		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
 
-		issueapiController, err := issueapi.New(ctx, config, db, h)
+		issueapiController, err := issueapi.New(ctx, config, db, limiterStore, h)
 		if err != nil {
 			return fmt.Errorf("issueapi.New: %w", err)
 		}

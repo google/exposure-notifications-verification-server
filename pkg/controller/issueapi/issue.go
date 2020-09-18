@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
@@ -191,6 +192,33 @@ func (c *Controller) HandleIssue() http.Handler {
 					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 					return
 				}
+			}
+		}
+
+		// If we got this far, we're about to issue a code.
+		dig, err := digest.HMACUint(realm.ID, c.config.GetRateLimitConfig().HMACKey)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		key := fmt.Sprintf("realm:quota:%s", dig)
+		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
+		if err != nil {
+			logger.Errorw("failed to take from limiter", "error", err)
+			stats.Record(ctx, c.metrics.QuotaErrors.M(1))
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
+			return
+		}
+		if !ok {
+			logger.Warnw("realm has exceeded daily quota",
+				"realm", realm.ID,
+				"limit", limit,
+				"reset", reset)
+			stats.Record(ctx, c.metrics.QuotaExceeded.M(1))
+
+			if c.config.GetEnforceRealmQuotas() {
+				c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
+				return
 			}
 		}
 

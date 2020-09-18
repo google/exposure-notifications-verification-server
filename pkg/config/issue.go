@@ -14,11 +14,17 @@
 
 package config
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+)
 
 // IssueAPIConfig is an interface that represents what is needed of the verification
 // code issue API.
 type IssueAPIConfig interface {
 	GetCollisionRetryCount() uint
 	GetAllowedSymptomAge() time.Duration
+	GetEnforceRealmQuotas() bool
+	GetRateLimitConfig() *ratelimit.Config
 }

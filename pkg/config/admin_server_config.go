@@ -47,6 +47,7 @@ type AdminAPIServerConfig struct {
 
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
+	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=false"`
 }
 
 // NewAdminAPIServerConfig returns the environment config for the Admin API server.
@@ -83,6 +84,14 @@ func (c *AdminAPIServerConfig) GetCollisionRetryCount() uint {
 
 func (c *AdminAPIServerConfig) GetAllowedSymptomAge() time.Duration {
 	return c.AllowedSymptomAge
+}
+
+func (c *AdminAPIServerConfig) GetEnforceRealmQuotas() bool {
+	return c.EnforceRealmQuotas
+}
+
+func (c *AdminAPIServerConfig) GetRateLimitConfig() *ratelimit.Config {
+	return &c.RateLimit
 }
 
 func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
