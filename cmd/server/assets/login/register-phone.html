@@ -125,8 +125,8 @@
           $registerDiv.hide();
           $pinDiv.show();
         }).catch(function(err) {
-          clearExistingFlash();
-          flash(err.message, "danger");
+          flash.clear();
+          flash.error(err.message);
           $submit.prop('disabled', false);
         });
       });
@@ -143,12 +143,12 @@
         // Complete enrollment.
         let user = firebase.auth().currentUser
         user.multiFactor.enroll(multiFactorAssertion, $displayName.val()).then(function() {
-          clearExistingFlash();
-          flash("SMS authentication enrolled successfully.", "success");
+          flash.clear();
+          flash.alert('SMS authentication enrolled successfully.');
           $skip.text("Continue")
         }).catch(function(err) {
-          clearExistingFlash();
-          flash(err.message, "danger");
+          flash.clear();
+          flash.error(err.message);
           $submit.prop('disabled', false);
         });
       });
@@ -172,8 +172,8 @@
           .then(function(verificationId) {
             verId = verificationId;
           }).catch(function(error) {
-            clearExistingFlash();
-            flash(error.message, "danger");
+            flash.clear();
+            flash.error(error.message);
             $submit.prop('disabled', false);
           });
       });

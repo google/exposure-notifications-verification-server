@@ -26,7 +26,7 @@
       firebase.auth().signOut().then(function () {
         window.location.assign("/");
       }).catch(function (error) {
-        flash("Error signing out, close browser window.", "danger")
+        flash.error('Error signing out, close browser window.');
       });
     });
   </script>

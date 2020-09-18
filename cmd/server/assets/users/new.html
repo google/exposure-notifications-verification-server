@@ -44,9 +44,9 @@
 
     firebase.auth().sendPasswordResetEmail(email)
       .then(function() {
-        flash("Successfully created user '" + {{.user.Name}} + "'.", "success");
+        flash.alert(`Successfully created user '{{.user.Name}}'.`);
       }).catch(function(error) {
-        flash(error.message, "danger");
+        flash.error(error.message);
       }).then(function() {
         $submit.prop('disabled', false);
         $allUsers.removeClass('disabled');
