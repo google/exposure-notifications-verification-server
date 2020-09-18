@@ -27,6 +27,16 @@
       <div class="card-body">
         {{template "beta-notice" .}}
 
+        <p>
+          Use this form to import a list of users. The server will create them in batches.
+        </p>
+
+        <pre>Example file contents:
+          <code>
+          email@example.com, Anne
+          another@example.com, Bob
+        </code>
+      </pre>
         <form id="form">
           <div class="custom-file">
             <input type="file" class="custom-file-input" id="csv" accept=".csv" required>
@@ -102,7 +112,7 @@
         reader.readAsText($csv[0].files[0]);
       });
 
-      const batchSize = 10
+      const batchSize = 1
 
       function readFile() {
         // State for managing cleanup and cancelling
@@ -136,10 +146,7 @@
             }
 
             if (batch.length >= batchSize || i == rows.length - 1) {
-              await uploadBatch(batch).catch(err => {
-                if (!cancelUpload) { alert(err, "danger"); }
-                cancelUpload = true;
-              });
+              await uploadBatch(batch).catch(err => { });
               if (cancelUpload) {
                 flash.warning("Successfully created " + totalUsersCreated + " new users."
                   + (rows.length - i) + " remaining.");
@@ -180,7 +187,13 @@
                 flash.error(error.message);
               });
           }
-        }
+          if (result.error) {
+            flash.error(result.error, "danger");
+          }
+        },
+        error: function(xhr, status, e) {
+          flash.error(e, "danger");
+        },
       });
     }
   </script>

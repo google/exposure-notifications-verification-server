@@ -81,13 +81,20 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			}
 		}
 
-		if err := batchErr.ErrorOrNil(); err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
+		response := &api.UserBatchResponse{
+			NewUsers: newUsers,
 		}
 
-		c.h.RenderJSON(w, http.StatusOK, &api.UserBatchResponse{
-			NewUsers: newUsers,
-		})
+		if err := batchErr.ErrorOrNil(); err != nil {
+			response.Error = err.Error()
+			response.ErrorCode = string(http.StatusInternalServerError)
+
+			if len(newUsers) == 0 { // We return partial success if any succeeded.
+				c.h.RenderJSON(w, http.StatusInternalServerError, response)
+				return
+			}
+		}
+
+		c.h.RenderJSON(w, http.StatusOK, response)
 	})
 }
