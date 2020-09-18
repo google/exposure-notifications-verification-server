@@ -41,7 +41,7 @@ type ServerConfig struct {
 	Port string `env:"PORT,default=8080"`
 
 	// Login Config
-	SessionDuration   time.Duration `env:"SESSION_DURATION,default=24h"`
+	SessionDuration   time.Duration `env:"SESSION_DURATION, default=20h"`
 	RevokeCheckPeriod time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
 
 	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.
