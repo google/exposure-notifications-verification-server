@@ -81,6 +81,9 @@ func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		// Record the issue attempt.
+		stats.Record(ctx, c.metrics.IssueAttempts.M(1))
+
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
@@ -118,20 +121,18 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
+		// Add realm so that metrics are groupable on a per-realm basis.
+		ctx, err = tag.New(ctx, tag.Upsert(observability.RealmTagKey, realm.Name))
+		if err != nil {
+			logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
+		}
+
 		// If this realm requires a date but no date was specified, return an error.
 		if request.SymptomDate == "" && realm.RequireDate {
 			stats.Record(ctx, c.metrics.IssueAttempts.M(1), c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate))
 			return
 		}
-
-		// Add realm so that metrics are groupable on a per-realm basis.
-		ctx, err = tag.New(ctx,
-			tag.Upsert(observability.RealmTagKey, realm.Name))
-		if err != nil {
-			logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
-		}
-		stats.Record(ctx, c.metrics.IssueAttempts.M(1))
 
 		// Validate that the request with the provided test type is valid for this
 		// realm.
