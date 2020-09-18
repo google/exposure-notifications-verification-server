@@ -216,8 +216,6 @@
               that their password will expire soon.
             </small>
           </div>
-
-        </div>
         </div>
       </div>
 
@@ -277,9 +275,9 @@
             </div>
           </div>
 
-          <div class="form-group row">
+          <div class="form-group row mb-n1">
             <label for="codeLength" class="col-sm-3">Code expires after:</label>
-            <div class="col-sm-8">
+            <div class="col-sm-2">
               {{if $realm.EnableENExpress}}
                 <input class="form-control{{if $realm.ErrorsFor "CodeDurationSeconds"}} is-invalid{{end}}" name="codeDuration" id="codeDuration" type="text" value="{{$realm.GetCodeDurationMinutes}}" readonly />
               {{else}}
@@ -289,15 +287,23 @@
                   <option value="{{$scm}}" {{if (eq $scm $current)}}selected{{end}}>{{$scm}}</option>
                   {{end}}
                 </select>
-                <small class="form-text text-muted">
-                  The short code can be valid from anywhere between <code>5</code> and <code>60</code>
-                  minutes. If you are using SMS deeplinks, it is recommended to keep this duration
-                  short and let the long code be valid for a longer period (up to <code>24</code> hours).
-                </small>
               {{end}}
             </div>
-            <div class="col-sm-1">minutes</div>
+            <div class="input-group-append">
+              <label class="ml-3" for="passwordWarn">minutes</label>
+            </div>
           </div>
+          {{if not $realm.EnableENExpress}}
+          <div class="row mb-3">
+            <div class="col-sm-3"></div>
+            <small class="form-text text-muted col">
+              The short code can be valid from anywhere between <code>5</code> and <code>60</code>
+              minutes. If you are using SMS deeplinks, it is recommended to keep this duration
+              short and let the long code be valid for a longer period (up to <code>24</code> hours).
+            </small>
+          </div>
+          {{end}}
+
 
           <div class="form-group row">
             <label for="codeLength" class="col-sm-3">Long code characters:</label>
@@ -319,9 +325,9 @@
             </div>
           </div>
 
-          <div class="form-group row">
+          <div class="form-group row  mb-n3">
             <label for="codeLength" class="col-sm-3">Long code expires after:</label>
-            <div class="col-sm-8">
+            <div class="col-sm-2">
               {{if $realm.EnableENExpress}}
                 <input class="form-control{{if $realm.ErrorsFor "LongCodeDurationSeconds"}} is-invalid{{end}}" name="longCodeDuration" id="longCodeDuration" type="text" value="{{$realm.GetLongCodeDurationHours}}" readonly />
               {{else}}
@@ -331,13 +337,20 @@
                     <option value="{{$lch}}" {{if (eq $lch $current)}}selected{{end}}>{{$lch}}</option>
                   {{end}}
                 </select>
-                <small class="form-text text-muted">
-                  The long code can be valid between <code>1</code> and <code>24</code> hours.
-                </small>
               {{end}}
             </div>
-            <div class="col-sm-1">hours</div>
+            <div class="input-group-append">
+              <label class="ml-3 col" for="passwordWarn">hours</label>
+            </div>
           </div>
+          {{if not $realm.EnableENExpress}}
+          <div class="row mb-3">
+            <div class="col-sm-3"></div>
+            <small class="form-text text-muted col">
+              The long code can be valid between <code>1</code> and <code>24</code> hours.
+            </small>
+          </div>
+          {{end}}
 
           <div class="form-group row">
             <label for="name" class="col-sm-3">SMS text template:</label>
