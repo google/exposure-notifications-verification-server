@@ -187,7 +187,7 @@ func (db *Database) TouchUserRevokeCheck(u *User) error {
 func (u *User) CreateFirebaseUser(ctx context.Context, fbAuth *auth.Client) (bool, error) {
 	if _, err := fbAuth.GetUserByEmail(ctx, u.Email); err != nil {
 		if auth.IsInvalidEmail(err) {
-			return false, fmt.Errorf("Invalid email: %q", u.Email)
+			return false, fmt.Errorf("invalid email: %q", u.Email)
 		}
 		if !auth.IsUserNotFound(err) {
 			return false, fmt.Errorf("failed lookup firebase user: %w", err)
