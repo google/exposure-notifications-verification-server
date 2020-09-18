@@ -173,7 +173,7 @@
             </div>
           </div>
 
-          <div class="form-group row">
+          <div class="form-group row mb-n3">
             <label for="passwordRotate" class="col-sm-3">Password rotation every:</label>
             <div class="col-sm-2">
               <select class="form-control" name="passwordRotate" id="passwordRotate">
@@ -187,7 +187,7 @@
               <label class="ml-3" for="passwordWarn">days</label>
             </div>
           </div>
-          <div class="row">
+          <div class="row mb-3">
             <div class="col-sm-3"></div>
             <small class="form-text text-muted col">
               The server will require the user to change their password after this number of
@@ -195,7 +195,7 @@
             </small>
           </div>
 
-          <div class="form-group row">
+          <div class="form-group row  mb-n3">
             <label for="passwordRotate" class="col-sm-3">Password rotation warning:</label>
             <div class="col-sm-2">
               <select class="custom-select{{if $realm.ErrorsFor "passwordWarn"}} is-invalid{{end}}" name="passwordWarn" id="passwordWarn">
@@ -209,7 +209,7 @@
                 <label class="ml-3" for="passwordWarn">days before rotation</label>
               </div>
           </div>
-          <div class="row">
+          <div class="row mb-3">
             <div class="col-sm-3"></div>
             <small class="form-text text-muted col">
               When the next password rotation is due in this many days, the server will warn the users
