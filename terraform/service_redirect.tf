@@ -55,7 +55,7 @@ resource "google_cloud_run_service" "redirect" {
       timeout_seconds      = 25
 
       containers {
-        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-redirect/enx-redirect:initial"
+        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/enx-redirect:initial"
 
         resources {
           limits = {
