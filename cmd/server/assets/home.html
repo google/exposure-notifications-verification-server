@@ -386,6 +386,12 @@
           }
         },
         error: function(xhr, resp, text) {
+          // On unauthorized, force a logout
+          if (xhr.status === 401 || xhr.status == 403) {
+            window.location.assign('/signout');
+            return;
+          }
+
           // Show reset button
           $buttonReset.removeClass('d-none');
 
