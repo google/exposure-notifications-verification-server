@@ -27,6 +27,7 @@ func (c *Controller) HandleSelectPassword() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
+		m["requirements"] = &c.config.PasswordRequirements
 		c.h.RenderHTML(w, "login/select-password", m)
 	})
 }
