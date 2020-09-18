@@ -83,6 +83,10 @@ locals {
     VERIFICATION_ADMIN_API  = google_cloud_run_service.adminapi.status.0.url
     VERIFICATION_SERVER_API = google_cloud_run_service.apiserver.status.0.url
   }
+
+  redirect_config = {
+    HOSTNAME_TO_REGION = join(",", [for o in var.redirect_domain_map : format("%s=%s", o.host, o.region)])
+  }
 }
 
 output "cookie_keys" {

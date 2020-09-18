@@ -167,6 +167,32 @@ steps:
   - 'build-e2e-runner'
 
 #
+# enx-redirect
+#
+- id: 'build-enx-redirect'
+  name: 'golang:1.15.1'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/enx-redirect'
+  - './cmd/enx-redirect'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-enx-redirect'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}'
+  - '--build-arg=SERVICE=enx-redirect'
+  - '.'
+  waitFor:
+  - 'build-enx-redirect'
+
+#
 # migrate
 #
 - id: 'build-migrate'
@@ -249,6 +275,7 @@ images:
 - 'gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}'
+- 'gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/modeler:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'
