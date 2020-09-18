@@ -1,7 +1,7 @@
 {{define "flash"}}
-<div style="position:absolute; top:0; right:1rem; z-index:2000;">
+<div id="alerts-container" style="position:absolute; top:0; right:1rem; z-index:2000;">
   {{range $msg := .flash.Errors}}
-    <div class="toast bg-white" role="alert" aria-live="assertive" aria-atomic="true" data-delay="10000" data-autohide="false">
+    <div class="toast bg-white" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
       <div class="toast-header text-danger">
         <span class="oi oi-circle-x mr-2" aria-hidden="true"></span>
         <strong class="mr-auto">Error</strong>
@@ -15,7 +15,7 @@
     </div>
   {{end}}
   {{range $msg := .flash.Warnings}}
-    <div class="toast bg-white" role="alert" aria-live="assertive" aria-atomic="true" data-delay="10000" data-autohide="false">
+    <div class="toast bg-white" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
       <div class="toast-header text-warning">
         <span class="oi oi-warning mr-2" aria-hidden="true"></span>
         <strong class="mr-auto">Warning</strong>

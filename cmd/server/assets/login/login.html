@@ -85,7 +85,7 @@
 
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
           .then(function(userCredential) {
-            clearExistingFlash();
+            flash.clear();
           })
           .catch(function(error) {
             if (error.code == 'auth/multi-factor-auth-required') {
@@ -105,17 +105,17 @@
                     $loginDiv.hide();
                     $pinDiv.show();
                   }).catch(function(error) {
-                    clearExistingFlash();
-                    flash(error.message, "danger");
+                    flash.clear();
+                    flash.error(error.message);
                     $submit.prop('disabled', false);
                   });
               } else {
-                clearExistingFlash();
-                flash("Unsupported 2nd factor authentication type.", "danger");
+                flash.clear();
+                flash.error('Unsupported 2nd factor authentication type.');
               }
             } else {
-              clearExistingFlash();
-              flash(error.message, "danger");
+              flash.clear();
+              flash.error(error.message);
               $submit.prop('disabled', false);
             }
           });
@@ -133,8 +133,8 @@
         // Complete sign-in.
         resolver.resolveSignIn(multiFactorAssertion)
           .catch(function(err) {
-            clearExistingFlash();
-            flash(err.message, "danger");
+            flash.clear();
+            flash.error(err.message);
             $submit.prop('disabled', false);
           });
       });
@@ -158,8 +158,8 @@
           .then(function(verificationId) {
             verId = verificationId;
           }).catch(function(error) {
-            clearExistingFlash();
-            flash(error.message, "danger");
+            flash.clear();
+            flash.error(error.message);
             $submit.prop('disabled', false);
           });
       });

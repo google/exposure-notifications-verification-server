@@ -57,8 +57,8 @@
         let user = firebase.auth().currentUser
         if (!user.emailVerified) {
           user.sendEmailVerification().then(function() {
-            clearExistingFlash();
-            flash("Verification email sent.", "success");
+            flash.clear();
+            flash.alert('Verification email sent.');
             $verify.prop('disabled', true);
           });
         }
