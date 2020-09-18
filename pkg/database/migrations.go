@@ -1081,6 +1081,15 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00046-AddWelcomeMessageToRealm",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS welcome_message text").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS welcome_message").Error
+			},
+		},
 	})
 }
 

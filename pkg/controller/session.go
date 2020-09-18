@@ -27,12 +27,13 @@ import (
 type sessionKey string
 
 const (
-	emailVerificationPrompted = sessionKey("emailVerificationPrompted")
-	factorCount               = sessionKey("factorCount")
-	mfaPrompted               = sessionKey("mfaPrompted")
-	sessionKeyFirebaseCookie  = sessionKey("firebaseCookie")
-	sessionKeyLastActivity    = sessionKey("lastActivity")
-	sessionKeyRealmID         = sessionKey("realmID")
+	emailVerificationPrompted         = sessionKey("emailVerificationPrompted")
+	factorCount                       = sessionKey("factorCount")
+	mfaPrompted                       = sessionKey("mfaPrompted")
+	sessionKeyFirebaseCookie          = sessionKey("firebaseCookie")
+	sessionKeyLastActivity            = sessionKey("lastActivity")
+	sessionKeyRealmID                 = sessionKey("realmID")
+	sessionKeyWelcomeMessageDisplayed = sessionKey("welcomeMessageDisplayed")
 )
 
 // StoreSessionFirebaseCookie stores the firebase cookie in the session. If the
@@ -70,6 +71,7 @@ func StoreSessionRealm(session *sessions.Session, realm *database.Realm) {
 	if session == nil || realm == nil {
 		return
 	}
+	ClearWelcomeMessageDisplayed(session)
 	session.Values[sessionKeyRealmID] = realm.ID
 }
 
@@ -205,6 +207,37 @@ func EmailVerificationPromptedFromSession(session *sessions.Session) bool {
 	f, ok := v.(bool)
 	if !ok {
 		delete(session.Values, emailVerificationPrompted)
+		return false
+	}
+
+	return f
+}
+
+// StoreSessionWelcomeMessageDisplayed stores if the user was displayed the
+// realm welcome message.
+func StoreSessionWelcomeMessageDisplayed(session *sessions.Session, prompted bool) {
+	if session == nil {
+		return
+	}
+	session.Values[sessionKeyWelcomeMessageDisplayed] = prompted
+}
+
+// ClearWelcomeMessageDisplayed clears the welcome message prompt bit.
+func ClearWelcomeMessageDisplayed(session *sessions.Session) {
+	sessionClear(session, sessionKeyWelcomeMessageDisplayed)
+}
+
+// WelcomeMessageDisplayedFromSession extracts if the user was displayed the
+// realm welcome message.
+func WelcomeMessageDisplayedFromSession(session *sessions.Session) bool {
+	v := sessionGet(session, sessionKeyWelcomeMessageDisplayed)
+	if v == nil {
+		return false
+	}
+
+	f, ok := v.(bool)
+	if !ok {
+		delete(session.Values, sessionKeyWelcomeMessageDisplayed)
 		return false
 	}
 

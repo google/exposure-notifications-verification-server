@@ -20,6 +20,7 @@ package home
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 	"time"
 
@@ -65,6 +66,12 @@ func (c *Controller) HandleHome() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
 			controller.MissingRealm(w, r, c.h)
@@ -78,6 +85,7 @@ func (c *Controller) HandleHome() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
+
 		// Set test date params
 		now := time.Now().UTC()
 		m["maxDate"] = now.Format("2006-01-02")
@@ -85,6 +93,19 @@ func (c *Controller) HandleHome() http.Handler {
 		m["maxSymptomDays"] = c.displayAllowedDays
 		m["duration"] = realm.CodeDuration.Duration.String()
 		m["hasSMSConfig"] = hasSMSConfig
+
+		// If the realm has a welcome message and it has not been displayed this
+		// session, display it.
+		if realm.WelcomeMessage != "" && !controller.WelcomeMessageDisplayedFromSession(session) {
+			// Don't display it again.
+			controller.StoreSessionWelcomeMessageDisplayed(session, true)
+
+			// This is marked as HTML safe because it's run through bluemonday during
+			// parsing. Also, realm admins are mostly trusted to not XSS themselves.
+			m["welcomeMessage"] = template.HTML(realm.RenderWelcomeMessage())
+		}
+
+		// Render
 		c.h.RenderHTML(w, "home", m)
 	})
 }

@@ -29,6 +29,12 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
+    {{if .welcomeMessage}}
+      <div class="alert alert-secondary" role="alert">
+        <div class="mb-n3">{{.welcomeMessage}}</div>
+      </div>
+    {{end}}
+
     <h1>Create verification code</h1>
     <p>
       Complete the following form to issue a single-use token to verify a
@@ -43,8 +49,6 @@
     {{else if $currentRealm.ValidTestType "likely" }}
       {{$colWidth = 6}}
     {{end}}
-
-    <div id="errors" class="alert alert-danger d-none"></div>
 
     <form id="issue" action="#">
       <div id="form-area">
