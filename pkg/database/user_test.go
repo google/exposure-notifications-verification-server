@@ -74,7 +74,7 @@ func TestUserLifecycle(t *testing.T) {
 	}
 
 	// Update password changed
-	now := time.Now()
+	now := time.Now().UTC()
 	if err := db.PasswordChanged(email, now); err != nil {
 		t.Fatalf("error updating password changed time: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestUserLifecycle(t *testing.T) {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 
-		if got, want := got.LastPasswordChange, now.UTC(); got != want {
+		if got, want := got.LastPasswordChange, now; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 	}

@@ -57,9 +57,9 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 		u.AddError("name", "cannot be blank")
 	}
 
-	if len(u.Errors()) > 0 {
-		return fmt.Errorf("validation failed")
-	}
+	//if len(u.Errors()) > 0 {
+	//	return fmt.Errorf("validation failed")
+	//}
 	return nil
 }
 
@@ -231,12 +231,17 @@ func (u *User) CreateFirebaseUser(ctx context.Context, fbAuth *auth.Client) (boo
 
 // PasswordChanged updates the last password change timestamp of the user.
 func (db *Database) PasswordChanged(email string, t time.Time) error {
-	if err := db.db.
+	q := db.db.
 		Model(&User{}).
 		Where("email = ?", email).
-		Update("last_pwd_change", t.UTC()).
-		Error; err != nil {
-		return err
+		Updates(User{LastPasswordChange: t.UTC()})
+
+	if q.Error != nil {
+		return q.Error
+	}
+
+	if q.RowsAffected != 1 {
+		return fmt.Errorf("no rows affected user %s", email)
 	}
 	return nil
 }
