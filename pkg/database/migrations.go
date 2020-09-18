@@ -1081,6 +1081,16 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00046-AddPasswordLastChangedToUsers",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email verification required to realm")
+				return tx.Exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_pwd_change TYPE date DEFAULT CURRENT_DATE").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE users DROP COLUMN IF EXISTS last_pwd_change").Error
+			},
+		},
 	})
 }
 
