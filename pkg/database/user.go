@@ -234,7 +234,7 @@ func (db *Database) PasswordChanged(email string, t time.Time) error {
 	q := db.db.
 		Model(&User{}).
 		Where("email = ?", email).
-		Update("last_password_change", t.UTC())
+		UpdateColumn("last_password_change", t.UTC())
 	if q.Error != nil {
 		return q.Error
 	}
