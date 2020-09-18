@@ -209,25 +209,24 @@ func realMain(ctx context.Context) error {
 			sub.Use(rateLimit)
 
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
-			sub.Handle("/login/create", loginController.HandleLoginCreate()).Methods("GET")
 			sub.Handle("/login/reset-password", loginController.HandleResetPassword()).Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
-
-			// Verifying email requires the user is logged in
-			sub = r.PathPrefix("").Subrouter()
-			sub.Use(requireAuth)
-			sub.Use(rateLimit)
-			sub.Use(loadCurrentRealm)
-			sub.Handle("/login/verify-email", loginController.HandleVerifyEmail()).Methods("GET")
 
 			// Realm selection
 			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
-			sub.Use(requireVerified)
 			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
+
+			// Verifying email requires the user is logged in
+			sub = r.PathPrefix("").Subrouter()
+			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
+			sub.Use(requireRealm)
+			sub.Handle("/login/verify-email", loginController.HandleVerifyEmail()).Methods("GET")
 
 			// SMS auth registration is realm-specific, so it needs to load the current realm.
 			sub = r.PathPrefix("").Subrouter()
@@ -243,9 +242,9 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(requireVerified)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
+		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
@@ -263,9 +262,9 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/code").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(requireVerified)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
+		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
@@ -279,9 +278,9 @@ func realMain(ctx context.Context) error {
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(requireVerified)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireAdmin)
+		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
@@ -300,13 +299,13 @@ func realMain(ctx context.Context) error {
 	{
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(requireAuth)
-		userSub.Use(requireVerified)
 		userSub.Use(loadCurrentRealm)
 		userSub.Use(requireAdmin)
+		userSub.Use(requireVerified)
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, cacher, config, db, h)
+		userController := user.New(ctx, auth, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).Queries("offset", "{[0-9]*?}").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
@@ -322,13 +321,13 @@ func realMain(ctx context.Context) error {
 	{
 		realmSub := r.PathPrefix("/realm").Subrouter()
 		realmSub.Use(requireAuth)
-		realmSub.Use(requireVerified)
 		realmSub.Use(loadCurrentRealm)
 		realmSub.Use(requireAdmin)
+		realmSub.Use(requireVerified)
 		realmSub.Use(requireMFA)
 		realmSub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, cacher, config, db, h)
+		realmadminController := realmadmin.New(ctx, cacher, config, db, limiterStore, h)
 		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
 		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
@@ -363,8 +362,8 @@ func realMain(ctx context.Context) error {
 	{
 		adminSub := r.PathPrefix("/admin").Subrouter()
 		adminSub.Use(requireAuth)
-		adminSub.Use(requireVerified)
 		adminSub.Use(loadCurrentRealm)
+		adminSub.Use(requireVerified)
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
@@ -372,6 +371,8 @@ func realMain(ctx context.Context) error {
 		adminSub.Handle("/realms", adminController.HandleIndex()).Methods("GET")
 		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("GET")
 		adminSub.Handle("/realms/create", adminController.HandleCreateRealm()).Methods("POST")
+
+		adminSub.Handle("/info", adminController.HandleInfoShow()).Methods("GET")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be

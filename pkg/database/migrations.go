@@ -965,7 +965,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 		},
 		{
-			ID: "00041-AddRealmAbuseProtection",
+			ID: "00041-AddRealmAbusePrevention",
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS abuse_prevention_enabled bool NOT NULL DEFAULT false`,
@@ -995,6 +995,60 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 
 				return nil
+			},
+		},
+		{
+			ID: "00042-ChangeRealmAbusePreventionLimitDefault",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms ALTER COLUMN abuse_prevention_limit SET DEFAULT 10`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms ALTER COLUMN abuse_prevention_limit SET DEFAULT 100`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00043-CreateModelerStatus",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&ModelerStatus{}).Error; err != nil {
+					return err
+				}
+				if err := tx.Create(&ModelerStatus{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("modeler_statuses").Error
+			},
+		},
+		{
+			ID: "00035-AddEmailVerifiedRequiredToRealms",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email verification required to realm")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verified_mode INTEGER DEFAULT 0").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS email_verified_mode").Error
 			},
 		},
 	})

@@ -38,3 +38,28 @@
   }
 </script>
 {{end}}
+
+{{define "login/pindiv"}}
+<div class="card shadow-sm" style="display:none;" id="sms-code-div">
+  <div class="card-header">
+    SMS Confirmation Code
+    <button type="button" class="close" aria-label="Close" id="sms-code-close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="card-body">
+    <form id="sms-code-form" class="floating-form" action="/" method="POST">
+      <div class="form-label-group">
+        <input type="text" id="sms-code" name="sms-code" class="form-control" placeholder="Code" autocomplete="one-time-code" required autofocus />
+        <label for="sms-code">Code</label>
+        <small class="form-text text-muted">
+          Please enter the numerical code that was sent via SMS.
+        </small>
+      </div>
+
+      <button type="submit" id="sms-code-submit" class="btn btn-primary btn-block">Confirm code</button>
+      <a id="sms-code-resend" class="card-link btn-block disabled" disabled>Resend SMS</a>
+    </form>
+  </div>
+</div>
+{{end}}

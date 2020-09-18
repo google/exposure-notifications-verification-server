@@ -42,6 +42,7 @@ func New(ctx context.Context, config *config.RedirectConfig, h *render.Renderer)
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
+	logger.Infow("redirect configuration", "hostnameToRegion", cfgMap)
 
 	return &Controller{
 		config:           config,

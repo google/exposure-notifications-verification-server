@@ -96,17 +96,22 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully created user '%v'", form.Name)
-		c.renderNew(ctx, w, user, true)
+		created, err := user.CreateFirebaseUser(ctx, c.client)
+		if err != nil {
+			flash.Alert("Failed to create user: %v", err)
+			c.renderNew(ctx, w, user, false)
+		}
+
+		c.renderNew(ctx, w, user, created)
 	})
 }
 
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, success bool) {
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, createdNewUser bool) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
-	if success {
+	if createdNewUser {
 		m["firebase"] = c.config.Firebase
 	}
-	m["created"] = success
+	m["created"] = createdNewUser
 	c.h.RenderHTML(w, "users/new", m)
 }

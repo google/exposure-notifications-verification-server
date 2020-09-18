@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package login defines the controller for the login page.
-package login
+package admin
 
 import (
 	"net/http"
@@ -21,23 +20,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleLoginCreate() http.Handler {
+// HandleInfoShow renders the list of system admins.
+func (c *Controller) HandleInfoShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		// If there's a firebase cookie in the session, try to redirect to /home. If
-		// the cookie is invalid, the auth middleware will pick it up, delete the
-		// cookie from the session, and kick them back here.
-		session := controller.SessionFromContext(ctx)
-		if session != nil {
-			if c := controller.FirebaseCookieFromSession(session); c != "" {
-				http.Redirect(w, r, "/home", http.StatusSeeOther)
-				return
-			}
-		}
-
 		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/create", m)
+		c.h.RenderHTML(w, "admin/info", m)
 	})
 }

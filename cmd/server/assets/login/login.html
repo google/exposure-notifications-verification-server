@@ -15,10 +15,11 @@
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center align-self-center">
         <div class="col-sm-6">
-          <div class="card shadow-sm">
+
+          <div class="card shadow-sm" id="login-div">
             <div class="card-header">COVID-19 test verification</div>
             <div class="card-body">
-              <form id="loginForm" class="floating-form" action="/" method="POST">
+              <form id="login-form" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
                   <input type="email" id="email" name="email" class="form-control" placeholder="Email address" required
                     autofocus />
@@ -32,12 +33,13 @@
                 </div>
 
                 <button type="submit" id="submit" class="btn btn-primary btn-block">Login</button>
+                <a class="card-link btn-block" href="login/reset-password">Forgot password</a>
               </form>
-              <div class="card-body">
-                <a class="card-link" href="login/reset-password">Forgot password</a>
-              </div>
             </div>
           </div>
+
+          {{template "login/pindiv" .}}
+
         </div>
       </div>
     </div>
@@ -60,10 +62,20 @@
       });
 
     $(function() {
-      let $form = $('#loginForm');
+      let $loginDiv = $('#login-div');
+      let $form = $('#login-form');
       let $submit = $('#submit');
       let $email = $('#email');
       let $password = $('#password');
+
+      let $pinDiv = $('#sms-code-div');
+      let $pinClose = $('#sms-code-close');
+      let $pinForm = $('#sms-code-form');
+      let $pin = $('#sms-code');
+      let $submitPin = $('#sms-code-submit');
+      let $resendPin = $('#sms-code-resend');
+
+      let verId = "";
 
       $form.on('submit', function(event) {
         event.preventDefault();
@@ -73,14 +85,13 @@
 
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
           .then(function(userCredential) {
-            clearExistingFlash();
+            flash.clear();
           })
           .catch(function(error) {
             if (error.code == 'auth/multi-factor-auth-required') {
               resolver = error.resolver;
               let selectedIndex = 0 // TODO: show list of factors
               if (resolver.hints[selectedIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
-
                 let phoneInfoOptions = {
                   multiFactorHint: resolver.hints[selectedIndex],
                   session: resolver.session
@@ -88,30 +99,68 @@
                 let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
                 return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
                   .then(function(verificationId) {
-                    let verificationCode = window.prompt('Please enter the verification ' +
-                      'code that was sent to your mobile device.');
-
-                    // Ask user for the SMS verification code.
-                    let cred = firebase.auth.PhoneAuthProvider.credential(
-                      verificationId, verificationCode);
-                    let multiFactorAssertion =
-                      firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
-                    // Complete sign-in.
-                    return resolver.resolveSignIn(multiFactorAssertion)
+                    verId = verificationId;
+                    setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+                    $submitPin.prop('disabled', false);
+                    $loginDiv.hide();
+                    $pinDiv.show();
                   }).catch(function(error) {
-                    clearExistingFlash();
-                    flash(error.message, "danger");
+                    flash.clear();
+                    flash.error(error.message);
                     $submit.prop('disabled', false);
                   });
               } else {
-                clearExistingFlash();
-                flash("Unsupported 2nd factor authentication type.", "danger");
+                flash.clear();
+                flash.error('Unsupported 2nd factor authentication type.');
               }
             } else {
-              clearExistingFlash();
-              flash(error.message, "danger");
+              flash.clear();
+              flash.error(error.message);
               $submit.prop('disabled', false);
             }
+          });
+      });
+
+      $pinForm.on('submit', function(event) {
+        event.preventDefault();
+
+        // Disable the submit button so we only attempt once.
+        $submitPin.prop('disabled', true);
+
+        // Ask user for the SMS verification code.
+        let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
+        let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+        // Complete sign-in.
+        resolver.resolveSignIn(multiFactorAssertion)
+          .catch(function(err) {
+            flash.clear();
+            flash.error(err.message);
+            $submit.prop('disabled', false);
+          });
+      });
+
+      $pinClose.on('click', function(event) {
+        $submit.prop('disabled', false);
+        $loginDiv.show();
+        $pinDiv.hide();
+      });
+
+      $resendPin.on('click', function(event) {
+        $resendPin.addClass('disabled');
+        setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+
+        let phoneInfoOptions = {
+          multiFactorHint: resolver.hints[0],
+          session: resolver.session
+        };
+        let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+        phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+          .then(function(verificationId) {
+            verId = verificationId;
+          }).catch(function(error) {
+            flash.clear();
+            flash.error(error.message);
+            $submit.prop('disabled', false);
           });
       });
     });

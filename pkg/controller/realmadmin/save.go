@@ -16,11 +16,13 @@ package realmadmin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
@@ -42,11 +44,12 @@ func init() {
 
 func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
-		Name             string            `form:"name"`
-		RegionCode       string            `form:"regionCode"`
-		AllowedTestTypes database.TestType `form:"allowedTestTypes"`
-		MFAMode          int16             `form:"MFAMode"`
-		RequireDate      bool              `form:"requireDate"`
+		Name              string            `form:"name"`
+		RegionCode        string            `form:"regionCode"`
+		AllowedTestTypes  database.TestType `form:"allowedTestTypes"`
+		MFAMode           int16             `form:"MFAMode"`
+		EmailVerifiedMode int16             `form:"emailVerifiedMode"`
+		RequireDate       bool              `form:"requireDate"`
 
 		CodeLength          uint   `form:"codeLength"`
 		CodeDurationMinutes int64  `form:"codeDuration"`
@@ -60,6 +63,7 @@ func (c *Controller) HandleSave() http.Handler {
 
 		AbusePreventionEnabled     bool    `form:"abuse_prevention_enabled"`
 		AbusePreventionLimitFactor float32 `form:"abuse_prevention_limit_factor"`
+		AbusePreventionBurst       uint64  `form:"abuse_prevention_burst"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +107,8 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.LongCodeLength = form.LongCodeLength
 		realm.LongCodeDuration.Duration = time.Hour * time.Duration(form.LongCodeHours)
 		realm.SMSTextTemplate = form.SMSTextTemplate
-		realm.MFAMode = database.MFAMode(form.MFAMode)
+		realm.MFAMode = database.AuthRequirement(form.MFAMode)
+		realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
 		realm.AbusePreventionEnabled = form.AbusePreventionEnabled
 		realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
 		if err := c.db.SaveRealm(realm); err != nil {
@@ -157,6 +162,22 @@ func (c *Controller) HandleSave() http.Handler {
 					return
 				}
 			}
+		}
+
+		// Process temporary abuse prevention bursts
+		if burst := form.AbusePreventionBurst; burst > 0 {
+			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			key := fmt.Sprintf("realm:quota:%s", dig)
+			if err := c.limiter.Burst(ctx, key, burst); err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+
+			flash.Alert("Successfully added %d to realm quota!", burst)
 		}
 
 		flash.Alert("Successfully updated realm settings!")

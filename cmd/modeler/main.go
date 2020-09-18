@@ -12,27 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This server builds or re-builds the statistical models for predicting the
+// future number of codes a realm with generate for abuse prevention.
 package main
 
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/redirect"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/modeler"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/sethvargo/go-signalcontext"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/gorilla/mux"
-	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
@@ -57,7 +58,7 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	config, err := config.NewRedirectConfig(ctx)
+	config, err := config.NewModeler(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
@@ -75,35 +76,39 @@ func realMain(ctx context.Context) error {
 	defer oe.Close()
 	logger.Infow("observability exporter", "config", oeConfig)
 
-	// Create the router
-	r := mux.NewRouter()
+	// Setup database
+	db, err := config.Database.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load database config: %w", err)
+	}
+	if err := db.Open(ctx); err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer db.Close()
 
 	// Create the renderer
-	h, err := render.New(ctx, config.AssetsPath, config.DevMode)
+	h, err := render.New(ctx, "", config.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "html"))
+	// Create the router
+	r := mux.NewRouter()
 
-	// Enable debug headers
-	processDebug := middleware.ProcessDebug(ctx)
-	r.Use(processDebug)
-
-	redirectController, err := redirect.New(ctx, config, h)
+	// Rate limiting
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	r.PathPrefix("/").Handler(redirectController.HandleIndex()).Methods("GET")
+	defer limiterStore.Close(ctx)
 
-	mux := http.NewServeMux()
-	mux.Handle("/", r)
+	modelerController := modeler.New(ctx, config, db, limiterStore, h)
+	r.Handle("/", modelerController.HandleModel()).Methods("POST")
 
 	srv, err := server.New(config.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 	logger.Infow("server listening", "port", config.Port)
-	return srv.ServeHTTPHandler(ctx, mux)
+	return srv.ServeHTTPHandler(ctx, r)
 }

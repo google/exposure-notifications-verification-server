@@ -136,12 +136,23 @@
           </div>
 
           <div class="form-group row">
+            <label for="emailVerifiedMode" class="col-sm-3">Email verified:</label>
+            <div class="col-sm-9">
+              <select name="emailVerifiedMode" id="emailVerifiedMode" class="form-control">
+                <option value="1" {{if eq $realm.EmailVerifiedMode.String "required"}}selected{{end}}>Required</option>
+                <option value="0" {{if eq $realm.EmailVerifiedMode.String "prompt"}}selected{{end}}>Prompt after login</option>
+                <option value="2" {{if eq $realm.EmailVerifiedMode.String "optional"}}selected{{end}}>Optional</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group row">
             <label for="MFAMode" class="col-sm-3">Multi factor auth:</label>
             <div class="col-sm-9">
               <select name="MFAMode" id="MFAMode" class="form-control">
-                <option value=1 {{if eq $realm.MFAModeString "required"}}selected{{end}}>Required</option>
-                <option value=0 {{if eq $realm.MFAModeString "prompt"}}selected{{end}}>Prompt after login</option>
-                <option value=2 {{if eq $realm.MFAModeString "optional"}}selected{{end}}>Optional</option>
+                <option value="1" {{if eq $realm.MFAMode.String "required"}}selected{{end}}>Required</option>
+                <option value="0" {{if eq $realm.MFAMode.String "prompt"}}selected{{end}}>Prompt after login</option>
+                <option value="2" {{if eq $realm.MFAMode.String "optional"}}selected{{end}}>Optional</option>
               </select>
             </div>
           </div>
@@ -356,15 +367,18 @@
           Abuse prevention
         </div>
         <div class="card-body">
-          <div class="alert alert-warning">
-            <span class="oi oi-beaker"></span> This feature is still under
-            active development.
-          </div>
+          {{template "beta-notice" .}}
 
           <p>
             Abuse prevention uses the historical record of your realm's past
             daily code issuances to build a predictive model of future use,
             rejecting requests that fall outside of the predicted model.
+          </p>
+
+          <p>
+            Without abuse protection, an attacker with a compromised credential
+            could generate many fake codes and then use those codes to
+            subsequently upload many fake keys to the system.
           </p>
 
           <div class="form-group form-check">
@@ -405,6 +419,17 @@
               <small class="form-text text-muted">
                 This is the effective daily limit for {{$realm.Name}} after
                 applying your limit factor.
+              </small>
+            </div>
+
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_burst" name="abuse_prevention_burst" class="form-control" placeholder="Temporary burst" value="0" />
+              <label for="abuse_prevention_burst">Temporary burst</label>
+              <small class="form-text text-muted">
+                Set this value to temporarily add quota to your realm. You
+                should only do this when you've exceeded your daily quota and
+                still need to issue new codes. After 00:00 UTC, the quota will
+                reset back to the predicted model automatically.
               </small>
             </div>
           </div>

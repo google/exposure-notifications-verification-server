@@ -25,8 +25,8 @@ import (
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		path := r.URL.RequestURI()
-		host := r.Host
+		path := strings.ToLower(r.URL.RequestURI())
+		host := strings.ToLower(r.Host)
 		// Strip of the port if that was passed along in the host header.
 		if i := strings.Index(host, ":"); i > 0 {
 			host = host[0:i]
@@ -41,7 +41,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		c.logger.Warnw("unknown host", "host", host)
-
 		ctx := r.Context()
 		m := controller.TemplateMapFromContext(ctx)
 		m["requestURI"] = fmt.Sprintf("https://%s%s", host, path)
