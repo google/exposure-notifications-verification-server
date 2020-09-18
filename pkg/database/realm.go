@@ -218,7 +218,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	if r.PasswordRotationWarningDays > r.PasswordRotationPeriodDays {
-		r.AddError("pwdWarn", "may not be longer than password rotation period")
+		r.AddError("passwordWarn", "may not be longer than password rotation period")
 	}
 
 	if r.CodeLength < 6 {

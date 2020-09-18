@@ -174,17 +174,17 @@
           </div>
 
           <div class="form-group row">
-            <label for="pwdRotate" class="col-sm-3">Password rotation every:</label>
+            <label for="passwordRotate" class="col-sm-3">Password rotation every:</label>
             <div class="col-sm-2">
-              <select class="form-control" name="pwdRotate" id="pwdRotate">
+              <select class="form-control" name="passwordRotate" id="passwordRotate">
                 {{$current := $realm.PasswordRotationPeriodDays}}
-                {{range $prd := .pwdRotateDays}}
+                {{range $prd := .passwordRotateDays}}
                 <option value="{{$prd}}" {{if (eq $prd $current)}}selected{{end}}>{{if (eq $prd 0)}}Off{{else}}{{$prd}}{{end}}</option>
                 {{end}}
               </select>
             </div>
             <div class="input-group-append">
-              <label class="ml-3" for="pwdWarn">days</label>
+              <label class="ml-3" for="passwordWarn">days</label>
             </div>
           </div>
           <div class="row">
@@ -196,17 +196,17 @@
           </div>
 
           <div class="form-group row">
-            <label for="pwdRotate" class="col-sm-3">Password rotation warning:</label>
+            <label for="passwordRotate" class="col-sm-3">Password rotation warning:</label>
             <div class="col-sm-2">
-              <select class="custom-select{{if $realm.ErrorsFor "pwdWarn"}} is-invalid{{end}}" name="pwdWarn" id="pwdWarn">
+              <select class="custom-select{{if $realm.ErrorsFor "passwordWarn"}} is-invalid{{end}}" name="passwordWarn" id="passwordWarn">
                 {{$current := $realm.PasswordRotationWarningDays}}
-                {{range $pwd := .pwdWarnDays}}
+                {{range $pwd := .passwordWarnDays}}
                 <option value="{{$pwd }}" {{if (eq $pwd $current)}}selected{{end}}>{{if (eq $pwd 0)}}Off{{else}}{{$pwd}}{{end}}</option>
                 {{end}}
               </select>
              </div>
               <div class="input-group-append">
-                <label class="ml-3" for="pwdWarn">days before rotation</label>
+                <label class="ml-3" for="passwordWarn">days before rotation</label>
               </div>
           </div>
           <div class="row">

@@ -51,8 +51,8 @@ func (c *Controller) HandleSave() http.Handler {
 		AllowedTestTypes   database.TestType `form:"allowedTestTypes"`
 		MFAMode            int16             `form:"MFAMode"`
 		EmailVerifiedMode  int16             `form:"emailVerifiedMode"`
-		PasswordRotateDays uint              `form:"pwdRotate"`
-		PasswordWarnDays   uint              `form:"pwdWarn"`
+		PasswordRotateDays uint              `form:"passwordRotate"`
+		PasswordWarnDays   uint              `form:"passwordWarn"`
 		RequireDate        bool              `form:"requireDate"`
 		WelcomeMessage     string            `form:"welcomeMessage"`
 
@@ -215,8 +215,8 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		"negative":  database.TestTypeConfirmed | database.TestTypeLikely | database.TestTypeNegative,
 	}
 	// Valid settings for pwd rotation.
-	m["pwdRotateDays"] = passwordRotationPeriodDays
-	m["pwdWarnDays"] = passwordRotationWarningDays
+	m["passwordRotateDays"] = passwordRotationPeriodDays
+	m["passwordWarnDays"] = passwordRotationWarningDays
 
 	// Valid settings for code parameters.
 	m["shortCodeLengths"] = shortCodeLengths
