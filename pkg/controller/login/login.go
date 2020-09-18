@@ -16,6 +16,7 @@
 package login
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -36,8 +37,12 @@ func (c *Controller) HandleLogin() http.Handler {
 			}
 		}
 
-		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login", m)
+		c.renderLogin(ctx, w)
 	})
+}
+
+func (c *Controller) renderLogin(ctx context.Context, w http.ResponseWriter) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["firebase"] = c.config.Firebase
+	c.h.RenderHTML(w, "login", m)
 }

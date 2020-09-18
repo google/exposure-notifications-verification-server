@@ -36,6 +36,8 @@ type User struct {
 	LastRevokeCheck time.Time
 	Realms          []*Realm `gorm:"many2many:user_realms"`
 	AdminRealms     []*Realm `gorm:"many2many:admin_realms"`
+
+	LastPasswordChange time.Time `gorm:"last_pwd_change"`
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -225,6 +227,17 @@ func (u *User) CreateFirebaseUser(ctx context.Context, fbAuth *auth.Client) (boo
 	}
 
 	return false, nil
+}
+
+// PasswordChanged updates the last password change timestamp of the user.
+func (db *Database) PasswordChanged(email string) error {
+	if err := db.db.Model(&User{}).
+		Update("last_pwd_change", time.Now().UTC()).
+		Where("email = ?", email).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 // SaveUser updates the user in the database.

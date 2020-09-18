@@ -210,7 +210,8 @@ func realMain(ctx context.Context) error {
 
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
 			sub.Handle("/login/reset-password", loginController.HandleResetPassword()).Methods("GET")
-			sub.Handle("/login/select-password", loginController.HandleSelectPassword()).Methods("GET")
+			sub.Handle("/login/select-password", loginController.HandleSelectNewPassword()).Methods("GET")
+			sub.Handle("/login/select-password", loginController.HandleSubmitNewPassword()).Methods("POST")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 

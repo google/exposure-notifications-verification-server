@@ -34,6 +34,10 @@ func TestUserLifecycle(t *testing.T) {
 		t.Fatalf("error creating user: %v", err)
 	}
 
+	if err := db.PasswordChanged(email); err != nil {
+		t.Fatalf("error updating password changed time user: %v", err)
+	}
+
 	// Find user by ID
 	{
 		got, err := db.FindUser(user.ID)
