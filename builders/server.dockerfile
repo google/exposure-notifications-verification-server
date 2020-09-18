@@ -15,8 +15,8 @@
 FROM alpine AS builder
 
 FROM scratch
-ARG SERVICE
-COPY ./bin/${SERVICE} /server
+COPY ./bin/server /server
+COPY ./cmd/server/assets /assets
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENV PORT 8080
