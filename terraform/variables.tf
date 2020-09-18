@@ -178,7 +178,7 @@ variable "adminapi-host" {
   description = "Domain adminapi is hosted on."
 }
 
-variable "redirect_domain_map" {
+variable "enx_redirect_domain_map" {
   type = list(object({
     region = string
     host   = string

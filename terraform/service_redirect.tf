@@ -14,8 +14,9 @@
 # limitations under the License.
 
 resource "google_service_account" "enx-redirect" {
-  project      = var.project
-  account_id   = "en-verification-enx-redirect-sa"
+  project = var.project
+  # TODO(sethvargo): namespace this, but SA are limited to 28 characters :(
+  account_id   = "enx-redirect-sa"
   display_name = "Verification enx-redirect"
 }
 
