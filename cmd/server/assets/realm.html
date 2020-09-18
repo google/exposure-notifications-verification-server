@@ -84,6 +84,22 @@
             </div>
           </div>
 
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Welcome message:</label>
+            <div class="col-sm-9">
+              <textarea id="welcome-message" name="welcomeMessage" class="form-control text-monospace{{if $realm.ErrorsFor "welcomeMessage"}} is-invalid{{end}}" rows="5">{{$realm.WelcomeMessage}}</textarea>
+              {{if $realm.ErrorsFor "welcomeMessage"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($realm.ErrorsFor "welcomeMessage") ", "}}
+              </div>
+              {{end}}
+              <small class="form-text text-muted">
+                Custom welcome message to display to users after selecting this
+                realm. Supports the common <a href="https://daringfireball.net/projects/markdown/syntax">markdown</a> stanard.
+              </small>
+            </div>
+          </div>
+
           <div class="form-group row mb-0">
             <label class="col-sm-3">Allowed tests:</label>
             <div class="col-sm-9">

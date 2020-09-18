@@ -55,8 +55,9 @@ type ServerConfig struct {
 	Port string `env:"PORT,default=8080"`
 
 	// Login Config
-	SessionDuration   time.Duration `env:"SESSION_DURATION, default=20h"`
-	RevokeCheckPeriod time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
+	SessionDuration    time.Duration `env:"SESSION_DURATION, default=20h"`
+	SessionIdleTimeout time.Duration `env:"SESSION_IDLE_TIMEOUT, default=20m"`
+	RevokeCheckPeriod  time.Duration `env:"REVOKE_CHECK_DURATION, default=5m"`
 
 	// Password Config
 	PasswordRequirements PasswordRequirementsConfig

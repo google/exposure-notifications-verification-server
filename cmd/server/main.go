@@ -182,7 +182,7 @@ func realMain(ctx context.Context) error {
 	r.Use(requireSession)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionDuration)
+	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionIdleTimeout, config.SessionDuration)
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	loadCurrentRealm := middleware.LoadCurrentRealm(ctx, cacher, db, h)
@@ -313,6 +313,7 @@ func realMain(ctx context.Context) error {
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
 		userSub.Handle("/import", userController.HandleImport()).Methods("GET")
+		userSub.Handle("/import", userController.HandleImportBatch()).Methods("POST")
 		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")
 		userSub.Handle("/{id}", userController.HandleShow()).Methods("GET")
 		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")

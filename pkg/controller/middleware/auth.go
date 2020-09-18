@@ -35,7 +35,7 @@ import (
 // RequireAuth requires a user to be logged in. It also ensures that currentUser
 // is set in the template map. It fetches a user from the session and stores the
 // full record in the request context.
-func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
+func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client, db *database.Database, h *render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
 
 	cacheTTL := 5 * time.Minute
@@ -52,6 +52,19 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 			}
 
 			flash := controller.Flash(session)
+
+			// Check session idle timeout.
+			if t := controller.LastActivityFromSession(session); !t.IsZero() {
+				// If it's been more than the TTL since we've seen this session,
+				// "expire" it by creating a new empty session. Note that we don't force
+				// the user back to a login page or anything - other middlewares will
+				// handle that if needed.
+				if time.Since(t) > sessionIdleTTL {
+					logger.Debug("session is expired")
+					controller.Unauthorized(w, r, h)
+					return
+				}
+			}
 
 			firebaseCookie := controller.FirebaseCookieFromSession(session)
 			if firebaseCookie == "" {
@@ -92,7 +105,7 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 			}
 
 			// Check if the session is still valid.
-			if time.Now().After(user.LastRevokeCheck.Add(ttl)) {
+			if time.Now().After(user.LastRevokeCheck.Add(expiryCheckTTL)) {
 				if _, err := fbClient.VerifySessionCookieAndCheckRevoked(ctx, firebaseCookie); err != nil {
 					logger.Debugw("failed to verify firebase cookie revocation", "error", err)
 					controller.ClearSessionFirebaseCookie(session)

@@ -32,10 +32,12 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/lib/pq v1.8.0
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
+	github.com/microcosm-cc/bluemonday v1.0.4
 	github.com/mikehelmick/go-chaff v0.3.0
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/rakutentech/jwk-go v1.0.1
+	github.com/russross/blackfriday/v2 v2.0.1
 	github.com/sethvargo/go-envconfig v0.3.1
 	github.com/sethvargo/go-limiter v0.5.2
 	github.com/sethvargo/go-password v0.2.0

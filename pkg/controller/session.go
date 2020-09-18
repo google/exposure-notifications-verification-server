@@ -15,6 +15,8 @@
 package controller
 
 import (
+	"time"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/sessions"
 )
@@ -25,11 +27,13 @@ import (
 type sessionKey string
 
 const (
-	sessionKeyFirebaseCookie  = sessionKey("firebaseCookie")
-	sessionKeyRealmID         = sessionKey("realmID")
-	factorCount               = sessionKey("factorCount")
-	mfaPrompted               = sessionKey("mfaPrompted")
-	emailVerificationPrompted = sessionKey("emailVerificationPrompted")
+	emailVerificationPrompted         = sessionKey("emailVerificationPrompted")
+	factorCount                       = sessionKey("factorCount")
+	mfaPrompted                       = sessionKey("mfaPrompted")
+	sessionKeyFirebaseCookie          = sessionKey("firebaseCookie")
+	sessionKeyLastActivity            = sessionKey("lastActivity")
+	sessionKeyRealmID                 = sessionKey("realmID")
+	sessionKeyWelcomeMessageDisplayed = sessionKey("welcomeMessageDisplayed")
 )
 
 // StoreSessionFirebaseCookie stores the firebase cookie in the session. If the
@@ -67,6 +71,7 @@ func StoreSessionRealm(session *sessions.Session, realm *database.Realm) {
 	if session == nil || realm == nil {
 		return
 	}
+	ClearWelcomeMessageDisplayed(session)
 	session.Values[sessionKeyRealmID] = realm.ID
 }
 
@@ -149,6 +154,36 @@ func MFAPromptedFromSession(session *sessions.Session) bool {
 	return f
 }
 
+// StoreSessionLastActivity stores the last time the user did something. This is
+// used to track idle session timeouts.
+func StoreSessionLastActivity(session *sessions.Session, t time.Time) {
+	if session == nil {
+		return
+	}
+	session.Values[sessionKeyLastActivity] = t.Unix()
+}
+
+// ClearLastActivity clears the session last activity time.
+func ClearLastActivity(session *sessions.Session) {
+	sessionClear(session, sessionKeyLastActivity)
+}
+
+// LastActivityFromSession extractsthe last time the user did something.
+func LastActivityFromSession(session *sessions.Session) time.Time {
+	v := sessionGet(session, sessionKeyLastActivity)
+	if v == nil {
+		return time.Time{}
+	}
+
+	i, ok := v.(int64)
+	if !ok || i == 0 {
+		delete(session.Values, sessionKeyLastActivity)
+		return time.Time{}
+	}
+
+	return time.Unix(i, 0)
+}
+
 // StoreSessionEmailVerificationPrompted stores if the user was prompted for email verification.
 func StoreSessionEmailVerificationPrompted(session *sessions.Session, prompted bool) {
 	if session == nil {
@@ -172,6 +207,37 @@ func EmailVerificationPromptedFromSession(session *sessions.Session) bool {
 	f, ok := v.(bool)
 	if !ok {
 		delete(session.Values, emailVerificationPrompted)
+		return false
+	}
+
+	return f
+}
+
+// StoreSessionWelcomeMessageDisplayed stores if the user was displayed the
+// realm welcome message.
+func StoreSessionWelcomeMessageDisplayed(session *sessions.Session, prompted bool) {
+	if session == nil {
+		return
+	}
+	session.Values[sessionKeyWelcomeMessageDisplayed] = prompted
+}
+
+// ClearWelcomeMessageDisplayed clears the welcome message prompt bit.
+func ClearWelcomeMessageDisplayed(session *sessions.Session) {
+	sessionClear(session, sessionKeyWelcomeMessageDisplayed)
+}
+
+// WelcomeMessageDisplayedFromSession extracts if the user was displayed the
+// realm welcome message.
+func WelcomeMessageDisplayedFromSession(session *sessions.Session) bool {
+	v := sessionGet(session, sessionKeyWelcomeMessageDisplayed)
+	if v == nil {
+		return false
+	}
+
+	f, ok := v.(bool)
+	if !ok {
+		delete(session.Values, sessionKeyWelcomeMessageDisplayed)
 		return false
 	}
 
