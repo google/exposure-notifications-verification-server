@@ -182,7 +182,7 @@ func realMain(ctx context.Context) error {
 	r.Use(requireSession)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionDuration)
+	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionIdleTimeout, config.SessionDuration)
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	loadCurrentRealm := middleware.LoadCurrentRealm(ctx, cacher, db, h)
