@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "google_service_account" "redirect" {
+resource "google_service_account" "enx-redirect" {
   project      = var.project
-  account_id   = "en-verification-redirect-sa"
-  display_name = "Verification redirect"
+  account_id   = "en-verification-enx-redirect-sa"
+  display_name = "Verification enx-redirect"
 }
 
-resource "google_service_account_iam_member" "cloudbuild-deploy-redirect" {
-  service_account_id = google_service_account.redirect.id
+resource "google_service_account_iam_member" "cloudbuild-deploy-enx-redirect" {
+  service_account_id = google_service_account.enx-redirect.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
 
@@ -30,7 +30,7 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-redirect" {
   ]
 }
 
-resource "google_project_iam_member" "redirect-observability" {
+resource "google_project_iam_member" "enx-redirect-observability" {
   for_each = toset([
     "roles/cloudtrace.agent",
     "roles/logging.logWriter",
@@ -40,18 +40,18 @@ resource "google_project_iam_member" "redirect-observability" {
 
   project = var.project
   role    = each.key
-  member  = "serviceAccount:${google_service_account.redirect.email}"
+  member  = "serviceAccount:${google_service_account.enx-redirect.email}"
 }
 
-resource "google_cloud_run_service" "redirect" {
-  name     = "redirect"
+resource "google_cloud_run_service" "enx-redirect" {
+  name     = "enx-redirect"
   location = var.region
 
   autogenerate_revision_name = true
 
   template {
     spec {
-      service_account_name = google_service_account.redirect.email
+      service_account_name = google_service_account.enx-redirect.email
       timeout_seconds      = 25
 
       containers {
@@ -67,10 +67,10 @@ resource "google_cloud_run_service" "redirect" {
         dynamic "env" {
           for_each = merge(
             local.gcp_config,
-            local.redirect_config,
+            local.enx_redirect_config,
 
             // This MUST come last to allow overrides!
-            lookup(var.service_environment, "redirect", {}),
+            lookup(var.service_environment, "enx-redirect", {}),
           )
 
           content {
@@ -101,8 +101,8 @@ resource "google_cloud_run_service" "redirect" {
   }
 }
 
-resource "google_compute_region_network_endpoint_group" "redirect" {
-  name     = "redirect"
+resource "google_compute_region_network_endpoint_group" "enx-redirect" {
+  name     = "enx-redirect"
   provider = google-beta
   project  = var.project
   region   = var.region
@@ -110,29 +110,29 @@ resource "google_compute_region_network_endpoint_group" "redirect" {
   network_endpoint_type = "SERVERLESS"
 
   cloud_run {
-    service = google_cloud_run_service.redirect.name
+    service = google_cloud_run_service.enx-redirect.name
   }
 }
 
-resource "google_compute_backend_service" "redirect" {
+resource "google_compute_backend_service" "enx-redirect" {
   count    = local.enable_lb ? 1 : 0
   provider = google-beta
-  name     = "redirect"
+  name     = "enx-redirect"
   project  = var.project
 
   backend {
-    group = google_compute_region_network_endpoint_group.redirect.id
+    group = google_compute_region_network_endpoint_group.enx-redirect.id
   }
 }
 
-resource "google_cloud_run_service_iam_member" "redirect-public" {
-  location = google_cloud_run_service.redirect.location
-  project  = google_cloud_run_service.redirect.project
-  service  = google_cloud_run_service.redirect.name
+resource "google_cloud_run_service_iam_member" "enx-redirect-public" {
+  location = google_cloud_run_service.enx-redirect.location
+  project  = google_cloud_run_service.enx-redirect.project
+  service  = google_cloud_run_service.enx-redirect.name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
 
-output "redirect_url" {
-  value = google_cloud_run_service.redirect.status.0.url
+output "enx_redirect_url" {
+  value = google_cloud_run_service.enx-redirect.status.0.url
 }
