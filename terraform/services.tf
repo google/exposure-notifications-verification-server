@@ -85,8 +85,7 @@ locals {
   }
 
   redirect_config = {
-    # TODO(icco): Is there a better way to do this?
-    HOSTNAME_TO_REGION = jsonencode(var.redirect_domain_map)
+    HOSTNAME_TO_REGION = join(",", [for o in var.redirect_domain_map : format("%s=%s", o.host, o.region)])
   }
 }
 
