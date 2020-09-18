@@ -13,8 +13,8 @@
 # limitations under the License.
 
 locals {
-  enable_lb       = var.server-host != "" && var.apiserver-host != "" && var.adminapi-host != ""
-  enable_redirect = length(var.redirect_domain_map) > 0
+  enable_lb           = var.server-host != "" && var.apiserver-host != "" && var.adminapi-host != ""
+  enable_enx_redirect = length(var.enx_redirect_domain_map) > 0
 }
 
 resource "google_compute_global_address" "verification-server" {
@@ -23,9 +23,9 @@ resource "google_compute_global_address" "verification-server" {
   project = var.project
 }
 
-resource "google_compute_global_address" "verification-redirect" {
-  count   = local.enable_redirect ? 1 : 0
-  name    = "verification-redirect-address"
+resource "google_compute_global_address" "verification-enx-redirect" {
+  count   = local.enable_enx_redirect ? 1 : 0
+  name    = "verification-enx-redirect-address"
   project = var.project
 }
 
@@ -79,12 +79,12 @@ resource "google_compute_url_map" "urlmap-https" {
   }
 }
 
-resource "google_compute_url_map" "redirect-urlmap-https" {
-  count           = local.enable_redirect ? 1 : 0
-  name            = "verification-redirect"
+resource "google_compute_url_map" "enx-redirect-urlmap-https" {
+  count           = local.enable_enx_redirect ? 1 : 0
+  name            = "verification-enx-redirect"
   provider        = google-beta
   project         = var.project
-  default_service = google_compute_backend_service.redirect[0].id
+  default_service = google_compute_backend_service.enx-redirect[0].id
 }
 
 resource "google_compute_target_http_proxy" "http" {
@@ -105,22 +105,22 @@ resource "google_compute_target_https_proxy" "https" {
   ssl_certificates = [google_compute_managed_ssl_certificate.default[0].id]
 }
 
-resource "google_compute_target_http_proxy" "redirect-http" {
-  count    = local.enable_redirect ? 1 : 0
+resource "google_compute_target_http_proxy" "enx-redirect-http" {
+  count    = local.enable_enx_redirect ? 1 : 0
   provider = google-beta
-  name     = "verification-redirect"
+  name     = "verification-enx-redirect"
   project  = var.project
 
   url_map = google_compute_url_map.urlmap-http.id
 }
 
-resource "google_compute_target_https_proxy" "redirect-https" {
-  count   = local.enable_redirect ? 1 : 0
-  name    = "verification-redirect"
+resource "google_compute_target_https_proxy" "enx-redirect-https" {
+  count   = local.enable_enx_redirect ? 1 : 0
+  name    = "verification-enx-redirect"
   project = var.project
 
   url_map          = google_compute_url_map.urlmap-https[0].id
-  ssl_certificates = [google_compute_managed_ssl_certificate.redirect[0].id]
+  ssl_certificates = [google_compute_managed_ssl_certificate.enx-redirect[0].id]
 }
 
 resource "google_compute_global_forwarding_rule" "http" {
@@ -149,27 +149,27 @@ resource "google_compute_global_forwarding_rule" "https" {
   target                = google_compute_target_https_proxy.https[0].id
 }
 
-resource "google_compute_global_forwarding_rule" "redirect-http" {
-  count    = local.enable_redirect ? 1 : 0
+resource "google_compute_global_forwarding_rule" "enx-redirect-http" {
+  count    = local.enable_enx_redirect ? 1 : 0
   provider = google-beta
-  name     = "verification-redirect-http"
+  name     = "verification-enx-redirect-http"
   project  = var.project
 
   ip_protocol           = "TCP"
-  ip_address            = google_compute_global_address.verification-redirect[0].address
+  ip_address            = google_compute_global_address.verification-enx-redirect[0].address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "80"
   target                = google_compute_target_http_proxy.http[0].id
 }
 
-resource "google_compute_global_forwarding_rule" "redirect-https" {
-  count    = local.enable_redirect ? 1 : 0
+resource "google_compute_global_forwarding_rule" "enx-redirect-https" {
+  count    = local.enable_enx_redirect ? 1 : 0
   provider = google-beta
-  name     = "verification-redirect-https"
+  name     = "verification-enx-redirect-https"
   project  = var.project
 
   ip_protocol           = "TCP"
-  ip_address            = google_compute_global_address.verification-redirect[0].address
+  ip_address            = google_compute_global_address.verification-enx-redirect[0].address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "443"
   target                = google_compute_target_https_proxy.https[0].id
@@ -186,14 +186,14 @@ resource "google_compute_managed_ssl_certificate" "default" {
   }
 }
 
-resource "google_compute_managed_ssl_certificate" "redirect" {
-  count    = local.enable_redirect ? 1 : 0
+resource "google_compute_managed_ssl_certificate" "enx-redirect" {
+  count    = local.enable_enx_redirect ? 1 : 0
   provider = google-beta
 
-  name = "verification-redirect-cert"
+  name = "verification-enx-redirect-cert"
 
   managed {
     // we can only have 100 domains in this list.
-    domains = [for o in var.redirect_domain_map : o.host]
+    domains = [for o in var.enx_redirect_domain_map : o.host]
   }
 }
