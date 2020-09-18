@@ -179,8 +179,11 @@ variable "adminapi-host" {
 }
 
 variable "redirect_domain_map" {
-  type        = map(string)
-  default     = {}
+  type = list(object({
+    region = string
+    host   = string
+  }))
+  default     = []
   description = "Redirect domains and environments."
 }
 
