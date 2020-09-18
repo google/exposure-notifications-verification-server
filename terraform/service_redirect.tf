@@ -66,6 +66,7 @@ resource "google_cloud_run_service" "redirect" {
 
         dynamic "env" {
           for_each = merge(
+            { "ASSETS_PATH" = "/assets" },
             local.gcp_config,
             local.redirect_config,
 
