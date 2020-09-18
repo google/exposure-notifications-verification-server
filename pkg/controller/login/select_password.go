@@ -17,11 +17,13 @@ package login
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
-func (c *Controller) HandleSelectPassword() http.Handler {
+func (c *Controller) HandleSelectNewPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -29,5 +31,38 @@ func (c *Controller) HandleSelectPassword() http.Handler {
 		m["firebase"] = c.config.Firebase
 		m["requirements"] = &c.config.PasswordRequirements
 		c.h.RenderHTML(w, "login/select-password", m)
+	})
+}
+
+func (c *Controller) HandleSubmitNewPassword() http.Handler {
+	logger := c.logger.Named("login.HandleSubmitNewPassword")
+
+	type FormData struct {
+		Email string `form:"email"`
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			logger.Errorw("failed to bind form", "error", err)
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
+			logger.Errorw("failed to mark password change time", "error", err)
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// There's no session yet, so make a one-time flash.
+		m := controller.TemplateMapFromContext(ctx)
+		f := flash.New(nil)
+		f.Alert("New password selected successfully.")
+		m["flash"] = f
+
+		c.renderLogin(ctx, w)
 	})
 }
