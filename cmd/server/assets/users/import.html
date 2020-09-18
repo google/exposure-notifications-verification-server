@@ -112,26 +112,26 @@
         reader.readAsText($csv[0].files[0]);
       });
 
-      const batchSize = 10
+      const batchSize = 10;
 
       function readFile() {
         // State for managing cleanup and cancelling
         let cancelUpload = false;
         let cancel = () => {
-          cancelUpload = true
+          cancelUpload = true;
         };
 
         let start = async function(e) {
           let rows = e.target.result.split("\n");
           let batch = [];
-          totalUsersCreated = 0
+          totalUsersCreated = 0;
           $tableBody.empty();
           let i = 0;
           for (; i < rows.length && !cancelUpload; i++) {
             if (rows[i].trim() != "") {
               if (batch.length >= batchSize) {
                 $tableBody.empty();
-                batch = []
+                batch = [];
               }
 
               let user = {};
@@ -167,7 +167,7 @@
           $cancel.prop('disabled', true);
         };
 
-        return { start, cancel }
+        return { start, cancel };
       }
     });
 
