@@ -83,8 +83,8 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 }
 
 func NeedsEmailVerification(session *sessions.Session, realm *database.Realm, fbUser *auth.UserRecord) bool {
-	if (realm == nil || realm.EmailVerifiedMode == database.MFARequired) && !fbUser.EmailVerified {
-		return true
+	if realm == nil || realm.EmailVerifiedMode == database.MFARequired {
+		return !fbUser.EmailVerified
 	}
 
 	if realm.EmailVerifiedMode == database.MFAOptionalPrompt &&
