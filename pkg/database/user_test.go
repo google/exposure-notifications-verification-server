@@ -75,6 +75,7 @@ func TestUserLifecycle(t *testing.T) {
 
 	// Update password changed
 	now := time.Now().UTC()
+	now = now.Truncate(time.Second) // db loses nanos
 	if err := db.PasswordChanged(email, now); err != nil {
 		t.Fatalf("error updating password changed time: %v", err)
 	}
@@ -91,7 +92,7 @@ func TestUserLifecycle(t *testing.T) {
 		}
 
 		if got, want := got.LastPasswordChange, now; got != want {
-			t.Errorf("expected %#v to be %#v", got, want)
+			t.Errorf("expected %#v to be %#v", got.String(), want.String())
 		}
 	}
 }

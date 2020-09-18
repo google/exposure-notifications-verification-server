@@ -37,7 +37,7 @@ type User struct {
 	Realms          []*Realm `gorm:"many2many:user_realms"`
 	AdminRealms     []*Realm `gorm:"many2many:admin_realms"`
 
-	LastPasswordChange time.Time `gorm:"last_pwd_change"`
+	LastPasswordChange time.Time
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -234,12 +234,10 @@ func (db *Database) PasswordChanged(email string, t time.Time) error {
 	q := db.db.
 		Model(&User{}).
 		Where("email = ?", email).
-		Updates(User{LastPasswordChange: t.UTC()})
-
+		Update("last_password_change", t.UTC())
 	if q.Error != nil {
 		return q.Error
 	}
-
 	if q.RowsAffected != 1 {
 		return fmt.Errorf("no rows affected user %s", email)
 	}
