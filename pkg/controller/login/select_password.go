@@ -21,29 +21,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-type Requirements struct {
-	Length    int
-	Uppercase int
-	Lowercase int
-	Number    int
-	Special   int
-}
-
 func (c *Controller) HandleSelectPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// TODO: get these values from env
-		reqs := Requirements{
-			Length:    8,
-			Uppercase: 1,
-			Number:    1,
-			Special:   1,
-		}
-
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
-		m["requirements"] = reqs
+		m["requirements"] = &c.config.PasswordRequirements
 		c.h.RenderHTML(w, "login/select-password", m)
 	})
 }

@@ -31,6 +31,20 @@ import (
 
 var _ IssueAPIConfig = (*ServerConfig)(nil)
 
+// PasswordRequirementsConfig represents the password complexity requirements for the server.
+type PasswordRequirementsConfig struct {
+	Length    int `env:"MIN_PWD_LENGTH,default=8"`
+	Uppercase int `env:"MIN_PWD_UPPER,default=1"`
+	Lowercase int `env:"MIN_PWD_LOWER,default=1"`
+	Number    int `env:"MIN_PWD_DIGITS,default=1"`
+	Special   int `env:"MIN_PWD_SPECIAL,default=1"`
+}
+
+// HasRequirements is true if any requirments are set.
+func (c *PasswordRequirementsConfig) HasRequirements() bool {
+	return c.Length > 0 || c.Uppercase > 0 || c.Lowercase > 0 || c.Number > 0 || c.Special > 0
+}
+
 // ServerConfig represents the environment based config for the server.
 type ServerConfig struct {
 	Firebase      FirebaseConfig
@@ -43,6 +57,9 @@ type ServerConfig struct {
 	// Login Config
 	SessionDuration   time.Duration `env:"SESSION_DURATION, default=20h"`
 	RevokeCheckPeriod time.Duration `env:"REVOKE_CHECK_DURATION,default=5m"`
+
+	// Password Config
+	PasswordRequirements PasswordRequirementsConfig
 
 	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.
 	// They should be base64-encoded.
