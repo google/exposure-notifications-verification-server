@@ -26,7 +26,6 @@
       <div class="card-header">Import</div>
       <div class="card-body">
         {{template "beta-notice" .}}
-        <small class="form-text text-muted">Coming soon</small>
 
         <form id="form">
           <div class="custom-file">
@@ -38,7 +37,7 @@
       </div>
 
       <div class="card-body">
-        <div class="progress">
+        <div class="progress"  id="progress-div" style="display:none;">
           <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
             aria-valuemax="100"></div>
         </div>
@@ -65,7 +64,10 @@
       let $import = $('#import');
       let $table = $('#csv-table');
       let $tableBody = $('#csv-table-body');
+      let $progressDiv = $('#progress-div');
       let $progress = $('#progress');
+
+      let totalUsersCreated = 0;
 
       if (typeof (FileReader) == "undefined") {
         flash("Your browser does not support the required HTML5 file reader.", "danger");
@@ -83,18 +85,21 @@
         event.preventDefault();
         $import.prop('disabled', true);
 
-        $table.show(400);
+        $table.show(100);
+        $progressDiv.show();
 
         var reader = new FileReader();
         reader.onload = readCSV
         reader.readAsText($csv[0].files[0]);
       });
 
-      const batchSize = 20
+      const batchSize = 10
 
       async function readCSV(e) {
         let rows = e.target.result.split("\n");
         let batch = [];
+        totalUsersCreated = 0
+        $tableBody.empty();
         for (let i = 0; i < rows.length; i++) {
           if (rows[i].trim() != "") {
             if (batch.length >= batchSize) {
@@ -114,19 +119,21 @@
           }
 
           if (batch.length >= batchSize || i == rows.length - 1) {
+            await uploadBatch(batch);
             let percent = Math.floor((i + 1) * 100 / rows.length) + "%"
             $progress.width(percent);
             $progress.html(percent)
-            uploadBatch(batch);
           }
         }
-        $table.hide(400);
+
+        $table.fadeOut(400);
+        flash("Successfully created " + totalUsersCreated + " new users.", "success");
         $import.prop('disabled', false);
       }
     });
 
-    function uploadBatch(data) {
-      $.ajax({
+   function uploadBatch(data) {
+      return $.ajax({
         type: 'POST',
         url: '/users/import',
         data: JSON.stringify({ "users": data }),
@@ -135,13 +142,15 @@
         success: function(result) {
           for (user of result.newUsers) {
             firebase.auth().sendPasswordResetEmail(user.email)
-              .catch(function(error) {
-                flash(error.message, "danger")
+            .then(function() {
+              totalUsersCreated++;
+            }).catch(function(error) {
+                flash(error.message, "danger");
               });
           }
         },
         error: function(xhr, status, e) {
-          flash(status + " " + e, "danger")
+          flash(status + " " + e, "danger");
         }
       });
     }
