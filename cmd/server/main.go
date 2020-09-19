@@ -221,6 +221,7 @@ func realMain(ctx context.Context) error {
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
 			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
+			sub.Handle("/login/change-password", loginController.HandleResetPassword()).Methods("GET")
 
 			// Verifying email requires the user is logged in
 			sub = r.PathPrefix("").Subrouter()
