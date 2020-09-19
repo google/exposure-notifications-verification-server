@@ -106,6 +106,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		stats, err := c.getStats(ctx, user, realm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		c.renderShow(ctx, w, user, stats)
