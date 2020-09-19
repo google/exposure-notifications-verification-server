@@ -65,6 +65,7 @@ const (
 	MFARequired
 	// MFAOptional will not prompt users to enable MFA.
 	MFAOptional
+
 	// MaxPageSize is the maximum allowed page size for a list query.
 	MaxPageSize = 1000
 )
