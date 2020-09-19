@@ -61,24 +61,18 @@
         <div class="card-header">Member of realms</div>
         <ul class="list-group list-group-flush">
           {{range $realm := $user.Realms}}
-          <li class="list-group-item">{{$realm.Name}}</li>
+          <li class="list-group-item">
+            {{$realm.Name}}
+            {{range $admin := $user.AdminRealms}}
+            {{if eq $admin.ID $realm.ID}}
+            <span class="badge badge-primary">Admin</span>
+            {{end}}
+            {{end}}
+          </li>
           {{end}}
         </ul>
       </div>
     </div>
-
-    {{if gt (len $user.AdminRealms) 0}}
-    <div class="card mb-3 shadow-sm">
-      <div class="card">
-        <div class="card-header">Admin of Realms</div>
-        <ul class="list-group list-group-flush">
-          {{range $realm := $user.AdminRealms}}
-          <li class="list-group-item">{{$realm.Name}}</li>
-          {{end}}
-        </ul>
-      </div>
-    </div>
-    {{end}}
   </main>
 
   {{template "scripts" .}}
