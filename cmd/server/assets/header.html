@@ -33,6 +33,10 @@
     background-color: #0055b1;
   }
 
+  div.admin-header {
+    background-color:#D66402
+  }
+
   a.input-group-text:hover {
     cursor: pointer;
     text-decoration: none;
@@ -180,6 +184,82 @@
 {{end}}
 
 {{define "navbar"}}
+<header class="mb-3">
+  {{if .currentRealm}}
+  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white realm-header">
+    {{.currentRealm.Name}}{{if .currentRealm.RegionCode}} - {{.currentRealm.RegionCode}}{{end}}
+  </div>
+  {{end}}
+
+  <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+    <div class="container">
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar"
+        aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbar">
+        {{if .currentUser}}
+        <ul class="navbar-nav mr-auto">
+          {{if .currentRealm}}
+          <li class="nav-item">
+            <a class="nav-link" href="/home">Issue code</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/code/status">Check code status</a>
+          </li>
+          {{end}}
+        </ul>
+
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
+              aria-expanded="false">
+              {{.currentUser.Name}}
+            </a>
+
+            <div class="dropdown-menu" aria-labelledby="profile-menu">
+              {{if .currentRealm }}
+              {{if .currentUser.CanAdminRealm .currentRealm.ID}}
+              <h6 class="dropdown-header">Manage realm</h6>
+              <a class="dropdown-item" href="/apikeys">API keys</a>
+              <a class="dropdown-item" href="/realm/keys">Signing keys</a>
+              <a class="dropdown-item" href="/realm/stats">Statistics</a>
+              <a class="dropdown-item" href="/users">Users</a>
+              <a class="dropdown-item" href="/realm/settings#general">Settings</a>
+              <div class="dropdown-divider"></div>
+              {{end}}
+              {{end}}
+
+              {{if .currentUser.Admin}}
+              <h6 class="dropdown-header">System admin</h6>
+              <a class="dropdown-item" href="/admin/realms">Realms</a>
+              <a class="dropdown-item" href="/admin/users">Admins</a>
+              <div class="dropdown-divider"></div>
+              {{end}}
+
+              <h6 class="dropdown-header">Actions</h6>
+              {{if gt (len .currentUser.Realms) 1}}
+              <a class="dropdown-item" href="/login/select-realm">{{if .currentRealm}}Change realm{{else}}Select realm{{end}}</a>
+              {{end}}
+              <a class="dropdown-item" href="/signout">Sign out</a>
+            </div>
+          </li>
+        </ul>
+        {{else}}
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Sign in</a>
+          </li>
+        </ul>
+        {{end}}
+      </div>
+    </div>
+  </nav>
+</header>
+{{end}}
+
+{{define "admin-navbar"}}
 <header class="mb-3">
   {{if .currentRealm}}
   <div href="/" class="d-block px-3 py-2 text-center text-bold text-white realm-header">
