@@ -94,7 +94,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		if err := c.db.SaveUser(user); err != nil {
 			flash.Error("Failed to update user: %v", err)
-			c.renderNew(ctx, w, user, false)
+			c.renderNew(ctx, w, user)
 			return
 		}
 

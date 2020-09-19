@@ -8,6 +8,7 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+  {{template "firebase" .}}
 </head>
 
 <body class="bg-light">
@@ -41,6 +42,12 @@
         <div>
           {{$user.CanAdminRealm $currentRealm.ID}}
         </div>
+
+        {{if .currentUser.CanAdminRealm .currentRealm.ID}}
+        <button id="password-reset" class="btn btn-primary btn-block mt-3 disabled">
+          Send password reset
+        </button>
+        {{end}}
       </div>
     </div>
 
@@ -106,6 +113,40 @@
     }
   </script>
   {{end}}
+
+  <script type="text/javascript">
+  $(function() {
+    $resetPassword = $('#password-reset');
+
+    {{if .created}}
+    sendReset(function() {
+      flash.alert(`Successfully created user '{{.user.Name}}'.`);
+    });
+    {{else}}
+    $resetPassword.removeClass('disabled');
+    {{end}}
+
+    $resetPassword.on('click', function(event) {
+      event.preventDefault();
+      sendReset(function() {
+        flash.alert(`Password reset email sent.`);
+      });
+    });
+
+    function sendReset(successFn) {
+      $resetPassword.addClass('disabled');
+      let email = {{$user.Email}};
+      return firebase.auth().sendPasswordResetEmail(email)
+      .then(function() {
+          setTimeout($resetPassword.addClass('disabled'), 10000);
+          successFn();
+      }).catch(function(error) {
+        $resetPassword.removeClass('disabled');
+        flash.error(error.message);
+      });
+    }
+  });
+  </script>
 </body>
 </html>
 {{end}}
