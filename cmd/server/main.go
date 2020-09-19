@@ -338,7 +338,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
 		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
 
-		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, h)
+		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, cacher, h)
 		if err != nil {
 			return fmt.Errorf("failed to create realmkeys controller: %w", err)
 		}

@@ -176,7 +176,7 @@ func realMain(ctx context.Context) error {
 		// POST /api/certificate
 		certChaff := chaff.New()
 		defer certChaff.Close()
-		certapiController, err := certapi.New(ctx, config, db, h, certificateSigner)
+		certapiController, err := certapi.New(ctx, config, db, cacher, certificateSigner, h)
 		if err != nil {
 			return fmt.Errorf("failed to create certapi controller: %w", err)
 		}
