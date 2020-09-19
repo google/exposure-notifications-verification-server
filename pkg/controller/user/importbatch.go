@@ -48,7 +48,6 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			// See if the user already exists by email - they may be a member of another
 			// realm.
 			user, err := c.db.FindUserByEmail(batchUser.Email)
-			alreadyExists := true
 			if err != nil {
 				if !database.IsNotFound(err) {
 					logger.Errorw("Error finding user", "error", err)
@@ -57,20 +56,10 @@ func (c *Controller) HandleImportBatch() http.Handler {
 				}
 
 				user = new(database.User)
-				alreadyExists = false
-			}
-
-			// Build the user struct - keeping email and name if user already exists in another realm.
-			if !alreadyExists {
 				user.Email = batchUser.Email
 				user.Name = batchUser.Name
 			}
 			user.Realms = append(user.Realms, realm)
-			if err := c.db.SaveUser(user); err != nil {
-				logger.Errorw("Error saving user", "error", err)
-				batchErr = multierror.Append(batchErr, err)
-				continue
-			}
 
 			if created, err := user.CreateFirebaseUser(ctx, c.client); err != nil {
 				logger.Errorw("Error creating firebase user", "error", err)
@@ -78,6 +67,12 @@ func (c *Controller) HandleImportBatch() http.Handler {
 				continue
 			} else if created {
 				newUsers = append(newUsers, &batchUser)
+			}
+
+			if err := c.db.SaveUser(user); err != nil {
+				logger.Errorw("Error saving user", "error", err)
+				batchErr = multierror.Append(batchErr, err)
+				continue
 			}
 		}
 
