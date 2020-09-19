@@ -40,6 +40,22 @@ type User struct {
 	LastPasswordChange time.Time
 }
 
+// PasswordAgeString displays the age of the password in friendly text.
+func (u *User) PasswordAgeString() string {
+	ago := time.Now().Sub(u.LastPasswordChange)
+	h := ago.Hours()
+	if h > 48 {
+		return fmt.Sprintf("%v days", int(h/24))
+	}
+	if h > 2 {
+		return fmt.Sprintf("%d hours", int(h))
+	}
+	if ago.Minutes() > 2 {
+		return fmt.Sprintf("%d minutes", int(ago.Minutes()))
+	}
+	return fmt.Sprintf("%d minutes", int(ago.Seconds()))
+}
+
 // BeforeSave runs validations. If there are errors, the save fails.
 func (u *User) BeforeSave(tx *gorm.DB) error {
 	u.Email = strings.TrimSpace(u.Email)

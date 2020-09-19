@@ -215,13 +215,14 @@ func realMain(ctx context.Context) error {
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 
-			// Realm selection
+			// Realm selection & account settings
 			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
 			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
 			sub.Handle("/login/change-password", loginController.HandleResetPassword()).Methods("GET")
+			sub.Handle("/account", loginController.HandleAccountSettings()).Methods("GET")
 
 			// Verifying email requires the user is logged in
 			sub = r.PathPrefix("").Subrouter()
