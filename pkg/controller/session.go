@@ -34,6 +34,7 @@ const (
 	sessionKeyLastActivity            = sessionKey("lastActivity")
 	sessionKeyRealmID                 = sessionKey("realmID")
 	sessionKeyWelcomeMessageDisplayed = sessionKey("welcomeMessageDisplayed")
+	passwordExpireWarned              = sessionKey("passwordExpireWarned")
 )
 
 // StoreSessionFirebaseCookie stores the firebase cookie in the session. If the
@@ -238,6 +239,37 @@ func WelcomeMessageDisplayedFromSession(session *sessions.Session) bool {
 	f, ok := v.(bool)
 	if !ok {
 		delete(session.Values, sessionKeyWelcomeMessageDisplayed)
+		return false
+	}
+
+	return f
+}
+
+// StorePasswordExpireWarned stores if the user was displayed the
+// realm welcome message.
+func StorePasswordExpireWarned(session *sessions.Session, prompted bool) {
+	if session == nil {
+		return
+	}
+	session.Values[passwordExpireWarned] = prompted
+}
+
+// ClearPasswordExpireWarned clears the welcome message prompt bit.
+func ClearPasswordExpireWarned(session *sessions.Session) {
+	sessionClear(session, passwordExpireWarned)
+}
+
+// PasswordExpireWarnedFromSession extracts if the user was displayed the
+// realm welcome message.
+func PasswordExpireWarnedFromSession(session *sessions.Session) bool {
+	v := sessionGet(session, passwordExpireWarned)
+	if v == nil {
+		return false
+	}
+
+	f, ok := v.(bool)
+	if !ok {
+		delete(session.Values, passwordExpireWarned)
 		return false
 	}
 
