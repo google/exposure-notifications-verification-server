@@ -27,10 +27,12 @@ import (
 )
 
 var (
-	shortCodeLengths = []int{6, 7, 8}
-	shortCodeMinutes = []int{}
-	longCodeLengths  = []int{12, 13, 14, 15, 16}
-	longCodeHours    = []int{}
+	shortCodeLengths            = []int{6, 7, 8}
+	shortCodeMinutes            = []int{}
+	longCodeLengths             = []int{12, 13, 14, 15, 16}
+	longCodeHours               = []int{}
+	passwordRotationPeriodDays  = []int{0, 30, 60, 90, 365}
+	passwordRotationWarningDays = []int{0, 1, 3, 5, 7, 30}
 )
 
 func init() {
@@ -44,13 +46,15 @@ func init() {
 
 func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
-		Name              string            `form:"name"`
-		RegionCode        string            `form:"regionCode"`
-		AllowedTestTypes  database.TestType `form:"allowedTestTypes"`
-		MFAMode           int16             `form:"MFAMode"`
-		EmailVerifiedMode int16             `form:"emailVerifiedMode"`
-		RequireDate       bool              `form:"requireDate"`
-		WelcomeMessage    string            `form:"welcomeMessage"`
+		Name               string            `form:"name"`
+		RegionCode         string            `form:"regionCode"`
+		AllowedTestTypes   database.TestType `form:"allowedTestTypes"`
+		MFAMode            int16             `form:"MFAMode"`
+		EmailVerifiedMode  int16             `form:"emailVerifiedMode"`
+		PasswordRotateDays uint              `form:"passwordRotate"`
+		PasswordWarnDays   uint              `form:"passwordWarn"`
+		RequireDate        bool              `form:"requireDate"`
+		WelcomeMessage     string            `form:"welcomeMessage"`
 
 		CodeLength          uint   `form:"codeLength"`
 		CodeDurationMinutes int64  `form:"codeDuration"`
@@ -111,6 +115,8 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.SMSTextTemplate = form.SMSTextTemplate
 		realm.MFAMode = database.AuthRequirement(form.MFAMode)
 		realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
+		realm.PasswordRotationPeriodDays = form.PasswordRotateDays
+		realm.PasswordRotationWarningDays = form.PasswordWarnDays
 		realm.AbusePreventionEnabled = form.AbusePreventionEnabled
 		realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
 		if err := c.db.SaveRealm(realm); err != nil {
@@ -208,6 +214,10 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		"likely":    database.TestTypeConfirmed | database.TestTypeLikely,
 		"negative":  database.TestTypeConfirmed | database.TestTypeLikely | database.TestTypeNegative,
 	}
+	// Valid settings for pwd rotation.
+	m["passwordRotateDays"] = passwordRotationPeriodDays
+	m["passwordWarnDays"] = passwordRotationWarningDays
+
 	// Valid settings for code parameters.
 	m["shortCodeLengths"] = shortCodeLengths
 	m["shortCodeMinutes"] = shortCodeMinutes

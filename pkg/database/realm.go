@@ -99,6 +99,14 @@ type Realm struct {
 	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
 	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
 
+	// PasswordRotationPeriodDays is the number of days before the user must
+	// rotate their password.
+	PasswordRotationPeriodDays uint `gorm:"type:smallint; not null; default: 0"`
+
+	// PasswordRotationWarningDays is the number of days before Password expiry
+	// that the user should receive a warning.
+	PasswordRotationWarningDays uint `gorm:"type:smallint; not null; default: 0"`
+
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
 	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
@@ -207,6 +215,10 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 				}
 			}
 		}
+	}
+
+	if r.PasswordRotationWarningDays > r.PasswordRotationPeriodDays {
+		r.AddError("passwordWarn", "may not be longer than password rotation period")
 	}
 
 	if r.CodeLength < 6 {
