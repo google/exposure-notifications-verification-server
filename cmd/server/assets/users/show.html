@@ -39,15 +39,13 @@
         </div>
 
         <strong>Admin</strong>
-        <div>
+        <div class="mb-3">
           {{$user.CanAdminRealm $currentRealm.ID}}
         </div>
 
-        {{if .currentUser.CanAdminRealm .currentRealm.ID}}
-        <button id="password-reset" class="btn btn-primary btn-block mt-3 disabled">
+        <button id="password-reset" class="btn btn-primary btn-block disabled">
           Send password reset
         </button>
-        {{end}}
       </div>
     </div>
 
