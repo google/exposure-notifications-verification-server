@@ -26,7 +26,6 @@ func (c *Controller) HandleResetPassword() http.Handler {
 		ctx := r.Context()
 
 		m := controller.TemplateMapFromContext(ctx)
-
 		m["firebase"] = c.config.Firebase
 		c.h.RenderHTML(w, "login/reset-password", m)
 	})
