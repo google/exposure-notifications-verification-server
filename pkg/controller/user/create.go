@@ -79,6 +79,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			user.Name = form.Name
 		}
 
+		// Create firebase user first, if this fails we don't want a db.User entry
 		created, err := user.CreateFirebaseUser(ctx, c.client)
 		if err != nil {
 			flash.Alert("Failed to create user: %v", err)
