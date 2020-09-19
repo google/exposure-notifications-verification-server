@@ -236,7 +236,7 @@
 
               <h6 class="dropdown-header">Actions</h6>
               {{if gt (len .currentUser.Realms) 1}}
-              <a class="dropdown-item" href="/login/select-realm">Change realm</a>
+              <a class="dropdown-item" href="/login/select-realm">{{if .currentRealm}}Change realm{{else}}Select realm{{end}}</a>
               {{end}}
               <a class="dropdown-item" href="/signout">Sign out</a>
             </div>
