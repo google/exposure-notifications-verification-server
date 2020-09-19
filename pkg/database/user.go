@@ -42,7 +42,7 @@ type User struct {
 
 // PasswordAgeString displays the age of the password in friendly text.
 func (u *User) PasswordAgeString() string {
-	ago := time.Now().Sub(u.LastPasswordChange)
+	ago := time.Since(u.LastPasswordChange)
 	h := ago.Hours()
 	if h > 48 {
 		return fmt.Sprintf("%v days", int(h/24))
