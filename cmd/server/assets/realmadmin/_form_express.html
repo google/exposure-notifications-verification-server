@@ -2,7 +2,7 @@
 
 {{$realm := .realm}}
 
-<form method="POST" action="/realm/settings/save#express" class="floating-form">
+<form method="POST" action="/realm/settings#express" class="floating-form">
   {{ .csrfField }}
 
   {{if $realm.EnableENExpress}}

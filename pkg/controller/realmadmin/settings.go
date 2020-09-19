@@ -44,7 +44,7 @@ func init() {
 	}
 }
 
-func (c *Controller) HandleSave() http.Handler {
+func (c *Controller) HandleSettings() http.Handler {
 	type FormData struct {
 		Name           string `form:"name"`
 		RegionCode     string `form:"region_code"`
@@ -88,10 +88,15 @@ func (c *Controller) HandleSave() http.Handler {
 			return
 		}
 
+		if r.Method == http.MethodGet {
+			c.renderSettings(ctx, w, r, realm, nil)
+			return
+		}
+
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
@@ -99,7 +104,7 @@ func (c *Controller) HandleSave() http.Handler {
 		if (form.TwilioAccountSid != "" || form.TwilioAuthToken != "" || form.TwilioFromNumber != "") &&
 			(form.TwilioAccountSid == "" || form.TwilioAuthToken == "" || form.TwilioFromNumber == "") {
 			flash.Error("Error updating realm: either all SMS fields must be specified or no SMS fields must be specified")
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
@@ -162,7 +167,7 @@ func (c *Controller) HandleSave() http.Handler {
 		// Save
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to update realm: %v", err)
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
@@ -178,7 +183,7 @@ func (c *Controller) HandleSave() http.Handler {
 				// All fields are empty, delete the record
 				if err := c.db.DeleteSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderShow(ctx, w, r, realm, smsConfig)
+					c.renderSettings(ctx, w, r, realm, smsConfig)
 					return
 				}
 			} else {
@@ -189,7 +194,7 @@ func (c *Controller) HandleSave() http.Handler {
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderShow(ctx, w, r, realm, smsConfig)
+					c.renderSettings(ctx, w, r, realm, smsConfig)
 					return
 				}
 			}
@@ -207,7 +212,7 @@ func (c *Controller) HandleSave() http.Handler {
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderShow(ctx, w, r, realm, smsConfig)
+					c.renderSettings(ctx, w, r, realm, smsConfig)
 					return
 				}
 			}
@@ -234,7 +239,7 @@ func (c *Controller) HandleSave() http.Handler {
 	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm, smsConfig *database.SMSConfig) {
+func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm, smsConfig *database.SMSConfig) {
 	if smsConfig == nil {
 		var err error
 		smsConfig, err = realm.SMSConfig(c.db)
@@ -265,11 +270,4 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 	m["longCodeLengths"] = longCodeLengths
 	m["longCodeHours"] = longCodeHours
 	c.h.RenderHTML(w, "realmadmin/edit", m)
-}
-
-func stringValOK(s *string) (string, bool) {
-	if s == nil {
-		return "", false
-	}
-	return *s, true
 }
