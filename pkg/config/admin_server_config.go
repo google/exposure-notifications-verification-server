@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -48,6 +49,11 @@ type AdminAPIServerConfig struct {
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=false"`
+
+	// For EN Express, the link will be
+	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
+	// This repository contains a redirect service that can be used for this purpose.
+	ENExpressRedirectDomain string `env:"ENX_REDIRECT_DOMAIN"`
 }
 
 // NewAdminAPIServerConfig returns the environment config for the Admin API server.
@@ -75,7 +81,13 @@ func (c *AdminAPIServerConfig) Validate() error {
 		}
 	}
 
+	c.ENExpressRedirectDomain = strings.ToLower(c.ENExpressRedirectDomain)
+
 	return nil
+}
+
+func (c *AdminAPIServerConfig) GetENXRedirectDomain() string {
+	return c.ENExpressRedirectDomain
 }
 
 func (c *AdminAPIServerConfig) GetCollisionRetryCount() uint {

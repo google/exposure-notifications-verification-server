@@ -81,6 +81,11 @@ type ServerConfig struct {
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
+	// For EN Express, the link will be
+	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
+	// This repository contains a redirect service that can be used for this purpose.
+	ENExpressRedirectDomain string `env:"ENX_REDIRECT_DOMAIN"`
+
 	// Certificate signing key settings, needed for public key / settings display.
 	CertificateSigning CertificateSigningConfig
 
@@ -119,7 +124,13 @@ func (c *ServerConfig) Validate() error {
 		}
 	}
 
+	c.ENExpressRedirectDomain = strings.ToLower(c.ENExpressRedirectDomain)
+
 	return nil
+}
+
+func (c *ServerConfig) GetENXRedirectDomain() string {
+	return c.ENExpressRedirectDomain
 }
 
 func (c *ServerConfig) GetCollisionRetryCount() uint {

@@ -14,26 +14,25 @@
 
 package database
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestSMS(t *testing.T) {
 	realm := NewRealmWithDefaults("test")
+	realm.SMSTextTemplate = "This is your Exposure Notifications Verification code: [enslink] Expires in [longexpires] hours"
 	realm.RegionCode = "US-WA"
 
-	{
-		got := realm.BuildSMSText("12345678", "abcdefgh12345678")
-		want := "This is your Exposure Notifications Verification code: ens://v?r=US-WA&c=abcdefgh12345678 Expires in 24 hours"
-		if got != want {
-			t.Errorf("SMS text wrong, want: %q got %q", want, got)
-		}
+	got := realm.BuildSMSText("12345678", "abcdefgh12345678", "en.express")
+	want := "This is your Exposure Notifications Verification code: https://us-wa.en.express/v?c=abcdefgh12345678 Expires in 24 hours"
+	if got != want {
+		t.Errorf("SMS text wrong, want: %q got %q", want, got)
 	}
 
-	{
-		realm.SMSTextTemplate = "State of Wonder, Covid-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
-		got := realm.BuildSMSText("654321", "asdflkjasdlkfjl")
-		want := "State of Wonder, Covid-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
-		if got != want {
-			t.Errorf("SMS text wrong, want: %q got %q", want, got)
-		}
+	realm.SMSTextTemplate = "State of Wonder, Covid-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
+	got = realm.BuildSMSText("654321", "asdflkjasdlkfjl", "")
+	want = "State of Wonder, Covid-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
+	if got != want {
+		t.Errorf("SMS text wrong, want: %q got %q", want, got)
 	}
 }

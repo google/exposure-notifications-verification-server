@@ -133,6 +133,8 @@ func templateFuncs() template.FuncMap {
 		"joinStrings":    strings.Join,
 		"trimSpace":      strings.TrimSpace,
 		"stringContains": strings.Contains,
+		"toLower":        strings.ToLower,
+		"toUpper":        strings.ToUpper,
 	}
 }
 

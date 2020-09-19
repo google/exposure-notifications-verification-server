@@ -263,11 +263,11 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 	// Valid settings for pwd rotation.
 	m["passwordRotateDays"] = passwordRotationPeriodDays
 	m["passwordWarnDays"] = passwordRotationWarningDays
-
 	// Valid settings for code parameters.
 	m["shortCodeLengths"] = shortCodeLengths
 	m["shortCodeMinutes"] = shortCodeMinutes
 	m["longCodeLengths"] = longCodeLengths
 	m["longCodeHours"] = longCodeHours
+	m["enxRedirectDomain"] = c.config.GetENXRedirectDomain()
 	c.h.RenderHTML(w, "realmadmin/edit", m)
 }
