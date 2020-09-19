@@ -118,7 +118,7 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 			}
 
 			if passwordRedirectRequired(ctx, user, realm) {
-				controller.RedirectToResetPassword(w, r, h)
+				controller.RedirectToChangePassword(w, r, h)
 			}
 
 			next.ServeHTTP(w, r)
@@ -159,7 +159,7 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 			}
 
 			if passwordRedirectRequired(ctx, user, realm) {
-				controller.RedirectToResetPassword(w, r, h)
+				controller.RedirectToChangePassword(w, r, h)
 			}
 
 			next.ServeHTTP(w, r)
@@ -168,20 +168,23 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 }
 
 func passwordRedirectRequired(ctx context.Context, user *database.User, realm *database.Realm) bool {
-	switch checkRealmPasswordAge(user, realm) {
-	case nil:
-		return false
-	case errPasswordChangeRequired:
-		return true
-	default:
-		if session := controller.SessionFromContext(ctx); !controller.
-			PasswordExpireWarnedFromSession(session) {
-			controller.StorePasswordExpireWarned(session, true)
-			flash := controller.Flash(session)
-			flash.Alert(strings.Title(err.Error()) + ".")
-		}
+	err := checkRealmPasswordAge(user, realm)
+	if err == nil {
 		return false
 	}
+	session := controller.SessionFromContext(ctx)
+	flash := controller.Flash(session)
+
+	if err == errPasswordChangeRequired {
+		flash.Error(strings.Title(err.Error() + "."))
+		return true
+	}
+
+	if !controller.PasswordExpireWarnedFromSession(session) {
+		controller.StorePasswordExpireWarned(session, true)
+		flash.Warning(strings.Title(err.Error() + "."))
+	}
+	return false
 }
 
 var errPasswordChangeRequired = errors.New("password change required")
@@ -195,7 +198,7 @@ func checkRealmPasswordAge(user *database.User, realm *database.Realm) error {
 	nextPasswordChange := user.LastPasswordChange.Add(
 		time.Hour * 24 * time.Duration(realm.PasswordRotationPeriodDays))
 
-	if nextPasswordChange.After(now) {
+	if now.After(nextPasswordChange) {
 		return errPasswordChangeRequired
 	}
 
