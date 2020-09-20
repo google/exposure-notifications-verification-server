@@ -29,9 +29,9 @@ func TestSMS(t *testing.T) {
 		t.Errorf("SMS text wrong, want: %q got %q", want, got)
 	}
 
-	realm.SMSTextTemplate = "State of Wonder, Covid-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
+	realm.SMSTextTemplate = "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
 	got = realm.BuildSMSText("654321", "asdflkjasdlkfjl", "")
-	want = "State of Wonder, Covid-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
+	want = "State of Wonder, COVID-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
 	if got != want {
 		t.Errorf("SMS text wrong, want: %q got %q", want, got)
 	}
