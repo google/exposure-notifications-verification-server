@@ -6,11 +6,7 @@
 
   <nav class="navbar navbar-expand-md navbar-dark bg-primary">
     <div class="container">
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar"
-        aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
+      {{template "navtoggle" .}}
       <div class="collapse navbar-collapse" id="navbar">
         <ul class="navbar-nav mr-auto">
           {{if .currentRealm}}
@@ -19,26 +15,7 @@
           </li>
           {{end}}
         </ul>
-
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
-              aria-expanded="false">
-              {{.currentUser.Name}}
-            </a>
-
-            <div class="dropdown-menu" aria-labelledby="profile-menu">
-              <h6 class="dropdown-header">System admin</h6>
-              <a class="dropdown-item" href="/admin/realms">Realms</a>
-              <a class="dropdown-item" href="/admin/users">Admins</a>
-              <div class="dropdown-divider"></div>
-
-              <h6 class="dropdown-header">Actions</h6>
-              <a class="dropdown-item" href="/login/select-realm">{{if .currentRealm}}Change realm{{else}}Select realm{{end}}</a>
-              <a class="dropdown-item" href="/signout">Sign out</a>
-            </div>
-          </li>
-        </ul>
+        {{template "navdropdown" .}}
       </div>
     </div>
   </nav>
