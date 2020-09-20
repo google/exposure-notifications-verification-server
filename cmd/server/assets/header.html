@@ -197,8 +197,7 @@
       {{template "navtoggle" .}}
 
       <div class="collapse navbar-collapse" id="navbar">
-        {{if .currentUser}}
-        {{if .currentRealm}}
+        {{if and .currentUser .currentRealm}}
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
             <a class="nav-link" href="/home">Issue code</a>
@@ -207,7 +206,6 @@
             <a class="nav-link" href="/code/status">Check code status</a>
           </li>
         </ul>
-        {{end}}
         {{end}}
         {{template "navdropdown" .}}
       </div>
