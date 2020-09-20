@@ -365,6 +365,7 @@ func realMain(ctx context.Context) error {
 	{
 		adminSub := r.PathPrefix("/admin").Subrouter()
 		adminSub.Use(requireAuth)
+		adminSub.Use(loadCurrentRealm)
 		adminSub.Use(requireVerified)
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
