@@ -29,14 +29,6 @@
 <title>{{if .title}}{{.title}}{{else}}Diagnosis Verification Server{{end}}</title>
 
 <style type="text/css">
-  div.realm-header {
-    background-color: #0055b1;
-  }
-
-  div.bg-nav {
-    background-color: #0055b1;
-  }
-
   div.admin-header {
     background-color:#D66402
   }
@@ -202,7 +194,7 @@
 
       <div class="collapse navbar-collapse mt-2" id="navbar">
         {{if .currentRealm}}
-        <ul class="nav mr-auto">
+        <ul class="nav mr-auto flex-column flex-md-row">
           <li class="nav-item">
             <a class="nav-link {{if .homeTab}}active{{end}}" href="/home">Issue code</a>
           </li>
@@ -228,7 +220,7 @@ aria-expanded="false" aria-label="Toggle navigation">
 
 {{/* defines the user dropdown menu */}}
 {{define "navdropdown"}}
-<ul class="navbar-nav ml-auto">
+<ul class="navbar-nav ml-3">
   {{if .currentUser}}
   <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
