@@ -166,5 +166,6 @@ type Code struct {
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, code Code) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["code"] = code
+	m["checkTab"] = true
 	c.h.RenderHTML(w, "code/show", m)
 }

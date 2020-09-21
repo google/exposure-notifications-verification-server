@@ -33,6 +33,10 @@
     background-color: #0055b1;
   }
 
+  div.bg-nav {
+    background-color: #0055b1;
+  }
+
   div.admin-header {
     background-color:#D66402
   }
@@ -187,23 +191,23 @@
 {{define "navbar"}}
 <header class="mb-3">
   {{if .currentRealm}}
-  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white realm-header">
+  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
     {{.currentRealm.Name}}{{if .currentRealm.RegionCode}} - {{.currentRealm.RegionCode}}{{end}}
   </div>
   {{end}}
 
-  <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+  <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
     <div class="container">
       {{template "navtoggle" .}}
 
       <div class="collapse navbar-collapse" id="navbar">
         {{if .currentRealm}}
-        <ul class="navbar-nav mr-auto">
+        <ul class="nav mr-auto">
           <li class="nav-item">
-            <a class="nav-link" href="/home">Issue code</a>
+            <a class="nav-link {{if .homeTab}}active{{end}}" href="/home">Issue code</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/code/status">Check code status</a>
+            <a class="nav-link {{if .checkTab}}active{{end}}" href="/code/status">Check code status</a>
           </li>
         </ul>
         {{end}}

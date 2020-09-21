@@ -88,6 +88,7 @@ func (c *Controller) HandleHome() http.Handler {
 
 		// Set test date params
 		now := time.Now().UTC()
+		m["homeTab"] = true
 		m["maxDate"] = now.Format("2006-01-02")
 		m["minDate"] = now.Add(c.pastDaysDuration).Format("2006-01-02")
 		m["maxSymptomDays"] = c.displayAllowedDays
