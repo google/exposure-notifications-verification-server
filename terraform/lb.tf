@@ -119,7 +119,7 @@ resource "google_compute_target_https_proxy" "enx-redirect-https" {
   name    = "verification-enx-redirect"
   project = var.project
 
-  url_map          = google_compute_url_map.urlmap-https[0].id
+  url_map          = google_compute_url_map.enx-redirect-urlmap-https[0].id
   ssl_certificates = [google_compute_managed_ssl_certificate.enx-redirect[0].id]
 }
 
@@ -159,7 +159,7 @@ resource "google_compute_global_forwarding_rule" "enx-redirect-http" {
   ip_address            = google_compute_global_address.verification-enx-redirect[0].address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "80"
-  target                = google_compute_target_http_proxy.http[0].id
+  target                = google_compute_target_http_proxy.enx-redirect-http[0].id
 }
 
 resource "google_compute_global_forwarding_rule" "enx-redirect-https" {
@@ -172,7 +172,7 @@ resource "google_compute_global_forwarding_rule" "enx-redirect-https" {
   ip_address            = google_compute_global_address.verification-enx-redirect[0].address
   load_balancing_scheme = "EXTERNAL"
   port_range            = "443"
-  target                = google_compute_target_https_proxy.https[0].id
+  target                = google_compute_target_https_proxy.enx-redirect-https[0].id
 }
 
 resource "google_compute_managed_ssl_certificate" "default" {
