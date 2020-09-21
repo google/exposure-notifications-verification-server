@@ -46,29 +46,33 @@ func init() {
 
 func (c *Controller) HandleSettings() http.Handler {
 	type FormData struct {
+		General        bool   `form:"general"`
 		Name           string `form:"name"`
 		RegionCode     string `form:"region_code"`
 		WelcomeMessage string `form:"welcome_message"`
 
+		Codes                 bool              `form:"codes"`
 		AllowedTestTypes      database.TestType `form:"allowed_test_types"`
-		RequireDate           *bool             `form:"require_date"`
+		RequireDate           bool              `form:"require_date"`
 		CodeLength            uint              `form:"code_length"`
 		CodeDurationMinutes   int64             `form:"code_duration"`
 		LongCodeLength        uint              `form:"long_code_length"`
 		LongCodeDurationHours int64             `form:"long_code_duration"`
 		SMSTextTemplate       string            `form:"sms_text_template"`
 
-		TwilioSMSConfig  bool   `form:"twilio_sms_config"`
+		SMS              bool   `form:"sms"`
 		TwilioAccountSid string `form:"twilio_account_sid"`
 		TwilioAuthToken  string `form:"twilio_auth_token"`
 		TwilioFromNumber string `form:"twilio_from_number"`
 
-		MFAMode                     *int16 `form:"mfa_mode"`
-		EmailVerifiedMode           *int16 `form:"email_verified_mode"`
-		PasswordRotationPeriodDays  uint   `form:"password_rotation_period_days"`
-		PasswordRotationWarningDays uint   `form:"password_rotation_warning_days"`
+		Security                    bool  `form:"security"`
+		MFAMode                     int16 `form:"mfa_mode"`
+		EmailVerifiedMode           int16 `form:"email_verified_mode"`
+		PasswordRotationPeriodDays  uint  `form:"password_rotation_period_days"`
+		PasswordRotationWarningDays uint  `form:"password_rotation_warning_days"`
 
-		AbusePreventionEnabled     *bool   `form:"abuse_prevention_enabled"`
+		AbusePrevention            bool    `form:"abuse_prevention"`
+		AbusePreventionEnabled     bool    `form:"abuse_prevention_enabled"`
 		AbusePreventionLimitFactor float32 `form:"abuse_prevention_limit_factor"`
 		AbusePreventionBurst       uint64  `form:"abuse_prevention_burst"`
 	}
@@ -110,59 +114,35 @@ func (c *Controller) HandleSettings() http.Handler {
 		}
 
 		// General
-		if v := form.Name; v != "" {
-			realm.Name = v
-		}
-		if v := form.RegionCode; v != "" {
-			realm.RegionCode = v
-		}
-		if v := form.WelcomeMessage; v != "" {
-			realm.WelcomeMessage = v
+		if form.General {
+			realm.Name = form.Name
+			realm.RegionCode = form.RegionCode
+			realm.WelcomeMessage = form.WelcomeMessage
 		}
 
 		// Codes
-		if v := form.AllowedTestTypes; v > 0 {
-			realm.AllowedTestTypes = v
-		}
-		if v := form.RequireDate; v != nil {
-			realm.RequireDate = *v
-		}
-		if v := form.CodeLength; v > 0 {
-			realm.CodeLength = v
-		}
-		if v := form.CodeDurationMinutes; v > 0 {
-			realm.CodeDuration.Duration = time.Duration(v) * time.Minute
-		}
-		if v := form.LongCodeLength; v > 0 {
-			realm.LongCodeLength = v
-		}
-		if v := form.LongCodeDurationHours; v > 0 {
-			realm.LongCodeDuration.Duration = time.Duration(v) * time.Minute
-		}
-		if v := form.SMSTextTemplate; v != "" {
-			realm.SMSTextTemplate = v
+		if form.Codes {
+			realm.AllowedTestTypes = form.AllowedTestTypes
+			realm.RequireDate = form.RequireDate
+			realm.CodeLength = form.CodeLength
+			realm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
+			realm.LongCodeLength = form.LongCodeLength
+			realm.LongCodeDuration.Duration = time.Duration(form.LongCodeDurationHours) * time.Hour
+			realm.SMSTextTemplate = form.SMSTextTemplate
 		}
 
 		// Security
-		if v := form.EmailVerifiedMode; v != nil {
-			realm.EmailVerifiedMode = database.AuthRequirement(*v)
-		}
-		if v := form.MFAMode; v != nil {
-			realm.MFAMode = database.AuthRequirement(*v)
-		}
-		if v := form.PasswordRotationPeriodDays; v > 0 {
-			realm.PasswordRotationPeriodDays = v
-		}
-		if v := form.PasswordRotationWarningDays; v > 0 {
-			realm.PasswordRotationWarningDays = v
+		if form.Security {
+			realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
+			realm.MFAMode = database.AuthRequirement(form.MFAMode)
+			realm.PasswordRotationPeriodDays = form.PasswordRotationPeriodDays
+			realm.PasswordRotationWarningDays = form.PasswordRotationWarningDays
 		}
 
 		// Abuse prevention
-		if v := form.AbusePreventionEnabled; v != nil {
-			realm.AbusePreventionEnabled = *v
-		}
-		if v := form.AbusePreventionLimitFactor; v > 0 {
-			realm.AbusePreventionLimitFactor = v
+		if form.AbusePrevention {
+			realm.AbusePreventionEnabled = form.AbusePreventionEnabled
+			realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
 		}
 
 		// Save
@@ -172,7 +152,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			return
 		}
 
-		if form.TwilioSMSConfig {
+		if form.SMS {
 			// Process SMS settings
 			smsConfig, err := realm.SMSConfig(c.db)
 			if err != nil && !database.IsNotFound(err) {

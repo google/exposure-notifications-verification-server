@@ -415,7 +415,7 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 	}
 }
 
-// callback HMAC alters HMACs the value with the given key before saving.
+// callbackHMAC alters HMACs the value with the given key before saving.
 func callbackHMAC(ctx context.Context, hashFunc func(string) (string, error), table, column string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		// Do nothing if not the target table
@@ -485,4 +485,20 @@ func withRetries(ctx context.Context, f retry.RetryFunc) error {
 	b = retry.WithCappedDuration(1*time.Second, b)
 
 	return retry.Do(ctx, b, f)
+}
+
+// stringValue gets the value of the string pointer, returning "" for nil.
+func stringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// stringPtr converts the string value to a pointer, returning nil for "".
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
