@@ -24,6 +24,11 @@ func HandleHealthz(hctx context.Context, cfg *database.Config, h *render.Rendere
 		ctx := r.Context()
 		params := r.URL.Query()
 		if s := params.Get("service"); s == "database" {
+			if cfg == nil {
+				InternalError(w, r, h, fmt.Errorf("database not configured for health check"))
+				return
+			}
+
 			if rl.Allow() {
 				db, err := cfg.Load(ctx)
 				if err != nil {
@@ -31,6 +36,7 @@ func HandleHealthz(hctx context.Context, cfg *database.Config, h *render.Rendere
 					InternalError(w, r, h, err)
 					return
 				}
+
 				if err := db.Open(ctx); err != nil {
 					logger.Errorw("connect db", "error", err)
 					InternalError(w, r, h, err)
