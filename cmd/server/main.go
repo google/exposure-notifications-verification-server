@@ -181,6 +181,10 @@ func realMain(ctx context.Context) error {
 	requireSession := middleware.RequireSession(ctx, sessions, h)
 	r.Use(requireSession)
 
+	// Include the current URI
+	currentRoute := middleware.CurrentRoute()
+	r.Use(currentRoute)
+
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionIdleTimeout, config.SessionDuration)
 	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)

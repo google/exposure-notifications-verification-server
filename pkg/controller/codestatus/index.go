@@ -38,6 +38,5 @@ func (c *Controller) HandleIndex() http.Handler {
 func (c *Controller) renderStatus(ctx context.Context, w http.ResponseWriter, code *database.VerificationCode) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["code"] = code
-	m["checkTab"] = true
 	c.h.RenderHTML(w, "code/status", m)
 }

@@ -196,10 +196,10 @@
         {{if .currentRealm}}
         <ul class="nav mr-auto flex-column flex-md-row">
           <li class="nav-item">
-            <a class="nav-link {{if .homeTab}}active{{end}}" href="/home">Issue code</a>
+            <a class="nav-link {{if eq .path.CurrentFile "home"}}active{{end}}" href="/home">Issue code</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {{if .checkTab}}active{{end}}" href="/code/status">Check code status</a>
+            <a class="nav-link {{if eq .path.CurrentDir "/code/"}}active{{end}}" href="/code/status">Check code status</a>
           </li>
         </ul>
         {{end}}
