@@ -39,6 +39,7 @@
           <h5 class="mb-1">Status</h5>
           <p class="mb-1">{{.code.Status}}</p>
         </div>
+        {{if not .code.Claimed}}
         <div class="list-group-item">
           <h5 class="mb-1">Expiry</h5>
           <span id="code-expires-at" class="sm text-danger">&nbsp;</span>
@@ -48,6 +49,7 @@
           <h5 class="mb-1">SMS link expiry</h5>
           <span id="long-code-expires-at" class="sm text-danger">&nbsp;</span>
         </div>
+        {{end}}
         {{end}}
         {{if .code.Expires}}
         <div class="list-group-item">
@@ -65,6 +67,7 @@
   {{template "scripts" .}}
   {{template "codescripts" .}}
 
+  {{if not .code.Claimed}}
   <script type="text/javascript">
     let $buttonInvalidate = $('button#invalidate');
     let expires = {{ .code.Expires }};
@@ -80,6 +83,7 @@
       {{end}}
     });
   </script>
+  {{end}}
 </body>
 
 </html>
