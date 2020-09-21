@@ -11,9 +11,10 @@
 
 <form method="POST" action="/realm/settings#sms" class="floating-form">
   {{ .csrfField }}
+  <input type="hidden" name="twilio_sms_config" value="1" />
 
   <div class="form-label-group">
-    <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control"
+    <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control text-monospace"
       placeholder="Twilio account" value="{{if $smsConfig}}{{$smsConfig.TwilioAccountSid}}{{end}}" />
     <label for="twilio-account-sid">Twilio account</label>
     <small class="form-text text-muted">
@@ -23,7 +24,7 @@
 
   <div class="form-label-group">
     <div class="input-group">
-      <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control" autocomplete="new-password"
+      <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace" autocomplete="new-password"
         placeholder="Twilio auth token" value="{{if $smsConfig}}{{$smsConfig.TwilioAuthToken}}{{end}}">
       <label for="twilio-auth-token">Twilio auth token</label>
       <div class="input-group-append">
@@ -38,7 +39,7 @@
   </div>
 
   <div class="form-label-group">
-    <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control"
+    <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control text-monospace" autocomplete="new-password"
       placeholder="Twilio numberx" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
     <label for="twilio-from-number">Twilio number</label>
     <small class="form-text text-muted">
