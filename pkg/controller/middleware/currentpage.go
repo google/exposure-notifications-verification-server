@@ -17,6 +17,7 @@ package middleware
 
 import (
 	"net/http"
+	"net/url"
 	"path"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -24,7 +25,7 @@ import (
 )
 
 type Path struct {
-	uri string
+	uri *url.URL
 }
 
 func CurrentPath() mux.MiddlewareFunc {
@@ -33,7 +34,7 @@ func CurrentPath() mux.MiddlewareFunc {
 			ctx := r.Context()
 
 			m := controller.TemplateMapFromContext(ctx)
-			m["currentPath"] = &Path{uri: r.RequestURI}
+			m["currentPath"] = &Path{uri: r.URL}
 
 			ctx = controller.WithTemplateMap(ctx, m)
 			*r = *r.WithContext(ctx)
@@ -43,16 +44,16 @@ func CurrentPath() mux.MiddlewareFunc {
 	}
 }
 
-func (p *Path) CurrentPath() string {
-	return p.uri
+func (p *Path) Path() string {
+	return p.uri.RequestURI()
 }
 
-func (p *Path) CurrentDir() string {
-	dir, _ := path.Split(p.uri)
+func (p *Path) Dir() string {
+	dir, _ := path.Split(p.uri.RequestURI())
 	return dir
 }
 
-func (p *Path) CurrentFile() string {
-	_, file := path.Split(p.uri)
+func (p *Path) File() string {
+	_, file := path.Split(p.uri.RequestURI())
 	return file
 }
