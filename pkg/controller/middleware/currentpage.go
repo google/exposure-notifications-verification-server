@@ -27,13 +27,13 @@ type Path struct {
 	uri string
 }
 
-func CurrentRoute() mux.MiddlewareFunc {
+func CurrentPath() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
 			m := controller.TemplateMapFromContext(ctx)
-			m["path"] = &Path{uri: r.RequestURI}
+			m["currentPath"] = &Path{uri: r.RequestURI}
 
 			ctx = controller.WithTemplateMap(ctx, m)
 			*r = *r.WithContext(ctx)

@@ -182,8 +182,8 @@ func realMain(ctx context.Context) error {
 	r.Use(requireSession)
 
 	// Include the current URI
-	currentRoute := middleware.CurrentRoute()
-	r.Use(currentRoute)
+	CurrentPath := middleware.CurrentPath)
+	r.Use(currentPath)
 
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionIdleTimeout, config.SessionDuration)
