@@ -58,6 +58,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		LongCodeDurationHours int64             `form:"long_code_duration"`
 		SMSTextTemplate       string            `form:"sms_text_template"`
 
+		TwilioSMSConfig  bool   `form:"twilio_sms_config"`
 		TwilioAccountSid string `form:"twilio_account_sid"`
 		TwilioAuthToken  string `form:"twilio_auth_token"`
 		TwilioFromNumber string `form:"twilio_from_number"`
@@ -171,49 +172,51 @@ func (c *Controller) HandleSettings() http.Handler {
 			return
 		}
 
-		// Process SMS settings
-		smsConfig, err := realm.SMSConfig(c.db)
-		if err != nil && !database.IsNotFound(err) {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-		if smsConfig != nil {
-			// We have an existing record
-			if form.TwilioAccountSid == "" && form.TwilioAuthToken == "" && form.TwilioFromNumber == "" {
-				// All fields are empty, delete the record
-				if err := c.db.DeleteSMSConfig(smsConfig); err != nil {
-					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, realm, smsConfig)
-					return
+		if form.TwilioSMSConfig {
+			// Process SMS settings
+			smsConfig, err := realm.SMSConfig(c.db)
+			if err != nil && !database.IsNotFound(err) {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			if smsConfig != nil {
+				// We have an existing record
+				if form.TwilioAccountSid == "" && form.TwilioAuthToken == "" && form.TwilioFromNumber == "" {
+					// All fields are empty, delete the record
+					if err := c.db.DeleteSMSConfig(smsConfig); err != nil {
+						flash.Error("Failed to update realm: %v", err)
+						c.renderSettings(ctx, w, r, realm, smsConfig)
+						return
+					}
+				} else {
+					// Potential updates
+					smsConfig.TwilioAccountSid = form.TwilioAccountSid
+					smsConfig.TwilioAuthToken = form.TwilioAuthToken
+					smsConfig.TwilioFromNumber = form.TwilioFromNumber
+
+					if err := c.db.SaveSMSConfig(smsConfig); err != nil {
+						flash.Error("Failed to update realm: %v", err)
+						c.renderSettings(ctx, w, r, realm, smsConfig)
+						return
+					}
 				}
 			} else {
-				// Potential updates
-				smsConfig.TwilioAccountSid = form.TwilioAccountSid
-				smsConfig.TwilioAuthToken = form.TwilioAuthToken
-				smsConfig.TwilioFromNumber = form.TwilioFromNumber
+				// No SMS config exists
+				if form.TwilioAccountSid != "" && form.TwilioAuthToken != "" && form.TwilioFromNumber != "" {
+					// Values were provided
+					smsConfig = &database.SMSConfig{
+						RealmID:          realm.ID,
+						ProviderType:     sms.ProviderTypeTwilio,
+						TwilioAccountSid: form.TwilioAccountSid,
+						TwilioAuthToken:  form.TwilioAuthToken,
+						TwilioFromNumber: form.TwilioFromNumber,
+					}
 
-				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
-					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, realm, smsConfig)
-					return
-				}
-			}
-		} else {
-			// No SMS config exists
-			if form.TwilioAccountSid != "" && form.TwilioAuthToken != "" && form.TwilioFromNumber != "" {
-				// Values were provided
-				smsConfig = &database.SMSConfig{
-					RealmID:          realm.ID,
-					ProviderType:     sms.ProviderTypeTwilio,
-					TwilioAccountSid: form.TwilioAccountSid,
-					TwilioAuthToken:  form.TwilioAuthToken,
-					TwilioFromNumber: form.TwilioFromNumber,
-				}
-
-				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
-					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, realm, smsConfig)
-					return
+					if err := c.db.SaveSMSConfig(smsConfig); err != nil {
+						flash.Error("Failed to update realm: %v", err)
+						c.renderSettings(ctx, w, r, realm, smsConfig)
+						return
+					}
 				}
 			}
 		}
