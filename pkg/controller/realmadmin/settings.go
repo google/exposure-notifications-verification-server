@@ -44,29 +44,30 @@ func init() {
 	}
 }
 
-func (c *Controller) HandleSave() http.Handler {
+func (c *Controller) HandleSettings() http.Handler {
 	type FormData struct {
-		Name               string            `form:"name"`
-		RegionCode         string            `form:"regionCode"`
-		AllowedTestTypes   database.TestType `form:"allowedTestTypes"`
-		MFAMode            int16             `form:"MFAMode"`
-		EmailVerifiedMode  int16             `form:"emailVerifiedMode"`
-		PasswordRotateDays uint              `form:"passwordRotate"`
-		PasswordWarnDays   uint              `form:"passwordWarn"`
-		RequireDate        bool              `form:"requireDate"`
-		WelcomeMessage     string            `form:"welcomeMessage"`
+		Name           string `form:"name"`
+		RegionCode     string `form:"region_code"`
+		WelcomeMessage string `form:"welcome_message"`
 
-		CodeLength          uint   `form:"codeLength"`
-		CodeDurationMinutes int64  `form:"codeDuration"`
-		LongCodeLength      uint   `form:"longCodeLength"`
-		LongCodeHours       int64  `form:"longCodeDuration"`
-		SMSTextTemplate     string `form:"SMSTextTemplate"`
+		AllowedTestTypes      database.TestType `form:"allowed_test_types"`
+		RequireDate           *bool             `form:"require_date"`
+		CodeLength            uint              `form:"code_length"`
+		CodeDurationMinutes   int64             `form:"code_duration"`
+		LongCodeLength        uint              `form:"long_code_length"`
+		LongCodeDurationHours int64             `form:"long_code_duration"`
+		SMSTextTemplate       string            `form:"sms_text_template"`
 
 		TwilioAccountSid string `form:"twilio_account_sid"`
 		TwilioAuthToken  string `form:"twilio_auth_token"`
 		TwilioFromNumber string `form:"twilio_from_number"`
 
-		AbusePreventionEnabled     bool    `form:"abuse_prevention_enabled"`
+		MFAMode                     *int16 `form:"mfa_mode"`
+		EmailVerifiedMode           *int16 `form:"email_verified_mode"`
+		PasswordRotationPeriodDays  uint   `form:"password_rotation_period_days"`
+		PasswordRotationWarningDays uint   `form:"password_rotation_warning_days"`
+
+		AbusePreventionEnabled     *bool   `form:"abuse_prevention_enabled"`
 		AbusePreventionLimitFactor float32 `form:"abuse_prevention_limit_factor"`
 		AbusePreventionBurst       uint64  `form:"abuse_prevention_burst"`
 	}
@@ -87,10 +88,15 @@ func (c *Controller) HandleSave() http.Handler {
 			return
 		}
 
+		if r.Method == http.MethodGet {
+			c.renderSettings(ctx, w, r, realm, nil)
+			return
+		}
+
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
@@ -98,30 +104,70 @@ func (c *Controller) HandleSave() http.Handler {
 		if (form.TwilioAccountSid != "" || form.TwilioAuthToken != "" || form.TwilioFromNumber != "") &&
 			(form.TwilioAccountSid == "" || form.TwilioAuthToken == "" || form.TwilioFromNumber == "") {
 			flash.Error("Error updating realm: either all SMS fields must be specified or no SMS fields must be specified")
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
-		// Process general settings
-		realm.Name = form.Name
-		realm.RegionCode = form.RegionCode
-		realm.AllowedTestTypes = form.AllowedTestTypes
-		realm.RequireDate = form.RequireDate
-		realm.WelcomeMessage = form.WelcomeMessage
-		realm.CodeLength = form.CodeLength
-		realm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
-		realm.LongCodeLength = form.LongCodeLength
-		realm.LongCodeDuration.Duration = time.Hour * time.Duration(form.LongCodeHours)
-		realm.SMSTextTemplate = form.SMSTextTemplate
-		realm.MFAMode = database.AuthRequirement(form.MFAMode)
-		realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
-		realm.PasswordRotationPeriodDays = form.PasswordRotateDays
-		realm.PasswordRotationWarningDays = form.PasswordWarnDays
-		realm.AbusePreventionEnabled = form.AbusePreventionEnabled
-		realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
+		// General
+		if v := form.Name; v != "" {
+			realm.Name = v
+		}
+		if v := form.RegionCode; v != "" {
+			realm.RegionCode = v
+		}
+		if v := form.WelcomeMessage; v != "" {
+			realm.WelcomeMessage = v
+		}
+
+		// Codes
+		if v := form.AllowedTestTypes; v > 0 {
+			realm.AllowedTestTypes = v
+		}
+		if v := form.RequireDate; v != nil {
+			realm.RequireDate = *v
+		}
+		if v := form.CodeLength; v > 0 {
+			realm.CodeLength = v
+		}
+		if v := form.CodeDurationMinutes; v > 0 {
+			realm.CodeDuration.Duration = time.Duration(v) * time.Minute
+		}
+		if v := form.LongCodeLength; v > 0 {
+			realm.LongCodeLength = v
+		}
+		if v := form.LongCodeDurationHours; v > 0 {
+			realm.LongCodeDuration.Duration = time.Duration(v) * time.Minute
+		}
+		if v := form.SMSTextTemplate; v != "" {
+			realm.SMSTextTemplate = v
+		}
+
+		// Security
+		if v := form.EmailVerifiedMode; v != nil {
+			realm.EmailVerifiedMode = database.AuthRequirement(*v)
+		}
+		if v := form.MFAMode; v != nil {
+			realm.MFAMode = database.AuthRequirement(*v)
+		}
+		if v := form.PasswordRotationPeriodDays; v > 0 {
+			realm.PasswordRotationPeriodDays = v
+		}
+		if v := form.PasswordRotationWarningDays; v > 0 {
+			realm.PasswordRotationWarningDays = v
+		}
+
+		// Abuse prevention
+		if v := form.AbusePreventionEnabled; v != nil {
+			realm.AbusePreventionEnabled = *v
+		}
+		if v := form.AbusePreventionLimitFactor; v > 0 {
+			realm.AbusePreventionLimitFactor = v
+		}
+
+		// Save
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to update realm: %v", err)
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
@@ -137,7 +183,7 @@ func (c *Controller) HandleSave() http.Handler {
 				// All fields are empty, delete the record
 				if err := c.db.DeleteSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderShow(ctx, w, r, realm, smsConfig)
+					c.renderSettings(ctx, w, r, realm, smsConfig)
 					return
 				}
 			} else {
@@ -148,13 +194,13 @@ func (c *Controller) HandleSave() http.Handler {
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderShow(ctx, w, r, realm, smsConfig)
+					c.renderSettings(ctx, w, r, realm, smsConfig)
 					return
 				}
 			}
 		} else {
 			// No SMS config exists
-			if form.TwilioAccountSid != "" || form.TwilioAuthToken != "" || form.TwilioFromNumber != "" {
+			if form.TwilioAccountSid != "" && form.TwilioAuthToken != "" && form.TwilioFromNumber != "" {
 				// Values were provided
 				smsConfig = &database.SMSConfig{
 					RealmID:          realm.ID,
@@ -166,7 +212,7 @@ func (c *Controller) HandleSave() http.Handler {
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderShow(ctx, w, r, realm, smsConfig)
+					c.renderSettings(ctx, w, r, realm, smsConfig)
 					return
 				}
 			}
@@ -193,7 +239,7 @@ func (c *Controller) HandleSave() http.Handler {
 	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm, smsConfig *database.SMSConfig) {
+func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm, smsConfig *database.SMSConfig) {
 	if smsConfig == nil {
 		var err error
 		smsConfig, err = realm.SMSConfig(c.db)
@@ -217,11 +263,11 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 	// Valid settings for pwd rotation.
 	m["passwordRotateDays"] = passwordRotationPeriodDays
 	m["passwordWarnDays"] = passwordRotationWarningDays
-
 	// Valid settings for code parameters.
 	m["shortCodeLengths"] = shortCodeLengths
 	m["shortCodeMinutes"] = shortCodeMinutes
 	m["longCodeLengths"] = longCodeLengths
 	m["longCodeHours"] = longCodeHours
-	c.h.RenderHTML(w, "realm", m)
+	m["enxRedirectDomain"] = c.config.GetENXRedirectDomain()
+	c.h.RenderHTML(w, "realmadmin/edit", m)
 }

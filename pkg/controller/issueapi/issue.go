@@ -255,7 +255,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			message := realm.BuildSMSText(code, longCode)
+			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token
 				if err := c.db.DeleteVerificationCode(code); err != nil {

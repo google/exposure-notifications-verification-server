@@ -8,9 +8,6 @@
 <head>
   {{template "head" .}}
   {{template "floatingform" .}}
-  {{if .created}}
-  {{template "firebase" .}}
-  {{end}}
 </head>
 
 <body class="bg-light">
@@ -34,26 +31,6 @@
   </main>
 
   {{template "scripts" .}}
-  {{if .created}}
-  <script type="text/javascript">
-  $(function() {
-    let $allUsers = $('#all-users');
-    let $submit = $('#submit-user');
-
-    let email = {{.user.Email}};
-
-    firebase.auth().sendPasswordResetEmail(email)
-      .then(function() {
-        flash.alert(`Successfully created user '{{.user.Name}}'.`);
-      }).catch(function(error) {
-        flash.error(error.message);
-      }).then(function() {
-        $submit.prop('disabled', false);
-        $allUsers.removeClass('disabled');
-      });
-  });
-  </script>
-  {{end}}
 </body>
 
 </html>

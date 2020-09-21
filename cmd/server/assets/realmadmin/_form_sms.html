@@ -1,0 +1,54 @@
+{{define "realmadmin/_form_sms"}}
+
+{{$realm := .realm}}
+{{$smsConfig := .smsConfig}}
+
+<p class="mb-4">
+  These are the settings for configuring the <a
+  href="https://www.twilio.com">Twilio</a> SMS provider. If these values are
+  blank, the system will not send SMS text message verification codes.
+</p>
+
+<form method="POST" action="/realm/settings#sms" class="floating-form">
+  {{ .csrfField }}
+
+  <div class="form-label-group">
+    <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control"
+      placeholder="Twilio account" value="{{if $smsConfig}}{{$smsConfig.TwilioAccountSid}}{{end}}" />
+    <label for="twilio-account-sid">Twilio account</label>
+    <small class="form-text text-muted">
+      This is the Twilio Account SID. Get this value from the Twilio console.
+    </small>
+  </div>
+
+  <div class="form-label-group">
+    <div class="input-group">
+      <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control" autocomplete="new-password"
+        placeholder="Twilio auth token" value="{{if $smsConfig}}{{$smsConfig.TwilioAuthToken}}{{end}}">
+      <label for="twilio-auth-token">Twilio auth token</label>
+      <div class="input-group-append">
+        <a class="input-group-text" data-toggle-password="twilio-auth-token">
+          <span class="oi oi-lock-locked" aria-hidden="true"></span>
+        </a>
+      </div>
+    </div>
+    <small class="form-text text-muted">
+      This is the Twilio Auth Token. Get this value from the Twilio console.
+    </small>
+  </div>
+
+  <div class="form-label-group">
+    <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control"
+      placeholder="Twilio numberx" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
+    <label for="twilio-from-number">Twilio number</label>
+    <small class="form-text text-muted">
+      This is the Twilio From Number. Get this value from the Twilio console.
+    </small>
+  </div>
+
+  <div class="mt-4">
+    <input type="submit" class="btn btn-primary btn-block" value="Update SMS settings" />
+  </div>
+</form>
+
+{{end}}

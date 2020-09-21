@@ -333,8 +333,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(rateLimit)
 
 		realmadminController := realmadmin.New(ctx, cacher, config, db, limiterStore, h)
-		realmSub.Handle("/settings", realmadminController.HandleIndex()).Methods("GET")
-		realmSub.Handle("/settings/save", realmadminController.HandleSave()).Methods("POST")
+		realmSub.Handle("/settings", realmadminController.HandleSettings()).Methods("GET", "POST")
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
 		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
@@ -367,6 +366,7 @@ func realMain(ctx context.Context) error {
 	{
 		adminSub := r.PathPrefix("/admin").Subrouter()
 		adminSub.Use(requireAuth)
+		adminSub.Use(loadCurrentRealm)
 		adminSub.Use(requireVerified)
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)

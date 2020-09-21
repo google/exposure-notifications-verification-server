@@ -1,4 +1,27 @@
 {{define "admin/navbar"}}
+<header class="mb-3">
+  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white admin-header">
+    System admin
+  </div>
+
+  <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+    <div class="container">
+      {{template "navtoggle" .}}
+      <div class="collapse navbar-collapse" id="navbar">
+        {{if .currentRealm}}
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/home">&larr; Back to {{.currentRealm.Name}} </a>
+          </li>
+        </ul>
+        {{end}}
+        {{template "navdropdown" .}}
+      </div>
+    </div>
+  </nav>
+</header>
+
+
 <ul class="nav nav-pills justify-content-center mb-3">
   <li class="nav-item">
     <a class="nav-link{{if stringContains .currentPath "/admin/realms"}} active{{end}}" href="/admin/realms">Realms</a>
