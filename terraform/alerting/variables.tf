@@ -5,7 +5,7 @@ variable "project" {
 variable "notification-email" {
   type        = string
   default     = "nobody@example.com"
-  description = "Email address for alerts"
+  description = "Email address for alerts to go to."
 }
 
 variable "server-host" {
@@ -24,6 +24,12 @@ variable "adminapi-host" {
   type        = string
   default     = ""
   description = "Domain adminapi is hosted on."
+}
+
+variable "extra-hosts" {
+  type        = list(string)
+  default     = []
+  description = "Extra hosts to probe and monitor."
 }
 
 terraform {
