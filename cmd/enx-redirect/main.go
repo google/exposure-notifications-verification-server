@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/redirect"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -90,6 +91,8 @@ func realMain(ctx context.Context) error {
 	// Enable debug headers
 	processDebug := middleware.ProcessDebug(ctx)
 	r.Use(processDebug)
+
+	r.Handle("/health", controller.HandleHealthz(ctx, nil, h)).Methods("GET")
 
 	redirectController, err := redirect.New(ctx, config, h)
 	if err != nil {
