@@ -160,6 +160,7 @@ resource "google_cloud_run_service" "server" {
             local.rate_limit_config,
             local.session_config,
             local.signing_config,
+            local.issue_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "server", {}),

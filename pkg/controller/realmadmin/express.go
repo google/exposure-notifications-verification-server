@@ -89,7 +89,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 		realm.CodeDuration = enxSettings.CodeDuration
 		realm.LongCodeLength = enxSettings.LongCodeLength
 		realm.LongCodeDuration = enxSettings.LongCodeDuration
-		realm.SMSTextTemplate = "This is your Exposure Notifications Verification code: [enslink] Expires in [longexpires] hours"
+		realm.SMSTextTemplate = "Your Exposure Notifications verification link: [enslink]. Expires in [longexpires] hours (click for mobile device only)"
 		// Confirmed is the only allowed test type for EN Express.
 		realm.AllowedTestTypes = database.TestTypeConfirmed
 

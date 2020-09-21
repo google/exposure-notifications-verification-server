@@ -87,7 +87,7 @@ type Realm struct {
 	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16"`
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
 	// SMS Content
-	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours'"`
+	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
 
 	// WelcomeMessage is arbitrary realm-defined data to display to users after
 	// selecting this realm. If empty, nothing is displayed. The format is
@@ -173,7 +173,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		CodeDuration:        FromDuration(15 * time.Minute),
 		LongCodeLength:      16,
 		LongCodeDuration:    FromDuration(24 * time.Hour),
-		SMSTextTemplate:     "This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours",
+		SMSTextTemplate:     "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours",
 		AllowedTestTypes:    14,
 		CertificateDuration: FromDuration(15 * time.Minute),
 	}
@@ -294,10 +294,19 @@ func (r *Realm) GetLongCodeDurationHours() int {
 }
 
 // BuildSMSText replaces certain strings with the right values.
-func (r *Realm) BuildSMSText(code, longCode string) string {
+func (r *Realm) BuildSMSText(code, longCode string, enxDomain string) string {
 	text := r.SMSTextTemplate
 
-	text = strings.ReplaceAll(text, SMSENExpressLink, fmt.Sprintf("ens://v?r=%s&c=%s", SMSRegion, SMSLongCode))
+	if enxDomain == "" {
+		// preserves legacy behavior.
+		text = strings.ReplaceAll(text, SMSENExpressLink, fmt.Sprintf("ens://v?r=%s&c=%s", SMSRegion, SMSLongCode))
+	} else {
+		text = strings.ReplaceAll(text, SMSENExpressLink,
+			fmt.Sprintf("https://%s.%s/v?c=%s",
+				strings.ToLower(r.RegionCode),
+				enxDomain,
+				SMSLongCode))
+	}
 	text = strings.ReplaceAll(text, SMSRegion, r.RegionCode)
 	text = strings.ReplaceAll(text, SMSCode, code)
 	text = strings.ReplaceAll(text, SMSExpires, fmt.Sprintf("%d", r.GetCodeDurationMinutes()))

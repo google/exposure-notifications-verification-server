@@ -84,6 +84,10 @@ locals {
     VERIFICATION_SERVER_API = google_cloud_run_service.apiserver.status.0.url
   }
 
+  issue_config = {
+    ENX_REDIRECT_DOMAIN = var.enx_redirect_domain
+  }
+
   enx_redirect_config = {
     ASSETS_PATH        = "/assets"
     HOSTNAME_TO_REGION = join(",", [for o in var.enx_redirect_domain_map : format("%s=%s", o.host, o.region)])
