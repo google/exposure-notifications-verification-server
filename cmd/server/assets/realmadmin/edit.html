@@ -25,11 +25,13 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs" role="tablist">
+          {{if not $realm.EnableENExpress}}
           <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#express" role="tab" aria-controls="express" aria-selected="true">ENX</a>
+            <a class="nav-link" id="express-tab" data-toggle="tab" href="#express" role="tab" aria-controls="express" aria-selected="true">ENX</a>
           </li>
+          {{end}}
           <li class="nav-item" role="presentation">
-            <a class="nav-link" id="home-tab" data-toggle="tab" href="#general" role="tab" aria-controls="general" aria-selected="true">General</a>
+            <a class="nav-link" id="general-tab" data-toggle="tab" href="#general" role="tab" aria-controls="general" aria-selected="true">General</a>
           </li>
           <li class="nav-item" role="presentation">
             <a class="nav-link" id="codes-tab" data-toggle="tab" href="#codes" role="tab" aria-controls="codes" aria-selected="false">Codes</a>
@@ -48,9 +50,11 @@
 
       <div class="card-body">
         <div class="tab-content">
-          <div class="tab-pane active" id="express" role="tabpanel" aria-labelledby="express-tab">
+          {{if not $realm.EnableENExpress}}
+          <div class="tab-pane" id="express" role="tabpanel" aria-labelledby="express-tab">
             {{template "realmadmin/_form_express" .}}
           </div>
+          {{end}}
           <div class="tab-pane" id="general" role="tabpanel" aria-labelledby="general-tab">
             {{template "realmadmin/_form_general" .}}
           </div>
@@ -69,6 +73,23 @@
         </div>
       </div>
     </div>
+
+    {{if $realm.EnableENExpress}}
+    <p class="text-center">
+      <a href="#" id="show-advanced-settings" class="text-muted small">
+        Advanced settings
+      </a>
+    </p>
+
+    <div id="advanced-settings" class="card mb-3 shadow-sm d-none">
+      <div class="card-header">
+        Advanced settings
+      </div>
+      <div class="card-body">
+        {{template "realmadmin/_form_express" .}}
+      </div>
+    </div>
+    {{end}}
   </main>
 
   {{template "scripts" .}}
@@ -86,6 +107,16 @@
         window.location.hash = this.hash;
         $('html,body').scrollTop(mem);
       });
+
+      {{if $realm.EnableENExpress}}
+      let $showAdvancedSettings = $('#show-advanced-settings');
+      let $advancedSettings = $('#advanced-settings');
+      $showAdvancedSettings.on('click', function(event) {
+        event.preventDefault();
+        $showAdvancedSettings.addClass('d-none');
+        $advancedSettings.removeClass('d-none');
+      });
+      {{end}}
     });
   </script>
 </body>
