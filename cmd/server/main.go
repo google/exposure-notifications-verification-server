@@ -182,7 +182,7 @@ func realMain(ctx context.Context) error {
 	r.Use(requireSession)
 
 	// Include the current URI
-	CurrentPath := middleware.CurrentPath)
+	currentPath := middleware.CurrentPath()
 	r.Use(currentPath)
 
 	// Create common middleware
