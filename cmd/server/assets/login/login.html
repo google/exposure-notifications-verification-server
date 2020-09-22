@@ -135,7 +135,6 @@
           .catch(function(err) {
             flash.clear();
             flash.error(err.message);
-            $loginDiv.show();
             $submit.prop('disabled', false);
           });
       });
