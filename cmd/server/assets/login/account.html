@@ -100,6 +100,7 @@
 
         if (user.multiFactor.enrolledFactors.length > 0) {
           $phoneReg.html('Two-factor auth is <span class="text-success">enabled</span>');
+          $phoneReg.after('<a href="/login/register-phone" class="card-link">Manage auth factors</a>');
         } else {
           $phoneReg.addClass("text-danger");
           $phoneReg.html('No second auth factor registered');

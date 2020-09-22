@@ -19,6 +19,13 @@
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center">
         <div class="col-sm-6">
+          <div class="card shadow-sm mb-3" id="registered-div" style="display:none;">
+            <div class="card-header">Registered factors</div>
+            <div id="factors" class="card-body">
+              <ul class="list-group list-group-flush">
+              </ul>
+            </div>
+          </div>
 
           <div class="card shadow-sm" id="register-div">
             <div class="card-header">Multi-factor authentication</div>
@@ -34,7 +41,7 @@
                 <strong>{{$currentRealm.Name}}</strong>
                 {{if eq .currentRealm.MFAMode.String "required"}}requires{{else}}recommends{{end}}
                 enhanced security via SMS-based 2-factor authentication. Please
-                provide your information below.
+                provide your information below to enroll.
               </p>
 
               <form id="register-form" class="floating-form" action="/" method="POST">
@@ -100,7 +107,53 @@
       let $submitPin = $('#sms-code-submit');
       let $resendPin = $('#sms-code-resend');
 
+      let $registeredDiv = $('#registered-div');
+      let $factors = $('#factors');
+
       let verId = ""
+
+      firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+          return
+        }
+
+        if (user.multiFactor.enrolledFactors.length > 0) {
+          $skip.text("Account settings");
+          $skip.attr("href","/account");
+
+          for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
+            let factor = user.multiFactor.enrolledFactors[i];
+            let li = $('<li class="list-group-item"></li>').text(factor.displayName);
+            li.attr("id", "factor"+factor.uid)
+            let unenroll = $('<a href="#" class="float-right">Delete factor</a>');
+            unenroll.prepend('<span class="oi oi-delete mr-1" aria-hidden="true"></span>');
+            li.append(unenroll);
+
+            unenroll.on('click', function(event) {
+              unenrollFactor(factor);
+            });
+
+            $factors.append(li);
+          }
+          $registeredDiv.show();
+        }
+      });
+
+      function unenrollFactor(factor) {
+        firebase.auth().currentUser.multiFactor.unenroll(factor)
+          .then(function() {
+            $('#factor'+factor.uid).remove();
+            flash.clear();
+            flash.alert(factor.displayName + ' unenrolled successfully.');
+
+            if (firebase.auth().currentUser.multiFactor.enrolledFactors.length == 0) {
+              $registeredDiv.hide();
+            }
+          }).catch(function(error) {
+            flash.clear();
+            flash.error(error.message);
+          });
+      }
 
       $registerForm.on('submit', function(event) {
         event.preventDefault();
@@ -145,7 +198,9 @@
         user.multiFactor.enroll(multiFactorAssertion, $displayName.val()).then(function() {
           flash.clear();
           flash.alert('SMS authentication enrolled successfully.');
-          $skip.text("Continue")
+          $skip.text("Continue");
+          $registerDiv.show();
+          $pinDiv.hide();
         }).catch(function(err) {
           flash.clear();
           flash.error(err.message);
