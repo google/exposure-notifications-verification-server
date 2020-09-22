@@ -29,10 +29,6 @@
 <title>{{if .title}}{{.title}}{{else}}Diagnosis Verification Server{{end}}</title>
 
 <style type="text/css">
-  div.realm-header {
-    background-color: #0055b1;
-  }
-
   div.admin-header {
     background-color:#D66402
   }
@@ -187,23 +183,23 @@
 {{define "navbar"}}
 <header class="mb-3">
   {{if .currentRealm}}
-  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white realm-header">
+  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
     {{.currentRealm.Name}}{{if .currentRealm.RegionCode}} - {{.currentRealm.RegionCode}}{{end}}
   </div>
   {{end}}
 
-  <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+  <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
     <div class="container">
       {{template "navtoggle" .}}
 
-      <div class="collapse navbar-collapse" id="navbar">
+      <div class="collapse navbar-collapse mt-2" id="navbar">
         {{if .currentRealm}}
-        <ul class="navbar-nav mr-auto">
+        <ul class="nav mr-auto flex-column flex-md-row">
           <li class="nav-item">
-            <a class="nav-link" href="/home">Issue code</a>
+            <a class="nav-link {{if .currentPath.IsFile "home"}}active{{end}}" href="/home">Issue code</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/code/status">Check code status</a>
+            <a class="nav-link {{if .currentPath.IsDir "/code/"}}active{{end}}" href="/code/status">Check code status</a>
           </li>
         </ul>
         {{end}}
@@ -224,7 +220,7 @@ aria-expanded="false" aria-label="Toggle navigation">
 
 {{/* defines the user dropdown menu */}}
 {{define "navdropdown"}}
-<ul class="navbar-nav ml-auto">
+<ul class="navbar-nav ml-3">
   {{if .currentUser}}
   <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
