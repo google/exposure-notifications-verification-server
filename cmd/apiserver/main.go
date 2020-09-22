@@ -90,7 +90,7 @@ func realMain(ctx context.Context) error {
 	// Setup cacher
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
 		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
-		cache.PrefixKeyFunc("apiserver:cache:"),
+		cache.PrefixKeyFunc("cache:"),
 	))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
