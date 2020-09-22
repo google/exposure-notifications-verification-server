@@ -114,6 +114,7 @@
 
       firebase.auth().onAuthStateChanged(function(user) {
         if (!user) {
+          window.location.assign("/signout");
           return
         }
 
@@ -122,58 +123,63 @@
           $skip.attr('href','/account');
 
           for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
-            let factor = user.multiFactor.enrolledFactors[i];
-            let $li = $('<li/>');
-            $li.addClass('list-group-item');
-            $li.attr('id', 'factor'+factor.uid);
-
-            let $row = $('<div/>').text(factor.displayName);
-            $li.append($row);
-
-            let $icon = $('<span/>');
-            $icon.addClass('oi oi-phone mr-1');
-            $icon.attr('aria-hidden','true');
-            $row.prepend($icon);
-
-            let $unenroll = $('<a/>');
-            $unenroll.addClass('text-danger float-right');
-            $unenroll.attr('href', '#')
-            $unenroll.attr('title', 'Delete this factor');
-            $unenroll.tooltip();
-
-            $icon = $('<span/>');
-            $icon.addClass('oi oi-delete mr-1');
-            $icon.attr('aria-hidden','true');
-            $unenroll.append($icon);
-            $row.append($unenroll);
-
-            let $time = $('<small/>');
-            $time.addClass('row text-muted ml-1')
-            $time.text('Enrolled at: ' + factor.enrollmentTime);
-            $row.append($time);
-
-            $unenroll.on('click', function(event) {
-              unenrollFactor(factor);
-            });
-
-            $factors.append($li);
+            appendAuthFactor(user.multiFactor.enrolledFactors[i], i);
           }
           $registeredDiv.removeClass('d-none');
         }
       });
+
+      function appendAuthFactor(factor, i) {
+        let $li = $('<li/>');
+        $li.addClass('list-group-item');
+        $li.attr('id', 'factor'+factor.uid);
+
+        let $row = $('<div/>').text(factor.displayName);
+        $li.append($row);
+
+        let $icon = $('<span/>');
+        $icon.addClass('oi oi-phone mr-1');
+        $icon.attr('aria-hidden','true');
+        $row.prepend($icon);
+
+        let $unenroll = $('<a/>');
+        $unenroll.addClass('text-danger float-right');
+        $unenroll.attr('href', '#')
+        $unenroll.attr('title', 'Delete this factor');
+        $unenroll.tooltip();
+
+        $icon = $('<span/>');
+        $icon.addClass('oi oi-delete mr-1');
+        $icon.attr('aria-hidden','true');
+        $unenroll.append($icon);
+        $row.append($unenroll);
+
+        let $time = $('<small/>');
+        $time.addClass('row text-muted ml-1')
+        $time.text('Enrolled at: ' + factor.enrollmentTime);
+        $row.append($time);
+
+        $unenroll.on('click', function(event) {
+          unenrollFactor(factor);
+        });
+
+        $factors.append($li);
+      }
 
       function unenrollFactor(factor) {
         if (window.confirm('Are you sure you want to delete ' + factor.displayName) !== true) {
           return;
         }
 
-        firebase.auth().currentUser.multiFactor.unenroll(factor)
+        let multiFactor = firebase.auth().currentUser.multiFactor
+        let last = multiFactor.enrolledFactors.length == 1
+        multiFactor.unenroll(factor)
           .then(function() {
             $('#factor'+factor.uid).remove();
             flash.clear();
-            flash.alert('Successfully unenrolled ${factor.displayName}');
+            flash.alert(`Successfully unenrolled ${factor.displayName}`);
 
-            if (firebase.auth().currentUser.multiFactor.enrolledFactors.length == 0) {
+            if (last) {
               $registeredDiv.addClass('d-none');
             }
           }).catch(function(error) {
@@ -226,11 +232,17 @@
           flash.clear();
           flash.alert('SMS authentication enrolled successfully.');
           $skip.text('Continue');
+
+          let l = user.multiFactor.enrolledFactors.length
+          appendAuthFactor(user.multiFactor.enrolledFactors[l-1], l-1);
+          $phone.text('');
+          $displayName.text('');
           $registerDiv.show();
           $pinDiv.addClass('d-none');
         }).catch(function(err) {
           flash.clear();
           flash.error(err.message);
+        }).then(function() {
           $submit.prop('disabled', false);
         });
       });
