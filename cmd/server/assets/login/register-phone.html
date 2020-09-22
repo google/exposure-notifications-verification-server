@@ -240,6 +240,7 @@
         }).catch(function(err) {
           flash.clear();
           flash.error(err.message);
+          $submitPin.prop('disabled', false);
         }).then(function() {
           $submit.prop('disabled', false);
         });
