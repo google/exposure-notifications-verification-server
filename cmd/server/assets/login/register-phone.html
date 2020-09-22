@@ -129,8 +129,9 @@
             let row = $('<div></div>').text(factor.displayName);
             li.append(row)
 
-            let unenroll = $('<a href="#" class="float-right">Delete factor</a>');
-            unenroll.prepend('<span class="oi oi-delete mr-1" aria-hidden="true"></span>');
+            let unenroll = $('<a href="#" class="text-danger float-right" title="Delete this factor"></a>');
+            unenroll.tooltip();
+            unenroll.append('<span class="oi oi-delete mr-1" aria-hidden="true"></span>');
             row.append(unenroll)
 
             let time = $('<small class="row text-muted ml-1"></small>').text('Enrolled at: ' + factor.enrollmentTime);
