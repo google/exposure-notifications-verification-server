@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
@@ -27,6 +28,7 @@ import (
 
 // Modeler is the configuration for the modeler service.
 type Modeler struct {
+	Cache         cache.Config
 	Database      database.Config
 	Observability observability.Config
 	RateLimit     ratelimit.Config

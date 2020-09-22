@@ -79,6 +79,12 @@ resource "google_secret_manager_secret_iam_member" "modeler-db-verification-code
   member    = "serviceAccount:${google_service_account.modeler.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "modeler-cache-hmac-key" {
+  secret_id = google_secret_manager_secret.cache-hmac-key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.modeler.email}"
+}
+
 resource "google_secret_manager_secret_iam_member" "modeler-ratelimit-hmac-key" {
   secret_id = google_secret_manager_secret.ratelimit-hmac-key.id
   role      = "roles/secretmanager.secretAccessor"
@@ -108,6 +114,7 @@ resource "google_cloud_run_service" "modeler" {
 
         dynamic "env" {
           for_each = merge(
+            local.cache_config,
             local.database_config,
             local.gcp_config,
             local.rate_limit_config,
