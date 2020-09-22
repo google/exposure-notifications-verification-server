@@ -21,8 +21,8 @@
         <div class="col-sm-6">
           <div class="card shadow-sm mb-3 d-none" id="registered-div">
             <div class="card-header">Registered factors</div>
-            <div id="factors" class="card-body">
-              <ul class="list-group list-group-flush">
+            <div class="card-body">
+              <ul id="factors" class="list-group list-group-flush">
               </ul>
             </div>
           </div>
@@ -123,25 +123,35 @@
 
           for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
             let factor = user.multiFactor.enrolledFactors[i];
-            let li = $('<li class="list-group-item"></li>');
-            li.attr("id", "factor"+factor.uid)
+            let $li = $('<li/>');
+            $li.addClass('list-group-item');
+            $li.attr('id', 'factor'+factor.uid);
 
-            let row = $('<div></div>').text(factor.displayName);
-            li.append(row)
+            let $row = $('<div/>').text(factor.displayName);
+            $li.append($row);
 
-            let unenroll = $('<a href="#" class="text-danger float-right" title="Delete this factor"></a>');
-            unenroll.tooltip();
-            unenroll.append('<span class="oi oi-delete mr-1" aria-hidden="true"></span>');
-            row.append(unenroll)
+            let $unenroll = $('<a/>');
+            $unenroll.addClass('text-danger float-right');
+            $unenroll.attr('href', '#')
+            $unenroll.attr('title', 'Delete this factor');
+            $unenroll.tooltip();
 
-            let time = $('<small class="row text-muted ml-1"></small>').text('Enrolled at: ' + factor.enrollmentTime);
-            row.append(time);
+            let $icon = $('<span/>');
+            $icon.addClass('oi oi-delete mr-1');
+            $icon.attr('aria-hidden','true');
+            $unenroll.append($icon);
+            $row.append($unenroll);
 
-            unenroll.on('click', function(event) {
+            let $time = $('<small/>');
+            $time.addClass('row text-muted ml-1')
+            $time.text('Enrolled at: ' + factor.enrollmentTime);
+            $row.append($time);
+
+            $unenroll.on('click', function(event) {
               unenrollFactor(factor);
             });
 
-            $factors.append(li);
+            $factors.append($li);
           }
           $registeredDiv.show();
         }
@@ -152,7 +162,7 @@
           .then(function() {
             $('#factor'+factor.uid).remove();
             flash.clear();
-            flash.alert(factor.displayName + ' unenrolled successfully.');
+            flash.alert('Successfully unenrolled ${factor.displayName}');
 
             if (firebase.auth().currentUser.multiFactor.enrolledFactors.length == 0) {
               $registeredDiv.hide();
@@ -206,7 +216,7 @@
         user.multiFactor.enroll(multiFactorAssertion, $displayName.val()).then(function() {
           flash.clear();
           flash.alert('SMS authentication enrolled successfully.');
-          $skip.text("Continue");
+          $skip.text('Continue');
           $registerDiv.show();
           $pinDiv.hide();
         }).catch(function(err) {
