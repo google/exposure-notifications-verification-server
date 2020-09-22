@@ -118,8 +118,8 @@
         }
 
         if (user.multiFactor.enrolledFactors.length > 0) {
-          $skip.text("Account settings");
-          $skip.attr("href","/account");
+          $skip.text('Account settings');
+          $skip.attr('href','/account');
 
           for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
             let factor = user.multiFactor.enrolledFactors[i];
@@ -153,7 +153,7 @@
 
             $factors.append($li);
           }
-          $registeredDiv.show();
+          $registeredDiv.removeClass('d-none');
         }
       });
 
@@ -165,7 +165,7 @@
             flash.alert('Successfully unenrolled ${factor.displayName}');
 
             if (firebase.auth().currentUser.multiFactor.enrolledFactors.length == 0) {
-              $registeredDiv.hide();
+              $registeredDiv.addClass('d-none');
             }
           }).catch(function(error) {
             flash.clear();
@@ -194,7 +194,7 @@
           verId = verificationId
           setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
           $registerDiv.hide();
-          $pinDiv.show();
+          $pinDiv.removeClass('d-none');
         }).catch(function(err) {
           flash.clear();
           flash.error(err.message);
@@ -218,7 +218,7 @@
           flash.alert('SMS authentication enrolled successfully.');
           $skip.text('Continue');
           $registerDiv.show();
-          $pinDiv.hide();
+          $pinDiv.addClass('d-none');
         }).catch(function(err) {
           flash.clear();
           flash.error(err.message);
@@ -229,7 +229,7 @@
       $pinClose.on('click', function(event) {
         $submit.prop('disabled', false);
         $registerDiv.show();
-        $pinDiv.hide();
+        $pinDiv.addClass('d-none');
       });
 
       $resendPin.on('click', function(event) {

@@ -103,7 +103,7 @@
                     setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
                     $submitPin.prop('disabled', false);
                     $loginDiv.hide();
-                    $pinDiv.show();
+                    $pinDiv.removeClass('d-none');
                   }).catch(function(error) {
                     flash.clear();
                     flash.error(error.message);
@@ -135,6 +135,8 @@
           .catch(function(err) {
             flash.clear();
             flash.error(err.message);
+            $loginDiv.show();
+            $pinDiv.addClass('d-none');
             $submit.prop('disabled', false);
           });
       });
@@ -142,7 +144,7 @@
       $pinClose.on('click', function(event) {
         $submit.prop('disabled', false);
         $loginDiv.show();
-        $pinDiv.hide();
+        $pinDiv.addClass('d-none');
       });
 
       $resendPin.on('click', function(event) {
