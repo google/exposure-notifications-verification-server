@@ -15,6 +15,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
@@ -25,7 +27,7 @@ type SMSConfig struct {
 	Errorable
 
 	// SMS Config belongs to exactly one realm.
-	RealmID uint `gorm:"unique_index"`
+	RealmID uint
 
 	// ProviderType is the SMS provider type - it's used to determine the
 	// underlying configuration.
@@ -40,11 +42,40 @@ type SMSConfig struct {
 	TwilioAuthToken                string `gorm:"type:varchar(250)"`
 	TwilioAuthTokenPlaintextCache  string `gorm:"-"`
 	TwilioAuthTokenCiphertextCache string `gorm:"-"`
+
+	// IsSystem determines if this is a system-level SMS configuration. There can
+	// only be one system-level SMS configuration.
+	IsSystem bool
+}
+
+func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
+	// Twilio config is all or nothing
+	if (s.TwilioAccountSid != "" || s.TwilioAuthToken != "" || s.TwilioFromNumber != "") &&
+		(s.TwilioAccountSid == "" || s.TwilioAuthToken == "" || s.TwilioFromNumber == "") {
+		s.AddError("twilioAccountSid", "all must be specified or all must be blank")
+		s.AddError("twilioAuthToken", "all must be specified or all must be blank")
+		s.AddError("twilioFromNumber", "all must be specified or all must be blank")
+	}
+
+	if len(s.Errors()) > 0 {
+		return fmt.Errorf("validation failed")
+	}
+	return nil
 }
 
 // SaveSMSConfig creates or updates an SMS configuration record.
 func (db *Database) SaveSMSConfig(s *SMSConfig) error {
-	if s.Model.ID == 0 {
+	if s.TwilioAccountSid == "" && s.TwilioAuthToken == "" && s.TwilioFromNumber == "" {
+		if db.db.NewRecord(s) {
+			// The fields are all blank, do not create the record.
+			return nil
+		}
+
+		// The fields were blank, delete the SMS config.
+		return db.db.Unscoped().Delete(s).Error
+	}
+
+	if db.db.NewRecord(s) {
 		return db.db.Create(s).Error
 	}
 	return db.db.Save(s).Error

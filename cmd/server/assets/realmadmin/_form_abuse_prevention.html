@@ -19,13 +19,14 @@
   </p>
 
   <div class="form-group form-check">
-    <input type="checkbox" name="abuse_prevention_enabled" id="abuse-prevention-enabled" class="form-check-input" value="1" {{if $realm.AbusePreventionEnabled}} checked{{end}}>
+    <input type="checkbox" name="abuse_prevention_enabled" id="abuse-prevention-enabled" class="form-check-input" value="1" {{if $realm.AbusePreventionEnabled}} checked{{end}}
+      data-toggle="collapse" data-target="#abuse-prevention-configuration">
     <label class="form-check-label" for="abuse-prevention-enabled">
       Enable abuse prevention
     </label>
   </div>
 
-  <div id="abuse-prevention-configuration" class="{{if not $realm.AbusePreventionEnabled}}d-none{{end}}">
+  <div id="abuse-prevention-configuration" class="collapse{{if $realm.AbusePreventionEnabled}} show{{end}}">
     <div class="form-label-group">
       <input type="text" name="abuse_prevention_limit" id="abuse-prevention-limit" class="form-control" placeholder="Computed limit" value="{{$realm.AbusePreventionLimit}}" readonly />
       <label for="abuse-prevention-limit">Computed limit</label>
@@ -78,19 +79,9 @@
 
 <script type="text/javascript">
   $(function() {
-    let $abusePreventionEnabled = $('#abuse-prevention-enabled');
-    let $abusePreventionConfiguration = $('#abuse-prevention-configuration');
     let $abusePreventionLimit = $('#abuse-prevention-limit');
     let $abusePreventionLimitFactor = $('#abuse-prevention-limit-factor');
     let $abusePreventionEffectiveLimit = $('#abuse-prevention-effective-limit');
-
-    $abusePreventionEnabled.change(function(e) {
-      if (this.checked) {
-        $abusePreventionConfiguration.removeClass('d-none');
-      } else {
-        $abusePreventionConfiguration.addClass('d-none');
-      }
-    });
 
     $abusePreventionLimitFactor.keyup(function(e){
       let $this = $(e.currentTarget);
