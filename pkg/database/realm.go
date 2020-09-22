@@ -97,8 +97,20 @@ type Realm struct {
 	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900"` // default 15m (in seconds)
 	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16"`
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
-	// SMS Content
+
+	// SMS configuration
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+
+	// CanUseSystemSMSConfig is configured by system administrators to share the
+	// system SMS config with this realm. Note that the system SMS config could be
+	// empty and a local SMS config is preferred over the system value.
+	CanUseSystemSMSConfig bool
+
+	// UseSystemSMSConfig is a realm-level configuration that lets a realm opt-out
+	// of sending SMS messages using the system-provided SMS configuration.
+	// Without this, a realm would always fallback to the system-level SMS
+	// configuration, making it impossible to opt out of text message sending.
+	UseSystemSMSConfig bool
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
@@ -217,6 +229,10 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	r.WelcomeMessage = strings.TrimSpace(r.WelcomeMessage)
 	r.WelcomeMessagePtr = stringPtr(r.WelcomeMessage)
 
+	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
+		r.AddError("useSystemSMSConfig", "is not allowed on this realm")
+	}
+
 	if r.EnableENExpress {
 		if r.RegionCode == "" {
 			r.AddError("regionCode", "cannot be blank when using EN Express")
@@ -333,13 +349,21 @@ func (r *Realm) BuildSMSText(code, longCode string, enxDomain string) string {
 	return text
 }
 
-// SMSConfig returns the SMS configuration for this realm, if one exists.
+// SMSConfig returns the SMS configuration for this realm, if one exists. If the
+// realm is configured to use the system SMS configuration, that configuration
+// is preferred.
 func (r *Realm) SMSConfig(db *Database) (*SMSConfig, error) {
+	q := db.db.
+		Model(&SMSConfig{}).
+		Order("is_system DESC").
+		Where("realm_id = ?", r.ID)
+
+	if r.UseSystemSMSConfig {
+		q = q.Or("is_system IS TRUE")
+	}
+
 	var smsConfig SMSConfig
-	if err := db.db.
-		Model(r).
-		Related(&smsConfig, "SMSConfig").
-		Error; err != nil {
+	if err := q.First(&smsConfig).Error; err != nil {
 		return nil, err
 	}
 	return &smsConfig, nil
@@ -349,18 +373,24 @@ func (r *Realm) SMSConfig(db *Database) (*SMSConfig, error) {
 // This does not perform the KMS encryption/decryption, so it's more efficient
 // that loading the full SMS config.
 func (r *Realm) HasSMSConfig(db *Database) (bool, error) {
-	var smsConfig SMSConfig
-	if err := db.db.
+	q := db.db.
+		Model(&SMSConfig{}).
 		Select("id").
-		Model(r).
-		Related(&smsConfig, "SMSConfig").
-		Error; err != nil {
+		Order("is_system DESC").
+		Where("realm_id = ?", r.ID)
+
+	if r.UseSystemSMSConfig {
+		q = q.Or("is_system IS TRUE")
+	}
+
+	var id []uint64
+	if err := q.Pluck("id", &id).Error; err != nil {
 		if IsNotFound(err) {
 			return false, nil
 		}
 		return false, err
 	}
-	return true, nil
+	return len(id) > 0, nil
 }
 
 // SMSProvider returns the SMS provider for the realm. If no sms configuration

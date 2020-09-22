@@ -60,10 +60,11 @@ func (c *Controller) HandleSettings() http.Handler {
 		LongCodeDurationHours int64             `form:"long_code_duration"`
 		SMSTextTemplate       string            `form:"sms_text_template"`
 
-		SMS              bool   `form:"sms"`
-		TwilioAccountSid string `form:"twilio_account_sid"`
-		TwilioAuthToken  string `form:"twilio_auth_token"`
-		TwilioFromNumber string `form:"twilio_from_number"`
+		SMS                bool   `form:"sms"`
+		UseSystemSMSConfig bool   `form:"use_system_sms_config"`
+		TwilioAccountSid   string `form:"twilio_account_sid"`
+		TwilioAuthToken    string `form:"twilio_auth_token"`
+		TwilioFromNumber   string `form:"twilio_from_number"`
 
 		Security                    bool  `form:"security"`
 		MFAMode                     int16 `form:"mfa_mode"`
@@ -105,14 +106,6 @@ func (c *Controller) HandleSettings() http.Handler {
 			return
 		}
 
-		// SMS config is all or nothing
-		if (form.TwilioAccountSid != "" || form.TwilioAuthToken != "" || form.TwilioFromNumber != "") &&
-			(form.TwilioAccountSid == "" || form.TwilioAuthToken == "" || form.TwilioFromNumber == "") {
-			flash.Error("Error updating realm: either all SMS fields must be specified or no SMS fields must be specified")
-			c.renderSettings(ctx, w, r, realm, nil)
-			return
-		}
-
 		// General
 		if form.General {
 			realm.Name = form.Name
@@ -131,6 +124,11 @@ func (c *Controller) HandleSettings() http.Handler {
 			realm.SMSTextTemplate = form.SMSTextTemplate
 		}
 
+		// SMS
+		if form.SMS {
+			realm.UseSystemSMSConfig = form.UseSystemSMSConfig
+		}
+
 		// Security
 		if form.Security {
 			realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
@@ -145,58 +143,48 @@ func (c *Controller) HandleSettings() http.Handler {
 			realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
 		}
 
-		// Save
+		// Save realm
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to update realm: %v", err)
 			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
-		if form.SMS {
-			// Process SMS settings
+		// SMS
+		if form.SMS && !form.UseSystemSMSConfig {
+			// Fetch the existing SMS config record, if one exists
 			smsConfig, err := realm.SMSConfig(c.db)
 			if err != nil && !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			if smsConfig != nil {
-				// We have an existing record
-				if form.TwilioAccountSid == "" && form.TwilioAuthToken == "" && form.TwilioFromNumber == "" {
-					// All fields are empty, delete the record
-					if err := c.db.DeleteSMSConfig(smsConfig); err != nil {
-						flash.Error("Failed to update realm: %v", err)
-						c.renderSettings(ctx, w, r, realm, smsConfig)
-						return
-					}
-				} else {
-					// Potential updates
-					smsConfig.TwilioAccountSid = form.TwilioAccountSid
-					smsConfig.TwilioAuthToken = form.TwilioAuthToken
-					smsConfig.TwilioFromNumber = form.TwilioFromNumber
+			if smsConfig != nil && !smsConfig.IsSystem {
+				// We have an existing record and the existing record is NOT the system
+				// record.
+				smsConfig.TwilioAccountSid = form.TwilioAccountSid
+				smsConfig.TwilioAuthToken = form.TwilioAuthToken
+				smsConfig.TwilioFromNumber = form.TwilioFromNumber
 
-					if err := c.db.SaveSMSConfig(smsConfig); err != nil {
-						flash.Error("Failed to update realm: %v", err)
-						c.renderSettings(ctx, w, r, realm, smsConfig)
-						return
-					}
+				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
+					flash.Error("Failed to update realm: %v", err)
+					c.renderSettings(ctx, w, r, realm, smsConfig)
+					return
 				}
 			} else {
-				// No SMS config exists
-				if form.TwilioAccountSid != "" && form.TwilioAuthToken != "" && form.TwilioFromNumber != "" {
-					// Values were provided
-					smsConfig = &database.SMSConfig{
-						RealmID:          realm.ID,
-						ProviderType:     sms.ProviderTypeTwilio,
-						TwilioAccountSid: form.TwilioAccountSid,
-						TwilioAuthToken:  form.TwilioAuthToken,
-						TwilioFromNumber: form.TwilioFromNumber,
-					}
+				// There's no record or the existing record was the system config so we
+				// want to create our own.
+				smsConfig := &database.SMSConfig{
+					RealmID:          realm.ID,
+					ProviderType:     sms.ProviderTypeTwilio,
+					TwilioAccountSid: form.TwilioAccountSid,
+					TwilioAuthToken:  form.TwilioAuthToken,
+					TwilioFromNumber: form.TwilioFromNumber,
+				}
 
-					if err := c.db.SaveSMSConfig(smsConfig); err != nil {
-						flash.Error("Failed to update realm: %v", err)
-						c.renderSettings(ctx, w, r, realm, smsConfig)
-						return
-					}
+				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
+					flash.Error("Failed to update realm: %v", err)
+					c.renderSettings(ctx, w, r, realm, smsConfig)
+					return
 				}
 			}
 		}
@@ -226,6 +214,27 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 	if smsConfig == nil {
 		var err error
 		smsConfig, err = realm.SMSConfig(c.db)
+		if err != nil {
+			if !database.IsNotFound(err) {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			smsConfig = new(database.SMSConfig)
+		}
+	}
+
+	// Don't pass through the system config to the template - we don't want to
+	// risk accidentially rendering its ID or values since the realm should never
+	// see these values. However, we have to go lookup the actual SMS config
+	// values if present so that if the user unchecks the form, they don't see
+	// blank values if they were previously using their own SMS configs.
+	if smsConfig.IsSystem {
+		var tmpRealm database.Realm
+		tmpRealm.ID = realm.ID
+		tmpRealm.UseSystemSMSConfig = false
+
+		var err error
+		smsConfig, err = tmpRealm.SMSConfig(c.db)
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
