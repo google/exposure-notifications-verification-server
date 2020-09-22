@@ -380,6 +380,10 @@ func realMain(ctx context.Context) error {
 		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
 		adminSub.Handle("/realms/new", adminController.HandleRealmsCreate()).Methods("GET")
+		adminSub.Handle("/realms/{id:[0-9]+}/edit", adminController.HandleRealmsUpdate()).Methods("GET")
+		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
+
+		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
 
 		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
 		adminSub.Handle("/users", adminController.HandleUsersCreate()).Methods("POST")

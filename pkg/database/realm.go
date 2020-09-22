@@ -309,7 +309,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	if len(r.Errors()) > 0 {
-		return fmt.Errorf("validation failed")
+		return fmt.Errorf("realm validation failed: %s", strings.Join(r.ErrorMessages(), ", "))
 	}
 	return nil
 }

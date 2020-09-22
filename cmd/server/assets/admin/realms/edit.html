@@ -1,0 +1,95 @@
+{{define "admin/realms/edit"}}
+
+{{$realm := .realm}}
+{{$systemSMSConfig := .systemSMSConfig}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+  {{template "floatingform" .}}
+</head>
+
+<body class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Edit realm</h1>
+    <p>
+      Use the form below to edit the realm.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <div class="alert alert-warning" class="mb-4">
+          Only a subset of realm fields are editable after creation. Work with
+          the realm administrator to update these values.
+        </div>
+
+        <form method="POST" action="/admin/realms/{{$realm.ID}}">
+          {{ .csrfField }}
+          <input type="hidden" name="_method" value="PATCH" />
+
+          <div class="form-label-group">
+            <input type="text" class="form-control" value="{{$realm.Name}} " disabled />
+            <label for="name">Realm name</label>
+          </div>
+
+          <div class="form-label-group">
+            <input type="text" class="form-control" value="{{$realm.RegionCode}} " disabled />
+            <label for="name">Region code</label>
+          </div>
+
+          {{if .supportsPerRealmSigning}}
+          <div class="form-group">
+            <select class="form-control custom-select" disabled>
+              <option selected>
+                {{if $realm.UseRealmCertificateKey}}
+                  Create realm-specific signing key
+                {{else}}
+                  Use system signing key
+                {{end}}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-label-group">
+            <input type="text" class="form-control" value="{{$realm.CertificateIssuer}} " disabled />
+            <label for="name">Issuer (iss)</label>
+          </div>
+
+          <div class="form-label-group">
+            <input type="text" class="form-control" value="{{$realm.CertificateAudience}} " disabled />
+            <label for="name">Audience (aud)</label>
+          </div>
+          {{end}}
+
+          {{if $systemSMSConfig}}
+          <div class="form-group form-check">
+            <input type="checkbox" name="can_use_system_sms_config" id="can-use-system-sms-config" class="form-check-input" value="1" {{if $realm.CanUseSystemSMSConfig}} checked{{end}}>
+            <label class="form-check-label" for="can-use-system-sms-config">
+              Share system SMS configuration
+            </label>
+            <small class="form-text text-muted">
+              Allow this realm to consume the system SMS credentials. If
+              enabled, the realm will not see the credentials, but they will be
+              able to send SMS messages using them. This could incur unexpected
+              costs for the credential owner.
+            </small>
+          </div>
+          {{end}}
+
+          <button type="submit" class="btn btn-primary btn-block">Update realm</button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}
