@@ -44,16 +44,16 @@ func InjectCurrentPath() mux.MiddlewareFunc {
 	}
 }
 
-func (p *Path) Path() string {
-	return p.uri.RequestURI()
+func (p *Path) IsPath(s string) bool {
+	return p.uri.RequestURI() == s
 }
 
-func (p *Path) Dir() string {
+func (p *Path) IsDir(s string) bool {
 	dir, _ := path.Split(p.uri.RequestURI())
-	return dir
+	return dir == s
 }
 
-func (p *Path) File() string {
+func (p *Path) IsFile(s string) bool {
 	_, file := path.Split(p.uri.RequestURI())
-	return file
+	return file == s
 }

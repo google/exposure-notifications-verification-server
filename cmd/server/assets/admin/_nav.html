@@ -24,15 +24,15 @@
 
 <ul class="nav nav-pills justify-content-center mb-3">
   <li class="nav-item">
-    <a class="nav-link{{if eq .currentPath.File "realms"}} active{{end}}" href="/admin/realms">Realms</a>
+    <a class="nav-link{{if .currentPath.IsFile "realms"}} active{{end}}" href="/admin/realms">Realms</a>
   </li>
 
   <li class="nav-item">
-    <a class="nav-link{{if eq .currentPath.File "users"}} active{{end}}" href="/admin/users">System admins</a>
+    <a class="nav-link{{if .currentPath.IsFile "users"}} active{{end}}" href="/admin/users">System admins</a>
   </li>
 
   <li class="nav-item">
-    <a class="nav-link{{if eq .currentPath.File "info"}} active{{end}}" href="/admin/info">Info</a>
+    <a class="nav-link{{if .currentPath.IsFile "info"}} active{{end}}" href="/admin/info">Info</a>
   </li>
 </ul>
 {{end}}
