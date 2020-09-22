@@ -28,7 +28,7 @@ type Path struct {
 	uri *url.URL
 }
 
-func CurrentPath() mux.MiddlewareFunc {
+func InjectCurrentPath() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
