@@ -30,15 +30,6 @@ type ModelerStatus struct {
 	NotBefore time.Time
 }
 
-// FindModelerStatus gets the current modeler status.
-func (db *Database) FindModelerStatus() (*ModelerStatus, error) {
-	var r ModelerStatus
-	if err := db.db.Model(&r).First(&r).Error; err != nil {
-		return nil, err
-	}
-	return &r, nil
-}
-
 // ClaimModelerStatus attempts to claim the modeler status lock. This acquires a
 // 15min lock on the table to prevent concurrent modifications over
 // subscription. If the function returns nil, it successfully claimed the lock.
