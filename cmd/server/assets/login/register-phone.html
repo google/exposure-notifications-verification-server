@@ -132,7 +132,7 @@
       function appendAuthFactor(factor, i) {
         let $li = $('<li/>');
         $li.addClass('list-group-item');
-        $li.attr('id', 'factor'+factor.uid);
+        $li.attr('id', `factor${factor.uid}`);
 
         let $row = $('<div/>').text(factor.displayName);
         $li.append($row);
@@ -156,7 +156,7 @@
 
         let $time = $('<small/>');
         $time.addClass('row text-muted ml-1')
-        $time.text('Enrolled at: ' + factor.enrollmentTime);
+        $time.text(`Enrolled at: ${factor.enrollmentTime}`);
         $row.append($time);
 
         $unenroll.on('click', function(event) {
@@ -167,7 +167,7 @@
       }
 
       function unenrollFactor(factor) {
-        if (window.confirm('Are you sure you want to delete ' + factor.displayName) !== true) {
+        if (window.confirm(`Are you sure you want to delete ${factor.displayName}`) !== true) {
           return;
         }
 
@@ -175,7 +175,7 @@
         let last = multiFactor.enrolledFactors.length == 1
         multiFactor.unenroll(factor)
           .then(function() {
-            $('#factor'+factor.uid).remove();
+            $(`#factor${factor.uid}`).remove();
             flash.clear();
             flash.alert(`Successfully unenrolled ${factor.displayName}`);
 
