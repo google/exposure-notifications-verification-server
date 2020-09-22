@@ -114,7 +114,7 @@
 
         if (user.multiFactor.enrolledFactors.length > 0) {
           $skip.text('Account settings');
-          $skip.attr('href','/account');
+          $skip.attr('href', '/account');
 
           for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
             appendAuthFactor(user.multiFactor.enrolledFactors[i], i);
@@ -133,7 +133,7 @@
 
         let $icon = $('<span/>');
         $icon.addClass('oi oi-phone mr-1');
-        $icon.attr('aria-hidden','true');
+        $icon.attr('aria-hidden', 'true');
         $row.prepend($icon);
 
         let $unenroll = $('<a/>');
@@ -144,7 +144,7 @@
 
         $icon = $('<span/>');
         $icon.addClass('oi oi-delete mr-1');
-        $icon.attr('aria-hidden','true');
+        $icon.attr('aria-hidden', 'true');
         $unenroll.append($icon);
         $row.append($unenroll);
 
@@ -228,7 +228,7 @@
           $skip.text('Continue');
 
           let l = user.multiFactor.enrolledFactors.length
-          appendAuthFactor(user.multiFactor.enrolledFactors[l-1], l-1);
+          appendAuthFactor(user.multiFactor.enrolledFactors[l - 1], l - 1);
           if (l == 1) {
             $registeredDiv.removeClass('d-none');
           }
