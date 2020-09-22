@@ -20,6 +20,7 @@ import (
 	"crypto"
 	"fmt"
 
+	vcache "github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
@@ -47,14 +48,15 @@ type Controller struct {
 	metrics *Metrics
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, cacher vcache.Cacher, kms keys.KeyManager, h *render.Renderer) (*Controller, error) {
 	logger := logging.FromContext(ctx)
 
-	pubKeyCache, err := keyutils.NewPublicKeyCache(config.CertificateSigning.PublicKeyCacheDuration)
+	pubKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create public key cache, likely invalid duration: %w", err)
 	}
 
+	// This has to be in-memory because the signer has state and connection pools.
 	signerCache, err := cache.New(config.CertificateSigning.SignerCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
