@@ -199,6 +199,12 @@ func realMain(ctx context.Context) error {
 		static := filepath.Join(config.AssetsPath, "static")
 		fs := http.FileServer(http.Dir(static))
 		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+
+		// Browers and devices seem to always hit this - serve it to keep our logs
+		// cleaner.
+		r.Handle("/favicon.ico", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, filepath.Join(static, "favicon.ico"))
+		}))
 	}
 
 	{
