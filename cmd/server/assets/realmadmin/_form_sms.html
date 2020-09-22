@@ -11,7 +11,7 @@
 
 <form method="POST" action="/realm/settings#sms" class="floating-form">
   {{ .csrfField }}
-  <input type="hidden" name="twilio_sms_config" value="1" />
+  <input type="hidden" name="sms" value="1" />
 
   <div class="form-label-group">
     <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control text-monospace"

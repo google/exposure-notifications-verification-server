@@ -10,6 +10,7 @@
 
 <form method="POST" action="/realm/settings#codes" class="floating-form">
   {{ .csrfField }}
+  <input type="hidden" name="codes" value="1" />
 
   <div class="form-group">
     <label>Allowed test types</label>

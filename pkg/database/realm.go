@@ -80,19 +80,25 @@ type Realm struct {
 	// Name is the name of the realm.
 	Name string `gorm:"type:varchar(200);unique_index"`
 
+	// RegionCode is both a display attribute and required field for ENX. To
+	// handle NULL and uniqueness, the field is converted from it's ptr type to a
+	// concrete type in callbacks. Do not modify RegionCodePtr directly.
+	RegionCode    string  `gorm:"-"`
+	RegionCodePtr *string `gorm:"column:region_code; type:varchar(10);"`
+
+	// WelcomeMessage is arbitrary realm-defined data to display to users after
+	// selecting this realm. If empty, nothing is displayed. The format is
+	// markdown. Do not modify WelcomeMessagePtr directly.
+	WelcomeMessage    string  `gorm:"-"`
+	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
+
 	// Code configuration
-	RegionCode       string          `gorm:"type:varchar(10); not null; default: ''"`
 	CodeLength       uint            `gorm:"type:smallint; not null; default: 8"`
 	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900"` // default 15m (in seconds)
 	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16"`
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
 	// SMS Content
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
-
-	// WelcomeMessage is arbitrary realm-defined data to display to users after
-	// selecting this realm. If empty, nothing is displayed. The format is
-	// markdown.
-	WelcomeMessage string `gorm:"type:text"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
@@ -187,6 +193,14 @@ func (r *Realm) SigningKeyID() string {
 	return fmt.Sprintf("realm-%d", r.ID)
 }
 
+// AfterFind runs after a realm is found.
+func (r *Realm) AfterFind(tx *gorm.DB) error {
+	r.RegionCode = stringValue(r.RegionCodePtr)
+	r.WelcomeMessage = stringValue(r.WelcomeMessagePtr)
+
+	return nil
+}
+
 // BeforeSave runs validations. If there are errors, the save fails.
 func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	r.Name = strings.TrimSpace(r.Name)
@@ -195,10 +209,13 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	r.RegionCode = strings.ToUpper(strings.TrimSpace(r.RegionCode))
-
 	if len(r.RegionCode) > 10 {
 		r.AddError("regionCode", "cannot be more than 10 characters")
 	}
+	r.RegionCodePtr = stringPtr(r.RegionCode)
+
+	r.WelcomeMessage = strings.TrimSpace(r.WelcomeMessage)
+	r.WelcomeMessagePtr = stringPtr(r.WelcomeMessage)
 
 	if r.EnableENExpress {
 		if r.RegionCode == "" {

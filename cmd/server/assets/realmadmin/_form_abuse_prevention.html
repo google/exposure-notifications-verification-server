@@ -4,6 +4,7 @@
 
 <form method="POST" action="/realm/settings#abuse-prevention" class="floating-form">
   {{ .csrfField }}
+  <input type="hidden" name="abuse_prevention" value="1" />
 
   <p>
     Abuse prevention uses the historical record of your realm's past
@@ -18,9 +19,6 @@
   </p>
 
   <div class="form-group form-check">
-    <!-- This forces the form to send a value of false (instead of no value at
-    all), when abuse prevention is unchecked. -->
-    <input type="hidden" name="abuse_prevention_enabled" value="0" />
     <input type="checkbox" name="abuse_prevention_enabled" id="abuse-prevention-enabled" class="form-check-input" value="1" {{if $realm.AbusePreventionEnabled}} checked{{end}}>
     <label class="form-check-label" for="abuse-prevention-enabled">
       Enable abuse prevention
