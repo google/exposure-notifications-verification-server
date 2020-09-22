@@ -9,6 +9,9 @@
 </head>
 
 <body class="tab-content">
+  {{if .currentUser}}
+  {{template "navbar" .}}
+  {{end}}
   <main role="main" class="container">
     {{template "flash" .}}
 
@@ -17,7 +20,11 @@
         <div class="col-sm-6">
 
           <div class="card shadow-sm" id="login-div">
+            {{if .currentUser}}
+            <div class="card-header">Refresh authentication</div>
+            {{else}}
             <div class="card-header">COVID-19 test verification</div>
+            {{end}}
             <div class="card-body">
               <form id="login-form" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
