@@ -33,7 +33,7 @@ const (
 
 // Config represents configuration for a cacher.
 type Config struct {
-	Type CacherType `env:"TYPE, default=IN_MEMORY"`
+	Type CacherType `env:"CACHE_TYPE, default=IN_MEMORY"`
 
 	// HMACKey is the hash key to use when for keys in the cacher.
 	HMACKey envconfig.Base64Bytes `env:"CACHE_HMAC_KEY, required"`
