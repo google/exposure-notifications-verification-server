@@ -17,6 +17,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -38,6 +39,20 @@ type User struct {
 	AdminRealms     []*Realm `gorm:"many2many:admin_realms"`
 
 	LastPasswordChange time.Time
+}
+
+// AfterFind runs after the record is found.
+func (u *User) AfterFind(tx *gorm.DB) error {
+	// Sort Realms and Admin realms. Unfortunately gorm provides no way to do this
+	// via sql hooks or default scopes.
+	sort.Slice(u.Realms, func(i, j int) bool {
+		return strings.ToLower(u.Realms[i].Name) < strings.ToLower(u.Realms[j].Name)
+	})
+	sort.Slice(u.AdminRealms, func(i, j int) bool {
+		return strings.ToLower(u.AdminRealms[i].Name) < strings.ToLower(u.AdminRealms[j].Name)
+	})
+
+	return nil
 }
 
 // PasswordAgeString displays the age of the password in friendly text.
@@ -196,7 +211,7 @@ func (db *Database) ListSystemAdmins() ([]*User, error) {
 	if err := db.db.
 		Model(&User{}).
 		Where("admin IS TRUE").
-		Order("name DESC").
+		Order("LOWER(name) ASC").
 		Find(&users).
 		Error; err != nil {
 		if IsNotFound(err) {
