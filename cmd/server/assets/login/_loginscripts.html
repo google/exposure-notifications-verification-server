@@ -52,14 +52,30 @@
       <div class="form-label-group">
         <input type="text" id="sms-code" name="sms-code" class="form-control" placeholder="Code" autocomplete="one-time-code" required autofocus />
         <label for="sms-code">Code</label>
-        <small class="form-text text-muted">
-          Please enter the numerical code that was sent via SMS.
-        </small>
+        <div class='w-100'>
+          <small class="text-muted">
+            Please enter the numerical code that was sent via SMS.
+          </small>
+        </div>
+        <small class="text-muted" id='code-text'></small>
       </div>
 
       <button type="submit" id="sms-code-submit" class="btn btn-primary btn-block">Confirm code</button>
-      <a id="sms-code-resend" class="card-link btn-block disabled" disabled>Resend SMS</a>
+      <div class="btn-block">
+        <a id="sms-code-resend" class="card-link disabled" disabled>Resend SMS</a>
+        <a id="sms-change" class="card-link d-none" href="#">Change login factor</a>
+      </div>
     </form>
+  </div>
+</div>
+{{end}}
+
+{{define "login/factorsdiv"}}
+<div class="card shadow-sm mb-3 d-none" id="registered-div">
+  <div class="card-header">Registered factors</div>
+  <div class="card-body">
+    <div id="factors" class="list-group list-group-flush">
+    </div>
   </div>
 </div>
 {{end}}

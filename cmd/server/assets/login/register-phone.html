@@ -19,13 +19,7 @@
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center">
         <div class="col-sm-6">
-          <div class="card shadow-sm mb-3 d-none" id="registered-div">
-            <div class="card-header">Registered factors</div>
-            <div class="card-body">
-              <ul id="factors" class="list-group list-group-flush">
-              </ul>
-            </div>
-          </div>
+          {{template "login/factorsdiv" .}}
 
           <div class="card shadow-sm" id="register-div">
             <div class="card-header">Multi-factor authentication</div>
@@ -81,7 +75,7 @@
   </main>
 
   {{template "scripts" .}}
-  <script>
+  <script type="text/javascript">
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
       'recaptcha-container',
       { 'size': 'invisible' }
@@ -130,7 +124,7 @@
       });
 
       function appendAuthFactor(factor, i) {
-        let $li = $('<li/>');
+        let $li = $('<div/>');
         $li.addClass('list-group-item');
         $li.attr('id', `factor${factor.uid}`);
 
@@ -246,6 +240,7 @@
         }).catch(function(err) {
           flash.clear();
           flash.error(err.message);
+          $submitPin.prop('disabled', false);
         }).then(function() {
           $submit.prop('disabled', false);
         });
