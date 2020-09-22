@@ -516,7 +516,7 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	if err := db.db.
 		Unscoped().
 		Model(AuthorizedApp{}).
-		Order("LOWER(name)").
+		Order("LOWER(name) ASC").
 		Where("id = ? AND realm_id = ?", id, r.ID).
 		First(&app).
 		Error; err != nil {
@@ -615,7 +615,10 @@ func (db *Database) FindRealm(id interface{}) (*Realm, error) {
 
 func (db *Database) GetRealms() ([]*Realm, error) {
 	var realms []*Realm
-	if err := db.db.Find(&realms).Error; err != nil {
+	if err := db.db.
+		Order("name ASC").
+		Find(&realms).
+		Error; err != nil {
 		return nil, err
 	}
 	return realms, nil
