@@ -123,11 +123,18 @@
 
           for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
             let factor = user.multiFactor.enrolledFactors[i];
-            let li = $('<li class="list-group-item"></li>').text(factor.displayName);
+            let li = $('<li class="list-group-item"></li>');
             li.attr("id", "factor"+factor.uid)
+
+            let row = $('<div></div>').text(factor.displayName);
+            li.append(row)
+
             let unenroll = $('<a href="#" class="float-right">Delete factor</a>');
             unenroll.prepend('<span class="oi oi-delete mr-1" aria-hidden="true"></span>');
-            li.append(unenroll);
+            row.append(unenroll)
+
+            let time = $('<small class="row text-muted ml-1"></small>').text('Enrolled at: ' + factor.enrollmentTime);
+            row.append(time);
 
             unenroll.on('click', function(event) {
               unenrollFactor(factor);
