@@ -235,6 +235,10 @@
 
           let l = user.multiFactor.enrolledFactors.length
           appendAuthFactor(user.multiFactor.enrolledFactors[l-1], l-1);
+          if (l == 1) {
+            $registeredDiv.removeClass('d-none');
+          }
+
           $phone.text('');
           $displayName.text('');
           $registerDiv.show();
