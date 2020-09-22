@@ -158,6 +158,10 @@
       });
 
       function unenrollFactor(factor) {
+        if (window.confirm('Are you sure you want to delete ' + factor.displayName) !== true) {
+          return;
+        }
+
         firebase.auth().currentUser.multiFactor.unenroll(factor)
           .then(function() {
             $('#factor'+factor.uid).remove();
