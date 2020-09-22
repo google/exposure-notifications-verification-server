@@ -20,10 +20,12 @@
         },
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/x-www-form-urlencoded',
+        {{if not .currentUser}}
         success: function(returnData) {
           // The user successfully signed in, redirect to realm selection.
           window.location.assign('/login/select-realm');
         },
+        {{end}}
         error: function(xhr, status, e) {
           // There was an error finding the user. Redirect to the
           // sign-out page to clear the firebase cookie and any session

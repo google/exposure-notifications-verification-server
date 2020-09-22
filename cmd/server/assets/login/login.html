@@ -9,6 +9,9 @@
 </head>
 
 <body class="tab-content">
+  {{if .currentUser}}
+  {{template "navbar" .}}
+  {{end}}
   <main role="main" class="container">
     {{template "flash" .}}
 
@@ -17,12 +20,16 @@
         <div class="col-sm-6">
 
           <div class="card shadow-sm" id="login-div">
+            {{if .currentUser}}
+            <div class="card-header">Refresh authentication</div>
+            {{else}}
             <div class="card-header">COVID-19 test verification</div>
+            {{end}}
             <div class="card-body">
               <form id="login-form" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
                   <input type="email" id="email" name="email" class="form-control" placeholder="Email address" required
-                    autofocus />
+                    autofocus {{if .currentUser}}disabled value="{{.currentUser.Email}}"{{end}}/>
                   <label for="email">Email address</label>
                 </div>
 
@@ -90,11 +97,15 @@
         // Disable the submit button so we only attempt once.
         $submit.prop('disabled', true);
 
+        {{if .currentUser}}
+        let credentials = firebase.auth.EmailAuthProvider.credential($email.val(),$password.val());
+        firebase.auth().currentUser.reauthenticateWithCredential(credentials)
+        {{else}}
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
+        {{end}}
           .then(function(userCredential) {
-            flash.clear();
-          })
-          .catch(function(error) {
+            loginSuccess();
+          }).catch(function(error) {
             if (error.code == 'auth/multi-factor-auth-required') {
               resolver = error.resolver;
               populatePinText(resolver.hints);
@@ -140,7 +151,9 @@
         let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
         // Complete sign-in.
         resolver.resolveSignIn(multiFactorAssertion)
-          .catch(function(err) {
+          .then(function(userCredential) {
+              loginSuccess();
+          }).catch(function(err) {
             flash.clear();
             flash.error(err.message);
             $submitPin.prop('disabled', false);
@@ -242,6 +255,16 @@
         });
 
         $factors.append($li);
+      }
+
+      function loginSuccess() {
+        {{if .loginRedirect}}
+        window.location.assign('{{.loginRedirect}}');
+        {{else}}
+        {{if .currentUser}}
+          flash.alert('Successfully refreshed auth credentials.');
+        {{end}}
+        {{end}}
       }
     });
   </script>
