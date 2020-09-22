@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/gorilla/mux"
@@ -49,8 +50,7 @@ func (p *Path) IsPath(s string) bool {
 }
 
 func (p *Path) IsDir(s string) bool {
-	dir, _ := path.Split(p.uri.RequestURI())
-	return dir == s
+	return strings.HasPrefix(p.uri.RequestURI(), s)
 }
 
 func (p *Path) IsFile(s string) bool {
