@@ -19,6 +19,13 @@
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center">
         <div class="col-sm-6">
+          <div class="card shadow-sm mb-3 d-none" id="registered-div">
+            <div class="card-header">Registered factors</div>
+            <div class="card-body">
+              <ul id="factors" class="list-group list-group-flush">
+              </ul>
+            </div>
+          </div>
 
           <div class="card shadow-sm" id="register-div">
             <div class="card-header">Multi-factor authentication</div>
@@ -34,7 +41,7 @@
                 <strong>{{$currentRealm.Name}}</strong>
                 {{if eq .currentRealm.MFAMode.String "required"}}requires{{else}}recommends{{end}}
                 enhanced security via SMS-based 2-factor authentication. Please
-                provide your information below.
+                provide your information below to enroll.
               </p>
 
               <form id="register-form" class="floating-form" action="/" method="POST">
@@ -100,7 +107,80 @@
       let $submitPin = $('#sms-code-submit');
       let $resendPin = $('#sms-code-resend');
 
+      let $registeredDiv = $('#registered-div');
+      let $factors = $('#factors');
+
       let verId = ""
+
+      firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+          return
+        }
+
+        if (user.multiFactor.enrolledFactors.length > 0) {
+          $skip.text('Account settings');
+          $skip.attr('href','/account');
+
+          for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
+            let factor = user.multiFactor.enrolledFactors[i];
+            let $li = $('<li/>');
+            $li.addClass('list-group-item');
+            $li.attr('id', 'factor'+factor.uid);
+
+            let $row = $('<div/>').text(factor.displayName);
+            $li.append($row);
+
+            let $icon = $('<span/>');
+            $icon.addClass('oi oi-phone mr-1');
+            $icon.attr('aria-hidden','true');
+            $row.prepend($icon);
+
+            let $unenroll = $('<a/>');
+            $unenroll.addClass('text-danger float-right');
+            $unenroll.attr('href', '#')
+            $unenroll.attr('title', 'Delete this factor');
+            $unenroll.tooltip();
+
+            $icon = $('<span/>');
+            $icon.addClass('oi oi-delete mr-1');
+            $icon.attr('aria-hidden','true');
+            $unenroll.append($icon);
+            $row.append($unenroll);
+
+            let $time = $('<small/>');
+            $time.addClass('row text-muted ml-1')
+            $time.text('Enrolled at: ' + factor.enrollmentTime);
+            $row.append($time);
+
+            $unenroll.on('click', function(event) {
+              unenrollFactor(factor);
+            });
+
+            $factors.append($li);
+          }
+          $registeredDiv.removeClass('d-none');
+        }
+      });
+
+      function unenrollFactor(factor) {
+        if (window.confirm('Are you sure you want to delete ' + factor.displayName) !== true) {
+          return;
+        }
+
+        firebase.auth().currentUser.multiFactor.unenroll(factor)
+          .then(function() {
+            $('#factor'+factor.uid).remove();
+            flash.clear();
+            flash.alert('Successfully unenrolled ${factor.displayName}');
+
+            if (firebase.auth().currentUser.multiFactor.enrolledFactors.length == 0) {
+              $registeredDiv.addClass('d-none');
+            }
+          }).catch(function(error) {
+            flash.clear();
+            flash.error(error.message);
+          });
+      }
 
       $registerForm.on('submit', function(event) {
         event.preventDefault();
@@ -123,7 +203,7 @@
           verId = verificationId
           setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
           $registerDiv.hide();
-          $pinDiv.show();
+          $pinDiv.removeClass('d-none');
         }).catch(function(err) {
           flash.clear();
           flash.error(err.message);
@@ -145,7 +225,9 @@
         user.multiFactor.enroll(multiFactorAssertion, $displayName.val()).then(function() {
           flash.clear();
           flash.alert('SMS authentication enrolled successfully.');
-          $skip.text("Continue")
+          $skip.text('Continue');
+          $registerDiv.show();
+          $pinDiv.addClass('d-none');
         }).catch(function(err) {
           flash.clear();
           flash.error(err.message);
@@ -156,7 +238,7 @@
       $pinClose.on('click', function(event) {
         $submit.prop('disabled', false);
         $registerDiv.show();
-        $pinDiv.hide();
+        $pinDiv.addClass('d-none');
       });
 
       $resendPin.on('click', function(event) {

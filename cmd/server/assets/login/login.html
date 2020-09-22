@@ -103,7 +103,7 @@
                     setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
                     $submitPin.prop('disabled', false);
                     $loginDiv.hide();
-                    $pinDiv.show();
+                    $pinDiv.removeClass('d-none');
                   }).catch(function(error) {
                     flash.clear();
                     flash.error(error.message);
@@ -142,7 +142,7 @@
       $pinClose.on('click', function(event) {
         $submit.prop('disabled', false);
         $loginDiv.show();
-        $pinDiv.hide();
+        $pinDiv.addClass('d-none');
       });
 
       $resendPin.on('click', function(event) {

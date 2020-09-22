@@ -47,6 +47,7 @@
         </li>
         <li class="list-group-item">
           <div class="card-text" id="phone-registered">loading</div>
+          <a href="/login/register-phone" id='register-link' class="card-link">Register phone</a>
         </li>
         <li class="list-group-item">
           <div class="card-text">Password was last changed <span class="text-info">{{$user.PasswordAgeString}}</span>
@@ -100,10 +101,10 @@
 
         if (user.multiFactor.enrolledFactors.length > 0) {
           $phoneReg.html('Two-factor auth is <span class="text-success">enabled</span>');
+          $('#register-link').text('Manage auth factors');
         } else {
           $phoneReg.addClass("text-danger");
           $phoneReg.html('No second auth factor registered');
-          $phoneReg.after('<a href="/login/register-phone" class="card-link">Register phone</a>');
         }
 
         if (user.emailVerified) {
@@ -111,7 +112,12 @@
         } else {
           $emailVer.addClass("text-danger");
           $emailVer.html('Email address is <strong>not</strong> verified');
-          $emailVer.after('<a href="/login/verify-email" class="card-link">Verify email</a>');
+
+          let $link = $('<a/>');
+          $link.addClass('card-link');
+          $link.attr('href','/login/verify-email');
+          $link.text('Verify email');
+          $emailVer.after($link);
         }
       });
     });
