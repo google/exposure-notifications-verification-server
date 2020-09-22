@@ -1131,6 +1131,97 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00049-MakeRegionCodeUnique",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					// Make region code case insensitive and unique.
+					"ALTER TABLE realms ALTER COLUMN region_code TYPE CITEXT",
+					"ALTER TABLE realms ALTER COLUMN region_code DROP DEFAULT",
+					"ALTER TABLE realms ALTER COLUMN region_code DROP NOT NULL",
+				}
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				// Make any existing empty string region codes to NULL. Without this,
+				// the new unique constraint will fail.
+				if err := tx.Exec("UPDATE realms SET region_code = NULL WHERE TRIM(region_code) = ''").Error; err != nil {
+					return err
+				}
+
+				// Make all region codes uppercase.
+				if err := tx.Exec("UPDATE realms SET region_code = UPPER(region_code) WHERE region_code IS NOT NULL").Error; err != nil {
+					return err
+				}
+
+				// Find any existing duplicate region codes - this could be combined
+				// into a much larger SQL statement with the next thing, but I'm
+				// optimizing for readability here.
+				var dupRegionCodes []string
+				if err := tx.Model(&Realm{}).
+					Unscoped().
+					Select("UPPER(region_code) AS region_code").
+					Where("region_code IS NOT NULL").
+					Group("region_code").
+					Having("COUNT(*) > 1").
+					Pluck("region_code", &dupRegionCodes).
+					Error; err != nil {
+					return err
+				}
+
+				// Update any duplicate regions to not be duplicate anymore.
+				for _, dupRegionCode := range dupRegionCodes {
+					logger.Warn("de-duplicating region code %q", dupRegionCode)
+
+					// I call this the "Microsoft method". For each duplicate realm,
+					// append -N, starting with 1. If there are 3 realms with the region
+					// code "PA", their new values will be "PA", "PA-1", and "PA-2"
+					// respectively.
+					sql := `
+						UPDATE
+							realms
+						SET region_code = CONCAT(realms.region_code, '-', (z-1)::text)
+						FROM (
+							SELECT
+								id,
+								region_code,
+								ROW_NUMBER() OVER (ORDER BY id ASC) AS z
+							FROM realms
+							WHERE UPPER(region_code) = UPPER($1)
+						) AS sq
+						WHERE realms.id = sq.id AND sq.z > 1`
+					if err := tx.Exec(sql, dupRegionCode).Error; err != nil {
+						return err
+					}
+				}
+
+				sqls = []string{
+					// There's already a runtime constraint and validation on names, this
+					// is just an extra layer of protection at the database layer.
+					"ALTER TABLE realms ALTER COLUMN name SET NOT NULL",
+
+					// Alter the unique index on realm names to be a column constraint.
+					"DROP INDEX IF EXISTS uix_realms_name",
+					"ALTER TABLE realms ADD CONSTRAINT uix_realms_name UNIQUE (name)",
+
+					// Now finally add a unique constraint on region codes.
+					"ALTER TABLE realms ADD CONSTRAINT uix_realms_region_code UNIQUE (region_code)",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 

@@ -252,6 +252,7 @@ aria-expanded="false" aria-label="Toggle navigation">
       {{if gt (len .currentUser.Realms) 1}}
       <a class="dropdown-item" href="/login/select-realm">{{if .currentRealm}}Change realm{{else}}Select realm{{end}}</a>
       {{end}}
+      <a class="dropdown-item" href="/account">My account</a>
       <a class="dropdown-item" href="/signout">Sign out</a>
     </div>
   </li>

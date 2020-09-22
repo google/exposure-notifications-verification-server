@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
@@ -35,6 +36,10 @@ func testModeler(tb testing.TB) *Controller {
 	config := config.Modeler{
 		Database: *dbConfig,
 		RateLimit: ratelimit.Config{
+			Type:    "IN_MEMORY",
+			HMACKey: []byte(""),
+		},
+		Cache: cache.Config{
 			Type:    "IN_MEMORY",
 			HMACKey: []byte(""),
 		},
@@ -77,6 +82,10 @@ func TestRebuildModel(t *testing.T) {
 
 	// Create some initial statistics.
 	{
+		if err := db.RawDB().Exec("TRUNCATE realm_stats").Error; err != nil {
+			t.Fatal(err)
+		}
+
 		line := []uint{50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50}
 		for _, y := range line {
 			if err := db.RawDB().
@@ -108,6 +117,10 @@ func TestRebuildModel(t *testing.T) {
 
 	// Add some more statistics
 	{
+		if err := db.RawDB().Exec("TRUNCATE realm_stats").Error; err != nil {
+			t.Fatal(err)
+		}
+
 		line := []uint{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
 		for _, y := range line {
 			if err := db.RawDB().
@@ -137,8 +150,47 @@ func TestRebuildModel(t *testing.T) {
 		}
 	}
 
+	// Test
+	{
+		if err := db.RawDB().Exec("TRUNCATE realm_stats").Error; err != nil {
+			t.Fatal(err)
+		}
+
+		line := []uint{1, 26, 61, 13, 19, 50, 9, 20, 91, 187, 39, 4, 2, 5, 1}
+		for _, y := range line {
+			if err := db.RawDB().
+				Create(&database.RealmStats{
+					Date:        nextDate(),
+					RealmID:     realm.ID,
+					CodesIssued: y,
+				}).
+				Error; err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Build the model.
+		if err := modeler.rebuildModels(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		// Get the realm so we can check the value.
+		realm, err := db.FindRealm(realm.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := realm.AbusePreventionLimit, uint(28); got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+	}
+
 	// Ensure we hit the floor
 	{
+		if err := db.RawDB().Exec("TRUNCATE realm_stats").Error; err != nil {
+			t.Fatal(err)
+		}
+
 		line := []uint{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 		for _, y := range line {
 			if err := db.RawDB().

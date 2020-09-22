@@ -18,11 +18,13 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/modeler"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
@@ -76,12 +78,22 @@ func realMain(ctx context.Context) error {
 	defer oe.Close()
 	logger.Infow("observability exporter", "config", oeConfig)
 
+	// Setup cacher
+	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
+		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
+		cache.PrefixKeyFunc("cache:"),
+	))
+	if err != nil {
+		return fmt.Errorf("failed to create cacher: %w", err)
+	}
+	defer cacher.Close()
+
 	// Setup database
 	db, err := config.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
-	if err := db.Open(ctx); err != nil {
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()

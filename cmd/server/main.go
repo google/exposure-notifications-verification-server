@@ -105,7 +105,7 @@ func realMain(ctx context.Context) error {
 	// Setup cacher
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
 		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
-		cache.PrefixKeyFunc("server:cache:"),
+		cache.PrefixKeyFunc("cache:"),
 	))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
@@ -219,13 +219,14 @@ func realMain(ctx context.Context) error {
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 
-			// Realm selection
+			// Realm selection & account settings
 			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
 			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
 			sub.Handle("/login/change-password", loginController.HandleResetPassword()).Methods("GET")
+			sub.Handle("/account", loginController.HandleAccountSettings()).Methods("GET")
 
 			// Verifying email requires the user is logged in
 			sub = r.PathPrefix("").Subrouter()
@@ -341,7 +342,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
 		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
 
-		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, h)
+		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, cacher, h)
 		if err != nil {
 			return fmt.Errorf("failed to create realmkeys controller: %w", err)
 		}

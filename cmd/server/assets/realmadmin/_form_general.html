@@ -9,6 +9,7 @@
 
 <form method="POST" action="/realm/settings#general" class="floating-form">
   {{ .csrfField }}
+  <input type="hidden" name="general" value="1" />
 
   <div class="form-label-group">
     <input type="text" name="name" id="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}"
@@ -22,11 +23,12 @@
     <small class="form-text text-muted">
       The realm name is displayed on the realm selection page and in the header
       when selected. Choose a descriptive name that your team will recognize.
+      This value must be globally unique in the system.
     </small>
   </div>
 
   <div class="form-label-group">
-    <input type="text" name="region_code" id="region-code" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}"
+    <input type="text" name="region_code" id="region-code" class="form-control text-uppercase{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}"
       value="{{$realm.RegionCode}}" placeholder="Region code" />
     <label for="region-code">Region code</label>
     {{if $realm.ErrorsFor "regionCode"}}
@@ -41,6 +43,7 @@
       <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO
       3166-1 country codes and ISO 3166-2 subdivision codes</a> where
       applicable. For example, Washington state would be <code>US-WA</code>.
+      This value must globally unique in the system.
     </small>
   </div>
 

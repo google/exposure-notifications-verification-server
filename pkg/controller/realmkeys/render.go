@@ -84,6 +84,7 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		} else {
 			pem, err := keyutils.EncodePublicKey(publicKey)
 			if err != nil {
+				m["systemCertPublicKey"] = ""
 				m["systemCertPublicKeyError"] = fmt.Sprintf("Failed to encode public key: %v", err)
 			} else {
 				m["systemCertPublicKey"] = pem

@@ -4,7 +4,6 @@
 
 <head>
   {{template "head" .}}
-
   {{template "firebase" .}}
 </head>
 
@@ -28,7 +27,7 @@
               </div>
               {{end}}
 
-              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong>not</strong> confirmed.
+              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.
               </p>
 
               <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
@@ -51,6 +50,7 @@
   <script>
     let $verify = $('#verify');
     let $skip = $('#skip');
+    let $not = $('#not');
 
     $(function() {
       $verify.on('click', function(event) {
@@ -72,8 +72,8 @@
       }
 
       if (user.emailVerified) {
-        window.location.assign('/home');
-        return;
+        $not.hide();
+        $skip.text("Go home");
       } else {
         $verify.prop('disabled', false);
       }

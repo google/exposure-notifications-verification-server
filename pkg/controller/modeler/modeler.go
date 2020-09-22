@@ -146,7 +146,7 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 
 	// This is probably overkill, but it enables us to pick a different curve in
 	// the future, if we want.
-	degree := 2
+	degree := 1
 	alpha := vandermonde(xs, degree)
 	beta := mat64.NewDense(len(ys), 1, ys)
 	gamma := mat64.NewDense(degree+1, 1, nil)
@@ -166,8 +166,17 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 		return result
 	}
 
-	// Calculate the predicted next value.
-	next := uint(math.Ceil(curve(float64(len(ys)))))
+	// In the case of a sharp decline, the model might predict a very low value,
+	// potentially less than zero. We need to do the negative check against the
+	// float value before casting to a uint, or else risk overflowing if this
+	// value is negative.
+	nextFloat := math.Ceil(curve(float64(len(ys))))
+	if nextFloat < 0 {
+		nextFloat = 0
+	}
+
+	// Calculate the predicted next value as a uint.
+	next := uint(nextFloat)
 
 	// This should really never happen - it means there's been a very sharp
 	// decline in the number of codes issued. In that case, we want to revert
@@ -177,8 +186,10 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 		next = 10
 	}
 
+	logger.Debugw("next value", "next", next)
+
 	// Save the new value back, bypassing any validation.
-	realm.AbusePreventionLimit = uint(next)
+	realm.AbusePreventionLimit = next
 	if err := c.db.SaveRealm(realm); err != nil {
 		return fmt.Errorf("failed to save model: %w", err)
 	}

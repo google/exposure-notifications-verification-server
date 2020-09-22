@@ -8,6 +8,7 @@
 
 <form method="POST" action="/realm/settings#security" class="floating-form">
   {{ .csrfField }}
+  <input type="hidden" name="security" value="1" />
 
   <div class="form-group">
     <label for="email-verified-mode">Email verification</label>
