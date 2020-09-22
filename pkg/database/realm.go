@@ -571,6 +571,37 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	return &app, nil
 }
 
+// ListMobileApps gets all the mobile apps for the realm.
+func (r *Realm) ListMobileApps(db *Database) ([]*MobileApp, error) {
+	var apps []*MobileApp
+	if err := db.db.
+		Unscoped().
+		Model(r).
+		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
+		Related(&apps).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return apps, nil
+		}
+		return nil, err
+	}
+	return apps, nil
+}
+
+// FindMobileApp finds the mobile app by the given id associated with the realm.
+func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) {
+	var app MobileApp
+	if err := db.db.
+		Unscoped().
+		Model(MobileApp{}).
+		Where("id = ?", id).
+		First(&app).
+		Error; err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
 // CountUsers returns the count users on this realm.
 func (r *Realm) CountUsers(db *Database) (int, error) {
 	var count int

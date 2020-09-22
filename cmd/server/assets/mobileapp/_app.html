@@ -1,0 +1,56 @@
+{{define "app"}}
+
+{{$app := .app}}
+
+  <div class="form-group">
+    <select class="form-control{{if $app.ErrorsFor "os"}} is-invalid{{end}}" name="os" id="os" onchange="osSelect()">
+      <option value="{{.iOS}}" {{if (eq $app.OS .iOS)}}selected{{end}}>iOS</option>
+      <option value="{{.android}}" {{if (eq $app.OS .android)}}selected{{end}}>Android</option>
+    </select>
+    {{if $app.ErrorsFor "os"}}
+    <div class="invalid-feedback">
+      {{joinStrings ($app.ErrorsFor "os") ", "}}
+    </div>
+    {{end}}
+  </div>
+
+  <div class="form-label-group" id="appID">
+    <input type="text" id="appID" name="appID" class="form-control{{if $app.ErrorsFor "appID"}} is-invalid{{end}}" value="{{$app.AppID}}" placeholder="Application ID" autofocus>
+    <label for="appID" id="idDIV">FILLIN</label>
+    {{if $app.ErrorsFor "appID"}}
+    <div class="invalid-feedback">
+      {{joinStrings ($app.ErrorsFor "appID") ", "}}
+    </div>
+    {{end}}
+  </div>
+
+    <label for="sha">SHAs (One Per Line)</label>
+    {{if $app.ErrorsFor "sha"}}
+    <div class="invalid-feedback">
+      {{joinStrings ($app.ErrorsFor "sha") ", "}}
+    </div>
+    {{end}}
+  <div class="form-label-group" id="shaDIV">
+    <textarea type="text" id="sha" name="sha" class="form-control{{if $app.ErrorsFor "sha"}} is-invalid{{end}}" rows=5 autofocus>{{$app.SHA}}</textarea>
+  </div>
+
+  <script>
+    function osSelect() {
+      selection = document.getElementById("os").value;
+      id = document.getElementById("idDIV")
+      sha = document.getElementById("shaDIV");
+      switch(selection) {
+		default:
+        case "{{.iOS}}":
+            id.innerText = "Application ID"
+            sha.style.display = "none";
+          break;
+        case "{{.android}}":
+            id.innerHTML = "Bundle Identifier"
+            sha.style.display = "block";
+          break;
+      }
+    }
+  </script>
+
+{{end}}
