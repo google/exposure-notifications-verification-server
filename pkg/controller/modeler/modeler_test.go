@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
@@ -35,6 +36,10 @@ func testModeler(tb testing.TB) *Controller {
 	config := config.Modeler{
 		Database: *dbConfig,
 		RateLimit: ratelimit.Config{
+			Type:    "IN_MEMORY",
+			HMACKey: []byte(""),
+		},
+		Cache: cache.Config{
 			Type:    "IN_MEMORY",
 			HMACKey: []byte(""),
 		},
