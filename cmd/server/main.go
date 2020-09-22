@@ -224,6 +224,7 @@ func realMain(ctx context.Context) error {
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
+			sub.Handle("/login", loginController.HandleReauth()).Methods("GET")
 			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
 			sub.Handle("/login/change-password", loginController.HandleResetPassword()).Methods("GET")
 			sub.Handle("/account", loginController.HandleAccountSettings()).Methods("GET")
