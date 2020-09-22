@@ -130,13 +130,18 @@
             let $row = $('<div/>').text(factor.displayName);
             $li.append($row);
 
+            let $icon = $('<span/>');
+            $icon.addClass('oi oi-phone mr-1');
+            $icon.attr('aria-hidden','true');
+            $row.prepend($icon);
+
             let $unenroll = $('<a/>');
             $unenroll.addClass('text-danger float-right');
             $unenroll.attr('href', '#')
             $unenroll.attr('title', 'Delete this factor');
             $unenroll.tooltip();
 
-            let $icon = $('<span/>');
+            $icon = $('<span/>');
             $icon.addClass('oi oi-delete mr-1');
             $icon.attr('aria-hidden','true');
             $unenroll.append($icon);
