@@ -20,13 +20,17 @@ import (
 	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/sethvargo/go-envconfig"
 )
 
 // RedirectConfig represents the environment based config for the redirect server.
 type RedirectConfig struct {
+	Database      database.Config
 	Observability observability.Config
+	Cache         cache.Config
 
 	Port string `env:"PORT, default=8080"`
 
@@ -61,6 +65,10 @@ func NewRedirectConfig(ctx context.Context) (*RedirectConfig, error) {
 
 func (c *RedirectConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
+}
+
+func (c *RedirectConfig) DatabaseConfig() *database.Config {
+	return &c.Database
 }
 
 // HostnameToRegion returns a normalized map of the HOSTNAME_TO_REGION config value.

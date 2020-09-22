@@ -167,6 +167,27 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("created device api key", "key", deviceAPIKey)
 
+	// Create some Apps
+	apps := []*database.MobileApp{
+		{
+			Name:  "iOS App",
+			OS:    database.OSTypeIOS,
+			AppID: "iOS.app-id",
+		},
+		{
+			Name:  "Android App",
+			OS:    database.OSTypeAndroid,
+			AppID: "Android.app-id",
+			SHA:   "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
+		},
+	}
+	for i := range apps {
+		app := apps[i]
+		if err := realm1.CreateMobileApp(db, app); err != nil {
+			return fmt.Errorf("failed to create app: %w", err)
+		}
+	}
+
 	// Create an admin API key
 	adminAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       "Tracing Tracker",

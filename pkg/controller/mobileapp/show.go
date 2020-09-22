@@ -1,0 +1,78 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package mobileapp
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
+	"github.com/gorilla/mux"
+)
+
+// HandleShow displays the mobile app.
+func (c *Controller) HandleShow() http.Handler {
+	logger := c.logger.Named("HandleShow")
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctxt := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctxt)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
+		realm := controller.RealmFromContext(ctxt)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		// If the app name is present, add it to the variables map and then delete it
+		// from the session.
+		appName, ok := session.Values["appName"]
+		if ok {
+			m := templateMap(ctxt)
+			m["appName"] = appName
+			delete(session.Values, "appName")
+		}
+
+		// Pull the authorized app from the id.
+		app, err := realm.FindMobileApp(c.db, vars["id"])
+		if err != nil {
+			if database.IsNotFound(err) {
+				logger.Debugw("mobile app does not exist", "id", vars["id"])
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		c.renderShow(ctxt, w, app)
+	})
+}
+
+// renderShow renders the edit page.
+func (c *Controller) renderShow(ctxt context.Context, w http.ResponseWriter, app *database.MobileApp) {
+	m := templateMap(ctxt)
+	m["app"] = app
+	c.h.RenderHTML(w, "mobileapp/show", m)
+}

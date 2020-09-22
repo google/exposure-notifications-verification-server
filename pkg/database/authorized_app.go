@@ -61,7 +61,7 @@ type AuthorizedApp struct {
 	// APIKey is the HMACed API key.
 	APIKey string `gorm:"type:varchar(512);unique_index"`
 
-	// APIKeyType s the API key type.
+	// APIKeyType is the API key type.
 	APIKeyType APIUserType `gorm:"default:0"`
 }
 
