@@ -48,7 +48,7 @@
       </div>
 
       <div class="card-body">
-        <div class="progress d-none" id="progress-div">
+        <div class="progress d-none" id="progress-div" style="display:none;>
           <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
             aria-valuemax="100"></div>
         </div>
@@ -105,7 +105,7 @@
         $cancel.prop('disabled', false);
 
         $table.show(100);
-        $progressDiv.show();
+        $progressDiv.removeClass('d-none');
 
         var reader = new FileReader();
         reader.onload = upload.start;
