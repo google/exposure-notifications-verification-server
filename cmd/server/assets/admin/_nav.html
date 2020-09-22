@@ -4,10 +4,10 @@
     System admin
   </div>
 
-  <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+  <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
     <div class="container">
       {{template "navtoggle" .}}
-      <div class="collapse navbar-collapse" id="navbar">
+      <div class="collapse navbar-collapse mt-2" id="navbar">
         {{if .currentRealm}}
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
@@ -24,15 +24,15 @@
 
 <ul class="nav nav-pills justify-content-center mb-3">
   <li class="nav-item">
-    <a class="nav-link{{if stringContains .currentPath "/admin/realms"}} active{{end}}" href="/admin/realms">Realms</a>
+    <a class="nav-link{{if .currentPath.IsFile "realms"}} active{{end}}" href="/admin/realms">Realms</a>
   </li>
 
   <li class="nav-item">
-    <a class="nav-link{{if stringContains .currentPath "/admin/users"}} active{{end}}" href="/admin/users">System admins</a>
+    <a class="nav-link{{if .currentPath.IsFile "users"}} active{{end}}" href="/admin/users">System admins</a>
   </li>
 
   <li class="nav-item">
-    <a class="nav-link{{if stringContains .currentPath "/admin/info"}} active{{end}}" href="/admin/info">Info</a>
+    <a class="nav-link{{if .currentPath.IsFile "info"}} active{{end}}" href="/admin/info">Info</a>
   </li>
 </ul>
 {{end}}
