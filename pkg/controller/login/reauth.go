@@ -17,12 +17,25 @@ package login
 
 import (
 	"net/http"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
 func (c *Controller) HandleReauth() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		// No redirect for reauth
+
+		// No session redirect for reauth
+
+		if r := r.FormValue("redir"); r != "" {
+			m := controller.TemplateMapFromContext(ctx)
+			m["loginRedirect"] = r
+
+			session := controller.SessionFromContext(ctx)
+			flash := controller.Flash(session)
+			flash.Alert("This operation is sensitive and requires recent authentication. Please sign-in again.")
+		}
+
 		c.renderLogin(ctx, w)
 	})
 }
