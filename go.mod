@@ -57,3 +57,5 @@ require (
 	k8s.io/api v0.18.7-rc.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v3 v3.0.1-0.20200706213357-43c19bbb7fba // indirect
 )
+
+replace github.com/jackc/puddle => github.com/jeremyfaller/puddle v1.1.2-0.20200821025810-91d0159cc97a
