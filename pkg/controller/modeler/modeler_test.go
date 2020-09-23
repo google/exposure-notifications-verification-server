@@ -219,4 +219,43 @@ func TestRebuildModel(t *testing.T) {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	}
+
+	// Ensure we hit the ceiling
+	{
+		if err := db.RawDB().Exec("TRUNCATE realm_stats").Error; err != nil {
+			t.Fatal(err)
+		}
+
+		line := make([]uint, 24)
+		for i := range line {
+			line[i] = uint(10000 * i)
+		}
+
+		for _, y := range line {
+			if err := db.RawDB().
+				Create(&database.RealmStats{
+					Date:        nextDate(),
+					RealmID:     realm.ID,
+					CodesIssued: y,
+				}).
+				Error; err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Build the model.
+		if err := modeler.rebuildModels(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		// Get the realm so we can check the value.
+		realm, err := db.FindRealm(realm.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := realm.AbusePreventionLimit, uint(20000); got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+	}
 }

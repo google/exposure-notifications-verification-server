@@ -38,6 +38,11 @@ type Modeler struct {
 	DevMode bool `env:"DEV_MODE"`
 
 	Port string `env:"PORT, default=8080"`
+
+	// MinValue and MaxValue determine the floor and ceiling limits for the
+	// modeler.
+	MinValue uint `env:"MODELER_MIN_VALUE, default=10"`
+	MaxValue uint `env:"MODELER_MAX_VALUE, default=20000"`
 }
 
 // NewModeler returns the config for the modeler server.
