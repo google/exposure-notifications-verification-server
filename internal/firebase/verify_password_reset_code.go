@@ -30,7 +30,7 @@ type verifyPasswordResetCodeRequest struct {
 }
 
 // VerifyPasswordResetCode sends a password reset email to the user. If the new
-// password is given, it applys the password reset change with the new password
+// password is given, it applies the password reset change with the new password
 // using the code.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
