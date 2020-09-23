@@ -132,7 +132,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
     display_name = "/backend_latencies"
     condition_threshold {
       duration        = "300s"
-      threshold_value = "2s"
+      threshold_value = "2000"
       comparison      = "COMPARISON_GT"
       filter          = "metric.type=\"loadbalancing.googleapis.com/https/backend_latencies\" resource.type=\"https_lb_rule\" "
 
