@@ -23,7 +23,7 @@ resource "google_compute_global_address" "verification-enx-redirect" {
 }
 
 # Redirects all requests to https
-resource "google_compute_url_map" "urlmap-http" {
+resource "google_compute_url_map" "enx-redirect-urlmap-http" {
   name     = "https-redirect"
   provider = google-beta
   project  = var.project
@@ -48,7 +48,7 @@ resource "google_compute_target_http_proxy" "enx-redirect-http" {
   name     = "verification-enx-redirect"
   project  = var.project
 
-  url_map = google_compute_url_map.urlmap-http.id
+  url_map = google_compute_url_map.enx-redirect-urlmap-http.id
 }
 
 resource "google_compute_target_https_proxy" "enx-redirect-https" {
