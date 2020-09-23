@@ -2,6 +2,7 @@
 
 {{$realm := .realm}}
 {{$smsConfig := .smsConfig}}
+{{$countries := .countries}}
 
 <p class="mb-4">
   These are the settings for configuring the <a
@@ -68,6 +69,21 @@
         This is the Twilio From Number. Get this value from the Twilio console.
       </small>
     </div>
+  </div>
+
+  <div class="form-label-group">
+    <select name="sms_country" id="sms_country" class="form-control custom-select">
+      <option disabled selected hidden>SMS country</option>
+      {{range $name, $value := $countries}}
+        <option value="{{$value}}"{{if eq $realm.SMSCountry $value}} selected{{end}}>{{$name}}</option>
+      {{end}}
+    </select>
+    {{template "errorable" $realm.ErrorsFor "smsCountry"}}
+    <small class="form-text text-muted">
+      This is the default value for the country code to use for SMS numbers.
+      Case workers will still be able to select a default value, but you should
+      set this to your most common region.
+    </small>
   </div>
 
   <div class="mt-4">

@@ -1299,6 +1299,25 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00053-AddRealmSMSCountry",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&Realm{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms DROP COLUMN IF EXISTS sms_country`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 

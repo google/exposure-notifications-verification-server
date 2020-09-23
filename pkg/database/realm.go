@@ -104,6 +104,11 @@ type Realm struct {
 	// SMS configuration
 	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
 
+	// SMSCountry is an optional field to hint the default phone picker country
+	// code.
+	SMSCountry    string  `gorm:"-"`
+	SMSCountryPtr *string `gorm:"column:sms_country; type:varchar(5);"`
+
 	// CanUseSystemSMSConfig is configured by system administrators to share the
 	// system SMS config with this realm. Note that the system SMS config could be
 	// empty and a local SMS config is preferred over the system value.
@@ -217,6 +222,7 @@ func (r *Realm) SigningKeyID() string {
 func (r *Realm) AfterFind(tx *gorm.DB) error {
 	r.RegionCode = stringValue(r.RegionCodePtr)
 	r.WelcomeMessage = stringValue(r.WelcomeMessagePtr)
+	r.SMSCountry = stringValue(r.SMSCountryPtr)
 
 	return nil
 }
@@ -240,6 +246,8 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")
 	}
+
+	r.SMSCountryPtr = stringPtr(r.SMSCountry)
 
 	if r.EnableENExpress {
 		if r.RegionCode == "" {
