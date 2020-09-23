@@ -53,6 +53,8 @@ func ProcessFirewall(ctx context.Context, h *render.Renderer, typ string) mux.Mi
 				allowedCIDRs = realm.AllowedCIDRsAPIServer
 			case "server":
 				allowedCIDRs = realm.AllowedCIDRsServer
+			default:
+				logger.Errorw("unknown firewall type", "type", typ)
 			}
 
 			// If there's no CIDRs, all traffic is allowed.
@@ -73,7 +75,12 @@ func ProcessFirewall(ctx context.Context, h *render.Renderer, typ string) mux.Mi
 				ipStr = strings.Split(xff, ",")[0]
 			}
 
+			// Parse as an IP.
 			ip := net.ParseIP(ipStr)
+			if ip == nil {
+				logger.Errorw("provided ip could not be parsed")
+			}
+
 			for _, c := range allowedCIDRs {
 				_, cidr, err := net.ParseCIDR(c)
 				if err != nil {

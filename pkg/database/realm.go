@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net"
 	"sort"
 	"strings"
 	"time"
@@ -826,7 +827,7 @@ func (r *Realm) RenderWelcomeMessage() string {
 
 // ToCIDRList converts the newline-separated and/or comma-separated CIDR list
 // into an array of strings.
-func ToCIDRList(s string) []string {
+func ToCIDRList(s string) ([]string, error) {
 	var cidrs []string
 	for _, line := range strings.Split(s, "\n") {
 		for _, v := range strings.Split(line, ",") {
@@ -847,10 +848,15 @@ func ToCIDRList(s string) []string {
 				}
 			}
 
+			// Basic sanity checking.
+			if _, _, err := net.ParseCIDR(v); err != nil {
+				return nil, err
+			}
+
 			cidrs = append(cidrs, v)
 		}
 	}
 
 	sort.Strings(cidrs)
-	return cidrs
+	return cidrs, nil
 }

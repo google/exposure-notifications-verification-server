@@ -139,9 +139,32 @@ func (c *Controller) HandleSettings() http.Handler {
 			realm.PasswordRotationPeriodDays = form.PasswordRotationPeriodDays
 			realm.PasswordRotationWarningDays = form.PasswordRotationWarningDays
 
-			realm.AllowedCIDRsAdminAPI = database.ToCIDRList(form.AllowedCIDRsAdminAPI)
-			realm.AllowedCIDRsAPIServer = database.ToCIDRList(form.AllowedCIDRsAPIServer)
-			realm.AllowedCIDRsServer = database.ToCIDRList(form.AllowedCIDRsServer)
+			allowedCIDRsAdminADPI, err := database.ToCIDRList(form.AllowedCIDRsAdminAPI)
+			if err != nil {
+				realm.AddError("allowedCIDRsAdminAPI", err.Error())
+				flash.Error("Failed to update realm")
+				c.renderSettings(ctx, w, r, realm, nil)
+				return
+			}
+			realm.AllowedCIDRsAdminAPI = allowedCIDRsAdminADPI
+
+			allowedCIDRsAPIServer, err := database.ToCIDRList(form.AllowedCIDRsAPIServer)
+			if err != nil {
+				realm.AddError("allowedCIDRsAPIServer", err.Error())
+				flash.Error("Failed to update realm")
+				c.renderSettings(ctx, w, r, realm, nil)
+				return
+			}
+			realm.AllowedCIDRsAPIServer = allowedCIDRsAPIServer
+
+			allowedCIDRsServer, err := database.ToCIDRList(form.AllowedCIDRsServer)
+			if err != nil {
+				realm.AddError("allowedCIDRsServer", err.Error())
+				flash.Error("Failed to update realm")
+				c.renderSettings(ctx, w, r, realm, nil)
+				return
+			}
+			realm.AllowedCIDRsServer = allowedCIDRsServer
 		}
 
 		// Abuse prevention
