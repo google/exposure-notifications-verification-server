@@ -30,6 +30,10 @@ func (c *Controller) HandleReauth() http.Handler {
 		if r := r.FormValue("redir"); r != "" {
 			m := controller.TemplateMapFromContext(ctx)
 			m["loginRedirect"] = r
+
+			session := controller.SessionFromContext(ctx)
+			flash := controller.Flash(session)
+			flash.Alert("This operation is sensitive and requires recent authentication. Please sign-in again.")
 		}
 
 		c.renderLogin(ctx, w)
