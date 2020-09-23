@@ -54,7 +54,7 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 				logger.Debugw("no user found when checking email verification")
 				flash.Error("Log in first to verify email.")
 				controller.ClearSessionFirebaseCookie(session)
-				controller.Unauthorized(w, r, h)
+				controller.MissingUser(w, r, h)
 				return
 			}
 
