@@ -24,7 +24,7 @@ resource "google_compute_global_address" "verification-server" {
 
 # Redirects all requests to https
 resource "google_compute_url_map" "urlmap-http" {
-  name     = "verification-https-redirect"
+  name     = "https-redirect"
   provider = google-beta
   project  = var.project
 
