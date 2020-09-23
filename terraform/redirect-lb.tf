@@ -58,7 +58,7 @@ resource "google_compute_target_https_proxy" "enx-redirect-https" {
 
   url_map = google_compute_url_map.enx-redirect-urlmap-https[0].id
   ssl_certificates = [
-    // First certificate is harder to change in UI, so let's keep a seperate
+    // First certificate is harder to change in UI, so let's keep a separate
     // unused cert in the first slot.
     google_compute_managed_ssl_certificate.enx-redirect-root[0].id,
     google_compute_managed_ssl_certificate.enx-redirect[0].id
