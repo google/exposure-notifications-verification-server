@@ -20,49 +20,45 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
-func (c *Controller) HandleShowSelectNewPassword() http.Handler {
+func (c *Controller) HandleShowChangePassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
 		m["requirements"] = &c.config.PasswordRequirements
-		c.h.RenderHTML(w, "login/select-password", m)
+		c.h.RenderHTML(w, "login/change-password", m)
 	})
 }
 
-func (c *Controller) HandleSubmitNewPassword() http.Handler {
+func (c *Controller) HandleSubmitChangePassword() http.Handler {
 	logger := c.logger.Named("login.HandleSubmitNewPassword")
-
-	type FormData struct {
-		Email string `form:"email"`
-	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			logger.Errorw("failed to bind form", "error", err)
-			controller.InternalError(w, r, c.h, err)
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		user := controller.UserFromContext(ctx)
+		if user == nil {
+			controller.MissingUser(w, r, c.h)
 			return
 		}
 
-		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
+		if err := c.db.PasswordChanged(user.Email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		// There's no session yet, so make a one-time flash.
-		m := controller.TemplateMapFromContext(ctx)
-		f := flash.New(nil)
-		f.Alert("Successfully selected new password.")
-		m["flash"] = f
-
-		c.renderLogin(ctx, w)
+		flash.Alert("Successfully changed password.")
+		http.Redirect(w, r, "/home", http.StatusSeeOther)
 	})
 }

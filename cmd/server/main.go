@@ -221,7 +221,7 @@ func realMain(ctx context.Context) error {
 
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
 			sub.Handle("/login/reset-password", loginController.HandleResetPassword()).Methods("GET")
-			sub.Handle("/login/select-password", loginController.HandleSelectNewPassword()).Methods("GET")
+			sub.Handle("/login/select-password", loginController.HandleShowSelectNewPassword()).Methods("GET")
 			sub.Handle("/login/select-password", loginController.HandleSubmitNewPassword()).Methods("POST")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
@@ -234,7 +234,8 @@ func realMain(ctx context.Context) error {
 			sub.Handle("/login", loginController.HandleReauth()).Methods("GET")
 			sub.Handle("/login", loginController.HandleReauth()).Queries("redir", "").Methods("GET")
 			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
-			sub.Handle("/login/change-password", loginController.HandleResetPassword()).Methods("GET")
+			sub.Handle("/login/change-password", loginController.HandleShowChangePassword()).Methods("GET")
+			sub.Handle("/login/change-password", loginController.HandleSubmitChangePassword()).Methods("POST")
 			sub.Handle("/account", loginController.HandleAccountSettings()).Methods("GET")
 
 			// Verifying email requires the user is logged in
