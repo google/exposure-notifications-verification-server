@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	iFB "github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -136,6 +137,10 @@ func realMain(ctx context.Context) error {
 	auth, err := app.Auth(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to configure firebase: %w", err)
+	}
+	fbInternal, err := iFB.New(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to configure internal firebase client: %w", err)
 	}
 
 	// Create the router
@@ -331,7 +336,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, auth, cacher, config, db, h)
+		userController := user.New(ctx, fbInternal, auth, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).Queries("offset", "{[0-9]*?}").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")

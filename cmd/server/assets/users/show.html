@@ -115,14 +115,7 @@
   <script type="text/javascript">
   $(function() {
     $resetPassword = $('#password-reset');
-
-    {{if .created}}
-    sendReset(function() {
-      flash.alert(`Successfully created user '{{.user.Name}}'.`);
-    });
-    {{else}}
     $resetPassword.removeClass('disabled');
-    {{end}}
 
     $resetPassword.on('click', function(event) {
       event.preventDefault();

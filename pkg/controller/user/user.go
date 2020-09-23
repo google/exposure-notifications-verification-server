@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"firebase.google.com/go/auth"
+	iFB "github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -31,24 +32,33 @@ import (
 
 // Controller manages users
 type Controller struct {
-	cacher cache.Cacher
-	client *auth.Client
-	config *config.ServerConfig
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	cacher     cache.Cacher
+	fbInternal *iFB.Client
+	client     *auth.Client
+	config     *config.ServerConfig
+	db         *database.Database
+	h          *render.Renderer
+	logger     *zap.SugaredLogger
 }
 
 // New creates a new controller for managing users.
-func New(ctx context.Context, client *auth.Client, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(
+	ctx context.Context,
+	fbInternal *iFB.Client,
+	client *auth.Client,
+	cacher cache.Cacher,
+	config *config.ServerConfig,
+	db *database.Database,
+	h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
-		cacher: cacher,
-		client: client,
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logger,
+		cacher:     cacher,
+		fbInternal: fbInternal,
+		client:     client,
+		config:     config,
+		db:         db,
+		h:          h,
+		logger:     logger,
 	}
 }

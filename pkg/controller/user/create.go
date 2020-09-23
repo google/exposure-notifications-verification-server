@@ -99,10 +99,13 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		if created {
-			m := controller.TemplateMapFromContext(ctx)
-			m["created"] = true
+		if err := c.fbInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
+			flash.Error("Failed sending new user invitation: %v", err)
+			c.renderNew(ctx, w, user)
+			return
 		}
+
+		flash.Alert("Successfully created user %v.", user.Name)
 
 		stats, err := c.getStats(ctx, user, realm)
 		if err != nil {
