@@ -99,7 +99,7 @@ resource "google_compute_managed_ssl_certificate" "enx-redirect-root" {
   description = "Controlled by Terraform"
 
   managed {
-    domains = ["www." + var.enx_redirect_domain]
+    domains = ["www.${var.enx_redirect_domain}"]
   }
 }
 
