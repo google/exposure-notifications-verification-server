@@ -48,6 +48,12 @@
           {{template "login/pindiv" .}}
           {{template "login/factorsdiv" .}}
 
+          {{if .loginRedirect}}
+          <div class="card-body">
+            <a class="card-link" href="/{{.loginRedirect}}">&larr; Back</a>
+          </div>
+          {{end}}
+
         </div>
       </div>
     </div>
