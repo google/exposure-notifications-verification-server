@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net"
+	"sort"
 	"strings"
 	"time"
 
@@ -26,6 +28,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 	"github.com/russross/blackfriday/v2"
 )
 
@@ -125,6 +128,11 @@ type Realm struct {
 	// PasswordRotationWarningDays is the number of days before Password expiry
 	// that the user should receive a warning.
 	PasswordRotationWarningDays uint `gorm:"type:smallint; not null; default: 0"`
+
+	// AllowedCIDRs is the list of allowed IPs to the various services.
+	AllowedCIDRsAdminAPI  pq.StringArray `gorm:"column:allowed_cidrs_adminapi; type:varchar(50)[];"`
+	AllowedCIDRsAPIServer pq.StringArray `gorm:"column:allowed_cidrs_apiserver; type:varchar(50)[];"`
+	AllowedCIDRsServer    pq.StringArray `gorm:"column:allowed_cidrs_server; type:varchar(50)[];"`
 
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
@@ -815,4 +823,40 @@ func (r *Realm) RenderWelcomeMessage() string {
 
 	raw := blackfriday.Run([]byte(msg))
 	return string(bluemonday.UGCPolicy().SanitizeBytes(raw))
+}
+
+// ToCIDRList converts the newline-separated and/or comma-separated CIDR list
+// into an array of strings.
+func ToCIDRList(s string) ([]string, error) {
+	var cidrs []string
+	for _, line := range strings.Split(s, "\n") {
+		for _, v := range strings.Split(line, ",") {
+			v = strings.TrimSpace(v)
+
+			// Ignore blanks
+			if v == "" {
+				continue
+			}
+
+			// If there's no /, assume the most specific. This is intentionally
+			// rudimentary.
+			if !strings.Contains(v, "/") {
+				if strings.Contains(v, ":") {
+					v = fmt.Sprintf("%s/128", v)
+				} else {
+					v = fmt.Sprintf("%s/32", v)
+				}
+			}
+
+			// Basic sanity checking.
+			if _, _, err := net.ParseCIDR(v); err != nil {
+				return nil, err
+			}
+
+			cidrs = append(cidrs, v)
+		}
+	}
+
+	sort.Strings(cidrs)
+	return cidrs, nil
 }

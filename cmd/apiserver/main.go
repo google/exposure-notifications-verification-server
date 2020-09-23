@@ -152,17 +152,18 @@ func realMain(ctx context.Context) error {
 	// first to reduce the chance of a database lookup.
 	r.Use(rateLimit)
 
+	// Other common middlewares
+	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
+		database.APIUserTypeDevice,
+	})
+	processFirewall := middleware.ProcessFirewall(ctx, h, "apiserver")
+
 	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 
 	{
 		sub := r.PathPrefix("/api").Subrouter()
-
-		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
-			database.APIUserTypeDevice,
-		})
-		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
+		sub.Use(processFirewall)
 
 		// POST /api/verify
 		verifyChaff := chaff.New()

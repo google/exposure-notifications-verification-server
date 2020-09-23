@@ -193,6 +193,7 @@ func realMain(ctx context.Context) error {
 	requireRealm := middleware.RequireRealm(ctx, h)
 	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
 	requireMFA := middleware.RequireMFA(ctx, h)
+	processFirewall := middleware.ProcessFirewall(ctx, h, "server")
 	rateLimit := httplimiter.Handle
 
 	{
@@ -242,6 +243,7 @@ func realMain(ctx context.Context) error {
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
 			sub.Use(requireRealm)
+			sub.Use(processFirewall)
 			sub.Handle("/login/verify-email", loginController.HandleVerifyEmail()).Methods("GET")
 
 			// SMS auth registration is realm-specific, so it needs to load the current realm.
@@ -250,6 +252,7 @@ func realMain(ctx context.Context) error {
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
 			sub.Use(requireRealm)
+			sub.Use(processFirewall)
 			sub.Use(requireVerified)
 			sub.Handle("/login/register-phone", loginController.HandleRegisterPhone()).Methods("GET")
 		}
@@ -260,6 +263,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
+		sub.Use(processFirewall)
 		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
@@ -280,6 +284,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
+		sub.Use(processFirewall)
 		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
@@ -295,6 +300,8 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("/apikeys").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
+		sub.Use(requireRealm)
+		sub.Use(processFirewall)
 		sub.Use(requireAdmin)
 		sub.Use(requireVerified)
 		sub.Use(requireMFA)
@@ -316,6 +323,8 @@ func realMain(ctx context.Context) error {
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(requireAuth)
 		userSub.Use(loadCurrentRealm)
+		userSub.Use(requireRealm)
+		userSub.Use(processFirewall)
 		userSub.Use(requireAdmin)
 		userSub.Use(requireVerified)
 		userSub.Use(requireMFA)
@@ -339,6 +348,8 @@ func realMain(ctx context.Context) error {
 		realmSub := r.PathPrefix("/realm").Subrouter()
 		realmSub.Use(requireAuth)
 		realmSub.Use(loadCurrentRealm)
+		realmSub.Use(requireRealm)
+		realmSub.Use(processFirewall)
 		realmSub.Use(requireAdmin)
 		realmSub.Use(requireVerified)
 		realmSub.Use(requireMFA)

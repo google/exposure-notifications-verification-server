@@ -1278,6 +1278,27 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00052-CreateRealmAllowedCIDRs",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&Realm{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_adminapi`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_apiserver`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_server`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 
