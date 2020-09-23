@@ -17,12 +17,21 @@ package login
 
 import (
 	"net/http"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
 func (c *Controller) HandleReauth() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		// No redirect for reauth
+
+		// No session redirect for reauth
+
+		if r := r.FormValue("redir"); r != "" {
+			m := controller.TemplateMapFromContext(ctx)
+			m["loginRedirect"] = r
+		}
+
 		c.renderLogin(ctx, w)
 	})
 }

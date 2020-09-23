@@ -176,9 +176,12 @@
             if (last) {
               $registeredDiv.addClass('d-none');
             }
-          }).catch(function(error) {
+          }).catch(function(err) {
+            if (err.code == 'auth/requires-recent-login') {
+              window.location.assign('/login?redir=login/register-phone');
+            }
             flash.clear();
-            flash.error(error.message);
+            flash.error(err.message);
           });
       }
 
@@ -205,6 +208,9 @@
           $registerDiv.hide();
           $pinDiv.removeClass('d-none');
         }).catch(function(err) {
+          if (err.code == 'auth/requires-recent-login') {
+              window.location.assign('/login?redir=login/register-phone');
+            }
           flash.clear();
           flash.error(err.message);
           $submit.prop('disabled', false);
@@ -238,6 +244,9 @@
           $registerDiv.show();
           $pinDiv.addClass('d-none');
         }).catch(function(err) {
+          if (err.code == 'auth/requires-recent-login') {
+              window.location.assign('/login?redir=login/register-phone');
+            }
           flash.clear();
           flash.error(err.message);
           $submitPin.prop('disabled', false);
