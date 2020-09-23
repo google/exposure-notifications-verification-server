@@ -171,7 +171,7 @@ EOT
 
 resource "google_monitoring_alert_policy" "realm_capacity" {
   project      = var.project
-  display_name = "RealmCapacityBelowThreshold"
+  display_name = "RealmCapacityUtilizationAboveThreshold"
   combiner     = "OR"
   conditions {
     display_name = "/realm_capacity_latest"
