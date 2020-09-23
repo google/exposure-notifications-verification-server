@@ -36,6 +36,7 @@ type Metrics struct {
 	CodeIssueErrors *stats.Int64Measure
 	SMSSent         *stats.Int64Measure
 	SMSSendErrors   *stats.Int64Measure
+	RealmCapacity   *stats.Float64Measure
 }
 
 func registerMetrics() (*Metrics, error) {
@@ -116,6 +117,17 @@ func registerMetrics() (*Metrics, error) {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
 	}
 
+	mRealmCapacity := stats.Float64(MetricPrefix+"/realm_capacity", "Available capacity for issuing verification codes", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/realm_capacity_latest",
+		Description: "Latest realm capacity",
+		TagKeys:     []tag.Key{observability.RealmTagKey},
+		Measure:     mRealmCapacity,
+		Aggregation: view.LastValue(),
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
 	return &Metrics{
 		IssueAttempts:   mIssueAttempts,
 		QuotaErrors:     mQuotaErrors,
@@ -124,5 +136,6 @@ func registerMetrics() (*Metrics, error) {
 		CodeIssueErrors: mCodesIssued,
 		SMSSent:         mSMSSent,
 		SMSSendErrors:   mSMSSendErrors,
+		RealmCapacity:   mRealmCapacity,
 	}, nil
 }

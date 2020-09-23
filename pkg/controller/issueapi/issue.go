@@ -15,6 +15,7 @@
 package issueapi
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -254,6 +255,14 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
+		err = c.recordCapacity(ctx, realm)
+		if err != nil {
+			logger.Errorw("failed to record realm capacity", "error", err)
+			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to update realm capacity"))
+			return
+		}
+
 		if request.Phone != "" && smsProvider != nil {
 			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
@@ -295,4 +304,27 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 	}
 
 	return authorizedApp, user, nil
+}
+
+func (c *Controller) recordCapacity(ctx context.Context, realm *database.Realm) error {
+	if !realm.AbusePreventionEnabled {
+		return nil
+	}
+
+	dayStart := time.Now().UTC().Truncate(24 * time.Hour)
+	dayEnd := dayStart.Add(1)
+
+	realmStats, err := realm.Stats(c.db, dayStart, dayEnd)
+	if err != nil {
+		return err
+	}
+	if len(realmStats) != 1 {
+		return errors.New("found more than one row of daily stats")
+	}
+
+	dailyStats := realmStats[0]
+	capacity := 1 - (float64(dailyStats.CodesIssued) / float64(realm.AbusePreventionEffectiveLimit()))
+	stats.Record(ctx, c.metrics.RealmCapacity.M(capacity))
+
+	return nil
 }
