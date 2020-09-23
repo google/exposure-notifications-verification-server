@@ -27,6 +27,7 @@ locals {
 
   cache_config = {
     CACHE_TYPE       = "REDIS"
+    CACHE_HMAC_KEY   = "secret://${google_secret_manager_secret_version.cache-hmac-key.id}"
     CACHE_REDIS_HOST = google_redis_instance.cache.host
     CACHE_REDIS_PORT = google_redis_instance.cache.port
   }
@@ -59,6 +60,7 @@ locals {
   }
 
   rate_limit_config = {
+    RATE_LIMIT_HMAC_KEY   = "secret://${google_secret_manager_secret_version.ratelimit-hmac-key.id}"
     RATE_LIMIT_TYPE       = "REDIS"
     RATE_LIMIT_TOKENS     = "60"
     RATE_LIMIT_INTERVAL   = "1m"
@@ -80,6 +82,15 @@ locals {
     KEY_SERVER              = "https://example.com/v1/publish"
     VERIFICATION_ADMIN_API  = google_cloud_run_service.adminapi.status.0.url
     VERIFICATION_SERVER_API = google_cloud_run_service.apiserver.status.0.url
+  }
+
+  issue_config = {
+    ENX_REDIRECT_DOMAIN = var.enx_redirect_domain
+  }
+
+  enx_redirect_config = {
+    ASSETS_PATH        = "/assets"
+    HOSTNAME_TO_REGION = join(",", [for o in var.enx_redirect_domain_map : format("%s:%s", o.host, o.region)])
   }
 }
 

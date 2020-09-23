@@ -17,6 +17,7 @@ package cache
 
 import (
 	"context"
+	"crypto/hmac"
 	"fmt"
 	"hash"
 	"io"
@@ -68,8 +69,8 @@ func PrefixKeyFunc(prefix string) KeyFunc {
 	}
 }
 
-// HashKeyFunc returns a KeyFunc that hashes or HMACs the provided key before
-// passing it to the cacher for storage.
+// HashKeyFunc returns a KeyFunc that hashes the provided key before passing it
+// to the cacher for storage.
 func HashKeyFunc(hasher func() hash.Hash) KeyFunc {
 	return func(in string) (string, error) {
 		h := hasher()
@@ -83,6 +84,14 @@ func HashKeyFunc(hasher func() hash.Hash) KeyFunc {
 		dig := h.Sum(nil)
 		return fmt.Sprintf("%x", dig), nil
 	}
+}
+
+// HMACKeyFunc returns a KeyFunc that HMACs the provided key before passing it
+// to the cacher for storage.
+func HMACKeyFunc(hasher func() hash.Hash, key []byte) KeyFunc {
+	return HashKeyFunc(func() hash.Hash {
+		return hmac.New(hasher, key)
+	})
 }
 
 // Cacher is an interface that defines caching.

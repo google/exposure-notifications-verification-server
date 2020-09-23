@@ -1,0 +1,64 @@
+{{define "admin/realms/index"}}
+
+{{$realms := .realms}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Realms</div>
+      <div class="card-body">
+        <div class="clearfix mb-3">
+          <a class="btn btn-outline-secondary btn-sm float-right" href="/admin/realms/new">
+            <span class="oi oi-plus" aria-hidden="true"></span>
+            New realm
+          </a>
+        </div>
+
+        {{if $realms}}
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped bg-white">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col" width="125">Region code</th>
+                  <th scope="col" width="125">Signing key</th>
+                </tr>
+              </thead>
+              <tbody>
+              {{range $realms}}
+                <tr>
+                  <td>
+                    <a href="/admin/realms/{{.ID}}/edit">{{.Name}}</a>
+                  </td>
+                  <td>{{.RegionCode}}</td>
+                  <td>
+                    {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
+                  </td>
+                </tr>
+              {{end}}
+              </tbody>
+            </table>
+          </div>
+        {{else}}
+          <p class="text-center">
+            <em>There are no realms.</em>
+          </p>
+        {{end}}
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

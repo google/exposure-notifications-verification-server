@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -35,6 +36,12 @@ import (
 	// ensure the postgres dialiect is compiled in.
 	"contrib.go.opencensus.io/integrations/ocsql"
 	postgres "github.com/lib/pq"
+)
+
+var (
+	// callbackLock prevents multiple callbacks from being registered
+	// simultaneously because that's a data race in gorm.
+	callbackLock sync.Mutex
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -105,25 +112,6 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		logger.Errorf("key manager does not support the SigningKeyManager interface, falling back to single verification signing key")
 	}
 
-	// If the key manager is in-memory, accept the key as a base64-encoded
-	// in-memory key.
-	if c.Keys.KeyManagerType == keys.KeyManagerTypeInMemory {
-		typ, ok := keyManager.(keys.EncryptionKeyAdder)
-		if !ok {
-			return nil, fmt.Errorf("key manager does not support adding keys")
-		}
-
-		key, err := base64util.DecodeString(c.EncryptionKey)
-		if err != nil {
-			return nil, fmt.Errorf("encryption key is invalid: %w", err)
-		}
-
-		if err := typ.AddEncryptionKey("database-encryption-key", key); err != nil {
-			return nil, fmt.Errorf("failed to add encryption key: %w", err)
-		}
-		c.EncryptionKey = "database-encryption-key"
-	}
-
 	return &Database{
 		config:            c,
 		keyManager:        keyManager,
@@ -190,6 +178,11 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	// Enable auto-preloading.
 	rawDB = rawDB.Set("gorm:auto_preload", true)
 
+	// Prevent multiple simultaneous callback registrations due to a data race in
+	// gorm.
+	callbackLock.Lock()
+	defer callbackLock.Unlock()
+
 	// SMS configs
 	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 	rawDB.Callback().Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
@@ -235,6 +228,11 @@ func (db *Database) Close() error {
 // Ping attempts a connection and closes it to the database.
 func (db *Database) Ping(ctx context.Context) error {
 	return db.db.DB().PingContext(ctx)
+}
+
+// RawDB returns the underlying gorm database.
+func (db *Database) RawDB() *gorm.DB {
+	return db.db
 }
 
 // IsNotFound determines if an error is a record not found.
@@ -417,7 +415,7 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 	}
 }
 
-// callback HMAC alters HMACs the value with the given key before saving.
+// callbackHMAC alters HMACs the value with the given key before saving.
 func callbackHMAC(ctx context.Context, hashFunc func(string) (string, error), table, column string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		// Do nothing if not the target table
@@ -487,4 +485,20 @@ func withRetries(ctx context.Context, f retry.RetryFunc) error {
 	b = retry.WithCappedDuration(1*time.Second, b)
 
 	return retry.Do(ctx, b, f)
+}
+
+// stringValue gets the value of the string pointer, returning "" for nil.
+func stringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// stringPtr converts the string value to a pointer, returning nil for "".
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

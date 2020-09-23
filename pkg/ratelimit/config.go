@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/redis"
 	redigo "github.com/opencensus-integrations/redigo/redis"
+	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-limiter/noopstore"
@@ -44,6 +45,10 @@ type Config struct {
 	Type     RateLimitType `env:"RATE_LIMIT_TYPE, default=NOOP"`
 	Tokens   uint64        `env:"RATE_LIMIT_TOKENS, default=60"`
 	Interval time.Duration `env:"RATE_LIMIT_INTERVAL, default=1m"`
+
+	// HMACKey is the key to use when calculating the HMAC of keys before saving
+	// them in the rate limiter.
+	HMACKey envconfig.Base64Bytes `env:"RATE_LIMIT_HMAC_KEY, required"`
 
 	// Redis configuration
 	Redis redis.Config `env:",prefix=RATE_LIMIT_"`

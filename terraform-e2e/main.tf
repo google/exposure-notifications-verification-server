@@ -35,8 +35,23 @@ module "en" {
 
   service_environment = {
     server = {
-      FIREBASE_PRIVACY_POLICY_URL   = "TODO"
-      FIREBASE_TERMS_OF_SERVICE_URL = "TODO"
+      FIREBASE_PRIVACY_POLICY_URL   = "https://policies.google.com/privacy"
+      FIREBASE_TERMS_OF_SERVICE_URL = "https://policies.google.com/terms"
+      LOG_DEBUG = "true"
+    }
+
+    apiserver = {
+      LOG_DEBUG = "true"
+    }
+
+    adminapi = {
+      LOG_DEBUG = "true"
+    }
+
+    e2e-runner = {
+      HEALTH_AUTHORITY_CODE = "e2e-test-only"
+      KEY_SERVER = "TODO"
+      LOG_DEBUG = "true"
     }
   }
 }

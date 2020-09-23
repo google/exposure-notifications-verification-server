@@ -30,6 +30,50 @@ resource "google_redis_instance" "cache" {
   ]
 }
 
+# Create secret for the HMAC cache keys
+resource "random_id" "cache-hmac-key" {
+  byte_length = 128
+}
+
+resource "google_secret_manager_secret" "cache-hmac-key" {
+  secret_id = "cache-hmac-key"
+
+  replication {
+    automatic = true
+  }
+
+  depends_on = [
+    google_project_service.services["secretmanager.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_version" "cache-hmac-key" {
+  secret      = google_secret_manager_secret.cache-hmac-key.id
+  secret_data = random_id.cache-hmac-key.b64_std
+}
+
+# Create secret for the HMAC ratelimit keys
+resource "random_id" "ratelimit-hmac-key" {
+  byte_length = 128
+}
+
+resource "google_secret_manager_secret" "ratelimit-hmac-key" {
+  secret_id = "ratelimit-hmac-key"
+
+  replication {
+    automatic = true
+  }
+
+  depends_on = [
+    google_project_service.services["secretmanager.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_version" "ratelimit-hmac-key" {
+  secret      = google_secret_manager_secret.ratelimit-hmac-key.id
+  secret_data = random_id.ratelimit-hmac-key.b64_std
+}
+
 output "redis_host" {
   value = google_redis_instance.cache.host
 }

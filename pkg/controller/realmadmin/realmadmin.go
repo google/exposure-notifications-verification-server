@@ -18,9 +18,11 @@ package realmadmin
 import (
 	"context"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/sethvargo/go-limiter"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -28,19 +30,23 @@ import (
 )
 
 type Controller struct {
-	config *config.ServerConfig
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	cacher  cache.Cacher
+	config  *config.ServerConfig
+	db      *database.Database
+	h       *render.Renderer
+	limiter limiter.Store
+	logger  *zap.SugaredLogger
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logger,
+		cacher:  cacher,
+		config:  config,
+		db:      db,
+		h:       h,
+		limiter: limiter,
+		logger:  logger,
 	}
 }

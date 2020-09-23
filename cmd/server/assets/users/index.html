@@ -12,66 +12,99 @@
   {{template "head" .}}
 </head>
 
-<body>
+<body class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
 
     <h1>Users</h1>
-    <p>
-      These are the users of this realm. You can also <a
-      href="/users/new">create a new user</a>.
-    </p>
+    <p>Manage users of <strong>{{.currentRealm.Name}}</strong>.</p>
 
-    {{if $users}}
-    <div class="table-responsive">
-      <table class="table table-bordered table-striped">
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col" width="300">Email</th>
-            <th scope="col" width="75">Options</th>
-            <th scope="col" width="40"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {{range $users}}
-          <tr>
-            <td>
-              <a href="/users/{{.ID}}">{{.Name}}</a>
-            </td>
-            <td>
-              {{.Email}}
-            </td>
-            <td class="text-center">
-              {{if .CanAdminRealm $currentRealm.ID}}
+    <div class="card mb-3 shadow-sm" style="min-width:550px;">
+      <div class="card-header">Users</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <a class="btn btn-sm" href="/users/new" data-toggle="tooltip" title="Create a new user">
+            <span class="oi oi-plus" aria-hidden="true"></span>
+            New user
+          </a>
+          <a class="btn btn-sm" href="/users/import" data-toggle="tooltip" title="Bulk import users">
+            <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
+            Import
+          </a>
+        </div>
+        {{if $users}}
+        <table class="table table-bordered table-striped bg-white">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col" width="300">Email</th>
+              <th scope="col" width="75">Options</th>
+              <th scope="col" width="40"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range $users}}
+            <tr>
+              <td>
+                <a href="/users/{{.ID}}">{{.Name}}</a>
+              </td>
+              <td>
+                {{.Email}}
+              </td>
+              <td class="text-center">
+                {{if .CanAdminRealm $currentRealm.ID}}
                 <span class="badge badge-pill badge-primary">Admin</span>
-              {{end}}
-            </td>
-            <td class="text-center">
-              {{- /* cannot delete yourself */ -}}
-              {{if not (eq .ID $currentUser.ID)}}
-              <a href="/users/{{.ID}}" class="d-block text-danger"
-                data-method="DELETE"
-                data-confirm="Are you sure you want to remove '{{.Name}}'?"
-                data-toggle="tooltip"
-                title="Remove this user">
-                <span class="oi oi-trash" aria-hidden="true"></span>
-              </a>
-              {{end}}
-            </td>
-          </tr>
-          {{end}}
-        </tbody>
-      </table>
+                {{end}}
+              </td>
+              <td class="text-center">
+                {{if not (eq .ID $currentUser.ID)}}
+                {{- /* cannot delete yourself */ -}}
+                <a href="/users/{{.ID}}" class="d-block text-danger" data-method="DELETE"
+                  data-confirm="Are you sure you want to remove '{{.Name}}'?" data-toggle="tooltip"
+                  title="Remove this user">
+                  <span class="oi oi-trash" aria-hidden="true"></span>
+                </a>
+                {{else if $currentUser.Admin}}
+                {{- /* system admins can remove themselves */ -}}
+                <a href="/users/{{.ID}}" class="d-block text-danger" data-method="DELETE"
+                  data-confirm="Are you sure you want to leave {{.Name}}?" data-toggle="tooltip"
+                  title="Leave this realm">
+                  <span class="oi oi-account-logout" aria-hidden="true"></span>
+                </a>
+                {{end}}
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+        {{if .pages}}
+        <nav>
+          {{$pages := .pages}}
+          <ul class="pagination">
+            <li class="page-item {{if eq $pages.Previous -1}}disabled{{end}}"><a class="page-link"
+                href="?offset={{$pages.Previous}}">Previous</a>
+            </li>
+            {{range $pageOffset := $pages.Offsets}}
+            <li class="page-item {{if eq $pages.Current $pageOffset.Offset}}active{{end}}"><a class="page-link"
+                href="?offset={{$pageOffset.Offset}}">{{$pageOffset.Label}}</a></li>
+            {{end}}
+            <li class="page-item {{if eq $pages.Next -1}}disabled{{end}}"><a class="page-link"
+                href="?offset={{$pages.Next}}">Next</a></li>
+          </ul>
+          <small class="form-text text-muted pl-2">{{$pages.Footer}}</small>
+        </nav>
+        {{end}}
+      </div>
+      {{else}}
+      <p>There are no users. Create one above.</p>
+      {{end}}
     </div>
-    {{else}}
-    <p>There are no users. Create one above.</p>
-    {{end}}
   </main>
 
   {{template "scripts" .}}
 </body>
+
 </html>
 {{end}}

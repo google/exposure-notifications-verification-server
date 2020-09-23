@@ -25,7 +25,7 @@ steps:
 #
 # adminapi
 #
-- id: 'deploy-adminapi'
+- id: 'promote-adminapi'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'
@@ -45,7 +45,7 @@ steps:
 #
 # apiserver
 #
-- id: 'deploy-apiserver'
+- id: 'promote-apiserver'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'
@@ -65,7 +65,7 @@ steps:
 #
 # cleanup
 #
-- id: 'deploy-cleanup'
+- id: 'promote-cleanup'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'
@@ -85,7 +85,7 @@ steps:
 #
 # e2e-runner
 #
-- id: 'deploy-e2e-runner'
+- id: 'promote-e2e-runner'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'
@@ -103,9 +103,49 @@ steps:
   - '-'
 
 #
+# enx-redirect
+#
+- id: 'promote-enx-redirect'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "enx-redirect" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
+# modeler
+#
+- id: 'promote-modeler'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "modeler" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
 # server
 #
-- id: 'deploy-server'
+- id: 'promote-server'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'

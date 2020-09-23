@@ -1,0 +1,77 @@
+{{define "admin/sms/show"}}
+
+{{$smsConfig := .smsConfig}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+  {{template "floatingform" .}}
+</head>
+
+<body class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>System SMS config</h1>
+    <p>
+      Use the form below to create or edit a system SMS configuration. After
+      creation, you can grant realms the ability to use this config without them
+      seeing the credentials.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">System SMS config</div>
+      <div class="card-body">
+        <form method="POST" action="/admin/sms">
+          {{ .csrfField }}
+
+          <div class="form-label-group">
+            <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAccountSid"}} is-invalid{{end}}"
+              placeholder="Twilio account" value="{{if $smsConfig}}{{$smsConfig.TwilioAccountSid}}{{end}}" />
+            <label for="twilio-account-sid">Twilio account</label>
+            {{template "errorable" $smsConfig.ErrorsFor "twilioAccountSid"}}
+            <small class="form-text text-muted">
+              This is the Twilio Account SID. Get this value from the Twilio console.
+            </small>
+          </div>
+
+          <div class="form-label-group">
+            <div class="input-group">
+              <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
+                placeholder="Twilio auth token" value="{{if $smsConfig}}{{$smsConfig.TwilioAuthToken}}{{end}}">
+              <label for="twilio-auth-token">Twilio auth token</label>
+              <div class="input-group-append">
+                <a class="input-group-text" data-toggle-password="twilio-auth-token">
+                  <span class="oi oi-lock-locked" aria-hidden="true"></span>
+                </a>
+              </div>
+            </div>
+            {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
+            <small class="form-text text-muted">
+              This is the Twilio Auth Token. Get this value from the Twilio console.
+            </small>
+          </div>
+
+          <div class="form-label-group">
+            <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioFromNumber"}} is-invalid{{end}}" autocomplete="new-password"
+              placeholder="Twilio number" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
+            <label for="twilio-from-number">Twilio number</label>
+            {{template "errorable" $smsConfig.ErrorsFor "twilioFromNumber"}}
+            <small class="form-text text-muted">
+              This is the Twilio From Number. Get this value from the Twilio console.
+            </small>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Update system SMS config</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

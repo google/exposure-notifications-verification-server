@@ -15,6 +15,9 @@
 package database
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
@@ -25,7 +28,7 @@ type SMSConfig struct {
 	Errorable
 
 	// SMS Config belongs to exactly one realm.
-	RealmID uint `gorm:"unique_index"`
+	RealmID uint
 
 	// ProviderType is the SMS provider type - it's used to determine the
 	// underlying configuration.
@@ -40,11 +43,67 @@ type SMSConfig struct {
 	TwilioAuthToken                string `gorm:"type:varchar(250)"`
 	TwilioAuthTokenPlaintextCache  string `gorm:"-"`
 	TwilioAuthTokenCiphertextCache string `gorm:"-"`
+
+	// IsSystem determines if this is a system-level SMS configuration. There can
+	// only be one system-level SMS configuration.
+	IsSystem bool
+}
+
+func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
+	// Twilio config is all or nothing
+	if (s.TwilioAccountSid != "" || s.TwilioAuthToken != "" || s.TwilioFromNumber != "") &&
+		(s.TwilioAccountSid == "" || s.TwilioAuthToken == "" || s.TwilioFromNumber == "") {
+		s.AddError("twilioAccountSid", "all must be specified or all must be blank")
+		s.AddError("twilioAuthToken", "all must be specified or all must be blank")
+		s.AddError("twilioFromNumber", "all must be specified or all must be blank")
+	}
+
+	if len(s.Errors()) > 0 {
+		return fmt.Errorf("sms config validation failed: %s", strings.Join(s.ErrorMessages(), ", "))
+	}
+	return nil
+}
+
+// SystemSMSConfig returns the system SMS config, if one exists
+func (db *Database) SystemSMSConfig() (*SMSConfig, error) {
+	var smsConfig SMSConfig
+	if err := db.db.
+		Model(&SMSConfig{}).
+		Where("is_system IS TRUE").
+		First(&smsConfig).
+		Error; err != nil {
+		return nil, err
+	}
+	return &smsConfig, nil
 }
 
 // SaveSMSConfig creates or updates an SMS configuration record.
 func (db *Database) SaveSMSConfig(s *SMSConfig) error {
-	if s.Model.ID == 0 {
+	if s.TwilioAccountSid == "" && s.TwilioAuthToken == "" && s.TwilioFromNumber == "" {
+		if db.db.NewRecord(s) {
+			// The fields are all blank, do not create the record.
+			return nil
+		}
+
+		if s.IsSystem {
+			// We're about to delete the system SMS config, revoke everyone's
+			// permissions to use it. You would think there'd be a way to do this with
+			// gorm natively. You'd even find an example in the documentation that led
+			// you to believe that gorm does this.
+			//
+			// Narrator: gorm does not do this.
+			if err := db.db.
+				Exec(`UPDATE realms SET can_use_system_sms_config = FALSE, use_system_sms_config = FALSE`).
+				Error; err != nil {
+				return err
+			}
+		}
+
+		// The fields were blank, delete the SMS config.
+		return db.db.Unscoped().Delete(s).Error
+	}
+
+	if db.db.NewRecord(s) {
 		return db.db.Create(s).Error
 	}
 	return db.db.Save(s).Error

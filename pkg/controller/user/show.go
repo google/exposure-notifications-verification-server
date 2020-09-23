@@ -54,14 +54,8 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		// Get and cache the stats for this user.
-		var stats []*database.UserStats
-		cacheKey := fmt.Sprintf("stats:user:%d:%d", realm.ID, user.ID)
-		if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
-			now := time.Now().UTC()
-			past := now.Add(-14 * 24 * time.Hour)
-			return user.Stats(c.db, realm.ID, past, now)
-		}); err != nil {
+		stats, err := c.getStats(ctx, user, realm)
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
@@ -70,9 +64,24 @@ func (c *Controller) HandleShow() http.Handler {
 	})
 }
 
+// Get and cache the stats for this user.
+func (c *Controller) getStats(ctx context.Context, user *database.User, realm *database.Realm) ([]*database.UserStats, error) {
+	var stats []*database.UserStats
+	cacheKey := fmt.Sprintf("stats:user:%d:%d", realm.ID, user.ID)
+	if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
+		now := time.Now().UTC()
+		past := now.Add(-14 * 24 * time.Hour)
+		return user.Stats(c.db, realm.ID, past, now)
+	}); err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats []*database.UserStats) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
 	m["stats"] = stats
+	m["firebase"] = c.config.Firebase
 	c.h.RenderHTML(w, "users/show", m)
 }

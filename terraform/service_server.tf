@@ -116,6 +116,18 @@ resource "google_secret_manager_secret_iam_member" "server-db-verification-code-
   member    = "serviceAccount:${google_service_account.server.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "server-cache-hmac-key" {
+  secret_id = google_secret_manager_secret.cache-hmac-key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.server.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "server-ratelimit-hmac-key" {
+  secret_id = google_secret_manager_secret.ratelimit-hmac-key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.server.email}"
+}
+
 resource "google_cloud_run_service" "server" {
   name     = "server"
   location = var.region
@@ -148,6 +160,7 @@ resource "google_cloud_run_service" "server" {
             local.rate_limit_config,
             local.session_config,
             local.signing_config,
+            local.issue_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "server", {}),

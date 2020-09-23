@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
@@ -81,6 +82,9 @@ func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		// Record the issue attempt.
+		stats.Record(ctx, c.metrics.IssueAttempts.M(1))
+
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
@@ -119,12 +123,17 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
-		ctx, err = tag.New(ctx,
-			tag.Upsert(observability.RealmTagKey, realm.Name))
+		ctx, err = tag.New(ctx, tag.Upsert(observability.RealmTagKey, fmt.Sprintf("%d", realm.ID)))
 		if err != nil {
 			logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
 		}
-		stats.Record(ctx, c.metrics.IssueAttempts.M(1))
+
+		// If this realm requires a date but no date was specified, return an error.
+		if request.SymptomDate == "" && realm.RequireDate {
+			stats.Record(ctx, c.metrics.IssueAttempts.M(1), c.metrics.CodeIssueErrors.M(1))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate))
+			return
+		}
 
 		// Validate that the request with the provided test type is valid for this
 		// realm.
@@ -186,6 +195,33 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 		}
 
+		// If we got this far, we're about to issue a code.
+		dig, err := digest.HMACUint(realm.ID, c.config.GetRateLimitConfig().HMACKey)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		key := fmt.Sprintf("realm:quota:%s", dig)
+		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
+		if err != nil {
+			logger.Errorw("failed to take from limiter", "error", err)
+			stats.Record(ctx, c.metrics.QuotaErrors.M(1))
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
+			return
+		}
+		if !ok {
+			logger.Warnw("realm has exceeded daily quota",
+				"realm", realm.ID,
+				"limit", limit,
+				"reset", reset)
+			stats.Record(ctx, c.metrics.QuotaExceeded.M(1))
+
+			if c.config.GetEnforceRealmQuotas() {
+				c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
+				return
+			}
+		}
+
 		now := time.Now().UTC()
 		expiryTime := now.Add(realm.CodeDuration.Duration)
 		longExpiryTime := now.Add(realm.LongCodeDuration.Duration)
@@ -219,7 +255,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			message := realm.BuildSMSText(code, longCode)
+			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token
 				if err := c.db.DeleteVerificationCode(code); err != nil {

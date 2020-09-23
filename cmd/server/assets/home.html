@@ -23,11 +23,17 @@
   </style>
 </head>
 
-<body class="bg-light">
+<body class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
+
+    {{if .welcomeMessage}}
+      <div class="alert alert-secondary" role="alert">
+        <div class="mb-n3">{{.welcomeMessage}}</div>
+      </div>
+    {{end}}
 
     <h1>Create verification code</h1>
     <p>
@@ -44,11 +50,9 @@
       {{$colWidth = 6}}
     {{end}}
 
-    <div id="errors" class="alert alert-danger d-none"></div>
-
     <form id="issue" action="#">
       <div id="form-area">
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Diagnosis</div>
           <div class="card-body">
             <div class="form-row">
@@ -97,27 +101,38 @@
           </div>
         </div>
 
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Dates</div>
           <div class="card-body">
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="testDate">Testing date (local time)</label>
-                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
               </div>
 
               <div class="form-group col-md-6">
                 <label for="symptomDate">Symptoms onset (local time)</label>
                 <div class="input-group">
-                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" />
+                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
                 </div>
               </div>
             </div>
+
+            {{if $currentRealm.RequireDate}}
+            <div class="form-row">
+              <div class="col">
+                <small class="form-text text-muted">
+                  {{$currentRealm.Name}} requires at least one date to be
+                  provided.
+                </small>
+              </div>
+            </div>
+            {{end}}
           </div>
         </div>
 
         {{ if $hasSMSConfig }}
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm">
           <div class="card-header">Notification</div>
           <div class="card-body">
             <div class="row form-group">
@@ -145,7 +160,7 @@
       </div>
     </form>
 
-    <div id="long-code-confirm" class="card d-none mb-3">
+    <div id="long-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
         SMS verification link
         <span id="long-code-expires-at" class="sm float-right text-danger"></span>
@@ -158,7 +173,7 @@
       </div>
     </div>
 
-    <div id="code-confirm" class="card d-none mb-3">
+    <div id="code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
         Generated short code
         <span id="code-expires-at" class="sm float-right text-danger"></span>
@@ -173,7 +188,7 @@
       </div>
     </div>
 
-    <div id="uuid-confirm" class="card d-none mb-3">
+    <div id="uuid-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">Unique identifier</div>
       <div class="card-body">
         <p>
@@ -205,8 +220,6 @@
   {{template "codescripts" .}}
 
   <script type="text/javascript">
-    let $errors;
-
     let $form;
       let $inputTestDate;
       let $inputSymptomDate;
@@ -229,8 +242,6 @@
     let longCodeCountdown;
 
     $(function() {
-      $errors = $('#errors');
-
       $form = $('form#issue');
         $inputTestDate = $('input#test-date');
         $inputSymptomDate = $('input#symptom-date');
@@ -257,8 +268,7 @@
         $buttonSubmit.prop('disabled', true);
 
         // Clear and hide errors
-        $errors.html('');
-        $errors.addClass('d-none');
+        flash.clear();
 
         let data = {};
         $($form.serializeArray()).each(function(i, obj) {
@@ -278,8 +288,7 @@
         clearInterval(longCodeCountdown);
 
         // Clear and hide errors
-        $errors.html('');
-        $errors.addClass('d-none');
+        flash.clear();
 
         // Clear form values
         $inputTestDate.val('');
@@ -307,6 +316,13 @@
         // Show form
         $formArea.removeClass('d-none');
       });
+
+      {{if $currentRealm.RequireDate}}
+      let $dates = $('input#test-date,input#symptom-date');
+      $dates.on('input', function() {
+        $dates.not(this).prop('required', !$(this).val().length);
+      });
+      {{end}}
     });
 
     function getCode(data) {
@@ -368,6 +384,12 @@
           }
         },
         error: function(xhr, resp, text) {
+          // On unauthorized, force a logout
+          if (xhr.status === 401 || xhr.status == 403) {
+            window.location.assign('/signout');
+            return;
+          }
+
           // Show reset button
           $buttonReset.removeClass('d-none');
 
@@ -381,14 +403,8 @@
     }
 
     function showError(error) {
-      // Make errors
-      $errors.html(error);
-      $errors.removeClass('d-none');
-
-      // Scroll to errors
-      $errors[0].scrollIntoView({
-        behavior: 'smooth',
-      });
+      flash.clear();
+      flash.error(error);
 
       // Show reset button
       $buttonReset.removeClass('d-none');

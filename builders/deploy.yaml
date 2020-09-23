@@ -106,6 +106,47 @@ steps:
   waitFor:
   - '-'
 
+#
+# enx-redirect
+#
+- id: 'deploy-enx-redirect'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run deploy "enx-redirect" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}" \
+      --no-traffic
+  waitFor:
+  - '-'
+
+#
+# modeler
+#
+- id: 'deploy-modeler'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run deploy "modeler" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/modeler:${_TAG}" \
+      --no-traffic
+  waitFor:
+  - '-'
 
 #
 # server

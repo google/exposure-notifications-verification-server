@@ -1,0 +1,72 @@
+{{define "realmadmin/_form_general"}}
+
+{{$realm := .realm}}
+{{$testTypes := .testTypes}}
+
+<p class="mb-4">
+  These are common settings that apply to all of {{$realm.Name}}.
+</p>
+
+<form method="POST" action="/realm/settings#general" class="floating-form">
+  {{ .csrfField }}
+  <input type="hidden" name="general" value="1" />
+
+  <div class="form-label-group">
+    <input type="text" name="name" id="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}"
+      value="{{$realm.Name}}" placeholder="Name" required autofocus />
+    <label for="name">Name</label>
+    {{if $realm.ErrorsFor "name"}}
+    <div class="invalid-feedback">
+      {{joinStrings ($realm.ErrorsFor "name") ", "}}
+    </div>
+    {{end}}
+    <small class="form-text text-muted">
+      The realm name is displayed on the realm selection page and in the header
+      when selected. Choose a descriptive name that your team will recognize.
+      This value must be globally unique in the system.
+    </small>
+  </div>
+
+  <div class="form-label-group">
+    <input type="text" name="region_code" id="region-code" class="form-control text-uppercase{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}"
+      value="{{$realm.RegionCode}}" placeholder="Region code" />
+    <label for="region-code">Region code</label>
+    {{if $realm.ErrorsFor "regionCode"}}
+    <div class="invalid-feedback">
+      {{joinStrings ($realm.ErrorsFor "regionCode") ", "}}
+    </div>
+    {{end}}
+    <small class="form-text text-muted">
+      The region code is displayed on the realm selection page and in the header
+      when selection. It is also used when the creating deep link SMS for
+      multi-health authority apps. Region should be
+      <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO
+      3166-1 country codes and ISO 3166-2 subdivision codes</a> where
+      applicable. For example, Washington state would be <code>US-WA</code>.
+      This value must globally unique in the system.
+    </small>
+  </div>
+
+  <div class="form-label-group">
+    <textarea name="welcome_message" id="welcome-message" class="form-control text-monospace{{if $realm.ErrorsFor "welcomeMessage"}} is-invalid{{end}}"
+      rows="5" placeholder="Welcome message">{{$realm.WelcomeMessage}}</textarea>
+    <label for="welcome-message">Welcome message</label>
+    {{if $realm.ErrorsFor "welcomeMessage"}}
+    <div class="invalid-feedback">
+      {{joinStrings ($realm.ErrorsFor "welcomeMessage") ", "}}
+    </div>
+    {{end}}
+    <small class="form-text text-muted">
+      The welcome message is displayed to your team after selecting this realm.
+      This field supports the common <a
+      href="https://daringfireball.net/projects/markdown/syntax">markdown</a>
+      stanard.
+    </small>
+  </div>
+
+  <div class="mt-4">
+    <input type="submit" class="btn btn-primary btn-block" value="Update general settings" />
+  </div>
+</form>
+
+{{end}}

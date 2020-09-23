@@ -8,9 +8,10 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+  {{template "firebase" .}}
 </head>
 
-<body>
+<body class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -24,7 +25,7 @@
       Here is information about the user.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
         <strong>Name</strong>
@@ -41,14 +42,18 @@
         <div class="mb-3">
           {{$user.CanAdminRealm $currentRealm.ID}}
         </div>
+
+        <button id="password-reset" class="btn btn-primary btn-block disabled">
+          Send password reset
+        </button>
       </div>
     </div>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}
-        <div id="chart" style="height: 300px;">
+        <div id="chart" class="mb-3" style="height: 300px;">
           <span>Loading chart...</span>
         </div>
         <table class="table table-bordered table-striped">
@@ -76,11 +81,7 @@
       </div>
     </div>
 
-    <div>
-      <p>
-        <a href="/apikeys">&larr; Back to all API keys</a>
-      </p>
-    </div>
+    <a class="card-link" href="/users">&larr; All users</a>
   </main>
 
   {{template "scripts" .}}
@@ -106,10 +107,44 @@
       };
 
       var chart = new google.charts.Line(document.getElementById('chart'));
-      chart.draw(data, options);
+      chart.draw(data, google.charts.Line.convertOptions(options));
     }
   </script>
   {{end}}
+
+  <script type="text/javascript">
+  $(function() {
+    $resetPassword = $('#password-reset');
+
+    {{if .created}}
+    sendReset(function() {
+      flash.alert(`Successfully created user '{{.user.Name}}'.`);
+    });
+    {{else}}
+    $resetPassword.removeClass('disabled');
+    {{end}}
+
+    $resetPassword.on('click', function(event) {
+      event.preventDefault();
+      sendReset(function() {
+        flash.alert(`Password reset email sent.`);
+      });
+    });
+
+    function sendReset(successFn) {
+      $resetPassword.addClass('disabled');
+      let email = {{$user.Email}};
+      return firebase.auth().sendPasswordResetEmail(email)
+      .then(function() {
+          setTimeout($resetPassword.addClass('disabled'), 10000);
+          successFn();
+      }).catch(function(error) {
+        $resetPassword.removeClass('disabled');
+        flash.error(error.message);
+      });
+    }
+  });
+  </script>
 </body>
 </html>
 {{end}}

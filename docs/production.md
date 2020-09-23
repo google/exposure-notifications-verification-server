@@ -2,6 +2,81 @@
 
 This page includes helpful tips for configuring things in production:
 
+## Key management
+
+The default production key management solution is [Google Cloud KMS][gcp-kms].
+If you are using the Terraform configurations, the system will automatically
+bootstrap and create the key rings and keys in Cloud KMS. If you are not using
+the Terraform configurations, follow this guide to create the keys manually:
+
+1.  Create a Google Cloud KMS key ring
+
+    ```sh
+    gcloud kms keyrings create "en-verification" \
+      --location "us"
+    ```
+
+    Note that the "us" location is configurable. If you choose a different
+    location, substitute it in all future commands.
+
+1.  Create two signing keys - one for tokens and one for certificates:
+
+    ```sh
+    gcloud kms keys create "token-signing" \
+      --location "us" \
+      --keyring "en-verification" \
+      --purpose "asymmetric-signing" \
+      --default-algorithm "ec-sign-p256-sha256" \
+      --protection-level "hsm"
+    ```
+
+    ```sh
+    gcloud kms keys create "certificate-signing" \
+      --location "us" \
+      --keyring "en-verification" \
+      --purpose "asymmetric-signing" \
+      --default-algorithm "ec-sign-p256-sha256" \
+      --protection-level "hsm"
+    ```
+
+    Note the "us" location is configurable, but the key purpose and algorithm
+    must be the same as above.
+
+1.  Create an encryption key for encrypting values in the database:
+
+    ```sh
+    gcloud kms keys create "database-encrypter" \
+      --location "us" \
+      --keyring "en-verification" \
+      --purpose "encryption" \
+      --rotation-period "30d" \
+      --protection-level "hsm"
+    ```
+
+1.  Get the resource names to the keys:
+
+    ```sh
+    gcloud kms keys describe "token-signing" \
+      --location "us" \
+      --keyring "en-verification"
+    ```
+
+    ```sh
+    gcloud kms keys describe "certificate-signing" \
+      --location "us" \
+      --keyring "en-verification"
+    ```
+
+    ```sh
+    gcloud kms keys describe "database-encrypter" \
+      --location "us" \
+      --keyring "en-verification"
+    ```
+
+1.  Provide these values as the `TOKEN_SIGNING_KEY`, `CERTIFICATE_SIGNING_KEY`,
+    and `DB_ENCRYPTION_KEY` respectively in the environment where the services
+    will run. You also need to grant the service permission to use the keys.
+
 
 ## Observability (tracing and metrics)
 
@@ -23,9 +98,7 @@ There are three types of "users" for the system:
     system configuration. System admins, however, do not have permissions to
     administer codes or perform realm-specific tasks beyond their creation.
     Typically a system administrator creates a realm, adds the initial realm
-    admin, then removes themselves from the realm. To create a system
-    administrator, use the `cmd/add-users` tool. There is presently no UI for
-    adding a system administrator.
+    admin, then removes themselves from the realm.
 
 -   **Realm administrator** - realm administrators control the configuration of
     one or more realms. A user may be an administrator of 0 or more realms. If a
@@ -41,6 +114,13 @@ There are three types of "users" for the system:
     the realm and click "Add User". If a user is a member of multiple realms (by
     email address), they will be prompted to choose a realm after authenticating
     to the system.
+
+When bootstrapping a new system, a default system administrator with the email
+address "super@example.com" is created in the database. This user is **NOT**
+created in Firebase. To bootstrap the system, log in to the Firebase console and
+manually create a user with this email address and a password, then login to the
+system. From there, you can create a real user with your email address and
+delete the initial system user.
 
 
 ## Rotating secrets
@@ -220,3 +300,60 @@ lifetime is short, it is probably safe to remove the key beyond 30 days.
 
 If you are using system keys, the system administrator will handle rotation. If
 you are using realm keys, you can generate new keys in the UI.
+
+
+### Cacher HMAC keys
+
+**Recommended frequency:** 90 days, on breach
+
+This key is used as the HMAC key to named values in the cacher. For example, API
+keys are cached in the cacher for a few minutes to reduce load on the database.
+We do not want the cacher to have plaintext API keys, so the values are HMACed
+before being written (and HMACed on lookup). This prevents a server operator
+with access to the cacher (e.g. Redis) from seeing plaintext data about the
+system. The data is hashed instead of encrypted because we only need a
+deterministic value to lookup.
+
+To generate a new key:
+
+```sh
+openssl rand -base64 128 | tr -d "\n"
+```
+
+Use this value as of the `CACHE_HMAC_KEY` environment variable:
+
+```sh
+CACHE_HMAC_KEY="RBwXRppIqscSWxSsP/e52AsPsab4jW7lL5DJSw3uZfTbwgGXj3IV/iWx0ZGjyvY0GB3kupK7qbaDZBGsxxqABT4thujJkx6kAiAabH4kz5qPwoPNGK2M9KW9TX5jM3dnX7smPzlL+Hg8ijxczceDCeQF44cys+3rdWaDdC6kHec="
+```
+
+Note: Changing this value will invalidate any existing caches. Most caches are
+small and are automatically re-built on demand, so occasional rotation is likely
+fine for this system.
+
+
+### Rate limit HMAC keys
+
+**Recommended frequency:** 90 days, on breach
+
+This key is used as the HMAC key to named values in the rate limit. For example,
+API keys and IP addresses are rate limited. We do not want the rate limiter to
+have those values in plaintext, so the values are HMACed before being written
+(and HMACed on lookup). This prevents a server operator with access to the rate
+limiter (e.g. Redis) from seeing plaintext data about the system. The data is
+hashed instead of encrypted because we only need a deterministic value to
+lookup.
+
+To generate a new key:
+
+```sh
+openssl rand -base64 128 | tr -d "\n"
+```
+
+Use this value as of the `RATE_LIMIT_HMAC_KEY` environment variable:
+
+```sh
+RATE_LIMIT_HMAC_KEY="43+ViAkv7uHYKjsXhU468NGBZrtlJWtZqTORIiY8V6OMsLAZ+XmUF5He/wIhRlislnteTmChNi+BHveSgkxky81tpZSw45HKdK+XW3X5P7H6092I0u7H31C0NaInrxNxIRAbSw0NxSIKNbfKwucDu1Y36XjJC0pi0wlJHxkdGes="
+```
+
+
+[gcp-kms]: https://cloud.google.com/kms

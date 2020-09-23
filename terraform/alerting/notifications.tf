@@ -6,4 +6,7 @@ resource "google_monitoring_notification_channel" "email" {
   labels = {
     email_address = var.notification-email
   }
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
+  ]
 }

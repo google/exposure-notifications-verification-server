@@ -85,9 +85,10 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
-	// TODO(sethvargo): switch to HMAC
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
-		cache.HashKeyFunc(sha1.New), cache.PrefixKeyFunc("adminapi:")))
+		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
+		cache.PrefixKeyFunc("cache:"),
+	))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
@@ -111,10 +112,10 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer limiterStore.Close()
+	defer limiterStore.Close(ctx)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
-		limitware.APIKeyFunc(ctx, "adminapi", db),
+		limitware.APIKeyFunc(ctx, db, "adminapi:ratelimit:", config.RateLimit.HMACKey),
 		limitware.AllowOnError(false))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
@@ -123,6 +124,10 @@ func realMain(ctx context.Context) error {
 
 	// Install common security headers
 	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "json"))
+
+	// Enable debug headers
+	processDebug := middleware.ProcessDebug(ctx)
+	r.Use(processDebug)
 
 	// Create the renderer
 	h, err := render.New(ctx, "", config.DevMode)
@@ -145,7 +150,7 @@ func realMain(ctx context.Context) error {
 		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
 
-		issueapiController, err := issueapi.New(ctx, config, db, h)
+		issueapiController, err := issueapi.New(ctx, config, db, limiterStore, h)
 		if err != nil {
 			return fmt.Errorf("issueapi.New: %w", err)
 		}

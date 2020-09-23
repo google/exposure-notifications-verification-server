@@ -91,7 +91,7 @@ func MissingRealm(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	case prefixInList(accept, ContentTypeHTML):
 		flash := Flash(SessionFromContext(r.Context()))
 		flash.Error("Please select a realm to continue.")
-		http.Redirect(w, r, "/realm", http.StatusSeeOther)
+		http.Redirect(w, r, "/login/select-realm", http.StatusSeeOther)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusBadRequest, apiErrorMissingRealm)
 	default:
@@ -113,6 +113,16 @@ func MissingSession(w http.ResponseWriter, r *http.Request, h *render.Renderer) 
 // MissingUser returns an internal error when the user does not exist.
 func MissingUser(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingUser)
+}
+
+// RedirectToMFA redirects to the MFA registration.
+func RedirectToMFA(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	http.Redirect(w, r, "/login/register-phone", http.StatusSeeOther)
+}
+
+// RedirectToChangePassword redirects to the password reset page.
+func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	http.Redirect(w, r, "/login/change-password", http.StatusSeeOther)
 }
 
 func prefixInList(list []string, prefix string) bool {

@@ -1,0 +1,75 @@
+{{define "login/select-realm"}}
+
+{{$csrfField := .csrfField}}
+{{$realms := .realms}}
+{{$currentRealm := .currentRealm}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Select your realm</h1>
+    <p>
+      Use the form below to select a realm.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">
+        Realm selector
+      </div>
+
+      {{if $realms}}
+        <div class="card-body">
+          <p class="mb-0">
+            You are a member of multiple realms - please select one to continue. You
+            can switch to another realm at any time.
+          </p>
+        </div>
+
+        <div class="list-group list-group-flush">
+        {{range $realm := $realms}}
+          <form action="/login/select-realm" method="POST" class="list-group-item p-0">
+            {{$csrfField}}
+            <input type="hidden" name="realm" value="{{$realm.ID}}" />
+            <a href="#" class="w-100 d-flex flex-row justify-content-between align-items-center align-self-center list-group-item-action px-4 py-3" data-submit-form>
+              <div>
+                <h5 class="mb-1">
+                  {{$realm.Name}}
+                  {{if $currentRealm}}{{if eq $currentRealm.ID $realm.ID}}
+                  <span class="badge badge-secondary float-right ml-2">currently selected</span>
+                  {{end}}{{end}}
+                </h5>
+                {{if $realm.RegionCode}}
+                <p class="mb-1">{{$realm.RegionCode}}</p>
+                {{end}}
+              </div>
+              <div>
+                <span class="oi oi-arrow-right" aria-hidden="true"></span>
+              </div>
+            </a>
+          </form>
+        {{end}}
+        </div>
+      {{else}}
+        <div class="card-body">
+          <p class="mb-0">
+            You are not a member of any realms. Contact your realm administrator for
+            assistance.
+          </p>
+        </div>
+      {{end}}
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

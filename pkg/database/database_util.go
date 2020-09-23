@@ -17,7 +17,6 @@ package database
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"os"
 	"strconv"
 	"testing"
@@ -90,7 +89,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	port := container.GetPort("5432/tcp")
 
 	// build database config.
-	config := Config{
+	config := &Config{
 		APIKeyDatabaseHMAC:           generateKeys(tb, 3, 128),
 		APIKeySignatureHMAC:          generateKeys(tb, 3, 128),
 		VerificationCodeDatabaseHMAC: generateKeys(tb, 3, 128),
@@ -106,9 +105,8 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		},
 
 		Keys: keys.Config{
-			KeyManagerType: keys.KeyManagerTypeInMemory,
+			KeyManagerType: keys.KeyManagerTypeFilesystem,
 		},
-		EncryptionKey: base64.RawStdEncoding.EncodeToString(generateKeys(tb, 1, 32)[0]),
 	}
 
 	// Wait for the container to start - we'll retry connections in a loop below,
@@ -120,6 +118,9 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	if err != nil {
 		tb.Fatal(err)
 	}
+
+	db.keyManager = keys.TestKeyManager(tb)
+	db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
 
 	if err := db.Open(ctx); err != nil {
 		tb.Fatal(err)
@@ -135,7 +136,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		db.db.Close()
 	})
 
-	return db, &config
+	return db, config
 }
 
 func NewTestDatabase(tb testing.TB) *Database {

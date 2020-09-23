@@ -7,7 +7,7 @@
   {{template "head" .}}
 </head>
 
-<body class="bg-light">
+<body class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -18,41 +18,46 @@
       Status of a verification code previously shared with your patient.
     </p>
 
-    <div class="card mb-3">
+    <div class="card mb-3 shadow-sm">
       <div class="card-header">
         Code status
       </div>
-      <div class="list-group-item">
-        <h5 class="mb-1">UUID</h5>
-        <p class="mb-1 text-monospace">{{.code.UUID}}</p>
-      </div>
-      <div class="list-group-item">
-        <h5 class="mb-1">{{.code.IssuerType}}</h5>
-        <p class="mb-1">{{.code.Issuer}}</p>
-      </div>
-      <div class="list-group-item">
-        <h5 class="mb-1">Test type</h5>
-        <p class="mb-1">{{.code.TestType}}</p>
-      </div>
-      <div class="list-group-item">
-        <h5 class="mb-1">Status</h5>
-        <p class="mb-1">{{.code.Status}}</p>
-      </div>
-      <div class="list-group-item">
-        <h5 class="mb-1">Expiry</h5>
-        <span id="code-expires-at" class="sm text-danger"></span>
-      </div>
-      {{if .code.HasLongExpires}}
-      <div class="list-group-item">
-        <h5 class="mb-1">SMS link expiry</h5>
-        <span id="long-code-expires-at" class="sm text-danger"></span>
-      </div>
-      {{end}}
-      <div class="card-body">
-        <a href="/code/{{.code.UUID}}/expire" class="d-block text-danger" data-method="PATCH"
-          data-confirm="Are you sure you want to expire this code?" data-toggle="tooltip" title="Expire code">
-          <button type="submit" id="invalidate" class="btn btn-danger btn-sm">Invalidate code now</button>
-        </a>
+      <div class="list-group list-group-flush">
+        <div class="list-group-item">
+          <h5 class="mb-1">UUID</h5>
+          <p class="mb-1 text-monospace">{{.code.UUID}}</p>
+        </div>
+        <div class="list-group-item">
+          <h5 class="mb-1">{{.code.IssuerType}}</h5>
+          <p class="mb-1">{{.code.Issuer}}</p>
+        </div>
+        <div class="list-group-item">
+          <h5 class="mb-1">Test type</h5>
+          <p class="mb-1">{{.code.TestType}}</p>
+        </div>
+        <div class="list-group-item">
+          <h5 class="mb-1">Status</h5>
+          <p class="mb-1">{{.code.Status}}</p>
+        </div>
+        {{if not .code.Claimed}}
+        <div class="list-group-item">
+          <h5 class="mb-1">Expiry</h5>
+          <span id="code-expires-at" class="sm text-danger">&nbsp;</span>
+        </div>
+        {{if .code.HasLongExpires}}
+        <div class="list-group-item">
+          <h5 class="mb-1">SMS link expiry</h5>
+          <span id="long-code-expires-at" class="sm text-danger">&nbsp;</span>
+        </div>
+        {{end}}
+        {{end}}
+        {{if .code.Expires}}
+        <div class="list-group-item">
+          <a href="/code/{{.code.UUID}}/expire" class="btn btn-danger d-block" data-method="PATCH" data-confirm="Are you sure you want to expire this code?">
+            Invalidate code now
+          </a>
+        </div>
+        {{end}}
       </div>
     </div>
 
@@ -62,29 +67,23 @@
   {{template "scripts" .}}
   {{template "codescripts" .}}
 
+  {{if not .code.Claimed}}
   <script type="text/javascript">
     let $buttonInvalidate = $('button#invalidate');
     let expires = {{ .code.Expires }};
-    let longExpires = {{ .code.LongExpires }}
+    let longExpires = {{ .code.LongExpires }};
 
     $(function() {
       let $codeExpiresAt = $('#code-expires-at');
-      // Start countdown
-      countdown($codeExpiresAt, expires, function() {
-        {{if not .code.HasLongExpires}}
-        // Disable the submit if already expired.
-        $buttonInvalidate.prop('disabled', true);
-        {{end}}
-      });
+      countdown($codeExpiresAt, expires);
 
       {{if .code.HasLongExpires}}
       let $longCodeExpiresAt = $('#long-code-expires-at');
-      countdown($longCodeExpiresAt, longExpires, function() {
-        $buttonInvalidate.prop('disabled', true);
-      });
+      countdown($longCodeExpiresAt, longExpires);
       {{end}}
     });
   </script>
+  {{end}}
 </body>
 
 </html>

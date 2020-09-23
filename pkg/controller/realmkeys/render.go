@@ -79,10 +79,12 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		// Download and PEM encode the public key.
 		publicKey, err := c.publicKeyCache.GetPublicKey(ctx, signing.CertificateSigningKey, c.systemCertificateKeyManager)
 		if err != nil {
+			m["systemCertPublicKey"] = ""
 			m["systemCertPublicKeyError"] = fmt.Sprintf("Failed to load public key: %v", err)
 		} else {
 			pem, err := keyutils.EncodePublicKey(publicKey)
 			if err != nil {
+				m["systemCertPublicKey"] = ""
 				m["systemCertPublicKeyError"] = fmt.Sprintf("Failed to encode public key: %v", err)
 			} else {
 				m["systemCertPublicKey"] = pem

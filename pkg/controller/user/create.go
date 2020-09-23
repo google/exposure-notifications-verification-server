@@ -68,7 +68,6 @@ func (c *Controller) HandleCreate() http.Handler {
 		// See if the user already exists by email - they may be a member of another
 		// realm.
 		user, err := c.db.FindUserByEmail(form.Email)
-		alreadyExists := true
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
@@ -76,16 +75,20 @@ func (c *Controller) HandleCreate() http.Handler {
 			}
 
 			user = new(database.User)
-			alreadyExists = false
-		}
-
-		// Build the user struct - keeping email and name if user already exists in another realm.
-		if !alreadyExists {
 			user.Email = form.Email
 			user.Name = form.Name
 		}
-		user.Realms = append(user.Realms, realm)
 
+		// Create firebase user first, if this fails we don't want a db.User entry
+		created, err := user.CreateFirebaseUser(ctx, c.client)
+		if err != nil {
+			flash.Alert("Failed to create user: %v", err)
+			c.renderNew(ctx, w, user)
+			return
+		}
+
+		// Build the user struct - keeping email and name if user already exists in another realm.
+		user.Realms = append(user.Realms, realm)
 		if form.Admin {
 			user.AdminRealms = append(user.AdminRealms, realm)
 		}
@@ -96,8 +99,18 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully created user '%v'", form.Name)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		if created {
+			m := controller.TemplateMapFromContext(ctx)
+			m["created"] = true
+		}
+
+		stats, err := c.getStats(ctx, user, realm)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		c.renderShow(ctx, w, user, stats)
 	})
 }
 

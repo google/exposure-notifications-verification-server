@@ -1,0 +1,72 @@
+{{define "realmadmin/_form_security"}}
+
+{{$realm := .realm}}
+
+<p class="mb-4">
+  These are the security settings for {{$realm.Name}}.
+</p>
+
+<form method="POST" action="/realm/settings#security" class="floating-form">
+  {{ .csrfField }}
+  <input type="hidden" name="security" value="1" />
+
+  <div class="form-group">
+    <label for="email-verified-mode">Email verification</label>
+    <select name="email_verified_mode" id="email-verified-mode" class="form-control custom-select">
+      <option value="1" {{if eq $realm.EmailVerifiedMode.String "required"}}selected{{end}}>Required</option>
+      <option value="0" {{if eq $realm.EmailVerifiedMode.String "prompt"}}selected{{end}}>Prompt after login</option>
+      <option value="2" {{if eq $realm.EmailVerifiedMode.String "optional"}}selected{{end}}>Optional</option>
+    </select>
+    <small class="form-text text-muted">
+      Email verification requires users to verify their email address before
+      using the system.
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label for="mfa-mode">Multi factor authentication</label>
+    <select name="mfa_mode" id="mfa-mode" class="form-control custom-select">
+      <option value="1" {{if eq $realm.MFAMode.String "required"}}selected{{end}}>Required</option>
+      <option value="0" {{if eq $realm.MFAMode.String "prompt"}}selected{{end}}>Prompt after login</option>
+      <option value="2" {{if eq $realm.MFAMode.String "optional"}}selected{{end}}>Optional</option>
+    </select>
+    <small class="form-text text-muted">
+      Multi-factor authentication requires users to supply a second factor (e.g.
+      a code via an SMS text message) when authenticating to the system.
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label for="password-rotation-period-days">Require password rotation</label>
+    <select name="password_rotation_period_days" id="password-rotation-period-days" class="form-control custom-select">
+      {{$current := $realm.PasswordRotationPeriodDays}}
+      {{range $prd := .passwordRotateDays}}
+      <option value="{{$prd}}" {{if (eq $prd $current)}}selected{{end}}>{{if (eq $prd 0)}}Off{{else}}Every {{$prd}} days{{end}}</option>
+      {{end}}
+    </select>
+    <small class="form-text text-muted">
+      If enabled, users will be required to change their password after this
+      number of days elapse since their last password change.
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label for="password-rotation-warning-days">Password rotation warning</label>
+    <select name="password_rotation_warning_days" id="password-rotation-warning-days" class="custom-select{{if $realm.ErrorsFor "passwordWarn"}} is-invalid{{end}}">
+      {{$current := $realm.PasswordRotationWarningDays}}
+      {{range $pwd := .passwordWarnDays}}
+      <option value="{{$pwd }}" {{if (eq $pwd $current)}}selected{{end}}>{{if (eq $pwd 0)}}Off{{else}}{{$pwd}} days before{{end}}</option>
+      {{end}}
+    </select>
+    <small class="form-text text-muted">
+      If enabled, users will be warned to change their password within this
+      number of days before expiration.
+    </small>
+  </div>
+
+  <div class="mt-4">
+    <input type="submit" class="btn btn-primary btn-block" value="Update security settings" />
+  </div>
+</form>
+
+{{end}}

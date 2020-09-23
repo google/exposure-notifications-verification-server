@@ -1,0 +1,85 @@
+{{define "login/verify-email"}}
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+  {{template "firebase" .}}
+</head>
+
+<body class="tab-content">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="d-flex vh-100">
+      <div class="d-flex w-100 justify-content-center">
+        <div class="col-sm-6">
+
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header">Email verification</div>
+            <div class="card-body">
+              {{if eq .currentRealm.EmailVerifiedMode.String "required"}}
+              <div class="alert alert-warning">
+                <span class="oi oi-warning"></span>
+                This realm <strong>requires</strong> email address verification.
+              </div>
+              {{end}}
+
+              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.
+              </p>
+
+              <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
+
+              <small class="form-text text-muted">Click to send an email containing a verification
+                link.</small>
+
+              {{if ne .currentRealm.EmailVerifiedMode.String "required"}}
+              <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
+              {{end}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+
+  <script>
+    let $verify = $('#verify');
+    let $skip = $('#skip');
+    let $not = $('#not');
+
+    $(function() {
+      $verify.on('click', function(event) {
+        let user = firebase.auth().currentUser
+        if (!user.emailVerified) {
+          user.sendEmailVerification().then(function() {
+            flash.clear();
+            flash.alert('Verification email sent.');
+            $verify.prop('disabled', true);
+          });
+        }
+      });
+    });
+
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) {
+        window.location.assign("/signout");
+        return;
+      }
+
+      if (user.emailVerified) {
+        $not.hide();
+        $skip.text("Go home");
+      } else {
+        $verify.prop('disabled', false);
+      }
+    });
+  </script>
+</body>
+
+</html>
+{{end}}

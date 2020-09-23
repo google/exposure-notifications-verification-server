@@ -1,7 +1,7 @@
 {{define "head"}}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta data-build-id="{{.build_id}}" data-build-tag="{{.build_tag}}">
+<meta data-build-id="{{.buildID}}" data-build-tag="{{.buildTag}}">
 
 <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -19,15 +19,18 @@
   href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
   integrity="sha256-BJ/G+e+y7bQdrYkS2RBTyNfBHpA9IuGaPmf9htub5MQ=" crossorigin="anonymous">
 
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+  integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+  integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+
 <title>{{if .title}}{{.title}}{{else}}Diagnosis Verification Server{{end}}</title>
 
 <style type="text/css">
-  nav.navbar {
-    margin-bottom: 40px;
-  }
-
-  div.realm-header {
-    background-color: #0055b1;
+  div.admin-header {
+    background-color:#D66402
   }
 
   a.input-group-text:hover {
@@ -35,6 +38,14 @@
     text-decoration: none;
   }
 
+  a.disabled {
+    color: lightgray;
+    pointer-events: none;
+  }
+
+  main.container[role=main] {
+    position: relative;
+  }
 </style>
 {{end}}
 
@@ -43,8 +54,6 @@
   .floating-form {
     width: 100%;
     height: 100%;
-    max-width: 420px;
-    padding: 15px;
     margin: auto;
   }
 
@@ -65,66 +74,82 @@
     left: 0;
     display: block;
     width: 100%;
-    margin-bottom: 0; /* Override default `<label>` margin */
+    margin-bottom: 0;
+    /* Override default `<label>` margin */
     line-height: 1.5;
     color: #495057;
     pointer-events: none;
-    cursor: text; /* Match the input under the label */
+    cursor: text;
+    /* Match the input under the label */
     border: 1px solid transparent;
     border-radius: .25rem;
     transition: all .1s ease-in-out;
+    z-index: 1000;
   }
 
-  .form-label-group input::-webkit-input-placeholder {
+  .form-label-group input::-webkit-input-placeholder,
+  .form-label-group textarea::-webkit-input-placeholder {
     color: transparent;
   }
 
-  .form-label-group input::-moz-placeholder {
+  .form-label-group input::-moz-placeholder,
+  .form-label-group textarea::-moz-placeholder {
     color: transparent;
   }
 
-  .form-label-group input:-ms-input-placeholder {
+  .form-label-group input:-ms-input-placeholder,
+  .form-label-group textarea:-ms-input-placeholder {
     color: transparent;
   }
 
-  .form-label-group input::-ms-input-placeholder {
+  .form-label-group input::-ms-input-placeholder,
+  .form-label-group textarea::-ms-input-placeholder {
     color: transparent;
   }
 
-  .form-label-group input::placeholder {
+  .form-label-group input::placeholder,
+  .form-label-group textarea::placeholder {
     color: transparent;
   }
 
-  .form-label-group input:not(:-moz-placeholder-shown) {
+  .form-label-group input:not(:-moz-placeholder-shown),
+  .form-label-group textarea:not(:-moz-placeholder-shown) {
     padding-top: 1.25rem;
     padding-bottom: .25rem;
   }
 
-  .form-label-group input:not(:-ms-input-placeholder) {
+  .form-label-group input:not(:-ms-input-placeholder),
+  .form-label-group textarea:not(:-ms-input-placeholder) {
     padding-top: 1.25rem;
     padding-bottom: .25rem;
   }
 
-  .form-label-group input:not(:placeholder-shown) {
+  .form-label-group input:not(:placeholder-shown),
+  .form-label-group textarea:not(:placeholder-shown) {
     padding-top: 1.25rem;
     padding-bottom: .25rem;
   }
 
-  .form-label-group input:not(:-moz-placeholder-shown) ~ label {
+  .form-label-group input:not(:-moz-placeholder-shown)~label,
+  .form-label-group textarea:not(:-moz-placeholder-shown)~label {
     padding-top: .25rem;
     padding-bottom: .25rem;
     font-size: 12px;
     color: #777;
   }
 
-  .form-label-group input:not(:-ms-input-placeholder) ~ label {
+  .form-label-group input:not(:-ms-input-placeholder)~label,
+  .form-label-group textarea:not(:-ms-input-placeholder)~label {
     padding-top: .25rem;
     padding-bottom: .25rem;
     font-size: 12px;
     color: #777;
   }
 
-  .form-label-group input:not(:placeholder-shown) ~ label {
+  .form-label-group input:-webkit-autofill~label,
+  .form-label-group textarea:-webkit-autofill~label,
+  .form-label-group input:not(:placeholder-shown)~label,
+  .form-label-group textarea:not(:placeholder-shown)~label {
     padding-top: .25rem;
     padding-bottom: .25rem;
     font-size: 12px;
@@ -145,125 +170,109 @@
       position: static;
     }
 
-    .form-label-group input::-ms-input-placeholder {
+    .form-label-group input::-ms-input-placeholder,
+    .form-label-group textarea::-ms-input-placeholder {
       color: #777;
     }
   }
-  </style>
+
+</style>
 {{end}}
 
+{{/* defines the top navigation bar */}}
 {{define "navbar"}}
-<header>
+<header class="mb-3">
   {{if .currentRealm}}
-  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white realm-header">
+  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
     {{.currentRealm.Name}}{{if .currentRealm.RegionCode}} - {{.currentRealm.RegionCode}}{{end}}
   </div>
   {{end}}
 
-  <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+  <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
     <div class="container">
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar"
-        aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+      {{template "navtoggle" .}}
 
-      <div class="collapse navbar-collapse" id="navbar">
-        {{if .currentUser}}
-        <ul class="navbar-nav mr-auto">
-          {{if .currentRealm}}
+      <div class="collapse navbar-collapse mt-2" id="navbar">
+        {{if .currentRealm}}
+        <ul class="nav mr-auto flex-column flex-md-row">
           <li class="nav-item">
-            <a class="nav-link" href="/home">Issue code</a>
+            <a class="nav-link {{if .currentPath.IsFile "home"}}active{{end}}" href="/home">Issue code</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/code/status">Check code status</a>
-          </li>
-          {{end}}
-        </ul>
-
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
-              aria-expanded="false">
-              {{.currentUser.Name}}
-            </a>
-
-            <div class="dropdown-menu" aria-labelledby="profile-menu">
-              {{if .currentRealm }}
-              {{if .currentUser.CanAdminRealm .currentRealm.ID}}
-              <h6 class="dropdown-header">Manage realm</h6>
-              <a class="dropdown-item" href="/apikeys">API keys</a>
-              <a class="dropdown-item" href="/realm/keys">Signing keys</a>
-              <a class="dropdown-item" href="/users">Users</a>
-              <a class="dropdown-item" href="/realm/settings">Settings</a>
-              <div class="dropdown-divider"></div>
-              {{end}}
-              {{end}}
-
-              {{if .currentUser.Admin}}
-              <h6 class="dropdown-header">System admin</h6>
-              <a class="dropdown-item" href="/admin/realms">Realms</a>
-              <div class="dropdown-divider"></div>
-              {{end}}
-
-              <h6 class="dropdown-header">Actions</h6>
-              {{if gt (len .currentUser.Realms) 1}}
-              <a class="dropdown-item" href="/realm">Change realm</a>
-              {{end}}
-              <a class="dropdown-item" href="/signout">Sign out</a>
-            </div>
-          </li>
-        </ul>
-        {{else}}
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="/">Sign in</a>
+            <a class="nav-link {{if .currentPath.IsDir "/code/"}}active{{end}}" href="/code/status">Check code status</a>
           </li>
         </ul>
         {{end}}
+        {{template "navdropdown" .}}
       </div>
     </div>
   </nav>
 </header>
 {{end}}
 
-{{define "flash"}}
-{{range $msg := .flash.Errors}}
-<div class="alert alert-danger" role="alert">
-  {{$msg}}
-</div>
+{{/* defines the hamburger menu toggle for mobile */}}
+{{define "navtoggle"}}
+<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar"
+aria-expanded="false" aria-label="Toggle navigation">
+  <span class="navbar-toggler-icon"></span>
+</button>
 {{end}}
-{{range $msg := .flash.Warnings}}
-<div class="alert alert-warning" role="alert">
-  {{$msg}}
-</div>
-{{end}}
-{{range $msg := .flash.Alerts}}
-<div class="alert alert-success alert-dismissible fade show" role="alert">
-  {{$msg}}
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
-</div>
-{{end}}
+
+{{/* defines the user dropdown menu */}}
+{{define "navdropdown"}}
+<ul class="navbar-nav ml-3">
+  {{if .currentUser}}
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
+      aria-expanded="false">
+      {{.currentUser.Name}}
+    </a>
+
+    <div class="dropdown-menu" aria-labelledby="profile-menu">
+      {{if .currentRealm }}
+      {{if .currentUser.CanAdminRealm .currentRealm.ID}}
+      <h6 class="dropdown-header">Manage realm</h6>
+      <a class="dropdown-item" href="/apikeys">API keys</a>
+      <a class="dropdown-item" href="/realm/keys">Signing keys</a>
+      <a class="dropdown-item" href="/realm/stats">Statistics</a>
+      <a class="dropdown-item" href="/users">Users</a>
+      <a class="dropdown-item" href="/realm/settings#general">Settings</a>
+      <div class="dropdown-divider"></div>
+      {{end}}
+      {{end}}
+
+      {{if .currentUser.Admin}}
+      <h6 class="dropdown-header">System admin</h6>
+      <a class="dropdown-item" href="/admin/realms">Launch</a>
+      <div class="dropdown-divider"></div>
+      {{end}}
+
+      <h6 class="dropdown-header">Actions</h6>
+      {{if gt (len .currentUser.Realms) 1}}
+      <a class="dropdown-item" href="/login/select-realm">{{if .currentRealm}}Change realm{{else}}Select realm{{end}}</a>
+      {{end}}
+      <a class="dropdown-item" href="/account">My account</a>
+      <a class="dropdown-item" href="/signout">Sign out</a>
+    </div>
+  </li>
+  {{else}}
+  <li class="nav-item">
+    <a class="nav-link" href="/">Sign in</a>
+  </li>
+  {{end}}
+</ul>
 {{end}}
 
 {{define "scripts"}}
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"
-  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-  integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
-  integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
-
 <script type="text/javascript">
-  $(function () {
+  $(function() {
     // Add data-toogle="tooltop" to toggle tooltips!
     $('[data-toggle="tooltip"]').tooltip();
 
     // Add data-submit-form properties to a link to have it act as a submit
     // button. You can also add a data-confirm attribute with a confirmation
     // prompt.
-    $('a[data-submit-form]').click(function (e) {
+    $('a[data-submit-form]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -280,7 +289,7 @@
     // Add data-method to a link and make the resulting href submit as that
     // method. You can also add a data-confirm attribute with a confirmation
     // prompt.
-    $('a[data-method]').click(function (e) {
+    $('a[data-method]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -311,7 +320,7 @@
 
     // Add data-toggle-password to an element with the value pointing to the id
     // of an input[type="password"]. It will toggle/untoggle the value.
-    $('a[data-toggle-password]').click(function (e) {
+    $('a[data-toggle-password]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -330,7 +339,7 @@
       }
     });
 
-    $('a[data-fill-target]').click(function (e) {
+    $('a[data-fill-target]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -341,7 +350,7 @@
       $target.val(value);
     });
 
-    $('a[data-copy]').click(function (e) {
+    $('a[data-copy]').click(function(e) {
       e.preventDefault();
 
       let $this = $(e.currentTarget);
@@ -355,30 +364,127 @@
       $this.tooltip('hide');
       document.getSelection().removeAllRanges();
     });
+
+    // Toast shows alerts/flash messages.
+    $('.toast').toast('show');
+
+    // Flash is the flash handler
+    let flash = function() {
+      let $alerts = $('#alerts-container');
+
+      let f = {};
+
+      // clear clears any existing flashes.
+      f.clear = function() {
+        $alerts.empty();
+      };
+
+      // error creates a flash error message.
+      f.error = function(message) {
+        f.flash('error', message);
+      };
+
+      // warning creates a flash warning message.
+      f.warning = function(message) {
+        f.flash('warning', message);
+      };
+
+      // alert creates a flash notice message.
+      f.alert = function(message) {
+        f.flash('alert', message);
+      };
+
+      // flash is a lower-level function for generating a flash message. Usually
+      // you want to call flash.alert() or flash.error() instead.
+      f.flash = function(level, message) {
+        let headerClass;
+        let headerIconClass;
+        let headerText;
+
+        switch (level) {
+          case 'error':
+            headerClass = 'text-danger';
+            headerIconClass = 'oi-circle-x';
+            headerText = 'Error';
+            break;
+          case 'warning':
+            headerClass = 'text-warning';
+            headerIconClass = 'oi-warning';
+            headerText = 'Warning';
+            break;
+          case 'alert':
+            headerClass = 'text-info';
+            headerIconClass = 'oi-info';
+            headerText = 'Notice';
+            break;
+          default:
+            throw `invalid level ${level}`;
+        }
+
+        let $toast = $('<div>');
+        $toast.addClass('toast bg-white');
+        $toast.attr('role', 'alert');
+        $toast.attr('aria-live', 'assertive');
+        $toast.attr('aria-atomic', 'true');
+
+        // Auto-dismiss notices, but everything else is sticky.
+        if (level === 'alert') {
+          $toast.attr('data-delay', 10000);
+          $toast.attr('data-autohide', true);
+        } else {
+          $toast.attr('data-autohide', false);
+        }
+
+        // Create the header.
+        let $header = $('<div>');
+        $header.addClass('toast-header');
+        $header.addClass(headerClass);
+
+        // Create the icon.
+        let $icon = $('<span>');
+        $icon.addClass('oi mr-2');
+        $icon.addClass(headerIconClass);
+        $icon.attr('aria-hidden', true)
+        $header.append($icon);
+
+        // Create the text next to the icon.
+        let $headerText = $('<strong>')
+        $headerText.addClass('mr-auto');
+        $headerText.html(headerText);
+        $header.append($headerText);
+
+        // Create the close button.
+        let $button = $('<button>');
+        $button.addClass('ml-2 mb-1 close');
+        $button.attr('type', 'button');
+        $button.attr('data-dismiss', 'toast');
+        $button.attr('aria-label', 'Close');
+        $button.html('<span aria-hidden="true">&times;</span>');
+        $header.append($button);
+
+        // Add the header to the toast.
+        $toast.append($header);
+
+        // Create the body.
+        let $body = $('<div>');
+        $body.addClass('toast-body');
+        $body.html(message);
+
+        // Add the body to the toast.
+        $toast.append($body);
+
+        // Add the toast to the page.
+        $alerts.append($toast);
+
+        // Show the toast.
+        $toast.toast('show');
+      };
+
+      return f;
+    }();
+
+    window.flash = flash;
   });
-
-  var $main = $('main');
-
-  function clearExistingFlash() {
-    $main.find('div.alert').remove();
-  }
-
-  function flash(message, errLevel) {
-    switch (errLevel) {
-      case "warning":
-      case "danger":
-        break;
-      case "success":
-        errLevel += " alert-dismissible"
-        break;
-      default:
-        errLevel = "warning"
-    }
-
-    let $div = $('<div class="alert alert-' + errLevel + '" role="alert" />');
-    $div.text(message);
-    $main.prepend($div);
-  }
 </script>
 {{end}}
 
@@ -387,5 +493,20 @@
   <a class="input-group-text" data-toggle="tooltip" title="Copy to clipboard" data-copy data-copy-target="{{.}}">
     <span class="oi oi-clipboard" aria-hidden="true"></span>
   </a>
+</div>
+{{end}}
+
+{{define "errorable"}}
+{{if .}}
+<div class="invalid-feedback">
+  {{joinStrings . ", "}}
+</div>
+{{end}}
+{{end}}
+
+{{define "beta-notice"}}
+<div class="alert alert-warning">
+  <span class="oi oi-beaker"></span> This feature is still under active
+  development.
 </div>
 {{end}}

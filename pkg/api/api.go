@@ -16,7 +16,12 @@
 // well as between mobile devices and the server.
 package api
 
-import "fmt"
+import (
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"math/big"
+)
 
 const (
 	// TestTypeConfirmed is the string that represents a confirmed covid-19 test.
@@ -47,6 +52,8 @@ const (
 	// ErrInvalidTestType indicates the client says it supports a test type this server doesn't
 	// know about.
 	ErrInvalidTestType = "invalid_test_type"
+	// ErrMissingDate indicates the realm requires a date, but none was supplied.
+	ErrMissingDate = "missing_date"
 
 	// Certificate API responses
 	// ErrTokenInvalid indicates the token provided is unknown or already used
@@ -98,24 +105,67 @@ func (e *ErrorReturn) WithCode(code string) *ErrorReturn {
 // It's arbitrary bytes that should be ignored or discarded. It primarily exists
 // to prevent a network observer from building a model based on request or
 // response sizes.
-type Padding struct {
-	Padding string `json:"padding,omitempty"`
+type Padding []byte
+
+// MarshalJSON is a custom JSON marshaler for padding. It generates and returns
+// 1-2kb (random) of base64-encoded bytes.
+func (p Padding) MarshalJSON() ([]byte, error) {
+	bi, err := rand.Int(rand.Reader, big.NewInt(1024))
+	if err != nil {
+		return nil, fmt.Errorf("padding: failed to generate random number: %w", err)
+	}
+
+	// rand.Int is [0, max), so add 1kb to set the range from 1-2kb.
+	i := int(bi.Int64() + 1024)
+
+	b := make([]byte, i)
+	n, err := rand.Read(b)
+	if err != nil {
+		return nil, fmt.Errorf("padding: failed to read bytes: %w", err)
+	}
+	if n < i {
+		return nil, fmt.Errorf("padding: wrote less bytes than expected")
+	}
+
+	s := fmt.Sprintf("%q", base64.StdEncoding.EncodeToString(b))
+	return []byte(s), nil
 }
 
 // CSRFResponse is the return type when requesting an AJAX CSRF token.
 type CSRFResponse struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	CSRFToken string `json:"csrftoken"`
 	Error     string `json:"error"`
 	ErrorCode string `json:"errorCode"`
 }
 
+// UserBatchRequest is a request for bulk creation of users.
+// This is called by the Web frontend.
+// API is served at /users/import/userbatch
+type UserBatchRequest struct {
+	Users []BatchUser `json:"users"`
+}
+
+// BatchUser represents a single user's email/name.
+type BatchUser struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+// UserBatchResponse defines the response type for UserBatchRequest.
+type UserBatchResponse struct {
+	NewUsers []*BatchUser `json:"newUsers"`
+
+	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
 // IssueCodeRequest defines the parameters to request an new OTP (short term)
 // code. This is called by the Web frontend.
 // API is served at /api/issue
 type IssueCodeRequest struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 	TestDate    string `json:"testDate"`
@@ -128,7 +178,7 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	// UUID is a handle which allows the issuer to track status of the issued verification code.
 	UUID string `json:"uuid"`
@@ -157,7 +207,7 @@ type IssueCodeResponse struct {
 // previously issued OTP code. This is called by the Web frontend.
 // API is served at /api/checkcodestatus
 type CheckCodeStatusRequest struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	// UUID is a handle which allows the issuer to track status of the issued verification code.
 	UUID string `json:"uuid"`
@@ -165,7 +215,7 @@ type CheckCodeStatusRequest struct {
 
 // CheckCodeStatusResponse defines the response type for CheckCodeStatusRequest.
 type CheckCodeStatusResponse struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	// Claimed is true if a user has used the OTP code to get a token via the VerifyCode api.
 	Claimed bool `json:"claimed"`
@@ -186,7 +236,7 @@ type CheckCodeStatusResponse struct {
 // This is called by the Web frontend.
 // API is served at /api/expirecode
 type ExpireCodeRequest struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	// UUID is a handle which allows the issuer to track status of the issued verification code.
 	UUID string `json:"uuid"`
@@ -194,7 +244,7 @@ type ExpireCodeRequest struct {
 
 // ExpireCodeResponse defines the response type for ExpireCodeRequest.
 type ExpireCodeResponse struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
 	// After this time the code will no longer be accepted and is eligible for deletion.
@@ -226,7 +276,7 @@ type ExpireCodeResponse struct {
 //
 // Requires API key in a HTTP header, X-API-Key: APIKEY
 type VerifyCodeRequest struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	VerificationCode string   `json:"code"`
 	AcceptTestTypes  []string `json:"accept"`
@@ -236,7 +286,7 @@ type VerifyCodeRequest struct {
 // (type and [optional] date) as well as the verification token. The verification token
 // may be sent back on a valid VerificationCertificateRequest later.
 type VerifyCodeResponse struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	TestType          string `json:"testtype,omitempty"`
 	SymptomDate       string `json:"symptomDate,omitempty"` // ISO 8601 formatted date, YYYY-MM-DD
@@ -252,7 +302,7 @@ type VerifyCodeResponse struct {
 //
 // Requires API key in a HTTP header, X-API-Key: APIKEY
 type VerificationCertificateRequest struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	VerificationToken string `json:"token"`
 	ExposureKeyHMAC   string `json:"ekeyhmac"`
@@ -262,7 +312,7 @@ type VerificationCertificateRequest struct {
 // a signed certificate that can be presented to the configured exposure
 // notifications server to publish keys along w/ the certified diagnosis.
 type VerificationCertificateResponse struct {
-	Padding
+	Padding Padding `json:"padding"`
 
 	Certificate string `json:"certificate,omitempty"`
 	Error       string `json:"error,omitempty"`

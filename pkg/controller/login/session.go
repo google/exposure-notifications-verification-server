@@ -23,7 +23,8 @@ import (
 
 func (c *Controller) HandleCreateSession() http.Handler {
 	type FormData struct {
-		IDToken string `form:"idToken,required"`
+		IDToken     string `form:"idToken,required"`
+		FactorCount uint   `form:"factorCount"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +44,10 @@ func (c *Controller) HandleCreateSession() http.Handler {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
+
+		// TODO: when the Identity Platform go client supports MFA, switch to directly
+		// grabbing this from the auth user struct
+		controller.StoreSessionFactorCount(session, form.FactorCount)
 
 		// Get the session cookie from firebase.
 		ttl := c.config.SessionDuration

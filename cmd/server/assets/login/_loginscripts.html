@@ -1,7 +1,7 @@
 {{define "loginscripts"}}
 <script type="text/javascript">
 
-  firebase.auth().onAuthStateChanged(function (user) {
+  firebase.auth().onAuthStateChanged(function(user) {
     if (!user) {
       return
     }
@@ -9,25 +9,26 @@
   });
 
   function setSession(user) {
+    let factorCount = user.multiFactor.enrolledFactors.length;
     user.getIdToken().then(idToken => {
       $.ajax({
         type: 'POST',
         url: '/session',
-        data: { idToken: idToken },
+        data: {
+          idToken: idToken,
+          factorCount: factorCount,
+        },
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/x-www-form-urlencoded',
-        success: function (returnData) {
-          if (user.multiFactor.enrolledFactors.length > 0) {
-            // The user successfully signed in, redirect to realm selection.
-            window.location.assign('/realm');
-          } else {
-            // The user successfully signed in, ask for multiauth.
-            window.location.assign('/login/registerphone');
-          }
+        {{if not .currentUser}}
+        success: function(returnData) {
+          // The user successfully signed in, redirect to realm selection.
+          window.location.assign('/login/select-realm');
         },
-        error: function (xhr, status, e) {
+        {{end}}
+        error: function(xhr, status, e) {
           // There was an error finding the user. Redirect to the
-          // signout page to clear the firebase cookie and any session
+          // sign-out page to clear the firebase cookie and any session
           // data.
           //
           // The flash data may have more detailed error messages, which
@@ -38,4 +39,45 @@
     });
   }
 </script>
+{{end}}
+
+{{define "login/pindiv"}}
+<div class="card shadow-sm d-none" id="sms-code-div">
+  <div class="card-header">
+    SMS Confirmation Code
+    <button type="button" class="close" aria-label="Close" id="sms-code-close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="card-body">
+    <form id="sms-code-form" class="floating-form" action="/" method="POST">
+      <div class="form-label-group">
+        <input type="text" id="sms-code" name="sms-code" class="form-control" placeholder="Code" autocomplete="one-time-code" required autofocus />
+        <label for="sms-code">Code</label>
+        <div class='w-100'>
+          <small class="text-muted">
+            Please enter the numerical code that was sent via SMS.
+          </small>
+        </div>
+        <small class="text-muted" id='code-text'></small>
+      </div>
+
+      <button type="submit" id="sms-code-submit" class="btn btn-primary btn-block">Confirm code</button>
+      <div class="btn-block">
+        <a id="sms-code-resend" class="card-link disabled" disabled>Resend SMS</a>
+        <a id="sms-change" class="card-link d-none" href="#">Change login factor</a>
+      </div>
+    </form>
+  </div>
+</div>
+{{end}}
+
+{{define "login/factorsdiv"}}
+<div class="card shadow-sm mb-3 d-none" id="registered-div">
+  <div class="card-header">Registered factors</div>
+  <div class="card-body">
+    <div id="factors" class="list-group list-group-flush">
+    </div>
+  </div>
+</div>
 {{end}}

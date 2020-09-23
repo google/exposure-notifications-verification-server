@@ -1,0 +1,287 @@
+{{define "login/register-phone"}}
+
+{{$currentRealm := .currentRealm}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+  {{template "floatingform" .}}
+  {{template "firebase" .}}
+</head>
+
+<body class="tab-content">
+  {{template "navbar" .}}
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="d-flex vh-100">
+      <div class="d-flex w-100 justify-content-center">
+        <div class="col-sm-6">
+          {{template "login/factorsdiv" .}}
+
+          <div class="card shadow-sm" id="register-div">
+            <div class="card-header">Multi-factor authentication</div>
+            <div class="card-body">
+              {{if eq .currentRealm.MFAMode.String "required"}}
+              <div class="alert alert-warning">
+                <span class="oi oi-warning"></span>
+                This realm <strong>requires</strong> multi-factor authorization.
+              </div>
+              {{end}}
+
+              <p>
+                <strong>{{$currentRealm.Name}}</strong>
+                {{if eq .currentRealm.MFAMode.String "required"}}requires{{else}}recommends{{end}}
+                enhanced security via SMS-based 2-factor authentication. Please
+                provide your information below to enroll.
+              </p>
+
+              <form id="register-form" class="floating-form" action="/" method="POST">
+                <div class="form-label-group">
+                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="Phone number" required
+                    autofocus />
+                  <label for="phone">Phone number</label>
+                  <small class="form-text text-muted">
+                    Fully qualified phone number beginning with '+'. Standard SMS rates may apply.
+                  </small>
+                </div>
+
+                <div class="form-label-group">
+                  <input type="text" id="display" name="display" class="form-control" placeholder="Display name" />
+                  <label for="display">Display name</label>
+                  <small class="form-text text-muted">
+                    Name for this phone.
+                  </small>
+                </div>
+
+                <button type="submit" id="submit-register" class="btn btn-primary btn-block">Register</button>
+              </form>
+
+              {{if ne .currentRealm.MFAMode.String "required"}}
+              <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
+              {{end}}
+            </div>
+          </div>
+
+          {{template "login/pindiv" .}}
+
+        </div>
+      </div>
+    </div>
+
+    <div id="recaptcha-container" class="center-block"></div>
+  </main>
+
+  {{template "scripts" .}}
+  <script type="text/javascript">
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+      'recaptcha-container',
+      { 'size': 'invisible' }
+    );
+
+    recaptchaVerifier.render()
+      .then(function(widgetId) {
+        window.recaptchaWidgetId = widgetId;
+      });
+
+    $(function() {
+      let $registerDiv = $('#register-div');
+      let $displayName = $('#display');
+      let $submit = $('#submit-register');
+      let $phone = $('#phone');
+      let $registerForm = $('#register-form');
+      let $skip = $('#skip');
+
+      let $pinDiv = $('#sms-code-div');
+      let $pinClose = $('#sms-code-close');
+      let $pinForm = $('#sms-code-form');
+      let $pin = $('#sms-code');
+      let $submitPin = $('#sms-code-submit');
+      let $resendPin = $('#sms-code-resend');
+
+      let $registeredDiv = $('#registered-div');
+      let $factors = $('#factors');
+
+      let verId = ""
+
+      firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+          window.location.assign("/signout");
+          return
+        }
+
+        if (user.multiFactor.enrolledFactors.length > 0) {
+          $skip.text('Account settings');
+          $skip.attr('href', '/account');
+
+          for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
+            appendAuthFactor(user.multiFactor.enrolledFactors[i], i);
+          }
+          $registeredDiv.removeClass('d-none');
+        }
+      });
+
+      function appendAuthFactor(factor, i) {
+        let $li = $('<div/>');
+        $li.addClass('list-group-item');
+        $li.attr('id', `factor${factor.uid}`);
+
+        let $row = $('<div/>').text(factor.displayName);
+        $li.append($row);
+
+        let $icon = $('<span/>');
+        $icon.addClass('oi oi-phone mr-1');
+        $icon.attr('aria-hidden', 'true');
+        $row.prepend($icon);
+
+        let $unenroll = $('<a/>');
+        $unenroll.addClass('text-danger float-right');
+        $unenroll.attr('href', '#')
+        $unenroll.attr('title', 'Delete this factor');
+        $unenroll.tooltip();
+
+        $icon = $('<span/>');
+        $icon.addClass('oi oi-delete mr-1');
+        $icon.attr('aria-hidden', 'true');
+        $unenroll.append($icon);
+        $row.append($unenroll);
+
+        let $time = $('<small/>');
+        $time.addClass('row text-muted ml-1')
+        $time.text(`Enrolled at: ${factor.enrollmentTime}`);
+        $row.append($time);
+
+        $unenroll.on('click', function(event) {
+          unenrollFactor(factor);
+        });
+
+        $factors.append($li);
+      }
+
+      function unenrollFactor(factor) {
+        if (window.confirm(`Are you sure you want to delete ${factor.displayName}`) !== true) {
+          return;
+        }
+
+        let multiFactor = firebase.auth().currentUser.multiFactor
+        let last = multiFactor.enrolledFactors.length == 1
+        multiFactor.unenroll(factor)
+          .then(function() {
+            $(`#factor${factor.uid}`).remove();
+            flash.clear();
+            flash.alert(`Successfully unenrolled ${factor.displayName}`);
+
+            if (last) {
+              $registeredDiv.addClass('d-none');
+            }
+          }).catch(function(err) {
+            if (err.code == 'auth/requires-recent-login') {
+              window.location.assign('/login?redir=login/register-phone');
+            }
+            flash.clear();
+            flash.error(err.message);
+          });
+      }
+
+      $registerForm.on('submit', function(event) {
+        event.preventDefault();
+
+        // Disable the submit button so we only attempt once.
+        $submit.prop('disabled', true);
+
+        let user = firebase.auth().currentUser
+        user.multiFactor.getSession().then(function(multiFactorSession) {
+          // Specify the phone number and pass the MFA session.
+          var phoneInfoOptions = {
+            phoneNumber: $phone.val(),
+            session: multiFactorSession
+          };
+          var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+          // Send SMS verification code.
+          return phoneAuthProvider.verifyPhoneNumber(
+            phoneInfoOptions, window.recaptchaVerifier);
+        }).then(function(verificationId) {
+          verId = verificationId
+          setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+          $registerDiv.hide();
+          $pinDiv.removeClass('d-none');
+        }).catch(function(err) {
+          if (err.code == 'auth/requires-recent-login') {
+              window.location.assign('/login?redir=login/register-phone');
+            }
+          flash.clear();
+          flash.error(err.message);
+          $submit.prop('disabled', false);
+        });
+      });
+
+      $pinForm.on('submit', function(event) {
+        event.preventDefault();
+
+        // Disable the submit button so we only attempt once.
+        $submitPin.prop('disabled', true);
+
+        var cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
+        var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+
+        // Complete enrollment.
+        let user = firebase.auth().currentUser
+        user.multiFactor.enroll(multiFactorAssertion, $displayName.val()).then(function() {
+          flash.clear();
+          flash.alert('SMS authentication enrolled successfully.');
+          $skip.text('Continue');
+
+          let l = user.multiFactor.enrolledFactors.length
+          appendAuthFactor(user.multiFactor.enrolledFactors[l - 1], l - 1);
+          if (l == 1) {
+            $registeredDiv.removeClass('d-none');
+          }
+
+          $phone.text('');
+          $displayName.text('');
+          $registerDiv.show();
+          $pinDiv.addClass('d-none');
+        }).catch(function(err) {
+          if (err.code == 'auth/requires-recent-login') {
+              window.location.assign('/login?redir=login/register-phone');
+            }
+          flash.clear();
+          flash.error(err.message);
+          $submitPin.prop('disabled', false);
+        }).then(function() {
+          $submit.prop('disabled', false);
+        });
+      });
+
+      $pinClose.on('click', function(event) {
+        $submit.prop('disabled', false);
+        $registerDiv.show();
+        $pinDiv.addClass('d-none');
+      });
+
+      $resendPin.on('click', function(event) {
+        $resendPin.addClass('disabled');
+        setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+
+        let phoneInfoOptions = {
+          multiFactorHint: resolver.hints[0],
+          session: resolver.session
+        };
+        let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+        phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+          .then(function(verificationId) {
+            verId = verificationId;
+          }).catch(function(error) {
+            flash.clear();
+            flash.error(error.message);
+            $submit.prop('disabled', false);
+          });
+      });
+    });
+  </script>
+</body>
+
+</html>
+{{end}}
