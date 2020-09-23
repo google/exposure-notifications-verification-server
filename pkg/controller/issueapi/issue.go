@@ -15,6 +15,7 @@
 package issueapi
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -202,7 +203,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 		key := fmt.Sprintf("realm:quota:%s", dig)
-		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
+		limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
 		if err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
 			stats.Record(ctx, c.metrics.QuotaErrors.M(1))
@@ -254,6 +255,8 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
+		c.recordCapacity(ctx, realm, remaining)
+
 		if request.Phone != "" && smsProvider != nil {
 			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
@@ -295,4 +298,18 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 	}
 
 	return authorizedApp, user, nil
+}
+
+func (c *Controller) recordCapacity(ctx context.Context, realm *database.Realm, remaining uint64) {
+	if !realm.AbusePreventionEnabled {
+		return
+	}
+	stats.Record(ctx, c.metrics.RealmTokenRemaining.M(int64(remaining)))
+
+	limit := realm.AbusePreventionEffectiveLimit()
+	issued := uint64(limit) - remaining
+	stats.Record(ctx, c.metrics.RealmTokenIssued.M(int64(issued)))
+
+	capacity := float64(issued) / float64(limit)
+	stats.Record(ctx, c.metrics.RealmTokenCapacity.M(capacity))
 }

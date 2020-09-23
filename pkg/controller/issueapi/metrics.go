@@ -29,13 +29,16 @@ var (
 )
 
 type Metrics struct {
-	IssueAttempts   *stats.Int64Measure
-	QuotaErrors     *stats.Int64Measure
-	QuotaExceeded   *stats.Int64Measure
-	CodesIssued     *stats.Int64Measure
-	CodeIssueErrors *stats.Int64Measure
-	SMSSent         *stats.Int64Measure
-	SMSSendErrors   *stats.Int64Measure
+	IssueAttempts       *stats.Int64Measure
+	QuotaErrors         *stats.Int64Measure
+	QuotaExceeded       *stats.Int64Measure
+	CodesIssued         *stats.Int64Measure
+	CodeIssueErrors     *stats.Int64Measure
+	SMSSent             *stats.Int64Measure
+	SMSSendErrors       *stats.Int64Measure
+	RealmTokenIssued    *stats.Int64Measure
+	RealmTokenRemaining *stats.Int64Measure
+	RealmTokenCapacity  *stats.Float64Measure
 }
 
 func registerMetrics() (*Metrics, error) {
@@ -116,13 +119,49 @@ func registerMetrics() (*Metrics, error) {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
 	}
 
+	mRealmTokenRemaining := stats.Int64(MetricPrefix+"/realm_token_remaining", "Remaining number of verification codes", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/realm_token_remaining_latest",
+		Description: "Latest realm remaining tokens",
+		TagKeys:     []tag.Key{observability.RealmTagKey},
+		Measure:     mRealmTokenRemaining,
+		Aggregation: view.LastValue(),
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
+	mRealmTokenIssued := stats.Int64(MetricPrefix+"/realm_token_issued", "Total issued verification codes", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/realm_token_issued_latest",
+		Description: "Latest realm issued tokens",
+		TagKeys:     []tag.Key{observability.RealmTagKey},
+		Measure:     mRealmTokenIssued,
+		Aggregation: view.LastValue(),
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
+	mRealmTokenCapacity := stats.Float64(MetricPrefix+"/realm_token_capacity", "Capacity utilization for issuing verification codes", stats.UnitDimensionless)
+	if err := view.Register(&view.View{
+		Name:        MetricPrefix + "/realm_token_capacity_latest",
+		Description: "Latest realm token capacity utilization",
+		TagKeys:     []tag.Key{observability.RealmTagKey},
+		Measure:     mRealmTokenCapacity,
+		Aggregation: view.LastValue(),
+	}); err != nil {
+		return nil, fmt.Errorf("stat view registration failure: %w", err)
+	}
+
 	return &Metrics{
-		IssueAttempts:   mIssueAttempts,
-		QuotaErrors:     mQuotaErrors,
-		QuotaExceeded:   mQuotaExceeded,
-		CodesIssued:     mCodesIssued,
-		CodeIssueErrors: mCodesIssued,
-		SMSSent:         mSMSSent,
-		SMSSendErrors:   mSMSSendErrors,
+		IssueAttempts:       mIssueAttempts,
+		QuotaErrors:         mQuotaErrors,
+		QuotaExceeded:       mQuotaExceeded,
+		CodesIssued:         mCodesIssued,
+		CodeIssueErrors:     mCodesIssued,
+		SMSSent:             mSMSSent,
+		SMSSendErrors:       mSMSSendErrors,
+		RealmTokenIssued:    mRealmTokenIssued,
+		RealmTokenRemaining: mRealmTokenRemaining,
+		RealmTokenCapacity:  mRealmTokenCapacity,
 	}, nil
 }
