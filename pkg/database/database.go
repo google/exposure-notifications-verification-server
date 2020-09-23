@@ -293,11 +293,11 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		realField, ciphertext, hasRealField := getFieldString(scope, column)
 		if !hasRealField {
-			scope.Log(fmt.Sprintf("skipping decryption, %s is not a string", realField.Name))
+			scope.Log(fmt.Sprintf("skipping decryption, %s is not a string", column))
 			return
 		}
 		if ciphertext == "" {
-			scope.Log(fmt.Sprintf("skipping decryption, %s is blank", realField.Name))
+			scope.Log(fmt.Sprintf("skipping decryption, %s is blank", column))
 			return
 		}
 
@@ -315,7 +315,7 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		ciphertextBytes, err := base64util.DecodeString(ciphertext)
 		if err != nil {
-			_ = scope.Err(fmt.Errorf("cannot decrypt %s, invalid ciphertext", realField.Name))
+			_ = scope.Err(fmt.Errorf("cannot decrypt %s, invalid ciphertext", column))
 			return
 		}
 
@@ -328,7 +328,7 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		if hasRealField {
 			if err := realField.Set(plaintext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", realField.Name, err))
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", column, err))
 				return
 			}
 		}
@@ -365,11 +365,11 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		realField, plaintext, hasRealField := getFieldString(scope, column)
 		if !hasRealField {
-			scope.Log(fmt.Sprintf("skipping encryption, %s is not a string", realField.Name))
+			scope.Log(fmt.Sprintf("skipping encryption, %s is not a string", column))
 			return
 		}
 		if plaintext == "" {
-			scope.Log(fmt.Sprintf("skipping encryption, %s is blank", realField.Name))
+			scope.Log(fmt.Sprintf("skipping encryption, %s is blank", column))
 			return
 		}
 
@@ -394,7 +394,7 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		if hasRealField {
 			if err := realField.Set(ciphertext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", realField.Name, err))
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", column, err))
 				return
 			}
 		}
