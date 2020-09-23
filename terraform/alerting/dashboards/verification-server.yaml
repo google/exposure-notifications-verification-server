@@ -41,7 +41,7 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.job]
-    - title: /api/issue/realm_capacity_latest by label.realm [MIN]
+    - title: /api/issue/realm_capacity_latest by label.realm [MAX]
       xyChart:
         chartOptions:
           mode: COLOR
@@ -51,6 +51,6 @@ gridLayout:
               timeSeriesQueryLanguage: >
                 generic_task ::
                 custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_capacity_latest
-                | align min()
+                | align max()
                 | every 1m
                 | [metric.realm]

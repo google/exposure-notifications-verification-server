@@ -177,8 +177,8 @@ resource "google_monitoring_alert_policy" "realm_capacity" {
     display_name = "/realm_capacity_latest"
     condition_threshold {
       duration        = "300s"
-      threshold_value = 0.1
-      comparison      = "COMPARISON_LT"
+      threshold_value = 0.9
+      comparison      = "COMPARISON_GT"
       filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_capacity_latest\" resource.type=\"generic_task\""
 
       aggregations {
@@ -186,7 +186,7 @@ resource "google_monitoring_alert_policy" "realm_capacity" {
         group_by_fields = [
           "resource.label.realm",
         ]
-        per_series_aligner = "ALIGN_MIN"
+        per_series_aligner = "ALIGN_MAX"
       }
 
       trigger {
@@ -200,7 +200,7 @@ resource "google_monitoring_alert_policy" "realm_capacity" {
 ## $${policy.display_name}
 
 [$${resource.label.realm}](https://$${resource.label.realm}) realm
-daily verification code issuing capacity below the threshold of 10%.
+daily verification code issuing capacity utilized above 90%.
 
 View the metric here
 
