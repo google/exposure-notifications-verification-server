@@ -219,7 +219,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	{
-		loginController := login.New(ctx, auth, config, db, h)
+		loginController := login.New(ctx, fbInternal, auth, config, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
