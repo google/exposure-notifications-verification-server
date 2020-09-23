@@ -16,6 +16,7 @@
 package login
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -26,19 +27,24 @@ import (
 func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		m["requirements"] = &c.config.PasswordRequirements
-		c.h.RenderHTML(w, "login/select-password", m)
+		c.renderShowSelectPassword(ctx, w, nil)
 	})
+}
+
+func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.ResponseWriter, err error) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["firebase"] = c.config.Firebase
+	m["requirements"] = &c.config.PasswordRequirements
+	c.h.RenderHTML(w, "login/select-password", m)
 }
 
 func (c *Controller) HandleSubmitNewPassword() http.Handler {
 	logger := c.logger.Named("login.HandleSubmitNewPassword")
 
 	type FormData struct {
-		Email string `form:"email"`
+		Email    string `form:"email"`
+		Password string `form:"password"`
+		Code     string `form:"code"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +54,17 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		if err := controller.BindForm(w, r, &form); err != nil {
 			logger.Errorw("failed to bind form", "error", err)
 			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// DO NOT SUBMIT
+		// double-check password complexity
+
+		if err := c.fbInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
+			logger.Errorw("VerifyPasswordResetCode failed", "error", err)
+			// DO NOT SUBMIT
+			// some of these errors are user, some are not
+			c.renderShowSelectPassword(ctx, w, err)
 			return
 		}
 

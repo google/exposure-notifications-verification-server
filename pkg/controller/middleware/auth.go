@@ -83,6 +83,14 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 				controller.Unauthorized(w, r, h)
 				return
 			}
+			fbUser, err := fbClient.GetUserByEmail(ctx, email)
+			if err != nil {
+				logger.Debugw("firebase user does not exist")
+				controller.ClearSessionFirebaseCookie(session)
+				controller.Unauthorized(w, r, h)
+				return
+			}
+			ctx = controller.WithFBUser(ctx, fbUser)
 
 			// Load the user by using the cache to alleviate pressure on the database
 			// layer.

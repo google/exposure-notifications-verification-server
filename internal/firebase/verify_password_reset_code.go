@@ -29,8 +29,8 @@ type verifyPasswordResetCodeRequest struct {
 	NewPassword string `json:"newPassword,omitempty"`
 }
 
-// VerifyPasswordResetCode sends a password reset email to the user. If the new
-// password is given, it applies the password reset change with the new password
+// VerifyPasswordResetCode validates the code from a password reset email.
+// If the new password is given, it applies the password reset change with the new password
 // using the code.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
