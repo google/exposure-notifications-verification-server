@@ -195,7 +195,7 @@ func checkRealmPasswordAge(user *database.User, realm *database.Realm) error {
 	}
 
 	now := time.Now().UTC()
-	nextPasswordChange := user.LastPasswordChange.Add(
+	nextPasswordChange := user.PasswordChanged().Add(
 		time.Hour * 24 * time.Duration(realm.PasswordRotationPeriodDays))
 
 	if now.After(nextPasswordChange) {
