@@ -181,9 +181,15 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 	// This should really never happen - it means there's been a very sharp
 	// decline in the number of codes issued. In that case, we want to revert
 	// back to the default minimum.
-	if next < 10 {
-		logger.Warnw("next is less than 10, using 10", "next", next)
-		next = 10
+	if next < c.config.MinValue {
+		logger.Warnw("next is less than min, using min", "next", next, "min", c.config.MinValue)
+		next = c.config.MinValue
+	}
+
+	// Ensure we don't exceed the number at which the math gods get angry.
+	if next > c.config.MaxValue {
+		logger.Warnw("next is greater than allowed max, using max", "next", next, "max", c.config.MaxValue)
+		next = c.config.MaxValue
 	}
 
 	logger.Debugw("next value", "next", next)
