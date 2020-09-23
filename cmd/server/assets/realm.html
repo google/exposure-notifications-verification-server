@@ -154,7 +154,7 @@
           <div class="form-group row">
             <label for="emailVerifiedMode" class="col-sm-3">Email verified:</label>
             <div class="col-sm-9">
-              <select name="emailVerifiedMode" id="emailVerifiedMode" class="form-control">
+              <select name="emailVerifiedMode" id="emailVerifiedMode" class="form-control custom-select">
                 <option value="1" {{if eq $realm.EmailVerifiedMode.String "required"}}selected{{end}}>Required</option>
                 <option value="0" {{if eq $realm.EmailVerifiedMode.String "prompt"}}selected{{end}}>Prompt after login</option>
                 <option value="2" {{if eq $realm.EmailVerifiedMode.String "optional"}}selected{{end}}>Optional</option>
@@ -165,7 +165,7 @@
           <div class="form-group row">
             <label for="MFAMode" class="col-sm-3">Multi factor auth:</label>
             <div class="col-sm-9">
-              <select name="MFAMode" id="MFAMode" class="form-control">
+              <select name="MFAMode" id="MFAMode" class="form-control custom-select">
                 <option value="1" {{if eq $realm.MFAMode.String "required"}}selected{{end}}>Required</option>
                 <option value="0" {{if eq $realm.MFAMode.String "prompt"}}selected{{end}}>Prompt after login</option>
                 <option value="2" {{if eq $realm.MFAMode.String "optional"}}selected{{end}}>Optional</option>
