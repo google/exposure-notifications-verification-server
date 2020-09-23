@@ -61,7 +61,7 @@
 
     <div class="form-label-group">
       <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioFromNumber"}} is-invalid{{end}}" autocomplete="new-password"
-        placeholder="Twilio numberx" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
+        placeholder="Twilio number" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
       <label for="twilio-from-number">Twilio number</label>
       {{template "errorable" $smsConfig.ErrorsFor "twilioFromNumber"}}
       <small class="form-text text-muted">

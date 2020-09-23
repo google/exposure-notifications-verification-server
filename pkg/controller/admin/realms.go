@@ -16,11 +16,11 @@ package admin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/gorilla/mux"
 )
 
 func (c *Controller) HandleRealmsIndex() http.Handler {
@@ -46,6 +46,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		UseRealmCertificateKey bool   `form:"useRealmCertificateKey"`
 		CertificateIssuer      string `form:"certificateIssuer"`
 		CertificateAudience    string `form:"certificateAudiance"`
+		CanUseSystemSMSConfig  bool   `form:"can_use_system_sms_config"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -56,6 +57,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
 
 		user := controller.UserFromContext(ctx)
 		if user == nil {
@@ -63,13 +65,17 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 			return
 		}
 
-		flash := controller.Flash(session)
+		smsConfig, err := c.db.SystemSMSConfig()
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
 			var realm database.Realm
 			realm.UseRealmCertificateKey = true
-			c.renderNewRealm(ctx, w, &realm)
+			c.renderNewRealm(ctx, w, &realm, smsConfig)
 			return
 		}
 
@@ -78,7 +84,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 			var realm database.Realm
 			realm.UseRealmCertificateKey = true
 			flash.Error("Failed to process form: %v", err)
-			c.renderNewRealm(ctx, w, &realm)
+			c.renderNewRealm(ctx, w, &realm, smsConfig)
 			return
 		}
 
@@ -87,9 +93,10 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		realm.UseRealmCertificateKey = form.UseRealmCertificateKey
 		realm.CertificateIssuer = form.CertificateIssuer
 		realm.CertificateAudience = form.CertificateAudience
+		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to create realm: %v", err)
-			c.renderNewRealm(ctx, w, realm)
+			c.renderNewRealm(ctx, w, realm, smsConfig)
 			return
 		}
 		flash.Alert("Created realm: %q.", realm.Name)
@@ -98,7 +105,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		user.AdminRealms = append(user.AdminRealms, realm)
 		if err := c.db.SaveUser(user); err != nil {
 			flash.Error("Failed to add you as an admin to the realm: %v", err)
-			c.renderNewRealm(ctx, w, realm)
+			c.renderNewRealm(ctx, w, realm, smsConfig)
 			return
 		}
 		flash.Alert("Added you as a user and admin to the realm.")
@@ -118,10 +125,77 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 	})
 }
 
-func (c *Controller) renderNewRealm(ctx context.Context, w http.ResponseWriter, realm *database.Realm) {
+func (c *Controller) renderNewRealm(ctx context.Context, w http.ResponseWriter, realm *database.Realm, smsConfig *database.SMSConfig) {
 	m := controller.TemplateMapFromContext(ctx)
-	fmt.Printf("errors %+v", realm.Errors())
 	m["realm"] = realm
+	m["systemSMSConfig"] = smsConfig
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	c.h.RenderHTML(w, "admin/realms/new", m)
+}
+
+func (c *Controller) HandleRealmsUpdate() http.Handler {
+	type FormData struct {
+		CanUseSystemSMSConfig bool `form:"can_use_system_sms_config"`
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		user := controller.UserFromContext(ctx)
+		if user == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		realm, err := c.db.FindRealm(vars["id"])
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		smsConfig, err := c.db.SystemSMSConfig()
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// Requested form, stop processing.
+		if r.Method == http.MethodGet {
+			c.renderEditRealm(ctx, w, realm, smsConfig)
+			return
+		}
+
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			flash.Error("Failed to process form: %v", err)
+			c.renderEditRealm(ctx, w, realm, smsConfig)
+			return
+		}
+
+		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
+		if err := c.db.SaveRealm(realm); err != nil {
+			flash.Error("Failed to create realm: %v", err)
+			c.renderEditRealm(ctx, w, realm, smsConfig)
+			return
+		}
+
+		flash.Alert("Successfully updated realm %q", realm.Name)
+		http.Redirect(w, r, "/admin/realms", http.StatusSeeOther)
+	})
+}
+
+func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter, realm *database.Realm, smsConfig *database.SMSConfig) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["realm"] = realm
+	m["systemSMSConfig"] = smsConfig
+	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
+	c.h.RenderHTML(w, "admin/realms/edit", m)
 }

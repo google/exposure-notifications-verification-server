@@ -37,7 +37,9 @@
               <tbody>
               {{range $realms}}
                 <tr>
-                  <td>{{.Name}}</td>
+                  <td>
+                    <a href="/admin/realms/{{.ID}}/edit">{{.Name}}</a>
+                  </td>
                   <td>{{.RegionCode}}</td>
                   <td>
                     {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
