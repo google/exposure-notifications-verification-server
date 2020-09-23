@@ -304,9 +304,12 @@ func (c *Controller) recordCapacity(ctx context.Context, realm *database.Realm, 
 	if !realm.AbusePreventionEnabled {
 		return
 	}
+	stats.Record(ctx, c.metrics.RealmTokenRemaining.M(int64(remaining)))
 
 	limit := realm.AbusePreventionEffectiveLimit()
 	issued := uint64(limit) - remaining
+	stats.Record(ctx, c.metrics.RealmTokenIssued.M(int64(issued)))
+
 	capacity := float64(issued) / float64(limit)
-	stats.Record(ctx, c.metrics.RealmCapacity.M(capacity))
+	stats.Record(ctx, c.metrics.RealmTokenCapacity.M(capacity))
 }

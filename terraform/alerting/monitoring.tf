@@ -169,9 +169,9 @@ EOT
   ]
 }
 
-resource "google_monitoring_alert_policy" "realm_capacity" {
+resource "google_monitoring_alert_policy" "realm_token_capacity" {
   project      = var.project
-  display_name = "RealmCapacityUtilizationAboveThreshold"
+  display_name = "RealmTokenCapacityUtilizationAboveThreshold"
   combiner     = "OR"
   conditions {
     display_name = "/realm_capacity_latest"
@@ -179,7 +179,7 @@ resource "google_monitoring_alert_policy" "realm_capacity" {
       duration        = "300s"
       threshold_value = 0.9
       comparison      = "COMPARISON_GT"
-      filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_capacity_latest\" resource.type=\"generic_task\""
+      filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest\" resource.type=\"generic_task\""
 
       aggregations {
         alignment_period     = "60s"
