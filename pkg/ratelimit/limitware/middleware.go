@@ -199,7 +199,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 // header. Since APIKeys are assumed to be "public" at some point, they are rate
 // limited by [realm,ip], and API keys have a 1-1 mapping to a realm.
 func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
+	logger := logging.FromContext(ctx).Named("ratelimit.APIKeyFunc")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
@@ -224,7 +224,7 @@ func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKe
 // UserIDKeyFunc pulls the user out of the request context and uses that to
 // ratelimit. It falls back to rate limiting by the client ip.
 func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
+	logger := logging.FromContext(ctx).Named("ratelimit.UserIDKeyFunc")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
@@ -247,7 +247,7 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 
 // IPAddressKeyFunc uses the client IP to rate limit.
 func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
+	logger := logging.FromContext(ctx).Named("ratelimit.IPAddressKeyFunc")
 
 	return func(r *http.Request) (string, error) {
 		// Get the remote addr

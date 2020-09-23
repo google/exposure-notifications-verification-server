@@ -63,8 +63,8 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 			// Load the authorized app by using the cache to alleviate pressure on the
 			// database layer.
 			var authApp database.AuthorizedApp
-			cacheKey := fmt.Sprintf("authorized_apps:by_api_key:%s", apiKey)
-			if err := cacher.Fetch(ctx, cacheKey, &authApp, cacheTTL, func() (interface{}, error) {
+			authAppCacheKey := fmt.Sprintf("authorized_apps:by_api_key:%s", apiKey)
+			if err := cacher.Fetch(ctx, authAppCacheKey, &authApp, cacheTTL, func() (interface{}, error) {
 				return db.FindAuthorizedAppByAPIKey(apiKey)
 			}); err != nil {
 				if database.IsNotFound(err) {
@@ -85,8 +85,26 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 				return
 			}
 
+			// Lookup the realm.
+			var realm database.Realm
+			realmCacheKey := fmt.Sprintf("realms:by_id:%d", authApp.RealmID)
+			if err := cacher.Fetch(ctx, realmCacheKey, &realm, cacheTTL, func() (interface{}, error) {
+				return authApp.Realm(db)
+			}); err != nil {
+				if database.IsNotFound(err) {
+					logger.Warnw("realm does not exist", "id", authApp.RealmID)
+					controller.Unauthorized(w, r, h)
+					return
+				}
+
+				logger.Errorw("failed to lookup realm from authorized app", "error", err)
+				controller.InternalError(w, r, h, err)
+				return
+			}
+
 			// Save the authorized app on the context.
 			ctx = controller.WithAuthorizedApp(ctx, &authApp)
+			ctx = controller.WithRealm(ctx, &realm)
 			*r = *r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)

@@ -17,6 +17,7 @@
       <option value="0" {{if eq $realm.EmailVerifiedMode.String "prompt"}}selected{{end}}>Prompt after login</option>
       <option value="2" {{if eq $realm.EmailVerifiedMode.String "optional"}}selected{{end}}>Optional</option>
     </select>
+    {{template "errorable" $realm.ErrorsFor "emailVerifiedMode"}}
     <small class="form-text text-muted">
       Email verification requires users to verify their email address before
       using the system.
@@ -30,6 +31,7 @@
       <option value="0" {{if eq $realm.MFAMode.String "prompt"}}selected{{end}}>Prompt after login</option>
       <option value="2" {{if eq $realm.MFAMode.String "optional"}}selected{{end}}>Optional</option>
     </select>
+    {{template "errorable" $realm.ErrorsFor "mfaMode"}}
     <small class="form-text text-muted">
       Multi-factor authentication requires users to supply a second factor (e.g.
       a code via an SMS text message) when authenticating to the system.
@@ -44,6 +46,7 @@
       <option value="{{$prd}}" {{if (eq $prd $current)}}selected{{end}}>{{if (eq $prd 0)}}Off{{else}}Every {{$prd}} days{{end}}</option>
       {{end}}
     </select>
+    {{template "errorable" $realm.ErrorsFor "passwordRotationPeriodDays"}}
     <small class="form-text text-muted">
       If enabled, users will be required to change their password after this
       number of days elapse since their last password change.
@@ -58,9 +61,57 @@
       <option value="{{$pwd }}" {{if (eq $pwd $current)}}selected{{end}}>{{if (eq $pwd 0)}}Off{{else}}{{$pwd}} days before{{end}}</option>
       {{end}}
     </select>
+    {{template "errorable" $realm.ErrorsFor "passwordRotationWarningDays"}}
     <small class="form-text text-muted">
       If enabled, users will be warned to change their password within this
       number of days before expiration.
+    </small>
+  </div>
+
+  <div class="form-label-group">
+    <textarea name="allowed_cidrs_adminapi" id="allowed-cidrs-adminapi" class="form-control text-monospace{{if $realm.ErrorsFor "allowedCIDRsAdminAPI"}} is-invalid{{end}}"
+      rows="5" placeholder="Allowed CIDRs (Admin API)">{{joinStrings $realm.AllowedCIDRsAdminAPI "\n"}}</textarea>
+    <label for="allowed-cidrs-adminapi">Allowed CIDRs (Admin API)</label>
+    {{template "errorable" $realm.ErrorsFor "allowedCIDRsAdminAPI"}}
+    <small class="form-text text-muted">
+      An optional list of CIDR blocks from which to allow traffic to the
+      <strong>Admin API</strong> which can be used to generate codes. If blank,
+      all traffic is allowed from all IPs. These should be of <a
+      href="https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing"
+      target="_BLANK">CIDR notation</a>
+      of the format (e.g. <code>192.1.2.0/24</code>).
+    </small>
+  </div>
+
+  <div class="form-label-group">
+    <textarea name="allowed_cidrs_apiserver" id="allowed-cidrs-apiserver" class="form-control text-monospace{{if $realm.ErrorsFor "allowedCIDRsAPIServer"}} is-invalid{{end}}"
+      rows="5" placeholder="Allowed CIDRs (Device API)">{{joinStrings $realm.AllowedCIDRsAPIServer "\n"}}</textarea>
+    <label for="allowed-cidrs-apiserver">Allowed CIDRs (Device API)</label>
+    {{template "errorable" $realm.ErrorsFor "allowedCIDRsAPIServer"}}
+    <small class="form-text text-muted">
+      An optional list of CIDR blocks from which to allow traffic to the
+      <strong>Device API</strong> which is where devices exchange their code for
+      a certificate. It is highly recommended that you <strong>leave this
+      service publicly accessible</strong>. If blank, all traffic is allowed
+      from all IPs. These should be of <a
+      href="https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing"
+      target="_BLANK">CIDR notation</a>
+      of the format (e.g. <code>192.1.2.0/24</code>).
+    </small>
+  </div>
+
+  <div class="form-label-group">
+    <textarea name="allowed_cidrs_server" id="allowed-cidrs-server" class="form-control text-monospace{{if $realm.ErrorsFor "allowedCIDRsServer"}} is-invalid{{end}}"
+      rows="5" placeholder="Allowed CIDRs (UI server)">{{joinStrings $realm.AllowedCIDRsServer "\n"}}</textarea>
+    <label for="allowed-cidrs-server">Allowed CIDRs (UI server)</label>
+    {{template "errorable" $realm.ErrorsFor "allowedCIDRsServer"}}
+    <small class="form-text text-muted">
+      An optional list of CIDR blocks from which to allow traffic to the
+      <strong>UI server</strong> (this server). If blank, all traffic is allowed
+      from all IPs. These should be of <a
+      href="https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing"
+      target="_BLANK">CIDR notation</a>
+      of the format (e.g. <code>192.1.2.0/24</code>).
     </small>
   </div>
 

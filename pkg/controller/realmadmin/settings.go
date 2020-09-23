@@ -66,11 +66,14 @@ func (c *Controller) HandleSettings() http.Handler {
 		TwilioAuthToken    string `form:"twilio_auth_token"`
 		TwilioFromNumber   string `form:"twilio_from_number"`
 
-		Security                    bool  `form:"security"`
-		MFAMode                     int16 `form:"mfa_mode"`
-		EmailVerifiedMode           int16 `form:"email_verified_mode"`
-		PasswordRotationPeriodDays  uint  `form:"password_rotation_period_days"`
-		PasswordRotationWarningDays uint  `form:"password_rotation_warning_days"`
+		Security                    bool   `form:"security"`
+		MFAMode                     int16  `form:"mfa_mode"`
+		EmailVerifiedMode           int16  `form:"email_verified_mode"`
+		PasswordRotationPeriodDays  uint   `form:"password_rotation_period_days"`
+		PasswordRotationWarningDays uint   `form:"password_rotation_warning_days"`
+		AllowedCIDRsAdminAPI        string `form:"allowed_cidrs_adminapi"`
+		AllowedCIDRsAPIServer       string `form:"allowed_cidrs_apiserver"`
+		AllowedCIDRsServer          string `form:"allowed_cidrs_server"`
 
 		AbusePrevention            bool    `form:"abuse_prevention"`
 		AbusePreventionEnabled     bool    `form:"abuse_prevention_enabled"`
@@ -135,6 +138,10 @@ func (c *Controller) HandleSettings() http.Handler {
 			realm.MFAMode = database.AuthRequirement(form.MFAMode)
 			realm.PasswordRotationPeriodDays = form.PasswordRotationPeriodDays
 			realm.PasswordRotationWarningDays = form.PasswordRotationWarningDays
+
+			realm.AllowedCIDRsAdminAPI = database.ToCIDRList(form.AllowedCIDRsAdminAPI)
+			realm.AllowedCIDRsAPIServer = database.ToCIDRList(form.AllowedCIDRsAPIServer)
+			realm.AllowedCIDRsServer = database.ToCIDRList(form.AllowedCIDRsServer)
 		}
 
 		// Abuse prevention
