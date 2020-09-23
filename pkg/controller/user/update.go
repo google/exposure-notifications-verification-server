@@ -94,13 +94,19 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		if err := c.db.SaveUser(user); err != nil {
 			flash.Error("Failed to update user: %v", err)
-			c.renderNew(ctx, w, user)
+			c.renderUpdate(ctx, w, user)
 			return
 		}
 
 		flash.Alert("Successfully updated user '%v'", form.Name)
 		http.Redirect(w, r, "/users", http.StatusSeeOther)
 	})
+}
+
+func (c *Controller) renderUpdate(ctx context.Context, w http.ResponseWriter, user *database.User) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["user"] = user
+	c.h.RenderHTML(w, "users/new", m)
 }
 
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user *database.User) {

@@ -67,6 +67,10 @@ func (c *Controller) HandleImportBatch() http.Handler {
 				continue
 			} else if created {
 				newUsers = append(newUsers, &batchUser)
+				if err := c.fbInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
+					batchErr = multierror.Append(batchErr, err)
+					continue
+				}
 			}
 
 			if err := c.db.SaveUser(user); err != nil {
