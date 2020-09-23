@@ -1235,7 +1235,12 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 
 					// Require realm_id be set on all rows except system configs, and
 					// ensure that realm_id is unique.
+					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS nn_sms_configs_realm_id`,
+					`DROP INDEX IF EXISTS nn_sms_configs_realm_id`,
 					`ALTER TABLE sms_configs ADD CONSTRAINT nn_sms_configs_realm_id CHECK (is_system IS TRUE OR realm_id IS NOT NULL)`,
+
+					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS uix_sms_configs_realm_id`,
+					`DROP INDEX IF EXISTS uix_sms_configs_realm_id`,
 					`ALTER TABLE sms_configs ADD CONSTRAINT uix_sms_configs_realm_id UNIQUE (realm_id)`,
 
 					// Realm option set by system admins to share the system SMS config
