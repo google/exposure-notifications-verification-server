@@ -123,3 +123,48 @@ EOT
     null_resource.manual-step-to-enable-workspace
   ]
 }
+
+resource "google_monitoring_alert_policy" "backend_latency" {
+  project      = var.project
+  display_name = "Elevated Latency Greater than 2s"
+  combiner     = "OR"
+  conditions {
+    display_name = "/backend_latencies"
+    condition_threshold {
+      duration        = "300s"
+      threshold_value = "2000"
+      comparison      = "COMPARISON_GT"
+      filter          = "metric.type=\"loadbalancing.googleapis.com/https/backend_latencies\" resource.type=\"https_lb_rule\" "
+
+      aggregations {
+        alignment_period     = "60s"
+        cross_series_reducer = "REDUCE_PERCENTILE_95"
+        group_by_fields = [
+          "resource.label.backend_target_name",
+        ]
+        per_series_aligner = "ALIGN_RATE"
+      }
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+
+[$${resource.label.host}](https://$${resource.label.host}) Latency is spiking in the server
+
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
+  ]
+}
