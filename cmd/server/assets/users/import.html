@@ -179,14 +179,7 @@
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/json',
         success: function(result) {
-          for (user of result.newUsers) {
-            firebase.auth().sendPasswordResetEmail(user.email)
-              .then(function() {
-                totalUsersCreated++;
-              }).catch(function(error) {
-                flash.error(error.message);
-              });
-          }
+          totalUsersCreated += result.newUsers.length;
           if (result.error) {
             flash.error(result.error, "danger");
           }
