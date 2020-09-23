@@ -47,21 +47,14 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			var user database.User
-			c.renderNew(ctx, w, &user)
+			c.renderNew(ctx, w)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			user := &database.User{
-				Email: form.Email,
-				Name:  form.Name,
-				Admin: form.Admin,
-			}
-
 			flash.Error("Failed to process form: %v", err)
-			c.renderNew(ctx, w, user)
+			c.renderNew(ctx, w)
 			return
 		}
 
@@ -80,11 +73,16 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		// Create firebase user first, if this fails we don't want a db.User entry
-		created, err := user.CreateFirebaseUser(ctx, c.client)
-		if err != nil {
+		if created, err := user.CreateFirebaseUser(ctx, c.client); err != nil {
 			flash.Alert("Failed to create user: %v", err)
-			c.renderNew(ctx, w, user)
+			c.renderNew(ctx, w)
 			return
+		} else if created {
+			if err := c.fbInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
+				flash.Error("Failed sending new user invitation: %v", err)
+				c.renderNew(ctx, w)
+				return
+			}
 		}
 
 		// Build the user struct - keeping email and name if user already exists in another realm.
@@ -95,13 +93,7 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		if err := c.db.SaveUser(user); err != nil {
 			flash.Error("Failed to create user: %v", err)
-			c.renderNew(ctx, w, user)
-			return
-		}
-
-		if err := c.fbInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
-			flash.Error("Failed sending new user invitation: %v", err)
-			c.renderNew(ctx, w, user)
+			c.renderNew(ctx, w)
 			return
 		}
 
@@ -117,8 +109,6 @@ func (c *Controller) HandleCreate() http.Handler {
 	})
 }
 
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User) {
-	m := controller.TemplateMapFromContext(ctx)
-	m["user"] = user
-	c.h.RenderHTML(w, "users/new", m)
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter) {
+	c.renderUpdate(ctx, w, &database.User{})
 }
