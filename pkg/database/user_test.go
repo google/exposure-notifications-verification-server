@@ -91,7 +91,7 @@ func TestUserLifecycle(t *testing.T) {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 
-		if got, want := got.LastPasswordChange, now; got != want {
+		if got, want := got.PasswordChanged(), now; got != want {
 			t.Errorf("expected %#v to be %#v", got.String(), want.String())
 		}
 	}
