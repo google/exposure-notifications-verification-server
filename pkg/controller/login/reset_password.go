@@ -38,8 +38,6 @@ func (c *Controller) renderResetPassword(ctx context.Context, w http.ResponseWri
 }
 
 func (c *Controller) HandleSubmitResetPassword() http.Handler {
-	logger := c.logger.Named("login.HandleSubmitResetPassword")
-
 	type FormData struct {
 		Email string `form:"email"`
 	}

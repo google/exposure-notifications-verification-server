@@ -24,7 +24,7 @@ var (
 	ErrInvalidToken     = errors.New("INVALID_ID_TOKEN")
 )
 
-var _ error = (nil)(*ErrorDetails)
+var _ error = (*ErrorDetails)(nil)
 
 // ErrorDetails is the structure firebase gives back.
 type ErrorDetails struct {
