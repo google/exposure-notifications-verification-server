@@ -3,7 +3,7 @@ resource "google_monitoring_uptime_check_config" "https" {
 
   display_name = each.key
   timeout      = "3s"
-  project      = var.project
+  project      = var.monitoring-host-project
   period       = "60s"
 
   http_check {
@@ -16,7 +16,7 @@ resource "google_monitoring_uptime_check_config" "https" {
   monitored_resource {
     type = "uptime_url"
     labels = {
-      project_id = var.project
+      project_id = var.monitoring-host-project
       host       = each.key
     }
   }
@@ -26,7 +26,7 @@ resource "google_monitoring_uptime_check_config" "https" {
 }
 
 resource "google_monitoring_alert_policy" "probers" {
-  project      = var.project
+  project      = var.monitoring-host-project
   display_name = "Host Down"
   combiner     = "OR"
   conditions {

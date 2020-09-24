@@ -1,5 +1,6 @@
-variable "project" {
-  type = string
+variable "monitoring-host-project" {
+  type        = string
+  description = "The host project for multi-project workspace. See also: http://cloud/monitoring/workspaces/create#first-multi-project-workspace"
 }
 
 variable "notification-email" {
