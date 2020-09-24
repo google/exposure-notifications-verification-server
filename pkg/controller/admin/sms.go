@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
 // HandleSMSUpdate creates or updates the SMS config.
@@ -64,6 +65,7 @@ func (c *Controller) HandleSMSUpdate() http.Handler {
 		}
 
 		// Update
+		smsConfig.ProviderType = sms.ProviderTypeTwilio
 		smsConfig.TwilioAccountSid = form.TwilioAccountSid
 		smsConfig.TwilioAuthToken = form.TwilioAuthToken
 		smsConfig.TwilioFromNumber = form.TwilioFromNumber

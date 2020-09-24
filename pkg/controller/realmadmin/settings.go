@@ -193,6 +193,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if smsConfig != nil && !smsConfig.IsSystem {
 				// We have an existing record and the existing record is NOT the system
 				// record.
+				smsConfig.ProviderType = sms.ProviderTypeTwilio
 				smsConfig.TwilioAccountSid = form.TwilioAccountSid
 				smsConfig.TwilioAuthToken = form.TwilioAuthToken
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
