@@ -226,7 +226,7 @@ func realMain(ctx context.Context) error {
 
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
 			sub.Handle("/login/reset-password", loginController.HandleShowResetPassword()).Methods("GET")
-			sub.Handle("/login/reset-password", loginController.HandleSubmitResetPassword()).Methods("GET")
+			sub.Handle("/login/reset-password", loginController.HandleSubmitResetPassword()).Methods("POST")
 			sub.Handle("/login/select-password", loginController.HandleShowSelectNewPassword()).Methods("GET")
 			sub.Handle("/login/select-password", loginController.HandleSubmitNewPassword()).Methods("POST")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")

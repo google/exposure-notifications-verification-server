@@ -12,27 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package firebase is common logic and handling around firebase.
 package firebase
 
-const (
-	EmailNotFound    = "EMAIL_NOT_FOUND"
-	InvalidOOBCode   = "INVALID_OOB_CODE"
-	CredentialTooOld = "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"
-	TokenExpired     = "TOKEN_EXPIRED"
-	InvalidToken     = "INVALID_ID_TOKEN"
+import "errors"
+
+var (
+	EmailNotFound    = &ErrorDetails{Err: "EMAIL_NOT_FOUND"}
+	InvalidOOBCode   = &ErrorDetails{Err: "INVALID_OOB_CODE"}
+	CredentialTooOld = &ErrorDetails{Err: "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"}
+	TokenExpired     = &ErrorDetails{Err: "TOKEN_EXPIRED"}
+	InvalidToken     = &ErrorDetails{Err: "INVALID_ID_TOKEN"}
 )
 
 // ErrorDetails is the structure firebase gives back.
 type ErrorDetails struct {
 	ErrorCode int    `json:"code"`
-	Error     string `json:"message"`
+	Err       string `json:"message"`
+	Message   string
 }
 
-func (err *ErrorDetails) ShouldReauthenticate() bool {
-	switch err.Error {
-	case CredentialTooOld, TokenExpired, InvalidToken:
-		return true
+func (err *ErrorDetails) Error() string {
+	return err.Message
+}
+
+func (err *ErrorDetails) Is(target error) bool {
+	if t, ok := target.(*ErrorDetails); ok {
+		return err.ErrorCode == t.ErrorCode
 	}
-	return false
+	return err.Message == target.Error()
+}
+
+// ShouldReauthenticate returns true for errors that require a refreshed auth token.
+func (err *ErrorDetails) ShouldReauthenticate() bool {
+	return errors.Is(err, CredentialTooOld) ||
+		errors.Is(err, TokenExpired) ||
+		errors.Is(err, InvalidToken)
 }
