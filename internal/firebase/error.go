@@ -17,11 +17,11 @@ package firebase
 import "errors"
 
 var (
-	EmailNotFound    = errors.New("EMAIL_NOT_FOUND")
-	InvalidOOBCode   = errors.New("INVALID_OOB_CODE")
-	CredentialTooOld = errors.New("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")
-	TokenExpired     = errors.New("TOKEN_EXPIRED")
-	InvalidToken     = errors.New("INVALID_ID_TOKEN")
+	ErrEmailNotFound    = errors.New("EMAIL_NOT_FOUND")
+	ErrInvalidOOBCode   = errors.New("INVALID_OOB_CODE")
+	ErrCredentialTooOld = errors.New("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")
+	ErrTokenExpired     = errors.New("TOKEN_EXPIRED")
+	ErrInvalidToken     = errors.New("INVALID_ID_TOKEN")
 )
 
 // ErrorDetails is the structure firebase gives back.
@@ -36,7 +36,7 @@ func (err ErrorDetails) Error() string {
 
 // ShouldReauthenticate returns true for errors that require a refreshed auth token.
 func (err ErrorDetails) ShouldReauthenticate() bool {
-	return errors.Is(err, CredentialTooOld) ||
-		errors.Is(err, TokenExpired) ||
-		errors.Is(err, InvalidToken)
+	return errors.Is(err, ErrCredentialTooOld) ||
+		errors.Is(err, ErrTokenExpired) ||
+		errors.Is(err, ErrInvalidToken)
 }
