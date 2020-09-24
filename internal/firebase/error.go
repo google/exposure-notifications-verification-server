@@ -24,18 +24,24 @@ var (
 	ErrInvalidToken     = errors.New("INVALID_ID_TOKEN")
 )
 
+var _ error = (nil)(*ErrorDetails)
+
 // ErrorDetails is the structure firebase gives back.
 type ErrorDetails struct {
 	ErrorCode int    `json:"code"`
 	Err       string `json:"message"`
 }
 
-func (err ErrorDetails) Error() string {
+func (err *ErrorDetails) Error() string {
 	return err.Err
 }
 
+func (err *ErrorDetails) Is(target error) bool {
+	return err.Err == target.Error()
+}
+
 // ShouldReauthenticate returns true for errors that require a refreshed auth token.
-func (err ErrorDetails) ShouldReauthenticate() bool {
+func (err *ErrorDetails) ShouldReauthenticate() bool {
 	return errors.Is(err, ErrCredentialTooOld) ||
 		errors.Is(err, ErrTokenExpired) ||
 		errors.Is(err, ErrInvalidToken)

@@ -67,7 +67,7 @@ func (c *Client) SendPasswordResetEmail(ctx context.Context, email string) error
 		var m map[string]ErrorDetails
 		if err := json.Unmarshal(b, &m); err != nil {
 			d := m["error"]
-			return d
+			return &d
 		}
 		return fmt.Errorf("failure %d: %s", status, string(b))
 	}

@@ -61,7 +61,6 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
 			// Treat not-found like success so we don't leak details.
 			if !errors.Is(err, firebase.ErrEmailNotFound) {
-				logger.Errorw("SendPasswordResetEmail failed", "error", err)
 				f.Error("Password reset failed.")
 				c.renderResetPassword(ctx, w)
 				return
