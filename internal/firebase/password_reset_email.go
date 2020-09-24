@@ -62,6 +62,13 @@ func (c *Client) SendPasswordResetEmail(ctx context.Context, email string) error
 		if err != nil {
 			return fmt.Errorf("response was %d, but failed to read body: %w", status, err)
 		}
+
+		// Try to unmarshal the error message. Firebase uses these as enum values to expand on the code.
+		var m map[string]ErrorDetails
+		if err := json.Unmarshal(b, &m); err == nil {
+			d := m["error"]
+			return &d
+		}
 		return fmt.Errorf("failure %d: %s", status, string(b))
 	}
 

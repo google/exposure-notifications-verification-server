@@ -78,7 +78,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			c.renderNew(ctx, w)
 			return
 		} else if created {
-			if err := c.fbInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
+			if err := c.firebaseInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
 				flash.Error("Failed sending new user invitation: %v", err)
 				c.renderNew(ctx, w)
 				return
