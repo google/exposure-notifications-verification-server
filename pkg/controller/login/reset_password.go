@@ -47,22 +47,22 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			logger.Errorw("failed to bind form", "error", err)
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
 		// There's no session yet, so make a one-time flash.
 		m := controller.TemplateMapFromContext(ctx)
 		f := flash.New(nil)
+
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			f.Error("Password failed. %v", err)
+			c.renderResetPassword(ctx, w)
+			return
+		}
 
 		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
 			// Treat not-found like success so we don't leak details.
 			if !errors.Is(err, firebase.EmailNotFound) {
 				logger.Errorw("SendPasswordResetEmail failed", "error", err)
-				f.Error("reset password failed. %v", err)
+				f.Error("Password reset failed. %v", err)
 				c.renderResetPassword(ctx, w)
 				return
 			}
