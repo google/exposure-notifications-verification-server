@@ -37,7 +37,7 @@ func (err *ErrorDetails) Error() string {
 
 func (err *ErrorDetails) Is(target error) bool {
 	if t, ok := target.(*ErrorDetails); ok {
-		return err.ErrorCode == t.ErrorCode
+		return err.Err == t.Err
 	}
 	return err.Message == target.Error()
 }
