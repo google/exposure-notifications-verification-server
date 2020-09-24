@@ -18,7 +18,7 @@ package login
 import (
 	"context"
 
-	iFB "github.com/google/exposure-notifications-verification-server/internal/firebase"
+	"github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -30,7 +30,7 @@ import (
 )
 
 type Controller struct {
-	firebaseInternal *iFB.Client
+	firebaseInternal *firebase.Client
 	client           *auth.Client
 	config           *config.ServerConfig
 	db               *database.Database
@@ -41,7 +41,7 @@ type Controller struct {
 // New creates a new login controller.
 func New(
 	ctx context.Context,
-	firebaseInternal *iFB.Client,
+	firebaseInternal *firebase.Client,
 	client *auth.Client,
 	config *config.ServerConfig,
 	db *database.Database,
