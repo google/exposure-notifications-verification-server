@@ -34,10 +34,14 @@ type verifyPasswordResetCodeRequest struct {
 // using the code.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
-func (c *Client) VerifyPasswordResetCode(ctx context.Context, code, newPassword string) (string, error) {
-	r := &verifyPasswordResetCodeRequest{
-		Code:        code,
-		NewPassword: newPassword,
+func (c *Client) VerifyPasswordResetCode(ctx context.Context, code string) (string, error) {
+	return c.ChangePasswordWithCode(ctx, code, "")
+}
+
+func (c *Client) ChangePasswordWithCode(ctx context.Context, code, newPassword string) (string, error) {
+	r := &verifyPasswordResetCodeRequest{Code: code}
+	if newPassword != "" {
+		r.NewPassword = newPassword
 	}
 
 	var body bytes.Buffer

@@ -41,7 +41,7 @@ func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 			return
 		}
 
-		email, err := c.firebaseInternal.VerifyPasswordResetCode(ctx, code, "")
+		email, err := c.firebaseInternal.VerifyPasswordResetCode(ctx, code)
 		if err != nil {
 			if errors.Is(err, firebase.ErrInvalidOOBCode) || errors.Is(err, firebase.ErrExpiredOOBCode) {
 				f.Error("The action code is invalid. This can happen if the code is malformed, expired, or has already been used.")
@@ -69,9 +69,8 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 	logger := c.logger.Named("login.HandleSubmitNewPassword")
 
 	type FormData struct {
-		Email    string `form:"email"`
 		Password string `form:"password"`
-		Code     string `form:"code"`
+		Email    string `form:"email"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -79,32 +78,34 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		session := controller.SessionFromContext(ctx)
 		f := flash.New(session.Values)
 
+		code := r.FormValue("oobCode")
+
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			f.Error("Select password failed. %v", err)
-			c.renderShowSelectPassword(ctx, w, "", r.FormValue("oobCode"), f)
+			c.renderShowSelectPassword(ctx, w, "", code, f)
 			return
 		}
 
 		if err := c.validateComplexity(form.Password); err != nil {
 			f.Error("Select password failed. %v", err)
-			c.renderShowSelectPassword(ctx, w, form.Email, form.Code, f)
+			c.renderShowSelectPassword(ctx, w, form.Email, code, f)
 			return
 		}
 
-		if _, err := c.firebaseInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
+		if _, err := c.firebaseInternal.ChangePasswordWithCode(ctx, code, form.Password); err != nil {
 			if errors.Is(err, firebase.ErrInvalidOOBCode) || errors.Is(err, firebase.ErrExpiredOOBCode) {
 				f.Error("The action code is invalid. This can happen if the code is malformed, expired, or has already been used.")
 			} else {
 				f.Error("Select password failed. %v", err)
 			}
-			c.renderShowSelectPassword(ctx, w, form.Email, form.Code, f)
+			c.renderShowSelectPassword(ctx, w, form.Email, code, f)
 			return
 		}
 
 		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
-			c.renderShowSelectPassword(ctx, w, form.Email, form.Code, f)
+			c.renderShowSelectPassword(ctx, w, form.Email, code, f)
 			return
 		}
 
