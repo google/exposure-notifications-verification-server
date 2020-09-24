@@ -63,7 +63,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		f := flash.New(nil)
 
 		if err := c.validateComplexity(form.Password); err != nil {
-			logger.Errorw("VerifyPasswordResetCode failed", "error", err)
+			logger.Errorw("validateComplexity failed", "error", err)
 			f.Error("Select password failed. %v", err)
 			c.renderShowSelectPassword(ctx, w)
 			return
