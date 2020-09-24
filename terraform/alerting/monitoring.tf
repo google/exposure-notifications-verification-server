@@ -142,7 +142,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
         group_by_fields = [
           "resource.label.backend_target_name",
         ]
-        per_series_aligner = "ALIGN_RATE"
+        per_series_aligner = "ALIGN_DELTA"
       }
 
       trigger {
