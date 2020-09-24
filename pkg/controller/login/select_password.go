@@ -52,12 +52,13 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		// There's no session yet, so make a one-time flash.
 		f := flash.New(nil)
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			logger.Errorw("failed to bind form", "error", err)
-			f.Error("Request failed.")
+			f.Error("Select password failed. %v", err)
 			c.renderShowSelectPassword(ctx, w, f)
 			return
 		}
@@ -80,7 +81,6 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 			return
 		}
 
-		// There's no session yet, so make a one-time flash.
 		f.Alert("Successfully selected new password.")
 		c.renderLogin(ctx, w)
 	})

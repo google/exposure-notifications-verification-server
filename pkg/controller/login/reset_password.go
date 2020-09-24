@@ -51,7 +51,7 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			f.Error("Password failed. %v", err)
+			f.Error("Password reset failed. %v", err)
 			c.renderResetPassword(ctx, w, f)
 			return
 		}
