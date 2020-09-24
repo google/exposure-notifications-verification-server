@@ -52,39 +52,37 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		m := controller.TemplateMapFromContext(ctx)
+		f := flash.New(nil)
+		m["flash"] = f
+
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			logger.Errorw("failed to bind form", "error", err)
-			controller.InternalError(w, r, c.h, err)
+			f.Error("Request failed.")
+			c.renderShowSelectPassword(ctx, w)
 			return
 		}
 
-		m := controller.TemplateMapFromContext(ctx)
-		f := flash.New(nil)
-
 		if err := c.validateComplexity(form.Password); err != nil {
-			logger.Errorw("validateComplexity failed", "error", err)
 			f.Error("Select password failed. %v", err)
 			c.renderShowSelectPassword(ctx, w)
 			return
 		}
 
 		if _, err := c.firebaseInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
-			logger.Errorw("VerifyPasswordResetCode failed", "error", err)
 			c.renderShowSelectPassword(ctx, w)
 			return
 		}
 
 		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
-			controller.InternalError(w, r, c.h, err)
+			c.renderShowSelectPassword(ctx, w)
 			return
 		}
 
 		// There's no session yet, so make a one-time flash.
 		f.Alert("Successfully selected new password.")
-		m["flash"] = f
-
 		c.renderLogin(ctx, w)
 	})
 }
