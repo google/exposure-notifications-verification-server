@@ -57,7 +57,7 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		f := flash.New(nil)
 
-		if details, err := c.fbInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
+		if details, err := c.firebaseInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
 			// Treat not-found like success so we don't leak details.
 			if details.Error != firebase.EmailNotFound {
 				logger.Errorw("SendPasswordResetEmail failed", "error", err)

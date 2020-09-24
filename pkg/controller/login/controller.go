@@ -30,18 +30,18 @@ import (
 )
 
 type Controller struct {
-	fbInternal *iFB.Client
-	client     *auth.Client
-	config     *config.ServerConfig
-	db         *database.Database
-	h          *render.Renderer
-	logger     *zap.SugaredLogger
+	firebaseInternal *iFB.Client
+	client           *auth.Client
+	config           *config.ServerConfig
+	db               *database.Database
+	h                *render.Renderer
+	logger           *zap.SugaredLogger
 }
 
 // New creates a new login controller.
 func New(
 	ctx context.Context,
-	fbInternal *iFB.Client,
+	firebaseInternal *iFB.Client,
 	client *auth.Client,
 	config *config.ServerConfig,
 	db *database.Database,
@@ -49,11 +49,11 @@ func New(
 	logger := logging.FromContext(ctx).Named("login")
 
 	return &Controller{
-		fbInternal * iFB.Client,
-		client: client,
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logger,
+		firebaseInternal: firebaseInternal,
+		client:           client,
+		config:           config,
+		db:               db,
+		h:                h,
+		logger:           logger,
 	}
 }

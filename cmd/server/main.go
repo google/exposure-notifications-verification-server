@@ -138,7 +138,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to configure firebase: %w", err)
 	}
-	fbInternal, err := iFB.New(ctx)
+	firebaseInternal, err := iFB.New(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to configure internal firebase client: %w", err)
 	}
@@ -219,7 +219,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	{
-		loginController := login.New(ctx, fbInternal, auth, config, db, h)
+		loginController := login.New(ctx, firebaseInternal, auth, config, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
@@ -337,7 +337,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, fbInternal, auth, cacher, config, db, h)
+		userController := user.New(ctx, firebaseInternal, auth, cacher, config, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).Queries("offset", "{[0-9]*?}").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
