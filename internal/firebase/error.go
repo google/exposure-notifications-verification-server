@@ -17,33 +17,25 @@ package firebase
 import "errors"
 
 var (
-	EmailNotFound    = &ErrorDetails{Err: "EMAIL_NOT_FOUND"}
-	InvalidOOBCode   = &ErrorDetails{Err: "INVALID_OOB_CODE"}
-	CredentialTooOld = &ErrorDetails{Err: "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"}
-	TokenExpired     = &ErrorDetails{Err: "TOKEN_EXPIRED"}
-	InvalidToken     = &ErrorDetails{Err: "INVALID_ID_TOKEN"}
+	EmailNotFound    = errors.New("EMAIL_NOT_FOUND")
+	InvalidOOBCode   = errors.New("INVALID_OOB_CODE")
+	CredentialTooOld = errors.New("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")
+	TokenExpired     = errors.New("TOKEN_EXPIRED")
+	InvalidToken     = errors.New("INVALID_ID_TOKEN")
 )
 
 // ErrorDetails is the structure firebase gives back.
 type ErrorDetails struct {
 	ErrorCode int    `json:"code"`
 	Err       string `json:"message"`
-	Message   string
 }
 
-func (err *ErrorDetails) Error() string {
-	return err.Message
-}
-
-func (err *ErrorDetails) Is(target error) bool {
-	if t, ok := target.(*ErrorDetails); ok {
-		return err.Err == t.Err
-	}
-	return err.Message == target.Error()
+func (err ErrorDetails) Error() string {
+	return err.Err
 }
 
 // ShouldReauthenticate returns true for errors that require a refreshed auth token.
-func (err *ErrorDetails) ShouldReauthenticate() bool {
+func (err ErrorDetails) ShouldReauthenticate() bool {
 	return errors.Is(err, CredentialTooOld) ||
 		errors.Is(err, TokenExpired) ||
 		errors.Is(err, InvalidToken)
