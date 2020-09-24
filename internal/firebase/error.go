@@ -16,6 +16,7 @@
 package firebase
 
 const (
+	EmailNotFound    = "EMAIL_NOT_FOUND"
 	InvalidOOBCode   = "INVALID_OOB_CODE"
 	CredentialTooOld = "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"
 	TokenExpired     = "TOKEN_EXPIRED"

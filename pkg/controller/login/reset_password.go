@@ -19,6 +19,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
@@ -56,11 +57,14 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		f := flash.New(nil)
 
-		if _, err := c.fbInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
-			logger.Errorw("SendPasswordResetEmail failed", "error", err)
-			f.Error("reset password failed. %v", err)
-			c.renderResetPassword(ctx, w)
-			return
+		if details, err := c.fbInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
+			// Treat not-found like success so we don't leak details.
+			if details.Error != firebase.EmailNotFound {
+				logger.Errorw("SendPasswordResetEmail failed", "error", err)
+				f.Error("reset password failed. %v", err)
+				c.renderResetPassword(ctx, w)
+				return
+			}
 		}
 
 		f.Alert("Password reset email sent.")
