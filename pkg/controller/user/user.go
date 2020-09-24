@@ -19,7 +19,7 @@ import (
 	"context"
 
 	"firebase.google.com/go/auth"
-	iFB "github.com/google/exposure-notifications-verification-server/internal/firebase"
+	"github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -33,7 +33,7 @@ import (
 // Controller manages users
 type Controller struct {
 	cacher           cache.Cacher
-	firebaseInternal *iFB.Client
+	firebaseInternal *firebase.Client
 	client           *auth.Client
 	config           *config.ServerConfig
 	db               *database.Database
@@ -44,7 +44,7 @@ type Controller struct {
 // New creates a new controller for managing users.
 func New(
 	ctx context.Context,
-	firebaseInternal *iFB.Client,
+	firebaseInternal *firebase.Client,
 	client *auth.Client,
 	cacher cache.Cacher,
 	config *config.ServerConfig,
