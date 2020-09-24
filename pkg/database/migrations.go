@@ -1229,6 +1229,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					// Add a new is_system boolean column and a constraint to ensure that
 					// only one row can have a value of true.
 					`ALTER TABLE sms_configs ADD COLUMN IF NOT EXISTS is_system BOOL`,
+					`UPDATE sms_configs SET is_system = FALSE WHERE is_system IS NULL`,
 					`ALTER TABLE sms_configs ALTER COLUMN is_system SET DEFAULT FALSE`,
 					`ALTER TABLE sms_configs ALTER COLUMN is_system SET NOT NULL`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS uix_sms_configs_is_system_true ON sms_configs (is_system) WHERE (is_system IS TRUE)`,
@@ -1246,11 +1247,13 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					// Realm option set by system admins to share the system SMS config
 					// with the realm.
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS can_use_system_sms_config BOOL`,
+					`UPDATE realms SET can_use_system_sms_config = FALSE WHERE can_use_system_sms_config IS NULL`,
 					`ALTER TABLE realms ALTER COLUMN can_use_system_sms_config SET DEFAULT FALSE`,
 					`ALTER TABLE realms ALTER COLUMN can_use_system_sms_config SET NOT NULL`,
 
 					// If true, the realm is set to use the system SMS config.
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS use_system_sms_config BOOL`,
+					`UPDATE realms SET use_system_sms_config = FALSE WHERE use_system_sms_config IS NULL`,
 					`ALTER TABLE realms ALTER COLUMN use_system_sms_config SET DEFAULT FALSE`,
 					`ALTER TABLE realms ALTER COLUMN use_system_sms_config SET NOT NULL`,
 				}
