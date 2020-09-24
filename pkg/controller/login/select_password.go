@@ -17,8 +17,10 @@ package login
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
+	"unicode"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
@@ -57,17 +59,18 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 			return
 		}
 
-		// DO NOT SUBMIT
-		// double-check password complexity
+		m := controller.TemplateMapFromContext(ctx)
+		f := flash.New(nil)
 
-		if details, err := c.fbInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
+		if err := c.validateComplexity(form.Password); err != nil {
 			logger.Errorw("VerifyPasswordResetCode failed", "error", err)
+			f.Error("Select password failed. %v", err)
+			c.renderShowSelectPassword(ctx, w)
+			return
+		}
 
-			if details.ShouldReauthenticate() {
-				http.Redirect(w, r, "/login?redir=login/select-password", http.StatusSeeOther)
-				return
-			}
-
+		if _, err := c.fbInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
+			logger.Errorw("VerifyPasswordResetCode failed", "error", err)
 			c.renderShowSelectPassword(ctx, w)
 			return
 		}
@@ -79,11 +82,49 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		}
 
 		// There's no session yet, so make a one-time flash.
-		m := controller.TemplateMapFromContext(ctx)
-		f := flash.New(nil)
 		f.Alert("Successfully selected new password.")
 		m["flash"] = f
 
 		c.renderLogin(ctx, w)
 	})
+}
+
+func (c *Controller) validateComplexity(password string) error {
+	reqs := c.config.PasswordRequirements
+	if len(password) < reqs.Length {
+		return fmt.Errorf("password must be at least %d characters long", reqs.Length)
+	}
+
+	upperCount := 0
+	lowerCount := 0
+	digitCount := 0
+	specialCount := 0
+	for _, c := range password {
+		if unicode.IsLetter(c) {
+			if unicode.IsUpper(c) {
+				upperCount++
+			} else {
+				lowerCount++
+			}
+		} else if unicode.IsDigit(c) {
+			digitCount++
+		} else {
+			specialCount++
+		}
+	}
+
+	if upperCount < reqs.Uppercase {
+		return fmt.Errorf("password must contain at least %d uppercase characters", reqs.Uppercase)
+	}
+	if lowerCount < reqs.Lowercase {
+		return fmt.Errorf("password must contain at least %d lowercase characters", reqs.Lowercase)
+	}
+	if digitCount < reqs.Number {
+		return fmt.Errorf("password must contain at least %d digits", reqs.Number)
+	}
+	if specialCount < reqs.Special {
+		return fmt.Errorf("password must contain at least %d special characters", reqs.Number)
+	}
+
+	return nil
 }
