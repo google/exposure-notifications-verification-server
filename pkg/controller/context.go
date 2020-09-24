@@ -32,7 +32,7 @@ const (
 	contextKeySession       = contextKey("session")
 	contextKeyTemplate      = contextKey("template")
 	contextKeyUser          = contextKey("user")
-	contextKeyFBUser        = contextKey("fbUser")
+	contextKeyFirebaseUser  = contextKey("firebaseUser")
 )
 
 // WithAuthorizedApp stores the authorized app on the context.
@@ -153,15 +153,15 @@ func UserFromContext(ctx context.Context) *database.User {
 	return t
 }
 
-// WithFBUser stores the current firebase user on the context.
-func WithFBUser(ctx context.Context, u *auth.UserRecord) context.Context {
-	return context.WithValue(ctx, contextKeyFBUser, u)
+// WithFirebaseUser stores the current firebase user on the context.
+func WithFirebaseUser(ctx context.Context, u *auth.UserRecord) context.Context {
+	return context.WithValue(ctx, contextKeyFirebaseUser, u)
 }
 
-// FBUserFromContext retrieves the firebase user from the context. If no value exists, it
+// FirebaseUserFromContext retrieves the firebase user from the context. If no value exists, it
 // returns nil.
-func FBUserFromContext(ctx context.Context) *auth.UserRecord {
-	v := ctx.Value(contextKeyFBUser)
+func FirebaseUserFromContext(ctx context.Context) *auth.UserRecord {
+	v := ctx.Value(contextKeyFirebaseUser)
 	if v == nil {
 		return nil
 	}

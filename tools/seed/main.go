@@ -80,7 +80,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to setup firebase: %w", err)
 	}
-	fbAuth, err := fb.Auth(ctx)
+	firebaseAuth, err := fb.Auth(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to configure firebase: %w", err)
 	}
@@ -115,7 +115,7 @@ func realMain(ctx context.Context) error {
 		logger.Infow("created user", "user", user)
 	}
 
-	if err := createFirebaseUser(ctx, fbAuth, user); err != nil {
+	if err := createFirebaseUser(ctx, firebaseAuth, user); err != nil {
 		return err
 	}
 	logger.Infow("enabled user", "user", user)
@@ -139,7 +139,7 @@ func realMain(ctx context.Context) error {
 		logger.Infow("created admin", "admin", admin)
 	}
 
-	if err := createFirebaseUser(ctx, fbAuth, admin); err != nil {
+	if err := createFirebaseUser(ctx, firebaseAuth, admin); err != nil {
 		return err
 	}
 	logger.Infow("enabled admin", "admin", admin)
@@ -152,7 +152,7 @@ func realMain(ctx context.Context) error {
 		logger.Infow("created super", "super", super)
 	}
 
-	if err := createFirebaseUser(ctx, fbAuth, super); err != nil {
+	if err := createFirebaseUser(ctx, firebaseAuth, super); err != nil {
 		return err
 	}
 	logger.Infow("enabled super", "super", super)
@@ -180,8 +180,8 @@ func realMain(ctx context.Context) error {
 	return nil
 }
 
-func createFirebaseUser(ctx context.Context, fbAuth *firebaseauth.Client, user *database.User) error {
-	existing, err := fbAuth.GetUserByEmail(ctx, user.Email)
+func createFirebaseUser(ctx context.Context, firebaseAuth *firebaseauth.Client, user *database.User) error {
+	existing, err := firebaseAuth.GetUserByEmail(ctx, user.Email)
 	if err != nil && !firebaseauth.IsUserNotFound(err) {
 		return fmt.Errorf("failed to get user by email %v: %w", user.Email, err)
 	}
@@ -196,7 +196,7 @@ func createFirebaseUser(ctx context.Context, fbAuth *firebaseauth.Client, user *
 		update := (&firebaseauth.UserToUpdate{}).
 			EmailVerified(true)
 
-		if _, err := fbAuth.UpdateUser(ctx, existing.UID, update); err != nil {
+		if _, err := firebaseAuth.UpdateUser(ctx, existing.UID, update); err != nil {
 			return fmt.Errorf("failed to update user %v: %w", user.Email, err)
 		}
 
@@ -210,7 +210,7 @@ func createFirebaseUser(ctx context.Context, fbAuth *firebaseauth.Client, user *
 		DisplayName(user.Name).
 		Password("password")
 
-	if _, err := fbAuth.CreateUser(ctx, create); err != nil {
+	if _, err := firebaseAuth.CreateUser(ctx, create); err != nil {
 		return fmt.Errorf("failed to create user %v: %w", user.Email, err)
 	}
 

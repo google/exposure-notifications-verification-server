@@ -58,9 +58,9 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 				return
 			}
 
-			fbUser := controller.FBUserFromContext(ctx)
+			firebaseUser := controller.FirebaseUserFromContext(ctx)
 			realm := controller.RealmFromContext(ctx)
-			if needsEmailVerification(session, realm, fbUser) {
+			if needsEmailVerification(session, realm, firebaseUser) {
 				logger.Debugw("user email not verified")
 				http.Redirect(w, r, "/login/verify-email", http.StatusSeeOther)
 				return
@@ -71,14 +71,14 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 	}
 }
 
-func needsEmailVerification(session *sessions.Session, realm *database.Realm, fbUser *auth.UserRecord) bool {
+func needsEmailVerification(session *sessions.Session, realm *database.Realm, firebaseUser *auth.UserRecord) bool {
 	if realm == nil || realm.EmailVerifiedMode == database.MFARequired {
-		return !fbUser.EmailVerified
+		return !firebaseUser.EmailVerified
 	}
 
 	if realm.EmailVerifiedMode == database.MFAOptionalPrompt &&
 		!controller.EmailVerificationPromptedFromSession(session) &&
-		!fbUser.EmailVerified {
+		!firebaseUser.EmailVerified {
 		return true
 	}
 

@@ -98,7 +98,7 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 			return
 		}
 
-		created, err := user.CreateFirebaseUser(ctx, c.fbAuth)
+		created, err := user.CreateFirebaseUser(ctx, c.firebaseAuth)
 		if err != nil {
 			flash.Alert("Failed to create user: %v", err)
 			c.renderNewUser(ctx, w, user)
