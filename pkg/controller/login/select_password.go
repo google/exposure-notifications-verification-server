@@ -43,7 +43,7 @@ func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 
 		email, err := c.firebaseInternal.VerifyPasswordResetCode(ctx, code, "")
 		if err != nil {
-			if errors.Is(err, firebase.ErrInvalidOOBCode) {
+			if errors.Is(err, firebase.ErrInvalidOOBCode) || errors.Is(err, firebase.ErrExpiredOOBCode) {
 				f.Error("The action code is invalid. This can happen if the code is malformed, expired, or has already been used.")
 			} else {
 				f.Error("Error checking code. %v", err)
@@ -93,7 +93,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		}
 
 		if _, err := c.firebaseInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
-			if errors.Is(err, firebase.ErrInvalidOOBCode) {
+			if errors.Is(err, firebase.ErrInvalidOOBCode) || errors.Is(err, firebase.ErrExpiredOOBCode) {
 				f.Error("The action code is invalid. This can happen if the code is malformed, expired, or has already been used.")
 			} else {
 				f.Error("Select password failed. %v", err)

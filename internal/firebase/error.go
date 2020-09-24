@@ -21,6 +21,7 @@ import (
 var (
 	ErrEmailNotFound    = &ErrorDetails{Err: "EMAIL_NOT_FOUND"}
 	ErrInvalidOOBCode   = &ErrorDetails{Err: "INVALID_OOB_CODE"}
+	ErrExpiredOOBCode   = &ErrorDetails{Err: "EXPIRED_OOB_CODE"}
 	ErrCredentialTooOld = &ErrorDetails{Err: "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"}
 	ErrTokenExpired     = &ErrorDetails{Err: "TOKEN_EXPIRED"}
 	ErrInvalidToken     = &ErrorDetails{Err: "INVALID_ID_TOKEN"}
