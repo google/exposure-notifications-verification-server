@@ -178,6 +178,21 @@ variable "adminapi-host" {
   description = "Domain adminapi is hosted on."
 }
 
+variable "enx_redirect_domain" {
+  type        = string
+  default     = ""
+  description = "TLD for enx-redirect service links."
+}
+
+variable "enx_redirect_domain_map" {
+  type = list(object({
+    region = string
+    host   = string
+  }))
+  default     = []
+  description = "Redirect domains and environments."
+}
+
 terraform {
   required_version = ">= 0.13.1"
 

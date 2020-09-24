@@ -1,0 +1,41 @@
+{{define "admin/navbar"}}
+<header class="mb-3">
+  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white admin-header">
+    System admin
+  </div>
+
+  <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
+    <div class="container">
+      {{template "navtoggle" .}}
+      <div class="collapse navbar-collapse mt-2" id="navbar">
+        {{if .currentRealm}}
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/home">&larr; Back to {{.currentRealm.Name}} </a>
+          </li>
+        </ul>
+        {{end}}
+        {{template "navdropdown" .}}
+      </div>
+    </div>
+  </nav>
+</header>
+
+<ul class="nav nav-pills justify-content-center mb-3">
+  <li class="nav-item">
+    <a class="nav-link{{if .currentPath.IsDir "/admin/realms"}} active{{end}}" href="/admin/realms">Realms</a>
+  </li>
+
+  <li class="nav-item">
+    <a class="nav-link{{if .currentPath.IsDir "/admin/users"}} active{{end}}" href="/admin/users">System admins</a>
+  </li>
+
+  <li class="nav-item">
+    <a class="nav-link{{if .currentPath.IsDir "/admin/sms"}} active{{end}}" href="/admin/sms">SMS</a>
+  </li>
+
+  <li class="nav-item">
+    <a class="nav-link{{if .currentPath.IsDir "/admin/info"}} active{{end}}" href="/admin/info">Info</a>
+  </li>
+</ul>
+{{end}}

@@ -138,17 +138,21 @@ func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp) (string, e
 
 // FindAuthorizedAppByAPIKey located an authorized app based on API key.
 func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, error) {
+	logger := db.logger.Named("FindAuthorizedAppByAPIKey")
+
 	// Determine if this is a v1 or v2 key. v2 keys have colons (v1 do not).
 	if strings.Contains(apiKey, ".") {
 		// v2 API keys are HMACed in the database.
 		apiKey, realmID, err := db.VerifyAPIKeySignature(apiKey)
 		if err != nil {
-			return nil, err
+			logger.Warnw("failed to verify api key signature", "error", err)
+			return nil, gorm.ErrRecordNotFound
 		}
 
 		hmacedKeys, err := db.generateAPIKeyHMACs(apiKey)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create hmac: %w", err)
+			logger.Warnw("failed to create hmac", "error", err)
+			return nil, gorm.ErrRecordNotFound
 		}
 
 		// Find the API key that matches the constraints.
@@ -166,7 +170,8 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 	// The API key is either invalid or a v1 API key.
 	hmacedKeys, err := db.generateAPIKeyHMACs(apiKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create hmac: %w", err)
+		logger.Warnw("failed to create hmac", "error", err)
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	var app AuthorizedApp

@@ -8,12 +8,9 @@
 <head>
   {{template "head" .}}
   {{template "floatingform" .}}
-  {{if .created}}
-  {{template "firebase" .}}
-  {{end}}
 </head>
 
-<body class="bg-light">
+<body class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -25,31 +22,15 @@
     </p>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
+      <div class="card-header">User details</div>
       <div class="card-body">
         {{template "users/_form" .}}
       </div>
     </div>
+    <a class="card-link" href="/users" id="all-users">&larr; All users</a>
   </main>
 
   {{template "scripts" .}}
-  {{if .created}}
-  <script type="text/javascript">
-    let email = {{.user.Email }};
-    let pwd = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-    firebase.auth().createUserWithEmailAndPassword(email, pwd)
-      .then(function(userCredential) {
-        return firebase.auth().sendPasswordResetEmail(email);
-      }).then(function() {
-        flash("New user invite sent.", "success");
-      })
-      .catch(function(error) {
-        flash(error.message, "danger")
-        $submit.prop('disabled', false);
-      });
-  </script>
-  {{end}}
 </body>
 
 </html>

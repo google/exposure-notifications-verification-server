@@ -40,7 +40,7 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 
 		if !realm.EnableENExpress {
 			flash.Error("Realm is not currently enrolled in EN Express.")
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
@@ -50,7 +50,7 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 		if err := c.db.SaveRealm(realm); err != nil {
 			flash.Error("Failed to disable EN Express: %v", err)
 
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
@@ -78,7 +78,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 
 		if realm.EnableENExpress {
 			flash.Error("Realm already has EN Express Enabled.")
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 
@@ -89,7 +89,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 		realm.CodeDuration = enxSettings.CodeDuration
 		realm.LongCodeLength = enxSettings.LongCodeLength
 		realm.LongCodeDuration = enxSettings.LongCodeDuration
-		realm.SMSTextTemplate = "This is your Exposure Notifications Verification code: [enslink] Expires in [longexpires] hours"
+		realm.SMSTextTemplate = "Your Exposure Notifications verification link: [enslink]. Expires in [longexpires] hours (click for mobile device only)"
 		// Confirmed is the only allowed test type for EN Express.
 		realm.AllowedTestTypes = database.TestTypeConfirmed
 
@@ -98,7 +98,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 			// This will allow the user to correct other validation errors and then click "uprade" again.
 			realm.EnableENExpress = false
 			realm.SMSTextTemplate = enxSettings.SMSTextTemplate
-			c.renderShow(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil)
 			return
 		}
 

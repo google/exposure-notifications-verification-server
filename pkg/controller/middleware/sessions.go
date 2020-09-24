@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -72,6 +73,7 @@ func RequireSession(ctx context.Context, store sessions.Store, h *render.Rendere
 				once.Do(func() {
 					session := controller.SessionFromContext(ctx)
 					if session != nil {
+						controller.StoreSessionLastActivity(session, time.Now())
 						err = session.Save(r, w)
 					}
 				})

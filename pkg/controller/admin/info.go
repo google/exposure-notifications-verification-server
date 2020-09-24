@@ -20,18 +20,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+// HandleInfoShow renders the list of system admins.
+func (c *Controller) HandleInfoShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		realms, err := c.db.GetRealms()
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
 		m := controller.TemplateMapFromContext(ctx)
-		m["realms"] = realms
-		c.h.RenderHTML(w, "admin/realms", m)
+		c.h.RenderHTML(w, "admin/info", m)
 	})
 }

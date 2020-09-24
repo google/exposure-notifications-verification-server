@@ -91,7 +91,6 @@ func (c *Controller) HandleVerify() http.Handler {
 		// The token can be used to sign TEKs later.
 		verificationToken, err := c.db.VerifyCodeAndIssueToken(authApp.RealmID, request.VerificationCode, acceptTypes, c.config.VerificationTokenDuration)
 		if err != nil {
-			c.logger.Errorw("failed to issue verification token", "error", err)
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
 				stats.Record(ctx, c.metrics.CodeVerifyExpired.M(1), c.metrics.CodeVerificationError.M(1))
@@ -106,6 +105,7 @@ func (c *Controller) HandleVerify() http.Handler {
 				stats.Record(ctx, c.metrics.CodeVerifyInvalid.M(1), c.metrics.CodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 			default:
+				c.logger.Errorw("failed to issue verification token", "error", err)
 				stats.Record(ctx, c.metrics.CodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			}

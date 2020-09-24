@@ -103,6 +103,46 @@ steps:
   - '-'
 
 #
+# enx-redirect
+#
+- id: 'promote-enx-redirect'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "enx-redirect" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
+# modeler
+#
+- id: 'promote-modeler'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "modeler" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
 # server
 #
 - id: 'promote-server'

@@ -23,11 +23,17 @@
   </style>
 </head>
 
-<body class="bg-light">
+<body class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
+
+    {{if .welcomeMessage}}
+      <div class="alert alert-secondary" role="alert">
+        <div class="mb-n3">{{.welcomeMessage}}</div>
+      </div>
+    {{end}}
 
     <h1>Create verification code</h1>
     <p>
@@ -43,8 +49,6 @@
     {{else if $currentRealm.ValidTestType "likely" }}
       {{$colWidth = 6}}
     {{end}}
-
-    <div id="errors" class="alert alert-danger d-none"></div>
 
     <form id="issue" action="#">
       <div id="form-area">
@@ -216,8 +220,6 @@
   {{template "codescripts" .}}
 
   <script type="text/javascript">
-    let $errors;
-
     let $form;
       let $inputTestDate;
       let $inputSymptomDate;
@@ -240,8 +242,6 @@
     let longCodeCountdown;
 
     $(function() {
-      $errors = $('#errors');
-
       $form = $('form#issue');
         $inputTestDate = $('input#test-date');
         $inputSymptomDate = $('input#symptom-date');
@@ -260,6 +260,18 @@
       $uuidConfirm = $('#uuid-confirm');
         $uuid = $('#uuid');
 
+      {{if $hasSMSConfig}}
+      // Initialize pretty phone
+      let phone = document.querySelector('#phone');
+      let iti = window.intlTelInput(phone, {
+        nationalMode: true,
+        {{- if $currentRealm.SMSCountry }}
+        initialCountry: '{{$currentRealm.SMSCountry}}',
+        {{- end }}
+        utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.0/js/utils.js',
+      });
+      {{end}}
+
       // Handle form submission
       $form.on('submit', function(e) {
         e.preventDefault();
@@ -268,14 +280,17 @@
         $buttonSubmit.prop('disabled', true);
 
         // Clear and hide errors
-        $errors.html('');
-        $errors.addClass('d-none');
+        flash.clear();
 
         let data = {};
         $($form.serializeArray()).each(function(i, obj) {
           data[obj.name] = obj.value
         });
         data.tzOffset = new Date().getTimezoneOffset();
+
+        {{if $hasSMSConfig}}
+        data['phone'] = iti.getNumber();
+        {{end}}
 
         getCode(data);
       });
@@ -289,8 +304,7 @@
         clearInterval(longCodeCountdown);
 
         // Clear and hide errors
-        $errors.html('');
-        $errors.addClass('d-none');
+        flash.clear();
 
         // Clear form values
         $inputTestDate.val('');
@@ -328,6 +342,7 @@
     });
 
     function getCode(data) {
+      console.log('data: ',data);
       $.ajax({
         url: '/home/issue',
         type: 'POST',
@@ -386,6 +401,12 @@
           }
         },
         error: function(xhr, resp, text) {
+          // On unauthorized, force a logout
+          if (xhr.status === 401 || xhr.status == 403) {
+            window.location.assign('/signout');
+            return;
+          }
+
           // Show reset button
           $buttonReset.removeClass('d-none');
 
@@ -399,14 +420,8 @@
     }
 
     function showError(error) {
-      // Make errors
-      $errors.html(error);
-      $errors.removeClass('d-none');
-
-      // Scroll to errors
-      $errors[0].scrollIntoView({
-        behavior: 'smooth',
-      });
+      flash.clear();
+      flash.error(error);
 
       // Show reset button
       $buttonReset.removeClass('d-none');

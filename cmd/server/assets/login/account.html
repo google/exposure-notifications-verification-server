@@ -1,0 +1,128 @@
+{{define "account"}}
+
+{{$user := .currentUser}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+  {{template "firebase" .}}
+</head>
+
+<body class="bg-light">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>My Account</h1>
+    <p>Information and settings for your account</p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <h6 class="card-title">Name</h6>
+        <div class="card-text mb-3">
+          {{$user.Name}}
+        </div>
+
+        <h6 class="card-title">Email</h6>
+        <div class="card-text">
+          {{$user.Email}}
+        </div>
+
+        {{if $user.Admin}}
+        <h6 class="card-title  mt-3">System admin</h6>
+        <div class="card-text text-success">Enabled</div>
+        {{end}}
+      </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Authentication</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <div class="card-text" id="email-verified">loading</div>
+        </li>
+        <li class="list-group-item">
+          <div class="card-text" id="phone-registered">loading</div>
+          <a href="/login/register-phone" id='register-link' class="card-link">Register phone</a>
+        </li>
+        <li class="list-group-item">
+          <div class="card-text">Password was last changed <span class="text-info">{{$user.PasswordAgeString}}</span>
+            ago</div>
+          <a href="/login/change-password" class="card-link">Change password</a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card">
+        <div class="card-header">Member of realms</div>
+        <ul class="list-group list-group-flush">
+          {{range $realm := $user.Realms}}
+          <li class="list-group-item">
+            {{$realm.Name}}
+
+            {{range $admin := $user.AdminRealms}}
+            {{if eq $admin.ID $realm.ID}}
+            <span class="badge badge-primary">Admin</span>
+            {{end}}
+            {{end}}
+
+            {{- /* system admins can remove themselves from realms */ -}}
+            {{if $user.Admin}}
+            <a href="/users/{{.ID}}" class="d-block text-danger float-right" data-method="DELETE"
+              data-confirm="Are you sure you want to leave {{.Name}}?">
+              <span class="oi oi-account-logout" aria-hidden="true"></span>
+              Leave realm
+            </a>
+            {{end}}
+          </li>
+          {{end}}
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+  <script type="text/javascript">
+    $(function() {
+      let $emailVer = $('#email-verified');
+      let $emailVerLink = $('#email-verified-link');
+      let $phoneReg = $('#phone-registered');
+      let $phoneRegLink = $('#register-phone-link');
+
+      firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+          return
+        }
+
+        if (user.multiFactor.enrolledFactors.length > 0) {
+          $phoneReg.html('Two-factor auth is <span class="text-success">enabled</span>');
+          $('#register-link').text('Manage auth factors');
+        } else {
+          $phoneReg.addClass("text-danger");
+          $phoneReg.html('No second auth factor registered');
+        }
+
+        if (user.emailVerified) {
+          $emailVer.html('Email address is <span class="text-success">verified</span>');
+        } else {
+          $emailVer.addClass("text-danger");
+          $emailVer.html('Email address is <strong>not</strong> verified');
+
+          let $link = $('<a/>');
+          $link.addClass('card-link');
+          $link.attr('href','/login/verify-email');
+          $link.text('Verify email');
+          $emailVer.after($link);
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
+{{end}}

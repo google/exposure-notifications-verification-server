@@ -18,12 +18,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"net"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
+	"github.com/russross/blackfriday/v2"
 )
 
 // TestType is a test type in the database.
@@ -52,8 +58,8 @@ const (
 	SMSENExpressLink = "[enslink]"
 )
 
-// MFAMode represents Multi Factor Authentication requirements for the realm
-type MFAMode int16
+// AuthRequirement represents authentication requirements for the realm
+type AuthRequirement int16
 
 const (
 	// MFAOptionalPrompt will prompt users for MFA on login.
@@ -62,6 +68,9 @@ const (
 	MFARequired
 	// MFAOptional will not prompt users to enable MFA.
 	MFAOptional
+
+	// MaxPageSize is the maximum allowed page size for a list query.
+	MaxPageSize = 1000
 )
 
 // Realm represents a tenant in the system. Typically this corresponds to a
@@ -74,17 +83,61 @@ type Realm struct {
 	// Name is the name of the realm.
 	Name string `gorm:"type:varchar(200);unique_index"`
 
+	// RegionCode is both a display attribute and required field for ENX. To
+	// handle NULL and uniqueness, the field is converted from it's ptr type to a
+	// concrete type in callbacks. Do not modify RegionCodePtr directly.
+	RegionCode    string  `gorm:"-"`
+	RegionCodePtr *string `gorm:"column:region_code; type:varchar(10);"`
+
+	// WelcomeMessage is arbitrary realm-defined data to display to users after
+	// selecting this realm. If empty, nothing is displayed. The format is
+	// markdown. Do not modify WelcomeMessagePtr directly.
+	WelcomeMessage    string  `gorm:"-"`
+	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
+
 	// Code configuration
-	RegionCode       string          `gorm:"type:varchar(10); not null; default: ''"`
 	CodeLength       uint            `gorm:"type:smallint; not null; default: 8"`
 	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900"` // default 15m (in seconds)
 	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16"`
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
-	// SMS Content
-	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours'"`
+
+	// SMS configuration
+	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+
+	// SMSCountry is an optional field to hint the default phone picker country
+	// code.
+	SMSCountry    string  `gorm:"-"`
+	SMSCountryPtr *string `gorm:"column:sms_country; type:varchar(5);"`
+
+	// CanUseSystemSMSConfig is configured by system administrators to share the
+	// system SMS config with this realm. Note that the system SMS config could be
+	// empty and a local SMS config is preferred over the system value.
+	CanUseSystemSMSConfig bool `gorm:"column:can_use_system_sms_config; type:bool; not null; default:false;"`
+
+	// UseSystemSMSConfig is a realm-level configuration that lets a realm opt-out
+	// of sending SMS messages using the system-provided SMS configuration.
+	// Without this, a realm would always fallback to the system-level SMS
+	// configuration, making it impossible to opt out of text message sending.
+	UseSystemSMSConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
-	MFAMode MFAMode `gorm:"type:smallint; not null; default: 0"`
+	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
+
+	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
+	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
+
+	// PasswordRotationPeriodDays is the number of days before the user must
+	// rotate their password.
+	PasswordRotationPeriodDays uint `gorm:"type:smallint; not null; default: 0"`
+
+	// PasswordRotationWarningDays is the number of days before Password expiry
+	// that the user should receive a warning.
+	PasswordRotationWarningDays uint `gorm:"type:smallint; not null; default: 0"`
+
+	// AllowedCIDRs is the list of allowed IPs to the various services.
+	AllowedCIDRsAdminAPI  pq.StringArray `gorm:"column:allowed_cidrs_adminapi; type:varchar(50)[];"`
+	AllowedCIDRsAPIServer pq.StringArray `gorm:"column:allowed_cidrs_apiserver; type:varchar(50)[];"`
+	AllowedCIDRsServer    pq.StringArray `gorm:"column:allowed_cidrs_server; type:varchar(50)[];"`
 
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
@@ -103,6 +156,22 @@ type Realm struct {
 	// EN Express
 	EnableENExpress bool `gorm:"type:boolean; default: false"`
 
+	// AbusePreventionEnabled determines if abuse protection is enabled.
+	AbusePreventionEnabled bool `gorm:"type:boolean; not null; default:false"`
+
+	// AbusePreventionLimit is the configured daily limit for the realm. This value is populated
+	// by the nightly aggregation job and is based on a statistical model from
+	// historical code issuance data.
+	AbusePreventionLimit uint `gorm:"type:integer; not null; default:10"`
+
+	// AbusePreventionLimitFactor is the factor against the predicted model for the day which
+	// determines the total number of codes that can be issued for the realm on
+	// the day. For example, if the predicted value was 50 and this value was 1.5,
+	// the realm could generate 75 codes today before triggering abuse prevention.
+	// Similarly, if this value was 0.5, the realm could only generate 25 codes
+	// before triggering abuse protections.
+	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0"`
+
 	// These are here for gorm to setup the association. You should NOT call them
 	// directly, ever. Use the ListUsers function instead. The have to be public
 	// for reflection.
@@ -114,6 +183,18 @@ type Realm struct {
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 }
 
+func (mode *AuthRequirement) String() string {
+	switch *mode {
+	case MFAOptionalPrompt:
+		return "prompt"
+	case MFARequired:
+		return "required"
+	case MFAOptional:
+		return "optional"
+	}
+	return ""
+}
+
 // NewRealmWithDefaults initializes a new Realm with the default settings populated,
 // and the provided name. It does NOT save the Realm to the database.
 func NewRealmWithDefaults(name string) *Realm {
@@ -123,7 +204,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		CodeDuration:        FromDuration(15 * time.Minute),
 		LongCodeLength:      16,
 		LongCodeDuration:    FromDuration(24 * time.Hour),
-		SMSTextTemplate:     "This is your Exposure Notifications Verification code: ens://v?r=[region]&c=[longcode] Expires in [longexpires] hours",
+		SMSTextTemplate:     "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours",
 		AllowedTestTypes:    14,
 		CertificateDuration: FromDuration(15 * time.Minute),
 	}
@@ -137,16 +218,13 @@ func (r *Realm) SigningKeyID() string {
 	return fmt.Sprintf("realm-%d", r.ID)
 }
 
-func (r *Realm) MFAModeString() string {
-	switch r.MFAMode {
-	case MFAOptionalPrompt:
-		return "prompt"
-	case MFARequired:
-		return "required"
-	case MFAOptional:
-		return "optional"
-	}
-	return ""
+// AfterFind runs after a realm is found.
+func (r *Realm) AfterFind(tx *gorm.DB) error {
+	r.RegionCode = stringValue(r.RegionCodePtr)
+	r.WelcomeMessage = stringValue(r.WelcomeMessagePtr)
+	r.SMSCountry = stringValue(r.SMSCountryPtr)
+
+	return nil
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -157,10 +235,19 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	r.RegionCode = strings.ToUpper(strings.TrimSpace(r.RegionCode))
-
 	if len(r.RegionCode) > 10 {
 		r.AddError("regionCode", "cannot be more than 10 characters")
 	}
+	r.RegionCodePtr = stringPtr(r.RegionCode)
+
+	r.WelcomeMessage = strings.TrimSpace(r.WelcomeMessage)
+	r.WelcomeMessagePtr = stringPtr(r.WelcomeMessage)
+
+	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
+		r.AddError("useSystemSMSConfig", "is not allowed on this realm")
+	}
+
+	r.SMSCountryPtr = stringPtr(r.SMSCountry)
 
 	if r.EnableENExpress {
 		if r.RegionCode == "" {
@@ -178,6 +265,10 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 				}
 			}
 		}
+	}
+
+	if r.PasswordRotationWarningDays > r.PasswordRotationPeriodDays {
+		r.AddError("passwordWarn", "may not be longer than password rotation period")
 	}
 
 	if r.CodeLength < 6 {
@@ -234,7 +325,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	if len(r.Errors()) > 0 {
-		return fmt.Errorf("validation failed")
+		return fmt.Errorf("realm validation failed: %s", strings.Join(r.ErrorMessages(), ", "))
 	}
 	return nil
 }
@@ -252,10 +343,19 @@ func (r *Realm) GetLongCodeDurationHours() int {
 }
 
 // BuildSMSText replaces certain strings with the right values.
-func (r *Realm) BuildSMSText(code, longCode string) string {
+func (r *Realm) BuildSMSText(code, longCode string, enxDomain string) string {
 	text := r.SMSTextTemplate
 
-	text = strings.ReplaceAll(text, SMSENExpressLink, fmt.Sprintf("ens://v?r=%s&c=%s", SMSRegion, SMSLongCode))
+	if enxDomain == "" {
+		// preserves legacy behavior.
+		text = strings.ReplaceAll(text, SMSENExpressLink, fmt.Sprintf("ens://v?r=%s&c=%s", SMSRegion, SMSLongCode))
+	} else {
+		text = strings.ReplaceAll(text, SMSENExpressLink,
+			fmt.Sprintf("https://%s.%s/v?c=%s",
+				strings.ToLower(r.RegionCode),
+				enxDomain,
+				SMSLongCode))
+	}
 	text = strings.ReplaceAll(text, SMSRegion, r.RegionCode)
 	text = strings.ReplaceAll(text, SMSCode, code)
 	text = strings.ReplaceAll(text, SMSExpires, fmt.Sprintf("%d", r.GetCodeDurationMinutes()))
@@ -265,13 +365,21 @@ func (r *Realm) BuildSMSText(code, longCode string) string {
 	return text
 }
 
-// SMSConfig returns the SMS configuration for this realm, if one exists.
+// SMSConfig returns the SMS configuration for this realm, if one exists. If the
+// realm is configured to use the system SMS configuration, that configuration
+// is preferred.
 func (r *Realm) SMSConfig(db *Database) (*SMSConfig, error) {
+	q := db.db.
+		Model(&SMSConfig{}).
+		Order("is_system DESC").
+		Where("realm_id = ?", r.ID)
+
+	if r.UseSystemSMSConfig {
+		q = q.Or("is_system IS TRUE")
+	}
+
 	var smsConfig SMSConfig
-	if err := db.db.
-		Model(r).
-		Related(&smsConfig, "SMSConfig").
-		Error; err != nil {
+	if err := q.First(&smsConfig).Error; err != nil {
 		return nil, err
 	}
 	return &smsConfig, nil
@@ -281,18 +389,24 @@ func (r *Realm) SMSConfig(db *Database) (*SMSConfig, error) {
 // This does not perform the KMS encryption/decryption, so it's more efficient
 // that loading the full SMS config.
 func (r *Realm) HasSMSConfig(db *Database) (bool, error) {
-	var smsConfig SMSConfig
-	if err := db.db.
+	q := db.db.
+		Model(&SMSConfig{}).
 		Select("id").
-		Model(r).
-		Related(&smsConfig, "SMSConfig").
-		Error; err != nil {
+		Order("is_system DESC").
+		Where("realm_id = ?", r.ID)
+
+	if r.UseSystemSMSConfig {
+		q = q.Or("is_system IS TRUE")
+	}
+
+	var id []uint64
+	if err := q.Pluck("id", &id).Error; err != nil {
 		if IsNotFound(err) {
 			return false, nil
 		}
 		return false, err
 	}
-	return true, nil
+	return len(id) > 0, nil
 }
 
 // SMSProvider returns the SMS provider for the realm. If no sms configuration
@@ -318,6 +432,29 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		return nil, err
 	}
 	return provider, nil
+}
+
+// AbusePreventionEffectiveLimit returns the effective limit, multiplying the limit by the
+// limit factor and rounding up.
+func (r *Realm) AbusePreventionEffectiveLimit() uint {
+	// Only maintain 3 digits of precision, since that's all we do in the
+	// database.
+	factor := math.Floor(float64(r.AbusePreventionLimitFactor)*100) / 100
+	return uint(math.Ceil(float64(r.AbusePreventionLimit) * float64(factor)))
+}
+
+// AbusePreventionEnabledRealmIDs returns the list of realm IDs that have abuse
+// prevention enabled.
+func (db *Database) AbusePreventionEnabledRealmIDs() ([]uint64, error) {
+	var ids []uint64
+	if err := db.db.
+		Model(&Realm{}).
+		Where("abuse_prevention_enabled IS true").
+		Pluck("id", &ids).
+		Error; err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 // GetCurrentSigningKey returns the currently active signing key, the one marked
@@ -425,7 +562,7 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	if err := db.db.
 		Unscoped().
 		Model(AuthorizedApp{}).
-		Order("LOWER(name)").
+		Order("LOWER(name) ASC").
 		Where("id = ? AND realm_id = ?", id, r.ID).
 		First(&app).
 		Error; err != nil {
@@ -434,10 +571,28 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	return &app, nil
 }
 
+// CountUsers returns the count users on this realm.
+func (r *Realm) CountUsers(db *Database) (int, error) {
+	var count int
+	if err := db.db.
+		Model(&User{}).
+		Joins("INNER JOIN user_realms ON user_realms.user_id = users.id and realm_id = ?", r.ID).
+		Count(&count).
+		Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // ListUsers returns the list of users on this realm.
-func (r *Realm) ListUsers(db *Database) ([]*User, error) {
+func (r *Realm) ListUsers(db *Database, offset, limit int) ([]*User, error) {
+	if limit > MaxPageSize {
+		limit = MaxPageSize
+	}
+
 	var users []*User
 	if err := db.db.
+		Offset(offset).Limit(limit).
 		Model(r).
 		Order("LOWER(name)").
 		Related(&users, "RealmUsers").
@@ -506,7 +661,10 @@ func (db *Database) FindRealm(id interface{}) (*Realm, error) {
 
 func (db *Database) GetRealms() ([]*Realm, error) {
 	var realms []*Realm
-	if err := db.db.Find(&realms).Error; err != nil {
+	if err := db.db.
+		Order("name ASC").
+		Find(&realms).
+		Error; err != nil {
 		return nil, err
 	}
 	return realms, nil
@@ -662,4 +820,51 @@ func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error
 	}
 
 	return stats, nil
+}
+
+// RenderWelcomeMessage message renders the realm's welcome message.
+func (r *Realm) RenderWelcomeMessage() string {
+	msg := strings.TrimSpace(r.WelcomeMessage)
+	if msg == "" {
+		return ""
+	}
+
+	raw := blackfriday.Run([]byte(msg))
+	return string(bluemonday.UGCPolicy().SanitizeBytes(raw))
+}
+
+// ToCIDRList converts the newline-separated and/or comma-separated CIDR list
+// into an array of strings.
+func ToCIDRList(s string) ([]string, error) {
+	var cidrs []string
+	for _, line := range strings.Split(s, "\n") {
+		for _, v := range strings.Split(line, ",") {
+			v = strings.TrimSpace(v)
+
+			// Ignore blanks
+			if v == "" {
+				continue
+			}
+
+			// If there's no /, assume the most specific. This is intentionally
+			// rudimentary.
+			if !strings.Contains(v, "/") {
+				if strings.Contains(v, ":") {
+					v = fmt.Sprintf("%s/128", v)
+				} else {
+					v = fmt.Sprintf("%s/32", v)
+				}
+			}
+
+			// Basic sanity checking.
+			if _, _, err := net.ParseCIDR(v); err != nil {
+				return nil, err
+			}
+
+			cidrs = append(cidrs, v)
+		}
+	}
+
+	sort.Strings(cidrs)
+	return cidrs, nil
 }

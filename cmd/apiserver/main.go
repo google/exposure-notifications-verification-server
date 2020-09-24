@@ -90,7 +90,7 @@ func realMain(ctx context.Context) error {
 	// Setup cacher
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
 		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
-		cache.PrefixKeyFunc("apiserver:cache:"),
+		cache.PrefixKeyFunc("cache:"),
 	))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
@@ -125,7 +125,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer limiterStore.Close()
+	defer limiterStore.Close(ctx)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.APIKeyFunc(ctx, db, "apiserver:ratelimit:", config.RateLimit.HMACKey),
@@ -152,17 +152,18 @@ func realMain(ctx context.Context) error {
 	// first to reduce the chance of a database lookup.
 	r.Use(rateLimit)
 
+	// Other common middlewares
+	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
+		database.APIUserTypeDevice,
+	})
+	processFirewall := middleware.ProcessFirewall(ctx, h, "apiserver")
+
 	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 
 	{
 		sub := r.PathPrefix("/api").Subrouter()
-
-		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
-			database.APIUserTypeDevice,
-		})
-		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
+		sub.Use(processFirewall)
 
 		// POST /api/verify
 		verifyChaff := chaff.New()
@@ -176,7 +177,7 @@ func realMain(ctx context.Context) error {
 		// POST /api/certificate
 		certChaff := chaff.New()
 		defer certChaff.Close()
-		certapiController, err := certapi.New(ctx, config, db, h, certificateSigner)
+		certapiController, err := certapi.New(ctx, config, db, cacher, certificateSigner, h)
 		if err != nil {
 			return fmt.Errorf("failed to create certapi controller: %w", err)
 		}

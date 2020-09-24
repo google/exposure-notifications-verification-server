@@ -47,28 +47,20 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			var user database.User
-			c.renderNew(ctx, w, &user, false)
+			c.renderNew(ctx, w)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			user := &database.User{
-				Email: form.Email,
-				Name:  form.Name,
-				Admin: form.Admin,
-			}
-
 			flash.Error("Failed to process form: %v", err)
-			c.renderNew(ctx, w, user, false)
+			c.renderNew(ctx, w)
 			return
 		}
 
 		// See if the user already exists by email - they may be a member of another
 		// realm.
 		user, err := c.db.FindUserByEmail(form.Email)
-		alreadyExists := true
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
@@ -76,37 +68,47 @@ func (c *Controller) HandleCreate() http.Handler {
 			}
 
 			user = new(database.User)
-			alreadyExists = false
-		}
-
-		// Build the user struct - keeping email and name if user already exists in another realm.
-		if !alreadyExists {
 			user.Email = form.Email
 			user.Name = form.Name
 		}
-		user.Realms = append(user.Realms, realm)
 
+		// Create firebase user first, if this fails we don't want a db.User entry
+		if created, err := user.CreateFirebaseUser(ctx, c.client); err != nil {
+			flash.Alert("Failed to create user: %v", err)
+			c.renderNew(ctx, w)
+			return
+		} else if created {
+			if err := c.fbInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
+				flash.Error("Failed sending new user invitation: %v", err)
+				c.renderNew(ctx, w)
+				return
+			}
+		}
+
+		// Build the user struct - keeping email and name if user already exists in another realm.
+		user.Realms = append(user.Realms, realm)
 		if form.Admin {
 			user.AdminRealms = append(user.AdminRealms, realm)
 		}
 
 		if err := c.db.SaveUser(user); err != nil {
 			flash.Error("Failed to create user: %v", err)
-			c.renderNew(ctx, w, user, false)
+			c.renderNew(ctx, w)
 			return
 		}
 
-		flash.Alert("Successfully created user '%v'", form.Name)
-		c.renderNew(ctx, w, user, true)
+		flash.Alert("Successfully created user %v.", user.Name)
+
+		stats, err := c.getStats(ctx, user, realm)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		c.renderShow(ctx, w, user, stats)
 	})
 }
 
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, success bool) {
-	m := controller.TemplateMapFromContext(ctx)
-	m["user"] = user
-	if success {
-		m["firebase"] = c.config.Firebase
-	}
-	m["created"] = success
-	c.h.RenderHTML(w, "users/new", m)
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter) {
+	c.renderUpdate(ctx, w, &database.User{})
 }

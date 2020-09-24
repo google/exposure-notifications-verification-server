@@ -1,6 +1,7 @@
-{{define "admin/newrealm"}}
+{{define "admin/realms/new"}}
 
 {{$realm := .realm}}
+{{$systemSMSConfig := .systemSMSConfig}}
 
 <!doctype html>
 <html lang="en">
@@ -9,8 +10,8 @@
   {{template "floatingform" .}}
 </head>
 
-<body class="bg-light">
-  {{template "navbar" .}}
+<body class="tab-content">
+  {{template "admin/navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
@@ -23,17 +24,13 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <form method="POST" action="/admin/realms/create">
+        <form method="POST" action="/admin/realms">
           {{ .csrfField }}
 
           <div class="form-label-group">
-            <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}" placeholder="Realm name" />
+            <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}" placeholder="Realm name" autofocus />
             <label for="name">Realm name</label>
-            {{if $realm.ErrorsFor "name"}}
-            <div class="invalid-feedback">
-              {{joinStrings ($realm.ErrorsFor "name") ", "}}
-            </div>
-            {{end}}
+            {{template "errorable" $realm.ErrorsFor "name"}}
             <small class="form-text text-muted">
               The realm name should be descriptive. It must also be globally
               unique.
@@ -43,11 +40,7 @@
           <div class="form-label-group">
             <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}" placeholder="Region code" />
             <label for="name">Region code</label>
-            {{if $realm.ErrorsFor "regionCode"}}
-            <div class="invalid-feedback">
-              {{joinStrings ($realm.ErrorsFor "regionCode") ", "}}
-            </div>
-            {{end}}
+            {{template "errorable" $realm.ErrorsFor "regionCode"}}
             <small class="form-text text-muted">
               Used in creating deep link SMS for multi-helath authority apps. Region should
               be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and ISO 3166-2 subdivision codes</a> where applicable.
@@ -57,15 +50,11 @@
 
           {{if .supportsPerRealmSigning}}
           <div class="form-group">
-            <select class="form-control{{if $realm.ErrorsFor "UseRealmCertificateKey"}} is-invalid{{end}}" name="useRealmCertificateKey" id="useRealmCertificateKey">
+            <select class="form-control custom-select{{if $realm.ErrorsFor "useRealmCertificateKey"}} is-invalid{{end}}" name="useRealmCertificateKey" id="useRealmCertificateKey">
               <option value="true" {{if $realm.UseRealmCertificateKey}}selected{{end}}>Create realm-specific signing key</option>
               <option value="false" {{if not $realm.UseRealmCertificateKey}}selected{{end}}>Use system signing key</option>
             </select>
-            {{if $realm.ErrorsFor "UseRealmCertificateKey"}}
-            <div class="invalid-feedback">
-              {{joinStrings ($realm.ErrorsFor "UseRealmCertificateKey") ", "}}
-            </div>
-            {{end}}
+            {{template "errorable" $realm.ErrorsFor "useRealmCertificateKey"}}
             <small class="form-text text-muted">
               It is recommended that you create a realm-specific signing key when creating a new realm. However, it
               is important to note that this once a realm is created, you cannot switch back to using the system
@@ -76,11 +65,7 @@
           <div class="form-label-group">
             <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}" value="{{$realm.CertificateIssuer}}" placeholder="Issuer (iss)" />
             <label for="name">Issuer (iss)</label>
-            {{if $realm.ErrorsFor "certificateIssuer"}}
-              <div class="invalid-feedback">
-                {{joinStrings ($realm.ErrorsFor "certificateIssuer") ", "}}
-              </div>
-            {{end}}
+            {{template "errorable" $realm.ErrorsFor "certificateIssuer"}}
             <small class="form-text text-muted">
               This value is specific to the health authority. After created
               using realm-specific keys, this field cannot be changed.
@@ -90,15 +75,26 @@
           <div class="form-label-group">
             <input type="text" id="certificateAudiance" name="certificateAudiance" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" placeholder="Audience (aud)" />
             <label for="name">Audience (aud)</label>
-            {{if $realm.ErrorsFor "certificateAudience"}}
-              <div class="invalid-feedback">
-                {{joinStrings ($realm.ErrorsFor "certificateAudience") ", "}}
-              </div>
-            {{end}}
+            {{template "errorable" $realm.ErrorsFor "certificateAudience"}}
             <small class="form-text text-muted">
               The audience (<code>aud</code>) value is provided the <em>key
               server</em> operator. After upgrading to use realm-specific keys,
               this field cannot be changed.
+            </small>
+          </div>
+          {{end}}
+
+          {{if $systemSMSConfig}}
+          <div class="form-group form-check">
+            <input type="checkbox" name="can_use_system_sms_config" id="can-use-system-sms-config" class="form-check-input" value="1" {{if $realm.CanUseSystemSMSConfig}} checked{{end}}>
+            <label class="form-check-label" for="can-use-system-sms-config">
+              Share system SMS configuration
+            </label>
+            <small class="form-text text-muted">
+              Allow this realm to consume the system SMS credentials. If
+              enabled, the realm will not see the credentials, but they will be
+              able to send SMS messages using them. This could incur unexpected
+              costs for the credential owner.
             </small>
           </div>
           {{end}}

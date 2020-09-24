@@ -20,10 +20,12 @@
         },
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/x-www-form-urlencoded',
+        {{if not .currentUser}}
         success: function(returnData) {
           // The user successfully signed in, redirect to realm selection.
           window.location.assign('/login/select-realm');
         },
+        {{end}}
         error: function(xhr, status, e) {
           // There was an error finding the user. Redirect to the
           // sign-out page to clear the firebase cookie and any session
@@ -37,4 +39,136 @@
     });
   }
 </script>
+{{end}}
+
+{{define "login/pindiv"}}
+<div class="card shadow-sm d-none" id="sms-code-div">
+  <div class="card-header">
+    SMS Confirmation Code
+    <button type="button" class="close" aria-label="Close" id="sms-code-close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="card-body">
+    <form id="sms-code-form" class="floating-form" action="/" method="POST">
+      <div class="form-label-group">
+        <input type="text" id="sms-code" name="sms-code" class="form-control" placeholder="Code" autocomplete="one-time-code" required autofocus />
+        <label for="sms-code">Code</label>
+        <div class='w-100'>
+          <small class="text-muted">
+            Please enter the numerical code that was sent via SMS.
+          </small>
+        </div>
+        <small class="text-muted" id='code-text'></small>
+      </div>
+
+      <button type="submit" id="sms-code-submit" class="btn btn-primary btn-block">Confirm code</button>
+      <div class="btn-block">
+        <a id="sms-code-resend" class="card-link disabled" disabled>Resend SMS</a>
+        <a id="sms-change" class="card-link d-none" href="#">Change login factor</a>
+      </div>
+    </form>
+  </div>
+</div>
+{{end}}
+
+{{define "login/factorsdiv"}}
+<div class="card shadow-sm mb-3 d-none" id="registered-div">
+  <div class="card-header">Registered factors</div>
+  <div class="card-body">
+    <div id="factors" class="list-group list-group-flush">
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{define "login/pwd-validate-js"}}
+  {{if .requirements.HasRequirements}}
+  let $lenReq = $('#length-req');
+  let $upperReq = $('#upper-req');
+  let $lowerReq = $('#lower-req');
+  let $numReq = $('#num-req');
+  let $specialReq = $('#special-req');
+  {{end}}
+
+  function checkPasswordValid(pwd) {
+    {{if .requirements.HasRequirements}}
+    let upper = 0;
+    let lower = 0;
+    let digit = 0;
+    let special = 0;
+    let specialPattern = new RegExp(/[~`!#$%\^&*+=\-\[\]\\';,/{}|\\":<>\?]/);
+    for (let i = 0; i < pwd.length; i++) {
+      let c = pwd.charAt(i);
+      if (!isNaN(parseInt(c, 10))) {
+        digit++;
+      } else if (specialPattern.test(c)) {
+        special++;
+      } else if (c == c.toUpperCase()) {
+        upper++;
+      } else if (c == c.toLowerCase()) {
+        lower++;
+      }
+    }
+
+    let errClass = "oi oi-circle-x pr-1";
+    let checkClass = "oi oi-circle-check pr-1";
+
+    {{if gt .requirements.Length 0}}
+    if (pwd.length < {{.requirements.Length}}) {
+      $lenReq.find("#icon").attr("class", errClass)
+      $lenReq.addClass("text-danger");
+      return false;
+    } else {
+      $lenReq.find("#icon").attr("class", checkClass)
+      $lenReq.addClass("text-muted");
+    }
+    {{end}}
+
+    {{if gt .requirements.Uppercase 0}}
+    if (upper < {{.requirements.Uppercase}}) {
+      $upperReq.find("#icon").attr("class", errClass);
+      $upperReq.addClass("text-danger");
+      return false;
+    } else {
+      $upperReq.find("#icon").attr("class", checkClass);
+      $upperReq.addClass("text-muted");
+    }
+    {{end}}
+
+    {{if gt .requirements.Lowercase 0}}
+    if (lower < {{.requirements.Lowercase}}) {
+      $lowerReq.find("#icon").attr("class", errClass);
+      $lowerReq.addClass("text-danger");
+      return false;
+    } else {
+      $lowerReq.find("#icon").attr("class", checkClass);
+      $lowerReq.addClass("text-muted");
+    }
+    {{end}}
+
+    {{if gt .requirements.Number 0}}
+    if (digit < {{.requirements.Number}}) {
+      $numReq.find("#icon").attr("class", errClass);
+      $numReq.addClass("text-danger");
+      return false;
+    } else {
+      $numReq.find("#icon").attr("class", checkClass);
+      $numReq.addClass("text-muted");
+    }
+    {{end}}
+
+    {{if gt .requirements.Special 0}}
+    if (special < {{.requirements.Special}}) {
+      $specialReq.find("#icon").attr("class", errClass);
+      $specialReq.addClass("text-danger");
+      return false;
+    } else {
+      $specialReq.find("#icon").attr("class", checkClass);
+      $specialReq.addClass("text-muted");
+    }
+    {{end}}
+    {{end}}
+    return true;
+  }
 {{end}}

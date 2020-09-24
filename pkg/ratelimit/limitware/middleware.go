@@ -3,8 +3,6 @@ package limitware
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -13,6 +11,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -155,7 +154,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		}
 
 		// Take from the store.
-		limit, remaining, reset, ok, err := m.store.Take(key)
+		limit, remaining, reset, ok, err := m.store.Take(ctx, key)
 		if err != nil {
 			m.logger.Errorw("failed to take", "error", err)
 			stats.Record(ctx, m.takeErrors.M(1))
@@ -200,7 +199,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 // header. Since APIKeys are assumed to be "public" at some point, they are rate
 // limited by [realm,ip], and API keys have a 1-1 mapping to a realm.
 func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
+	logger := logging.FromContext(ctx).Named("ratelimit.APIKeyFunc")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
@@ -210,7 +209,7 @@ func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKe
 			realmID := realmIDFromAPIKey(db, v)
 			if realmID != 0 {
 				logger.Debugw("limiting by realm from apikey")
-				dig, err := digest(fmt.Sprintf("%d:%s", realmID, remoteIP(r)), hmacKey)
+				dig, err := digest.HMAC(fmt.Sprintf("%d:%s", realmID, remoteIP(r)), hmacKey)
 				if err != nil {
 					return "", fmt.Errorf("failed to digest api key: %w", err)
 				}
@@ -225,7 +224,7 @@ func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKe
 // UserIDKeyFunc pulls the user out of the request context and uses that to
 // ratelimit. It falls back to rate limiting by the client ip.
 func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
+	logger := logging.FromContext(ctx).Named("ratelimit.UserIDKeyFunc")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
@@ -235,7 +234,7 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 		user := controller.UserFromContext(ctx)
 		if user != nil {
 			logger.Debugw("limiting by user", "user", user.ID)
-			dig, err := digest(fmt.Sprintf("%d", user.ID), hmacKey)
+			dig, err := digest.HMACUint(user.ID, hmacKey)
 			if err != nil {
 				return "", fmt.Errorf("failed to digest user id: %w", err)
 			}
@@ -248,14 +247,14 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 
 // IPAddressKeyFunc uses the client IP to rate limit.
 func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named(scope + ".ratelimit")
+	logger := logging.FromContext(ctx).Named("ratelimit.IPAddressKeyFunc")
 
 	return func(r *http.Request) (string, error) {
 		// Get the remote addr
 		ip := remoteIP(r)
 
 		logger.Debugw("limiting by ip", "ip", ip)
-		dig, err := digest(ip, hmacKey)
+		dig, err := digest.HMAC(ip, hmacKey)
 		if err != nil {
 			return "", fmt.Errorf("failed to digest ip: %w", err)
 		}
@@ -276,21 +275,6 @@ func remoteIP(r *http.Request) string {
 	}
 
 	return ip
-}
-
-// digest returns the digest of given string as a hex-encoded string, and any
-// errors that occur while hashing.
-func digest(in string, key []byte) (string, error) {
-	h := hmac.New(sha1.New, key)
-	n, err := h.Write([]byte(in))
-	if err != nil {
-		return "", err
-	}
-	if got, want := n, len(in); got < want {
-		return "", fmt.Errorf("only hashed %d of %d bytes", got, want)
-	}
-	dig := h.Sum(nil)
-	return fmt.Sprintf("%x", dig), nil
 }
 
 // realmIDFromAPIKey extracts the realmID from the provided API key, handling v1

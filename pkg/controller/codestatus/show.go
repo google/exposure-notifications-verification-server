@@ -84,12 +84,13 @@ func (c *Controller) responseCode(ctx context.Context, r *http.Request, code *da
 		retCode.Issuer = c.getAuthAppName(ctx, r, code.IssuingAppID)
 	}
 
+	retCode.Claimed = code.Claimed
 	if code.Claimed {
 		retCode.Status = "Claimed by user"
 	} else {
 		retCode.Status = "Not yet claimed"
 	}
-	if !code.IsExpired() {
+	if !code.IsExpired() && !code.Claimed {
 		retCode.Expires = code.ExpiresAt.UTC().Unix()
 		retCode.LongExpires = code.LongExpiresAt.UTC().Unix()
 		retCode.HasLongExpires = retCode.LongExpires > retCode.Expires
@@ -152,6 +153,7 @@ func (c *Controller) getAuthAppName(ctx context.Context, r *http.Request, id uin
 
 type Code struct {
 	UUID           string `json:"uuid"`
+	Claimed        bool   `json:"claimed"`
 	Status         string `json:"status"`
 	TestType       string `json:"testType"`
 	IssuerType     string `json:"issuerType"`

@@ -7,7 +7,7 @@ This document describes the process for manually testing the system.
 1.  Request a verification code using the **Admin** API key:
 
     ```sh
-    go run ./cmd/get-code \
+    go run ./tools/get-code \
       -type "confirmed" \
       -onset "2020-08-01" \
       -apikey "ADMIN_API_KEY"
@@ -20,7 +20,7 @@ This document describes the process for manually testing the system.
     **Device** API key:
 
     ```sh
-    go run ./cmd/get-token \
+    go run ./tools/get-token \
       -apikey "DEVICE_API_KEY" \
       -code "CODE_FROM_STEP_2"
     ```
@@ -37,7 +37,7 @@ This document describes the process for manually testing the system.
     HMAC of the TEKs you plan to upload:
 
     ```sh
-    go run ./cmd/get-certificate \
+    go run ./tools/get-certificate \
       -apikey "DEVICE_API_KEY" \
       -token "VERIFICATION_TOKEN" \
       -hmac "HMAC_OF_TEKS"

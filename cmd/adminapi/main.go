@@ -87,7 +87,7 @@ func realMain(ctx context.Context) error {
 	// Setup cacher
 	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
 		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
-		cache.PrefixKeyFunc("adminapi:cache:"),
+		cache.PrefixKeyFunc("cache:"),
 	))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
@@ -112,7 +112,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
-	defer limiterStore.Close()
+	defer limiterStore.Close(ctx)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.APIKeyFunc(ctx, db, "adminapi:ratelimit:", config.RateLimit.HMACKey),
@@ -139,18 +139,19 @@ func realMain(ctx context.Context) error {
 	// first to reduce the chance of a database lookup.
 	r.Use(rateLimit)
 
+	// Other common middlewares
+	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
+		database.APIUserTypeAdmin,
+	})
+	processFirewall := middleware.ProcessFirewall(ctx, h, "adminapi")
+
 	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
 	{
 		sub := r.PathPrefix("/api").Subrouter()
-
-		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
-			database.APIUserTypeAdmin,
-		})
-		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
+		sub.Use(processFirewall)
 
-		issueapiController, err := issueapi.New(ctx, config, db, h)
+		issueapiController, err := issueapi.New(ctx, config, db, limiterStore, h)
 		if err != nil {
 			return fmt.Errorf("issueapi.New: %w", err)
 		}

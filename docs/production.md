@@ -98,9 +98,7 @@ There are three types of "users" for the system:
     system configuration. System admins, however, do not have permissions to
     administer codes or perform realm-specific tasks beyond their creation.
     Typically a system administrator creates a realm, adds the initial realm
-    admin, then removes themselves from the realm. To create a system
-    administrator, use the `cmd/add-users` tool. There is presently no UI for
-    adding a system administrator.
+    admin, then removes themselves from the realm.
 
 -   **Realm administrator** - realm administrators control the configuration of
     one or more realms. A user may be an administrator of 0 or more realms. If a
@@ -116,6 +114,13 @@ There are three types of "users" for the system:
     the realm and click "Add User". If a user is a member of multiple realms (by
     email address), they will be prompted to choose a realm after authenticating
     to the system.
+
+When bootstrapping a new system, a default system administrator with the email
+address "super@example.com" is created in the database. This user is **NOT**
+created in Firebase. To bootstrap the system, log in to the Firebase console and
+manually create a user with this email address and a password, then login to the
+system. From there, you can create a real user with your email address and
+delete the initial system user.
 
 
 ## Rotating secrets

@@ -230,6 +230,11 @@ func (db *Database) Ping(ctx context.Context) error {
 	return db.db.DB().PingContext(ctx)
 }
 
+// RawDB returns the underlying gorm database.
+func (db *Database) RawDB() *gorm.DB {
+	return db.db
+}
+
 // IsNotFound determines if an error is a record not found.
 func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
@@ -288,11 +293,11 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		realField, ciphertext, hasRealField := getFieldString(scope, column)
 		if !hasRealField {
-			scope.Log(fmt.Sprintf("skipping decryption, %s is not a string", realField.Name))
+			scope.Log(fmt.Sprintf("skipping decryption, %s is not a string", column))
 			return
 		}
 		if ciphertext == "" {
-			scope.Log(fmt.Sprintf("skipping decryption, %s is blank", realField.Name))
+			scope.Log(fmt.Sprintf("skipping decryption, %s is blank", column))
 			return
 		}
 
@@ -310,7 +315,7 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		ciphertextBytes, err := base64util.DecodeString(ciphertext)
 		if err != nil {
-			_ = scope.Err(fmt.Errorf("cannot decrypt %s, invalid ciphertext", realField.Name))
+			_ = scope.Err(fmt.Errorf("cannot decrypt %s, invalid ciphertext", column))
 			return
 		}
 
@@ -323,7 +328,7 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		if hasRealField {
 			if err := realField.Set(plaintext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", realField.Name, err))
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", column, err))
 				return
 			}
 		}
@@ -360,11 +365,11 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		realField, plaintext, hasRealField := getFieldString(scope, column)
 		if !hasRealField {
-			scope.Log(fmt.Sprintf("skipping encryption, %s is not a string", realField.Name))
+			scope.Log(fmt.Sprintf("skipping encryption, %s is not a string", column))
 			return
 		}
 		if plaintext == "" {
-			scope.Log(fmt.Sprintf("skipping encryption, %s is blank", realField.Name))
+			scope.Log(fmt.Sprintf("skipping encryption, %s is blank", column))
 			return
 		}
 
@@ -389,7 +394,7 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		if hasRealField {
 			if err := realField.Set(ciphertext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", realField.Name, err))
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", column, err))
 				return
 			}
 		}
@@ -410,7 +415,7 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 	}
 }
 
-// callback HMAC alters HMACs the value with the given key before saving.
+// callbackHMAC alters HMACs the value with the given key before saving.
 func callbackHMAC(ctx context.Context, hashFunc func(string) (string, error), table, column string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		// Do nothing if not the target table
@@ -480,4 +485,20 @@ func withRetries(ctx context.Context, f retry.RetryFunc) error {
 	b = retry.WithCappedDuration(1*time.Second, b)
 
 	return retry.Do(ctx, b, f)
+}
+
+// stringValue gets the value of the string pointer, returning "" for nil.
+func stringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// stringPtr converts the string value to a pointer, returning nil for "".
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

@@ -46,13 +46,13 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		c.renderStats(ctx, w, realm, stats)
+		c.renderShow(ctx, w, realm, stats)
 	})
 }
 
-func (c *Controller) renderStats(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = realm
 	m["stats"] = stats
-	c.h.RenderHTML(w, "realmstats", m)
+	c.h.RenderHTML(w, "realmadmin/show", m)
 }

@@ -52,8 +52,25 @@ type Controller struct {
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		// key is the key in the cacher where the values for this JWK are cached.
+		key := r.URL.String()
+
+		// See if there's a cached value. Note we cannot use Fetch here because our
+		// fetch function also depends on the cacher to lookup pubic keys and
+		// results in a deadlock.
 		var encoded []*jwk.JWK
-		if err := c.cacher.Fetch(ctx, r.URL.String(), &encoded, 5*time.Minute, func() (interface{}, error) {
+		if err := c.cacher.Read(ctx, key, &encoded); err == nil {
+			c.h.RenderJSON(w, http.StatusOK, encoded)
+			return
+		} else if err != cache.ErrNotFound {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// If we got this far, it means there was no cached value, so do a full
+		// read.
+		encoded, err := func() ([]*jwk.JWK, error) {
 			// Grab the URL path components  we need.
 			realmID := mux.Vars(r)["realm"]
 
@@ -62,11 +79,13 @@ func (c *Controller) HandleIndex() http.Handler {
 			if err != nil {
 				return nil, err
 			}
+
 			var keys []*database.SigningKey
 			keys, err = realm.ListSigningKeys(c.db)
 			if err != nil {
 				return nil, err
 			}
+
 			encoded := make([]*jwk.JWK, len(keys))
 			for i, key := range keys {
 				pk, err := c.keyCache.GetPublicKey(ctx, key.KeyID, c.db.KeyManager())
@@ -82,6 +101,19 @@ func (c *Controller) HandleIndex() http.Handler {
 					return nil, err
 				}
 			}
+			return encoded, nil
+		}()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// It's possible there were concurrent requests and someone already has the
+		// cache - now that we have the value, we can avoid the deadline and do a
+		// fetch. If there's already a cached value, our value will be discarded.
+		// Otherwise, it will be overwritten and saved in the cache.
+		ttl := 5 * time.Minute
+		if err := c.cacher.Fetch(ctx, key, &encoded, ttl, func() (interface{}, error) {
 			return encoded, nil
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -109,11 +141,12 @@ func (c *Controller) getRealm(realmStr string) (*database.Realm, error) {
 
 // New creates a new jwks *Controller, and returns it.
 func New(ctx context.Context, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
-	kc, err := keyutils.NewPublicKeyCache(time.Minute)
+	kc, err := keyutils.NewPublicKeyCache(ctx, cacher, time.Minute)
 	if err != nil {
 		return nil, err
 	}
 	logger := logging.FromContext(ctx)
+
 	return &Controller{
 		h:        h,
 		db:       db,

@@ -964,6 +964,368 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00041-AddRealmAbusePrevention",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS abuse_prevention_enabled bool NOT NULL DEFAULT false`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS abuse_prevention_limit integer NOT NULL DEFAULT 100`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS abuse_prevention_limit_factor numeric(8, 5) NOT NULL DEFAULT 1.0`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms DROP COLUMN IF EXISTS abuse_prevention_enabled`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS abuse_prevention_limit`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS abuse_prevention_limit_factor`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00042-ChangeRealmAbusePreventionLimitDefault",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms ALTER COLUMN abuse_prevention_limit SET DEFAULT 10`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms ALTER COLUMN abuse_prevention_limit SET DEFAULT 100`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00043-CreateModelerStatus",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&ModelerStatus{}).Error; err != nil {
+					return err
+				}
+				if err := tx.Create(&ModelerStatus{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("modeler_statuses").Error
+			},
+		},
+		{
+			ID: "00044-AddEmailVerifiedRequiredToRealms",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email verification required to realm")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verified_mode INTEGER DEFAULT 0").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS email_verified_mode").Error
+			},
+		},
+		{
+			ID: "00045-BootstrapSystemAdmin",
+			Migrate: func(tx *gorm.DB) error {
+				// Only create the default system admin if there are no users. This
+				// ensures people who are already running a system don't get a random
+				// admin user.
+				var user User
+				if err := db.db.Model(&User{}).First(&user).Error; err == nil {
+					return nil
+				} else {
+					if !IsNotFound(err) {
+						return err
+					}
+				}
+
+				user = User{
+					Name:  "System admin",
+					Email: "super@example.com",
+					Admin: true,
+				}
+
+				if err := db.SaveUser(&user); err != nil {
+					return err
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00046-AddWelcomeMessageToRealm",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS welcome_message text").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS welcome_message").Error
+			},
+		},
+		{
+			ID: "00047-AddPasswordLastChangedToUsers",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email verification required to realm")
+				return tx.Exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_password_change DATE DEFAULT CURRENT_DATE").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE users DROP COLUMN IF EXISTS last_password_change").Error
+			},
+		},
+		{
+			ID: "00048-AddPasswordRotateToRealm",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS password_rotation_period_days integer NOT NULL DEFAULT 0`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS password_rotation_warning_days integer NOT NULL DEFAULT 0`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms DROP COLUMN IF EXISTS password_rotation_period_days`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS password_rotation_warning_days `,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00049-MakeRegionCodeUnique",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					// Make region code case insensitive and unique.
+					"ALTER TABLE realms ALTER COLUMN region_code TYPE CITEXT",
+					"ALTER TABLE realms ALTER COLUMN region_code DROP DEFAULT",
+					"ALTER TABLE realms ALTER COLUMN region_code DROP NOT NULL",
+				}
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				// Make any existing empty string region codes to NULL. Without this,
+				// the new unique constraint will fail.
+				if err := tx.Exec("UPDATE realms SET region_code = NULL WHERE TRIM(region_code) = ''").Error; err != nil {
+					return err
+				}
+
+				// Make all region codes uppercase.
+				if err := tx.Exec("UPDATE realms SET region_code = UPPER(region_code) WHERE region_code IS NOT NULL").Error; err != nil {
+					return err
+				}
+
+				// Find any existing duplicate region codes - this could be combined
+				// into a much larger SQL statement with the next thing, but I'm
+				// optimizing for readability here.
+				var dupRegionCodes []string
+				if err := tx.Model(&Realm{}).
+					Unscoped().
+					Select("UPPER(region_code) AS region_code").
+					Where("region_code IS NOT NULL").
+					Group("region_code").
+					Having("COUNT(*) > 1").
+					Pluck("region_code", &dupRegionCodes).
+					Error; err != nil {
+					return err
+				}
+
+				// Update any duplicate regions to not be duplicate anymore.
+				for _, dupRegionCode := range dupRegionCodes {
+					logger.Warn("de-duplicating region code %q", dupRegionCode)
+
+					// I call this the "Microsoft method". For each duplicate realm,
+					// append -N, starting with 1. If there are 3 realms with the region
+					// code "PA", their new values will be "PA", "PA-1", and "PA-2"
+					// respectively.
+					sql := `
+						UPDATE
+							realms
+						SET region_code = CONCAT(realms.region_code, '-', (z-1)::text)
+						FROM (
+							SELECT
+								id,
+								region_code,
+								ROW_NUMBER() OVER (ORDER BY id ASC) AS z
+							FROM realms
+							WHERE UPPER(region_code) = UPPER($1)
+						) AS sq
+						WHERE realms.id = sq.id AND sq.z > 1`
+					if err := tx.Exec(sql, dupRegionCode).Error; err != nil {
+						return err
+					}
+				}
+
+				sqls = []string{
+					// There's already a runtime constraint and validation on names, this
+					// is just an extra layer of protection at the database layer.
+					"ALTER TABLE realms ALTER COLUMN name SET NOT NULL",
+
+					// Alter the unique index on realm names to be a column constraint.
+					"DROP INDEX IF EXISTS uix_realms_name",
+					"ALTER TABLE realms ADD CONSTRAINT uix_realms_name UNIQUE (name)",
+
+					// Now finally add a unique constraint on region codes.
+					"ALTER TABLE realms ADD CONSTRAINT uix_realms_region_code UNIQUE (region_code)",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00051-CreateSystemSMSConfig",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					// Add a new is_system boolean column and a constraint to ensure that
+					// only one row can have a value of true.
+					`ALTER TABLE sms_configs ADD COLUMN IF NOT EXISTS is_system BOOL`,
+					`UPDATE sms_configs SET is_system = FALSE WHERE is_system IS NULL`,
+					`ALTER TABLE sms_configs ALTER COLUMN is_system SET DEFAULT FALSE`,
+					`ALTER TABLE sms_configs ALTER COLUMN is_system SET NOT NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS uix_sms_configs_is_system_true ON sms_configs (is_system) WHERE (is_system IS TRUE)`,
+
+					// Require realm_id be set on all rows except system configs, and
+					// ensure that realm_id is unique.
+					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS nn_sms_configs_realm_id`,
+					`DROP INDEX IF EXISTS nn_sms_configs_realm_id`,
+					`ALTER TABLE sms_configs ADD CONSTRAINT nn_sms_configs_realm_id CHECK (is_system IS TRUE OR realm_id IS NOT NULL)`,
+
+					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS uix_sms_configs_realm_id`,
+					`DROP INDEX IF EXISTS uix_sms_configs_realm_id`,
+					`ALTER TABLE sms_configs ADD CONSTRAINT uix_sms_configs_realm_id UNIQUE (realm_id)`,
+
+					// Realm option set by system admins to share the system SMS config
+					// with the realm.
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS can_use_system_sms_config BOOL`,
+					`UPDATE realms SET can_use_system_sms_config = FALSE WHERE can_use_system_sms_config IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN can_use_system_sms_config SET DEFAULT FALSE`,
+					`ALTER TABLE realms ALTER COLUMN can_use_system_sms_config SET NOT NULL`,
+
+					// If true, the realm is set to use the system SMS config.
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS use_system_sms_config BOOL`,
+					`UPDATE realms SET use_system_sms_config = FALSE WHERE use_system_sms_config IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN use_system_sms_config SET DEFAULT FALSE`,
+					`ALTER TABLE realms ALTER COLUMN use_system_sms_config SET NOT NULL`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE sms_configs DROP COLUMN IF EXISTS is_system`,
+					`DROP INDEX IF EXISTS uix_sms_configs_is_system_true`,
+					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS nn_sms_configs_realm_id`,
+					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS uix_sms_configs_realm_id`,
+
+					`ALTER TABLE realms DROP COLUMN IF EXISTS can_use_system_sms_config`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS use_system_sms_config`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00052-CreateRealmAllowedCIDRs",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&Realm{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_adminapi`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_apiserver`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_server`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00053-AddRealmSMSCountry",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&Realm{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE realms DROP COLUMN IF EXISTS sms_country`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 

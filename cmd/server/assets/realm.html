@@ -8,9 +8,10 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+  {{template "floatingform" .}}
 </head>
 
-<body class="bg-light">
+<body class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -46,7 +47,7 @@
     {{end}}
 
 
-    <form method="POST" action="/realm/settings/save">
+    <form method="POST" class="floating-form" action="/realm/settings/save">
       {{ .csrfField }}
 
       <div class="card mb-3 shadow-sm">
@@ -79,6 +80,22 @@
                 Used in creating deep link SMS for multi-helath authority apps. Region should
                 be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and ISO 3166-2 subdivision codes</a> where applicable.
                 For example, Washington State would be <code>US-WA</code>.
+              </small>
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label for="name" class="col-sm-3">Welcome message:</label>
+            <div class="col-sm-9">
+              <textarea id="welcome-message" name="welcomeMessage" class="form-control text-monospace{{if $realm.ErrorsFor "welcomeMessage"}} is-invalid{{end}}" rows="5">{{$realm.WelcomeMessage}}</textarea>
+              {{if $realm.ErrorsFor "welcomeMessage"}}
+              <div class="invalid-feedback">
+                {{joinStrings ($realm.ErrorsFor "welcomeMessage") ", "}}
+              </div>
+              {{end}}
+              <small class="form-text text-muted">
+                Custom welcome message to display to users after selecting this
+                realm. Supports the common <a href="https://daringfireball.net/projects/markdown/syntax">markdown</a> stanard.
               </small>
             </div>
           </div>
@@ -135,14 +152,69 @@
           </div>
 
           <div class="form-group row">
-            <label for="MFAMode" class="col-sm-3">Multi factor auth:</label>
+            <label for="emailVerifiedMode" class="col-sm-3">Email verified:</label>
             <div class="col-sm-9">
-              <select name="MFAMode" id="MFAMode" class="form-control">
-                <option value=1 {{if eq $realm.MFAModeString "required"}}selected{{end}}>Required</option>
-                <option value=0 {{if eq $realm.MFAModeString "prompt"}}selected{{end}}>Prompt after login</option>
-                <option value=2 {{if eq $realm.MFAModeString "optional"}}selected{{end}}>Optional</option>
+              <select name="emailVerifiedMode" id="emailVerifiedMode" class="form-control custom-select">
+                <option value="1" {{if eq $realm.EmailVerifiedMode.String "required"}}selected{{end}}>Required</option>
+                <option value="0" {{if eq $realm.EmailVerifiedMode.String "prompt"}}selected{{end}}>Prompt after login</option>
+                <option value="2" {{if eq $realm.EmailVerifiedMode.String "optional"}}selected{{end}}>Optional</option>
               </select>
             </div>
+          </div>
+
+          <div class="form-group row">
+            <label for="MFAMode" class="col-sm-3">Multi factor auth:</label>
+            <div class="col-sm-9">
+              <select name="MFAMode" id="MFAMode" class="form-control custom-select">
+                <option value="1" {{if eq $realm.MFAMode.String "required"}}selected{{end}}>Required</option>
+                <option value="0" {{if eq $realm.MFAMode.String "prompt"}}selected{{end}}>Prompt after login</option>
+                <option value="2" {{if eq $realm.MFAMode.String "optional"}}selected{{end}}>Optional</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group row mb-n3">
+            <label for="passwordRotate" class="col-sm-3">Password rotation every:</label>
+            <div class="col-sm-2">
+              <select class="form-control" name="passwordRotate" id="passwordRotate">
+                {{$current := $realm.PasswordRotationPeriodDays}}
+                {{range $prd := .passwordRotateDays}}
+                <option value="{{$prd}}" {{if (eq $prd $current)}}selected{{end}}>{{if (eq $prd 0)}}Off{{else}}{{$prd}}{{end}}</option>
+                {{end}}
+              </select>
+            </div>
+            <div class="input-group-append">
+              <label class="ml-1" for="passwordWarn">days</label>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-sm-3"></div>
+            <small class="form-text text-muted col">
+              The server will require the user to change their password after this number of
+              days elapse since their last password change.
+            </small>
+          </div>
+
+          <div class="form-group row  mb-n3">
+            <label for="passwordRotate" class="col-sm-3">Password rotation warning:</label>
+            <div class="col-sm-2">
+              <select class="custom-select{{if $realm.ErrorsFor "passwordWarn"}} is-invalid{{end}}" name="passwordWarn" id="passwordWarn">
+                {{$current := $realm.PasswordRotationWarningDays}}
+                {{range $pwd := .passwordWarnDays}}
+                <option value="{{$pwd }}" {{if (eq $pwd $current)}}selected{{end}}>{{if (eq $pwd 0)}}Off{{else}}{{$pwd}}{{end}}</option>
+                {{end}}
+              </select>
+             </div>
+              <div class="input-group-append">
+                <label class="ml-1" for="passwordWarn">days before rotation</label>
+              </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-sm-3"></div>
+            <small class="form-text text-muted col">
+              When the next password rotation is due in this many days, the server will warn the users
+              that their password will expire soon.
+            </small>
           </div>
         </div>
       </div>
@@ -203,9 +275,9 @@
             </div>
           </div>
 
-          <div class="form-group row">
+          <div class="form-group row mb-n1">
             <label for="codeLength" class="col-sm-3">Code expires after:</label>
-            <div class="col-sm-8">
+            <div class="col-sm-2">
               {{if $realm.EnableENExpress}}
                 <input class="form-control{{if $realm.ErrorsFor "CodeDurationSeconds"}} is-invalid{{end}}" name="codeDuration" id="codeDuration" type="text" value="{{$realm.GetCodeDurationMinutes}}" readonly />
               {{else}}
@@ -215,15 +287,23 @@
                   <option value="{{$scm}}" {{if (eq $scm $current)}}selected{{end}}>{{$scm}}</option>
                   {{end}}
                 </select>
-                <small class="form-text text-muted">
-                  The short code can be valid from anywhere between <code>5</code> and <code>60</code>
-                  minutes. If you are using SMS deeplinks, it is recommended to keep this duration
-                  short and let the long code be valid for a longer period (up to <code>24</code> hours).
-                </small>
               {{end}}
             </div>
-            <div class="col-sm-1">minutes</div>
+            <div class="input-group-append">
+              <label class="ml-1" for="passwordWarn">minutes</label>
+            </div>
           </div>
+          {{if not $realm.EnableENExpress}}
+          <div class="row mb-3">
+            <div class="col-sm-3"></div>
+            <small class="form-text text-muted col">
+              The short code can be valid from anywhere between <code>5</code> and <code>60</code>
+              minutes. If you are using SMS deeplinks, it is recommended to keep this duration
+              short and let the long code be valid for a longer period (up to <code>24</code> hours).
+            </small>
+          </div>
+          {{end}}
+
 
           <div class="form-group row">
             <label for="codeLength" class="col-sm-3">Long code characters:</label>
@@ -245,9 +325,9 @@
             </div>
           </div>
 
-          <div class="form-group row">
+          <div class="form-group row  mb-n3">
             <label for="codeLength" class="col-sm-3">Long code expires after:</label>
-            <div class="col-sm-8">
+            <div class="col-sm-2">
               {{if $realm.EnableENExpress}}
                 <input class="form-control{{if $realm.ErrorsFor "LongCodeDurationSeconds"}} is-invalid{{end}}" name="longCodeDuration" id="longCodeDuration" type="text" value="{{$realm.GetLongCodeDurationHours}}" readonly />
               {{else}}
@@ -257,13 +337,20 @@
                     <option value="{{$lch}}" {{if (eq $lch $current)}}selected{{end}}>{{$lch}}</option>
                   {{end}}
                 </select>
-                <small class="form-text text-muted">
-                  The long code can be valid between <code>1</code> and <code>24</code> hours.
-                </small>
               {{end}}
             </div>
-            <div class="col-sm-1">hours</div>
+            <div class="input-group-append">
+              <label class="ml-1 col" for="passwordWarn">hours</label>
+            </div>
           </div>
+          {{if not $realm.EnableENExpress}}
+          <div class="row mb-3">
+            <div class="col-sm-3"></div>
+            <small class="form-text text-muted col">
+              The long code can be valid between <code>1</code> and <code>24</code> hours.
+            </small>
+          </div>
+          {{end}}
 
           <div class="form-group row">
             <label for="name" class="col-sm-3">SMS text template:</label>
@@ -282,7 +369,16 @@
                 {{if $realm.EnableENExpress}}
                   Your SMS template <em>MUST</em> contain <code>[enslink]</code>.
                   <ul>
+                    {{if eq "" .enxRedirectDomain}}
                     <li><code>[enslink]</code> Inserts the required EN Express link of: <code>ens://v?r=[region]&c=[longcode]</code></li>
+                    {{else}}
+                    <li><code>[enslink]</code> Inserts the EN Express link of: <code>https://{{toLower $realm.RegionCode}}.{{.enxRedirectDomain}}/v?c=[longcode]</code>
+                      <ul>
+                        <li>This domain should be registered as a universal link for both your Android and iOS applications.</li>
+                        <li>Contact your server operator to verify the the verification EN Express redirect service is running and configurd correctly.</li>
+                      </ul>
+                    </li>
+                    {{end}}
                     <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
                   </ul>
 
@@ -290,11 +386,10 @@
 
                   <ul>
                     <li>
-                      <p>Custom greeting before the EN Express link and showing expiration.
-                         This is <code>145</code> characters when expanded.</p>
+                      <p>Custom greeting before the EN Express link and showing expiration.</p>
                       <p>
                         <samp class="text-dark">
-                          State of Wonder Dept. of Health. Click to share anonymous data for exposure notifications [enslink] Expires in [longexpires] hours
+                          State of Wonder DOH. Click to share anonymous data for exposure notifications [enslink] (mobile only) Expires in [longexpires] hours
                         </samp>
                       </p>
                     </li>
@@ -302,7 +397,11 @@
                       <p>This results in a SMS message that looks like:</p>
                       <p>
                         <samp class="text-dark">
-                          State of Wonder Dept. of Health. Click to share anonymous data for exposure notifications ens://v?r=US-XX&c=12345678abcd1234 Expires in 24 hours
+                          {{if eq "" .enxRedirectDomain}}
+                          State of Wonder DOH. Click to share anonymous data for exposure notifications ens://v?r={{$realm.RegionCode}}&c=[longcode] (mobile only) Expires in 24 hours
+                          {{else}}
+                          State of Wonder DOH. Click to share anonymous data for exposure notifications https://{{toLower $realm.RegionCode}}.{{.enxRedirectDomain}}/v?c=[longcode] (mobile only) Expires in 24 hours
+                          {{end}}
                         </samp>
                       </p>
                     </li>
@@ -333,12 +432,15 @@
                     </p>
                   </li>
                   <li>
-                    <p>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration):</p>
+                    <p>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration).
+                       Here we assume that <code>verify.mypha.gov</code> is registred as a universal link for both your iOS
+                       and Android applications.
+                    </p>
                     <p>
                       <samp class="text-dark">
                         You have tested positive for Covid-19. Click here to
                         share anonymous data for exposure notifications
-                        dohen://v?c=[longcode] (Expires in [longexpires] hours)
+                        https://verify.mypha.gov/v?c=[longcode] (Expires in [longexpires] hours)
                       </samp>
                     </p>
                   </li>
@@ -347,7 +449,80 @@
               </small>
             </div>
           </div>
+        </div>
+      </div>
 
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          Abuse prevention
+        </div>
+        <div class="card-body">
+          {{template "beta-notice" .}}
+
+          <p>
+            Abuse prevention uses the historical record of your realm's past
+            daily code issuances to build a predictive model of future use,
+            rejecting requests that fall outside of the predicted model.
+          </p>
+
+          <p>
+            Without abuse protection, an attacker with a compromised credential
+            could generate many fake codes and then use those codes to
+            subsequently upload many fake keys to the system.
+          </p>
+
+          <div class="form-group form-check">
+            <input class="form-check-input" type="checkbox" name="abuse_prevention_enabled" id="abuse_prevention_enabled" value="1" {{if $realm.AbusePreventionEnabled}} checked{{end}}>
+            <label class="form-check-label" for="abuse_prevention_enabled">
+              Enable abuse prevention
+            </label>
+          </div>
+
+          <div id="abuse_prevention_configuration" class="{{if not $realm.AbusePreventionEnabled}}d-none{{end}}">
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_limit" name="abuse_prevention_limit" class="form-control" placeholder="Computed limit" value="{{$realm.AbusePreventionLimit}}" readonly />
+              <label for="abuse_prevention_limit">Computed limit</label>
+              <small class="form-text text-muted">
+                This value is computed by the historical daily model and applies
+                for the next 24h block of rolling UTC time.
+              </small>
+            </div>
+
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_limit_factor" name="abuse_prevention_limit_factor" class="form-control" placeholder="Limit factor" value="{{printf "%.3f" $realm.AbusePreventionLimitFactor}}" />
+              <label for="abuse_prevention_limit_factor">Limit factor</label>
+              <small class="form-text text-muted">
+                This value is factored against the predicted daily model to
+                determine the total number of codes that {{$realm.Name}} can issue
+                in a day. For example, to enable 25% more codes to be issued than
+                predicted by the model model, set this value to <code>1.25</code>.
+              </small>
+              <small class="form-text text-danger font-weight-bold">
+                Setting this value too low will prevent case workers from issuing
+                codes for legitimate uses!
+              </small>
+            </div>
+
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_effective_limit" class="form-control" placeholder="Effective limit" value="{{$realm.AbusePreventionEffectiveLimit}}" readonly />
+              <label for="abuse_prevention_effective_limit">Effective limit</label>
+              <small class="form-text text-muted">
+                This is the effective daily limit for {{$realm.Name}} after
+                applying your limit factor.
+              </small>
+            </div>
+
+            <div class="form-label-group">
+              <input type="text" id="abuse_prevention_burst" name="abuse_prevention_burst" class="form-control" placeholder="Temporary burst" value="0" />
+              <label for="abuse_prevention_burst">Temporary burst</label>
+              <small class="form-text text-muted">
+                Set this value to temporarily add quota to your realm. You
+                should only do this when you've exceeded your daily quota and
+                still need to issue new codes. After 00:00 UTC, the quota will
+                reset back to the predicted model automatically.
+              </small>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -416,6 +591,35 @@
   </main>
 
   {{template "scripts" .}}
+
+  <script type="text/javascript">
+    $(function() {
+      let $abusePreventionEnabled = $('#abuse_prevention_enabled');
+      let $abusePreventionConfiguration = $('#abuse_prevention_configuration');
+      let $abusePreventionLimit = $('#abuse_prevention_limit');
+      let $abusePreventionLimitFactor = $('#abuse_prevention_limit_factor');
+      let $abusePreventionEffectiveLimit = $('#abuse_prevention_effective_limit');
+
+      $abusePreventionEnabled.change(function(e) {
+        if (this.checked) {
+          $abusePreventionConfiguration.removeClass('d-none');
+        } else {
+          $abusePreventionConfiguration.addClass('d-none');
+        }
+      });
+
+      $abusePreventionLimitFactor.keyup(function(e){
+        let $this = $(e.currentTarget);
+        let current = $this.val();
+
+        if (current && current.length) {
+          let effective = parseFloat(current) * parseFloat($abusePreventionLimit.val());
+          effective = Math.ceil(effective);
+          $abusePreventionEffectiveLimit.val(effective);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
 {{end}}

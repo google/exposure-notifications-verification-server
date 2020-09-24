@@ -17,10 +17,10 @@ package realmkeys
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
@@ -40,10 +40,10 @@ type Controller struct {
 	systemCertificateKeyManager keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, h *render.Renderer) (*Controller, error) {
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
 	logger := logging.FromContext(ctx)
 
-	publicKeyCache, err := keyutils.NewPublicKeyCache(time.Minute)
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		return nil, err
 	}

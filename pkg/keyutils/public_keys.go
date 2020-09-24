@@ -18,43 +18,61 @@ package keyutils
 import (
 	"context"
 	"crypto"
+	"crypto/dsa"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 )
 
 type PublicKeyCache struct {
-	pubKeyCache *cache.Cache
+	cacher cache.Cacher
+	ttl    time.Duration
 }
 
-func NewPublicKeyCache(ttl time.Duration) (*PublicKeyCache, error) {
-	pubKeyCache, err := cache.New(ttl)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize cache: %w", err)
-	}
+// NewPublicKeyCache creates a new public key cache from the given parameters.
+func NewPublicKeyCache(ctx context.Context, cacher cache.Cacher, ttl time.Duration) (*PublicKeyCache, error) {
 	return &PublicKeyCache{
-		pubKeyCache: pubKeyCache,
+		cacher: cacher,
+		ttl:    ttl,
 	}, nil
 }
 
-func (c *PublicKeyCache) GetPublicKey(ctx context.Context, keyID string, kms keys.KeyManager) (crypto.PublicKey, error) {
-	// Get the public key for the Token Signing Key.
-	keyCache, err := c.pubKeyCache.WriteThruLookup(keyID,
-		func() (interface{}, error) {
-			signer, err := kms.NewSigner(ctx, keyID)
-			if err != nil {
-				return nil, err
-			}
-			return signer.Public(), nil
-		})
+// GetPublicKey returns the public key for the provided ID.
+func (c *PublicKeyCache) GetPublicKey(ctx context.Context, id string, kms keys.KeyManager) (crypto.PublicKey, error) {
+	key := fmt.Sprintf("publickey:%s", id)
+
+	var b []byte
+	if err := c.cacher.Fetch(ctx, key, &b, c.ttl, func() (interface{}, error) {
+		signer, err := kms.NewSigner(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return x509.MarshalPKIXPublicKey(signer.Public())
+	}); err != nil {
+		return nil, fmt.Errorf("failed to fetch public key for %s: %w", id, err)
+	}
+
+	raw, err := x509.ParsePKIXPublicKey(b)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get public key for keyId %v: %w", keyID, err)
+		return nil, fmt.Errorf("failed to parse public key: %w", err)
 	}
-	publicKey, ok := keyCache.(crypto.PublicKey)
-	if !ok {
-		return nil, fmt.Errorf("public key in wrong format for %v: %w", keyID, err)
+
+	switch pub := raw.(type) {
+	case *rsa.PublicKey:
+		return pub, nil
+	case *dsa.PublicKey:
+		return pub, nil
+	case *ecdsa.PublicKey:
+		return pub, nil
+	case ed25519.PublicKey:
+		return pub, nil
+	default:
+		return fmt.Errorf("unknown public key type: %T", pub), nil
 	}
-	return publicKey, nil
 }

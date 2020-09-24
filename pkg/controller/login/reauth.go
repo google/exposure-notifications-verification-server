@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realmadmin
+// Package login defines the controller for the login page.
+package login
 
 import (
 	"net/http"
@@ -20,16 +21,21 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+func (c *Controller) HandleReauth() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
+		// No session redirect for reauth
+
+		if r := r.FormValue("redir"); r != "" {
+			m := controller.TemplateMapFromContext(ctx)
+			m["loginRedirect"] = r
+
+			session := controller.SessionFromContext(ctx)
+			flash := controller.Flash(session)
+			flash.Alert("This operation is sensitive and requires recent authentication. Please sign-in again.")
 		}
 
-		c.renderShow(ctx, w, r, realm, nil)
+		c.renderLogin(ctx, w)
 	})
 }

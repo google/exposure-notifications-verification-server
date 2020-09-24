@@ -16,8 +16,10 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -115,6 +117,10 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
+			if passwordRedirectRequired(ctx, user, realm) {
+				controller.RedirectToChangePassword(w, r, h)
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -152,7 +158,62 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 				return
 			}
 
+			if passwordRedirectRequired(ctx, user, realm) {
+				controller.RedirectToChangePassword(w, r, h)
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func passwordRedirectRequired(ctx context.Context, user *database.User, realm *database.Realm) bool {
+	err := checkRealmPasswordAge(user, realm)
+	if err == nil {
+		return false
+	}
+	session := controller.SessionFromContext(ctx)
+	flash := controller.Flash(session)
+
+	if err == errPasswordChangeRequired {
+		flash.Error(strings.Title(err.Error() + "."))
+		return true
+	}
+
+	if !controller.PasswordExpireWarnedFromSession(session) {
+		controller.StorePasswordExpireWarned(session, true)
+		flash.Warning(strings.Title(err.Error() + "."))
+	}
+	return false
+}
+
+var errPasswordChangeRequired = errors.New("password change required")
+
+func checkRealmPasswordAge(user *database.User, realm *database.Realm) error {
+	if realm.PasswordRotationPeriodDays <= 0 {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	nextPasswordChange := user.PasswordChanged().Add(
+		time.Hour * 24 * time.Duration(realm.PasswordRotationPeriodDays))
+
+	if now.After(nextPasswordChange) {
+		return errPasswordChangeRequired
+	}
+
+	if nextPasswordChange.Add(
+		time.Hour * 24 * time.Duration(realm.PasswordRotationWarningDays)).
+		After(now) {
+		untilChange := nextPasswordChange.Sub(now).Hours()
+		if daysUntilChange := int(untilChange / 24); daysUntilChange > 1 {
+			return fmt.Errorf("password change required in %d days", daysUntilChange)
+		}
+		if hoursUntilChange := int(untilChange); hoursUntilChange > 1 {
+			return fmt.Errorf("password change required in %d hours", hoursUntilChange)
+		}
+		return fmt.Errorf("password change required soon")
+	}
+
+	return nil
 }

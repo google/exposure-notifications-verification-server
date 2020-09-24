@@ -12,32 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package login defines the controller for the login page.
-package login
+package user
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleLoginCreate() http.Handler {
+func (c *Controller) HandleImport() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// If there's a firebase cookie in the session, try to redirect to /home. If
-		// the cookie is invalid, the auth middleware will pick it up, delete the
-		// cookie from the session, and kick them back here.
-		session := controller.SessionFromContext(ctx)
-		if session != nil {
-			if c := controller.FirebaseCookieFromSession(session); c != "" {
-				http.Redirect(w, r, "/home", http.StatusSeeOther)
-				return
-			}
-		}
-
-		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/create", m)
+		c.renderImport(ctx, w)
 	})
+}
+
+func (c *Controller) renderImport(ctx context.Context, w http.ResponseWriter) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["firebase"] = c.config.Firebase
+	c.h.RenderHTML(w, "users/import", m)
 }

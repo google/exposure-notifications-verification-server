@@ -120,6 +120,11 @@ func RedirectToMFA(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	http.Redirect(w, r, "/login/register-phone", http.StatusSeeOther)
 }
 
+// RedirectToChangePassword redirects to the password reset page.
+func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	http.Redirect(w, r, "/login/change-password", http.StatusSeeOther)
+}
+
 func prefixInList(list []string, prefix string) bool {
 	for _, v := range list {
 		if strings.HasPrefix(v, prefix) {

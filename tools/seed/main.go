@@ -88,6 +88,7 @@ func realMain(ctx context.Context) error {
 	// Create a realm
 	realm1 := database.NewRealmWithDefaults("Narnia")
 	realm1.RegionCode = "US-PA"
+	realm1.AbusePreventionEnabled = true
 	if err := db.SaveRealm(realm1); err != nil {
 		return fmt.Errorf("failed to create realm: %w: %v", err, realm1.ErrorMessages())
 	}
@@ -97,6 +98,7 @@ func realMain(ctx context.Context) error {
 	realm2 := database.NewRealmWithDefaults("Wonderland")
 	realm2.AllowedTestTypes = database.TestTypeLikely | database.TestTypeConfirmed
 	realm2.RegionCode = "US-WA"
+	realm2.AbusePreventionEnabled = true
 	if err := db.SaveRealm(realm2); err != nil {
 		return fmt.Errorf("failed to create realm: %w: %v", err, realm2.ErrorMessages())
 	}
@@ -104,12 +106,14 @@ func realMain(ctx context.Context) error {
 
 	// Create users
 	user := &database.User{Email: "user@example.com", Name: "Demo User"}
-	user.AddRealm(realm1)
-	user.AddRealm(realm2)
-	if err := db.SaveUser(user); err != nil {
-		return fmt.Errorf("failed to create user: %w: %v", err, user.ErrorMessages())
+	if _, err := db.FindUserByEmail(user.Email); database.IsNotFound(err) {
+		user.AddRealm(realm1)
+		user.AddRealm(realm2)
+		if err := db.SaveUser(user); err != nil {
+			return fmt.Errorf("failed to create user: %w: %v", err, user.ErrorMessages())
+		}
+		logger.Infow("created user", "user", user)
 	}
-	logger.Infow("created user", "user", user)
 
 	if err := createFirebaseUser(ctx, fbAuth, user); err != nil {
 		return err
@@ -117,19 +121,23 @@ func realMain(ctx context.Context) error {
 	logger.Infow("enabled user", "user", user)
 
 	unverified := &database.User{Email: "unverified@example.com", Name: "Unverified User"}
-	unverified.AddRealm(realm1)
-	if err := db.SaveUser(unverified); err != nil {
-		return fmt.Errorf("failed to create unverified: %w: %v", err, unverified.ErrorMessages())
+	if _, err := db.FindUserByEmail(unverified.Email); database.IsNotFound(err) {
+		unverified.AddRealm(realm1)
+		if err := db.SaveUser(unverified); err != nil {
+			return fmt.Errorf("failed to create unverified: %w: %v", err, unverified.ErrorMessages())
+		}
+		logger.Infow("created user", "user", unverified)
 	}
-	logger.Infow("created user", "user", unverified)
 
 	admin := &database.User{Email: "admin@example.com", Name: "Admin User"}
-	admin.AddRealm(realm1)
-	admin.AddRealmAdmin(realm1)
-	if err := db.SaveUser(admin); err != nil {
-		return fmt.Errorf("failed to create admin: %w: %v", err, admin.ErrorMessages())
+	if _, err := db.FindUserByEmail(admin.Email); database.IsNotFound(err) {
+		admin.AddRealm(realm1)
+		admin.AddRealmAdmin(realm1)
+		if err := db.SaveUser(admin); err != nil {
+			return fmt.Errorf("failed to create admin: %w: %v", err, admin.ErrorMessages())
+		}
+		logger.Infow("created admin", "admin", admin)
 	}
-	logger.Infow("created admin", "admin", admin)
 
 	if err := createFirebaseUser(ctx, fbAuth, admin); err != nil {
 		return err
@@ -137,10 +145,12 @@ func realMain(ctx context.Context) error {
 	logger.Infow("enabled admin", "admin", admin)
 
 	super := &database.User{Email: "super@example.com", Name: "Super User", Admin: true}
-	if err := db.SaveUser(super); err != nil {
-		return fmt.Errorf("failed to create super: %w: %v", err, super.ErrorMessages())
+	if _, err := db.FindUserByEmail(super.Email); database.IsNotFound(err) {
+		if err := db.SaveUser(super); err != nil {
+			return fmt.Errorf("failed to create super: %w: %v", err, super.ErrorMessages())
+		}
+		logger.Infow("created super", "super", super)
 	}
-	logger.Infow("created super", "super", super)
 
 	if err := createFirebaseUser(ctx, fbAuth, super); err != nil {
 		return err

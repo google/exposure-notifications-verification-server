@@ -22,11 +22,18 @@
   {{template "scripts" .}}
 
   <script type="text/javascript">
-    window.addEventListener('load', function () {
-      firebase.auth().signOut().then(function () {
-        window.location.assign("/");
-      }).catch(function (error) {
-        flash("Error signing out, close browser window.", "danger")
+    window.addEventListener('load', function() {
+      firebase.auth().signOut().then(function() {
+        if ($('#alerts-container').children().length == 0) {
+          window.location.assign("/");
+        } else {
+          $('#signout').text("Redirecting to login...")
+          window.setTimeout(function() {
+            window.location.assign("/");
+          }, 3000);
+        }
+      }).catch(function(error) {
+        flash.error('Error signing out, close browser window.');
       });
     });
   </script>
