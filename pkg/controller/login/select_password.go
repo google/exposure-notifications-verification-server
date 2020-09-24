@@ -69,7 +69,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 			return
 		}
 
-		if _, err := c.fbInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
+		if _, err := c.firebaseInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
 			logger.Errorw("VerifyPasswordResetCode failed", "error", err)
 			c.renderShowSelectPassword(ctx, w)
 			return

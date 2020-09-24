@@ -76,5 +76,5 @@ func (c *Client) VerifyPasswordResetCode(ctx context.Context, code, newPassword 
 		return details, fmt.Errorf("failure %d: %s", status, string(b))
 	}
 
-	return details, nil
+	return nil, nil
 }
