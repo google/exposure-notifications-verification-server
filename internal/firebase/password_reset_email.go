@@ -32,38 +32,47 @@ type sendPasswordResetEmailRequest struct {
 // SendPasswordResetEmail sends a password reset email to the user.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
-func (c *Client) SendPasswordResetEmail(ctx context.Context, email string) error {
+func (c *Client) SendPasswordResetEmail(ctx context.Context, email string) (*ErrorDetails, error) {
 	r := &sendPasswordResetEmailRequest{
 		RequestType: "PASSWORD_RESET",
 		Email:       email,
 	}
+	details := &ErrorDetails{}
 
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(r); err != nil {
-		return fmt.Errorf("failed to create json body: %w", err)
+		return details, fmt.Errorf("failed to create json body: %w", err)
 	}
 
 	u := c.buildURL("/v1/accounts:sendOobCode")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, &body)
 	if err != nil {
-		return fmt.Errorf("failed to build request: %w", err)
+		return details, fmt.Errorf("failed to build request: %w", err)
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send password reset email: %w", err)
+		return details, fmt.Errorf("failed to send password reset email: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if status := resp.StatusCode; status != http.StatusOK {
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("response was %d, but failed to read body: %w", status, err)
+			return details, fmt.Errorf("response was %d, but failed to read body: %w", status, err)
 		}
-		return fmt.Errorf("failure %d: %s", status, string(b))
+
+		// Try to unmarshal the error message. Firebase uses these as enum values to expand on the code.
+		var m map[string]ErrorDetails
+		if err := json.Unmarshal(b, &m); err != nil {
+			d := m["error"]
+			details = &d
+		}
+
+		return details, fmt.Errorf("failure %d: %s", status, string(b))
 	}
 
-	return nil
+	return nil, nil
 }

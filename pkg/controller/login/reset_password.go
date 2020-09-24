@@ -16,17 +16,56 @@
 package login
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
 
-func (c *Controller) HandleResetPassword() http.Handler {
+func (c *Controller) HandleShowResetPassword() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		c.renderResetPassword(ctx, w)
+	})
+}
+
+func (c *Controller) renderResetPassword(ctx context.Context, w http.ResponseWriter) {
+	m := controller.TemplateMapFromContext(ctx)
+	c.h.RenderHTML(w, "login/reset-password", m)
+}
+
+func (c *Controller) HandleSubmitResetPassword() http.Handler {
+	logger := c.logger.Named("login.HandleSubmitResetPassword")
+
+	type FormData struct {
+		Email string `form:"email"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			logger.Errorw("failed to bind form", "error", err)
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// There's no session yet, so make a one-time flash.
 		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/reset-password", m)
+		f := flash.New(nil)
+
+		if _, err := c.fbInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
+			logger.Errorw("SendPasswordResetEmail failed", "error", err)
+			f.Error("reset password failed. %v", err)
+			c.renderResetPassword(ctx, w)
+			return
+		}
+
+		f.Alert("Password reset email sent.")
+		m["flash"] = f
+
+		c.renderResetPassword(ctx, w)
 	})
 }

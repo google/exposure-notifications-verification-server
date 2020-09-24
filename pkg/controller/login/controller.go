@@ -18,6 +18,7 @@ package login
 import (
 	"context"
 
+	iFB "github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -29,18 +30,26 @@ import (
 )
 
 type Controller struct {
-	client *auth.Client
-	config *config.ServerConfig
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	fbInternal *iFB.Client
+	client     *auth.Client
+	config     *config.ServerConfig
+	db         *database.Database
+	h          *render.Renderer
+	logger     *zap.SugaredLogger
 }
 
 // New creates a new login controller.
-func New(ctx context.Context, client *auth.Client, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
+func New(
+	ctx context.Context,
+	fbInternal *iFB.Client,
+	client *auth.Client,
+	config *config.ServerConfig,
+	db *database.Database,
+	h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("login")
 
 	return &Controller{
+		fbInternal * iFB.Client,
 		client: client,
 		config: config,
 		db:     db,
