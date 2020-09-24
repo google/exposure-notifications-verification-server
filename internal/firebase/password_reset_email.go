@@ -65,7 +65,7 @@ func (c *Client) SendPasswordResetEmail(ctx context.Context, email string) error
 
 		// Try to unmarshal the error message. Firebase uses these as enum values to expand on the code.
 		var m map[string]ErrorDetails
-		if err := json.Unmarshal(b, &m); err != nil {
+		if err := json.Unmarshal(b, &m); err == nil {
 			d := m["error"]
 			return &d
 		}
