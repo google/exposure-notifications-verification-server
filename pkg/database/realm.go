@@ -112,13 +112,13 @@ type Realm struct {
 	// CanUseSystemSMSConfig is configured by system administrators to share the
 	// system SMS config with this realm. Note that the system SMS config could be
 	// empty and a local SMS config is preferred over the system value.
-	CanUseSystemSMSConfig bool
+	CanUseSystemSMSConfig bool `gorm:"column:can_use_system_sms_config; type:bool; not null; default:false;"`
 
 	// UseSystemSMSConfig is a realm-level configuration that lets a realm opt-out
 	// of sending SMS messages using the system-provided SMS configuration.
 	// Without this, a realm would always fallback to the system-level SMS
 	// configuration, making it impossible to opt out of text message sending.
-	UseSystemSMSConfig bool
+	UseSystemSMSConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
