@@ -51,6 +51,6 @@ gridLayout:
               timeSeriesQueryLanguage: >
                 generic_task ::
                 custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest
-                | align max()
+                | align rate()
                 | every 1m
-                | [metric.realm]
+                | group_by [metric.realm], [max(value.realm_token_capacity_latest)]
