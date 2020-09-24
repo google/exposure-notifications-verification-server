@@ -138,10 +138,14 @@ represent best practices.
     export DB_APIKEY_SIGNATURE_KEY="HFeglmupbtv/I2X04OQRl1V7mcvfAXuv8XtmIFYV6aYsPuwQVFtXDlfFrjouYT2Z6kYln7B90RcutHJNjpPDRkyBQ28HtWmid3dr0tpJ1KiiK5NGG7JS9mU8fCvEYklw5RV+1f8qN13nWzHpW8/RQw9rR/vQGy90yL5/aydBuVA="
     export DB_VERIFICATION_CODE_DATABASE_KEY="YEN4+tnuf1DzQPryRzrPVilqT0Q2TO8IIg3C8prvXWGAaoABOWACl79hS40OneuaU8GsQHwhJ13wM2A5ooyOq+uqxCjrqVJZZXPU5xzl/6USEYAp4z2b0ZYrfkx2SRk1o9HfFi1RMqpaBf1TRIbsNOK9hNRG3nS2It49y6mR1ho="
 
+    # Configure database pooling.
+    export DB_POOL_MIN_CONNS="2"
+    export DB_POOL_MAX_CONNS="10"
+
     # Enable dev mode. Do not enable dev mode or database dev mode in production
     # environments.
-    export DEV_MODE=1
-    export DB_DEBUG=1
+    export DEV_MODE="true"
+    export DB_DEBUG="true"
     ```
 
 1.  Source the `.env` file. Do this each time before you start the server:
@@ -166,7 +170,7 @@ represent best practices.
 1.  (Optional) Seed the database with fake data:
 
     ```sh
-    go run ./tools/seed
+    ./scripts/dev dbseed
     ```
 
     This will create some default users like `admin@example.com` and

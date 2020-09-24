@@ -30,8 +30,8 @@ DB_APIKEY_SIGNATURE_KEY="${DB_APIKEY_SIGNATURE_KEY:-"PsOkeJ+1iXN2bMnKKTH6Ea+KtZG
 DB_ENCRYPTION_KEY="O04ZjG4WuoceRd0k2pTqDN0r8omr6sbFL0U3T5b12Lo="
 DB_HOST="${DB_HOST:-"127.0.0.1"}"
 DB_NAME="${DB_NAME:-"en-verification-server-db"}"
-DB_PASSWORD="${DB_PASSWORD:-"BjrvWmjQPXykPu"}"
-DB_PORT="${DB_PORT:-"5432"}"
+DB_PASSWORD="${DB_PASSWORD:-"c0546931436d1e4e"}"
+DB_PORT="${DB_PORT:-"5433"}"
 DB_SSLMODE="${DB_SSLMODE:-"require"}"
 DB_USER="${DB_USER:-"en-verification-server"}"
 DB_URL="postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
@@ -59,11 +59,11 @@ function init() {
   echo "export DB_ENCRYPTION_KEY=\"${DB_ENCRYPTION_KEY}\""
   echo "export DB_HOST=\"${DB_HOST}\""
   echo "export DB_NAME=\"${DB_NAME}\""
+  echo "export DB_USER=\"${DB_USER}\""
   echo "export DB_PASSWORD=\"${DB_PASSWORD}\""
   echo "export DB_PORT=\"${DB_PORT}\""
   echo "export DB_SSLMODE=\"${DB_SSLMODE}\""
   echo "export DB_URL=\"${DB_URL}\""
-  echo "export DB_USER=\"${DB_USER}\""
   echo "export DB_VERIFICATION_CODE_DATABASE_KEY=\"${DB_VERIFICATION_CODE_DATABASE_KEY}\""
 }
 
@@ -158,11 +158,12 @@ function psql() {
 
 # migrate runs the migrations against the database.
 function migrate() {
-  if [ $# -eq 0 ]; then
-    set -- "up"
-  fi
-
   go run ./cmd/migrate
+}
+
+# seed puts fake development data in the database.
+function seed() {
+  go run ./tools/seed
 }
 
 # dburl returns the full connection url.
@@ -179,6 +180,7 @@ function help() {
   echo 1>&2 "  dbstart      start a dev server"
   echo 1>&2 "  dbstop       stop the dev server"
   echo 1>&2 "  dbmigrate    run migrations"
+  echo 1>&2 "  dbseed       seed dev data"
   echo 1>&2 "  dburl        print url"
   echo 1>&2 "  dbshell      attach a psql session"
 }
@@ -212,6 +214,11 @@ case "${SUBCOMMAND}" in
   "dbmigrate" )
     shift
     migrate "$@"
+    ;;
+
+  "dbseed" )
+    shift
+    seed "$@"
     ;;
 
   "dburl" )
