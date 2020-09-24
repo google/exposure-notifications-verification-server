@@ -12,26 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package firebase is common logic and handling around firebase.
 package firebase
 
-const (
-	InvalidOOBCode   = "INVALID_OOB_CODE"
-	CredentialTooOld = "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"
-	TokenExpired     = "TOKEN_EXPIRED"
-	InvalidToken     = "INVALID_ID_TOKEN"
+import "errors"
+
+var (
+	ErrEmailNotFound    = &ErrorDetails{Err: "EMAIL_NOT_FOUND"}
+	ErrInvalidOOBCode   = &ErrorDetails{Err: "INVALID_OOB_CODE"}
+	ErrCredentialTooOld = &ErrorDetails{Err: "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"}
+	ErrTokenExpired     = &ErrorDetails{Err: "TOKEN_EXPIRED"}
+	ErrInvalidToken     = &ErrorDetails{Err: "INVALID_ID_TOKEN"}
 )
+
+var _ error = (*ErrorDetails)(nil)
 
 // ErrorDetails is the structure firebase gives back.
 type ErrorDetails struct {
 	ErrorCode int    `json:"code"`
-	Error     string `json:"message"`
+	Err       string `json:"message"`
 }
 
+func (err *ErrorDetails) Error() string {
+	return err.Err
+}
+
+// ShouldReauthenticate returns true for errors that require a refreshed auth token.
 func (err *ErrorDetails) ShouldReauthenticate() bool {
-	switch err.Error {
-	case CredentialTooOld, TokenExpired, InvalidToken:
-		return true
-	}
-	return false
+	return errors.Is(err, ErrCredentialTooOld) ||
+		errors.Is(err, ErrTokenExpired) ||
+		errors.Is(err, ErrInvalidToken)
 }

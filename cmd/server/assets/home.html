@@ -260,6 +260,18 @@
       $uuidConfirm = $('#uuid-confirm');
         $uuid = $('#uuid');
 
+      {{if $hasSMSConfig}}
+      // Initialize pretty phone
+      let phone = document.querySelector('#phone');
+      let iti = window.intlTelInput(phone, {
+        nationalMode: true,
+        {{- if $currentRealm.SMSCountry }}
+        initialCountry: '{{$currentRealm.SMSCountry}}',
+        {{- end }}
+        utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.0/js/utils.js',
+      });
+      {{end}}
+
       // Handle form submission
       $form.on('submit', function(e) {
         e.preventDefault();
@@ -275,6 +287,10 @@
           data[obj.name] = obj.value
         });
         data.tzOffset = new Date().getTimezoneOffset();
+
+        {{if $hasSMSConfig}}
+        data['phone'] = iti.getNumber();
+        {{end}}
 
         getCode(data);
       });
@@ -326,6 +342,7 @@
     });
 
     function getCode(data) {
+      console.log('data: ',data);
       $.ajax({
         url: '/home/issue',
         type: 'POST',

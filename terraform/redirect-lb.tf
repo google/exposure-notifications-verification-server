@@ -24,7 +24,7 @@ resource "google_compute_global_address" "verification-enx-redirect" {
 
 # Redirects all requests to https
 resource "google_compute_url_map" "enx-redirect-urlmap-http" {
-  name     = "https-redirect"
+  name     = "enx-redirect-https-redirect"
   provider = google-beta
   project  = var.project
 
@@ -99,7 +99,7 @@ resource "google_compute_managed_ssl_certificate" "enx-redirect-root" {
   description = "Controlled by Terraform"
 
   managed {
-    domains = ["www." + var.enx_redirect_domain]
+    domains = ["www.${var.enx_redirect_domain}"]
   }
 }
 

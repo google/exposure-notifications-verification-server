@@ -62,6 +62,7 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		SMS                bool   `form:"sms"`
 		UseSystemSMSConfig bool   `form:"use_system_sms_config"`
+		SMSCountry         string `form:"sms_country"`
 		TwilioAccountSid   string `form:"twilio_account_sid"`
 		TwilioAuthToken    string `form:"twilio_auth_token"`
 		TwilioFromNumber   string `form:"twilio_from_number"`
@@ -130,6 +131,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		// SMS
 		if form.SMS {
 			realm.UseSystemSMSConfig = form.UseSystemSMSConfig
+			realm.SMSCountry = form.SMSCountry
 		}
 
 		// Security
@@ -191,6 +193,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if smsConfig != nil && !smsConfig.IsSystem {
 				// We have an existing record and the existing record is NOT the system
 				// record.
+				smsConfig.ProviderType = sms.ProviderTypeTwilio
 				smsConfig.TwilioAccountSid = form.TwilioAccountSid
 				smsConfig.TwilioAuthToken = form.TwilioAuthToken
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
@@ -277,6 +280,7 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 	m := controller.TemplateMapFromContext(ctx)
 	m["realm"] = realm
 	m["smsConfig"] = smsConfig
+	m["countries"] = database.Countries
 	m["testTypes"] = map[string]database.TestType{
 		"confirmed": database.TestTypeConfirmed,
 		"likely":    database.TestTypeConfirmed | database.TestTypeLikely,

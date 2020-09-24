@@ -26,6 +26,11 @@ import (
 	"github.com/sethvargo/go-password/password"
 )
 
+const minDuration = -1 << 63
+
+// They probably didn't make an account before this project existed.
+var launched time.Time = time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
+
 // User represents a user of the system
 type User struct {
 	gorm.Model
@@ -39,6 +44,14 @@ type User struct {
 	AdminRealms     []*Realm `gorm:"many2many:admin_realms"`
 
 	LastPasswordChange time.Time
+}
+
+// PasswordChanged returns password change time or account creation time if unset.
+func (u *User) PasswordChanged() time.Time {
+	if u.LastPasswordChange.Before(launched) {
+		return u.CreatedAt
+	}
+	return u.LastPasswordChange
 }
 
 // AfterFind runs after the record is found.
@@ -57,7 +70,11 @@ func (u *User) AfterFind(tx *gorm.DB) error {
 
 // PasswordAgeString displays the age of the password in friendly text.
 func (u *User) PasswordAgeString() string {
-	ago := time.Since(u.LastPasswordChange)
+	ago := time.Since(u.PasswordChanged())
+	if ago == minDuration {
+		return "unknown"
+	}
+
 	h := ago.Hours()
 	if h > 48 {
 		return fmt.Sprintf("%v days", int(h/24))

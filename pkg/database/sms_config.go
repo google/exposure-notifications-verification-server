@@ -46,7 +46,7 @@ type SMSConfig struct {
 
 	// IsSystem determines if this is a system-level SMS configuration. There can
 	// only be one system-level SMS configuration.
-	IsSystem bool
+	IsSystem bool `gorm:"type:bool; not null; default:false;"`
 }
 
 func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
