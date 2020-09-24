@@ -14,7 +14,9 @@
 
 package firebase
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrEmailNotFound    = &ErrorDetails{Err: "EMAIL_NOT_FOUND"}
@@ -34,6 +36,13 @@ type ErrorDetails struct {
 
 func (err *ErrorDetails) Error() string {
 	return err.Err
+}
+
+func (err *ErrorDetails) Is(target error) bool {
+	if tErr, ok := target.(*ErrorDetails); ok {
+		return err.Err == tErr.Err
+	}
+	return false
 }
 
 // ShouldReauthenticate returns true for errors that require a refreshed auth token.
