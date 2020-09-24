@@ -52,9 +52,8 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		// There's no session yet, so make a one-time flash.
-		f := flash.New(nil)
+		session := controller.SessionFromContext(ctx)
+		f := flash.New(session.Values)
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
