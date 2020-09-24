@@ -29,12 +29,13 @@ import (
 func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		c.renderShowSelectPassword(ctx, w)
+		c.renderShowSelectPassword(ctx, w, nil)
 	})
 }
 
-func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.ResponseWriter) {
+func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.ResponseWriter, f *flash.Flash) {
 	m := controller.TemplateMapFromContext(ctx)
+	m["flash"] = f
 	m["firebase"] = c.config.Firebase
 	m["requirements"] = &c.config.PasswordRequirements
 	c.h.RenderHTML(w, "login/select-password", m)
@@ -51,33 +52,31 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		m := controller.TemplateMapFromContext(ctx)
 		f := flash.New(nil)
-		m["flash"] = f
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			logger.Errorw("failed to bind form", "error", err)
 			f.Error("Request failed.")
-			c.renderShowSelectPassword(ctx, w)
+			c.renderShowSelectPassword(ctx, w, f)
 			return
 		}
 
 		if err := c.validateComplexity(form.Password); err != nil {
 			f.Error("Select password failed. %v", err)
-			c.renderShowSelectPassword(ctx, w)
+			c.renderShowSelectPassword(ctx, w, f)
 			return
 		}
 
-		if _, err := c.firebaseInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
-			c.renderShowSelectPassword(ctx, w)
+		if err := c.firebaseInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
+			f.Error("Select password failed. %v", err)
+			c.renderShowSelectPassword(ctx, w, f)
 			return
 		}
 
 		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
-			c.renderShowSelectPassword(ctx, w)
+			c.renderShowSelectPassword(ctx, w, f)
 			return
 		}
 
