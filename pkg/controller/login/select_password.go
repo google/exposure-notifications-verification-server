@@ -27,11 +27,11 @@ import (
 func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		c.renderShowSelectPassword(ctx, w, nil)
+		c.renderShowSelectPassword(ctx, w)
 	})
 }
 
-func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.ResponseWriter, err error) {
+func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.ResponseWriter) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["firebase"] = c.config.Firebase
 	m["requirements"] = &c.config.PasswordRequirements
@@ -60,11 +60,15 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		// DO NOT SUBMIT
 		// double-check password complexity
 
-		if err := c.fbInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
+		if details, err := c.fbInternal.VerifyPasswordResetCode(ctx, form.Code, form.Password); err != nil {
 			logger.Errorw("VerifyPasswordResetCode failed", "error", err)
-			// DO NOT SUBMIT
-			// some of these errors are user, some are not
-			c.renderShowSelectPassword(ctx, w, err)
+
+			if details.ShouldReauthenticate() {
+				http.Redirect(w, r, "/login?redir=login/select-password", http.StatusSeeOther)
+				return
+			}
+
+			c.renderShowSelectPassword(ctx, w)
 			return
 		}
 

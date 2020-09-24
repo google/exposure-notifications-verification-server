@@ -34,38 +34,47 @@ type verifyPasswordResetCodeRequest struct {
 // using the code.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
-func (c *Client) VerifyPasswordResetCode(ctx context.Context, code, newPassword string) error {
+func (c *Client) VerifyPasswordResetCode(ctx context.Context, code, newPassword string) (*ErrorDetails, error) {
 	r := &verifyPasswordResetCodeRequest{
 		Code:        code,
 		NewPassword: newPassword,
 	}
+	details := &ErrorDetails{}
 
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(r); err != nil {
-		return fmt.Errorf("failed to create json body: %w", err)
+		return details, fmt.Errorf("failed to create json body: %w", err)
 	}
 
 	u := c.buildURL("/v1/accounts:resetPassword")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, &body)
 	if err != nil {
-		return fmt.Errorf("failed to build request: %w", err)
+		return details, fmt.Errorf("failed to build request: %w", err)
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send password reset email: %w", err)
+		return details, fmt.Errorf("failed to send password reset email: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if status := resp.StatusCode; status != http.StatusOK {
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("response was %d, but failed to read body: %w", status, err)
+			return details, fmt.Errorf("response was %d, but failed to read body: %w", status, err)
 		}
-		return fmt.Errorf("failure %d: %s", status, string(b))
+
+		// Try to unmarshal the error message. Firebase uses these as enum values to expand on the code.
+		var m map[string]ErrorDetails
+		if err := json.Unmarshal(b, &m); err != nil {
+			d := m["error"]
+			details = &d
+		}
+
+		return details, fmt.Errorf("failure %d: %s", status, string(b))
 	}
 
-	return nil
+	return details, nil
 }
