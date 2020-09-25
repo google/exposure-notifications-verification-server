@@ -227,8 +227,10 @@ func realMain(ctx context.Context) error {
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
 			sub.Handle("/login/reset-password", loginController.HandleShowResetPassword()).Methods("GET")
 			sub.Handle("/login/reset-password", loginController.HandleSubmitResetPassword()).Methods("POST")
-			sub.Handle("/login/select-password", loginController.HandleShowSelectNewPassword()).Queries("oobCode", "").Methods("GET")
-			sub.Handle("/login/select-password", loginController.HandleSubmitNewPassword()).Queries("oobCode", "").Methods("POST")
+			sub.Handle("/login/select-password", loginController.HandleShowSelectNewPassword()).
+				Queries("oobCode", "", "mode", "").Methods("GET")
+			sub.Handle("/login/select-password", loginController.HandleSubmitNewPassword()).
+				Queries("oobCode", "").Methods("POST")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 
@@ -340,7 +342,7 @@ func realMain(ctx context.Context) error {
 		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
-			Queries("offset", "{[0-9]*}").Queries("email", "").Methods("GET")
+			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
 		userSub.Handle("/import", userController.HandleImport()).Methods("GET")
