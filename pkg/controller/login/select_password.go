@@ -30,10 +30,6 @@ import (
 
 func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.FormValue("mode") == "verifyEmail" {
-			http.Redirect(w, r, "/login/verify-email", http.StatusSeeOther)
-		}
-
 		ctx := r.Context()
 		session := controller.SessionFromContext(ctx)
 		flash := flash.New(session.Values)
