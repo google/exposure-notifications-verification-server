@@ -19,7 +19,7 @@ resource "null_resource" "manual-step-to-enable-workspace" {
   provisioner "local-exec" {
     command = <<EOF
     echo -e '>>>> WARNING WARNING WARNING!'
-    echo -e '>>>> Please use https://console.cloud.google.com/monitoring/signup?project=${var.monitoring-host-project}&nextPath=monitoring to create the first workspace.'
+    echo -e '>>>> Please use https://console.cloud.google.com/monitoring/signup?project=${local.monitoring-host-project}&nextPath=monitoring to create the first workspace.'
     echo -e '>>>> Terraform cannot create workspace yet, you can only create workspace via the Google Cloud Console.'
     echo -e '>>>> Related doc: https://cloud.google.com/monitoring/workspaces/create#single-project-workspace'
     EOF
