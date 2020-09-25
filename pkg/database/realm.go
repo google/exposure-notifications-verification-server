@@ -585,15 +585,20 @@ func (r *Realm) CountUsers(db *Database) (int, error) {
 }
 
 // ListUsers returns the list of users on this realm.
-func (r *Realm) ListUsers(db *Database, offset, limit int) ([]*User, error) {
+func (r *Realm) ListUsers(db *Database, offset, limit int, emailPrefix string) ([]*User, error) {
 	if limit > MaxPageSize {
 		limit = MaxPageSize
 	}
 
+	realmDB := db.db.Model(r)
+
+	if emailPrefix != "" {
+		realmDB = realmDB.Where("email like ?", fmt.Sprintf("%%%s%%", emailPrefix))
+	}
+
 	var users []*User
-	if err := db.db.
+	if err := realmDB.
 		Offset(offset).Limit(limit).
-		Model(r).
 		Order("LOWER(name)").
 		Related(&users, "RealmUsers").
 		Error; err != nil {

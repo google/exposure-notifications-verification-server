@@ -66,7 +66,8 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		users, err := realm.ListUsers(c.db, offset, pageSize)
+		emailPrefix := r.FormValue("search")
+		users, err := realm.ListUsers(c.db, offset, pageSize, emailPrefix)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -77,7 +78,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			pages = populatePageStrip(offset, count)
 		}
 
-		c.renderIndex(ctx, w, users, pages)
+		c.renderIndex(ctx, w, users, pages, emailPrefix)
 	})
 }
 
@@ -143,8 +144,14 @@ func populatePageStrip(offset, count int) *Pages {
 	return pages
 }
 
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, users []*database.User, pages *Pages) {
+func (c *Controller) renderIndex(
+	ctx context.Context,
+	w http.ResponseWriter,
+	users []*database.User,
+	pages *Pages,
+	emailPrefix string) {
 	m := controller.TemplateMapFromContext(ctx)
+	m["search"] = emailPrefix
 	m["users"] = users
 	m["pages"] = pages
 	c.h.RenderHTML(w, "users/index", m)
