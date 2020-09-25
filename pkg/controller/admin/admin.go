@@ -29,21 +29,21 @@ import (
 )
 
 type Controller struct {
-	config *config.ServerConfig
-	db     *database.Database
-	fbAuth *auth.Client
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	config       *config.ServerConfig
+	db           *database.Database
+	firebaseAuth *auth.Client
+	h            *render.Renderer
+	logger       *zap.SugaredLogger
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, fbAuth *auth.Client, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, firebaseAuth *auth.Client, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("admin")
 
 	return &Controller{
-		config: config,
-		db:     db,
-		fbAuth: fbAuth,
-		h:      h,
-		logger: logger,
+		config:       config,
+		db:           db,
+		firebaseAuth: firebaseAuth,
+		h:            h,
+		logger:       logger,
 	}
 }

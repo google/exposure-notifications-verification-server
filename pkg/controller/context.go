@@ -17,6 +17,7 @@ package controller
 import (
 	"context"
 
+	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/sessions"
 )
@@ -31,6 +32,7 @@ const (
 	contextKeySession       = contextKey("session")
 	contextKeyTemplate      = contextKey("template")
 	contextKeyUser          = contextKey("user")
+	contextKeyFirebaseUser  = contextKey("firebaseUser")
 )
 
 // WithAuthorizedApp stores the authorized app on the context.
@@ -145,6 +147,26 @@ func UserFromContext(ctx context.Context) *database.User {
 	}
 
 	t, ok := v.(*database.User)
+	if !ok {
+		return nil
+	}
+	return t
+}
+
+// WithFirebaseUser stores the current firebase user on the context.
+func WithFirebaseUser(ctx context.Context, u *auth.UserRecord) context.Context {
+	return context.WithValue(ctx, contextKeyFirebaseUser, u)
+}
+
+// FirebaseUserFromContext retrieves the firebase user from the context. If no value exists, it
+// returns nil.
+func FirebaseUserFromContext(ctx context.Context) *auth.UserRecord {
+	v := ctx.Value(contextKeyFirebaseUser)
+	if v == nil {
+		return nil
+	}
+
+	t, ok := v.(*auth.UserRecord)
 	if !ok {
 		return nil
 	}

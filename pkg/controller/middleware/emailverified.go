@@ -58,20 +58,9 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 				return
 			}
 
-			m := controller.TemplateMapFromContext(ctx)
-
-			fbUser, err := client.GetUserByEmail(ctx, user.Email)
-			if err != nil {
-				delete(m, "currentUser") // Remove user from the template map.
-				logger.Debugw("firebase user does not exist")
-				flash.Error("That user does not exist.")
-				controller.ClearSessionFirebaseCookie(session)
-				controller.Unauthorized(w, r, h)
-				return
-			}
-
+			firebaseUser := controller.FirebaseUserFromContext(ctx)
 			realm := controller.RealmFromContext(ctx)
-			if NeedsEmailVerification(session, realm, fbUser) {
+			if needsEmailVerification(session, realm, firebaseUser) {
 				logger.Debugw("user email not verified")
 				http.Redirect(w, r, "/login/verify-email", http.StatusSeeOther)
 				return
@@ -82,14 +71,14 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 	}
 }
 
-func NeedsEmailVerification(session *sessions.Session, realm *database.Realm, fbUser *auth.UserRecord) bool {
+func needsEmailVerification(session *sessions.Session, realm *database.Realm, firebaseUser *auth.UserRecord) bool {
 	if realm == nil || realm.EmailVerifiedMode == database.MFARequired {
-		return !fbUser.EmailVerified
+		return !firebaseUser.EmailVerified
 	}
 
 	if realm.EmailVerifiedMode == database.MFAOptionalPrompt &&
 		!controller.EmailVerificationPromptedFromSession(session) &&
-		!fbUser.EmailVerified {
+		!firebaseUser.EmailVerified {
 		return true
 	}
 

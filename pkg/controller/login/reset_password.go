@@ -32,9 +32,9 @@ func (c *Controller) HandleShowResetPassword() http.Handler {
 	})
 }
 
-func (c *Controller) renderResetPassword(ctx context.Context, w http.ResponseWriter, f *flash.Flash) {
+func (c *Controller) renderResetPassword(ctx context.Context, w http.ResponseWriter, flash *flash.Flash) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["flash"] = f
+	m["flash"] = flash
 	c.h.RenderHTML(w, "login/reset-password", m)
 }
 
@@ -45,27 +45,26 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		// There's no session yet, so make a one-time flash.
-		f := flash.New(nil)
+		session := controller.SessionFromContext(ctx)
+		flash := flash.New(session.Values)
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			f.Error("Password failed. %v", err)
-			c.renderResetPassword(ctx, w, f)
+			flash.Error("Password reset failed. %v", err)
+			c.renderResetPassword(ctx, w, flash)
 			return
 		}
 
 		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
 			// Treat not-found like success so we don't leak details.
 			if !errors.Is(err, firebase.ErrEmailNotFound) {
-				f.Error("Password reset failed.")
-				c.renderResetPassword(ctx, w, f)
+				flash.Error("Password reset failed.")
+				c.renderResetPassword(ctx, w, flash)
 				return
 			}
 		}
 
-		f.Alert("Password reset email sent.")
-		c.renderResetPassword(ctx, w, f)
+		flash.Alert("Password reset email sent.")
+		c.renderResetPassword(ctx, w, flash)
 	})
 }

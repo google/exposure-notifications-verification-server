@@ -253,8 +253,8 @@ func (db *Database) TouchUserRevokeCheck(u *User) error {
 // user. It does nothing if the firebase user already exists. If the firebase
 // user does not exist, it generates a random password. The returned boolean
 // indicates if the user was created.
-func (u *User) CreateFirebaseUser(ctx context.Context, fbAuth *auth.Client) (bool, error) {
-	if _, err := fbAuth.GetUserByEmail(ctx, u.Email); err != nil {
+func (u *User) CreateFirebaseUser(ctx context.Context, firebaseAuth *auth.Client) (bool, error) {
+	if _, err := firebaseAuth.GetUserByEmail(ctx, u.Email); err != nil {
 		if auth.IsInvalidEmail(err) {
 			return false, fmt.Errorf("invalid email: %q", u.Email)
 		}
@@ -267,11 +267,9 @@ func (u *User) CreateFirebaseUser(ctx context.Context, fbAuth *auth.Client) (boo
 			return false, fmt.Errorf("failed to generate password: %w", err)
 		}
 
-		fbUser := &auth.UserToCreate{}
-		fbUser = fbUser.Email(u.Email)
-		fbUser = fbUser.Password(pwd)
-		fbUser = fbUser.DisplayName(u.Name)
-		if _, err := fbAuth.CreateUser(ctx, fbUser); err != nil {
+		firebaseUser := &auth.UserToCreate{}
+		firebaseUser.Email(u.Email).Password(pwd).DisplayName(u.Name)
+		if _, err := firebaseAuth.CreateUser(ctx, firebaseUser); err != nil {
 			return false, fmt.Errorf("failed to create firebase user: %w", err)
 		}
 		return true, nil
