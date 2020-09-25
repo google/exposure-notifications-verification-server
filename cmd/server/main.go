@@ -232,8 +232,6 @@ func realMain(ctx context.Context) error {
 				Queries("oobCode", "", "mode", "resetPassword|recoverEmail").Methods("GET")
 			sub.Handle("/login/select-password", loginController.HandleShowSelectNewPassword()).
 				Queries("oobCode", "", "mode", "resetPassword|recoverEmail").Methods("GET")
-			sub.Handle("/login/select-password", loginController.HandleSubmitNewPassword()).
-				Queries("oobCode", "").Methods("POST")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 
