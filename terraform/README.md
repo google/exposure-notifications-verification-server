@@ -139,7 +139,12 @@ Terraform module.
       # Enable optional alerting.
       module "en-alerting" {
         source  = "github.com/google/exposure-notifications-verification-server/terraform/alerting"
-          monitoring-host-project = "example"
+          verification-server-project = "example"
+
+          # Optional: if you want to set up monitoring in a separate
+          # project. This is the recommended best practice from Google
+          # Cloud Monitoring
+          # monitoring-host-project = "example"
 
           adminapi-host  = "adminapi.example.org"
           apiserver-host = "apiserver.example.org"

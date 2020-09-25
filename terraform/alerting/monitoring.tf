@@ -175,7 +175,7 @@ EOT
 }
 
 resource "google_monitoring_alert_policy" "realm_token_capacity" {
-  project      = var.verificatoin-server-project
+  project      = var.verification-server-project
   display_name = "RealmTokenCapacityUtilizationAboveThreshold"
   combiner     = "OR"
   conditions {
