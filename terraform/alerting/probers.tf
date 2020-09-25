@@ -1,9 +1,24 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 resource "google_monitoring_uptime_check_config" "https" {
+  project = local.monitoring-host-project
+
   for_each = toset(compact(concat([var.server-host, var.apiserver-host, var.adminapi-host], var.extra-hosts)))
 
   display_name = each.key
   timeout      = "3s"
-  project      = var.monitoring-host-project
   period       = "60s"
 
   http_check {
@@ -16,7 +31,7 @@ resource "google_monitoring_uptime_check_config" "https" {
   monitored_resource {
     type = "uptime_url"
     labels = {
-      project_id = var.monitoring-host-project
+      project_id = local.monitoring-host-project
       host       = each.key
     }
   }
@@ -26,7 +41,8 @@ resource "google_monitoring_uptime_check_config" "https" {
 }
 
 resource "google_monitoring_alert_policy" "probers" {
-  project      = var.monitoring-host-project
+  project = local.monitoring-host-project
+
   display_name = "Host Down"
   combiner     = "OR"
   conditions {
