@@ -66,14 +66,14 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	config, err := config.NewAdminAPIServerConfig(ctx)
+	cfg, err := config.NewAdminAPIServerConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
-	oeConfig := config.ObservabilityExporterConfig()
+	oeConfig := cfg.ObservabilityExporterConfig()
 	oe, err := observability.NewFromEnv(ctx, oeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
@@ -85,8 +85,8 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
+	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.MultiKeyFunc(
+		cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey),
 		cache.PrefixKeyFunc("cache:"),
 	))
 	if err != nil {
@@ -95,7 +95,7 @@ func realMain(ctx context.Context) error {
 	defer cacher.Close()
 
 	// Setup database
-	db, err := config.Database.Load(ctx)
+	db, err := cfg.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
@@ -108,14 +108,14 @@ func realMain(ctx context.Context) error {
 	r := mux.NewRouter()
 
 	// Rate limiting
-	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
 	defer limiterStore.Close(ctx)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
-		limitware.APIKeyFunc(ctx, db, "adminapi:ratelimit:", config.RateLimit.HMACKey),
+		limitware.APIKeyFunc(ctx, db, "adminapi:ratelimit:", cfg.RateLimit.HMACKey),
 		limitware.AllowOnError(false))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
@@ -123,14 +123,14 @@ func realMain(ctx context.Context) error {
 	rateLimit := httplimiter.Handle
 
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "json"))
+	r.Use(middleware.SecureHeaders(ctx, cfg.DevMode, "json"))
 
 	// Enable debug headers
 	processDebug := middleware.ProcessDebug(ctx)
 	r.Use(processDebug)
 
 	// Create the renderer
-	h, err := render.New(ctx, "", config.DevMode)
+	h, err := render.New(ctx, "", cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
@@ -145,27 +145,27 @@ func realMain(ctx context.Context) error {
 	})
 	processFirewall := middleware.ProcessFirewall(ctx, h, "adminapi")
 
-	r.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
 	{
 		sub := r.PathPrefix("/api").Subrouter()
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
 
-		issueapiController, err := issueapi.New(ctx, config, db, limiterStore, h)
+		issueapiController, err := issueapi.New(ctx, cfg, db, limiterStore, h)
 		if err != nil {
 			return fmt.Errorf("issueapi.New: %w", err)
 		}
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 
-		codeStatusController := codestatus.NewAPI(ctx, config, db, h)
+		codeStatusController := codestatus.NewAPI(ctx, cfg, db, h)
 		sub.Handle("/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
 		sub.Handle("/expirecode", codeStatusController.HandleExpireAPI()).Methods("POST")
 	}
 
-	srv, err := server.New(config.Port)
+	srv, err := server.New(cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
-	logger.Infow("server listening", "port", config.Port)
+	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }

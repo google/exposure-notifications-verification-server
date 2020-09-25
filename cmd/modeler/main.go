@@ -60,14 +60,14 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	config, err := config.NewModeler(ctx)
+	cfg, err := config.NewModeler(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
-	oeConfig := config.ObservabilityExporterConfig()
+	oeConfig := cfg.ObservabilityExporterConfig()
 	oe, err := observability.NewFromEnv(ctx, oeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
@@ -79,8 +79,8 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
+	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.MultiKeyFunc(
+		cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey),
 		cache.PrefixKeyFunc("cache:"),
 	))
 	if err != nil {
@@ -89,7 +89,7 @@ func realMain(ctx context.Context) error {
 	defer cacher.Close()
 
 	// Setup database
-	db, err := config.Database.Load(ctx)
+	db, err := cfg.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
@@ -99,7 +99,7 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	// Create the renderer
-	h, err := render.New(ctx, "", config.DevMode)
+	h, err := render.New(ctx, "", cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
@@ -108,19 +108,19 @@ func realMain(ctx context.Context) error {
 	r := mux.NewRouter()
 
 	// Rate limiting
-	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
 	defer limiterStore.Close(ctx)
 
-	modelerController := modeler.New(ctx, config, db, limiterStore, h)
+	modelerController := modeler.New(ctx, cfg, db, limiterStore, h)
 	r.Handle("/", modelerController.HandleModel()).Methods("POST")
 
-	srv, err := server.New(config.Port)
+	srv, err := server.New(cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
-	logger.Infow("server listening", "port", config.Port)
+	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, r)
 }
