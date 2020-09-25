@@ -85,7 +85,7 @@ func (u *User) PasswordAgeString() string {
 	if ago.Minutes() > 2 {
 		return fmt.Sprintf("%d minutes", int(ago.Minutes()))
 	}
-	return fmt.Sprintf("%d minutes", int(ago.Seconds()))
+	return fmt.Sprintf("%d seconds", int(ago.Seconds()))
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
