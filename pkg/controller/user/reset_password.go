@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -28,15 +28,18 @@ func (c *Controller) HandleResetPassword() http.Handler {
 	})
 }
 
-func (c *Controller) resetPassword(ctx context.Context, user *database.User, flash *flash.Flash) (bool, error) {
-	return c.maybeResetPassword(ctx, true, user, flash)
+func (c *Controller) resetPassword(ctx context.Context, user *database.User) (bool, error) {
+	return c.maybeResetPassword(ctx, true, user)
 }
 
-func (c *Controller) createFirebaseUser(ctx context.Context, user *database.User, flash *flash.Flash) (bool, error) {
-	return c.maybeResetPassword(ctx, false, user, flash)
+func (c *Controller) createFirebaseUser(ctx context.Context, user *database.User) (bool, error) {
+	return c.maybeResetPassword(ctx, false, user)
 }
 
-func (c *Controller) maybeResetPassword(ctx context.Context, reset bool, user *database.User, flash *flash.Flash) (bool, error) {
+func (c *Controller) maybeResetPassword(ctx context.Context, reset bool, user *database.User) (bool, error) {
+	session := controller.SessionFromContext(ctx)
+	flash := controller.Flash(session)
+
 	// Ensure the firebase user is created
 	created, err := user.CreateFirebaseUser(ctx, c.client)
 	if err != nil {

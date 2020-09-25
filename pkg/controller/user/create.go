@@ -73,7 +73,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		// Create firebase user first, if this fails we don't want a db.User entry
-		if _, err := c.createFirebaseUser(ctx, user, flash); err != nil {
+		if _, err := c.createFirebaseUser(ctx, user); err != nil {
 			c.renderNew(ctx, w)
 			return
 		}

@@ -61,7 +61,7 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 	}
 
 	if resetPassword {
-		if _, err := c.resetPassword(ctx, user, flash); err == nil {
+		if _, err := c.resetPassword(ctx, user); err == nil {
 			flash.Alert("Password reset email sent.")
 		}
 	}
