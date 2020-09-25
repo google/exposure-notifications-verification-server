@@ -121,11 +121,15 @@ func (c *Controller) HandleSettings() http.Handler {
 		if form.Codes {
 			realm.AllowedTestTypes = form.AllowedTestTypes
 			realm.RequireDate = form.RequireDate
-			realm.CodeLength = form.CodeLength
-			realm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
-			realm.LongCodeLength = form.LongCodeLength
-			realm.LongCodeDuration.Duration = time.Duration(form.LongCodeDurationHours) * time.Hour
 			realm.SMSTextTemplate = form.SMSTextTemplate
+
+			// These fields can only be set if ENX is disabled
+			if !realm.EnableENExpress {
+				realm.CodeLength = form.CodeLength
+				realm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
+				realm.LongCodeLength = form.LongCodeLength
+				realm.LongCodeDuration.Duration = time.Duration(form.LongCodeDurationHours) * time.Hour
+			}
 		}
 
 		// SMS
