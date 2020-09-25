@@ -10,6 +10,7 @@
 
 <head>
   {{template "head" .}}
+  {{template "floatingform" .}}
 </head>
 
 <body class="tab-content">
@@ -84,17 +85,31 @@
           {{$pages := .pages}}
           <ul class="pagination">
             <li class="page-item {{if eq $pages.Previous -1}}disabled{{end}}"><a class="page-link"
-                href="?offset={{$pages.Previous}}">Previous</a>
+                href="?{{if .email}}email={{.email}}&{{end}}offset={{$pages.Previous}}">Previous</a>
             </li>
             {{range $pageOffset := $pages.Offsets}}
             <li class="page-item {{if eq $pages.Current $pageOffset.Offset}}active{{end}}"><a class="page-link"
-                href="?offset={{$pageOffset.Offset}}">{{$pageOffset.Label}}</a></li>
+                href="?{{if .email}}email={{.email}}&{{end}}offset={{$pageOffset.Offset}}">{{$pageOffset.Label}}</a>
+            </li>
             {{end}}
             <li class="page-item {{if eq $pages.Next -1}}disabled{{end}}"><a class="page-link"
-                href="?offset={{$pages.Next}}">Next</a></li>
+                href="?{{if .email}}email={{.email}}&{{end}}offset={{$pages.Next}}">Next</a></li>
           </ul>
           <small class="form-text text-muted pl-2">{{$pages.Footer}}</small>
         </nav>
+
+        <div class="col-6">
+          <div class="row">
+            <form class="floating-form mb-3" actionn="/" method="GET">
+              <div class="form-label-group">
+                <input type="text" id="search-email" name="email" class="form-control" placeholder="Email address"
+                  aria-label="email" aria-describedby="button-addon2" value="{{.email}}" />
+                <label for="search-email">Email address</label>
+              </div>
+              <button class="btn btn-outline-secondary mt-n3" type="submit" id="button-addon2">Search</button>
+            </form>
+          </div>
+        </div>
         {{end}}
       </div>
       {{else}}
