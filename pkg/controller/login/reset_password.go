@@ -55,6 +55,11 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			return
 		}
 
+		// Ensure that if we have a user, they have auth
+		if user, err := c.db.FindUserByEmail(form.Email); err == nil {
+			user.CreateFirebaseUser(ctx, c.client)
+		}
+
 		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
 			// Treat not-found like success so we don't leak details.
 			if !errors.Is(err, firebase.ErrEmailNotFound) {
