@@ -37,7 +37,7 @@ func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 		code := r.FormValue("oobCode")
 		if code == "" {
 			flash.Error("No oobCode.")
-			c.renderShowSelectPassword(ctx, w, "", code, flash)
+			c.renderShowSelectPassword(ctx, w, "", code, true, flash)
 			return
 		}
 
@@ -45,22 +45,26 @@ func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 		if err != nil {
 			if errors.Is(err, firebase.ErrInvalidOOBCode) || errors.Is(err, firebase.ErrExpiredOOBCode) {
 				flash.Error("The action code is invalid. This can happen if the code is malformed, expired, or has already been used.")
+				c.renderShowSelectPassword(ctx, w, "", code, true, flash)
 			} else {
 				flash.Error("Error checking code. %v", err)
+				c.renderShowSelectPassword(ctx, w, "", code, false, flash)
 			}
-			c.renderShowSelectPassword(ctx, w, "", code, flash)
 			return
 		}
 
-		c.renderShowSelectPassword(ctx, w, email, code, flash)
+		c.renderShowSelectPassword(ctx, w, email, code, false, flash)
 	})
 }
 
-func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.ResponseWriter, email, code string, flash *flash.Flash) {
+func (c *Controller) renderShowSelectPassword(
+	ctx context.Context, w http.ResponseWriter,
+	email, code string, oobCodeInvalid bool, flash *flash.Flash) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["email"] = email
 	m["code"] = code
 	m["flash"] = flash
+	m["codeInvalid"] = oobCodeInvalid
 	m["requirements"] = &c.config.PasswordRequirements
 	c.h.RenderHTML(w, "login/select-password", m)
 }
@@ -83,29 +87,30 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Select password failed: %v", err)
-			c.renderShowSelectPassword(ctx, w, "", code, flash)
+			c.renderShowSelectPassword(ctx, w, "", code, false, flash)
 			return
 		}
 
 		if err := c.validateComplexity(form.Password); err != nil {
 			flash.Error("Select password failed: %v", err)
-			c.renderShowSelectPassword(ctx, w, form.Email, code, flash)
+			c.renderShowSelectPassword(ctx, w, form.Email, code, false, flash)
 			return
 		}
 
 		if _, err := c.firebaseInternal.ChangePasswordWithCode(ctx, code, form.Password); err != nil {
 			if errors.Is(err, firebase.ErrInvalidOOBCode) || errors.Is(err, firebase.ErrExpiredOOBCode) {
 				flash.Error("The action code is invalid. This can happen if the code is malformed, expired, or has already been used.")
+				c.renderShowSelectPassword(ctx, w, form.Email, code, true, flash)
 			} else {
 				flash.Error("Select password failed. %v", err)
+				c.renderShowSelectPassword(ctx, w, form.Email, code, false, flash)
 			}
-			c.renderShowSelectPassword(ctx, w, form.Email, code, flash)
 			return
 		}
 
 		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
-			c.renderShowSelectPassword(ctx, w, form.Email, code, flash)
+			c.renderShowSelectPassword(ctx, w, form.Email, code, false, flash)
 			return
 		}
 
