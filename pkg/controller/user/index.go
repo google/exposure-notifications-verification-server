@@ -66,7 +66,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		emailPrefix := r.FormValue("email")
+		emailPrefix := r.FormValue("search")
 		users, err := realm.ListUsers(c.db, offset, pageSize, emailPrefix)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -151,7 +151,7 @@ func (c *Controller) renderIndex(
 	pages *Pages,
 	emailPrefix string) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["email"] = emailPrefix
+	m["search"] = emailPrefix
 	m["users"] = users
 	m["pages"] = pages
 	c.h.RenderHTML(w, "users/index", m)

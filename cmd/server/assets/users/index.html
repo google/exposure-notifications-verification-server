@@ -4,6 +4,7 @@
 {{$currentUser := .currentUser}}
 {{$currentRealm := .currentRealm}}
 {{$users := .users}}
+{{$s := .search}}
 
 <!doctype html>
 <html lang="en">
@@ -85,25 +86,25 @@
           {{$pages := .pages}}
           <ul class="pagination">
             <li class="page-item {{if eq $pages.Previous -1}}disabled{{end}}"><a class="page-link"
-                href="?{{if .email}}email={{.email}}&{{end}}offset={{$pages.Previous}}">Previous</a>
+                href="?{{if $s}}search={{$s}}&{{end}}offset={{$pages.Previous}}">Previous</a>
             </li>
             {{range $pageOffset := $pages.Offsets}}
             <li class="page-item {{if eq $pages.Current $pageOffset.Offset}}active{{end}}"><a class="page-link"
-                href="?{{if .email}}email={{.email}}&{{end}}offset={{$pageOffset.Offset}}">{{$pageOffset.Label}}</a>
+                href="?{{if $s}}search={{$s}}&{{end}}offset={{$pageOffset.Offset}}">{{$pageOffset.Label}}</a>
             </li>
             {{end}}
             <li class="page-item {{if eq $pages.Next -1}}disabled{{end}}"><a class="page-link"
-                href="?{{if .email}}email={{.email}}&{{end}}offset={{$pages.Next}}">Next</a></li>
+                href="?{{if $s}}search={{$s}}&{{end}}offset={{$pages.Next}}">Next</a></li>
           </ul>
           <small class="form-text text-muted pl-2">{{$pages.Footer}}</small>
         </nav>
 
         <div class="col-6">
           <div class="row">
-            <form class="floating-form mb-3" actionn="/" method="GET">
+            <form class="floating-form mb-3" method="GET">
               <div class="form-label-group">
-                <input type="text" id="search-email" name="email" class="form-control" placeholder="Email address"
-                  aria-label="email" aria-describedby="button-addon2" value="{{.email}}" />
+                <input type="text" id="search-email" name="search" class="form-control" placeholder="Email address"
+                  aria-label="email" aria-describedby="button-addon2" {{if $s}}value="{{$s}}"{{end}} />
                 <label for="search-email">Email address</label>
               </div>
               <button class="btn btn-outline-secondary mt-n3" type="submit" id="button-addon2">Search</button>
