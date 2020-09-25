@@ -593,7 +593,7 @@ func (r *Realm) ListUsers(db *Database, offset, limit int, emailPrefix string) (
 	realmDB := db.db.Model(r)
 
 	if emailPrefix != "" {
-		realmDB = realmDB.Where("email like ?", fmt.Sprintf("%s%%", emailPrefix))
+		realmDB = realmDB.Where("email like %?%", fmt.Sprintf("%s", emailPrefix))
 	}
 
 	var users []*User
