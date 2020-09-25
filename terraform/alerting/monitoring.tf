@@ -12,8 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  monitoring-host-project = (
+  var.monitoring-host-project != "" ? var.monitoring-host-project : var.verification-server-project)
+}
+
 resource "google_monitoring_dashboard" "verification-server" {
-  project        = var.monitoring-host-project
+  project        = local.monitoring-host-project
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/verification-server.yaml")))
   depends_on = [
     null_resource.manual-step-to-enable-workspace
@@ -21,7 +26,7 @@ resource "google_monitoring_dashboard" "verification-server" {
 }
 
 resource "google_monitoring_dashboard" "e2e" {
-  project        = var.monitoring-host-project
+  project        = local.monitoring-host-project
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/e2e.yaml")))
   depends_on = [
     null_resource.manual-step-to-enable-workspace
@@ -29,7 +34,7 @@ resource "google_monitoring_dashboard" "e2e" {
 }
 
 resource "google_monitoring_alert_policy" "five_xx" {
-  project      = var.monitoring-host-project
+  project      = local.monitoring-host-project
   display_name = "Elevated 5xx"
   combiner     = "OR"
   conditions {
@@ -75,7 +80,7 @@ EOT
 }
 
 resource "google_monitoring_alert_policy" "rate_limited_count" {
-  project      = var.monitoring-host-project
+  project      = local.monitoring-host-project
   display_name = "ElevatedRateLimitedCount"
   combiner     = "OR"
   conditions {
@@ -111,7 +116,7 @@ client app, or a potential DoS attack.
 
 View the metric here
 
-https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.monitoring-host-project}
+https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${local.monitoring-host-project}
 EOT
     mime_type = "text/markdown"
   }
@@ -125,7 +130,7 @@ EOT
 }
 
 resource "google_monitoring_alert_policy" "backend_latency" {
-  project      = var.project
+  project      = var.verification-server-project
   display_name = "Elevated Latency Greater than 2s"
   combiner     = "OR"
   conditions {
@@ -170,7 +175,7 @@ EOT
 }
 
 resource "google_monitoring_alert_policy" "realm_token_capacity" {
-  project      = var.project
+  project      = var.verificatoin-server-project
   display_name = "RealmTokenCapacityUtilizationAboveThreshold"
   combiner     = "OR"
   conditions {
@@ -182,7 +187,7 @@ resource "google_monitoring_alert_policy" "realm_token_capacity" {
       filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest\" resource.type=\"generic_task\""
 
       aggregations {
-        alignment_period     = "60s"
+        alignment_period = "60s"
         group_by_fields = [
           "resource.label.realm",
         ]
@@ -204,7 +209,7 @@ daily verification code issuing capacity utilized above 90%.
 
 View the metric here
 
-https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.project}
+https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.verification-server-project}
 EOT
     mime_type = "text/markdown"
   }
