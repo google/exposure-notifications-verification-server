@@ -27,41 +27,52 @@ import (
 
 func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		vars := mux.Vars(r)
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
-
-		// Pull the user from the id.
-		user, err := realm.FindUser(c.db, vars["id"])
-		if err != nil {
-			if database.IsNotFound(err) {
-				controller.Unauthorized(w, r, c.h)
-				return
-			}
-
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		stats, err := c.getStats(ctx, user, realm)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		c.renderShow(ctx, w, user, stats)
+		c.Show(w, r, false)
 	})
+}
+
+func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword bool) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	session := controller.SessionFromContext(ctx)
+	if session == nil {
+		controller.MissingSession(w, r, c.h)
+		return
+	}
+	flash := controller.Flash(session)
+
+	realm := controller.RealmFromContext(ctx)
+	if realm == nil {
+		controller.MissingRealm(w, r, c.h)
+		return
+	}
+
+	// Pull the user from the id.
+	user, err := realm.FindUser(c.db, vars["id"])
+	if err != nil {
+		if database.IsNotFound(err) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		controller.InternalError(w, r, c.h, err)
+		return
+	}
+
+	if resetPassword {
+		if _, err := c.resetPassword(ctx, user, flash); err == nil {
+			flash.Alert("Password reset email sent.")
+		}
+	}
+
+	stats, err := c.getStats(ctx, user, realm)
+	if err != nil {
+		controller.InternalError(w, r, c.h, err)
+		return
+	}
+
+	c.renderShow(ctx, w, user, stats)
 }
 
 // Get and cache the stats for this user.

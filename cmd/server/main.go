@@ -358,6 +358,7 @@ func realMain(ctx context.Context) error {
 		userSub.Handle("/import", userController.HandleImportBatch()).Methods("POST")
 		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")
 		userSub.Handle("/{id}", userController.HandleShow()).Methods("GET")
+		userSub.Handle("/{id}", userController.HandleResetPassword()).Methods("POST")
 		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
 		userSub.Handle("/{id}", userController.HandleDelete()).Methods("DELETE")
 	}
