@@ -82,7 +82,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			f.Error("Select password failed. %v", err)
+			f.Error("Select password failed: %v", err)
 			c.renderShowSelectPassword(ctx, w, "", code, f)
 			return
 		}
