@@ -110,8 +110,6 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 
 		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
-			c.renderShowSelectPassword(ctx, w, form.Email, code, false, flash)
-			return
 		}
 
 		flash.Alert("Successfully selected new password.")
