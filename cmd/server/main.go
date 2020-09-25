@@ -259,7 +259,6 @@ func realMain(ctx context.Context) error {
 				Queries("mode", "verifyEmail").Methods("GET")
 			sub.Handle("/login/select-password", loginController.HandleVerifyEmail()).
 				Queries("mode", "verifyEmail").Methods("GET")
-			sub.Handle("/login/verify-email", loginController.HandleVerifyEmail()).Methods("GET")
 
 			// SMS auth registration is realm-specific, so it needs to load the current realm.
 			sub = r.PathPrefix("").Subrouter()
