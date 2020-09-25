@@ -62,7 +62,7 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 			realm := controller.RealmFromContext(ctx)
 			if needsEmailVerification(session, realm, firebaseUser) {
 				logger.Debugw("user email not verified")
-				http.Redirect(w, r, "/login/verify-email", http.StatusSeeOther)
+				http.Redirect(w, r, "/login/manage-account?mode=verifyEmail", http.StatusSeeOther)
 				return
 			}
 
