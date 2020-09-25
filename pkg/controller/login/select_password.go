@@ -88,7 +88,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		}
 
 		if err := c.validateComplexity(form.Password); err != nil {
-			f.Error("Select password failed. %v", err)
+			f.Error("Select password failed: %v", err)
 			c.renderShowSelectPassword(ctx, w, form.Email, code, f)
 			return
 		}
