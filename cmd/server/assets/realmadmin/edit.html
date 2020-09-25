@@ -76,12 +76,12 @@
 
     {{if $realm.EnableENExpress}}
     <p class="text-center">
-      <a href="#" id="show-advanced-settings" class="text-muted small">
+      <a href="#advanced-settings" class="text-muted small" data-toggle="collapse">
         Advanced settings
       </a>
     </p>
 
-    <div id="advanced-settings" class="card mb-3 shadow-sm d-none">
+    <div id="advanced-settings" class="card mb-3 shadow-sm collapse">
       <div class="card-header">
         Advanced settings
       </div>
@@ -108,16 +108,6 @@
         window.location.hash = hash;
         $('html,body').scrollTop(mem);
       }
-
-      {{if $realm.EnableENExpress}}
-      let $showAdvancedSettings = $('#show-advanced-settings');
-      let $advancedSettings = $('#advanced-settings');
-      $showAdvancedSettings.on('click', function(event) {
-        event.preventDefault();
-        $showAdvancedSettings.addClass('d-none');
-        $advancedSettings.removeClass('d-none');
-      });
-      {{end}}
     });
   </script>
 </body>

@@ -121,10 +121,18 @@ func (c *Controller) HandleSettings() http.Handler {
 		if form.Codes {
 			realm.AllowedTestTypes = form.AllowedTestTypes
 			realm.RequireDate = form.RequireDate
-			realm.CodeLength = form.CodeLength
-			realm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
-			realm.LongCodeLength = form.LongCodeLength
-			realm.LongCodeDuration.Duration = time.Duration(form.LongCodeDurationHours) * time.Hour
+			if v := realm.CodeLength; v > 0 {
+				realm.CodeLength = v
+			}
+			if v := form.CodeDurationMinutes; v > 0 {
+				realm.CodeDuration.Duration = time.Duration(v) * time.Minute
+			}
+			if v := form.LongCodeLength; v > 0 {
+				realm.LongCodeLength = v
+			}
+			if v := form.LongCodeDurationHours; v > 0 {
+				realm.LongCodeDuration.Duration = time.Duration(v) * time.Hour
+			}
 			realm.SMSTextTemplate = form.SMSTextTemplate
 		}
 
