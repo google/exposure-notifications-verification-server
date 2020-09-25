@@ -57,14 +57,14 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	config, err := config.NewCleanupConfig(ctx)
+	cfg, err := config.NewCleanupConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
-	oeConfig := config.ObservabilityExporterConfig()
+	oeConfig := cfg.ObservabilityExporterConfig()
 	oe, err := observability.NewFromEnv(ctx, oeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
@@ -76,7 +76,7 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup database
-	db, err := config.Database.Load(ctx)
+	db, err := cfg.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
@@ -86,7 +86,7 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	// Create the renderer
-	h, err := render.New(ctx, "", config.DevMode)
+	h, err := render.New(ctx, "", cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
@@ -94,13 +94,13 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
-	cleanupController := cleanup.New(ctx, config, db, h)
+	cleanupController := cleanup.New(ctx, cfg, db, h)
 	r.Handle("/", cleanupController.HandleCleanup()).Methods("GET")
 
-	srv, err := server.New(config.Port)
+	srv, err := server.New(cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
-	logger.Infow("server listening", "port", config.Port)
+	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, r)
 }

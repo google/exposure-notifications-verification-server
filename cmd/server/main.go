@@ -77,14 +77,14 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	config, err := config.NewServerConfig(ctx)
+	cfg, err := config.NewServerConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
 
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
-	oeConfig := config.ObservabilityExporterConfig()
+	oeConfig := cfg.ObservabilityExporterConfig()
 	oe, err := observability.NewFromEnv(ctx, oeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
@@ -96,16 +96,16 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup sessions
-	sessions := sessions.NewCookieStore(config.CookieKeys.AsBytes()...)
+	sessions := sessions.NewCookieStore(cfg.CookieKeys.AsBytes()...)
 	sessions.Options.Path = "/"
-	sessions.Options.Domain = config.CookieDomain
-	sessions.Options.MaxAge = int(config.SessionDuration.Seconds())
-	sessions.Options.Secure = !config.DevMode
+	sessions.Options.Domain = cfg.CookieDomain
+	sessions.Options.MaxAge = int(cfg.SessionDuration.Seconds())
+	sessions.Options.Secure = !cfg.DevMode
 	sessions.Options.SameSite = http.SameSiteStrictMode
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &config.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, config.Cache.HMACKey),
+	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.MultiKeyFunc(
+		cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey),
 		cache.PrefixKeyFunc("cache:"),
 	))
 	if err != nil {
@@ -114,7 +114,7 @@ func realMain(ctx context.Context) error {
 	defer cacher.Close()
 
 	// Setup database
-	db, err := config.Database.Load(ctx)
+	db, err := cfg.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
@@ -124,13 +124,13 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	// Setup signers
-	certificateSigner, err := keys.KeyManagerFor(ctx, &config.CertificateSigning.Keys)
+	certificateSigner, err := keys.KeyManagerFor(ctx, &cfg.CertificateSigning.Keys)
 	if err != nil {
 		return fmt.Errorf("failed to create certificate key manager: %w", err)
 	}
 
 	// Setup firebase
-	app, err := firebase.NewApp(ctx, config.FirebaseConfig())
+	app, err := firebase.NewApp(ctx, cfg.FirebaseConfig())
 	if err != nil {
 		return fmt.Errorf("failed to setup firebase: %w", err)
 	}
@@ -148,38 +148,38 @@ func realMain(ctx context.Context) error {
 
 	// Inject template middleware - this needs to be first because other
 	// middlewares may add data to the template map.
-	populateTemplateVariables := middleware.PopulateTemplateVariables(ctx, config)
+	populateTemplateVariables := middleware.PopulateTemplateVariables(ctx, cfg)
 	r.Use(populateTemplateVariables)
 
 	// Create the renderer
-	h, err := render.New(ctx, config.AssetsPath, config.DevMode)
+	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
 	// Rate limiting
-	limiterStore, err := ratelimit.RateLimiterFor(ctx, &config.RateLimit)
+	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
 	defer limiterStore.Close(ctx)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
-		limitware.UserIDKeyFunc(ctx, "server:ratelimit:", config.RateLimit.HMACKey),
+		limitware.UserIDKeyFunc(ctx, "server:ratelimit:", cfg.RateLimit.HMACKey),
 		limitware.AllowOnError(false))
 	if err != nil {
 		return fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
 
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, config.DevMode, "html"))
+	r.Use(middleware.SecureHeaders(ctx, cfg.DevMode, "html"))
 
 	// Enable debug headers
 	processDebug := middleware.ProcessDebug(ctx)
 	r.Use(processDebug)
 
 	// Install the CSRF protection middleware.
-	configureCSRF := middleware.ConfigureCSRF(ctx, config, h)
+	configureCSRF := middleware.ConfigureCSRF(ctx, cfg, h)
 	r.Use(configureCSRF)
 
 	// Sessions
@@ -191,8 +191,8 @@ func realMain(ctx context.Context) error {
 	r.Use(currentPath)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, config.SessionIdleTimeout, config.SessionDuration)
-	requireVerified := middleware.RequireVerified(ctx, auth, db, h, config.SessionDuration)
+	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
+	requireVerified := middleware.RequireVerified(ctx, auth, db, h, cfg.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	loadCurrentRealm := middleware.LoadCurrentRealm(ctx, cacher, db, h)
 	requireRealm := middleware.RequireRealm(ctx, h)
@@ -202,7 +202,7 @@ func realMain(ctx context.Context) error {
 	rateLimit := httplimiter.Handle
 
 	{
-		static := filepath.Join(config.AssetsPath, "static")
+		static := filepath.Join(cfg.AssetsPath, "static")
 		fs := http.FileServer(http.Dir(static))
 		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 
@@ -215,11 +215,11 @@ func realMain(ctx context.Context) error {
 
 	{
 		sub := r.PathPrefix("").Subrouter()
-		sub.Handle("/health", controller.HandleHealthz(ctx, &config.Database, h)).Methods("GET")
+		sub.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
 	}
 
 	{
-		loginController := login.New(ctx, firebaseInternal, auth, config, db, h)
+		loginController := login.New(ctx, firebaseInternal, auth, cfg, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
@@ -275,11 +275,11 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		homeController := home.New(ctx, config, db, h)
+		homeController := home.New(ctx, cfg, db, h)
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
-		issueapiController, err := issueapi.New(ctx, config, db, limiterStore, h)
+		issueapiController, err := issueapi.New(ctx, cfg, db, limiterStore, h)
 		if err != nil {
 			return fmt.Errorf("issueapi.New: %w", err)
 		}
@@ -296,7 +296,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		codeStatusController := codestatus.NewServer(ctx, config, db, h)
+		codeStatusController := codestatus.NewServer(ctx, cfg, db, h)
 		sub.Handle("/status", codeStatusController.HandleIndex()).Methods("GET")
 		sub.Handle("/show", codeStatusController.HandleShow()).Methods("POST")
 		sub.Handle("/{uuid}/expire", codeStatusController.HandleExpirePage()).Methods("PATCH")
@@ -314,7 +314,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		apikeyController := apikey.New(ctx, config, cacher, db, h)
+		apikeyController := apikey.New(ctx, cfg, cacher, db, h)
 		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
 		sub.Handle("", apikeyController.HandleCreate()).Methods("POST")
 		sub.Handle("/new", apikeyController.HandleCreate()).Methods("GET")
@@ -337,7 +337,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, firebaseInternal, auth, cacher, config, db, h)
+		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).Queries("offset", "{[0-9]*?}").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
@@ -362,13 +362,13 @@ func realMain(ctx context.Context) error {
 		realmSub.Use(requireMFA)
 		realmSub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, cacher, config, db, limiterStore, h)
+		realmadminController := realmadmin.New(ctx, cacher, cfg, db, limiterStore, h)
 		realmSub.Handle("/settings", realmadminController.HandleSettings()).Methods("GET", "POST")
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
 		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
 
-		realmKeysController, err := realmkeys.New(ctx, config, db, certificateSigner, cacher, h)
+		realmKeysController, err := realmkeys.New(ctx, cfg, db, certificateSigner, cacher, h)
 		if err != nil {
 			return fmt.Errorf("failed to create realmkeys controller: %w", err)
 		}
@@ -401,7 +401,7 @@ func realMain(ctx context.Context) error {
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
-		adminController := admin.New(ctx, config, db, auth, h)
+		adminController := admin.New(ctx, cfg, db, auth, h)
 		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
 		adminSub.Handle("/realms/new", adminController.HandleRealmsCreate()).Methods("GET")
@@ -424,10 +424,10 @@ func realMain(ctx context.Context) error {
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod(ctx)(r))
 
-	srv, err := server.New(config.Port)
+	srv, err := server.New(cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
-	logger.Infow("server listening", "port", config.Port)
+	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
 }
