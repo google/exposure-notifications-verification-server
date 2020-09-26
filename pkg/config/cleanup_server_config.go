@@ -42,6 +42,7 @@ type CleanupConfig struct {
 	CleanupPeriod           time.Duration `env:"CLEANUP_PERIOD,default=15m"`
 	VerificationCodeMaxAge  time.Duration `env:"VERIFICATION_CODE_MAX_AGE,default=24h"`
 	VerificationTokenMaxAge time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE,default=24h"`
+	MobileAppMaxAge         time.Duration `env:"MOBILE_APP_MAX_AGE,default=168h"`
 }
 
 // NewCleanupConfig returns the environment config for the cleanup server.

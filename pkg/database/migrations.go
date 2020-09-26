@@ -1223,6 +1223,16 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 		},
 		{
+			ID: "00050-CreateMobileApps",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("creating authorized apps table")
+				return tx.AutoMigrate(&MobileApp{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("mobile_apps").Error
+			},
+		},
+		{
 			ID: "00051-CreateSystemSMSConfig",
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{

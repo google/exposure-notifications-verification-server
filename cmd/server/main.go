@@ -36,6 +36,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
@@ -311,6 +312,29 @@ func realMain(ctx context.Context) error {
 		sub.Handle("/status", codeStatusController.HandleIndex()).Methods("GET")
 		sub.Handle("/show", codeStatusController.HandleShow()).Methods("POST")
 		sub.Handle("/{uuid}/expire", codeStatusController.HandleExpirePage()).Methods("PATCH")
+	}
+
+	// mobileapp
+	{
+		sub := r.PathPrefix("/mobile-apps").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(loadCurrentRealm)
+		sub.Use(requireRealm)
+		sub.Use(processFirewall)
+		sub.Use(requireAdmin)
+		sub.Use(requireVerified)
+		sub.Use(requireMFA)
+		sub.Use(rateLimit)
+
+		mobileappsController := mobileapps.New(ctx, cfg, cacher, db, h)
+		sub.Handle("", mobileappsController.HandleIndex()).Methods("GET")
+		sub.Handle("", mobileappsController.HandleCreate()).Methods("POST")
+		sub.Handle("/new", mobileappsController.HandleCreate()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}/edit", mobileappsController.HandleUpdate()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}", mobileappsController.HandleShow()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}", mobileappsController.HandleUpdate()).Methods("PATCH")
+		sub.Handle("/{id:[0-9]+}/disable", mobileappsController.HandleDisable()).Methods("PATCH")
+		sub.Handle("/{id:[0-9]+}/enable", mobileappsController.HandleEnable()).Methods("PATCH")
 	}
 
 	// apikeys
