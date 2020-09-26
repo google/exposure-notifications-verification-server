@@ -20,7 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
@@ -35,7 +35,7 @@ type Controller struct {
 	client           *auth.Client
 	config           *config.ServerConfig
 	db               *database.Database
-	metrics          *user.Metrics
+	metrics          *controller.Metrics
 	h                *render.Renderer
 	logger           *zap.SugaredLogger
 }
@@ -45,12 +45,14 @@ func New(
 	ctx context.Context,
 	firebaseInternal *firebase.Client,
 	client *auth.Client,
-	metrics *user.Metrics,
 	config *config.ServerConfig,
 	db *database.Database,
 	h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("login")
-
+	ctx, metrics, err := controller.MetricsFromContext(ctx)
+	if err != nil {
+		logger.Errorw("Failed to register shared metrics", "error", err)
+	}
 	return &Controller{
 		firebaseInternal: firebaseInternal,
 		client:           client,

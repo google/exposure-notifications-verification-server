@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package user
+package controller
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
@@ -24,15 +25,27 @@ import (
 	"go.opencensus.io/tag"
 )
 
-var (
-	MetricPrefix = observability.MetricRoot + "/server/user"
-)
+const contextKeyMetrics = contextKey("controllerMetricsKey")
+
+var MetricPrefix = observability.MetricRoot + "/server/shared"
 
 type Metrics struct {
 	FirebaseRecreates *stats.Int64Measure
 }
 
-func RegisterMetrics() (*Metrics, error) {
+func MetricsFromContext(ctx context.Context) (context.Context, *Metrics, error) {
+	v := ctx.Value(contextKeyMetrics)
+	if v == nil {
+		return registerMetrics(ctx)
+	}
+
+	if m, ok := v.(*Metrics); ok {
+		return ctx, m, nil
+	}
+	return registerMetrics(ctx)
+}
+
+func registerMetrics(ctx context.Context) (context.Context, *Metrics, error) {
 	mFirebaseRecreates := stats.Int64(MetricPrefix+"/fb_recreate", "recreation of firebase users", stats.UnitDimensionless)
 	if err := view.Register(&view.View{
 		Name:        MetricPrefix + "/fb_recreate_count",
@@ -41,10 +54,9 @@ func RegisterMetrics() (*Metrics, error) {
 		TagKeys:     []tag.Key{observability.RealmTagKey},
 		Aggregation: view.Count(),
 	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
+		return ctx, nil, fmt.Errorf("stat view registration failure: %w", err)
 	}
 
-	return &Metrics{
-		FirebaseRecreates: mFirebaseRecreates,
-	}, nil
+	metrics := &Metrics{FirebaseRecreates: mFirebaseRecreates}
+	return context.WithValue(ctx, contextKeyMetrics, metrics), metrics, nil
 }
