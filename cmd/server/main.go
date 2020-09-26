@@ -201,12 +201,6 @@ func realMain(ctx context.Context) error {
 	processFirewall := middleware.ProcessFirewall(ctx, h, "server")
 	rateLimit := httplimiter.Handle
 
-	// Shared metrics
-	userMetrics, err := user.RegisterMetrics()
-	if err != nil {
-		return err
-	}
-
 	{
 		static := filepath.Join(cfg.AssetsPath, "static")
 		fs := http.FileServer(http.Dir(static))
@@ -225,7 +219,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	{
-		loginController := login.New(ctx, firebaseInternal, auth, userMetrics, cfg, db, h)
+		loginController := login.New(ctx, firebaseInternal, auth, cfg, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
@@ -354,7 +348,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, firebaseInternal, auth, cacher, userMetrics, cfg, db, h)
+		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
