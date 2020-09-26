@@ -14,6 +14,11 @@
 
 locals {
   enable_lb = var.server-host != "" && var.apiserver-host != "" && var.adminapi-host != ""
+  lb_mapping = {
+    "server": var.server-host,
+    "apiserver": var.apiserver-host,
+    "adminapi": var.adminapi-host,
+  }
 }
 
 resource "google_compute_global_address" "verification-server" {
@@ -41,34 +46,20 @@ resource "google_compute_url_map" "urlmap-https" {
   project         = var.project
   default_service = google_compute_backend_service.server[0].id
 
-  host_rule {
-    hosts        = [var.server-host]
-    path_matcher = "server"
-  }
 
-  path_matcher {
-    name            = "server"
-    default_service = google_compute_backend_service.server[0].id
+  dynamic "host_rule" {
+    for_each = local.lb_mapping
+    content = {
+      hosts = [host_rule.value]
+      path_matcher = host_rule.key
+    }
   }
-
-  host_rule {
-    hosts        = [var.apiserver-host]
-    path_matcher = "apiserver"
-  }
-
-  path_matcher {
-    name            = "apiserver"
-    default_service = google_compute_backend_service.apiserver[0].id
-  }
-
-  host_rule {
-    hosts        = [var.adminapi-host]
-    path_matcher = "adminapi"
-  }
-
-  path_matcher {
-    name            = "adminapi"
-    default_service = google_compute_backend_service.adminapi[0].id
+  dynamic "path_matcher" {
+    for_each = local.lb_mapping
+    content = {
+      name = path_matcher.key
+      default_service = google_compute_backend_service.get(path_matcher.key)[0].id
+    }
   }
 }
 
