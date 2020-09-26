@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mobileapp
+package mobileapps
 
 import (
 	"net/http"
@@ -53,10 +53,11 @@ func (c *Controller) HandleEnable() http.Handler {
 
 		if err := app.Enable(c.db); err != nil {
 			flash.Error("Failed to enable mobile app: %v", err)
-			http.Redirect(w, r, "/mobileapp", http.StatusSeeOther)
+			http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
+			return
 		}
 
 		flash.Alert("Successfully enabled mobile app '%v'", app.Name)
-		http.Redirect(w, r, "/mobileapp", http.StatusSeeOther)
+		http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
 	})
 }

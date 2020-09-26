@@ -12,52 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mobileapp
+package mobileapps
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-
 	"github.com/gorilla/mux"
 )
 
-// HandleShow displays the mobile app.
-func (c *Controller) HandleShow() http.Handler {
-	logger := c.logger.Named("HandleShow")
-
+func (c *Controller) HandleDisable() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctxt := r.Context()
+		ctx := r.Context()
 		vars := mux.Vars(r)
 
-		session := controller.SessionFromContext(ctxt)
+		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctxt)
+		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
 			controller.MissingRealm(w, r, c.h)
 			return
 		}
 
-		// If the app name is present, add it to the variables map and then delete it
-		// from the session.
-		appName, ok := session.Values["appName"]
-		if ok {
-			m := templateMap(ctxt)
-			m["appName"] = appName
-			delete(session.Values, "appName")
-		}
-
-		// Pull the authorized app from the id.
 		app, err := realm.FindMobileApp(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
-				logger.Debugw("mobile app does not exist", "id", vars["id"])
 				controller.Unauthorized(w, r, c.h)
 				return
 			}
@@ -66,13 +51,13 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		c.renderShow(ctxt, w, app)
-	})
-}
+		if err := app.Disable(c.db); err != nil {
+			flash.Error("Failed to disable mobile app: %v", err)
+			http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
+			return
+		}
 
-// renderShow renders the edit page.
-func (c *Controller) renderShow(ctxt context.Context, w http.ResponseWriter, app *database.MobileApp) {
-	m := templateMap(ctxt)
-	m["app"] = app
-	c.h.RenderHTML(w, "mobileapp/show", m)
+		flash.Alert("Successfully disabled mobile app '%v'", app.Name)
+		http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
+	})
 }

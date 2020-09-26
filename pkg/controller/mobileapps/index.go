@@ -12,27 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mobileapp
+package mobileapps
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleDisable() http.Handler {
+func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		vars := mux.Vars(r)
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-		flash := controller.Flash(session)
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -40,23 +32,20 @@ func (c *Controller) HandleDisable() http.Handler {
 			return
 		}
 
-		app, err := realm.FindMobileApp(c.db, vars["id"])
+		// Perform the lazy load on authorized apps for the realm.
+		apps, err := realm.ListMobileApps(c.db)
 		if err != nil {
-			if database.IsNotFound(err) {
-				controller.Unauthorized(w, r, c.h)
-				return
-			}
-
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		if err := app.Disable(c.db); err != nil {
-			flash.Error("Failed to disable mobile app: %v", err)
-			http.Redirect(w, r, "/mobileapp", http.StatusSeeOther)
-		}
-
-		flash.Alert("Successfully disabled mobile app '%v'", app.Name)
-		http.Redirect(w, r, "/mobileapp", http.StatusSeeOther)
+		c.renderIndex(ctx, w, apps)
 	})
+}
+
+// renderIndex renders the index page.
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp) {
+	m := templateMap(ctx)
+	m["apps"] = apps
+	c.h.RenderHTML(w, "mobileapps/index", m)
 }

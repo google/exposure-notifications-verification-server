@@ -91,6 +91,12 @@ func (c *Controller) HandleCleanup() http.Handler {
 			c.logger.Infof("purged %v verification tokens", count)
 		}
 
+		if count, err := c.db.PurgeMobileApps(c.config.MobileAppMaxAge); err != nil {
+			c.logger.Errorf("db.PurgeMobileApps: %v", err)
+		} else {
+			c.logger.Infof("purged %v mobile apps tokens", count)
+		}
+
 		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{true})
 	})
 }

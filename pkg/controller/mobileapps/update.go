@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mobileapp
+package mobileapps
 
 import (
 	"context"
@@ -26,18 +26,25 @@ import (
 
 // HandleUpdate handles an update.
 func (c *Controller) HandleUpdate() http.Handler {
+	type FormData struct {
+		Name  string          `form:"name"`
+		OS    database.OSType `form:"os"`
+		AppID string          `form:"app_id"`
+		SHA   string          `form:"sha"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctxt := r.Context()
+		ctx := r.Context()
 		vars := mux.Vars(r)
 
-		session := controller.SessionFromContext(ctxt)
+		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctxt)
+		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
 			controller.MissingRealm(w, r, c.h)
 			return
@@ -56,7 +63,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderEdit(ctxt, w, app)
+			c.renderEdit(ctx, w, app)
 			return
 		}
 
@@ -71,9 +78,8 @@ func (c *Controller) HandleUpdate() http.Handler {
 			}
 
 			flash.Error("Failed to process form: %v", err)
-			c.renderEdit(ctxt, w, app)
+			c.renderEdit(ctx, w, app)
 		}
-		form.SHA = cleanSHA(form.SHA)
 
 		// Build the authorized app struct
 		app.Name = form.Name
@@ -81,28 +87,21 @@ func (c *Controller) HandleUpdate() http.Handler {
 		app.AppID = form.AppID
 		app.SHA = form.SHA
 
-		// Verify the form.
-		if err := form.verify(); err != nil {
-			flash.Error("Failed to verify: %v", err)
-			c.renderEdit(ctxt, w, app)
-			return
-		}
-
 		// Save
 		if err := c.db.SaveMobileApp(app); err != nil {
 			flash.Error("Failed to save mobile app: %v", err)
-			c.renderEdit(ctxt, w, app)
+			c.renderEdit(ctx, w, app)
 			return
 		}
 
 		flash.Alert("Successfully updated mobile app!")
-		http.Redirect(w, r, "/mobileapp", http.StatusSeeOther)
+		http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
 	})
 }
 
 // renderEdit renders the edit page.
-func (c *Controller) renderEdit(ctxt context.Context, w http.ResponseWriter, app *database.MobileApp) {
-	m := templateMap(ctxt)
+func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, app *database.MobileApp) {
+	m := templateMap(ctx)
 	m["app"] = app
-	c.h.RenderHTML(w, "mobileapp/edit", m)
+	c.h.RenderHTML(w, "mobileapps/edit", m)
 }

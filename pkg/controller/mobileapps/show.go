@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mobileapp
+package mobileapps
 
 import (
 	"context"
@@ -20,11 +20,21 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
+	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+// HandleShow displays the mobile app.
+func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -32,20 +42,25 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		// Perform the lazy load on authorized apps for the realm.
-		apps, err := realm.ListMobileApps(c.db)
+		// Pull the authorized app from the id.
+		app, err := realm.FindMobileApp(c.db, vars["id"])
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(ctx, w, apps)
+		c.renderShow(ctx, w, app)
 	})
 }
 
-// renderIndex renders the index page.
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp) {
+// renderShow renders the edit page.
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, app *database.MobileApp) {
 	m := templateMap(ctx)
-	m["apps"] = apps
-	c.h.RenderHTML(w, "mobileapp/index", m)
+	m["app"] = app
+	c.h.RenderHTML(w, "mobileapps/show", m)
 }

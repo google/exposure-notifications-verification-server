@@ -36,7 +36,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapp"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
@@ -316,7 +316,7 @@ func realMain(ctx context.Context) error {
 
 	// mobileapp
 	{
-		sub := r.PathPrefix("/mobileapp").Subrouter()
+		sub := r.PathPrefix("/mobile-apps").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
@@ -326,15 +326,15 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		mobileController := mobileapp.New(ctx, config, cacher, db, h)
-		sub.Handle("", mobileController.HandleIndex()).Methods("GET")
-		sub.Handle("", mobileController.HandleCreate()).Methods("POST")
-		sub.Handle("/new", mobileController.HandleCreate()).Methods("GET")
-		sub.Handle("/{id}/edit", mobileController.HandleUpdate()).Methods("GET")
-		sub.Handle("/{id}", mobileController.HandleShow()).Methods("GET")
-		sub.Handle("/{id}", mobileController.HandleUpdate()).Methods("PATCH")
-		sub.Handle("/{id}/disable", mobileController.HandleDisable()).Methods("PATCH")
-		sub.Handle("/{id}/enable", mobileController.HandleEnable()).Methods("PATCH")
+		mobileappsController := mobileapps.New(ctx, cfg, cacher, db, h)
+		sub.Handle("", mobileappsController.HandleIndex()).Methods("GET")
+		sub.Handle("", mobileappsController.HandleCreate()).Methods("POST")
+		sub.Handle("/new", mobileappsController.HandleCreate()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}/edit", mobileappsController.HandleUpdate()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}", mobileappsController.HandleShow()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}", mobileappsController.HandleUpdate()).Methods("PATCH")
+		sub.Handle("/{id:[0-9]+}/disable", mobileappsController.HandleDisable()).Methods("PATCH")
+		sub.Handle("/{id:[0-9]+}/enable", mobileappsController.HandleEnable()).Methods("PATCH")
 	}
 
 	// apikeys

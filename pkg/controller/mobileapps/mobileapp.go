@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mobileapp contains web controllers for listing and adding mobile
+// Package mobileapps contains web controllers for listing and adding mobile
 // apps.
-package mobileapp
+package mobileapps
 
 import (
 	"context"
@@ -37,7 +37,7 @@ type Controller struct {
 }
 
 func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx).Named("mobileapp")
+	logger := logging.FromContext(ctx).Named("mobileapps")
 
 	return &Controller{
 		config: config,
@@ -48,8 +48,8 @@ func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, 
 	}
 }
 
-func templateMap(ctxt context.Context) controller.TemplateMap {
-	m := controller.TemplateMapFromContext(ctxt)
+func templateMap(ctx context.Context) controller.TemplateMap {
+	m := controller.TemplateMapFromContext(ctx)
 	m["iOS"] = database.OSTypeIOS
 	m["android"] = database.OSTypeAndroid
 	return m

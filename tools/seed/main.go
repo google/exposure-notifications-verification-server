@@ -170,14 +170,14 @@ func realMain(ctx context.Context) error {
 	// Create some Apps
 	apps := []*database.MobileApp{
 		{
-			Name:  "iOS App",
+			Name:  "Example iOS app",
 			OS:    database.OSTypeIOS,
-			AppID: "iOS.app-id",
+			AppID: "ios.example.app",
 		},
 		{
-			Name:  "Android App",
+			Name:  "Example Android app",
 			OS:    database.OSTypeAndroid,
-			AppID: "Android.app-id",
+			AppID: "android.example.app",
 			SHA:   "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 		},
 	}

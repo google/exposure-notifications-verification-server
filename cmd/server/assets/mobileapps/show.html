@@ -1,0 +1,66 @@
+{{define "mobileapps/show"}}
+
+{{$app := .app}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>{{$app.Name}}</h1>
+    <p class="float-right">
+      <a href="/mobile-apps/{{$app.ID}}/edit">Edit</a>
+    </p>
+    <p>
+      Here is information about the mobile app.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <dl class="mb-n1">
+          <dt>App name</dt>
+          <dd>{{$app.Name}}</dd>
+
+          <dt>OS</dt>
+          <dd>
+            {{if (eq $app.OS .iOS)}}
+              iOS
+            {{else if (eq $app.OS .android)}}
+              Android
+            {{end}}
+          </dd>
+
+          {{if (eq $app.OS .iOS)}}
+            <dt>Application ID</dt>
+            <dd class="text-monospace">{{$app.AppID}}</dd>
+          {{end}}
+
+          {{if (eq $app.OS .android)}}
+            <dt>Bundle identifier</dt>
+            <dd class="text-monospace">{{$app.AppID}}</dd>
+
+            <dt>SHA</dt>
+            <dd class="text-monospace">{{$app.SHA}}</dd>
+          {{end}}
+        </dl>
+      </div>
+    </div>
+
+    <a href="/mobile-apps">&larr; Back to all mobile apps</a>
+  </main>
+
+  {{template "scripts" .}}
+
+</body>
+
+</html>
+{{end}}

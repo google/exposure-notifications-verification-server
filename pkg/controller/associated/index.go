@@ -26,91 +26,67 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.uber.org/zap"
 )
 
 type Controller struct {
-	ctxt   context.Context
-	db     *database.Database
 	cacher cache.Cacher
+	db     *database.Database
 	h      *render.Renderer
+	logger *zap.SugaredLogger
 }
 
-var ttl = 30 * time.Minute
+// cacheTTL is the amount of time for which to cache these values.
+const cacheTTL = 30 * time.Minute
 
 func (c *Controller) HandleIos() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		key := r.URL.String()
+		ctx := r.Context()
+		cacheKey := r.URL.String()
 
-		// Check the cache.
-		{
-			var data IOSData
-			if err := c.cacher.Read(c.ctxt, key, &data); err == nil {
-				c.h.RenderJSON(w, http.StatusOK, data)
-				return
-			} else if err != cache.ErrNotFound {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
-		}
-
-		// Not in cache, go get it.
-		data, err := c.getIosData()
-		if err != nil {
-			c.h.RenderJSON(w, http.StatusOK, api.Error(err))
-			return
-		}
-
-		// Cache the data.
-		if err := c.cacher.Fetch(c.ctxt, key, &data, ttl, func() (interface{}, error) {
-			return data, nil
+		var iosData IOSData
+		if err := c.cacher.Fetch(ctx, cacheKey, &iosData, cacheTTL, func() (interface{}, error) {
+			c.logger.Debug("fetching new ios data")
+			return c.getIosData()
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.h.RenderJSON(w, http.StatusOK, data)
+		c.h.RenderJSON(w, http.StatusOK, iosData)
 	})
 }
 
 func (c *Controller) HandleAndroid() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		key := r.URL.String()
+		ctx := r.Context()
+		cacheKey := r.URL.String()
 
-		// Check the cache
-		var data []AndroidData
-		if err := c.cacher.Read(c.ctxt, r.URL.String(), &data); err == nil {
-			c.h.RenderJSON(w, http.StatusOK, data)
-			return
-		} else if err != cache.ErrNotFound {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		// Not in cache, get the data.
-		var err error
-		data, err = c.getAndroidData()
-		if err != nil {
-			c.h.RenderJSON(w, http.StatusOK, api.Error(err))
-			return
-		}
-
-		// And save to the cache.
-		if err := c.cacher.Fetch(c.ctxt, key, &data, ttl, func() (interface{}, error) {
-			return data, nil
+		var androidData AndroidData
+		if err := c.cacher.Fetch(ctx, cacheKey, &androidData, cacheTTL, func() (interface{}, error) {
+			c.logger.Debug("fetching new android data")
+			return c.getAndroidData()
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.h.RenderJSON(w, http.StatusOK, data)
+		c.h.RenderJSON(w, http.StatusOK, androidData)
 	})
 }
 
-func New(ctxt context.Context, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
-	return &Controller{ctxt: ctxt, db: db, cacher: cacher, h: h}, nil
+func New(ctx context.Context, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
+	logger := logging.FromContext(ctx).Named("associated")
+
+	return &Controller{
+		db:     db,
+		cacher: cacher,
+		h:      h,
+		logger: logger,
+	}, nil
 }

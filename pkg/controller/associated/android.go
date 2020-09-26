@@ -15,6 +15,7 @@
 package associated
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -35,7 +36,7 @@ type Target struct {
 func (c *Controller) getAndroidData() ([]AndroidData, error) {
 	apps, err := c.db.ListActiveAppsByOS(database.OSTypeAndroid)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get android data: %w", err)
 	}
 
 	ret := make([]AndroidData, 0, len(apps))

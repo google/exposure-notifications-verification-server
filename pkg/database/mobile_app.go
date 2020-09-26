@@ -15,13 +15,18 @@
 package database
 
 import (
+	"fmt"
+	"strings"
+	"time"
+
 	"github.com/jinzhu/gorm"
 )
 
 type OSType int
 
 const (
-	OSTypeIOS OSType = iota
+	OSTypeInvalid OSType = iota
+	OSTypeIOS
 	OSTypeAndroid
 )
 
@@ -30,21 +35,76 @@ type MobileApp struct {
 	Errorable
 
 	// Name is the name of the app.
-	Name string `gorm:"name,varchar(512);unique_index:realm_app_name"`
+	Name string `gorm:"column:name; type:citext; unique_index:realm_app_name;"`
 
 	// RealmID is the id of the mobile app.
-	RealmID uint `gorm:"unique_index:realm_app_name"`
+	RealmID uint `gorm:"column:realm_id; unique_index:realm_app_name;"`
 
 	// OS is the type of the application we're using (eg, iOS, Android).
-	OS OSType `gorm:"os,type:int"`
+	OS OSType `gorm:"column:os; type:int;"`
 
 	// IOSAppID is a unique string representing the app.
-	AppID string `gorm:"app_id,type:varchar(512)"`
+	AppID string `gorm:"column:app_id; type:varchar(512);"`
 
 	// SHA is a unique hash of the app.
 	// It is only present for Android devices, and should be of the form:
 	//   AA:BB:CC:DD...
-	SHA string `gorm:"sha,type:text"`
+	SHA string `gorm:"column:sha; type:text;"`
+}
+
+func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
+	a.Name = strings.TrimSpace(a.Name)
+	if a.Name == "" {
+		a.AddError("name", "is required")
+	}
+
+	if a.RealmID == 0 {
+		a.AddError("realm_id", "is required")
+	}
+
+	a.AppID = strings.TrimSpace(a.AppID)
+	if a.AppID == "" {
+		a.AddError("app_id", "is required")
+	}
+
+	// Ensure OS is valid
+	if a.OS < OSTypeIOS || a.OS > OSTypeAndroid {
+		a.AddError("os", "is invalid")
+	}
+
+	a.SHA = strings.TrimSpace(a.SHA)
+	if a.OS == OSTypeAndroid {
+		if a.SHA == "" {
+			a.AddError("sha", "is required for Android apps")
+		}
+	}
+
+	// Process and clean SHAs
+	var shas []string
+	for _, line := range strings.Split(a.SHA, "\n") {
+		for _, entry := range strings.Split(line, ",") {
+			entry = strings.ToUpper(strings.TrimSpace(entry))
+			if entry == "" {
+				continue
+			}
+
+			if len(entry) != 95 {
+				a.AddError("sha", "is not 95 characters")
+				continue
+			}
+
+			if entry != "" {
+				shas = append(shas, entry)
+			}
+		}
+	}
+	a.SHA = strings.Join(shas, "\n")
+
+	if len(a.Errors()) > 0 {
+		return fmt.Errorf("validation failed")
+	}
+
+	return nil
 }
 
 // ListActiveAppsByOS finds all authorized by their OS.
@@ -54,9 +114,11 @@ func (db *Database) ListActiveAppsByOS(os OSType) ([]*MobileApp, error) {
 	if err := db.db.
 		Model(&MobileApp{}).
 		Where("os = ?", os).
-		Where("deleted_at IS NULL").
 		Find(&apps).
 		Error; err != nil {
+		if IsNotFound(err) {
+			return apps, nil
+		}
 		return nil, err
 	}
 	return apps, nil
@@ -70,24 +132,30 @@ func (r *Realm) CreateMobileApp(db *Database, app *MobileApp) error {
 
 // SaveMobileApp saves the authorized app.
 func (db *Database) SaveMobileApp(r *MobileApp) error {
-	if r.Model.ID == 0 {
-		return db.db.Create(r).Error
-	}
 	return db.db.Save(r).Error
 }
 
 // Disable disables the mobile app.
 func (a *MobileApp) Disable(db *Database) error {
-	if err := db.db.Delete(a).Error; err != nil {
-		return err
-	}
-	return nil
+	return db.db.Delete(a).Error
 }
 
 // Enable enables the mobile app.
 func (a *MobileApp) Enable(db *Database) error {
-	if err := db.db.Unscoped().Model(a).Update("deleted_at", nil).Error; err != nil {
-		return err
+	return db.db.Unscoped().Model(a).Update("deleted_at", nil).Error
+}
+
+// PurgeMobileApps will delete mobile apps that have been deleted for more than
+// the specified time.
+func (db *Database) PurgeMobileApps(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
 	}
-	return nil
+	deleteBefore := time.Now().UTC().Add(maxAge)
+
+	result := db.db.
+		Unscoped().
+		Where("deleted_at IS NOT NULL AND deleted_at < ?", deleteBefore).
+		Delete(&MobileApp{})
+	return result.RowsAffected, result.Error
 }
