@@ -43,8 +43,9 @@
             {{template "errorable" $realm.ErrorsFor "regionCode"}}
             <small class="form-text text-muted">
               Used in creating deep link SMS for multi-helath authority apps. Region should
-              be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and ISO 3166-2 subdivision codes</a> where applicable.
-              For example, Washington State would be <code>US-WA</code>.
+              be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and (optionally) ISO 3166-2 subdivision codes</a> where applicable.
+              For example, Washington State would be <code>US-WA</code>, and Canada would be <code>CA</code>. The region code should be scoped to the authority of the public health
+              system represented by this verification system.
             </small>
           </div>
 
