@@ -55,7 +55,7 @@ func New(
 	logger := logging.FromContext(ctx)
 	ctx, metrics, err := controller.MetricsFromContext(ctx)
 	if err != nil {
-		logger.Errorw("Failed to register shared metrics", "error", err)
+		logger.Errorw("failed to register shared metrics", "error", err)
 	}
 
 	return &Controller{
