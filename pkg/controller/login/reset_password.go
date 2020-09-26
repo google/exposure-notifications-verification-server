@@ -23,6 +23,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+
+	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleShowResetPassword() http.Handler {
@@ -57,7 +59,9 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 
 		// Ensure that if we have a user, they have auth
 		if user, err := c.db.FindUserByEmail(form.Email); err == nil {
-			user.CreateFirebaseUser(ctx, c.client)
+			if created, _ := user.CreateFirebaseUser(ctx, c.client); created {
+				stats.Record(ctx, c.metrics.FirebaseRecreates.M(1))
+			}
 		}
 
 		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {

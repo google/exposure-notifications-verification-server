@@ -23,6 +23,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
+
+	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleShow() http.Handler {
@@ -61,18 +63,22 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 	}
 
 	if resetPassword {
-		if _, err := c.resetPassword(ctx, user); err == nil {
+		created, err := c.resetPassword(ctx, user)
+		if err == nil {
 			flash.Alert("Password reset email sent.")
+		}
+		if created {
+			stats.Record(ctx, c.metrics.FirebaseRecreates.M(1))
 		}
 	}
 
-	stats, err := c.getStats(ctx, user, realm)
+	userStats, err := c.getStats(ctx, user, realm)
 	if err != nil {
 		controller.InternalError(w, r, c.h, err)
 		return
 	}
 
-	c.renderShow(ctx, w, user, stats)
+	c.renderShow(ctx, w, user, userStats)
 }
 
 // Get and cache the stats for this user.

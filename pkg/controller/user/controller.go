@@ -37,6 +37,7 @@ type Controller struct {
 	client           *auth.Client
 	config           *config.ServerConfig
 	db               *database.Database
+	metrics          *Metrics
 	h                *render.Renderer
 	logger           *zap.SugaredLogger
 }
@@ -47,6 +48,7 @@ func New(
 	firebaseInternal *firebase.Client,
 	client *auth.Client,
 	cacher cache.Cacher,
+	metrics *Metrics,
 	config *config.ServerConfig,
 	db *database.Database,
 	h *render.Renderer) *Controller {
@@ -58,6 +60,7 @@ func New(
 		client:           client,
 		config:           config,
 		db:               db,
+		metrics:          metrics,
 		h:                h,
 		logger:           logger,
 	}
