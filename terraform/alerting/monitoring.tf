@@ -184,14 +184,16 @@ resource "google_monitoring_alert_policy" "realm_token_capacity" {
       duration        = "300s"
       threshold_value = 0.9
       comparison      = "COMPARISON_GT"
-      filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest\" resource.type=\"generic_task\""
+      filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest\" resource.type=\"generic_task\" resource.label.\"job\"=\"server\""
 
       aggregations {
         alignment_period = "60s"
         group_by_fields = [
-          "resource.label.realm",
+          "resource.label.job",
+          "metric.label.realm",
         ]
-        per_series_aligner = "ALIGN_MAX"
+        per_series_aligner   = "ALIGN_MAX"
+        cross_series_reducer = "REDUCE_SUM"
       }
 
       trigger {
