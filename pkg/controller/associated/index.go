@@ -67,7 +67,7 @@ func (c *Controller) HandleAndroid() http.Handler {
 		ctx := r.Context()
 		cacheKey := r.URL.String()
 
-		var androidData AndroidData
+		var androidData []AndroidData
 		if err := c.cacher.Fetch(ctx, cacheKey, &androidData, cacheTTL, func() (interface{}, error) {
 			c.logger.Debug("fetching new android data")
 			return c.getAndroidData()
