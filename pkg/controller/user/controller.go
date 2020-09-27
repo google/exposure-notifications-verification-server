@@ -51,14 +51,14 @@ func New(
 	cacher cache.Cacher,
 	config *config.ServerConfig,
 	db *database.Database,
-	h *render.Renderer) *Controller {
+	h *render.Renderer) (context.Context, *Controller) {
 	logger := logging.FromContext(ctx)
-	_, metrics, err := controller.MetricsFromContext(ctx)
+	ctx, metrics, err := controller.MetricsFromContext(ctx)
 	if err != nil {
 		logger.Errorw("failed to register shared metrics", "error", err)
 	}
 
-	return &Controller{
+	return ctx, &Controller{
 		cacher:           cacher,
 		firebaseInternal: firebaseInternal,
 		client:           client,

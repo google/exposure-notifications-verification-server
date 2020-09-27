@@ -219,7 +219,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	{
-		loginController := login.New(ctx, firebaseInternal, auth, cfg, db, h)
+		ctx, loginController := login.New(ctx, firebaseInternal, auth, cfg, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
@@ -348,7 +348,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
+		ctx, userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
