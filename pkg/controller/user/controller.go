@@ -53,7 +53,7 @@ func New(
 	db *database.Database,
 	h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
-	ctx, metrics, err := controller.MetricsFromContext(ctx)
+	_, metrics, err := controller.MetricsFromContext(ctx)
 	if err != nil {
 		logger.Errorw("failed to register shared metrics", "error", err)
 	}
