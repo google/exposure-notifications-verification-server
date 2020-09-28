@@ -39,14 +39,12 @@
               </p>
 
               <form id="register-form" class="floating-form" action="/" method="POST">
-                <div class="form-label-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="Phone number" required
-                    autofocus />
-                  <label for="phone">Phone number</label>
+                <div class="form-group">
+                  <input type="tel" id="phone" name="phone" class="form-control" required autofocus />
                   <small class="form-text text-muted">
-                    Fully qualified phone number beginning with '+'. Standard SMS rates may apply.
+                    Standard SMS rates may apply.
                   </small>
-                </div>
+               </div>
 
                 <div class="form-label-group">
                   <input type="text" id="display" name="display" class="form-control" placeholder="Display name" />
@@ -105,6 +103,16 @@
       let $factors = $('#factors');
 
       let verId = ""
+
+      // Initialize pretty phone
+      let phone = document.querySelector('#phone');
+      let iti = window.intlTelInput(phone, {
+        nationalMode: true,
+        {{- if $currentRealm.SMSCountry }}
+        initialCountry: '{{$currentRealm.SMSCountry}}',
+        {{- end }}
+        utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.0/js/utils.js',
+      });
 
       firebase.auth().onAuthStateChanged(function(user) {
         if (!user) {
@@ -195,7 +203,7 @@
         user.multiFactor.getSession().then(function(multiFactorSession) {
           // Specify the phone number and pass the MFA session.
           var phoneInfoOptions = {
-            phoneNumber: $phone.val(),
+            phoneNumber: iti.getNumber(),
             session: multiFactorSession
           };
           var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
