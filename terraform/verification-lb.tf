@@ -15,9 +15,9 @@
 locals {
   enable_lb = var.server-host != "" && var.apiserver-host != "" && var.adminapi-host != ""
   lb_mapping = {
-    "server": var.server-host,
-    "apiserver": var.apiserver-host,
-    "adminapi": var.adminapi-host,
+    "server" : var.server-host,
+    "apiserver" : var.apiserver-host,
+    "adminapi" : var.adminapi-host,
   }
 }
 
@@ -49,16 +49,16 @@ resource "google_compute_url_map" "urlmap-https" {
 
   dynamic "host_rule" {
     for_each = local.lb_mapping
-    content = {
-      hosts = [host_rule.value]
+    content {
+      hosts        = [host_rule.value]
       path_matcher = host_rule.key
     }
   }
   dynamic "path_matcher" {
     for_each = local.lb_mapping
-    content = {
-      name = path_matcher.key
-      default_service = google_compute_backend_service.get(path_matcher.key)[0].id
+    content {
+      name            = path_matcher.key
+      default_service = element(google_compute_backend_service, path_matcher.key)[0].id
     }
   }
 }
