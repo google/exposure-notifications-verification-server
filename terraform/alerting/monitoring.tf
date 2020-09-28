@@ -139,11 +139,11 @@ resource "google_monitoring_alert_policy" "backend_latency" {
       duration        = "300s"
       threshold_value = "2000"
       comparison      = "COMPARISON_GT"
-      filter          = "metric.type=\"loadbalancing.googleapis.com/https/backend_latencies\" resource.type=\"https_lb_rule\" "
+      filter          = "metric.type=\"loadbalancing.googleapis.com/https/backend_latencies\" resource.type=\"https_lb_rule\" resource.label.\"backend_name\"!=\"NO_BACKEND_SELECTED\" resource.label.\"forwarding_rule_name\"=\"verification-server-https\""
 
       aggregations {
         alignment_period     = "60s"
-        cross_series_reducer = "REDUCE_PERCENTILE_95"
+        cross_series_reducer = "REDUCE_PERCENTILE_99"
         group_by_fields = [
           "resource.label.backend_target_name",
         ]
@@ -160,7 +160,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
     content   = <<-EOT
 ## $${policy.display_name}
 
-[$${resource.label.host}](https://$${resource.label.host}) Latency is spiking in the server
+Latency has been above 2s for > 5 minutes on $${resource.label.backend_target_name}.
 
 EOT
     mime_type = "text/markdown"
