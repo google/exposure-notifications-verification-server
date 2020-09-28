@@ -60,7 +60,7 @@
               </form>
 
 
-              <a id="skip" href="/home" class="float-right mt-3 text-muted {{if ne .currentRealm.MFAMode.String "required"}}d-none{{end}}">
+              <a id="skip" href="/home" class="float-right mt-3 text-muted {{if eq .currentRealm.MFAMode.String "required"}}d-none{{end}}">
                 Skip for now
               </a>
             </div>
