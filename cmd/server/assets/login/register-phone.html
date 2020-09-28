@@ -280,7 +280,7 @@
           });
       });
 
-       {
+      function setSession(user) {
         let factorCount = user.multiFactor.enrolledFactors.length;
         user.getIdToken().then(idToken => {
           $.ajax({
