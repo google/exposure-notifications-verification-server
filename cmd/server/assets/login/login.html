@@ -131,7 +131,7 @@
                     $pinDiv.removeClass('d-none');
                   }).catch(function(error) {
                     flash.clear();
-                    flash.error(error.message);
+                    flash.error("Sign-in failed. Please try again.");
                     $submit.prop('disabled', false);
                   });
               } else {
