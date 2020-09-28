@@ -184,16 +184,15 @@ resource "google_monitoring_alert_policy" "realm_token_capacity" {
       duration        = "300s"
       threshold_value = 0.9
       comparison      = "COMPARISON_GT"
-      filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest\" resource.type=\"generic_task\" resource.label.\"job\"=\"server\""
+      filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest\" resource.type=\"generic_task\""
 
       aggregations {
         alignment_period = "60s"
         group_by_fields = [
-          "resource.label.job",
           "metric.label.realm",
         ]
         per_series_aligner   = "ALIGN_MAX"
-        cross_series_reducer = "REDUCE_SUM"
+        cross_series_reducer = "REDUCE_MAX"
       }
 
       trigger {
@@ -206,8 +205,7 @@ resource "google_monitoring_alert_policy" "realm_token_capacity" {
     content   = <<-EOT
 ## $${policy.display_name}
 
-[$${resource.label.realm}](https://$${resource.label.realm}) realm
-daily verification code issuing capacity utilized above 90%.
+Realm $${metric.label.realm} daily verification code issuing capacity utilized above 90%.
 
 View the metric here
 
