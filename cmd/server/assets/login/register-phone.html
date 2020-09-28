@@ -298,8 +298,8 @@
               {{else}}
               flash.clear();
               flash.alert('SMS authentication enrolled successfully.');
-              $skip.removeClass("d-none");
               $skip.text('Continue');
+              $skip.removeClass("d-none");
               {{end}}
             },
             error: function(xhr, status, e) {
