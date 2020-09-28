@@ -1336,6 +1336,37 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00054-ChangeMobileAppNameUniqueness",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`DROP INDEX IF EXISTS realm_app_name`,
+					`ALTER TABLE mobile_apps ADD CONSTRAINT uix_name_realm_id_os UNIQUE (name, realm_id, os)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`CREATE UNIQUE INDEX realm_app_name ON mobile_apps (name, realm_id)`,
+					`ALTER TABLE mobile_apps DROP CONSTRAINT uix_name_realm_id_os UNIQUE (name, realm_id, os)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 

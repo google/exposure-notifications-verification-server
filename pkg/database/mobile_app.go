@@ -35,10 +35,10 @@ type MobileApp struct {
 	Errorable
 
 	// Name is the name of the app.
-	Name string `gorm:"column:name; type:citext; unique_index:realm_app_name;"`
+	Name string `gorm:"column:name; type:citext;"`
 
 	// RealmID is the id of the mobile app.
-	RealmID uint `gorm:"column:realm_id; unique_index:realm_app_name;"`
+	RealmID uint `gorm:"column:realm_id;"`
 
 	// OS is the type of the application we're using (eg, iOS, Android).
 	OS OSType `gorm:"column:os; type:int;"`
@@ -72,6 +72,23 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("os", "is invalid")
 	}
 
+	// Ensure name/os combo is unique - there's still a database constraint that
+	// enforces this in case there's a race.
+	var existing MobileApp
+	if err := tx.Unscoped().
+		Model(&MobileApp{}).
+		Where("name = ?", a.Name).
+		Where("realm_id = ?", a.RealmID).
+		Where("os = ?", a.OS).
+		Find(&existing).
+		Error; err != nil && !IsNotFound(err) {
+		return fmt.Errorf("failed to check if app already exists: %w", err)
+	}
+	if existing.ID != 0 {
+		a.AddError("name", "already exists")
+	}
+
+	// SHA is required for Android
 	a.SHA = strings.TrimSpace(a.SHA)
 	if a.OS == OSTypeAndroid {
 		if a.SHA == "" {
