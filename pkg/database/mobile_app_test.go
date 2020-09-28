@@ -19,12 +19,14 @@ import "testing"
 func TestMobileApp_Validation(t *testing.T) {
 	t.Parallel()
 
+	db := NewTestDatabase(t)
+
 	t.Run("name", func(t *testing.T) {
 		t.Parallel()
 
 		var m MobileApp
 		m.Name = ""
-		_ = m.BeforeSave(nil)
+		_ = m.BeforeSave(db.RawDB())
 
 		nameErrs := m.ErrorsFor("name")
 		if len(nameErrs) < 1 {
@@ -37,7 +39,7 @@ func TestMobileApp_Validation(t *testing.T) {
 
 		var m MobileApp
 		m.AppID = ""
-		_ = m.BeforeSave(nil)
+		_ = m.BeforeSave(db.RawDB())
 
 		appIDErrs := m.ErrorsFor("app_id")
 		if len(appIDErrs) < 1 {
@@ -50,7 +52,7 @@ func TestMobileApp_Validation(t *testing.T) {
 
 		var m MobileApp
 		m.OS = 0
-		_ = m.BeforeSave(nil)
+		_ = m.BeforeSave(db.RawDB())
 
 		osErrs := m.ErrorsFor("os")
 		if len(osErrs) < 1 {
@@ -58,7 +60,7 @@ func TestMobileApp_Validation(t *testing.T) {
 		}
 
 		m.OS = 4
-		_ = m.BeforeSave(nil)
+		_ = m.BeforeSave(db.RawDB())
 
 		osErrs = m.ErrorsFor("os")
 		if len(osErrs) < 1 {
@@ -71,7 +73,7 @@ func TestMobileApp_Validation(t *testing.T) {
 
 		var m MobileApp
 		m.OS = OSTypeIOS
-		_ = m.BeforeSave(nil)
+		_ = m.BeforeSave(db.RawDB())
 
 		shaErrs := m.ErrorsFor("sha")
 		if len(shaErrs) > 0 {
@@ -79,7 +81,7 @@ func TestMobileApp_Validation(t *testing.T) {
 		}
 
 		m.OS = OSTypeAndroid
-		_ = m.BeforeSave(nil)
+		_ = m.BeforeSave(db.RawDB())
 
 		shaErrs = m.ErrorsFor("sha")
 		if len(shaErrs) < 1 {
@@ -117,7 +119,7 @@ func TestMobileApp_Validation(t *testing.T) {
 
 				var m MobileApp
 				m.SHA = tc.sha
-				_ = m.BeforeSave(nil)
+				_ = m.BeforeSave(db.RawDB())
 
 				shaErrs := m.ErrorsFor("sha")
 				if !tc.err && len(shaErrs) > 0 {
