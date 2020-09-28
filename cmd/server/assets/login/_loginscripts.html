@@ -83,9 +83,9 @@
 {{end}}
 
 {{define "login/pwd-validate"}}
-{{if .requirements.HasRequirements}}
 <p class="card-text ml-4">
   <small class="form-text text-muted">
+    {{if .requirements.HasRequirements}}
     <span class="row">Password should be:</span>
     {{if gt .requirements.Length 0}}
     <span class="row ml-1" id="length-req">
@@ -112,12 +112,12 @@
       <span id="icon" aria-hidden="true"></span>Contain {{.requirements.Special}} special character
     </span>
     {{end}}
+    {{end}}
     <span class="row ml-1" id="retyped">
       <span id="icon" aria-hidden="true"></span>Retyped password must match password
     </span>
   </small>
 </p>
-{{end}}
 {{end}}
 
 {{define "login/pwd-validate-js"}}
