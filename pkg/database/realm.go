@@ -252,20 +252,6 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	if r.EnableENExpress {
 		if r.RegionCode == "" {
 			r.AddError("regionCode", "cannot be blank when using EN Express")
-		} else {
-			parts := strings.Split(r.RegionCode, "-")
-			if lp := len(parts); lp != 2 {
-				if lp == 1 && len(parts[0]) != 2 {
-					r.AddError("regionCode", "must be formated like 'region' (2 characters) or 'region-subregion' (2 characters dash 2 or 3 characters)")
-				}
-			} else {
-				if len(parts[0]) != 2 {
-					r.AddError("regionCode", "first part must be exactly 2 characters in length")
-				}
-				if l := len(parts[1]); !(l == 2 || l == 3) {
-					r.AddError("regionCode", "second part must be exactly 2 or 3 characters in length")
-				}
-			}
 		}
 	}
 
