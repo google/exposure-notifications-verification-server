@@ -9,6 +9,7 @@ This page includes helpful tips for configuring things in production.
 - [User administration](#user-administration)
 - [Rotating secrets](#rotating-secrets)
 - [SMS with Twilio](#sms-with-twilio)
+- [Identity Platform setup](#identity-platform-setup)
 
 <!-- /TOC -->
 
@@ -393,3 +394,14 @@ send SMS text messages. To get started:
     SMS-enabled cell phone.
 
 [gcp-kms]: https://cloud.google.com/kms
+
+## Identity Platform setup
+
+The verification server uses the Google Identity Platform for authorization.
+
+1. Visit the [Google Identity Platform MFA](https://console.cloud.google.com/customer-identity/mfa) page. Ensure the identity platform is enabled for your project and ensure 'Multi-factor-authorization' is toggled on. Here you may also register test phone numbers for development.
+
+2. Navigate to https://firebase.corp.google.com/u/0/project/{your project id}/authentication/emails to modify the email templates sent during password reset / verify email. Customize the link to your custom domain (if applicable) and direct it to '/login/manage-account' to use the custom password selection. You may also customize the text of the email if you wish.
+
+3. Visit [Google Identity Platform Settings](https://console.cloud.google.com/customer-identity/settings) and ensure that 'Enable create (sign-up)' and 'Enable delete' are unchecked. This system is intended to be invite-only and these flows are handled by administrators.
+
