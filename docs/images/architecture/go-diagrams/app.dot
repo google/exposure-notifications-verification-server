@@ -1,0 +1,129 @@
+digraph root {
+	fontcolor="#2D3436";
+	fontname="Sans-Serif";
+	fontsize=13;
+	label="EN Verification Server Architecture";
+	nodesep=0.6;
+	pad=2;
+	rankdir=LR;
+	ranksep=0.75;
+	splines=ortho;
+	jgkbqvhu->upuqedjc[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	rzuecyhv->upuqedjc[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	qbajqgxo->upuqedjc[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	jqovcgby->rzuecyhv[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	jqovcgby->qbajqgxo[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	pixwhvjh->jgkbqvhu[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	pixwhvjh->noxnwkgc[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	noxnwkgc->rdbvqldi[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	upuqedjc->ijyhstzl[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	ijyhstzl->ovrkhdru[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	lmsjcbqj->ovrkhdru[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	upuqedjc->lmsjcbqj[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	upuqedjc->slsgvhvc[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	slsgvhvc->ovrkhdru[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	slsgvhvc->vmyujdcd[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	ijyhstzl->vmyujdcd[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	lmsjcbqj->vmyujdcd[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	rdbvqldi->agpabplh[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	agpabplh->ovrkhdru[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	agpabplh->vmyujdcd[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	lgengsta->ooqblmbm[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	ooqblmbm->ovrkhdru[ color="#7B8894", dir=forward, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13 ];
+	subgraph cluster_GCP {
+	bgcolor="#E5F5FD";
+	fontcolor="#2D3436";
+	fontname="Sans-Serif";
+	fontsize=12;
+	label=GCP;
+	labeljust=l;
+	pencolor="#AEB6BE";
+	shape=box;
+	style=rounded;
+	subgraph "clusterenx-redirect" {
+	bgcolor="#EBF3E7";
+	fontcolor="#2D3436";
+	fontname="Sans-Serif";
+	fontsize=12;
+	label="Redirect Server";
+	labeljust=l;
+	pencolor="#AEB6BE";
+	shape=box;
+	style=rounded;
+	agpabplh [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/compute/run.png", imagescale=true, label=Redirect, labelloc=b, shape=none, style=rounded, width=1.4 ];
+
+}
+;
+	subgraph clusterdata {
+	bgcolor="#EBF3E7";
+	fontcolor="#2D3436";
+	fontname="Sans-Serif";
+	fontsize=12;
+	label="Data Stores";
+	labeljust=l;
+	pencolor="#AEB6BE";
+	shape=box;
+	style=rounded;
+	ovrkhdru [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=2.1999999999999997, image="assets/gcp/database/sql.png", imagescale=true, label=Postgres, labelloc=b, shape=none, style=rounded, width=1.4 ];
+	vmyujdcd [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/database/memorystore.png", imagescale=true, label=Redis, labelloc=b, shape=none, style=rounded, width=1.4 ];
+
+}
+;
+	subgraph clusterretention {
+	bgcolor="#EBF3E7";
+	fontcolor="#2D3436";
+	fontname="Sans-Serif";
+	fontsize=12;
+	label=Cleanup;
+	labeljust=l;
+	pencolor="#AEB6BE";
+	shape=box;
+	style=rounded;
+	lgengsta [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/devtools/scheduler.png", imagescale=true, label="Cloud Scheduler", labelloc=b, shape=none, style=rounded, width=1.4 ];
+	ooqblmbm [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/compute/run.png", imagescale=true, label=Cleanup, labelloc=b, shape=none, style=rounded, width=1.4 ];
+	ovrkhdru [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=2.1999999999999997, image="assets/gcp/database/sql.png", imagescale=true, label=Postgres, labelloc=b, shape=none, style=rounded, width=1.4 ];
+
+}
+;
+	subgraph clusterservices {
+	bgcolor="#EBF3E7";
+	fontcolor="#2D3436";
+	fontname="Sans-Serif";
+	fontsize=12;
+	label=Verification;
+	labeljust=l;
+	pencolor="#AEB6BE";
+	shape=box;
+	style=rounded;
+	ijyhstzl [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/compute/run.png", imagescale=true, label="API Server", labelloc=b, shape=none, style=rounded, width=1.4 ];
+	lmsjcbqj [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/compute/run.png", imagescale=true, label="Admin API", labelloc=b, shape=none, style=rounded, width=1.4 ];
+	slsgvhvc [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/compute/run.png", imagescale=true, label="UI Server", labelloc=b, shape=none, style=rounded, width=1.4 ];
+
+}
+;
+	rdbvqldi [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=2.1999999999999997, image="assets/gcp/network/load-balancing.png", imagescale=true, label="Redirect LB", labelloc=b, shape=none, style=rounded, width=1.4 ];
+	upuqedjc [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=2.1999999999999997, image="assets/gcp/network/load-balancing.png", imagescale=true, label=LB, labelloc=b, shape=none, style=rounded, width=1.4 ];
+
+}
+;
+	subgraph cluster_Users {
+	bgcolor="#E5F5FD";
+	fontcolor="#2D3436";
+	fontname="Sans-Serif";
+	fontsize=12;
+	label=Users;
+	labeljust=l;
+	pencolor="#AEB6BE";
+	shape=box;
+	style=rounded;
+	jqovcgby [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=2.1999999999999997, image="assets/generic/device/tablet.png", imagescale=true, label=laptop, labelloc=b, shape=none, style=rounded, width=1.4 ];
+	pixwhvjh [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=2.1999999999999997, image="assets/generic/device/mobile.png", imagescale=true, label=phone, labelloc=b, shape=none, style=rounded, width=1.4 ];
+
+}
+;
+	jgkbqvhu [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/network/dns.png", imagescale=true, label=" apiserver.encv.org", labelloc=b, shape=none, style=rounded, width=1.4 ];
+	noxnwkgc [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/network/dns.png", imagescale=true, label="*.en.express", labelloc=b, shape=none, style=rounded, width=1.4 ];
+	qbajqgxo [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/network/dns.png", imagescale=true, label=" encv.org", labelloc=b, shape=none, style=rounded, width=1.4 ];
+	rzuecyhv [ fixedsize=true, fontcolor="#2D3436", fontname="Sans-Serif", fontsize=13, height=1.7999999999999998, image="assets/gcp/network/dns.png", imagescale=true, label=" adminapi.encv.org", labelloc=b, shape=none, style=rounded, width=1.4 ];
+
+}

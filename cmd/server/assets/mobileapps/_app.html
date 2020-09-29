@@ -26,13 +26,13 @@
 
 <div id="sha-group" class="form-label-group d-none">
   <textarea name="sha" id="sha" class="form-control text-monospace{{if $app.ErrorsFor "sha"}} is-invalid{{end}}"
-    placeholder="SHAs (one per line)" rows="5">{{$app.SHA}}</textarea>
+    placeholder="SHA256s (one per line)" rows="5">{{$app.SHA}}</textarea>
   <label for="sha">SHA256 from the app signing certificate (one per line) </label>
   {{template "errorable" $app.ErrorsFor "sha"}}
   <small class="form-text text-muted">
     SHAs are unique fingerprints of Android applications from their signing
-    certificate. We support multiple SHAs for different versions of the app
-    (e.g. development and production). SHAs should be 95 characters and of the
+    certificate. We support multiple SHA256s for different versions of the app
+    (e.g. development and production). SHA256s should be 95 characters and of the
     form: <code>AA:BB:CC:..</code>. You can generate a SHA with the following
     command:
     <pre class="mt-3 mb-4 ml-3"><code>keytool -list -v -keystore my-release-key.keystore</code></pre>
@@ -58,8 +58,8 @@
         $shaGroup.addClass('d-none');
         $appIDGroup.removeClass('d-none');
       } else if (val === '{{.android}}') {
-        $appID.attr('placeholder', 'Bundle identifier');
-        $appIDLabel.html('Bundle identifier');
+        $appID.attr('placeholder', 'Package name');
+        $appIDLabel.html('Package name');
         $shaGroup.removeClass('d-none');
         $appIDGroup.removeClass('d-none');
       }
