@@ -52,10 +52,7 @@ type Suite struct {
 // NewTestSuite creates a Suite for integration tests.
 func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
 	tb.Helper()
-	cfg, db, err := config.NewIntegrationTestConfig(ctx, tb)
-	if err != nil {
-		tb.Fatalf("failed to process config: %v", err)
-	}
+	cfg, db := config.NewIntegrationTestConfig(ctx, tb)
 
 	// Create or reuse the existing realm
 	realm, err := db.FindRealmByName(realmName)
