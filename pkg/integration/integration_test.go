@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"encoding/base64"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/util"
 	"github.com/google/exposure-notifications-server/pkg/verification"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 )
 
 const (
@@ -19,67 +21,98 @@ const (
 )
 
 func TestIntegration(t *testing.T) {
+	cases := []struct {
+		Name   string
+		expire bool
+		ErrMsg string
+	}{
+		{
+			Name: "valid token",
+		},
+		{
+			Name:   "expired token",
+			expire: true,
+			ErrMsg: "verification token expired",
+		},
+	}
+
 	ctx := context.Background()
 	suite := NewTestSuite(t, ctx)
 
 	adminClient := suite.NewAdminAPIServer(ctx, t)
 	apiClient := suite.NewAPIServer(ctx, t)
 
-	testType := "confirmed"
-	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format("2006-01-02")
-	tzMinOffset := 0
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
 
-	now := time.Now().UTC()
-	curDayInterval := timeToInterval(now)
-	nextInterval := curDayInterval
+			now := time.Now().UTC()
+			curDayInterval := timeToInterval(now)
+			nextInterval := curDayInterval
+			symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format("2006-01-02")
+			testType := "confirmed"
+			tzMinOffset := 0
 
-	teks := make([]verifyapi.ExposureKey, 14)
-	for i := 0; i < len(teks); i++ {
-		key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
-		if err != nil {
-			t.Fatalf("not enough entropy: %v", err)
-		}
-		teks[i] = key
-		nextInterval -= maxInterval
-	}
+			teks := make([]verifyapi.ExposureKey, 14)
+			for i := 0; i < len(teks); i++ {
+				key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
+				if err != nil {
+					t.Fatalf("not enough entropy: %v", err)
+				}
+				teks[i] = key
+				nextInterval -= maxInterval
+			}
 
-	hmacSecret := make([]byte, 32)
-	hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
-	if err != nil {
-		t.Fatalf("error calculating tek HMAC: %v", err)
-	}
-	hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
+			hmacSecret := make([]byte, 32)
+			hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
+			if err != nil {
+				t.Fatalf("error calculating tek HMAC: %v", err)
+			}
+			hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
 
-	issueRequest := api.IssueCodeRequest{
-		TestType:    testType,
-		SymptomDate: symptomDate,
-		TZOffset:    float32(tzMinOffset),
-	}
+			issueRequest := api.IssueCodeRequest{
+				TestType:    testType,
+				SymptomDate: symptomDate,
+				TZOffset:    float32(tzMinOffset),
+			}
 
-	issueResp, err := adminClient.IssueCode(issueRequest)
-	if issueResp == nil || err != nil && issueResp.ErrorCode != "" {
-		t.Fatalf("expected nil, got resp %+v, err %v", issueResp, err)
-	}
+			issueResp, err := adminClient.IssueCode(issueRequest)
+			if issueResp == nil || err != nil {
+				t.Fatalf("adminClient.IssueCode(%+v) = expected nil, got resp %+v, err %v", issueRequest, issueResp, err)
+			}
 
-	verifyRequest := api.VerifyCodeRequest{
-		VerificationCode: issueResp.VerificationCode,
-		AcceptTestTypes:  []string{"confirmed"},
-	}
+			verifyRequest := api.VerifyCodeRequest{
+				VerificationCode: issueResp.VerificationCode,
+				AcceptTestTypes:  []string{testType},
+			}
 
-	verifyResp, err := apiClient.GetToken(verifyRequest)
-	if err != nil || verifyResp.ErrorCode != "" {
-		t.Errorf("expected nil, got resp %+v, err %v", verifyResp, err)
-	}
+			verifyResp, err := apiClient.GetToken(verifyRequest)
+			if err != nil {
+				t.Fatalf("apiClient.GetToken(%+v) = expected nil, got resp %+v, err %v", verifyRequest, verifyResp, err)
+			}
 
-	certRequest := api.VerificationCertificateRequest{
-		VerificationToken: verifyResp.VerificationToken,
-		ExposureKeyHMAC:   hmacB64,
+			if tc.expire {
+				time.Sleep(config.VerificationTokenDuration)
+			}
+
+			certRequest := api.VerificationCertificateRequest{
+				VerificationToken: verifyResp.VerificationToken,
+				ExposureKeyHMAC:   hmacB64,
+			}
+			_, err = apiClient.GetCertificate(certRequest)
+			if tc.expire {
+				if err == nil || !strings.Contains(err.Error(), tc.ErrMsg) {
+					t.Errorf("apiClient.GetCertificate(%+v) = expected %v, got err %v", certRequest, tc.ErrMsg, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("apiClient.GetCertificate(%+v) = expected nil, got err %v", certRequest, err)
+			}
+		})
 	}
-	certResp, err := apiClient.GetCertificate(certRequest)
-	if err != nil || certResp.ErrorCode != "" {
-		t.Errorf("expected nil, got resp %+v, err %v", verifyResp, err)
-	}
-	t.Logf("resp: %+v", certResp)
 }
 
 func timeToInterval(t time.Time) int32 {

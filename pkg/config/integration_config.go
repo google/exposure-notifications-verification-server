@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	VerificationTokenDuration = time.Second * 5
-	APIKeyCacheDuration       = time.Second * 3
+	VerificationTokenDuration = time.Second * 2
+	APIKeyCacheDuration       = time.Second * 2
 
 	APISrvPort   = "8080"
 	AdminSrvPort = "8081"
