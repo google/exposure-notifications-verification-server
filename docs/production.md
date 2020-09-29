@@ -396,4 +396,4 @@ send SMS text messages. To get started:
 
 ## Architecture
 
-![diagram of layout](images/architecture/go-diagram/diagram.png)
+![diagram of layout](images/architecture/go-diagrams/diagram.png)
