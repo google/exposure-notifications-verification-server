@@ -9,33 +9,27 @@ replace golang.org/x/sys => golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6
 require (
 	cloud.google.com/go v0.66.0
 	cloud.google.com/go/firestore v1.3.0 // indirect
-	cloud.google.com/go/storage v1.12.0 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.7.1-0.20200615190824-f8c219d2d895 // indirect
 	contrib.go.opencensus.io/exporter/prometheus v0.2.1-0.20200609204449-6bcf6f8577f0 // indirect
 	contrib.go.opencensus.io/integrations/ocsql v0.1.6
 	firebase.google.com/go v3.13.0+incompatible
-	github.com/Azure/azure-sdk-for-go v46.3.0+incompatible // indirect
-	github.com/Azure/go-autorest/autorest/azure/auth v0.5.2 // indirect
 	github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
-	github.com/aws/aws-sdk-go v1.34.30 // indirect
 	github.com/client9/misspell v0.3.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/frankban/quicktest v1.8.1 // indirect
-	github.com/golang/snappy v0.0.2 // indirect
 	github.com/gonum/blas v0.0.0-20181208220705-f22b278b28ac // indirect
 	github.com/gonum/floats v0.0.0-20181209220543-c233463c7e82 // indirect
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.9.2
+	github.com/google/exposure-notifications-server v0.10.0
 	github.com/google/go-cmp v0.5.2
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
 	github.com/gorilla/sessions v1.2.1
-	github.com/grpc-ecosystem/grpc-gateway v1.15.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/jinzhu/now v1.1.1 // indirect
@@ -46,8 +40,6 @@ require (
 	github.com/mikehelmick/go-chaff v0.3.0
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
-	github.com/prometheus/common v0.14.0 // indirect
-	github.com/prometheus/procfs v0.2.0 // indirect
 	github.com/rakutentech/jwk-go v1.0.1
 	github.com/russross/blackfriday/v2 v2.0.1
 	github.com/sethvargo/go-envconfig v0.3.2
@@ -59,10 +51,7 @@ require (
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.22.4
-	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20200923182212-328152dc79b1 // indirect
-	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.0.0-20200924162744-06f3a46a9d1e
 	google.golang.org/api v0.32.0
