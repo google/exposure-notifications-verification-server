@@ -10,6 +10,7 @@ This page includes helpful tips for configuring things in production.
 - [Rotating secrets](#rotating-secrets)
 - [SMS with Twilio](#sms-with-twilio)
 - [Identity Platform setup](#identity-platform-setup)
+- [Architecture](#architecture)
 
 <!-- /TOC -->
 
@@ -405,3 +406,6 @@ The verification server uses the Google Identity Platform for authorization.
 
 3. Visit [Google Identity Platform Settings](https://console.cloud.google.com/customer-identity/settings) and ensure that 'Enable create (sign-up)' and 'Enable delete' are unchecked. This system is intended to be invite-only and these flows are handled by administrators.
 
+## Architecture
+
+![diagram of layout](images/architecture/go-diagrams/diagram.png)
