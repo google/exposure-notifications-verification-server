@@ -1,6 +1,16 @@
 # Production
 
-This page includes helpful tips for configuring things in production:
+This page includes helpful tips for configuring things in production.
+
+<!-- TOC depthFrom:2 depthTo:2 -->
+
+- [Key management](#key-management)
+- [Observability (tracing and metrics)](#observability-tracing-and-metrics)
+- [User administration](#user-administration)
+- [Rotating secrets](#rotating-secrets)
+- [SMS with Twilio](#sms-with-twilio)
+
+<!-- /TOC -->
 
 ## Key management
 
@@ -355,5 +365,31 @@ Use this value as of the `RATE_LIMIT_HMAC_KEY` environment variable:
 RATE_LIMIT_HMAC_KEY="43+ViAkv7uHYKjsXhU468NGBZrtlJWtZqTORIiY8V6OMsLAZ+XmUF5He/wIhRlislnteTmChNi+BHveSgkxky81tpZSw45HKdK+XW3X5P7H6092I0u7H31C0NaInrxNxIRAbSw0NxSIKNbfKwucDu1Y36XjJC0pi0wlJHxkdGes="
 ```
 
+
+## SMS with Twilio
+
+The verification server can optionally be configured to send SMS messages with
+app deep-links for the verification codes. This removes the need for a case
+worker to dictate a code over the phone, but requires the use of [Twilio](https://twilio.com) to
+send SMS text messages. To get started:
+
+1.  [Create an account on Twilio](https://www.twilio.com/try-twilio).
+
+1.  [Purchase](https://support.twilio.com/hc/en-us/articles/223135247-How-to-Search-for-and-Buy-a-Twilio-Phone-Number-from-Console)
+    or
+    [transfer](https://support.twilio.com/hc/en-us/articles/223179348-Porting-a-Phone-Number-to-Twilio)
+    a phone number from which SMS text messages will be sent.
+
+    Note: To reduce the chance of your SMS messages being flagged as spam, we
+    strongly recommend registering a toll-free SMS number or SMS short code.
+
+1.  Find your Twilio **Account SID** and **Auth token** on your [Twilio dashboard](https://twilio.com/dashboard).
+
+1.  Go to the realm settings page on the **SMS** tab, enter these values, and
+    click save.
+
+1.  Case workers will now see an option on the **Issue code** page to enter a
+    phone number. This is _always_ optional in case the patient does not have an
+    SMS-enabled cell phone.
 
 [gcp-kms]: https://cloud.google.com/kms
