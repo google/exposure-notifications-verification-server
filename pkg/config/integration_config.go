@@ -69,6 +69,9 @@ func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationT
 	}
 
 	kms, err := keys.KeyManagerFor(ctx, &keyConfig)
+	if err != nil {
+		tb.Fatal(err)
+	}
 	tb.Cleanup(func() {
 		if err := os.RemoveAll(tmpdir); err != nil {
 			tb.Fatal(err)
