@@ -393,3 +393,7 @@ send SMS text messages. To get started:
     SMS-enabled cell phone.
 
 [gcp-kms]: https://cloud.google.com/kms
+
+## Architecture
+
+![diagram of layout](images/architecture/go-diagram/diagram.png)
