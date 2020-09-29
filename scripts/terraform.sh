@@ -98,7 +98,7 @@ function destroy() {
   local db_inst_name
   # Fetching databases from previous terraform deployment output is not always reliable,
   # especially when previous terraform deployment failed. So grepping from terraform state instead.
-  db_inst_name="$(tf state show module.en.google_sql_database_instance.db-inst | grep -Eo 'en-verification-[a-zA-Z0-9]+' | uniq)"
+  db_inst_name="$(terraform state show module.en.google_sql_database_instance.db-inst | grep -Eo 'en-verification-[a-zA-Z0-9]+' | uniq)"
   if [[ -n "${db_inst_name}" ]]; then
     gcloud sql instances delete ${db_inst_name} -q --project=${PROJECT_ID}
   fi
