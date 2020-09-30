@@ -94,7 +94,10 @@ func realMain(ctx context.Context) error {
 	// Create the router
 	r := mux.NewRouter()
 
-	cleanupController := cleanup.New(ctx, cfg, db, h)
+	cleanupController, err := cleanup.New(ctx, cfg, db, h)
+	if err != nil {
+		return fmt.Errorf("failed to create cleanup controller: %w", err)
+	}
 	r.Handle("/", cleanupController.HandleCleanup()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)
