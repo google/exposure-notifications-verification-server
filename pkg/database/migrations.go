@@ -1072,7 +1072,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					Admin: true,
 				}
 
-				if err := db.SaveUser(&user); err != nil {
+				if err := tx.Save(&user).Error; err != nil {
 					return err
 				}
 				return nil
@@ -1367,6 +1367,56 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00055-AddAuditEntries",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&AuditEntry{}).Error; err != nil {
+					return err
+				}
+
+				sqls := []string{
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_realm_id ON audit_entries (realm_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_actor_id ON audit_entries (actor_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_target_id ON audit_entries (target_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_created_at ON audit_entries (created_at)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec(`DROP TABLE audit_entries`).Error
+			},
+		},
+		{
+			ID: "00056-AuthorzedAppsAPIKeyTypeBasis",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&AuditEntry{}).Error; err != nil {
+					return err
+				}
+
+				sqls := []string{
+					`ALTER TABLE authorized_apps ALTER COLUMN api_key_type DROP DEFAULT`,
+					`ALTER TABLE authorized_apps ALTER COLUMN api_key_type SET NOT NULL`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 
@@ -1409,7 +1459,7 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 	m := db.getMigrations(ctx)
 	logger.Debugw("migrations starting")
 	if err := m.Migrate(); err != nil {
-		logger.Errorf("failed to migrate", "error", err)
+		logger.Errorw("failed to migrate", "error", err)
 		return err
 	}
 	logger.Debugw("migrations complete")

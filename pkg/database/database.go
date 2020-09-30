@@ -21,6 +21,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,8 +31,11 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/jinzhu/gorm"
 	"github.com/sethvargo/go-retry"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
@@ -59,6 +64,9 @@ type Database struct {
 
 	// logger is the internal logger.
 	logger *zap.SugaredLogger
+
+	// metrics is the metrics handler.
+	metrics *Metrics
 
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
@@ -93,6 +101,11 @@ func (db *Database) KeyManager() keys.KeyManager {
 func (c *Config) Load(ctx context.Context) (*Database, error) {
 	logger := logging.FromContext(ctx).Named("database")
 
+	metrics, err := registerMetrics()
+	if err != nil {
+		return nil, fmt.Errorf("failed to register metrics: %w", err)
+	}
+
 	// Create the secret manager.
 	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
 	if err != nil {
@@ -118,6 +131,7 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		signingKeyManager: signingKeyManager,
 		logger:            logger,
 		secretManager:     secretManager,
+		metrics:           metrics,
 	}, nil
 }
 
@@ -196,6 +210,9 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
 
+	// Metrics
+	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, db.metrics.AuditEntryCreated, "audit_entries"))
+
 	// Cache clearing
 	if cacher != nil {
 		// Apps
@@ -238,6 +255,34 @@ func (db *Database) RawDB() *gorm.DB {
 // IsNotFound determines if an error is a record not found.
 func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
+}
+
+// callbackIncremementMetric incremements the provided metric
+func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table string) func(scope *gorm.Scope) {
+	return func(scope *gorm.Scope) {
+		if scope.TableName() != table {
+			return
+		}
+
+		if scope.HasError() {
+			return
+		}
+
+		// Add realm so that metrics are groupable on a per-realm basis.
+		field, ok := scope.FieldByName("realm_id")
+		if ok && field.Field.CanInterface() && field.Field.Interface() != nil {
+			realmID := field.Field.Interface()
+
+			var err error
+			ctx, err = tag.New(ctx, tag.Upsert(observability.RealmTagKey, fmt.Sprintf("%d", realmID)))
+			if err != nil {
+				_ = scope.Err(fmt.Errorf("failed to add realm tag to metrics: %w", err))
+				return
+			}
+		}
+
+		stats.Record(ctx, m.M(1))
+	}
 }
 
 // callbackPurgeCache purges the cache key for the given record.
@@ -501,4 +546,35 @@ func stringPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+// stringDiff builds a diff of the string values.
+func stringDiff(old, new string) string {
+	var w strings.Builder
+
+	for _, line := range strings.Split(old, "\n") {
+		fmt.Fprintf(&w, "-%s\n", line)
+	}
+
+	for _, line := range strings.Split(new, "\n") {
+		fmt.Fprintf(&w, "+%s\n", line)
+	}
+
+	return w.String()
+}
+
+func boolDiff(old, new bool) string {
+	return stringDiff(strconv.FormatBool(old), strconv.FormatBool(new))
+}
+
+func float32Diff(old, new float32) string {
+	return float64Diff(float64(old), float64(new))
+}
+
+func float64Diff(old, new float64) string {
+	return stringDiff(strconv.FormatFloat(old, 'f', 4, 64), strconv.FormatFloat(new, 'f', 4, 64))
+}
+
+func uintDiff(old, new uint) string {
+	return stringDiff(strconv.FormatUint(uint64(old), 10), strconv.FormatUint(uint64(new), 10))
 }

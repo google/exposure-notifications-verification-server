@@ -11,7 +11,7 @@
 
 <div class="form-group">
   <select name="os" id="os" class="form-control custom-select{{if $app.ErrorsFor "os"}} is-invalid{{end}}">
-    <option disabled selected>Choose platform...</option>
+    <option selected disabled>Choose platform...</option>
     <option value="{{.iOS}}" {{if (eq $app.OS .iOS)}}selected{{end}}>iOS</option>
     <option value="{{.android}}" {{if (eq $app.OS .android)}}selected{{end}}>Android</option>
   </select>

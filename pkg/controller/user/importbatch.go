@@ -34,6 +34,12 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		var request api.UserBatchRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			logger.Errorw("Error decoding request", "error", err)
@@ -73,7 +79,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 				}
 			}
 
-			if err := c.db.SaveUser(user); err != nil {
+			if err := c.db.SaveUser(user, currentUser); err != nil {
 				logger.Errorw("Error saving user", "error", err)
 				batchErr = multierror.Append(batchErr, err)
 				continue

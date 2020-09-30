@@ -40,6 +40,12 @@ func (c *Controller) HandleEnable() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -51,7 +57,8 @@ func (c *Controller) HandleEnable() http.Handler {
 			return
 		}
 
-		if err := authApp.Enable(c.db); err != nil {
+		authApp.DeletedAt = nil
+		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			flash.Error("Failed to enable API Key: %v", err)
 			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
 		}

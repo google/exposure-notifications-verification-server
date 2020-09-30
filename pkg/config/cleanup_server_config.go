@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -43,6 +44,7 @@ type CleanupConfig struct {
 	VerificationCodeMaxAge  time.Duration `env:"VERIFICATION_CODE_MAX_AGE,default=24h"`
 	VerificationTokenMaxAge time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE,default=24h"`
 	MobileAppMaxAge         time.Duration `env:"MOBILE_APP_MAX_AGE,default=168h"`
+	AuditEntryMaxAge        time.Duration `env:"AUDIT_ENTRY_MAX_AGE,default=720h"`
 }
 
 // NewCleanupConfig returns the environment config for the cleanup server.
@@ -64,12 +66,18 @@ func (c *CleanupConfig) Validate() error {
 		{c.CleanupPeriod, "CLEANUP_PERIOD"},
 		{c.VerificationCodeMaxAge, "VERIFICATION_CODE_MAX_AGE"},
 		{c.VerificationTokenMaxAge, "VERIFICATION_TOKEN_MAX_AGE"},
+		{c.AuditEntryMaxAge, "AUDIT_ENTRY_MAX_AGE"},
 	}
 
 	for _, f := range fields {
 		if err := checkPositiveDuration(f.Var, f.Name); err != nil {
 			return err
 		}
+	}
+
+	// Audit entries need to persist for at least 7 days. The default is 30d ays.
+	if c.AuditEntryMaxAge < 7*24*time.Hour {
+		return fmt.Errorf("AUDIT_ENTRY_MAX_AGE must be at least 7 days")
 	}
 
 	return nil

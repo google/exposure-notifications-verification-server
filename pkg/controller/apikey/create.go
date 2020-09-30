@@ -25,8 +25,8 @@ import (
 
 func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Name string               `form:"name"`
-		Type database.APIUserType `form:"type"`
+		Name string              `form:"name"`
+		Type database.APIKeyType `form:"type"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,10 +45,16 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
 			var authApp database.AuthorizedApp
-			authApp.APIKeyType = -1
+			authApp.APIKeyType = database.APIKeyTypeInvalid
 			c.renderNew(ctx, w, &authApp)
 			return
 		}
@@ -71,7 +77,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			APIKeyType: form.Type,
 		}
 
-		apiKey, err := realm.CreateAuthorizedApp(c.db, authApp)
+		apiKey, err := realm.CreateAuthorizedApp(c.db, authApp, currentUser)
 		if err != nil {
 			flash.Error("Failed to create API Key: %v", err)
 			c.renderNew(ctx, w, authApp)
@@ -91,7 +97,7 @@ func (c *Controller) HandleCreate() http.Handler {
 func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["authApp"] = authApp
-	m["typeAdmin"] = database.APIUserTypeAdmin
-	m["typeDevice"] = database.APIUserTypeDevice
+	m["typeAdmin"] = database.APIKeyTypeAdmin
+	m["typeDevice"] = database.APIKeyTypeDevice
 	c.h.RenderHTML(w, "apikeys/new", m)
 }

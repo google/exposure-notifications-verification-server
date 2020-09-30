@@ -40,6 +40,12 @@ func (c *Controller) HandleEnable() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		app, err := realm.FindMobileApp(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -51,7 +57,8 @@ func (c *Controller) HandleEnable() http.Handler {
 			return
 		}
 
-		if err := app.Enable(c.db); err != nil {
+		app.DeletedAt = nil
+		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
 			flash.Error("Failed to enable mobile app: %v", err)
 			http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
 			return

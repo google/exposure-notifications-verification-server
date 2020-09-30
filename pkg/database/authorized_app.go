@@ -28,14 +28,30 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type APIUserType int
-
 const (
 	apiKeyBytes = 64 // 64 bytes is 86 chararacters in non-padded base64.
-
-	APIUserTypeDevice APIUserType = 0
-	APIUserTypeAdmin  APIUserType = 1
 )
+
+type APIKeyType int
+
+const (
+	APIKeyTypeInvalid APIKeyType = iota - 1
+	APIKeyTypeDevice
+	APIKeyTypeAdmin
+)
+
+func (a APIKeyType) Display() string {
+	switch a {
+	case APIKeyTypeDevice:
+		return "device"
+	case APIKeyTypeAdmin:
+		return "admin"
+	default:
+		return "invalid"
+	}
+}
+
+var _ Auditable = (*AuthorizedApp)(nil)
 
 // AuthorizedApp represents an application that is authorized to verify
 // verification codes and perform token exchanges.
@@ -62,7 +78,7 @@ type AuthorizedApp struct {
 	APIKey string `gorm:"type:varchar(512);unique_index"`
 
 	// APIKeyType is the API key type.
-	APIKeyType APIUserType `gorm:"default:0"`
+	APIKeyType APIKeyType `gorm:"column:api_key_type; type:integer; not null;"`
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -73,7 +89,7 @@ func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("name", "cannot be blank")
 	}
 
-	if !(a.APIKeyType == APIUserTypeDevice || a.APIKeyType == APIUserTypeAdmin) {
+	if !(a.APIKeyType == APIKeyTypeDevice || a.APIKeyType == APIKeyTypeAdmin) {
 		a.AddError("type", "is invalid")
 	}
 
@@ -84,11 +100,11 @@ func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
 }
 
 func (a *AuthorizedApp) IsAdminType() bool {
-	return a.APIKeyType == APIUserTypeAdmin
+	return a.APIKeyType == APIKeyTypeAdmin
 }
 
 func (a *AuthorizedApp) IsDeviceType() bool {
-	return a.APIKeyType == APIUserTypeDevice
+	return a.APIKeyType == APIKeyTypeDevice
 }
 
 // Realm returns the associated realm for this app.
@@ -109,7 +125,7 @@ func (AuthorizedApp) TableName() string {
 // app. Note that the API key is NOT stored in the database, only a hash. The
 // only time the API key is available is as the string return parameter from
 // invoking this function.
-func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp) (string, error) {
+func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp, actor Auditable) (string, error) {
 	fullAPIKey, err := db.GenerateAPIKey(r.ID)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate API key: %w", err)
@@ -130,7 +146,7 @@ func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp) (string, e
 	app.APIKey = hmacedKey
 	app.APIKeyPreview = apiKey[:6]
 
-	if err := db.db.Save(&app).Error; err != nil {
+	if err := db.SaveAuthorizedApp(app, actor); err != nil {
 		return "", err
 	}
 	return fullAPIKey, nil
@@ -208,28 +224,61 @@ func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) ([]*Authorize
 	return stats, nil
 }
 
-// Disable disables the authorized app.
-func (a *AuthorizedApp) Disable(db *Database) error {
-	if err := db.db.Delete(a).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// Enable enables the authorized app.
-func (a *AuthorizedApp) Enable(db *Database) error {
-	if err := db.db.Unscoped().Model(a).Update("deleted_at", nil).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 // SaveAuthorizedApp saves the authorized app.
-func (db *Database) SaveAuthorizedApp(r *AuthorizedApp) error {
-	if r.Model.ID == 0 {
-		return db.db.Create(r).Error
+func (db *Database) SaveAuthorizedApp(a *AuthorizedApp, actor Auditable) error {
+	if a == nil {
+		return fmt.Errorf("provided API key is nil")
 	}
-	return db.db.Save(r).Error
+
+	if actor == nil {
+		return fmt.Errorf("auditing actor is nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var audits []*AuditEntry
+
+		var existing AuthorizedApp
+		if err := tx.
+			Unscoped().
+			Model(&AuthorizedApp{}).
+			Where("id = ?", a.ID).
+			First(&existing).
+			Error; err != nil && !IsNotFound(err) {
+			return fmt.Errorf("failed to get existing API key")
+		}
+
+		// Save the app
+		if err := tx.Unscoped().Save(a).Error; err != nil {
+			return fmt.Errorf("failed to save API key: %w", err)
+		}
+
+		// Brand new app?
+		if existing.ID == 0 {
+			audit := BuildAuditEntry(actor, "created API key", a, a.RealmID)
+			audits = append(audits, audit)
+		} else {
+			if existing.Name != a.Name {
+				audit := BuildAuditEntry(actor, "updated API key name", a, a.RealmID)
+				audit.Diff = stringDiff(existing.Name, a.Name)
+				audits = append(audits, audit)
+			}
+
+			if existing.DeletedAt != a.DeletedAt {
+				audit := BuildAuditEntry(actor, "updated API key enabled", a, a.RealmID)
+				audit.Diff = boolDiff(existing.DeletedAt == nil, a.DeletedAt == nil)
+				audits = append(audits, audit)
+			}
+		}
+
+		// Save all audits
+		for _, audit := range audits {
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audits: %w", err)
+			}
+		}
+
+		return nil
+	})
 }
 
 // GenerateAPIKeyHMAC generates the HMAC of the provided API key using the
@@ -359,4 +408,12 @@ func (db *Database) VerifyAPIKeySignature(key string) (string, uint, error) {
 	}
 
 	return apiKey, uint(realmID), nil
+}
+
+func (a *AuthorizedApp) AuditID() string {
+	return fmt.Sprintf("authorized_apps:%d", a.ID)
+}
+
+func (a *AuthorizedApp) AuditDisplay() string {
+	return a.Name
 }

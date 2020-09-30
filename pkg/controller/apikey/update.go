@@ -47,6 +47,12 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -82,7 +88,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 		authApp.Name = form.Name
 
 		// Save
-		if err := c.db.SaveAuthorizedApp(authApp); err != nil {
+		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			flash.Error("Failed to save api key: %v", err)
 			c.renderEdit(ctx, w, authApp)
 			return

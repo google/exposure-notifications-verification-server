@@ -37,9 +37,15 @@ func (c *Controller) HandleUpgrade() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		if realm.CanUpgradeToRealmSigningKeys() {
 			realm.UseRealmCertificateKey = true
-			if err := c.db.SaveRealm(realm); err != nil {
+			if err := c.db.SaveRealm(realm, currentUser); err != nil {
 				flash.Error("Error upgrading realm: %v", err)
 				c.renderShow(ctx, w, r, realm)
 				return

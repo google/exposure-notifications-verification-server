@@ -41,7 +41,7 @@ func (c *Controller) HandleDelete() http.Handler {
 		}
 
 		currentUser := controller.UserFromContext(ctx)
-		if realm == nil {
+		if currentUser == nil {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
@@ -57,8 +57,9 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		// Do not allow users to remove themselves unless they are admins.
-		if user.ID == currentUser.ID && !currentUser.Admin {
+		// Do not allow users to remove themselves. System admins can remove
+		// themselves from the system admin panel.
+		if user.ID == currentUser.ID {
 			flash.Error("Failed to remove user from realm: cannot remove self")
 			http.Redirect(w, r, "/users", http.StatusSeeOther)
 			return
@@ -66,7 +67,7 @@ func (c *Controller) HandleDelete() http.Handler {
 
 		user.RemoveRealm(realm)
 
-		if err := c.db.SaveUser(user); err != nil {
+		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to remove user from realm: %v", err)
 			http.Redirect(w, r, "/users", http.StatusSeeOther)
 			return

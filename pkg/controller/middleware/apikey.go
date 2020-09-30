@@ -39,10 +39,10 @@ const (
 // RequireAPIKey reads the X-API-Key header and validates it is a real
 // authorized app. It also ensures currentAuthorizedApp is set in the template
 // map.
-func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer, allowedTypes []database.APIUserType) mux.MiddlewareFunc {
+func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer, allowedTypes []database.APIKeyType) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireAPIKey")
 
-	allowedTypesMap := make(map[database.APIUserType]struct{}, len(allowedTypes))
+	allowedTypesMap := make(map[database.APIKeyType]struct{}, len(allowedTypes))
 	for _, t := range allowedTypes {
 		allowedTypesMap[t] = struct{}{}
 	}
