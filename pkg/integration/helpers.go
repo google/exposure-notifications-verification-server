@@ -77,7 +77,7 @@ func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
-		if err := db.SaveRealm(realm); err != nil {
+		if err := db.SaveRealm(realm, database.System); err != nil {
 			tb.Fatalf("failed to create realm %+v: %v: %v", realm, err, realm.ErrorMessages())
 		}
 	}
@@ -90,16 +90,16 @@ func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
 
 	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       adminKeyName + suffix,
-		APIKeyType: database.APIUserTypeAdmin,
-	})
+		APIKeyType: database.APIKeyTypeAdmin,
+	}, database.System)
 	if err != nil {
 		tb.Fatalf("error trying to create a new Admin API Key: %v", err)
 	}
 
 	deviceKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       deviceKeyName + suffix,
-		APIKeyType: database.APIUserTypeDevice,
-	})
+		APIKeyType: database.APIKeyTypeDevice,
+	}, database.System)
 	if err != nil {
 		tb.Fatalf("error trying to create a new Device API Key: %v", err)
 	}
@@ -169,8 +169,8 @@ func (s *Suite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Se
 		sub := adminRouter.PathPrefix("/api").Subrouter()
 
 		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, s.db, h, []database.APIUserType{
-			database.APIUserTypeAdmin,
+		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, s.db, h, []database.APIKeyType{
+			database.APIKeyTypeAdmin,
 		})
 		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
@@ -244,8 +244,8 @@ func (s *Suite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server 
 		sub := apiRouter.PathPrefix("/api").Subrouter()
 
 		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, s.db, h, []database.APIUserType{
-			database.APIUserTypeDevice,
+		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, s.db, h, []database.APIKeyType{
+			database.APIKeyTypeDevice,
 		})
 		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
