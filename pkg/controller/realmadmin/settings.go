@@ -98,6 +98,12 @@ func (c *Controller) HandleSettings() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		if r.Method == http.MethodGet {
 			c.renderSettings(ctx, w, r, realm, nil)
 			return
@@ -180,7 +186,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		}
 
 		// Save realm
-		if err := c.db.SaveRealm(realm); err != nil {
+		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to update realm: %v", err)
 			c.renderSettings(ctx, w, r, realm, nil)
 			return

@@ -72,13 +72,6 @@
                   title="Remove this user">
                   <span class="oi oi-trash" aria-hidden="true"></span>
                 </a>
-                {{else if $currentUser.Admin}}
-                {{- /* system admins can remove themselves */ -}}
-                <a href="/users/{{.ID}}" class="d-block text-danger" data-method="DELETE"
-                  data-confirm="Are you sure you want to leave {{.Name}}?" data-toggle="tooltip"
-                  title="Leave this realm">
-                  <span class="oi oi-account-logout" aria-hidden="true"></span>
-                </a>
                 {{end}}
               </td>
             </tr>

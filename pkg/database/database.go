@@ -21,6 +21,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -501,4 +503,35 @@ func stringPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+// stringDiff builds a diff of the string values.
+func stringDiff(old, new string) string {
+	var w strings.Builder
+
+	for _, line := range strings.Split(old, "\n") {
+		fmt.Fprintf(&w, "-%s\n", line)
+	}
+
+	for _, line := range strings.Split(new, "\n") {
+		fmt.Fprintf(&w, "+%s\n", line)
+	}
+
+	return w.String()
+}
+
+func boolDiff(old, new bool) string {
+	return stringDiff(strconv.FormatBool(old), strconv.FormatBool(new))
+}
+
+func float32Diff(old, new float32) string {
+	return float64Diff(float64(old), float64(new))
+}
+
+func float64Diff(old, new float64) string {
+	return stringDiff(strconv.FormatFloat(old, 'f', 4, 64), strconv.FormatFloat(new, 'f', 4, 64))
+}
+
+func uintDiff(old, new uint) string {
+	return stringDiff(strconv.FormatUint(uint64(old), 10), strconv.FormatUint(uint64(new), 10))
 }

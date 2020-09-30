@@ -47,6 +47,12 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
 			var app database.MobileApp
@@ -70,14 +76,14 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		// Build the authorized app struct
 		app := &database.MobileApp{
-			Name:  form.Name,
-			OS:    form.OS,
-			AppID: form.AppID,
-			SHA:   form.SHA,
+			Name:    form.Name,
+			RealmID: realm.ID,
+			OS:      form.OS,
+			AppID:   form.AppID,
+			SHA:     form.SHA,
 		}
 
-		err := realm.CreateMobileApp(c.db, app)
-		if err != nil {
+		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
 			flash.Error("Failed to create mobile app: %v", err)
 			c.renderNew(ctx, w, app)
 			return

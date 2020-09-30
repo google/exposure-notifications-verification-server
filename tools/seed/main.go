@@ -89,7 +89,7 @@ func realMain(ctx context.Context) error {
 	realm1 := database.NewRealmWithDefaults("Narnia")
 	realm1.RegionCode = "US-PA"
 	realm1.AbusePreventionEnabled = true
-	if err := db.SaveRealm(realm1); err != nil {
+	if err := db.SaveRealm(realm1, database.System); err != nil {
 		return fmt.Errorf("failed to create realm: %w: %v", err, realm1.ErrorMessages())
 	}
 	logger.Infow("created realm", "realm", realm1)
@@ -99,7 +99,7 @@ func realMain(ctx context.Context) error {
 	realm2.AllowedTestTypes = database.TestTypeLikely | database.TestTypeConfirmed
 	realm2.RegionCode = "US-WA"
 	realm2.AbusePreventionEnabled = true
-	if err := db.SaveRealm(realm2); err != nil {
+	if err := db.SaveRealm(realm2, database.System); err != nil {
 		return fmt.Errorf("failed to create realm: %w: %v", err, realm2.ErrorMessages())
 	}
 	logger.Infow("created realm", "realm", realm2)
@@ -109,7 +109,7 @@ func realMain(ctx context.Context) error {
 	if _, err := db.FindUserByEmail(user.Email); database.IsNotFound(err) {
 		user.AddRealm(realm1)
 		user.AddRealm(realm2)
-		if err := db.SaveUser(user); err != nil {
+		if err := db.SaveUser(user, database.System); err != nil {
 			return fmt.Errorf("failed to create user: %w: %v", err, user.ErrorMessages())
 		}
 		logger.Infow("created user", "user", user)
@@ -123,7 +123,7 @@ func realMain(ctx context.Context) error {
 	unverified := &database.User{Email: "unverified@example.com", Name: "Unverified User"}
 	if _, err := db.FindUserByEmail(unverified.Email); database.IsNotFound(err) {
 		unverified.AddRealm(realm1)
-		if err := db.SaveUser(unverified); err != nil {
+		if err := db.SaveUser(unverified, database.System); err != nil {
 			return fmt.Errorf("failed to create unverified: %w: %v", err, unverified.ErrorMessages())
 		}
 		logger.Infow("created user", "user", unverified)
@@ -133,7 +133,7 @@ func realMain(ctx context.Context) error {
 	if _, err := db.FindUserByEmail(admin.Email); database.IsNotFound(err) {
 		admin.AddRealm(realm1)
 		admin.AddRealmAdmin(realm1)
-		if err := db.SaveUser(admin); err != nil {
+		if err := db.SaveUser(admin, database.System); err != nil {
 			return fmt.Errorf("failed to create admin: %w: %v", err, admin.ErrorMessages())
 		}
 		logger.Infow("created admin", "admin", admin)
@@ -146,7 +146,7 @@ func realMain(ctx context.Context) error {
 
 	super := &database.User{Email: "super@example.com", Name: "Super User", Admin: true}
 	if _, err := db.FindUserByEmail(super.Email); database.IsNotFound(err) {
-		if err := db.SaveUser(super); err != nil {
+		if err := db.SaveUser(super, database.System); err != nil {
 			return fmt.Errorf("failed to create super: %w: %v", err, super.ErrorMessages())
 		}
 		logger.Infow("created super", "super", super)
@@ -161,7 +161,7 @@ func realMain(ctx context.Context) error {
 	deviceAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       "Corona Capture",
 		APIKeyType: database.APIUserTypeDevice,
-	})
+	}, admin)
 	if err != nil {
 		return fmt.Errorf("failed to create device api key: %w", err)
 	}
@@ -170,20 +170,22 @@ func realMain(ctx context.Context) error {
 	// Create some Apps
 	apps := []*database.MobileApp{
 		{
-			Name:  "Example iOS app",
-			OS:    database.OSTypeIOS,
-			AppID: "ios.example.app",
+			Name:    "Example iOS app",
+			RealmID: realm1.ID,
+			OS:      database.OSTypeIOS,
+			AppID:   "ios.example.app",
 		},
 		{
-			Name:  "Example Android app",
-			OS:    database.OSTypeAndroid,
-			AppID: "android.example.app",
-			SHA:   "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
+			Name:    "Example Android app",
+			RealmID: realm1.ID,
+			OS:      database.OSTypeAndroid,
+			AppID:   "android.example.app",
+			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 		},
 	}
 	for i := range apps {
 		app := apps[i]
-		if err := realm1.CreateMobileApp(db, app); err != nil {
+		if err := db.SaveMobileApp(app, database.System); err != nil {
 			return fmt.Errorf("failed to create app: %w", err)
 		}
 	}
@@ -192,7 +194,7 @@ func realMain(ctx context.Context) error {
 	adminAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       "Tracing Tracker",
 		APIKeyType: database.APIUserTypeAdmin,
-	})
+	}, admin)
 	if err != nil {
 		return fmt.Errorf("failed to create admin api key: %w", err)
 	}

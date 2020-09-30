@@ -45,6 +45,12 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
 			var authApp database.AuthorizedApp
@@ -71,7 +77,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			APIKeyType: form.Type,
 		}
 
-		apiKey, err := realm.CreateAuthorizedApp(c.db, authApp)
+		apiKey, err := realm.CreateAuthorizedApp(c.db, authApp, currentUser)
 		if err != nil {
 			flash.Error("Failed to create API Key: %v", err)
 			c.renderNew(ctx, w, authApp)

@@ -38,6 +38,12 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		if !realm.EnableENExpress {
 			flash.Error("Realm is not currently enrolled in EN Express.")
 			c.renderSettings(ctx, w, r, realm, nil)
@@ -47,7 +53,7 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 		defaultSettings := database.NewRealmWithDefaults("--")
 		realm.EnableENExpress = false
 		realm.SMSTextTemplate = defaultSettings.SMSTextTemplate
-		if err := c.db.SaveRealm(realm); err != nil {
+		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to disable EN Express: %v", err)
 
 			c.renderSettings(ctx, w, r, realm, nil)
@@ -76,6 +82,12 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		if realm.EnableENExpress {
 			flash.Error("Realm already has EN Express Enabled.")
 			c.renderSettings(ctx, w, r, realm, nil)
@@ -93,7 +105,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 		// Confirmed is the only allowed test type for EN Express.
 		realm.AllowedTestTypes = database.TestTypeConfirmed
 
-		if err := c.db.SaveRealm(realm); err != nil {
+		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to enable EN Express: %v", err)
 			// This will allow the user to correct other validation errors and then click "uprade" again.
 			realm.EnableENExpress = false

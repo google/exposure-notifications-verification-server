@@ -48,6 +48,12 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		user, err := realm.FindUser(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -92,7 +98,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 			user.RemoveRealmAdmin(realm)
 		}
 
-		if err := c.db.SaveUser(user); err != nil {
+		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to update user: %v", err)
 			c.renderUpdate(ctx, w, user)
 			return

@@ -43,6 +43,12 @@ func (c *Controller) HandleSave() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
@@ -56,7 +62,7 @@ func (c *Controller) HandleSave() http.Handler {
 		// AsString delgates the duration parsing and validation to the model.
 		realm.CertificateDuration.AsString = form.DuratingString
 
-		if err := c.db.SaveRealm(realm); err != nil {
+		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to update realm: %v", err)
 			c.renderShow(ctx, w, r, realm)
 		}
