@@ -51,7 +51,7 @@ type AuditEntry struct {
 
 	// TargetID and TargetDisplay are the same as the actor, but are for the
 	// target of the action.
-	TargetID      string `gorm:"column:target_name; type:text; not null;"`
+	TargetID      string `gorm:"column:target_id; type:text; not null;"`
 	TargetDisplay string `gorm:"column:target_display; type:text; not null;"`
 
 	// Diff is the change of structure that occurred, if any.

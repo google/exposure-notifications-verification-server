@@ -1376,7 +1376,8 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 
 				sqls := []string{
 					`CREATE INDEX IF NOT EXISTS idx_audit_entries_realm_id ON audit_entries (realm_id)`,
-					`CREATE INDEX IF NOT EXISTS idx_audit_entries_actor_id ON audit_entries (realm_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_actor_id ON audit_entries (actor_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_target_id ON audit_entries (target_id)`,
 					`CREATE INDEX IF NOT EXISTS idx_audit_entries_created_at ON audit_entries (created_at)`,
 				}
 
