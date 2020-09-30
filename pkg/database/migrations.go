@@ -1393,6 +1393,30 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec(`DROP TABLE audit_entries`).Error
 			},
 		},
+		{
+			ID: "00056-AuthorzedAppsAPIKeyTypeBasis",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&AuditEntry{}).Error; err != nil {
+					return err
+				}
+
+				sqls := []string{
+					`ALTER TABLE authorized_apps ALTER COLUMN api_key_type DROP DEFAULT`,
+					`ALTER TABLE authorized_apps ALTER COLUMN api_key_type SET NOT NULL`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 
@@ -1435,7 +1459,7 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 	m := db.getMigrations(ctx)
 	logger.Debugw("migrations starting")
 	if err := m.Migrate(); err != nil {
-		logger.Errorf("failed to migrate", "error", err)
+		logger.Errorw("failed to migrate", "error", err)
 		return err
 	}
 	logger.Debugw("migrations complete")

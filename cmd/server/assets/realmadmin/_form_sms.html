@@ -76,7 +76,7 @@
 
   <div class="form-label-group">
     <select name="sms_country" id="sms_country" class="form-control custom-select">
-      <option disabled selected hidden>SMS country</option>
+      <option selected disabled>SMS country</option>
       {{range $name, $value := $countries}}
         <option value="{{$value}}"{{if eq $realm.SMSCountry $value}} selected{{end}}>{{$name}}</option>
       {{end}}

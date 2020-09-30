@@ -153,8 +153,8 @@ func realMain(ctx context.Context) error {
 	r.Use(rateLimit)
 
 	// Other common middlewares
-	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIUserType{
-		database.APIUserTypeDevice,
+	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIKeyType{
+		database.APIKeyTypeDevice,
 	})
 	processFirewall := middleware.ProcessFirewall(ctx, h, "apiserver")
 

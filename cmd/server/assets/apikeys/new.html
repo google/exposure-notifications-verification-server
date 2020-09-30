@@ -38,7 +38,7 @@
 
           <div class="form-group">
             <select class="form-control{{if $authApp.ErrorsFor "type"}} is-invalid{{end}}" name="type" id="type">
-              <option value="-1" {{if (eq $authApp.APIKeyType -1)}}selected{{else}}disabled{{end}}>Select type...</option>
+              <option selected disabled>Select type...</option>
               <option value="{{.typeDevice}}" {{if (eq $authApp.APIKeyType .typeDevice)}}selected{{end}}>Device (can verify codes)</option>
               <option value="{{.typeAdmin}}" {{if (eq $authApp.APIKeyType .typeAdmin)}}selected{{end}}>Admin (can issue codes)</option>
             </select>
