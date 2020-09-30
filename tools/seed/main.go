@@ -160,7 +160,7 @@ func realMain(ctx context.Context) error {
 	// Create a device API key
 	deviceAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       "Corona Capture",
-		APIKeyType: database.APIUserTypeDevice,
+		APIKeyType: database.APIKeyTypeDevice,
 	}, admin)
 	if err != nil {
 		return fmt.Errorf("failed to create device api key: %w", err)
@@ -193,7 +193,7 @@ func realMain(ctx context.Context) error {
 	// Create an admin API key
 	adminAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       "Tracing Tracker",
-		APIKeyType: database.APIUserTypeAdmin,
+		APIKeyType: database.APIKeyTypeAdmin,
 	}, admin)
 	if err != nil {
 		return fmt.Errorf("failed to create admin api key: %w", err)

@@ -211,7 +211,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
 
 	// Metrics
-	rawDB.Callback().Create().After("gorm:create").Register("audit_entires:metrics", callbackIncrementMetric(ctx, db.metrics.AuditEntryCreated, "audit_entries"))
+	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, db.metrics.AuditEntryCreated, "audit_entries"))
 
 	// Cache clearing
 	if cacher != nil {

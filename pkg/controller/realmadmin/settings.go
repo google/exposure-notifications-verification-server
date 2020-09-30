@@ -270,7 +270,7 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	// Don't pass through the system config to the template - we don't want to
-	// risk accidentially rendering its ID or values since the realm should never
+	// risk accidentally rendering its ID or values since the realm should never
 	// see these values. However, we have to go lookup the actual SMS config
 	// values if present so that if the user unchecks the form, they don't see
 	// blank values if they were previously using their own SMS configs.
