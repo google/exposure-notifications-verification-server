@@ -24,11 +24,28 @@ import (
 
 type OSType int
 
+// Display prints the name of the OSType. Note this CANNOT be named String()
+// because, if it is, Go's text/template package will automatically call
+// String() and cause you to lose hours upon hours of your life debuggin when
+// forms are suddenly broken.
+func (o OSType) Display() string {
+	switch o {
+	case OSTypeIOS:
+		return "iOS"
+	case OSTypeAndroid:
+		return "Android"
+	default:
+		return "Unknown"
+	}
+}
+
 const (
 	OSTypeInvalid OSType = iota
 	OSTypeIOS
 	OSTypeAndroid
 )
+
+var _ Auditable = (*MobileApp)(nil)
 
 type MobileApp struct {
 	gorm.Model
@@ -72,22 +89,6 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("os", "is invalid")
 	}
 
-	// Ensure name/os combo is unique - there's still a database constraint that
-	// enforces this in case there's a race.
-	var existing MobileApp
-	if err := tx.Unscoped().
-		Model(&MobileApp{}).
-		Where("name = ?", a.Name).
-		Where("realm_id = ?", a.RealmID).
-		Where("os = ?", a.OS).
-		Find(&existing).
-		Error; err != nil && !IsNotFound(err) {
-		return fmt.Errorf("failed to check if app already exists: %w", err)
-	}
-	if existing.ID != 0 {
-		a.AddError("name", "already exists")
-	}
-
 	// SHA is required for Android
 	a.SHA = strings.TrimSpace(a.SHA)
 	if a.OS == OSTypeAndroid {
@@ -124,7 +125,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
-// ListActiveAppsByOS finds all authorized by their OS.
+// ListActiveAppsByOS finds all mobile apps by their OS.
 func (db *Database) ListActiveAppsByOS(os OSType) ([]*MobileApp, error) {
 	// Find the apps.
 	var apps []*MobileApp
@@ -141,25 +142,87 @@ func (db *Database) ListActiveAppsByOS(os OSType) ([]*MobileApp, error) {
 	return apps, nil
 }
 
-// CreateMobileApp adds a mobile app to the DB.
-func (r *Realm) CreateMobileApp(db *Database, app *MobileApp) error {
-	app.RealmID = r.ID
-	return db.db.Save(&app).Error
+// SaveMobileApp saves the mobile app.
+func (db *Database) SaveMobileApp(a *MobileApp, actor Auditable) error {
+	if a == nil {
+		return fmt.Errorf("provided mobile app is nil")
+	}
+
+	if actor == nil {
+		return fmt.Errorf("auditing actor is nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var audits []*AuditEntry
+
+		var existing MobileApp
+		if err := tx.
+			Unscoped().
+			Model(&MobileApp{}).
+			Where("id = ?", a.ID).
+			First(&existing).
+			Error; err != nil && !IsNotFound(err) {
+			return fmt.Errorf("failed to get existing mobile app")
+		}
+
+		// Save the app
+		if err := tx.Unscoped().Save(a).Error; err != nil {
+			return fmt.Errorf("failed to save mobile app: %w", err)
+		}
+
+		// Brand new app?
+		if existing.ID == 0 {
+			audit := BuildAuditEntry(actor, "created mobile app", a, a.RealmID)
+			audits = append(audits, audit)
+		} else {
+			if existing.Name != a.Name {
+				audit := BuildAuditEntry(actor, "updated mobile app name", a, a.RealmID)
+				audit.Diff = stringDiff(existing.Name, a.Name)
+				audits = append(audits, audit)
+			}
+
+			if existing.OS != a.OS {
+				audit := BuildAuditEntry(actor, "updated mobile app os", a, a.RealmID)
+				audit.Diff = stringDiff(existing.OS.Display(), a.OS.Display())
+				audits = append(audits, audit)
+			}
+
+			if existing.AppID != a.AppID {
+				audit := BuildAuditEntry(actor, "updated mobile app appID", a, a.RealmID)
+				audit.Diff = stringDiff(existing.AppID, a.AppID)
+				audits = append(audits, audit)
+			}
+
+			if existing.SHA != a.SHA {
+				audit := BuildAuditEntry(actor, "updated mobile app sha", a, a.RealmID)
+				audit.Diff = stringDiff(existing.SHA, a.SHA)
+				audits = append(audits, audit)
+			}
+
+			if existing.DeletedAt != a.DeletedAt {
+				audit := BuildAuditEntry(actor, "updated mobile app enabled", a, a.RealmID)
+				audit.Diff = boolDiff(existing.DeletedAt == nil, a.DeletedAt == nil)
+				audits = append(audits, audit)
+			}
+		}
+
+		// Save all audits
+		for _, audit := range audits {
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audits: %w", err)
+			}
+		}
+
+		return nil
+	})
 }
 
-// SaveMobileApp saves the authorized app.
-func (db *Database) SaveMobileApp(r *MobileApp) error {
-	return db.db.Save(r).Error
+func (a *MobileApp) AuditID() string {
+	return fmt.Sprintf("mobile_apps:%d", a.ID)
 }
 
-// Disable disables the mobile app.
-func (a *MobileApp) Disable(db *Database) error {
-	return db.db.Delete(a).Error
-}
-
-// Enable enables the mobile app.
-func (a *MobileApp) Enable(db *Database) error {
-	return db.db.Unscoped().Model(a).Update("deleted_at", nil).Error
+func (a *MobileApp) AuditDisplay() string {
+	return fmt.Sprintf("%s (%s)", a.Name, a.OS.Display())
 }
 
 // PurgeMobileApps will delete mobile apps that have been deleted for more than

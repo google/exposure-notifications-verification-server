@@ -50,6 +50,12 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		app, err := realm.FindMobileApp(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -88,7 +94,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 		app.SHA = form.SHA
 
 		// Save
-		if err := c.db.SaveMobileApp(app); err != nil {
+		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
 			flash.Error("Failed to save mobile app: %v", err)
 			c.renderEdit(ctx, w, app)
 			return

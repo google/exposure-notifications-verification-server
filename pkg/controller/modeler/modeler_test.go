@@ -70,7 +70,7 @@ func TestRebuildModel(t *testing.T) {
 	// Create the realm.
 	realm := database.NewRealmWithDefaults("Statsylvania")
 	realm.AbusePreventionEnabled = true
-	if err := db.SaveRealm(realm); err != nil {
+	if err := db.SaveRealm(realm, database.System); err != nil {
 		t.Fatal(err)
 	}
 

@@ -1072,7 +1072,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					Admin: true,
 				}
 
-				if err := db.SaveUser(&user); err != nil {
+				if err := tx.Save(&user).Error; err != nil {
 					return err
 				}
 				return nil
@@ -1365,6 +1365,31 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 
 				return nil
+			},
+		},
+		{
+			ID: "00055-AddAuditEntries",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&AuditEntry{}).Error; err != nil {
+					return err
+				}
+
+				sqls := []string{
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_realm_id ON audit_entries (realm_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_actor_id ON audit_entries (realm_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_created_at ON audit_entries (created_at)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec(`DROP TABLE audit_entries`).Error
 			},
 		},
 	})

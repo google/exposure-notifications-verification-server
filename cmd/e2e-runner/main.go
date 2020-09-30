@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
@@ -110,7 +111,7 @@ func realMain(ctx context.Context) error {
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
-		if err := db.SaveRealm(realm); err != nil {
+		if err := db.SaveRealm(realm, database.System); err != nil {
 			return fmt.Errorf("failed to create realm %+v: %w: %v", realm, err, realm.ErrorMessages())
 		}
 	}
@@ -124,7 +125,7 @@ func realMain(ctx context.Context) error {
 	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       adminKeyName + suffix,
 		APIKeyType: database.APIUserTypeAdmin,
-	})
+	}, database.System)
 	if err != nil {
 		return fmt.Errorf("error trying to create a new Admin API Key: %w", err)
 	}
@@ -134,7 +135,9 @@ func realMain(ctx context.Context) error {
 		if err != nil {
 			logger.Errorf("admin API key cleanup failed: %w", err)
 		}
-		if err := app.Disable(db); err != nil {
+		now := time.Now().UTC()
+		app.DeletedAt = &now
+		if err := db.SaveAuthorizedApp(app, database.System); err != nil {
 			logger.Errorf("admin API key disable failed: %w", err)
 		}
 		logger.Info("successfully cleaned up e2e test admin key")
@@ -143,7 +146,7 @@ func realMain(ctx context.Context) error {
 	deviceKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       deviceKeyName + suffix,
 		APIKeyType: database.APIUserTypeDevice,
-	})
+	}, database.System)
 	if err != nil {
 		return fmt.Errorf("error trying to create a new Device API Key: %w", err)
 	}
@@ -153,7 +156,9 @@ func realMain(ctx context.Context) error {
 		if err != nil {
 			logger.Errorf("device API key cleanup failed: %w", err)
 		}
-		if err := app.Disable(db); err != nil {
+		now := time.Now().UTC()
+		app.DeletedAt = &now
+		if err := db.SaveAuthorizedApp(app, database.System); err != nil {
 			logger.Errorf("device API key disable failed: %w", err)
 		}
 		logger.Info("successfully cleaned up e2e test device key")

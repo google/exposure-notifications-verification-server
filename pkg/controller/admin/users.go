@@ -57,6 +57,12 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
 			var user database.User
@@ -92,7 +98,7 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 		}
 
 		user.Admin = true
-		if err := c.db.SaveUser(user); err != nil {
+		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to create user: %v", err)
 			c.renderNewUser(ctx, w, user)
 			return
@@ -159,7 +165,7 @@ func (c *Controller) HandleUsersDelete() http.Handler {
 		}
 
 		user.Admin = false
-		if err := c.db.SaveUser(user); err != nil {
+		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to remove system admin: %v", err)
 			controller.Back(w, r, c.h)
 			return

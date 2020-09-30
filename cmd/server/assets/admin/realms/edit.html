@@ -1,5 +1,6 @@
 {{define "admin/realms/edit"}}
 
+{{$currentUser := .currentUser}}
 {{$realm := .realm}}
 {{$systemSMSConfig := .systemSMSConfig}}
 
@@ -87,6 +88,38 @@
       </div>
     </div>
 
+    {{if $currentUser.CanAdminRealm $realm.ID}}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">Leave realm</div>
+        <div class="card-body">
+          <p>
+            You are currently a member of this realm. Click the button to leave.
+          </p>
+          <a href="/admin/realms/{{$realm.ID}}/leave" class="btn btn-block btn-danger"
+            data-method="PATCH"
+            data-confirm="Are you sure you want to leave this realm? This event will be logged and audited.">
+            Leave realm
+          </a>
+        </div>
+      </div>
+    {{else}}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">Join realm</div>
+        <div class="card-body">
+          <p>
+            Click the button below to join the realm to debug or support the
+            realm. This will also set {{$realm.Name}} as your current active
+            realm. Only do this after gaining permission from the realm
+            administrator.
+          </p>
+          <a href="/admin/realms/{{$realm.ID}}/join" class="btn btn-block btn-danger"
+            data-method="PATCH"
+            data-confirm="Are you sure you want to join this realm? This event will be logged and audited.">
+            Join realm
+          </a>
+        </div>
+      </div>
+    {{end}}
   </main>
 
   {{template "scripts" .}}

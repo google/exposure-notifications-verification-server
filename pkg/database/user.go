@@ -31,18 +31,21 @@ const minDuration = -1 << 63
 // They probably didn't make an account before this project existed.
 var launched time.Time = time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 
+// Ensure user can be an audit actor.
+var _ Auditable = (*User)(nil)
+
 // User represents a user of the system
 type User struct {
 	gorm.Model
 	Errorable
 
-	Email           string `gorm:"type:varchar(250);unique_index"`
-	Name            string `gorm:"type:varchar(100)"`
-	Admin           bool   `gorm:"default:false"`
-	LastRevokeCheck time.Time
-	Realms          []*Realm `gorm:"many2many:user_realms"`
-	AdminRealms     []*Realm `gorm:"many2many:admin_realms"`
+	Email       string   `gorm:"type:varchar(250);unique_index"`
+	Name        string   `gorm:"type:varchar(100)"`
+	Admin       bool     `gorm:"default:false"`
+	Realms      []*Realm `gorm:"many2many:user_realms"`
+	AdminRealms []*Realm `gorm:"many2many:admin_realms"`
 
+	LastRevokeCheck    time.Time
 	LastPasswordChange time.Time
 }
 
@@ -90,17 +93,16 @@ func (u *User) PasswordAgeString() string {
 
 // BeforeSave runs validations. If there are errors, the save fails.
 func (u *User) BeforeSave(tx *gorm.DB) error {
+	// Validation
 	u.Email = strings.TrimSpace(u.Email)
-	u.Name = strings.TrimSpace(u.Name)
-
 	if u.Email == "" {
 		u.AddError("email", "cannot be blank")
 	}
-
 	if !strings.Contains(u.Email, "@") {
 		u.AddError("email", "appears to be invalid")
 	}
 
+	u.Name = strings.TrimSpace(u.Name)
 	if u.Name == "" {
 		u.AddError("name", "cannot be blank")
 	}
@@ -108,6 +110,7 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 	if len(u.Errors()) > 0 {
 		return fmt.Errorf("validation failed")
 	}
+
 	return nil
 }
 
@@ -293,9 +296,125 @@ func (db *Database) PasswordChanged(email string, t time.Time) error {
 	return nil
 }
 
-// SaveUser updates the user in the database.
-func (db *Database) SaveUser(u *User) error {
-	db.db.Model(u).Association("Realms").Replace(u.Realms)
-	db.db.Model(u).Association("AdminRealms").Replace(u.AdminRealms)
-	return db.db.Save(u).Error
+// AuditID is how the user is stored in the audit entry.
+func (u *User) AuditID() string {
+	return fmt.Sprintf("users:%d", u.ID)
+}
+
+// AuditDisplay is how the user will be displayed in audit entries.
+func (u *User) AuditDisplay() string {
+	return fmt.Sprintf("%s (%s)", u.Name, u.Email)
+}
+
+func (db *Database) SaveUser(u *User, actor Auditable) error {
+	if u == nil {
+		return fmt.Errorf("provided user is nil")
+	}
+
+	if actor == nil {
+		return fmt.Errorf("auditing actor is nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var audits []*AuditEntry
+
+		// Look up the existing user so we can do a diff and generate audit entries.
+		var existing User
+		if err := tx.
+			Model(&User{}).
+			Where("id = ?", u.ID).
+			First(&existing).
+			Error; err != nil && !IsNotFound(err) {
+			return fmt.Errorf("failed to get existing user")
+		}
+
+		// Force-update associations
+		tx.Model(u).Association("Realms").Replace(u.Realms)
+		tx.Model(u).Association("AdminRealms").Replace(u.AdminRealms)
+
+		// Save the user
+		if err := tx.Save(u).Error; err != nil {
+			return fmt.Errorf("failed to save user: %w", err)
+		}
+
+		// Brand new user?
+		if existing.ID == 0 {
+			audit := BuildAuditEntry(actor, "created user", u, 0)
+			audits = append(audits, audit)
+		} else {
+			if existing.Admin != u.Admin {
+				audit := BuildAuditEntry(actor, "updated user system admin", u, 0)
+				audit.Diff = boolDiff(existing.Admin, u.Admin)
+				audits = append(audits, audit)
+			}
+
+			if existing.Name != u.Name {
+				audit := BuildAuditEntry(actor, "updated user's name", u, 0)
+				audit.Diff = stringDiff(existing.Name, u.Name)
+				audits = append(audits, audit)
+			}
+
+			if existing.Email != u.Email {
+				audit := BuildAuditEntry(actor, "updated user's email", u, 0)
+				audit.Diff = stringDiff(existing.Email, u.Email)
+				audits = append(audits, audit)
+			}
+		}
+
+		// Diff realms - this intentionally happens for both new and existing users
+		existingRealms := make(map[uint]struct{}, len(existing.Realms))
+		for _, v := range existing.Realms {
+			existingRealms[v.ID] = struct{}{}
+		}
+		existingAdminRealms := make(map[uint]struct{}, len(existing.AdminRealms))
+		for _, v := range existing.AdminRealms {
+			existingAdminRealms[v.ID] = struct{}{}
+		}
+
+		newRealms := make(map[uint]struct{}, len(u.Realms))
+		for _, v := range u.Realms {
+			newRealms[v.ID] = struct{}{}
+		}
+		newAdminRealms := make(map[uint]struct{}, len(u.AdminRealms))
+		for _, v := range u.AdminRealms {
+			newAdminRealms[v.ID] = struct{}{}
+		}
+
+		for ear := range existingAdminRealms {
+			if _, ok := newAdminRealms[ear]; !ok {
+				audit := BuildAuditEntry(actor, "demoted user from realm admin", u, ear)
+				audits = append(audits, audit)
+			}
+		}
+
+		for er := range existingRealms {
+			if _, ok := newRealms[er]; !ok {
+				audit := BuildAuditEntry(actor, "removed user from realm", u, er)
+				audits = append(audits, audit)
+			}
+		}
+
+		for nr := range newRealms {
+			if _, ok := existingRealms[nr]; !ok {
+				audit := BuildAuditEntry(actor, "added user to realm", u, nr)
+				audits = append(audits, audit)
+			}
+		}
+
+		for nr := range newAdminRealms {
+			if _, ok := existingAdminRealms[nr]; !ok {
+				audit := BuildAuditEntry(actor, "promoted user to realm admin", u, nr)
+				audits = append(audits, audit)
+			}
+		}
+
+		// Save all audits
+		for _, audit := range audits {
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audits: %w", err)
+			}
+		}
+
+		return nil
+	})
 }

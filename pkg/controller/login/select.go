@@ -43,8 +43,16 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 			return
 		}
 
-		// If the user is only a member of one realm, set that and bypass selection.
-		if len(user.Realms) == 1 {
+		switch len(user.Realms) {
+		case 0:
+			// If the user is a member of zero realms, it's possible they are an
+			// admin. If so, redirect them to the admin page.
+			if user.Admin {
+				http.Redirect(w, r, "/admin", http.StatusSeeOther)
+				return
+			}
+		case 1:
+			// If the user is only a member of one realm, set that and bypass selection.
 			realm := user.Realms[0]
 
 			// The user is already logged in and the current realm matches the
@@ -64,6 +72,8 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 			controller.StoreSessionRealm(session, realm)
 			http.Redirect(w, r, "/home", http.StatusSeeOther)
 			return
+		default:
+			// Continue below
 		}
 
 		// Requested form, stop processing.
