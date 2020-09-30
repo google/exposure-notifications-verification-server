@@ -73,19 +73,19 @@ func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
 	realm, err := db.FindRealmByName(realmName)
 	if err != nil {
 		if !database.IsNotFound(err) {
-			tb.Errorf("error when finding the realm %q: %w", realmName, err)
+			tb.Fatalf("error when finding the realm %q: %v", realmName, err)
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
 		if err := db.SaveRealm(realm); err != nil {
-			tb.Errorf("failed to create realm %+v: %w: %v", realm, err, realm.ErrorMessages())
+			tb.Fatalf("failed to create realm %+v: %v: %v", realm, err, realm.ErrorMessages())
 		}
 	}
 
 	// Create new API keys
 	suffix, err := randomString()
 	if err != nil {
-		tb.Errorf("failed to create suffix string for API keys: %w", err)
+		tb.Fatalf("failed to create suffix string for API keys: %v", err)
 	}
 
 	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
@@ -93,7 +93,7 @@ func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
 		APIKeyType: database.APIUserTypeAdmin,
 	})
 	if err != nil {
-		tb.Errorf("error trying to create a new Admin API Key: %w", err)
+		tb.Fatalf("error trying to create a new Admin API Key: %v", err)
 	}
 
 	deviceKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
@@ -101,7 +101,7 @@ func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
 		APIKeyType: database.APIUserTypeDevice,
 	})
 	if err != nil {
-		tb.Errorf("error trying to create a new Device API Key: %w", err)
+		tb.Fatalf("error trying to create a new Device API Key: %v", err)
 	}
 
 	return &Suite{
@@ -140,7 +140,7 @@ func (s *Suite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Se
 	// Create the renderer
 	h, err := render.New(ctx, "", s.cfg.APISrvConfig.DevMode)
 	if err != nil {
-		tb.Errorf("failed to create the renderer %v", err)
+		tb.Fatalf("failed to create the renderer %v", err)
 	}
 
 	// Setup cacher
@@ -153,14 +153,14 @@ func (s *Suite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Se
 	}
 	tb.Cleanup(func() {
 		if err := cacher.Close(); err != nil {
-			tb.Errorf("got err when cleanup: %v", err)
+			tb.Fatalf("failed to close cacher: %v", err)
 		}
 	})
 
 	// Create LimitStore
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &s.cfg.AdminAPISrvConfig.RateLimit)
 	if err != nil {
-		tb.Errorf("failed to create the limit store %v", err)
+		tb.Fatalf("failed to create the limit store %v", err)
 	}
 
 	adminRouter.Handle("/health", controller.HandleHealthz(ctx, &s.cfg.AdminAPISrvConfig.Database, h)).Methods("GET")
@@ -177,7 +177,7 @@ func (s *Suite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Se
 
 		issueapiController, err := issueapi.New(ctx, &s.cfg.AdminAPISrvConfig, s.db, limiterStore, h)
 		if err != nil {
-			tb.Errorf("issueapi.New: %w", err)
+			tb.Fatalf("failed to create issue api controller: %v", err)
 		}
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 
@@ -188,7 +188,7 @@ func (s *Suite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Se
 
 	srv, err := server.New(s.cfg.AdminAPISrvConfig.Port)
 	if err != nil {
-		tb.Errorf("failed to create server: %w", err)
+		tb.Fatalf("failed to create server: %v", err)
 	}
 
 	// Stop the server on cleanup
@@ -197,7 +197,7 @@ func (s *Suite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Se
 
 	go func() {
 		if err := srv.ServeHTTPHandler(stopCtx, handlers.CombinedLoggingHandler(os.Stdout, adminRouter)); err != nil {
-			tb.Error(err)
+			tb.Fatalf("failed to serve HTTP handler: %v", err)
 		}
 	}()
 	return srv
@@ -207,7 +207,7 @@ func (s *Suite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server 
 	// Create the renderer
 	h, err := render.New(ctx, "", s.cfg.APISrvConfig.DevMode)
 	if err != nil {
-		tb.Errorf("failed to create the renderer %v", err)
+		tb.Fatalf("failed to create the renderer %v", err)
 	}
 
 	// Setup cacher
@@ -220,7 +220,7 @@ func (s *Suite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server 
 	}
 	tb.Cleanup(func() {
 		if err := cacher.Close(); err != nil {
-			tb.Errorf("got err when cleanup: %v", err)
+			tb.Fatalf("failed to close cacher: %v", err)
 		}
 	})
 
@@ -254,7 +254,7 @@ func (s *Suite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server 
 		defer verifyChaff.Close()
 		verifyapiController, err := verifyapi.New(ctx, &s.cfg.APISrvConfig, s.db, h, tokenSigner)
 		if err != nil {
-			tb.Errorf("failed to create verify api controller: %w", err)
+			tb.Fatalf("failed to create verify api controller: %v", err)
 		}
 		sub.Handle("/verify", verifyapiController.HandleVerify()).Methods("POST")
 
@@ -262,14 +262,14 @@ func (s *Suite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server 
 		defer certChaff.Close()
 		certapiController, err := certapi.New(ctx, &s.cfg.APISrvConfig, s.db, cacher, certificateSigner, h)
 		if err != nil {
-			tb.Errorf("failed to create certapi controller: %w", err)
+			tb.Fatalf("failed to create cert api controller: %v", err)
 		}
 		sub.Handle("/certificate", certapiController.HandleCertificate()).Methods("POST")
 	}
 
 	srv, err := server.New(s.cfg.APISrvConfig.Port)
 	if err != nil {
-		tb.Errorf("failed to create server: %w", err)
+		tb.Fatalf("failed to create server: %v", err)
 	}
 
 	// Stop the server on cleanup
@@ -278,7 +278,7 @@ func (s *Suite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server 
 
 	go func() {
 		if err := srv.ServeHTTPHandler(stopCtx, handlers.CombinedLoggingHandler(os.Stdout, apiRouter)); err != nil {
-			tb.Error(err)
+			tb.Fatalf("failed to serve HTTP handler: %v", err)
 		}
 	}()
 	return srv

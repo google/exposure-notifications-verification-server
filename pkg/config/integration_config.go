@@ -79,7 +79,11 @@ func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationT
 	})
 
 	parent := keys.TestSigningKey(tb, kms)
-	keyID, err := kms.(keys.SigningKeyManager).CreateKeyVersion(ctx, parent)
+	skm, ok := kms.(keys.SigningKeyManager)
+	if !ok {
+		tb.Fatal("KMS doesn't implement interface SigningKeyManager")
+	}
+	keyID, err := skm.CreateKeyVersion(ctx, parent)
 	if err != nil {
 		tb.Fatal(err)
 	}

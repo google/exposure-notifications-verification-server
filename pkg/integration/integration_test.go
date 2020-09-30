@@ -35,6 +35,7 @@ const (
 )
 
 func TestIntegration(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		Name   string
 		expire bool
