@@ -47,11 +47,11 @@ func New(
 	client *auth.Client,
 	config *config.ServerConfig,
 	db *database.Database,
-	h *render.Renderer) (context.Context, *Controller) {
+	h *render.Renderer) (context.Context, *Controller, error) {
 	logger := logging.FromContext(ctx).Named("login")
 	ctx, metrics, err := controller.MetricsFromContext(ctx)
 	if err != nil {
-		logger.Errorw("failed to register shared metrics", "error", err)
+		return ctx, nil, err
 	}
 	return ctx, &Controller{
 		firebaseInternal: firebaseInternal,
@@ -61,5 +61,5 @@ func New(
 		db:               db,
 		h:                h,
 		logger:           logger,
-	}
+	}, nil
 }

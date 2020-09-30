@@ -218,7 +218,11 @@ func realMain(ctx context.Context) error {
 		sub.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
 	}
 
-	ctx, loginController := login.New(ctx, firebaseInternal, auth, cfg, db, h)
+	ctx, loginController, err := login.New(ctx, firebaseInternal, auth, cfg, db, h)
+	if err != nil {
+		return fmt.Errorf("failed to create login controller: %w", err)
+	}
+
 	{
 		sub := r.PathPrefix("").Subrouter()
 		sub.Use(rateLimit)
@@ -335,7 +339,11 @@ func realMain(ctx context.Context) error {
 	}
 
 	// users
-	ctx, userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
+	ctx, userController, err := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
+	if err != nil {
+		return fmt.Errorf("failed to create user controller: %w", err)
+	}
+
 	{
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(requireAuth)
