@@ -142,8 +142,18 @@ resource "google_cloud_run_service" "cleanup" {
 
   depends_on = [
     google_project_service.services["run.googleapis.com"],
+
     google_secret_manager_secret_iam_member.cleanup-db,
+    google_project_iam_member.cleanup-observability,
+    google_kms_crypto_key_iam_member.cleanup-database-encrypter,
+    google_secret_manager_secret_iam_member.cleanup-db-apikey-db-hmac,
+    google_secret_manager_secret_iam_member.cleanup-db-apikey-sig-hmac,
+    google_secret_manager_secret_iam_member.cleanup-db-verification-code-hmac,
+    google_secret_manager_secret_iam_member.cleanup-cache-hmac-key,
+    google_secret_manager_secret_iam_member.cleanup-ratelimit-hmac-key,
+
     null_resource.build,
+    null_resource.migrate,
   ]
 
   lifecycle {

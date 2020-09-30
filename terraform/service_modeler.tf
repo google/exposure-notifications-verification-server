@@ -140,8 +140,19 @@ resource "google_cloud_run_service" "modeler" {
 
   depends_on = [
     google_project_service.services["run.googleapis.com"],
+
+    google_service_account_iam_member.cloudbuild-deploy-modeler,
     google_secret_manager_secret_iam_member.modeler-db,
+    google_project_iam_member.modeler-observability,
+    google_kms_crypto_key_iam_member.modeler-database-encrypter,
+    google_secret_manager_secret_iam_member.modeler-db-apikey-db-hmac,
+    google_secret_manager_secret_iam_member.modeler-db-apikey-sig-hmac,
+    google_secret_manager_secret_iam_member.modeler-db-verification-code-hmac,
+    google_secret_manager_secret_iam_member.modeler-cache-hmac-key,
+    google_secret_manager_secret_iam_member.modeler-ratelimit-hmac-key,
+
     null_resource.build,
+    null_resource.migrate,
   ]
 
   lifecycle {
