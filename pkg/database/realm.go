@@ -143,6 +143,10 @@ type Realm struct {
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
 
+	// MFARequiredGracePeriod defines how long after creation a user may skip adding
+	// a second auth factor before the server requires it.
+	MFARequiredGracePeriod DurationSeconds `gorm:"type:bigint; not null; default: 0"`
+
 	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
 	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
 
