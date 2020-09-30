@@ -17,8 +17,8 @@
   {{if $realm.CanUseSystemSMSConfig}}
     {{if $realm.UseSystemSMSConfig}}
       <div class="alert alert-danger">
-        <strong>Warning!</strong> You are currently use the system-provided SMS
-        configuration. Specifying values below will override the system
+        <strong>Warning!</strong> You are currently using the system-provided
+        SMS configuration. Specifying values below will override the system
         configuration to use your supplied credentials.
       </div>
     {{end}}
@@ -67,6 +67,9 @@
       {{template "errorable" $smsConfig.ErrorsFor "twilioFromNumber"}}
       <small class="form-text text-muted">
         This is the Twilio From Number. Get this value from the Twilio console.
+        If you plan on sending more than 100 codes per day, we <strong>strongly
+        recommend</strong> acquiring a toll free number or SMS short code to
+        reduce the chance that your message will be flagged as spam.
       </small>
     </div>
   </div>
