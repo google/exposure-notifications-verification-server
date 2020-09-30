@@ -176,15 +176,16 @@
           return;
         }
 
-        let multiFactor = firebase.auth().currentUser.multiFactor
-        let last = multiFactor.enrolledFactors.length == 1
-        multiFactor.unenroll(factor)
+        let user = firebase.auth().currentUser
+        user.multiFactor.unenroll(factor)
           .then(function() {
+            setSession(user);
+
             $(`#factor${factor.uid}`).remove();
             flash.clear();
             flash.alert(`Successfully unenrolled ${factor.displayName}`);
 
-            if (last) {
+            if (user.multiFactor.enrolledFactors.length == 0) {
               $registeredDiv.addClass('d-none');
             }
           }).catch(function(err) {
