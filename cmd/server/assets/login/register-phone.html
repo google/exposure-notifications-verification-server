@@ -177,6 +177,7 @@
         }
 
         let user = firebase.auth().currentUser
+        let length = user.multiFactor.enrolledFactors.length
         user.multiFactor.unenroll(factor)
           .then(function() {
             setSession(user);
@@ -185,7 +186,7 @@
             flash.clear();
             flash.alert(`Successfully unenrolled ${factor.displayName}`);
 
-            if (user.multiFactor.enrolledFactors.length == 0) {
+            if (length == 1) {
               $registeredDiv.addClass('d-none');
             }
           }).catch(function(err) {
