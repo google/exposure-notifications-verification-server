@@ -845,6 +845,12 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 				audits = append(audits, audit)
 			}
 
+			if existing.MFARequiredGracePeriod != r.MFARequiredGracePeriod {
+				audit := BuildAuditEntry(actor, "updated MFA required grace period", r, r.ID)
+				audit.Diff = stringDiff(existing.MFARequiredGracePeriod.AsString, r.MFARequiredGracePeriod.AsString)
+				audits = append(audits, audit)
+			}
+
 			if existing.EmailVerifiedMode != r.EmailVerifiedMode {
 				audit := BuildAuditEntry(actor, "updated email verification mode", r, r.ID)
 				audit.Diff = stringDiff(existing.EmailVerifiedMode.String(), r.EmailVerifiedMode.String())
