@@ -31,6 +31,7 @@ var (
 	shortCodeMinutes            = []int{}
 	longCodeLengths             = []int{12, 13, 14, 15, 16}
 	longCodeHours               = []int{}
+	mfaGracePeriod              = []int64{0, 1, 7, 30}
 	passwordRotationPeriodDays  = []int{0, 30, 60, 90, 365}
 	passwordRotationWarningDays = []int{0, 1, 3, 5, 7, 30}
 )
@@ -69,6 +70,7 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		Security                    bool   `form:"security"`
 		MFAMode                     int16  `form:"mfa_mode"`
+		MFARequiredGracePeriod      int64  `form:"mfa_grace_period"`
 		EmailVerifiedMode           int16  `form:"email_verified_mode"`
 		PasswordRotationPeriodDays  uint   `form:"password_rotation_period_days"`
 		PasswordRotationWarningDays uint   `form:"password_rotation_warning_days"`
@@ -148,6 +150,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		if form.Security {
 			realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
 			realm.MFAMode = database.AuthRequirement(form.MFAMode)
+			realm.MFARequiredGracePeriod = database.FromDuration(time.Duration(form.MFARequiredGracePeriod) * 24 * time.Hour)
 			realm.PasswordRotationPeriodDays = form.PasswordRotationPeriodDays
 			realm.PasswordRotationWarningDays = form.PasswordRotationWarningDays
 
@@ -267,7 +270,7 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	// Don't pass through the system config to the template - we don't want to
-	// risk accidentially rendering its ID or values since the realm should never
+	// risk accidentally rendering its ID or values since the realm should never
 	// see these values. However, we have to go lookup the actual SMS config
 	// values if present so that if the user unchecks the form, they don't see
 	// blank values if they were previously using their own SMS configs.
@@ -297,6 +300,7 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 		"negative":  database.TestTypeConfirmed | database.TestTypeLikely | database.TestTypeNegative,
 	}
 	// Valid settings for pwd rotation.
+	m["mfaGracePeriod"] = mfaGracePeriod
 	m["passwordRotateDays"] = passwordRotationPeriodDays
 	m["passwordWarnDays"] = passwordRotationWarningDays
 	// Valid settings for code parameters.

@@ -143,6 +143,10 @@ type Realm struct {
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
 
+	// MFARequiredGracePeriod defines how long after creation a user may skip adding
+	// a second auth factor before the server requires it.
+	MFARequiredGracePeriod DurationSeconds `gorm:"type:bigint; not null; default: 0"`
+
 	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
 	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
 
@@ -838,6 +842,12 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 			if existing.MFAMode != r.MFAMode {
 				audit := BuildAuditEntry(actor, "updated MFA mode", r, r.ID)
 				audit.Diff = stringDiff(existing.MFAMode.String(), r.MFAMode.String())
+				audits = append(audits, audit)
+			}
+
+			if existing.MFARequiredGracePeriod != r.MFARequiredGracePeriod {
+				audit := BuildAuditEntry(actor, "updated MFA required grace period", r, r.ID)
+				audit.Diff = stringDiff(existing.MFARequiredGracePeriod.AsString, r.MFARequiredGracePeriod.AsString)
 				audits = append(audits, audit)
 			}
 
