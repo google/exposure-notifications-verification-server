@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
@@ -85,7 +86,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx := observability.WithBuildInfo(r.Context())
 
 		if err := c.shouldCleanup(ctx); err != nil {
 			c.logger.Errorw("failed to run shouldCleanup", "error", err)

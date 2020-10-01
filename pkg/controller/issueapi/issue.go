@@ -31,7 +31,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
 	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 )
 
 // Cache the UTC time.Location, to speed runtime.
@@ -81,7 +80,7 @@ func (c *Controller) HandleIssue() http.Handler {
 	logger := c.logger.Named("issueapi.HandleIssue")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx := observability.WithBuildInfo(r.Context())
 
 		// Record the issue attempt.
 		stats.Record(ctx, c.metrics.IssueAttempts.M(1))
@@ -124,10 +123,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
-		ctx, err = tag.New(ctx, tag.Upsert(observability.RealmTagKey, fmt.Sprintf("%d", realm.ID)))
-		if err != nil {
-			logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
-		}
+		ctx = observability.WithRealmID(ctx, realm.ID)
 
 		// If this realm requires a date but no date was specified, return an error.
 		if request.SymptomDate == "" && realm.RequireDate {

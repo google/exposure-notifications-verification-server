@@ -21,7 +21,6 @@ import (
 
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/tag"
 )
 
 var (
@@ -43,7 +42,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/attempt_count",
 		Measure:     mAttempts,
 		Description: "The count of certificate issue attempts",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -53,7 +52,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/token_expired_count",
 		Measure:     mTokenExpired,
 		Description: "The count of expired tokens on certificate issue",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -63,7 +62,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/token_used_count",
 		Measure:     mTokenUsed,
 		Description: "The count of already used tokens on certificate issue",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -73,7 +72,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/invalid_token_count",
 		Measure:     mTokenInvalid,
 		Description: "The count of invalid tokens on certificate issue",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -83,7 +82,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/issue_count",
 		Measure:     mCertificateIssued,
 		Description: "The count of certificates issued",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -93,7 +92,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/error_count",
 		Measure:     mCertificateErrors,
 		Description: "The count of certificate issue errors",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)

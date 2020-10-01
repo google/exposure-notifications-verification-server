@@ -28,14 +28,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 )
 
 func (c *Controller) HandleCertificate() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx := observability.WithBuildInfo(r.Context())
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
@@ -45,17 +44,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 			return
 		}
 
-		// This is a non terminal error, as we're only using the realm for stats.
-		realm, err := authApp.Realm(c.db)
-		if err != nil {
-			c.logger.Errorf("unable to load realm", "error", err)
-		} else {
-			ctx, err = tag.New(ctx,
-				tag.Upsert(observability.RealmTagKey, realm.Name))
-			if err != nil {
-				c.logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
-			}
-		}
+		ctx = observability.WithRealmID(ctx, authApp.RealmID)
+
 		stats.Record(ctx, c.metrics.Attempts.M(1))
 
 		// Get the public key for the token.

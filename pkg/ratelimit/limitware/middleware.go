@@ -142,7 +142,7 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc, op
 // metadata about when it's safe to retry.
 func (m *Middleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx := observability.WithBuildInfo(r.Context())
 
 		// Call the key function - if this fails, it's an internal server error.
 		key, err := m.keyFunc(r)
