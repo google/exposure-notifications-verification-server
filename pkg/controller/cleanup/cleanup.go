@@ -142,13 +142,15 @@ func (c *Controller) HandleCleanup() http.Handler {
 		}
 
 		// If there are any errors, return them
-		if errs := merr.WrappedErrors(); len(errs) > 0 {
-			c.logger.Errorw("failed to cleanup", "errors", errs)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
-				OK:     false,
-				Errors: errs,
-			})
-			return
+		if merr != nil {
+			if errs := merr.WrappedErrors(); len(errs) > 0 {
+				c.logger.Errorw("failed to cleanup", "errors", errs)
+				c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
+					OK:     false,
+					Errors: errs,
+				})
+				return
+			}
 		}
 
 		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
