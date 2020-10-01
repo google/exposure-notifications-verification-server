@@ -192,7 +192,7 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 		next = c.config.MaxValue
 	}
 
-	logger.Debugw("next value", "next", next)
+	logger.Debugw("next value", "value", next)
 
 	// Save the new value back, bypassing any validation.
 	realm.AbusePreventionLimit = next
@@ -200,13 +200,18 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 		return fmt.Errorf("failed to save model: %w", err)
 	}
 
+	// Calculate effective limit.
+	effective := realm.AbusePreventionEffectiveLimit()
+
+	logger.Debugw("next effective limit", "value", effective)
+
 	// Update the limiter to use the new value.
 	dig, err := digest.HMACUint64(id, c.config.RateLimit.HMACKey)
 	if err != nil {
 		return fmt.Errorf("failed to digest realm id: %w", err)
 	}
 	key := fmt.Sprintf("realm:quota:%s", dig)
-	if err := c.limiter.Set(ctx, key, uint64(next), 24*time.Hour); err != nil {
+	if err := c.limiter.Set(ctx, key, uint64(effective), 24*time.Hour); err != nil {
 		return fmt.Errorf("failed to update limit: %w", err)
 	}
 
