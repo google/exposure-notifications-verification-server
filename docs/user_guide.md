@@ -13,7 +13,7 @@ This will provide a link to set up your account password.
 
 ### Second factor authentication
 
-On your next login, you will be given the option to enroll a second factor for authentication (SMS sent to your mobile phone). It is highly recommended to enroll in a second factor. The phone number requires the international prefix (e.g. +1 for USA).
+On your next login, you will be given the option to enroll a second factor for authentication (SMS sent to your mobile phone). It is highly recommended to enroll in a second factor. It can be helpful to set up multiple different phone numbers as backups for the second factor.
 
 ![new user](images/users/step04.png "second factor")
 
@@ -21,9 +21,9 @@ On your next login, you will be given the option to enroll a second factor for a
 
 To issue a verification code
 
-1. select the test type (for EN Express areas, 'Positive test' is the only type available).
+1. Select the test type (for EN Express areas, 'Positive test' is the only type available).
 
-2. Enter the symptom onset date or COVID-19 test date
+2. Enter the symptom onset date or COVID-19 test date.
 
     * Both of these dates are optional but should be entered if they are known.
 
@@ -31,7 +31,7 @@ To issue a verification code
 
     * _If this functionality is not available in your area, the input field will not be shown._
 
-4. Click the `Create verification code` button
+4. Click the `Create verification code` button.
 
 ![issue code](images/users/issue01.png "issue code")
 
