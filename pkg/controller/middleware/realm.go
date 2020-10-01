@@ -202,9 +202,8 @@ func checkRealmPasswordAge(user *database.User, realm *database.Realm) error {
 		return errPasswordChangeRequired
 	}
 
-	if nextPasswordChange.Add(
-		time.Hour * 24 * time.Duration(realm.PasswordRotationWarningDays)).
-		After(now) {
+	if time.Until(nextPasswordChange) <
+		time.Hour*24*time.Duration(realm.PasswordRotationWarningDays) {
 		untilChange := nextPasswordChange.Sub(now).Hours()
 		if daysUntilChange := int(untilChange / 24); daysUntilChange > 1 {
 			return fmt.Errorf("password change required in %d days", daysUntilChange)
