@@ -169,7 +169,7 @@ func ClearLastActivity(session *sessions.Session) {
 	sessionClear(session, sessionKeyLastActivity)
 }
 
-// LastActivityFromSession extractsthe last time the user did something.
+// LastActivityFromSession extracts the last time the user did something.
 func LastActivityFromSession(session *sessions.Session) time.Time {
 	v := sessionGet(session, sessionKeyLastActivity)
 	if v == nil {
