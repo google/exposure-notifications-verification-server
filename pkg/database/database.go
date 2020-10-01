@@ -35,7 +35,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/sethvargo/go-retry"
 	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
@@ -271,16 +270,46 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 		// Add realm so that metrics are groupable on a per-realm basis.
 		field, ok := scope.FieldByName("realm_id")
 		if ok && field.Field.CanInterface() && field.Field.Interface() != nil {
-			realmID := field.Field.Interface()
+			realmIDRaw := field.Field.Interface()
 
-			var err error
-			ctx, err = tag.New(ctx, tag.Upsert(observability.RealmTagKey, fmt.Sprintf("%d", realmID)))
-			if err != nil {
-				_ = scope.Err(fmt.Errorf("failed to add realm tag to metrics: %w", err))
+			var realmID uint
+			switch t := realmIDRaw.(type) {
+			case uint:
+				realmID = t
+			case uint8:
+				realmID = uint(t)
+			case uint16:
+				realmID = uint(t)
+			case uint32:
+				realmID = uint(t)
+			case uint64:
+				realmID = uint(t)
+			case int:
+				realmID = uint(t)
+			case int8:
+				realmID = uint(t)
+			case int16:
+				realmID = uint(t)
+			case int32:
+				realmID = uint(t)
+			case int64:
+				realmID = uint(t)
+			case string:
+				raw, err := strconv.ParseUint(t, 10, 64)
+				if err != nil {
+					_ = scope.Err(fmt.Errorf("failed to parse realm_id: %w", err))
+					return
+				}
+				realmID = uint(raw)
+			default:
+				_ = scope.Err(fmt.Errorf("realm_id is of unknown type %v", t))
 				return
 			}
+
+			ctx = observability.WithRealmID(ctx, realmID)
 		}
 
+		ctx = observability.WithBuildInfo(ctx)
 		stats.Record(ctx, m.M(1))
 	}
 }

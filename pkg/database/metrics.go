@@ -21,7 +21,6 @@ import (
 
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/tag"
 )
 
 var (
@@ -38,7 +37,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/audit_entry_created_count",
 		Measure:     mAuditEntryCreated,
 		Description: "The count of the number of audit entries created",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("failed to register audit_entry_created: %w", err)
