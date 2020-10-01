@@ -41,7 +41,7 @@ func FromDuration(d time.Duration) DurationSeconds {
 }
 
 func (d *DurationSeconds) Days() int64 {
-	return int64(d.Duration.Hours() / 24)
+	return int64(d.Duration.Hours() / 24.0)
 }
 
 // Update attempts to parse the AsString value and set is as the duration
