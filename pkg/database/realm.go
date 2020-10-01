@@ -207,6 +207,19 @@ type Realm struct {
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 }
 
+func (realm *Realm) EffectiveMFAMode(user *User) *AuthRequirement {
+	if realm == nil {
+		var required AuthRequirement = MFARequired
+		return &required
+	}
+
+	if time.Since(user.CreatedAt) <= realm.MFARequiredGracePeriod.Duration {
+		var prompt AuthRequirement = MFAOptionalPrompt
+		return &prompt
+	}
+	return &realm.MFAMode
+}
+
 func (mode *AuthRequirement) String() string {
 	switch *mode {
 	case MFAOptionalPrompt:

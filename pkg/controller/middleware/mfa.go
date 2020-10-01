@@ -17,7 +17,6 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -59,20 +58,11 @@ func RequireMFA(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 }
 
 func NeedsMFARedirect(session *sessions.Session, user *database.User, realm *database.Realm) bool {
-	if (realm == nil || realm.MFAMode == database.MFARequired) && controller.FactorCountFromSession(session) == 0 {
-		if time.Since(user.CreatedAt) <= realm.MFARequiredGracePeriod.Duration && controller.MFAPromptedFromSession(session) {
-			return false
-		}
-
-		return true
-	}
-
-	if realm == nil {
+	if controller.FactorCountFromSession(session) > 0 {
 		return false
 	}
-
-	if realm.MFAMode == database.MFAOptionalPrompt && !controller.MFAPromptedFromSession(session) &&
-		controller.FactorCountFromSession(session) == 0 {
+	if mode := *realm.EffectiveMFAMode(user); mode == database.MFARequired ||
+		mode == database.MFAOptionalPrompt && !controller.MFAPromptedFromSession(session) {
 		return true
 	}
 
