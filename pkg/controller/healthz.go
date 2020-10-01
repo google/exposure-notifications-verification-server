@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.opencensus.io/stats"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -16,15 +18,21 @@ import (
 
 var (
 	rl = rate.NewLimiter(rate.Every(time.Minute), 1)
+
+	mHealthzBuildInfo = stats.Int64("build_info", "Current build information", "1")
 )
 
-func HandleHealthz(hctx context.Context, cfg *database.Config, h *render.Renderer) http.Handler {
-	logger := logging.FromContext(hctx).Named("healthz")
+func HandleHealthz(ctx context.Context, cfg *database.Config, h *render.Renderer) http.Handler {
+	logger := logging.FromContext(ctx).Named("healthz")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx := observability.WithBuildInfo(r.Context())
+
+		// Emit the buildinfo metric
+		stats.Record(ctx, mHealthzBuildInfo.M(1))
+
 		params := r.URL.Query()
-		if s := params.Get("service"); s == "database" {
+		if params.Get("service") == "database" {
 			if cfg == nil {
 				InternalError(w, r, h, fmt.Errorf("database not configured for health check"))
 				return
