@@ -104,7 +104,7 @@
         $submit.prop('disabled', true);
 
         {{if .currentUser}}
-        let credentials = firebase.auth.EmailAuthProvider.credential($email.val(),$password.val());
+        let credentials = firebase.auth.EmailAuthProvider.credential($email.val().trim(),$password.val());
         firebase.auth().currentUser.reauthenticateWithCredential(credentials)
         {{else}}
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
@@ -153,7 +153,7 @@
         $submitPin.prop('disabled', true);
 
         // Ask user for the SMS verification code.
-        let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
+        let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
         let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
         // Complete sign-in.
         resolver.resolveSignIn(multiFactorAssertion)
