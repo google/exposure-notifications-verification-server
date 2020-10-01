@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -55,7 +56,7 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			return
 		}
 
-		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, form.Email); err != nil {
+		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, strings.TrimSpace(form.Email)); err != nil {
 			// Treat not-found like success so we don't leak details.
 			if !errors.Is(err, firebase.ErrEmailNotFound) {
 				flash.Error("Password reset failed.")

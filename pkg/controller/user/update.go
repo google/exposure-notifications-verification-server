@@ -17,6 +17,7 @@ package user
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -72,10 +73,12 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			user.Email = form.Email
-			user.Name = form.Name
+		err = controller.BindForm(w, r, &form)
 
+		// Build the user struct
+		user.Email = strings.TrimSpace(form.Email)
+		user.Name = strings.TrimSpace(form.Name)
+		if err != nil {
 			if terr, ok := err.(schema.MultiError); ok {
 				for k, err := range terr {
 					user.AddError(k, err.Error())
@@ -86,10 +89,6 @@ func (c *Controller) HandleUpdate() http.Handler {
 			c.renderEdit(ctx, w, user)
 			return
 		}
-
-		// Build the user struct
-		user.Email = form.Email
-		user.Name = form.Name
 
 		// Manage realm admin permissions.
 		if form.Admin {

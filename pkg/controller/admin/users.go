@@ -17,6 +17,7 @@ package admin
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -71,10 +72,13 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 		}
 
 		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
+		err := controller.BindForm(w, r, &form)
+		email := strings.TrimSpace(form.Email)
+		name := strings.TrimSpace(form.Name)
+		if err != nil {
 			user := &database.User{
-				Email: form.Email,
-				Name:  form.Name,
+				Email: email,
+				Name:  name,
 			}
 
 			flash.Error("Failed to process form: %v", err)
@@ -83,7 +87,7 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 		}
 
 		// See if the user already exists and use that record.
-		user, err := c.db.FindUserByEmail(form.Email)
+		user, err := c.db.FindUserByEmail(email)
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
@@ -92,8 +96,8 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 
 			// User does not exist, create a new one.
 			user = &database.User{
-				Name:  form.Name,
-				Email: form.Email,
+				Name:  name,
+				Email: email,
 			}
 		}
 
