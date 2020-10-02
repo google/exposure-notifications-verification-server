@@ -172,12 +172,14 @@ func realMain(ctx context.Context) error {
 		{
 			Name:    "Example iOS app",
 			RealmID: realm1.ID,
+			URL:     "http://apple.com",
 			OS:      database.OSTypeIOS,
 			AppID:   "ios.example.app",
 		},
 		{
 			Name:    "Example Android app",
 			RealmID: realm1.ID,
+			URL:     "http://google.com",
 			OS:      database.OSTypeAndroid,
 			AppID:   "android.example.app",
 			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",

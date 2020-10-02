@@ -1427,6 +1427,15 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_required_grace_period").Error
 			},
 		},
+		{
+			ID: "00058-AddAppStoreLink",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE mobile_apps ADD COLUMN IF NOT EXISTS url TEXT").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS url").Error
+			},
+		},
 	})
 }
 

@@ -57,6 +57,10 @@ type MobileApp struct {
 	// RealmID is the id of the mobile app.
 	RealmID uint `gorm:"column:realm_id;"`
 
+	// URL is the link to the app in it's appstore.
+	URL    string  `gorm:"-"`
+	URLPtr *string `gorm:"column:url; type:text"`
+
 	// OS is the type of the application we're using (eg, iOS, Android).
 	OS OSType `gorm:"column:os; type:int;"`
 
@@ -82,6 +86,12 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	a.AppID = strings.TrimSpace(a.AppID)
 	if a.AppID == "" {
 		a.AddError("app_id", "is required")
+	}
+
+	a.URL = strings.TrimSpace(a.URL)
+	a.URLPtr = stringPtr(a.URL)
+	if a.URL == "" {
+		a.AddError("url", "is required")
 	}
 
 	// Ensure OS is valid
@@ -223,6 +233,11 @@ func (a *MobileApp) AuditID() string {
 
 func (a *MobileApp) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", a.Name, a.OS.Display())
+}
+
+func (a *MobileApp) AfterFind(tx *gorm.DB) error {
+	a.URL = stringValue(a.URLPtr)
+	return nil
 }
 
 // PurgeMobileApps will delete mobile apps that have been deleted for more than

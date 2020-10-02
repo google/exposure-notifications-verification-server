@@ -28,6 +28,7 @@ import (
 func (c *Controller) HandleUpdate() http.Handler {
 	type FormData struct {
 		Name  string          `form:"name"`
+		URL   string          `form:"url"`
 		OS    database.OSType `form:"os"`
 		AppID string          `form:"app_id"`
 		SHA   string          `form:"sha"`
@@ -89,6 +90,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		// Build the authorized app struct
 		app.Name = form.Name
+		app.URL = form.URL
 		app.OS = form.OS
 		app.AppID = form.AppID
 		app.SHA = form.SHA
