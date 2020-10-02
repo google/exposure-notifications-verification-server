@@ -27,7 +27,6 @@ import (
 
 func (c *Controller) HandleUpdate() http.Handler {
 	type FormData struct {
-		Email string `form:"email"`
 		Name  string `form:"name"`
 		Admin bool   `form:"admin"`
 	}
@@ -76,7 +75,6 @@ func (c *Controller) HandleUpdate() http.Handler {
 		err = controller.BindForm(w, r, &form)
 
 		// Build the user struct
-		user.Email = strings.TrimSpace(form.Email)
 		user.Name = strings.TrimSpace(form.Name)
 		if err != nil {
 			if terr, ok := err.(schema.MultiError); ok {
