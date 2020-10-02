@@ -3,6 +3,7 @@ package observability
 
 import (
 	"context"
+	"os"
 	"strconv"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -17,7 +18,16 @@ const (
 var (
 	BuildIDTagKey  = tag.MustNewKey("build_id")
 	BuildTagTagKey = tag.MustNewKey("build_tag")
-	RealmTagKey    = tag.MustNewKey("realm")
+
+	KnativeServiceTagKey       = tag.MustNewKey("k_service")
+	KnativeRevisionTagKey      = tag.MustNewKey("k_revision")
+	KnativeConfigurationTagKey = tag.MustNewKey("k_configuration")
+
+	RealmTagKey = tag.MustNewKey("realm")
+
+	knativeService       = os.Getenv("K_SERVICE")
+	knativeRevision      = os.Getenv("K_REVISION")
+	knativeConfiguration = os.Getenv("K_CONFIGURATION")
 )
 
 // CommonTagKeys returns the slice of common tag keys that should used in all
@@ -45,16 +55,31 @@ func WithRealmID(octx context.Context, realmID uint) context.Context {
 	return ctx
 }
 
-// WithBuildInfo creates a new context with the build info attached to the
-// observability context.
+// WithBuildInfo creates a new context with the build and revision info attached
+// to the observability context.
 func WithBuildInfo(octx context.Context) context.Context {
-	ctx, err := tag.New(octx,
-		tag.Upsert(BuildIDTagKey, buildinfo.BuildID),
-		tag.Upsert(BuildTagTagKey, buildinfo.BuildTag))
+	tags := make([]tag.Mutator, 0, 5)
+	tags = append(tags, tag.Upsert(BuildIDTagKey, buildinfo.BuildID))
+	tags = append(tags, tag.Upsert(BuildTagTagKey, buildinfo.BuildTag))
+
+	if knativeService != "" {
+		tags = append(tags, tag.Upsert(KnativeServiceTagKey, knativeService))
+	}
+
+	if knativeRevision != "" {
+		tags = append(tags, tag.Upsert(KnativeRevisionTagKey, knativeRevision))
+	}
+
+	if knativeConfiguration != "" {
+		tags = append(tags, tag.Upsert(KnativeConfigurationTagKey, knativeConfiguration))
+	}
+
+	ctx, err := tag.New(octx, tags...)
 	if err != nil {
 		logger := logging.FromContext(octx).Named("observability.WithBuildInfo")
 		logger.Errorw("failed to upsert buildinfo on observability context", "error", err)
 		return octx
 	}
+
 	return ctx
 }
