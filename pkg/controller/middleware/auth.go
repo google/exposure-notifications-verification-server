@@ -173,13 +173,13 @@ func RequireAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			user := controller.UserFromContext(ctx)
-			if user == nil {
+			currentUser := controller.UserFromContext(ctx)
+			if currentUser == nil {
 				controller.MissingUser(w, r, h)
 				return
 			}
 
-			if !user.Admin {
+			if !currentUser.Admin {
 				logger.Debugw("user is not an admin")
 				controller.Unauthorized(w, r, h)
 				return

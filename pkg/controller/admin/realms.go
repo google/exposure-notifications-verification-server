@@ -212,8 +212,8 @@ func (c *Controller) HandleRealmsJoin() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
@@ -224,11 +224,11 @@ func (c *Controller) HandleRealmsJoin() http.Handler {
 			return
 		}
 
-		user.Realms = append(user.Realms, realm)
-		user.AdminRealms = append(user.AdminRealms, realm)
+		currentUser.Realms = append(currentUser.Realms, realm)
+		currentUser.AdminRealms = append(currentUser.AdminRealms, realm)
 
 		// Save the user
-		if err := c.db.SaveUser(user, user); err != nil {
+		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
 			flash.Error("Failed to join %q: %v", realm.Name, err)
 			controller.Back(w, r, c.h)
 			return
@@ -254,8 +254,8 @@ func (c *Controller) HandleRealmsLeave() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
@@ -266,10 +266,10 @@ func (c *Controller) HandleRealmsLeave() http.Handler {
 			return
 		}
 
-		user.RemoveRealm(realm)
+		currentUser.RemoveRealm(realm)
 
 		// Save the user
-		if err := c.db.SaveUser(user, user); err != nil {
+		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
 			flash.Error("Failed to leave %q: %v", realm.Name, err)
 			controller.Back(w, r, c.h)
 			return

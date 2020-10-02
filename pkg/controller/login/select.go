@@ -37,23 +37,23 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
 
-		switch len(user.Realms) {
+		switch len(currentUser.Realms) {
 		case 0:
 			// If the user is a member of zero realms, it's possible they are an
 			// admin. If so, redirect them to the admin page.
-			if user.Admin {
+			if currentUser.Admin {
 				http.Redirect(w, r, "/admin", http.StatusSeeOther)
 				return
 			}
 		case 1:
 			// If the user is only a member of one realm, set that and bypass selection.
-			realm := user.Realms[0]
+			realm := currentUser.Realms[0]
 
 			// The user is already logged in and the current realm matches the
 			// expected realm - just redirect.
@@ -78,28 +78,28 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderSelect(ctx, w, user.Realms)
+			c.renderSelect(ctx, w, currentUser.Realms)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error(err.Error())
-			c.renderSelect(ctx, w, user.Realms)
+			c.renderSelect(ctx, w, currentUser.Realms)
 			return
 		}
 
-		realm := user.GetRealm(form.RealmID)
+		realm := currentUser.GetRealm(form.RealmID)
 		if realm == nil {
 			flash.Error("Please select a realm to continue.")
-			c.renderSelect(ctx, w, user.Realms)
+			c.renderSelect(ctx, w, currentUser.Realms)
 			return
 		}
 
 		// Verify that the user has access to the realm.
-		if !user.CanViewRealm(realm.ID) {
+		if !currentUser.CanViewRealm(realm.ID) {
 			flash.Error("Invalid realm selection.")
-			c.renderSelect(ctx, w, user.Realms)
+			c.renderSelect(ctx, w, currentUser.Realms)
 			return
 		}
 

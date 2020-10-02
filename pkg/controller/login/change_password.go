@@ -46,13 +46,13 @@ func (c *Controller) HandleSubmitChangePassword() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
 
-		if err := c.db.PasswordChanged(user.Email, time.Now()); err != nil {
+		if err := c.db.PasswordChanged(currentUser.Email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
 			controller.InternalError(w, r, c.h, err)
 			return

@@ -89,11 +89,11 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 	ctx := r.Context()
 
 	authorizedApp := controller.AuthorizedAppFromContext(ctx)
-	user := controller.UserFromContext(ctx)
+	currentUser := controller.UserFromContext(ctx)
 
-	if authorizedApp == nil && user == nil {
+	if authorizedApp == nil && currentUser == nil {
 		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
 	}
 
-	return authorizedApp, user, nil
+	return authorizedApp, currentUser, nil
 }
