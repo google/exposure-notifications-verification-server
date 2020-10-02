@@ -192,30 +192,34 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 		}
 
-		// If we got this far, we're about to issue a code.
-		dig, err := digest.HMACUint(realm.ID, c.config.GetRateLimitConfig().HMACKey)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-		key := fmt.Sprintf("realm:quota:%s", dig)
-		limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
-		if err != nil {
-			logger.Errorw("failed to take from limiter", "error", err)
-			stats.Record(ctx, c.metrics.QuotaErrors.M(1))
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
-			return
-		}
-		if !ok {
-			logger.Warnw("realm has exceeded daily quota",
-				"realm", realm.ID,
-				"limit", limit,
-				"reset", reset)
-			stats.Record(ctx, c.metrics.QuotaExceeded.M(1))
-
-			if c.config.GetEnforceRealmQuotas() {
-				c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
+		// If we got this far, we're about to issue a code - take from the limiter
+		// to ensure this is permitted.
+		if realm.AbusePreventionEnabled {
+			dig, err := digest.HMACUint(realm.ID, c.config.GetRateLimitConfig().HMACKey)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
 				return
+			}
+			key := fmt.Sprintf("realm:quota:%s", dig)
+			limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
+			c.recordCapacity(ctx, limit, remaining)
+			if err != nil {
+				logger.Errorw("failed to take from limiter", "error", err)
+				stats.Record(ctx, c.metrics.QuotaErrors.M(1))
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
+				return
+			}
+			if !ok {
+				logger.Warnw("realm has exceeded daily quota",
+					"realm", realm.ID,
+					"limit", limit,
+					"reset", reset)
+				stats.Record(ctx, c.metrics.QuotaExceeded.M(1))
+
+				if c.config.GetEnforceRealmQuotas() {
+					c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
+					return
+				}
 			}
 		}
 
@@ -250,8 +254,6 @@ func (c *Controller) HandleIssue() http.Handler {
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			return
 		}
-
-		c.recordCapacity(ctx, realm, remaining)
 
 		if request.Phone != "" && smsProvider != nil {
 			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
@@ -296,13 +298,9 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 	return authorizedApp, currentUser, nil
 }
 
-func (c *Controller) recordCapacity(ctx context.Context, realm *database.Realm, remaining uint64) {
-	if !realm.AbusePreventionEnabled {
-		return
-	}
+func (c *Controller) recordCapacity(ctx context.Context, limit, remaining uint64) {
 	stats.Record(ctx, c.metrics.RealmTokenRemaining.M(int64(remaining)))
 
-	limit := realm.AbusePreventionEffectiveLimit()
 	issued := uint64(limit) - remaining
 	stats.Record(ctx, c.metrics.RealmTokenIssued.M(int64(issued)))
 

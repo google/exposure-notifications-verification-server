@@ -46,7 +46,7 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 
 		if !realm.EnableENExpress {
 			flash.Error("Realm is not currently enrolled in EN Express.")
-			c.renderSettings(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil, 0, 0)
 			return
 		}
 
@@ -56,7 +56,7 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to disable EN Express: %v", err)
 
-			c.renderSettings(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil, 0, 0)
 			return
 		}
 
@@ -90,7 +90,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 
 		if realm.EnableENExpress {
 			flash.Error("Realm already has EN Express Enabled.")
-			c.renderSettings(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil, 0, 0)
 			return
 		}
 
@@ -110,7 +110,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 			// This will allow the user to correct other validation errors and then click "uprade" again.
 			realm.EnableENExpress = false
 			realm.SMSTextTemplate = enxSettings.SMSTextTemplate
-			c.renderSettings(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil, 0, 0)
 			return
 		}
 
