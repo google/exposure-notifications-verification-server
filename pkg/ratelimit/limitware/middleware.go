@@ -231,10 +231,10 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 		ctx := r.Context()
 
 		// See if a user exists on the context
-		user := controller.UserFromContext(ctx)
-		if user != nil {
-			logger.Debugw("limiting by user", "user", user.ID)
-			dig, err := digest.HMACUint(user.ID, hmacKey)
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser != nil {
+			logger.Debugw("limiting by user", "user", currentUser.ID)
+			dig, err := digest.HMACUint(currentUser.ID, hmacKey)
 			if err != nil {
 				return "", fmt.Errorf("failed to digest user id: %w", err)
 			}
