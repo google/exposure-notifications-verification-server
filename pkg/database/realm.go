@@ -207,6 +207,19 @@ type Realm struct {
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 }
 
+// EffectiveMFAMode returns the realm's default MFAMode but first
+// checks if the user is in the grace-period (if so, required becomes promp).
+func (r *Realm) EffectiveMFAMode(user *User) AuthRequirement {
+	if r == nil {
+		return MFARequired
+	}
+
+	if time.Since(user.CreatedAt) <= r.MFARequiredGracePeriod.Duration {
+		return MFAOptionalPrompt
+	}
+	return r.MFAMode
+}
+
 func (mode *AuthRequirement) String() string {
 	switch *mode {
 	case MFAOptionalPrompt:
