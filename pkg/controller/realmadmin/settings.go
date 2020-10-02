@@ -106,15 +106,31 @@ func (c *Controller) HandleSettings() http.Handler {
 			return
 		}
 
+		var quotaLimit, quotaRemaining uint64
+		if realm.AbusePreventionEnabled {
+			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			key := fmt.Sprintf("realm:quota:%s", dig)
+
+			quotaLimit, quotaRemaining, err = c.limiter.Get(ctx, key)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+		}
+
 		if r.Method == http.MethodGet {
-			c.renderSettings(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderSettings(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -158,7 +174,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				realm.AddError("allowedCIDRsAdminAPI", err.Error())
 				flash.Error("Failed to update realm")
-				c.renderSettings(ctx, w, r, realm, nil)
+				c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
 				return
 			}
 			realm.AllowedCIDRsAdminAPI = allowedCIDRsAdminADPI
@@ -167,7 +183,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				realm.AddError("allowedCIDRsAPIServer", err.Error())
 				flash.Error("Failed to update realm")
-				c.renderSettings(ctx, w, r, realm, nil)
+				c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
 				return
 			}
 			realm.AllowedCIDRsAPIServer = allowedCIDRsAPIServer
@@ -176,7 +192,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				realm.AddError("allowedCIDRsServer", err.Error())
 				flash.Error("Failed to update realm")
-				c.renderSettings(ctx, w, r, realm, nil)
+				c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
 				return
 			}
 			realm.AllowedCIDRsServer = allowedCIDRsServer
@@ -191,7 +207,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		// Save realm
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to update realm: %v", err)
-			c.renderSettings(ctx, w, r, realm, nil)
+			c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -213,7 +229,7 @@ func (c *Controller) HandleSettings() http.Handler {
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, realm, smsConfig)
+					c.renderSettings(ctx, w, r, realm, smsConfig, quotaLimit, quotaRemaining)
 					return
 				}
 			} else {
@@ -229,7 +245,7 @@ func (c *Controller) HandleSettings() http.Handler {
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, realm, smsConfig)
+					c.renderSettings(ctx, w, r, realm, smsConfig, quotaLimit, quotaRemaining)
 					return
 				}
 			}
@@ -256,7 +272,7 @@ func (c *Controller) HandleSettings() http.Handler {
 	})
 }
 
-func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm, smsConfig *database.SMSConfig) {
+func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm, smsConfig *database.SMSConfig, quotaLimit, quotaRemaining uint64) {
 	if smsConfig == nil {
 		var err error
 		smsConfig, err = realm.SMSConfig(c.db)
@@ -309,5 +325,9 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 	m["longCodeLengths"] = longCodeLengths
 	m["longCodeHours"] = longCodeHours
 	m["enxRedirectDomain"] = c.config.GetENXRedirectDomain()
+
+	m["quotaLimit"] = quotaLimit
+	m["quotaRemaining"] = quotaRemaining
+
 	c.h.RenderHTML(w, "realmadmin/edit", m)
 }

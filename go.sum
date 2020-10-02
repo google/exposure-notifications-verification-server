@@ -1153,12 +1153,12 @@ github.com/sethvargo/go-envconfig v0.3.2 h1:277Lb2iTpUZjUZu1qLoLa/aetwvtZbKh8wNW
 github.com/sethvargo/go-envconfig v0.3.2/go.mod h1:XZ2JRR7vhlBEO5zMmOpLgUhgYltqYqq4d4tKagtPUv0=
 github.com/sethvargo/go-gcpkms v0.1.0 h1:pyjDLqLwpk9pMjDSTilPpaUjgP1AfSjX9WGzitZwGUY=
 github.com/sethvargo/go-gcpkms v0.1.0/go.mod h1:33BuvqUjsYk0bpMgn+WCclCYtMLOyaqtn5j0fCo4vvk=
-github.com/sethvargo/go-limiter v0.5.2 h1:NIFp7xy3NyE2+mEHbengdLQF0C0STOpwF5Qw5JtayIs=
-github.com/sethvargo/go-limiter v0.5.2/go.mod h1:C0kbSFbiriE5k2FFOe18M1YZbAR2Fiwf72uGu0CXCcU=
+github.com/sethvargo/go-limiter v0.6.0 h1:186jmCdl1ItQUXbHFdTBrFSZztN6/bL9855C5jfMlKU=
+github.com/sethvargo/go-limiter v0.6.0/go.mod h1:C0kbSFbiriE5k2FFOe18M1YZbAR2Fiwf72uGu0CXCcU=
 github.com/sethvargo/go-password v0.2.0 h1:BTDl4CC/gjf/axHMaDQtw507ogrXLci6XRiLc7i/UHI=
 github.com/sethvargo/go-password v0.2.0/go.mod h1:Ym4Mr9JXLBycr02MFuVQ/0JHidNetSgbzutTr3zsYXE=
-github.com/sethvargo/go-redisstore v0.2.1-opencensus h1:EAwZAuZr5DJdLmEruJTj2zeBvmZsIXI7wqgMueuaxks=
-github.com/sethvargo/go-redisstore v0.2.1-opencensus/go.mod h1:TMFAy7azG5hDd/Hb5ng2CDsawcxg1+oEuGhuVp7eycI=
+github.com/sethvargo/go-redisstore v0.3.0-opencensus h1:H9W15fuJHwHmttV+G6oY94J/YjxhRz0E/1S5y7elxlg=
+github.com/sethvargo/go-redisstore v0.3.0-opencensus/go.mod h1:byILvIz3sOqWiKLQmL7KUK0CzD3MWHajkksZH7V43yk=
 github.com/sethvargo/go-retry v0.1.0 h1:8sPqlWannzcReEcYjHSNw9becsiYudcwTD7CasGjQaI=
 github.com/sethvargo/go-retry v0.1.0/go.mod h1:JzIOdZqQDNpPkQDmcqgtteAcxFLtYpNF/zJCM1ysDg8=
 github.com/sethvargo/go-signalcontext v0.1.0 h1:3IU7HOlmRXF0PSDf85C4nJ/zjYDjF+DS+LufcKfLvyk=
