@@ -30,6 +30,9 @@
           <dt>App name</dt>
           <dd>{{$app.Name}}</dd>
 
+          <dt>AppStore link</dt>
+          <dd><a href="{{$app.URL}}" target="_blank">{{$app.URL}}</a></dd>
+
           <dt>OS</dt>
           <dd>
             {{if (eq $app.OS .iOS)}}
