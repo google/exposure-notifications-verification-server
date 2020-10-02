@@ -25,7 +25,7 @@
 
     <div class="form-label-group">
       <input type="email" id="email" name="email" class="form-control{{if $user.ErrorsFor "email"}} is-invalid{{end}}"
-        value="{{$user.Email}}" placeholder="Email address" required />
+        value="{{$user.Email}}" placeholder="Email address" {{if $user.ID}}disabled{{else}}required{{end}} />
       <label for="name">Email address</label>
       {{if $user.ErrorsFor "email"}}
       <div class="invalid-feedback">
