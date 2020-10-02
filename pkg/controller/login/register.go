@@ -36,12 +36,12 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
-
 		realm := controller.RealmFromContext(ctx)
 
 		m := controller.TemplateMapFromContext(ctx)
 
-		m["mfaMode"] = realm.EffectiveMFAMode(user)
+		mode := realm.EffectiveMFAMode(user)
+		m["mfaMode"] = &mode
 
 		if controller.MFAPromptedFromSession(session) {
 			m["isPrompt"] = true

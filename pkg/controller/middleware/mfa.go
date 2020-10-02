@@ -61,7 +61,7 @@ func NeedsMFARedirect(session *sessions.Session, user *database.User, realm *dat
 	if controller.FactorCountFromSession(session) > 0 {
 		return false
 	}
-	if mode := *realm.EffectiveMFAMode(user); mode == database.MFARequired ||
+	if mode := realm.EffectiveMFAMode(user); mode == database.MFARequired ||
 		mode == database.MFAOptionalPrompt && !controller.MFAPromptedFromSession(session) {
 		return true
 	}
