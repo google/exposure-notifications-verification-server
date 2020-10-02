@@ -207,15 +207,15 @@ type Realm struct {
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 }
 
-func (realm *Realm) EffectiveMFAMode(user *User) AuthRequirement {
-	if realm == nil {
+func (r *Realm) EffectiveMFAMode(user *User) AuthRequirement {
+	if r == nil {
 		return MFARequired
 	}
 
-	if time.Since(user.CreatedAt) <= realm.MFARequiredGracePeriod.Duration {
+	if time.Since(user.CreatedAt) <= r.MFARequiredGracePeriod.Duration {
 		return MFAOptionalPrompt
 	}
-	return realm.MFAMode
+	return r.MFAMode
 }
 
 func (mode *AuthRequirement) String() string {
