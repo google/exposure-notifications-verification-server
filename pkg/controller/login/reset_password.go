@@ -57,6 +57,12 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		}
 
 		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, strings.TrimSpace(form.Email)); err != nil {
+			if errors.Is(err, firebase.ErrTooManyAttempts) {
+				flash.Error("Too many attempts have been made. Please wait and try again later.")
+				c.renderResetPassword(ctx, w, flash)
+				return
+			}
+
 			// Treat not-found like success so we don't leak details.
 			if !errors.Is(err, firebase.ErrEmailNotFound) {
 				flash.Error("Password reset failed.")
