@@ -25,6 +25,7 @@ var (
 	ErrCredentialTooOld = &ErrorDetails{Err: "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"}
 	ErrTokenExpired     = &ErrorDetails{Err: "TOKEN_EXPIRED"}
 	ErrInvalidToken     = &ErrorDetails{Err: "INVALID_ID_TOKEN"}
+	ErrTooManyAttempts  = &ErrorDetails{Err: "TOO_MANY_ATTEMPTS_TRY_LATER"}
 )
 
 var _ error = (*ErrorDetails)(nil)

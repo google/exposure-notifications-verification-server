@@ -138,6 +138,10 @@
                 flash.clear();
                 flash.error('Unsupported 2nd factor authentication type.');
               }
+            } else if (error.code == 'auth/too-many-requests'){
+              flash.clear();
+              flash.error(err.message);
+              $submit.prop('disabled', false);
             } else {
               flash.clear();
               flash.error("Sign-in failed. Please try again.");
