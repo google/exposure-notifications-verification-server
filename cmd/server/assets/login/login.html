@@ -112,6 +112,7 @@
           .then(function(userCredential) {
             loginSuccess();
           }).catch(function(error) {
+            console.error(error);
             if (error.code == 'auth/multi-factor-auth-required') {
               resolver = error.resolver;
               populatePinText(resolver.hints);
