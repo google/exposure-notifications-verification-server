@@ -50,6 +50,7 @@ func New(
 	config *config.ServerConfig,
 	db *database.Database,
 	h *render.Renderer) *Controller {
+
 	logger := logging.FromContext(ctx)
 	return &Controller{
 		cacher:           cacher,
