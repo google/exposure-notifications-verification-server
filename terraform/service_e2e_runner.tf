@@ -143,8 +143,18 @@ resource "google_cloud_run_service" "e2e-runner" {
 
   depends_on = [
     google_project_service.services["run.googleapis.com"],
+
     google_secret_manager_secret_iam_member.e2e-runner-db,
+    google_project_iam_member.e2e-runner-observability,
+    google_kms_crypto_key_iam_member.e2e-runner-database-encrypter,
+    google_secret_manager_secret_iam_member.e2e-runner-db-apikey-db-hmac,
+    google_secret_manager_secret_iam_member.e2e-runner-db-apikey-sig-hmac,
+    google_secret_manager_secret_iam_member.e2e-runner-db-verification-code-hmac,
+    google_secret_manager_secret_iam_member.e2e-runner-cache-hmac-key,
+    google_secret_manager_secret_iam_member.e2e-runner-ratelimit-hmac-key,
+
     null_resource.build,
+    null_resource.migrate,
   ]
 
   lifecycle {

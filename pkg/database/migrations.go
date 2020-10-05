@@ -1072,7 +1072,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					Admin: true,
 				}
 
-				if err := db.SaveUser(&user); err != nil {
+				if err := tx.Save(&user).Error; err != nil {
 					return err
 				}
 				return nil
@@ -1223,6 +1223,16 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 		},
 		{
+			ID: "00050-CreateMobileApps",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("creating authorized apps table")
+				return tx.AutoMigrate(&MobileApp{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("mobile_apps").Error
+			},
+		},
+		{
 			ID: "00051-CreateSystemSMSConfig",
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
@@ -1326,6 +1336,106 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00054-ChangeMobileAppNameUniqueness",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`DROP INDEX IF EXISTS realm_app_name`,
+					`ALTER TABLE mobile_apps ADD CONSTRAINT uix_name_realm_id_os UNIQUE (name, realm_id, os)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`CREATE UNIQUE INDEX realm_app_name ON mobile_apps (name, realm_id)`,
+					`ALTER TABLE mobile_apps DROP CONSTRAINT uix_name_realm_id_os UNIQUE (name, realm_id, os)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00055-AddAuditEntries",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&AuditEntry{}).Error; err != nil {
+					return err
+				}
+
+				sqls := []string{
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_realm_id ON audit_entries (realm_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_actor_id ON audit_entries (actor_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_target_id ON audit_entries (target_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_audit_entries_created_at ON audit_entries (created_at)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec(`DROP TABLE audit_entries`).Error
+			},
+		},
+		{
+			ID: "00056-AuthorzedAppsAPIKeyTypeBasis",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&AuditEntry{}).Error; err != nil {
+					return err
+				}
+
+				sqls := []string{
+					`ALTER TABLE authorized_apps ALTER COLUMN api_key_type DROP DEFAULT`,
+					`ALTER TABLE authorized_apps ALTER COLUMN api_key_type SET NOT NULL`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00057-AddMFARequiredGracePeriod",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email verification required to realm")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_required_grace_period BIGINT DEFAULT 0").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_required_grace_period").Error
+			},
+		},
+		{
+			ID: "00058-AddAppStoreLink",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE mobile_apps ADD COLUMN IF NOT EXISTS url TEXT").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS url").Error
+			},
+		},
 	})
 }
 
@@ -1368,7 +1478,7 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 	m := db.getMigrations(ctx)
 	logger.Debugw("migrations starting")
 	if err := m.Migrate(); err != nil {
-		logger.Errorf("failed to migrate", "error", err)
+		logger.Errorw("failed to migrate", "error", err)
 		return err
 	}
 	logger.Debugw("migrations complete")

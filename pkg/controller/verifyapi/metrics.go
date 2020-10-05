@@ -21,7 +21,6 @@ import (
 
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/tag"
 )
 
 var (
@@ -43,7 +42,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/attempt_count",
 		Measure:     mCodeVerifyAttempts,
 		Description: "The count of attempted code verifications",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -53,7 +52,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/code_expired_count",
 		Measure:     mCodeVerifyExpired,
 		Description: "The count of attempted claims on expired verification codes",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -63,7 +62,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/code_used_count",
 		Measure:     mCodeVerifyCodeUsed,
 		Description: "The count of attempted claims on an already used verification codes",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -73,7 +72,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/code_invalid_count",
 		Measure:     mCodeVerifyInvalid,
 		Description: "The count of attempted claims on invalid verification codes",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -83,7 +82,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/code_verified_count",
 		Measure:     mCodeVerified,
 		Description: "The count of successfully verified codes",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -93,7 +92,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/error_count",
 		Measure:     mCodeVerificationError,
 		Description: "The count of errors issuing verification codes",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)

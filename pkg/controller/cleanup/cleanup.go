@@ -23,7 +23,10 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/hashicorp/go-multierror"
+	"go.opencensus.io/stats"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -32,24 +35,32 @@ import (
 
 // Controller is a controller for the cleanup service.
 type Controller struct {
-	config *config.CleanupConfig
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	config  *config.CleanupConfig
+	db      *database.Database
+	h       *render.Renderer
+	logger  *zap.SugaredLogger
+	metrics *Metrics
 }
 
 // New creates a new cleanup controller.
-func New(ctx context.Context, config *config.CleanupConfig, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-		logger: logger,
+func New(ctx context.Context, config *config.CleanupConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
+	metrics, err := registerMetrics()
+	if err != nil {
+		return nil, err
 	}
+
+	logger := logging.FromContext(ctx).Named("cleanup")
+
+	return &Controller{
+		config:  config,
+		db:      db,
+		h:       h,
+		logger:  logger,
+		metrics: metrics,
+	}, nil
 }
 
-func (c *Controller) shouldCleanup() error {
+func (c *Controller) shouldCleanup(ctx context.Context) error {
 	cStat, err := c.db.CreateCleanup(database.CleanupName)
 	if err != nil {
 		return fmt.Errorf("failed to create cleanup: %w", err)
@@ -60,37 +71,90 @@ func (c *Controller) shouldCleanup() error {
 	}
 
 	// Attempt to advance the generation.
+	stats.Record(ctx, c.metrics.ClaimAttempts.M(1))
 	if _, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod); err != nil {
-		return fmt.Errorf("unable to lock cleanup: %v", err)
+		stats.Record(ctx, c.metrics.ClaimErrors.M(1))
+		return fmt.Errorf("failed to claim cleanup: %w", err)
 	}
 	return nil
 }
 
 func (c *Controller) HandleCleanup() http.Handler {
 	type CleanupResult struct {
-		Cleanup bool `json:"cleanup"`
+		OK     bool    `json:"ok"`
+		Errors []error `json:"errors,omitempty"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := c.shouldCleanup(); err != nil {
-			c.logger.Errorf("shouldCleanUp: %v", err)
-			c.h.RenderJSON(w, http.StatusOK, &CleanupResult{false})
+		ctx := observability.WithBuildInfo(r.Context())
+
+		if err := c.shouldCleanup(ctx); err != nil {
+			c.logger.Errorw("failed to run shouldCleanup", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
+				OK:     false,
+				Errors: []error{err},
+			})
 			return
 		}
 
-		// Cleanup tasks
+		// Construct a multi-error. If one of the purges fails, we still want to
+		// attempt the other purges.
+		var merr *multierror.Error
+
+		// Verification codes
+		stats.Record(ctx, c.metrics.PurgeVerificationCodesAttempts.M(1))
 		if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
-			c.logger.Errorf("db.PurgeVerificationCodes: %v", err)
+			stats.Record(ctx, c.metrics.PurgeVerificationCodesErrors.M(1))
+			merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
 		} else {
-			c.logger.Infof("purged %v verification codes", count)
+			stats.Record(ctx, c.metrics.PurgeVerificationCodesPurged.M(count))
+			c.logger.Infow("purged verification codes", "count", count)
 		}
 
+		// Verification tokens
+		stats.Record(ctx, c.metrics.PurgeVerificationTokensAttempts.M(1))
 		if count, err := c.db.PurgeTokens(c.config.VerificationTokenMaxAge); err != nil {
-			c.logger.Errorf("db.PurgeTokens: %v", err)
+			stats.Record(ctx, c.metrics.PurgeVerificationTokensErrors.M(1))
+			merr = multierror.Append(merr, fmt.Errorf("failed to purge tokens: %w", err))
 		} else {
-			c.logger.Infof("purged %v verification tokens", count)
+			stats.Record(ctx, c.metrics.PurgeVerificationTokensPurged.M(count))
+			c.logger.Infow("purged verification tokens", "count", count)
 		}
 
-		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{true})
+		// Mobile apps
+		stats.Record(ctx, c.metrics.PurgeMobileAppsAttempts.M(1))
+		if count, err := c.db.PurgeMobileApps(c.config.MobileAppMaxAge); err != nil {
+			stats.Record(ctx, c.metrics.PurgeMobileAppsErrors.M(1))
+			merr = multierror.Append(merr, fmt.Errorf("failed to purge mobile apps: %w", err))
+		} else {
+			stats.Record(ctx, c.metrics.PurgeMobileAppsPurged.M(count))
+			c.logger.Infow("purged mobile apps", "count", count)
+		}
+
+		// Audit entries
+		stats.Record(ctx, c.metrics.PurgeAuditEntriesAttempts.M(1))
+		if count, err := c.db.PurgeAuditEntries(c.config.AuditEntryMaxAge); err != nil {
+			stats.Record(ctx, c.metrics.PurgeAuditEntriesErrors.M(1))
+			merr = multierror.Append(merr, fmt.Errorf("failed to purge audit entries: %w", err))
+		} else {
+			stats.Record(ctx, c.metrics.PurgeAuditEntriesPurged.M(count))
+			c.logger.Infow("purged audit entries", "count", count)
+		}
+
+		// If there are any errors, return them
+		if merr != nil {
+			if errs := merr.WrappedErrors(); len(errs) > 0 {
+				c.logger.Errorw("failed to cleanup", "errors", errs)
+				c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
+					OK:     false,
+					Errors: errs,
+				})
+				return
+			}
+		}
+
+		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
+			OK: true,
+		})
 	})
 }

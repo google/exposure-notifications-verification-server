@@ -29,7 +29,7 @@
             <table class="table table-bordered table-striped bg-white">
               <thead>
                 <tr>
-                  <th scope="col" width="50">ID</th>
+                  <th scope="col" width="50" class="text-center">ID</th>
                   <th scope="col">Name</th>
                   <th scope="col" width="125">Region code</th>
                   <th scope="col" width="125">Signing key</th>
@@ -38,7 +38,7 @@
               <tbody>
               {{range $realms}}
                 <tr>
-                  <td>{{.ID}}</td>
+                  <td class="text-center">{{.ID}}</td>
                   <td>
                     <a href="/admin/realms/{{.ID}}/edit">{{.Name}}</a>
                   </td>

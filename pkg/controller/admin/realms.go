@@ -59,8 +59,8 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
@@ -94,16 +94,16 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		realm.CertificateIssuer = form.CertificateIssuer
 		realm.CertificateAudience = form.CertificateAudience
 		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
-		if err := c.db.SaveRealm(realm); err != nil {
+		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to create realm: %v", err)
 			c.renderNewRealm(ctx, w, realm, smsConfig)
 			return
 		}
 		flash.Alert("Created realm: %q.", realm.Name)
 
-		user.Realms = append(user.Realms, realm)
-		user.AdminRealms = append(user.AdminRealms, realm)
-		if err := c.db.SaveUser(user); err != nil {
+		currentUser.Realms = append(currentUser.Realms, realm)
+		currentUser.AdminRealms = append(currentUser.AdminRealms, realm)
+		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
 			flash.Error("Failed to add you as an admin to the realm: %v", err)
 			c.renderNewRealm(ctx, w, realm, smsConfig)
 			return
@@ -149,8 +149,8 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		user := controller.UserFromContext(ctx)
-		if user == nil {
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
@@ -181,7 +181,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		}
 
 		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
-		if err := c.db.SaveRealm(realm); err != nil {
+		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to create realm: %v", err)
 			c.renderEditRealm(ctx, w, realm, smsConfig)
 			return
@@ -198,4 +198,89 @@ func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
 	m["systemSMSConfig"] = smsConfig
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	c.h.RenderHTML(w, "admin/realms/edit", m)
+}
+
+func (c *Controller) HandleRealmsJoin() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		realm, err := c.db.FindRealm(vars["id"])
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		currentUser.Realms = append(currentUser.Realms, realm)
+		currentUser.AdminRealms = append(currentUser.AdminRealms, realm)
+
+		// Save the user
+		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
+			flash.Error("Failed to join %q: %v", realm.Name, err)
+			controller.Back(w, r, c.h)
+			return
+		}
+
+		// Store the current realm on the session.
+		controller.StoreSessionRealm(session, realm)
+
+		flash.Alert("Successfully joined %q", realm.Name)
+		controller.Back(w, r, c.h)
+	})
+}
+
+func (c *Controller) HandleRealmsLeave() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		realm, err := c.db.FindRealm(vars["id"])
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		currentUser.RemoveRealm(realm)
+
+		// Save the user
+		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
+			flash.Error("Failed to leave %q: %v", realm.Name, err)
+			controller.Back(w, r, c.h)
+			return
+		}
+
+		// If the currently-selected realm is the realm the admin just left, clear
+		// it.
+		if controller.RealmIDFromSession(session) == realm.ID {
+			controller.ClearSessionRealm(session)
+		}
+		flash.Alert("Successfully left %q", realm.Name)
+		controller.Back(w, r, c.h)
+	})
 }

@@ -63,14 +63,15 @@ function deploy() {
   # google_app_engine_application.app is global, cannot be deleted once created,
   # if this project already has it created then terraform apply will fail,
   # importing it can solve this problem
-  terraform import module.en.google_app_engine_application.app ${PROJECT_ID} || true
-  terraform import module.en.google_firebase_project.default ${PROJECT_ID} || true
+  terraform import module.en.google_app_engine_application.app ${PROJECT_ID} || best_effort
+  terraform import module.en.google_firebase_project.default ${PROJECT_ID} || best_effort
   for networkEndpointGroups in adminapi apiserver server; do
     terraform import module.en.google_compute_region_network_endpoint_group.${networkEndpointGroups} \
-      projects/${PROJECT_ID}/regions/us-central1/networkEndpointGroups/${networkEndpointGroups} || true
+      projects/${PROJECT_ID}/regions/us-central1/networkEndpointGroups/${networkEndpointGroups} || best_effort
   done
+
   terraform import module.en.google_cloud_scheduler_job.cleanup-worker \
-    projects/${PROJECT_ID}/locations/us-central1/jobs/cleanup-worker || true
+    projects/${PROJECT_ID}/locations/us-central1/jobs/cleanup-worker || best_effort
 
   # Terraform deployment might fail intermittently with certain cloud run 
   # services not up, retry to make it more resilient
@@ -92,23 +93,31 @@ function destroy() {
 
   init
 
-  local db_inst_name
-  db_inst_name="$(terraform output -json 'en' | jq '. | .db_inst_name' | tr -d \")"
-  # DB often failed to be destroyed by terraform due to "used by other process",
+  # DB always failed to be destroyed by terraform as it's set to not to destroy,
   # so delete it manually
-  gcloud sql instances delete ${db_inst_name} -q --project=${PROJECT_ID} || true
+  local db_inst_name
+  # Fetching databases from previous terraform deployment output is not always reliable,
+  # especially when previous terraform deployment failed. So grepping from terraform state instead.
+  db_inst_name="$(terraform state show module.en.google_sql_database_instance.db-inst | grep -Eo 'en-verification-[a-zA-Z0-9]+' | uniq)"
+  if [[ -n "${db_inst_name}" ]]; then
+    gcloud sql instances delete ${db_inst_name} -q --project=${PROJECT_ID}
+  fi
   # Clean up states after manual DB delete
-  terraform state rm module.en.google_sql_user.user || true
-  terraform state rm module.en.google_sql_ssl_cert.db-cert || true
+  terraform state rm module.en.google_sql_user.user || best_effort
+  terraform state rm module.en.google_sql_ssl_cert.db-cert || best_effort
   terraform destroy -auto-approve
   popd > /dev/null
 }
 
 function smoke() {
   # Best effort destroy before applying
-  destroy || true
+  destroy || best_effort
   trap "destroy || true" EXIT
   deploy
+}
+
+function best_effort() {
+  echo "💁🏽 Please disregard error message above, this is best effort"
 }
 
 # help prints help.
@@ -126,7 +135,7 @@ case "${1:-}" in
     help
     ;;
 
-  "deploy" | "destroy" | "smoke" )
+  "init" | "deploy" | "destroy" | "smoke" )
     $1
     ;;
 

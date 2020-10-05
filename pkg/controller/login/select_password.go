@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 	"unicode"
 
@@ -90,25 +91,26 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 			c.renderShowSelectPassword(ctx, w, "", code, false, flash)
 			return
 		}
+		email := strings.TrimSpace(form.Email)
 
 		if err := c.validateComplexity(form.Password); err != nil {
 			flash.Error("Select password failed: %v", err)
-			c.renderShowSelectPassword(ctx, w, form.Email, code, false, flash)
+			c.renderShowSelectPassword(ctx, w, email, code, false, flash)
 			return
 		}
 
 		if _, err := c.firebaseInternal.ChangePasswordWithCode(ctx, code, form.Password); err != nil {
 			if errors.Is(err, firebase.ErrInvalidOOBCode) || errors.Is(err, firebase.ErrExpiredOOBCode) {
 				flash.Error("The action code is invalid. This can happen if the code is malformed, expired, or has already been used.")
-				c.renderShowSelectPassword(ctx, w, form.Email, code, true, flash)
+				c.renderShowSelectPassword(ctx, w, email, code, true, flash)
 			} else {
 				flash.Error("Select password failed. %v", err)
-				c.renderShowSelectPassword(ctx, w, form.Email, code, false, flash)
+				c.renderShowSelectPassword(ctx, w, email, code, false, flash)
 			}
 			return
 		}
 
-		if err := c.db.PasswordChanged(form.Email, time.Now()); err != nil {
+		if err := c.db.PasswordChanged(email, time.Now()); err != nil {
 			logger.Errorw("failed to mark password change time", "error", err)
 		}
 

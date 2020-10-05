@@ -25,7 +25,7 @@
 
     <div class="form-label-group">
       <input type="email" id="email" name="email" class="form-control{{if $user.ErrorsFor "email"}} is-invalid{{end}}"
-        value="{{$user.Email}}" placeholder="Email address" required />
+        value="{{$user.Email}}" placeholder="Email address" {{if $user.ID}}disabled{{else}}required{{end}} />
       <label for="name">Email address</label>
       {{if $user.ErrorsFor "email"}}
       <div class="invalid-feedback">
@@ -35,10 +35,10 @@
     </div>
 
     <div class="form-group">
-      <div class="form-check">
-        <input type="checkbox" id="admin" name="admin" class="form-check-input"
+      <div class="custom-control custom-checkbox">
+        <input type="checkbox" id="admin" name="admin" class="custom-control-input"
           {{if $user.CanAdminRealm $currentRealm.ID}} checked{{end}}>
-        <label class="form-check-label" for="admin">Admin</label>
+        <label class="custom-control-label" for="admin">Admin</label>
       </div>
     </div>
 

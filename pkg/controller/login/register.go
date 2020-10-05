@@ -31,10 +31,25 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 			return
 		}
 
-		// Mark prompted so we only prompt once.
-		controller.StoreSessionMFAPrompted(session, true)
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+		realm := controller.RealmFromContext(ctx)
 
 		m := controller.TemplateMapFromContext(ctx)
+
+		mode := realm.EffectiveMFAMode(currentUser)
+		m["mfaMode"] = &mode
+
+		if controller.MFAPromptedFromSession(session) {
+			m["isPrompt"] = true
+		} else {
+			// Mark prompted so we only prompt once.
+			controller.StoreSessionMFAPrompted(session, true)
+		}
+
 		m["firebase"] = c.config.Firebase
 		c.h.RenderHTML(w, "login/register-phone", m)
 	})

@@ -17,6 +17,7 @@ package user
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -26,7 +27,6 @@ import (
 
 func (c *Controller) HandleUpdate() http.Handler {
 	type FormData struct {
-		Email string `form:"email"`
 		Name  string `form:"name"`
 		Admin bool   `form:"admin"`
 	}
@@ -48,6 +48,12 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		user, err := realm.FindUser(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -66,10 +72,11 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			user.Email = form.Email
-			user.Name = form.Name
+		err = controller.BindForm(w, r, &form)
 
+		// Build the user struct
+		user.Name = strings.TrimSpace(form.Name)
+		if err != nil {
 			if terr, ok := err.(schema.MultiError); ok {
 				for k, err := range terr {
 					user.AddError(k, err.Error())
@@ -81,10 +88,6 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		// Build the user struct
-		user.Email = form.Email
-		user.Name = form.Name
-
 		// Manage realm admin permissions.
 		if form.Admin {
 			user.AddRealmAdmin(realm)
@@ -92,7 +95,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 			user.RemoveRealmAdmin(realm)
 		}
 
-		if err := c.db.SaveUser(user); err != nil {
+		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to update user: %v", err)
 			c.renderUpdate(ctx, w, user)
 			return

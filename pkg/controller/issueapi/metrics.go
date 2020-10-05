@@ -21,7 +21,6 @@ import (
 
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/tag"
 )
 
 var (
@@ -47,7 +46,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/attempt_count",
 		Measure:     mIssueAttempts,
 		Description: "The count of the number of attempts to issue codes",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -58,7 +57,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/quota_errors_count",
 		Measure:     mQuotaErrors,
 		Description: "The count of the number of errors to the limiter",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -69,7 +68,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/quota_exceeded_count",
 		Measure:     mQuotaExceeded,
 		Description: "The count of the number of times quota has been exceeded",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -80,7 +79,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/codes_issued_count",
 		Measure:     mCodesIssued,
 		Description: "The count of verification codes issued",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -91,7 +90,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/code_issue_error_count",
 		Measure:     mCodeIssueErrors,
 		Description: "The count of the number of times a code fails to issue",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -102,7 +101,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/sms_sent_count",
 		Measure:     mSMSSent,
 		Description: "The count of verification codes sent over SMS",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -113,7 +112,7 @@ func registerMetrics() (*Metrics, error) {
 		Name:        MetricPrefix + "/sms_send_error_count",
 		Measure:     mSMSSendErrors,
 		Description: "The count of the number of a code issue failed due to SMS send failure",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Aggregation: view.Count(),
 	}); err != nil {
 		return nil, fmt.Errorf("stat view registration failure: %w", err)
@@ -123,7 +122,7 @@ func registerMetrics() (*Metrics, error) {
 	if err := view.Register(&view.View{
 		Name:        MetricPrefix + "/realm_token_remaining_latest",
 		Description: "Latest realm remaining tokens",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Measure:     mRealmTokenRemaining,
 		Aggregation: view.LastValue(),
 	}); err != nil {
@@ -134,7 +133,7 @@ func registerMetrics() (*Metrics, error) {
 	if err := view.Register(&view.View{
 		Name:        MetricPrefix + "/realm_token_issued_latest",
 		Description: "Latest realm issued tokens",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Measure:     mRealmTokenIssued,
 		Aggregation: view.LastValue(),
 	}); err != nil {
@@ -145,7 +144,7 @@ func registerMetrics() (*Metrics, error) {
 	if err := view.Register(&view.View{
 		Name:        MetricPrefix + "/realm_token_capacity_latest",
 		Description: "Latest realm token capacity utilization",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
+		TagKeys:     observability.CommonTagKeys(),
 		Measure:     mRealmTokenCapacity,
 		Aggregation: view.LastValue(),
 	}); err != nil {

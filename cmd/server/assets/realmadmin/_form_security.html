@@ -38,6 +38,23 @@
     </small>
   </div>
 
+  <div class="form-group" id="grace-div" {{if ne $realm.MFAMode.String "required"}}style="display:none;"{{end}}>
+    <label for="mfa-grace-period">Require MFA</label>
+    <select name="mfa_grace_period" id="mfa-grace-period" class="form-control custom-select" {{if ne $realm.MFAMode.String "required"}}disabled{{end}}>
+      {{$current := $realm.MFARequiredGracePeriod}}
+      {{range $prd := .mfaGracePeriod}}
+      <option value="{{$prd}}" {{if eq $prd $current.Days}}selected{{end}}>
+        {{if (eq $prd 0)}}Immediately{{else}}After {{$prd}} days{{end}}
+      </option>
+      {{end}}
+    </select>
+    {{template "errorable" $realm.ErrorsFor "mfaMode"}}
+    <small class="form-text text-muted">
+      Allows users to continue without registering multi-factor authentication for a period of time. This can be
+      less burdensome to new users or short-term users.
+    </small>
+  </div>
+
   <div class="form-group">
     <label for="password-rotation-period-days">Require password rotation</label>
     <select name="password_rotation_period_days" id="password-rotation-period-days" class="form-control custom-select">
@@ -122,5 +139,23 @@
     <input type="submit" class="btn btn-primary btn-block" value="Update security settings" />
   </div>
 </form>
+
+<script type="text/javascript">
+  $(function(){
+    let $grace = $('#mfa-grace-period');
+    let $graceDiv = $('#grace-div');
+    let $mfaMode = $('#mfa-mode');
+
+    $mfaMode.change(function() {
+      if ($mfaMode.val() == 1) {
+        $grace.prop("disabled", false);
+        $graceDiv.show(200);
+      } else {
+        $graceDiv.hide(200);
+        $grace.prop("disabled", true);
+      }
+    });
+  });
+  </script>
 
 {{end}}

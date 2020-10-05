@@ -1,0 +1,40 @@
+{{define "mobileapps/new"}}
+
+{{$app := .app}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+  {{template "floatingform" .}}
+</head>
+
+<body class="tab-content">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>New mobile app</h1>
+    <p>
+      Use the form below to create a new mobile app.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <form method="POST" action="/mobile-apps" class="floating-form">
+          {{ .csrfField }}
+
+          {{template "mobileapps/_app" .}}
+
+          <button type="submit" class="btn btn-primary btn-block">Create mobile app</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+</html>
+{{end}}

@@ -36,6 +36,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
@@ -315,6 +316,29 @@ func realMain(ctx context.Context) error {
 		sub.Handle("/{uuid}/expire", codeStatusController.HandleExpirePage()).Methods("PATCH")
 	}
 
+	// mobileapp
+	{
+		sub := r.PathPrefix("/mobile-apps").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(loadCurrentRealm)
+		sub.Use(requireRealm)
+		sub.Use(processFirewall)
+		sub.Use(requireAdmin)
+		sub.Use(requireVerified)
+		sub.Use(requireMFA)
+		sub.Use(rateLimit)
+
+		mobileappsController := mobileapps.New(ctx, cfg, cacher, db, h)
+		sub.Handle("", mobileappsController.HandleIndex()).Methods("GET")
+		sub.Handle("", mobileappsController.HandleCreate()).Methods("POST")
+		sub.Handle("/new", mobileappsController.HandleCreate()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}/edit", mobileappsController.HandleUpdate()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}", mobileappsController.HandleShow()).Methods("GET")
+		sub.Handle("/{id:[0-9]+}", mobileappsController.HandleUpdate()).Methods("PATCH")
+		sub.Handle("/{id:[0-9]+}/disable", mobileappsController.HandleDisable()).Methods("PATCH")
+		sub.Handle("/{id:[0-9]+}/enable", mobileappsController.HandleEnable()).Methods("PATCH")
+	}
+
 	// apikeys
 	{
 		sub := r.PathPrefix("/apikeys").Subrouter()
@@ -386,6 +410,7 @@ func realMain(ctx context.Context) error {
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
 		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
+		realmSub.Handle("/events", realmadminController.HandleEvents()).Methods("GET")
 
 		realmKeysController, err := realmkeys.New(ctx, cfg, db, certificateSigner, cacher, h)
 		if err != nil {
@@ -421,10 +446,13 @@ func realMain(ctx context.Context) error {
 		adminSub.Use(rateLimit)
 
 		adminController := admin.New(ctx, cfg, db, auth, h)
+		adminSub.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
 		adminSub.Handle("/realms/new", adminController.HandleRealmsCreate()).Methods("GET")
 		adminSub.Handle("/realms/{id:[0-9]+}/edit", adminController.HandleRealmsUpdate()).Methods("GET")
+		adminSub.Handle("/realms/{id:[0-9]+}/join", adminController.HandleRealmsJoin()).Methods("PATCH")
+		adminSub.Handle("/realms/{id:[0-9]+}/leave", adminController.HandleRealmsLeave()).Methods("PATCH")
 		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
 
 		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")

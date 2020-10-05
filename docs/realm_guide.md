@@ -1,6 +1,6 @@
 # Realm admin guide
 
-This guide provides high level steps for realm administrators to follow.
+This guide provides high-level steps for realm administrators to follow.
 
 If you are not a realm administrator, you will not have access to these screens.
 
@@ -8,10 +8,10 @@ If you are not a realm administrator, you will not have access to these screens.
 
 ### Account protection
 
-We provide a base level of account protection measures that we urge you to share with your case workers that are issuing verification codes.
+We provide a base level of account protection measures that we urge you to share with your caseworkers that are issuing verification codes.
 
 * All user accounts must verify ownership of their email address before using the system.
-* Two factor authentication (2FA) is available, we strongly suggest you require your users to enroll in 2FA
+* Two-factor authentication (2FA) is available, we strongly suggest you require your users to enroll in 2FA
   using a mobile device under their sole control.
 * Users should not share logins to the verification system.
 * Users should only issue codes to people who have a verified COVID-19 diagnosis.
@@ -21,12 +21,12 @@ Realm administrators should monitor the number of codes issued and take correcti
 ### API key protection
 
 * API keys should not be checked into source code.
-* ADMIN level API Keys have the ability to issue codes, these should be closely guarded and their access should be monitored. Periodically, the API key should be rotated.
+* ADMIN level API Keys can issue codes, these should be closely guarded and their access should be monitored. Periodically, the API key should be rotated.
 
 
 ## Settings, enabling EN Express
 
-Go to realm setting by selecting the `settings` drop down menu (shown under your name).
+Go to the realm setting by selecting the `settings` drop down menu (shown under your name).
 
 ![settings](images/admin/settings01.png "Click on your name and select 'settings'")
 
@@ -49,15 +49,14 @@ See the help text on that page for guidance.
 
 ## Settings, Twilio SMS credentials
 
-In order to dispatch verification codes / links over SMS, a realm must provide their own
-credentials for [Twilio](https://www.twilio.com/). The necessary credentials (Twilio account, auth token, and phone number)
+To dispatch verification codes / links over SMS, a realm must provide their credentials for [Twilio](https://www.twilio.com/). The necessary credentials (Twilio account, auth token, and phone number)
 must be obtained from the Twilio console.
 
 ![smssettings](images/admin/sms01.png "SMS settings")
 
 ## Adding users
 
-Go to realm users admin by selecting 'Users' from the drop down menu (shown under your name).
+Go to realm users admin by selecting 'Users' from the drop-down menu (shown under your name).
 
 ![settings](images/admin/settings01.png "Click on your name and select 'Users'")
 
@@ -67,14 +66,14 @@ Add users, by clicking on `create a new user`.
 
 Enter the name of the user and the email address to add. The email address will need to be verified on the person's first login.
 
-The admin check box indicates if this person should be made a realm admin (same powers that you have).
+The admin checkbox indicates if this person should be made a realm admin (same powers that you have).
 If a user only needs to be able to issue verification codes, they do not need to be a realm admin.
 
 ![users](images/admin/users02.png "User listing")
 
 ## API Keys
 
-API Keys are used by your mobile app in order to access the verification server.
+API Keys are used by your mobile app to access the verification server.
 These API keys should be kept secret and only used by your mobile app.
 
 ![api keys](images/admin/settings01.png "Click on your name and select 'API Keys'")
@@ -110,15 +109,15 @@ Click the "Create a new signing key version" button. This will _create_ but not 
 
 ![api keys](images/admin/keys01.png "API key created")
 
-If successful, you will get a message indiciating the new key version that was created.
+If successful, you will get a message indicating the new key version that was created.
 
 ![api keys](images/admin/keys02.png "successful")
 
-This keyID and the public key need to be communicated to your key sever opertor.
+This keyID and the public key need to be communicated to your key sever operator.
 
 ![api keys](images/admin/keys03.png "successful")
 
-When your key sever opertor confirms that this key is configurd, you can click 'Activate.'
+When your key server operator confirms that this key is configured, you can click 'Activate.'
 
 15 minutes after activating the new key, you can destroy the old version.
-__Caution__: destroying the old key too early it may invalidate already issued, and still certificate tokens.
+__Caution__: destroying the old key too early it may invalidate already issued, and still valid, certificate tokens.

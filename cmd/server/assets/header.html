@@ -181,6 +181,10 @@
     }
   }
 
+  .iti {
+    width: 100%;
+  }
+
 </style>
 {{end}}
 
@@ -238,6 +242,8 @@ aria-expanded="false" aria-label="Toggle navigation">
       {{if .currentUser.CanAdminRealm .currentRealm.ID}}
       <h6 class="dropdown-header">Manage realm</h6>
       <a class="dropdown-item" href="/apikeys">API keys</a>
+      <a class="dropdown-item" href="/mobile-apps">Mobile apps</a>
+      <a class="dropdown-item" href="/realm/events">Event log</a>
       <a class="dropdown-item" href="/realm/keys">Signing keys</a>
       <a class="dropdown-item" href="/realm/stats">Statistics</a>
       <a class="dropdown-item" href="/users">Users</a>
@@ -368,6 +374,36 @@ aria-expanded="false" aria-label="Toggle navigation">
       document.execCommand('copy');
       $this.tooltip('hide');
       document.getSelection().removeAllRanges();
+    });
+
+    $('[data-timestamp]').each(function(i, e) {
+      let $this = $(e);
+      let date = new Date($this.data('timestamp'));
+
+      let year = date.getFullYear();
+      let month = date.getMonth() + 1;
+      if (month < 10) {
+        month = `0${month}`;
+      }
+      let day = date.getDate();
+      if (day < 10) {
+        day = `0${day}`;
+      }
+      let ampm = 'AM';
+      let hours = date.getHours();
+      if (hours > 12) {
+        ampm = 'PM';
+        hours = hours - 12;
+      }
+      if (hours < 10) {
+        hours = `0${hours}`;
+      }
+      let minutes = date.getMinutes();
+      if (minutes < 10) {
+        minutes = `0${minutes}`;
+      }
+
+      $this.html(`${year}-${month}-${day} ${hours}:${minutes} ${ampm}`);
     });
 
     // Toast shows alerts/flash messages.

@@ -24,7 +24,7 @@
           <div class="card shadow-sm" id="register-div">
             <div class="card-header">Multi-factor authentication</div>
             <div class="card-body">
-              {{if eq .currentRealm.MFAMode.String "required"}}
+              {{if eq .mfaMode.String "required"}}
               <div class="alert alert-warning">
                 <span class="oi oi-warning"></span>
                 This realm <strong>requires</strong> multi-factor authorization.
@@ -33,35 +33,35 @@
 
               <p>
                 <strong>{{$currentRealm.Name}}</strong>
-                {{if eq .currentRealm.MFAMode.String "required"}}requires{{else}}recommends{{end}}
+                {{if eq .mfaMode.String "required"}}requires{{else}}recommends{{end}}
                 enhanced security via SMS-based 2-factor authentication. Please
                 provide your information below to enroll.
               </p>
 
               <form id="register-form" class="floating-form" action="/" method="POST">
-                <div class="form-label-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="Phone number" required
-                    autofocus />
-                  <label for="phone">Phone number</label>
+                <div class="form-group">
+                  <input type="tel" id="phone" name="phone" class="form-control" required autofocus />
                   <small class="form-text text-muted">
-                    Fully qualified phone number beginning with '+'. Standard SMS rates may apply.
+                    You will be asked to confirm a code using this phone number at login.
+                    Standard SMS rates may apply.
                   </small>
-                </div>
+               </div>
 
                 <div class="form-label-group">
                   <input type="text" id="display" name="display" class="form-control" placeholder="Display name" />
                   <label for="display">Display name</label>
                   <small class="form-text text-muted">
-                    Name for this phone.
+                    Display name for this phone.
                   </small>
                 </div>
 
                 <button type="submit" id="submit-register" class="btn btn-primary btn-block">Register</button>
               </form>
 
-              {{if ne .currentRealm.MFAMode.String "required"}}
-              <a id="skip" class="float-right mt-3 text-muted" href="/home">Skip for now</a>
-              {{end}}
+
+              <a id="skip" href="/home" class="float-right mt-3 card-link {{if eq .mfaMode.String "required"}}d-none{{end}}">
+                Skip for now
+              </a>
             </div>
           </div>
 
@@ -106,6 +106,16 @@
 
       let verId = ""
 
+      // Initialize pretty phone
+      let phone = document.querySelector('#phone');
+      let iti = window.intlTelInput(phone, {
+        nationalMode: true,
+        {{- if $currentRealm.SMSCountry }}
+        initialCountry: '{{$currentRealm.SMSCountry}}',
+        {{- end }}
+        utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.0/js/utils.js',
+      });
+
       firebase.auth().onAuthStateChanged(function(user) {
         if (!user) {
           window.location.assign("/signout");
@@ -115,6 +125,7 @@
         if (user.multiFactor.enrolledFactors.length > 0) {
           $skip.text('Account settings');
           $skip.attr('href', '/account');
+          $skip.removeClass("d-none");
 
           for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
             appendAuthFactor(user.multiFactor.enrolledFactors[i], i);
@@ -165,10 +176,12 @@
           return;
         }
 
-        let multiFactor = firebase.auth().currentUser.multiFactor
-        let last = multiFactor.enrolledFactors.length == 1
-        multiFactor.unenroll(factor)
+        let user = firebase.auth().currentUser
+        let last = user.multiFactor.enrolledFactors.length == 1
+        user.multiFactor.unenroll(factor)
           .then(function() {
+            setSession(user);
+
             $(`#factor${factor.uid}`).remove();
             flash.clear();
             flash.alert(`Successfully unenrolled ${factor.displayName}`);
@@ -195,7 +208,7 @@
         user.multiFactor.getSession().then(function(multiFactorSession) {
           // Specify the phone number and pass the MFA session.
           var phoneInfoOptions = {
-            phoneNumber: $phone.val(),
+            phoneNumber: iti.getNumber(),
             session: multiFactorSession
           };
           var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
@@ -223,15 +236,13 @@
         // Disable the submit button so we only attempt once.
         $submitPin.prop('disabled', true);
 
-        var cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
+        var cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
         var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
 
         // Complete enrollment.
         let user = firebase.auth().currentUser
         user.multiFactor.enroll(multiFactorAssertion, $displayName.val()).then(function() {
-          flash.clear();
-          flash.alert('SMS authentication enrolled successfully.');
-          $skip.text('Continue');
+          setSession(user);
 
           let l = user.multiFactor.enrolledFactors.length
           appendAuthFactor(user.multiFactor.enrolledFactors[l - 1], l - 1);
@@ -279,6 +290,35 @@
             $submit.prop('disabled', false);
           });
       });
+
+      function setSession(user) {
+        let factorCount = user.multiFactor.enrolledFactors.length;
+        user.getIdToken().then(idToken => {
+          $.ajax({
+            type: 'POST',
+            url: '/session',
+            data: {
+              idToken: idToken,
+              factorCount: factorCount,
+            },
+            headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
+            contentType: 'application/x-www-form-urlencoded',
+            success: function(returnData) {
+              {{if .isPrompt}}
+              window.location.assign('/home');
+              {{else}}
+              flash.clear();
+              flash.alert('SMS authentication enrolled successfully.');
+              $skip.text('Continue');
+              $skip.removeClass("d-none");
+              {{end}}
+            },
+            error: function(xhr, status, e) {
+              window.location.assign("/signout");
+            }
+          })
+        });
+      }
     });
   </script>
 </body>

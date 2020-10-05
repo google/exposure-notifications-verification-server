@@ -1,6 +1,18 @@
 # Production
 
-This page includes helpful tips for configuring things in production:
+This page includes helpful tips for configuring things in production.
+
+<!-- TOC depthFrom:2 depthTo:2 -->
+
+- [Key management](#key-management)
+- [Observability (tracing and metrics)](#observability-tracing-and-metrics)
+- [User administration](#user-administration)
+- [Rotating secrets](#rotating-secrets)
+- [SMS with Twilio](#sms-with-twilio)
+- [Identity Platform setup](#identity-platform-setup)
+- [Architecture](#architecture)
+
+<!-- /TOC -->
 
 ## Key management
 
@@ -356,4 +368,44 @@ RATE_LIMIT_HMAC_KEY="43+ViAkv7uHYKjsXhU468NGBZrtlJWtZqTORIiY8V6OMsLAZ+XmUF5He/wI
 ```
 
 
+## SMS with Twilio
+
+The verification server can optionally be configured to send SMS messages with
+app deep-links for the verification codes. This removes the need for a case
+worker to dictate a code over the phone, but requires the use of [Twilio](https://twilio.com) to
+send SMS text messages. To get started:
+
+1.  [Create an account on Twilio](https://www.twilio.com/try-twilio).
+
+1.  [Purchase](https://support.twilio.com/hc/en-us/articles/223135247-How-to-Search-for-and-Buy-a-Twilio-Phone-Number-from-Console)
+    or
+    [transfer](https://support.twilio.com/hc/en-us/articles/223179348-Porting-a-Phone-Number-to-Twilio)
+    a phone number from which SMS text messages will be sent.
+
+    Note: To reduce the chance of your SMS messages being flagged as spam, we
+    strongly recommend registering a toll-free SMS number or SMS short code.
+
+1.  Find your Twilio **Account SID** and **Auth token** on your [Twilio dashboard](https://twilio.com/dashboard).
+
+1.  Go to the realm settings page on the **SMS** tab, enter these values, and
+    click save.
+
+1.  Case workers will now see an option on the **Issue code** page to enter a
+    phone number. This is _always_ optional in case the patient does not have an
+    SMS-enabled cell phone.
+
 [gcp-kms]: https://cloud.google.com/kms
+
+## Identity Platform setup
+
+The verification server uses the Google Identity Platform for authorization.
+
+1. Visit the [Google Identity Platform MFA](https://console.cloud.google.com/customer-identity/mfa) page. Ensure the identity platform is enabled for your project and ensure 'Multi-factor-authorization' is toggled on. Here you may also register test phone numbers for development.
+
+2. Navigate to https://firebase.corp.google.com/u/0/project/{your project id}/authentication/emails to modify the email templates sent during password reset / verify email. Customize the link to your custom domain (if applicable) and direct it to '/login/manage-account' to use the custom password selection. You may also customize the text of the email if you wish.
+
+3. Visit [Google Identity Platform Settings](https://console.cloud.google.com/customer-identity/settings) and ensure that 'Enable create (sign-up)' and 'Enable delete' are unchecked. This system is intended to be invite-only and these flows are handled by administrators.
+
+## Architecture
+
+![diagram of layout](images/architecture/go-diagrams/diagram.png)

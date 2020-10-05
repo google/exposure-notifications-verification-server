@@ -49,12 +49,12 @@
 
         <strong>Type</strong>
         <div>
-          {{if (eq $authApp.APIKeyType 0)}}
-          Device (can verify codes)
-          {{else if (eq $authApp.APIKeyType 1)}}
-          Admin (can issue codes)
+          {{if $authApp.IsDeviceType}}
+            Device (can verify codes)
+          {{else if $authApp.IsAdminType}}
+            Admin (can issue codes)
           {{else}}
-          Unknown
+            Unknown
           {{end}}
         </div>
       </div>

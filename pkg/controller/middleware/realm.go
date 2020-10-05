@@ -97,8 +97,8 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			user := controller.UserFromContext(ctx)
-			if user == nil {
+			currentUser := controller.UserFromContext(ctx)
+			if currentUser == nil {
 				controller.MissingUser(w, r, h)
 				return
 			}
@@ -109,7 +109,7 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
-			if !user.CanViewRealm(realm.ID) {
+			if !currentUser.CanViewRealm(realm.ID) {
 				logger.Debugw("user cannot view realm")
 				// Technically this is unauthorized, but we don't want to leak the
 				// existence of a realm by returning a different error.
@@ -117,7 +117,7 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
-			if passwordRedirectRequired(ctx, user, realm) {
+			if passwordRedirectRequired(ctx, currentUser, realm) {
 				controller.RedirectToChangePassword(w, r, h)
 			}
 
@@ -138,8 +138,8 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			user := controller.UserFromContext(ctx)
-			if user == nil {
+			currentUser := controller.UserFromContext(ctx)
+			if currentUser == nil {
 				controller.MissingUser(w, r, h)
 				return
 			}
@@ -150,7 +150,7 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 				return
 			}
 
-			if !user.CanAdminRealm(realm.ID) {
+			if !currentUser.CanAdminRealm(realm.ID) {
 				logger.Debugw("user cannot manage realm")
 				// Technically this is unauthorized, but we don't want to leak the
 				// existence of a realm by returning a different error.
@@ -158,7 +158,7 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 				return
 			}
 
-			if passwordRedirectRequired(ctx, user, realm) {
+			if passwordRedirectRequired(ctx, currentUser, realm) {
 				controller.RedirectToChangePassword(w, r, h)
 			}
 
@@ -202,9 +202,8 @@ func checkRealmPasswordAge(user *database.User, realm *database.Realm) error {
 		return errPasswordChangeRequired
 	}
 
-	if nextPasswordChange.Add(
-		time.Hour * 24 * time.Duration(realm.PasswordRotationWarningDays)).
-		After(now) {
+	if time.Until(nextPasswordChange) <
+		time.Hour*24*time.Duration(realm.PasswordRotationWarningDays) {
 		untilChange := nextPasswordChange.Sub(now).Hours()
 		if daysUntilChange := int(untilChange / 24); daysUntilChange > 1 {
 			return fmt.Errorf("password change required in %d days", daysUntilChange)

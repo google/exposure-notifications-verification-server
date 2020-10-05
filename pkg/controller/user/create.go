@@ -17,6 +17,7 @@ package user
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -45,6 +46,12 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
 			c.renderNew(ctx, w)
@@ -57,10 +64,11 @@ func (c *Controller) HandleCreate() http.Handler {
 			c.renderNew(ctx, w)
 			return
 		}
+		email := strings.TrimSpace(form.Email)
 
 		// See if the user already exists by email - they may be a member of another
 		// realm.
-		user, err := c.db.FindUserByEmail(form.Email)
+		user, err := c.db.FindUserByEmail(email)
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
@@ -68,7 +76,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			}
 
 			user = new(database.User)
-			user.Email = form.Email
+			user.Email = email
 			user.Name = form.Name
 		}
 
@@ -78,13 +86,13 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		// Build the user struct - keeping email and name if user already exists in another realm.
+		// Build the user struct
 		user.Realms = append(user.Realms, realm)
 		if form.Admin {
 			user.AdminRealms = append(user.AdminRealms, realm)
 		}
 
-		if err := c.db.SaveUser(user); err != nil {
+		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to create user: %v", err)
 			c.renderNew(ctx, w)
 			return

@@ -241,7 +241,7 @@ func TestIssueToken(t *testing.T) {
 			t.Parallel()
 
 			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
-			if err := db.SaveRealm(realm); err != nil {
+			if err := db.SaveRealm(realm, System); err != nil {
 				t.Fatal(err)
 			}
 

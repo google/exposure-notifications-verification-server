@@ -28,14 +28,14 @@
             <div class="card-body">
               <form id="login-form" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
-                  <input type="email" id="email" name="email" class="form-control" placeholder="Email address" required
-                    autofocus {{if .currentUser}}disabled value="{{.currentUser.Email}}"{{end}}/>
+                  <input type="email" id="email" name="email" class="form-control" placeholder="Email address"
+                  autocomplete="username" required autofocus {{if .currentUser}}disabled value="{{.currentUser.Email}}"{{end}}/>
                   <label for="email">Email address</label>
                 </div>
 
                 <div class="form-label-group">
                   <input type="password" id="password" name="password" class="form-control" placeholder="Password"
-                    required />
+                  autocomplete="password" required />
                   <label for="password">Password</label>
                 </div>
 
@@ -104,7 +104,7 @@
         $submit.prop('disabled', true);
 
         {{if .currentUser}}
-        let credentials = firebase.auth.EmailAuthProvider.credential($email.val(),$password.val());
+        let credentials = firebase.auth.EmailAuthProvider.credential($email.val().trim(),$password.val());
         firebase.auth().currentUser.reauthenticateWithCredential(credentials)
         {{else}}
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
@@ -131,16 +131,20 @@
                     $pinDiv.removeClass('d-none');
                   }).catch(function(error) {
                     flash.clear();
-                    flash.error(error.message);
+                    flash.error(error);
                     $submit.prop('disabled', false);
                   });
               } else {
                 flash.clear();
                 flash.error('Unsupported 2nd factor authentication type.');
               }
+            } else if (error.code == 'auth/too-many-requests'){
+              flash.clear();
+              flash.error(err.message);
+              $submit.prop('disabled', false);
             } else {
               flash.clear();
-              flash.error(error.message);
+              flash.error("Sign-in failed. Please try again.");
               $submit.prop('disabled', false);
             }
           });
@@ -153,7 +157,7 @@
         $submitPin.prop('disabled', true);
 
         // Ask user for the SMS verification code.
-        let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
+        let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
         let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
         // Complete sign-in.
         resolver.resolveSignIn(multiFactorAssertion)

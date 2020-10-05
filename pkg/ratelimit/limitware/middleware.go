@@ -142,7 +142,7 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc, op
 // metadata about when it's safe to retry.
 func (m *Middleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx := observability.WithBuildInfo(r.Context())
 
 		// Call the key function - if this fails, it's an internal server error.
 		key, err := m.keyFunc(r)
@@ -231,10 +231,10 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 		ctx := r.Context()
 
 		// See if a user exists on the context
-		user := controller.UserFromContext(ctx)
-		if user != nil {
-			logger.Debugw("limiting by user", "user", user.ID)
-			dig, err := digest.HMACUint(user.ID, hmacKey)
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser != nil {
+			logger.Debugw("limiting by user", "user", currentUser.ID)
+			dig, err := digest.HMACUint(currentUser.ID, hmacKey)
 			if err != nil {
 				return "", fmt.Errorf("failed to digest user id: %w", err)
 			}

@@ -35,15 +35,33 @@ import (
 // TestType is a test type in the database.
 type TestType int16
 
-var (
-	ErrNoSigningKeyManagement = errors.New("no signing key management")
-)
-
 const (
 	_ TestType = 1 << iota
 	TestTypeConfirmed
 	TestTypeLikely
 	TestTypeNegative
+)
+
+func (t TestType) Display() string {
+	var types []string
+
+	if t&TestTypeConfirmed != 0 {
+		types = append(types, "confirmed")
+	}
+
+	if t&TestTypeLikely != 0 {
+		types = append(types, "likely")
+	}
+
+	if t&TestTypeNegative != 0 {
+		types = append(types, "negative")
+	}
+
+	return strings.Join(types, ", ")
+}
+
+var (
+	ErrNoSigningKeyManagement = errors.New("no signing key management")
 )
 
 const (
@@ -72,6 +90,8 @@ const (
 	// MaxPageSize is the maximum allowed page size for a list query.
 	MaxPageSize = 1000
 )
+
+var _ Auditable = (*Realm)(nil)
 
 // Realm represents a tenant in the system. Typically this corresponds to a
 // geography or a public health authority scope.
@@ -122,6 +142,10 @@ type Realm struct {
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
+
+	// MFARequiredGracePeriod defines how long after creation a user may skip adding
+	// a second auth factor before the server requires it.
+	MFARequiredGracePeriod DurationSeconds `gorm:"type:bigint; not null; default: 0"`
 
 	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
 	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
@@ -181,6 +205,19 @@ type Realm struct {
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
+}
+
+// EffectiveMFAMode returns the realm's default MFAMode but first
+// checks if the user is in the grace-period (if so, required becomes promp).
+func (r *Realm) EffectiveMFAMode(user *User) AuthRequirement {
+	if r == nil {
+		return MFARequired
+	}
+
+	if time.Since(user.CreatedAt) <= r.MFARequiredGracePeriod.Duration {
+		return MFAOptionalPrompt
+	}
+	return r.MFAMode
 }
 
 func (mode *AuthRequirement) String() string {
@@ -252,18 +289,6 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	if r.EnableENExpress {
 		if r.RegionCode == "" {
 			r.AddError("regionCode", "cannot be blank when using EN Express")
-		} else {
-			parts := strings.Split(r.RegionCode, "-")
-			if len(parts) != 2 {
-				r.AddError("regionCode", "must be formated like 'region-subregion', 2 characters dash 2 or 3 characters")
-			} else {
-				if len(parts[0]) != 2 {
-					r.AddError("regionCode", "first part must be exactly 2 characters in length")
-				}
-				if l := len(parts[1]); !(l == 2 || l == 3) {
-					r.AddError("regionCode", "second part must be exactly 2 or 3 characters in length")
-				}
-			}
 		}
 	}
 
@@ -434,6 +459,22 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 	return provider, nil
 }
 
+func (r *Realm) Audits(db *Database) ([]*AuditEntry, error) {
+	var entries []*AuditEntry
+	if err := db.db.
+		Model(&AuditEntry{}).
+		Where("realm_id = ?", r.ID).
+		Order("created_at DESC").
+		Find(&entries).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return entries, nil
+		}
+		return nil, err
+	}
+	return entries, nil
+}
+
 // AbusePreventionEffectiveLimit returns the effective limit, multiplying the limit by the
 // limit factor and rounding up.
 func (r *Realm) AbusePreventionEffectiveLimit() uint {
@@ -571,6 +612,37 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 	return &app, nil
 }
 
+// ListMobileApps gets all the mobile apps for the realm.
+func (r *Realm) ListMobileApps(db *Database) ([]*MobileApp, error) {
+	var apps []*MobileApp
+	if err := db.db.
+		Unscoped().
+		Model(r).
+		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
+		Related(&apps).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return apps, nil
+		}
+		return nil, err
+	}
+	return apps, nil
+}
+
+// FindMobileApp finds the mobile app by the given id associated with the realm.
+func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) {
+	var app MobileApp
+	if err := db.db.
+		Unscoped().
+		Model(MobileApp{}).
+		Where("id = ?", id).
+		First(&app).
+		Error; err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
 // CountUsers returns the count users on this realm.
 func (r *Realm) CountUsers(db *Database) (int, error) {
 	var count int
@@ -675,8 +747,213 @@ func (db *Database) GetRealms() ([]*Realm, error) {
 	return realms, nil
 }
 
-func (db *Database) SaveRealm(r *Realm) error {
-	return db.db.Save(r).Error
+func (r *Realm) AuditID() string {
+	return fmt.Sprintf("realms:%d", r.ID)
+}
+
+func (r *Realm) AuditDisplay() string {
+	return r.Name
+}
+
+func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
+	if r == nil {
+		return fmt.Errorf("provided realm is nil")
+	}
+
+	if actor == nil {
+		return fmt.Errorf("auditing actor is nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var audits []*AuditEntry
+
+		var existing Realm
+		if err := tx.
+			Model(&Realm{}).
+			Where("id = ?", r.ID).
+			First(&existing).
+			Error; err != nil && !IsNotFound(err) {
+			return fmt.Errorf("failed to get existing realm")
+		}
+
+		// Save the realm
+		if err := tx.Save(r).Error; err != nil {
+			return fmt.Errorf("failed to save realm: %w", err)
+		}
+
+		// Brand new realm?
+		if existing.ID == 0 {
+			audit := BuildAuditEntry(actor, "created realm", r, r.ID)
+			audits = append(audits, audit)
+		} else {
+			if existing.Name != r.Name {
+				audit := BuildAuditEntry(actor, "updated realm name", r, r.ID)
+				audit.Diff = stringDiff(existing.Name, r.Name)
+				audits = append(audits, audit)
+			}
+
+			if existing.RegionCode != r.RegionCode {
+				audit := BuildAuditEntry(actor, "updated region code", r, r.ID)
+				audit.Diff = stringDiff(existing.RegionCode, r.RegionCode)
+				audits = append(audits, audit)
+			}
+
+			if existing.WelcomeMessage != r.WelcomeMessage {
+				audit := BuildAuditEntry(actor, "updated welcome message", r, r.ID)
+				audit.Diff = stringDiff(existing.WelcomeMessage, r.WelcomeMessage)
+				audits = append(audits, audit)
+			}
+
+			if existing.CodeLength != r.CodeLength {
+				audit := BuildAuditEntry(actor, "updated code length", r, r.ID)
+				audit.Diff = uintDiff(existing.CodeLength, r.CodeLength)
+				audits = append(audits, audit)
+			}
+
+			if existing.CodeDuration != r.CodeDuration {
+				audit := BuildAuditEntry(actor, "updated code duration", r, r.ID)
+				audit.Diff = stringDiff(existing.CodeDuration.AsString, r.CodeDuration.AsString)
+				audits = append(audits, audit)
+			}
+
+			if existing.LongCodeLength != r.LongCodeLength {
+				audit := BuildAuditEntry(actor, "updated long code length", r, r.ID)
+				audit.Diff = uintDiff(existing.LongCodeLength, r.LongCodeLength)
+				audits = append(audits, audit)
+			}
+
+			if existing.LongCodeDuration != r.LongCodeDuration {
+				audit := BuildAuditEntry(actor, "updated long code duration", r, r.ID)
+				audit.Diff = stringDiff(existing.LongCodeDuration.AsString, r.LongCodeDuration.AsString)
+				audits = append(audits, audit)
+			}
+
+			if existing.SMSTextTemplate != r.SMSTextTemplate {
+				audit := BuildAuditEntry(actor, "updated SMS template", r, r.ID)
+				audit.Diff = stringDiff(existing.SMSTextTemplate, r.SMSTextTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.SMSCountry != r.SMSCountry {
+				audit := BuildAuditEntry(actor, "updated SMS country", r, r.ID)
+				audit.Diff = stringDiff(existing.SMSCountry, r.SMSCountry)
+				audits = append(audits, audit)
+			}
+
+			if existing.CanUseSystemSMSConfig != r.CanUseSystemSMSConfig {
+				audit := BuildAuditEntry(actor, "updated ability to use system SMS config", r, r.ID)
+				audit.Diff = boolDiff(existing.CanUseSystemSMSConfig, r.CanUseSystemSMSConfig)
+				audits = append(audits, audit)
+			}
+
+			if existing.UseSystemSMSConfig != r.UseSystemSMSConfig {
+				audit := BuildAuditEntry(actor, "updated use system SMS config", r, r.ID)
+				audit.Diff = boolDiff(existing.UseSystemSMSConfig, r.UseSystemSMSConfig)
+				audits = append(audits, audit)
+			}
+
+			if existing.MFAMode != r.MFAMode {
+				audit := BuildAuditEntry(actor, "updated MFA mode", r, r.ID)
+				audit.Diff = stringDiff(existing.MFAMode.String(), r.MFAMode.String())
+				audits = append(audits, audit)
+			}
+
+			if existing.MFARequiredGracePeriod != r.MFARequiredGracePeriod {
+				audit := BuildAuditEntry(actor, "updated MFA required grace period", r, r.ID)
+				audit.Diff = stringDiff(existing.MFARequiredGracePeriod.AsString, r.MFARequiredGracePeriod.AsString)
+				audits = append(audits, audit)
+			}
+
+			if existing.EmailVerifiedMode != r.EmailVerifiedMode {
+				audit := BuildAuditEntry(actor, "updated email verification mode", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailVerifiedMode.String(), r.EmailVerifiedMode.String())
+				audits = append(audits, audit)
+			}
+
+			if existing.PasswordRotationPeriodDays != r.PasswordRotationPeriodDays {
+				audit := BuildAuditEntry(actor, "updated password rotation period", r, r.ID)
+				audit.Diff = uintDiff(existing.PasswordRotationPeriodDays, r.PasswordRotationPeriodDays)
+				audits = append(audits, audit)
+			}
+
+			if existing.PasswordRotationWarningDays != r.PasswordRotationWarningDays {
+				audit := BuildAuditEntry(actor, "updated password rotation warning", r, r.ID)
+				audit.Diff = uintDiff(existing.PasswordRotationWarningDays, r.PasswordRotationWarningDays)
+				audits = append(audits, audit)
+			}
+
+			// TODO(sethvargo): diff allowed CIDRs
+
+			if existing.AllowedTestTypes != r.AllowedTestTypes {
+				audit := BuildAuditEntry(actor, "updated allowed test types", r, r.ID)
+				audit.Diff = stringDiff(existing.AllowedTestTypes.Display(), r.AllowedTestTypes.Display())
+				audits = append(audits, audit)
+			}
+
+			if existing.RequireDate != r.RequireDate {
+				audit := BuildAuditEntry(actor, "updated require date", r, r.ID)
+				audit.Diff = boolDiff(existing.RequireDate, r.RequireDate)
+				audits = append(audits, audit)
+			}
+
+			if existing.UseRealmCertificateKey != r.UseRealmCertificateKey {
+				audit := BuildAuditEntry(actor, "updated use realm certificate key", r, r.ID)
+				audit.Diff = boolDiff(existing.UseRealmCertificateKey, r.UseRealmCertificateKey)
+				audits = append(audits, audit)
+			}
+
+			if existing.CertificateIssuer != r.CertificateIssuer {
+				audit := BuildAuditEntry(actor, "updated certificate issuer", r, r.ID)
+				audit.Diff = stringDiff(existing.CertificateIssuer, r.CertificateIssuer)
+				audits = append(audits, audit)
+			}
+
+			if existing.CertificateAudience != r.CertificateAudience {
+				audit := BuildAuditEntry(actor, "updated certificate audience", r, r.ID)
+				audit.Diff = stringDiff(existing.CertificateAudience, r.CertificateAudience)
+				audits = append(audits, audit)
+			}
+
+			if existing.CertificateDuration != r.CertificateDuration {
+				audit := BuildAuditEntry(actor, "updated certificate duration", r, r.ID)
+				audit.Diff = stringDiff(existing.CertificateDuration.AsString, r.CertificateDuration.AsString)
+				audits = append(audits, audit)
+			}
+
+			if existing.EnableENExpress != r.EnableENExpress {
+				audit := BuildAuditEntry(actor, "updated enable ENX", r, r.ID)
+				audit.Diff = boolDiff(existing.EnableENExpress, r.EnableENExpress)
+				audits = append(audits, audit)
+			}
+
+			if existing.AbusePreventionEnabled != r.AbusePreventionEnabled {
+				audit := BuildAuditEntry(actor, "updated enable abuse prevention", r, r.ID)
+				audit.Diff = boolDiff(existing.AbusePreventionEnabled, r.AbusePreventionEnabled)
+				audits = append(audits, audit)
+			}
+
+			if existing.AbusePreventionLimit != r.AbusePreventionLimit {
+				audit := BuildAuditEntry(actor, "updated abuse prevention limit", r, r.ID)
+				audit.Diff = uintDiff(existing.AbusePreventionLimit, r.AbusePreventionLimit)
+				audits = append(audits, audit)
+			}
+
+			if existing.AbusePreventionLimitFactor != r.AbusePreventionLimitFactor {
+				audit := BuildAuditEntry(actor, "updated abuse prevention limit factor", r, r.ID)
+				audit.Diff = float32Diff(existing.AbusePreventionLimitFactor, r.AbusePreventionLimitFactor)
+				audits = append(audits, audit)
+			}
+		}
+
+		// Save all audits
+		for _, audit := range audits {
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audits: %w", err)
+			}
+		}
+
+		return nil
+	})
 }
 
 // CreateSigningKeyVersion creates a new signing key version on the key manager
