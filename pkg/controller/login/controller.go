@@ -20,7 +20,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
@@ -35,7 +34,6 @@ type Controller struct {
 	client           *auth.Client
 	config           *config.ServerConfig
 	db               *database.Database
-	metrics          *controller.Metrics
 	h                *render.Renderer
 	logger           *zap.SugaredLogger
 }
@@ -47,17 +45,12 @@ func New(
 	client *auth.Client,
 	config *config.ServerConfig,
 	db *database.Database,
-	h *render.Renderer) (context.Context, *Controller, error) {
+	h *render.Renderer) (*Controller, error) {
 	logger := logging.FromContext(ctx).Named("login")
-	ctx, metrics, err := controller.MetricsFromContext(ctx)
-	if err != nil {
-		return ctx, nil, err
-	}
-	return ctx, &Controller{
+	return &Controller{
 		firebaseInternal: firebaseInternal,
 		client:           client,
 		config:           config,
-		metrics:          metrics,
 		db:               db,
 		h:                h,
 		logger:           logger,

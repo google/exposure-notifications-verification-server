@@ -64,8 +64,8 @@ type Database struct {
 	// logger is the internal logger.
 	logger *zap.SugaredLogger
 
-	// metrics is the metrics handler.
-	metrics *Metrics
+	// Metrics is the metrics handler.
+	Metrics *Metrics
 
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
@@ -130,7 +130,7 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		signingKeyManager: signingKeyManager,
 		logger:            logger,
 		secretManager:     secretManager,
-		metrics:           metrics,
+		Metrics:           metrics,
 	}, nil
 }
 
@@ -210,7 +210,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
 
 	// Metrics
-	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, db.metrics.AuditEntryCreated, "audit_entries"))
+	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, db.Metrics.AuditEntryCreated, "audit_entries"))
 
 	// Cache clearing
 	if cacher != nil {
@@ -256,7 +256,7 @@ func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
 }
 
-// callbackIncremementMetric incremements the provided metric
+// callbackIncrementMetric increments the provided metric
 func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {

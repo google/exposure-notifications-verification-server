@@ -68,7 +68,7 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 			flash.Alert("Password reset email sent.")
 		}
 		if created {
-			stats.Record(ctx, c.metrics.FirebaseRecreates.M(1))
+			stats.Record(ctx, c.db.Metrics.FirebaseRecreates.M(1))
 		}
 	}
 

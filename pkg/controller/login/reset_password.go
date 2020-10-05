@@ -61,7 +61,7 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		// Ensure that if we have a user, they have auth
 		if user, err := c.db.FindUserByEmail(form.Email); err == nil {
 			if created, _ := user.CreateFirebaseUser(ctx, c.client); created {
-				stats.Record(ctx, c.metrics.FirebaseRecreates.M(1))
+				stats.Record(ctx, c.db.Metrics.FirebaseRecreates.M(1))
 			}
 		}
 
