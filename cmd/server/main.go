@@ -220,63 +220,61 @@ func realMain(ctx context.Context) error {
 	}
 
 	{
-		loginController, err := login.New(ctx, firebaseInternal, auth, cfg, db, h)
-		if err != nil {
-			return fmt.Errorf("failed to create login controller: %w", err)
+		loginController := login.New(ctx, firebaseInternal, auth, cfg, db, h)
+		{
+			sub := r.PathPrefix("").Subrouter()
+			sub.Use(rateLimit)
+
+			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
+			sub.Handle("/login/reset-password", loginController.HandleShowResetPassword()).Methods("GET")
+			sub.Handle("/login/reset-password", loginController.HandleSubmitResetPassword()).Methods("POST")
+			// TODO(whaught): we can't customize separate links. Migrate to manage-account.
+			sub.Handle("/login/manage-account", loginController.HandleShowSelectNewPassword()).
+				Queries("oobCode", "", "mode", "{resetPassword|recoverEmail}").Methods("GET")
+			sub.Handle("/login/manage-account", loginController.HandleSubmitNewPassword()).
+				Queries("oobCode", "", "mode", "{resetPassword|recoverEmail}").Methods("POST")
+			sub.Handle("/login/select-password", loginController.HandleShowSelectNewPassword()).
+				Queries("oobCode", "", "mode", "{resetPassword|recoverEmail}").Methods("GET")
+			sub.Handle("/login/select-password", loginController.HandleSubmitNewPassword()).
+				Queries("oobCode", "", "mode", "{resetPassword|recoverEmail}").Methods("POST")
+			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
+			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
+
+			// Realm selection & account settings
+			sub = r.PathPrefix("").Subrouter()
+			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
+			sub.Handle("/login", loginController.HandleReauth()).Methods("GET")
+			sub.Handle("/login", loginController.HandleReauth()).Queries("redir", "").Methods("GET")
+			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
+			sub.Handle("/login/change-password", loginController.HandleShowChangePassword()).Methods("GET")
+			sub.Handle("/login/change-password", loginController.HandleSubmitChangePassword()).Methods("POST")
+			sub.Handle("/account", loginController.HandleAccountSettings()).Methods("GET")
+
+			// Verifying email requires the user is logged in
+			sub = r.PathPrefix("").Subrouter()
+			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
+			sub.Use(requireRealm)
+			sub.Use(processFirewall)
+			// TODO(whaught): we can't customize separate links. Migrate to manage-account.
+			sub.Handle("/login/manage-account", loginController.HandleVerifyEmail()).
+				Queries("mode", "verifyEmail").Methods("GET")
+			sub.Handle("/login/select-password", loginController.HandleVerifyEmail()).
+				Queries("mode", "verifyEmail").Methods("GET")
+
+			// SMS auth registration is realm-specific, so it needs to load the current realm.
+			sub = r.PathPrefix("").Subrouter()
+			sub.Use(requireAuth)
+			sub.Use(rateLimit)
+			sub.Use(loadCurrentRealm)
+			sub.Use(requireRealm)
+			sub.Use(processFirewall)
+			sub.Use(requireVerified)
+			sub.Handle("/login/register-phone", loginController.HandleRegisterPhone()).Methods("GET")
 		}
-
-		sub := r.PathPrefix("").Subrouter()
-		sub.Use(rateLimit)
-
-		sub.Handle("/", loginController.HandleLogin()).Methods("GET")
-		sub.Handle("/login/reset-password", loginController.HandleShowResetPassword()).Methods("GET")
-		sub.Handle("/login/reset-password", loginController.HandleSubmitResetPassword()).Methods("POST")
-		// TODO(whaught): we can't customize separate links. Migrate to manage-account.
-		sub.Handle("/login/manage-account", loginController.HandleShowSelectNewPassword()).
-			Queries("oobCode", "", "mode", "{resetPassword|recoverEmail}").Methods("GET")
-		sub.Handle("/login/manage-account", loginController.HandleSubmitNewPassword()).
-			Queries("oobCode", "", "mode", "{resetPassword|recoverEmail}").Methods("POST")
-		sub.Handle("/login/select-password", loginController.HandleShowSelectNewPassword()).
-			Queries("oobCode", "", "mode", "{resetPassword|recoverEmail}").Methods("GET")
-		sub.Handle("/login/select-password", loginController.HandleSubmitNewPassword()).
-			Queries("oobCode", "", "mode", "{resetPassword|recoverEmail}").Methods("POST")
-		sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
-		sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
-
-		// Realm selection & account settings
-		sub = r.PathPrefix("").Subrouter()
-		sub.Use(requireAuth)
-		sub.Use(rateLimit)
-		sub.Use(loadCurrentRealm)
-		sub.Handle("/login", loginController.HandleReauth()).Methods("GET")
-		sub.Handle("/login", loginController.HandleReauth()).Queries("redir", "").Methods("GET")
-		sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
-		sub.Handle("/login/change-password", loginController.HandleShowChangePassword()).Methods("GET")
-		sub.Handle("/login/change-password", loginController.HandleSubmitChangePassword()).Methods("POST")
-		sub.Handle("/account", loginController.HandleAccountSettings()).Methods("GET")
-
-		// Verifying email requires the user is logged in
-		sub = r.PathPrefix("").Subrouter()
-		sub.Use(requireAuth)
-		sub.Use(rateLimit)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
-		sub.Use(processFirewall)
-		// TODO(whaught): we can't customize separate links. Migrate to manage-account.
-		sub.Handle("/login/manage-account", loginController.HandleVerifyEmail()).
-			Queries("mode", "verifyEmail").Methods("GET")
-		sub.Handle("/login/select-password", loginController.HandleVerifyEmail()).
-			Queries("mode", "verifyEmail").Methods("GET")
-
-		// SMS auth registration is realm-specific, so it needs to load the current realm.
-		sub = r.PathPrefix("").Subrouter()
-		sub.Use(requireAuth)
-		sub.Use(rateLimit)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
-		sub.Use(processFirewall)
-		sub.Use(requireVerified)
-		sub.Handle("/login/register-phone", loginController.HandleRegisterPhone()).Methods("GET")
 	}
 
 	{
@@ -364,11 +362,6 @@ func realMain(ctx context.Context) error {
 
 	// users
 	{
-		userController, err := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
-		if err != nil {
-			return fmt.Errorf("failed to create user controller: %w", err)
-		}
-
 		userSub := r.PathPrefix("/users").Subrouter()
 		userSub.Use(requireAuth)
 		userSub.Use(loadCurrentRealm)
@@ -379,6 +372,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
+		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
@@ -388,7 +382,6 @@ func realMain(ctx context.Context) error {
 		userSub.Handle("/import", userController.HandleImportBatch()).Methods("POST")
 		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")
 		userSub.Handle("/{id}", userController.HandleShow()).Methods("GET")
-		userSub.Handle("/{id}", userController.HandleResetPassword()).Methods("POST")
 		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
 		userSub.Handle("/{id}", userController.HandleDelete()).Methods("DELETE")
 	}

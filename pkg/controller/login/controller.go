@@ -45,7 +45,7 @@ func New(
 	client *auth.Client,
 	config *config.ServerConfig,
 	db *database.Database,
-	h *render.Renderer) (*Controller, error) {
+	h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("login")
 	return &Controller{
 		firebaseInternal: firebaseInternal,
@@ -54,5 +54,5 @@ func New(
 		db:               db,
 		h:                h,
 		logger:           logger,
-	}, nil
+	}
 }

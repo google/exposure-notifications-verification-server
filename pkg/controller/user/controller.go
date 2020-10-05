@@ -49,7 +49,7 @@ func New(
 	cacher cache.Cacher,
 	config *config.ServerConfig,
 	db *database.Database,
-	h *render.Renderer) (*Controller, error) {
+	h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx)
 	return &Controller{
 		cacher:           cacher,
@@ -59,5 +59,5 @@ func New(
 		db:               db,
 		h:                h,
 		logger:           logger,
-	}, nil
+	}
 }
