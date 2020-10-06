@@ -224,19 +224,21 @@ EOT
 
 resource "google_logging_metric" "requests_by_host" {
   name   = "requests_by_host"
-  filter = "resource.type=cloud_run_revision AND httpRequest.requestUrl!=\"\""
+  filter = <<-EOT
+resource.type=cloud_run_revision 
+httpRequest.requestUrl!=\"\""
+EOT
 
   metric_descriptor {
     metric_kind = "DELTA"
     value_type  = "INT64"
     labels {
-      key         = "mass"
-      value_type  = "STRING"
-      description = "amount of matter"
+      key        = "host"
+      value_type = "STRING"
     }
   }
 
   label_extractors = {
-    "mass" = "EXTRACT(jsonPayload.request)"
+    "host" = "REGEXP_EXTRACT(httpRequest.requestUrl, \"^https?://([a-z0-9\\\\-._~%]+|\\\\[[a-z0-9\\\\-._~%!$&'()*+,;=:]+\\\\])/.*$\")"
   }
 }
