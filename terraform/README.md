@@ -73,8 +73,16 @@ This is for a POC. You should **not** use this method for production.
 1.  Save the project ID as a Terraform variable:
 
     ```text
-    $ echo "project = \"${PROJECT_ID}\"" >> ./terraform.tfvars
-    ```
+    $ cat <<EOF > terraform.tfvars
+      project = "${PROJECT_ID}"
+
+      service_environment = {
+        server = {
+          FIREBASE_PRIVACY_POLICY_URL   = "TODO"
+          FIREBASE_TERMS_OF_SERVICE_URL = "TODO"
+        }
+      }
+      ```
 
 1.  Run `terraform init`. Terraform will automatically download the plugins
     required to execute this code. You only need to do this once per machine.
