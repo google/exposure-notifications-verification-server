@@ -64,9 +64,6 @@ type Database struct {
 	// logger is the internal logger.
 	logger *zap.SugaredLogger
 
-	// Metrics is the metrics handler.
-	Metrics *Metrics
-
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
 
@@ -100,11 +97,6 @@ func (db *Database) KeyManager() keys.KeyManager {
 func (c *Config) Load(ctx context.Context) (*Database, error) {
 	logger := logging.FromContext(ctx).Named("database")
 
-	metrics, err := registerMetrics()
-	if err != nil {
-		return nil, fmt.Errorf("failed to register metrics: %w", err)
-	}
-
 	// Create the secret manager.
 	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
 	if err != nil {
@@ -130,7 +122,6 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		signingKeyManager: signingKeyManager,
 		logger:            logger,
 		secretManager:     secretManager,
-		Metrics:           metrics,
 	}, nil
 }
 
@@ -210,7 +201,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
 
 	// Metrics
-	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, db.Metrics.AuditEntryCreated, "audit_entries"))
+	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, mAuditEntryCreated, "audit_entries"))
 
 	// Cache clearing
 	if cacher != nil {

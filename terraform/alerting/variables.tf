@@ -15,22 +15,19 @@ variable "notification-email" {
   description = "Email address for alerts to go to."
 }
 
-variable "server-host" {
-  type        = string
-  default     = ""
-  description = "Domain web ui is hosted on."
+variable "server_hosts" {
+  type        = list(string)
+  description = "List of domains upon which the web ui is served."
 }
 
-variable "apiserver-host" {
-  type        = string
-  default     = ""
-  description = "Domain apiserver is hosted on."
+variable "apiserver_hosts" {
+  type        = list(string)
+  description = "List of domains upon which the apiserver is served."
 }
 
-variable "adminapi-host" {
-  type        = string
-  default     = ""
-  description = "Domain adminapi is hosted on."
+variable "adminapi_hosts" {
+  type        = list(string)
+  description = "List of domains upon which the adminapi is served."
 }
 
 variable "extra-hosts" {

@@ -44,8 +44,6 @@ type Controller struct {
 	pubKeyCache *keyutils.PublicKeyCache // Cache of public keys for verification token verification.
 	signerCache *cache.Cache             // Cache signers on a per-realm basis.
 	kms         keys.KeyManager
-
-	metrics *Metrics
 }
 
 func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, cacher vcache.Cacher, kms keys.KeyManager, h *render.Renderer) (*Controller, error) {
@@ -62,11 +60,6 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
 	}
 
-	metrics, err := registerMetrics()
-	if err != nil {
-		return nil, err
-	}
-
 	return &Controller{
 		config:      config,
 		db:          db,
@@ -75,7 +68,6 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 		pubKeyCache: pubKeyCache,
 		signerCache: signerCache,
 		kms:         kms,
-		metrics:     metrics,
 	}, nil
 }
 
@@ -97,29 +89,29 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		return publicKey, nil
 	})
 	if err != nil {
-		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
+		stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 		c.logger.Errorf("invalid verification token: %v", err)
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	tokenClaims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
-		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
+		stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 		c.logger.Errorf("invalid claims in verification token")
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	if err := tokenClaims.Valid(); err != nil {
-		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
+		stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 		c.logger.Errorf("JWT is invalid: %v", err)
 		return "", nil, fmt.Errorf("verification token expired")
 	}
 	if !tokenClaims.VerifyIssuer(c.config.TokenSigning.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenSigning.TokenIssuer, true) {
-		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
+		stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 		c.logger.Errorf("jwt contains invalid iss/aud: iss %v aud: %v", tokenClaims.Issuer, tokenClaims.Audience)
 		return "", nil, fmt.Errorf("verification token not valid")
 	}
 	subject, err := database.ParseSubject(tokenClaims.Subject)
 	if err != nil {
-		stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
+		stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 		return "", nil, fmt.Errorf("invalid subject: %w", err)
 	}
 	return tokenClaims.Id, subject, nil

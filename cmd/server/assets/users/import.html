@@ -26,6 +26,10 @@
       <div class="card-header">Import</div>
       <div class="card-body">
         {{template "beta-notice" .}}
+        <div class="alert alert-warning">
+          <span class="oi oi-warning"></span>
+          Work with a system admin to temporarily raise quota before importing batches of users >100.
+        </div>
 
         <p>
           Use this form to import a list of users. The server will create them in batches.

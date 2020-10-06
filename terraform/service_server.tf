@@ -212,6 +212,8 @@ resource "google_cloud_run_service" "server" {
 }
 
 resource "google_compute_region_network_endpoint_group" "server" {
+  count = length(var.server_hosts) > 0 ? 1 : 0
+
   name     = "server"
   provider = google-beta
   project  = var.project
@@ -225,35 +227,14 @@ resource "google_compute_region_network_endpoint_group" "server" {
 }
 
 resource "google_compute_backend_service" "server" {
-  count    = local.enable_lb ? 1 : 0
+  count = length(var.server_hosts) > 0 ? 1 : 0
+
   provider = google-beta
   name     = "server"
   project  = var.project
 
   backend {
-    group = google_compute_region_network_endpoint_group.server.id
-  }
-}
-
-resource "google_cloud_run_domain_mapping" "server" {
-  for_each = var.server_custom_domains
-
-  location = var.cloudrun_location
-  name     = each.key
-
-  metadata {
-    namespace = var.project
-  }
-
-  spec {
-    route_name     = google_cloud_run_service.server.name
-    force_override = true
-  }
-
-  lifecycle {
-    ignore_changes = [
-      spec[0].force_override
-    ]
+    group = google_compute_region_network_endpoint_group.server[0].id
   }
 }
 
@@ -265,6 +246,6 @@ resource "google_cloud_run_service_iam_member" "server-public" {
   member   = "allUsers"
 }
 
-output "server_url" {
-  value = google_cloud_run_service.server.status.0.url
+output "server_urls" {
+  value = concat([google_cloud_run_service.server.status.0.url], formatlist("https://%s", var.server_hosts))
 }
