@@ -229,9 +229,11 @@ func realMain(ctx context.Context) error {
 			sub.Handle("/login/reset-password", loginController.HandleShowResetPassword()).Methods("GET")
 			sub.Handle("/login/reset-password", loginController.HandleSubmitResetPassword()).Methods("POST")
 			sub.Handle("/login/manage-account", loginController.HandleShowSelectNewPassword()).
-				Queries("oobCode", "", "mode", "{mode:(?:resetPassword|recoverEmail)}").Methods("GET")
+				Queries("oobCode", "", "mode", "resetPassword").Methods("GET")
 			sub.Handle("/login/manage-account", loginController.HandleSubmitNewPassword()).
-				Queries("oobCode", "", "mode", "{mode:(?:resetPassword|recoverEmail)}").Methods("POST")
+				Queries("oobCode", "", "mode", "resetPassword").Methods("POST")
+			sub.Handle("/login/manage-account", loginController.HandleSubmitVerifyEmail()).
+				Queries("oobCode", "{oobCode:.+}", "mode", "{mode:(?:verifyEmail|recoverEmail)}").Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 
@@ -254,7 +256,7 @@ func realMain(ctx context.Context) error {
 			sub.Use(loadCurrentRealm)
 			sub.Use(requireRealm)
 			sub.Use(processFirewall)
-			sub.Handle("/login/manage-account", loginController.HandleVerifyEmail()).
+			sub.Handle("/login/manage-account", loginController.HandleShowVerifyEmail()).
 				Queries("mode", "verifyEmail").Methods("GET")
 
 			// SMS auth registration is realm-specific, so it needs to load the current realm.
