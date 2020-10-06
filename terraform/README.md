@@ -146,9 +146,9 @@ Terraform module.
           # Cloud Monitoring
           # monitoring-host-project = "example"
 
-          adminapi-host  = "adminapi.example.org"
-          apiserver-host = "apiserver.example.org"
-          server-host    = "example.org"
+          adminapi_hosts  = ["adminapi.example.org"]
+          apiserver_hosts = ["apiserver.example.org"]
+          server_hosts    = ["example.org"]
 
           notification-email = "example+alert@google.com"
       }
@@ -240,6 +240,14 @@ database_max_connections = 256
 ```
 
 ### Debugging
+
+#### Custom hosts
+
+Using custom hosts (domains) for the services requires a manual step of updating
+DNS entries. Run Terraform once and get the `lb_ip` entry. Then, update your DNS
+provider to point the A records to that IP address. Give DNS time to propagate
+and then re-apply Terraform. DNS must be working for the certificates to
+provision.
 
 #### Cannot find firebase provider
 

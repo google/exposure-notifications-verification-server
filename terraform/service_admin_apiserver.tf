@@ -165,6 +165,8 @@ resource "google_cloud_run_service" "adminapi" {
 }
 
 resource "google_compute_region_network_endpoint_group" "adminapi" {
+  count = length(var.adminapi_hosts) > 0 ? 1 : 0
+
   name     = "adminapi"
   provider = google-beta
   project  = var.project
@@ -178,35 +180,14 @@ resource "google_compute_region_network_endpoint_group" "adminapi" {
 }
 
 resource "google_compute_backend_service" "adminapi" {
-  count    = local.enable_lb ? 1 : 0
+  count = length(var.adminapi_hosts) > 0 ? 1 : 0
+
   provider = google-beta
   name     = "adminapi"
   project  = var.project
 
   backend {
-    group = google_compute_region_network_endpoint_group.adminapi.id
-  }
-}
-
-resource "google_cloud_run_domain_mapping" "adminapi" {
-  for_each = var.adminapi_custom_domains
-
-  location = var.cloudrun_location
-  name     = each.key
-
-  metadata {
-    namespace = var.project
-  }
-
-  spec {
-    route_name     = google_cloud_run_service.adminapi.name
-    force_override = true
-  }
-
-  lifecycle {
-    ignore_changes = [
-      spec[0].force_override
-    ]
+    group = google_compute_region_network_endpoint_group.adminapi[0].id
   }
 }
 
@@ -218,6 +199,6 @@ resource "google_cloud_run_service_iam_member" "adminapi-public" {
   member   = "allUsers"
 }
 
-output "adminapi_url" {
-  value = google_cloud_run_service.adminapi.status.0.url
+output "adminapi_urls" {
+  value = concat([google_cloud_run_service.adminapi.status.0.url], formatlist("https://%s", var.adminapi_hosts))
 }
