@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleResetPassword() http.Handler {
@@ -28,8 +29,12 @@ func (c *Controller) HandleResetPassword() http.Handler {
 	})
 }
 
-func (c *Controller) resetPassword(ctx context.Context, user *database.User) (bool, error) {
-	return c.maybeResetPassword(ctx, true, user)
+func (c *Controller) resetPassword(ctx context.Context, user *database.User) error {
+	created, err := c.maybeResetPassword(ctx, true, user)
+	if created {
+		stats.Record(ctx, controller.MFirebaseRecreates.M(1))
+	}
+	return err
 }
 
 func (c *Controller) createFirebaseUser(ctx context.Context, user *database.User) (bool, error) {
