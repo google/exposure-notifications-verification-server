@@ -43,7 +43,10 @@
           {{$user.CanAdminRealm $currentRealm.ID}}
         </div>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> upstream/main
         <form class="floating-form" action="/users/{{$user.ID}}" method="POST">
           {{ .csrfField }}
           <input type="hidden" name="email" value="{{$user.Email}}"/>

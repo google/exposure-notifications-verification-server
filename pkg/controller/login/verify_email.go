@@ -21,7 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleVerifyEmail() http.Handler {
+func (c *Controller) HandleShowVerifyEmail() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -37,5 +37,15 @@ func (c *Controller) HandleVerifyEmail() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		m["firebase"] = c.config.Firebase
 		c.h.RenderHTML(w, "login/verify-email", m)
+	})
+}
+
+func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		m := controller.TemplateMapFromContext(ctx)
+		m["firebase"] = c.config.Firebase
+		c.h.RenderHTML(w, "login/verify-email-check", m)
 	})
 }
