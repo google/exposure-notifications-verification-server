@@ -226,7 +226,7 @@ resource "google_logging_metric" "requests_by_host" {
   name   = "requests_by_host"
   filter = <<-EOT
 resource.type=cloud_run_revision 
-httpRequest.requestUrl!=\"\""
+httpRequest.requestUrl!=""
 EOT
 
   metric_descriptor {
