@@ -1,0 +1,32 @@
+{{define "login/verify-email-check"}}
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="d-flex vh-100">
+      <div class="d-flex w-100 justify-content-center">
+        <div class="col-sm-6">
+
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header">Email verification</div>
+            <div class="card-body">
+              <p>Email address ownership.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  {{template "scripts" .}}
+</body>
+
+</html>
+{{end}}

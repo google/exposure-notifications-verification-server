@@ -24,52 +24,45 @@ import (
 	"net/http"
 )
 
-type verifyPasswordResetCodeRequest struct {
-	Code        string `json:"oobCode"`
-	NewPassword string `json:"newPassword,omitempty"`
+type verifyEmailRequest struct {
+	Code string `json:"oobCode"`
 }
 
-// VerifyPasswordResetCode is called with the one-time-code given from a reset email to the user.
-// It can be used to check that the code is valid without making changes to the user.
+// VerifyEmailCode sends a password reset email to the user. If the new
+// password is given, it applies the password reset change with the new password
+// using the code.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
-func (c *Client) VerifyPasswordResetCode(ctx context.Context, code string) (string, error) {
-	return c.ChangePasswordWithCode(ctx, code, "")
-}
-
-// ChangePasswordWithCode is called with the one-time-code given from a reset email to the user.
-// When called with newPassword, it updates the user's password.
-//
-// See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
-func (c *Client) ChangePasswordWithCode(ctx context.Context, code, newPassword string) (string, error) {
-	r := &verifyPasswordResetCodeRequest{Code: code}
-	if newPassword != "" {
-		r.NewPassword = newPassword
-	}
+func (c *Client) VerifyEmailCode(ctx context.Context, code, key string) error {
+	r := &verifyEmailRequest{Code: code}
 
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(r); err != nil {
-		return "", fmt.Errorf("failed to create json body: %w", err)
+		return fmt.Errorf("failed to create json body: %w", err)
 	}
 
-	u := c.buildURL("/v1/accounts:resetPassword")
+	u := c.buildURL("/v1/accounts:update")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, &body)
 	if err != nil {
-		return "", fmt.Errorf("failed to build request: %w", err)
+		return fmt.Errorf("failed to build request: %w", err)
 	}
+
+	q := req.URL.Query()
+	q.Add("key", key)
+	req.URL.RawQuery = q.Encode()
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to send password reset email: %w", err)
+		return fmt.Errorf("failed tp update user email-verified: %w", err)
 	}
 	defer resp.Body.Close()
 
 	status := resp.StatusCode
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("response was %d, but failed to read body: %w", status, err)
+		return fmt.Errorf("response was %d, but failed to read body: %w", status, err)
 	}
 
 	if status != http.StatusOK {
@@ -77,16 +70,11 @@ func (c *Client) ChangePasswordWithCode(ctx context.Context, code, newPassword s
 		var m map[string]ErrorDetails
 		if err := json.Unmarshal(b, &m); err == nil {
 			d := m["error"]
-			return "", &d
+			return &d
 		}
 
-		return "", fmt.Errorf("failure %d: %s", status, string(b))
+		return fmt.Errorf("failure %d: %s", status, string(b))
 	}
 
-	var m map[string]string
-	if err := json.Unmarshal(b, &m); err == nil {
-		return m["email"], nil
-	}
-
-	return "", nil
+	return nil
 }
