@@ -139,43 +139,25 @@ variable "redis_cache_size" {
   description = "Size of the Redis instance in GB."
 }
 
-variable "adminapi_custom_domains" {
-  type    = set(string)
+variable "server_hosts" {
+  type    = list(string)
   default = []
 
-  description = "Custom domains to map for adminapi. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
+  description = "List of domains upon which the web ui is served."
 }
 
-variable "apiserver_custom_domains" {
-  type    = set(string)
+variable "apiserver_hosts" {
+  type    = list(string)
   default = []
 
-  description = "Custom domains to map for apiserver. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
+  description = "List of domains upon which the apiserver is served."
 }
 
-variable "server_custom_domains" {
-  type    = set(string)
+variable "adminapi_hosts" {
+  type    = list(string)
   default = []
 
-  description = "Custom domains to map for server. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
-}
-
-variable "server-host" {
-  type        = string
-  default     = ""
-  description = "Domain web ui is hosted on."
-}
-
-variable "apiserver-host" {
-  type        = string
-  default     = ""
-  description = "Domain apiserver is hosted on."
-}
-
-variable "adminapi-host" {
-  type        = string
-  default     = ""
-  description = "Domain adminapi is hosted on."
+  description = "List of domains upon which the adminapi is served."
 }
 
 variable "enx_redirect_domain" {
