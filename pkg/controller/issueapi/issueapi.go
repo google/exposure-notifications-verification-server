@@ -39,17 +39,10 @@ type Controller struct {
 	logger  *zap.SugaredLogger
 
 	validTestType map[string]struct{}
-
-	metrics *Metrics
 }
 
 // New creates a new IssueAPI controller.
 func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) (*Controller, error) {
-	metrics, err := registerMetrics()
-	if err != nil {
-		return nil, err
-	}
-
 	return &Controller{
 		config:  config,
 		db:      db,
@@ -61,6 +54,5 @@ func New(ctx context.Context, config config.IssueAPIConfig, db *database.Databas
 			api.TestTypeLikely:    {},
 			api.TestTypeNegative:  {},
 		},
-		metrics: metrics,
 	}, nil
 }

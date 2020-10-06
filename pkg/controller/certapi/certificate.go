@@ -38,7 +38,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
-			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
+			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorf("missing authorized app")
 			controller.MissingAuthorizedApp(w, r, c.h)
 			return
@@ -46,7 +46,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 
 		ctx = observability.WithRealmID(ctx, authApp.RealmID)
 
-		stats.Record(ctx, c.metrics.Attempts.M(1))
+		stats.Record(ctx, mAttempts.M(1))
 
 		// Get the public key for the token.
 		allowedPublicKeys := make(map[string]crypto.PublicKey)
@@ -63,7 +63,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		var request api.VerificationCertificateRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.logger.Errorw("failed to parse json request", "error", err)
-			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
+			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			return
 		}
@@ -71,7 +71,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Parse and validate the verification token.
 		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken, allowedPublicKeys)
 		if err != nil {
-			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
+			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			return
 		}
@@ -79,13 +79,13 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Validate the HMAC length. SHA 256 HMAC must be 32 bytes in length.
 		hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
 		if err != nil {
-			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
+			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not a valid base64: %v", err).WithCode(api.ErrHMACInvalid))
 			return
 		}
 		if len(hmacBytes) != 32 {
-			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
+			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", len(hmacBytes)).WithCode(api.ErrHMACInvalid))
 			return
@@ -94,7 +94,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// determine the correct signing key to use.
 		signerInfo, err := c.getSignerForRealm(ctx, authApp)
 		if err != nil {
-			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
+			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
@@ -120,7 +120,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		certToken.Header[verifyapi.KeyIDHeader] = signerInfo.KeyID
 		certificate, err := jwthelper.SignJWT(certToken, signerInfo.Signer)
 		if err != nil {
-			stats.Record(ctx, c.metrics.CertificateErrors.M(1))
+			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorw("failed to sign certificate", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			return
@@ -132,22 +132,22 @@ func (c *Controller) HandleCertificate() http.Handler {
 			c.logger.Errorw("failed to claim token", "tokenID", tokenID, "error", err)
 			switch {
 			case errors.Is(err, database.ErrTokenExpired):
-				stats.Record(ctx, c.metrics.TokenExpired.M(1), c.metrics.CertificateErrors.M(1))
+				stats.Record(ctx, mTokenExpired.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenExpired))
 			case errors.Is(err, database.ErrTokenUsed):
-				stats.Record(ctx, c.metrics.TokenUsed.M(1), c.metrics.CertificateErrors.M(1))
+				stats.Record(ctx, mTokenUsed.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 			case errors.Is(err, database.ErrTokenMetadataMismatch):
-				stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
+				stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 			default:
-				stats.Record(ctx, c.metrics.TokenInvalid.M(1), c.metrics.CertificateErrors.M(1))
+				stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			}
 			return
 		}
 
-		stats.Record(ctx, c.metrics.CertificateIssued.M(1))
+		stats.Record(ctx, mCertificateIssued.M(1))
 		c.h.RenderJSON(w, http.StatusOK, &api.VerificationCertificateResponse{
 			Certificate: certificate,
 		})
