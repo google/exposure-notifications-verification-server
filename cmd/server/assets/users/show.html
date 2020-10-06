@@ -43,9 +43,11 @@
           {{$user.CanAdminRealm $currentRealm.ID}}
         </div>
 
-        <button id="password-reset" class="btn btn-primary btn-block disabled">
-          Send password reset
-        </button>
+        <form class="floating-form" action="/users/{{$user.ID}}" method="POST">
+          {{ .csrfField }}
+          <input type="hidden" name="email" value="{{$user.Email}}"/>
+          <button type="password-reset" id="submit" class="btn btn-primary btn-block">Send password reset</button>
+        </form>
       </div>
     </div>
 
@@ -111,33 +113,6 @@
     }
   </script>
   {{end}}
-
-  <script type="text/javascript">
-  $(function() {
-    $resetPassword = $('#password-reset');
-    $resetPassword.removeClass('disabled');
-
-    $resetPassword.on('click', function(event) {
-      event.preventDefault();
-      sendReset(function() {
-        flash.alert(`Password reset email sent.`);
-      });
-    });
-
-    function sendReset(successFn) {
-      $resetPassword.addClass('disabled');
-      let email = {{$user.Email}};
-      return firebase.auth().sendPasswordResetEmail(email)
-      .then(function() {
-          setTimeout($resetPassword.addClass('disabled'), 10000);
-          successFn();
-      }).catch(function(error) {
-        $resetPassword.removeClass('disabled');
-        flash.error(error.message);
-      });
-    }
-  });
-  </script>
 </body>
 </html>
 {{end}}
