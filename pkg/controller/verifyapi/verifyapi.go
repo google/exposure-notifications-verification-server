@@ -32,24 +32,16 @@ type Controller struct {
 	h      *render.Renderer
 	logger *zap.SugaredLogger
 	kms    keys.KeyManager
-
-	metrics *Metrics
 }
 
 func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
 	logger := logging.FromContext(ctx)
 
-	metrics, err := registerMetrics()
-	if err != nil {
-		return nil, err
-	}
-
 	return &Controller{
-		config:  config,
-		db:      db,
-		h:       h,
-		logger:  logger,
-		kms:     kms,
-		metrics: metrics,
+		config: config,
+		db:     db,
+		h:      h,
+		logger: logger,
+		kms:    kms,
 	}, nil
 }

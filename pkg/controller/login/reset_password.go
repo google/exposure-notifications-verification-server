@@ -56,6 +56,11 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			return
 		}
 
+		// Ensure that if we have a user, they have auth
+		if user, err := c.db.FindUserByEmail(form.Email); err == nil {
+			user.CreateFirebaseUser(ctx, c.client)
+		}
+
 		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, strings.TrimSpace(form.Email)); err != nil {
 			if errors.Is(err, firebase.ErrTooManyAttempts) {
 				flash.Error("Too many attempts have been made. Please wait and try again later.")

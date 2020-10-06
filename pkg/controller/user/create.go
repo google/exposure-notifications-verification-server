@@ -81,16 +81,9 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		// Create firebase user first, if this fails we don't want a db.User entry
-		if created, err := user.CreateFirebaseUser(ctx, c.client); err != nil {
-			flash.Alert("Failed to create user: %v", err)
+		if _, err := c.createFirebaseUser(ctx, user); err != nil {
 			c.renderNew(ctx, w)
 			return
-		} else if created {
-			if err := c.firebaseInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
-				flash.Error("Failed sending new user invitation: %v", err)
-				c.renderNew(ctx, w)
-				return
-			}
 		}
 
 		// Build the user struct

@@ -35,28 +35,21 @@ import (
 
 // Controller is a controller for the cleanup service.
 type Controller struct {
-	config  *config.CleanupConfig
-	db      *database.Database
-	h       *render.Renderer
-	logger  *zap.SugaredLogger
-	metrics *Metrics
+	config *config.CleanupConfig
+	db     *database.Database
+	h      *render.Renderer
+	logger *zap.SugaredLogger
 }
 
 // New creates a new cleanup controller.
 func New(ctx context.Context, config *config.CleanupConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
-	metrics, err := registerMetrics()
-	if err != nil {
-		return nil, err
-	}
-
 	logger := logging.FromContext(ctx).Named("cleanup")
 
 	return &Controller{
-		config:  config,
-		db:      db,
-		h:       h,
-		logger:  logger,
-		metrics: metrics,
+		config: config,
+		db:     db,
+		h:      h,
+		logger: logger,
 	}, nil
 }
 
@@ -71,9 +64,9 @@ func (c *Controller) shouldCleanup(ctx context.Context) error {
 	}
 
 	// Attempt to advance the generation.
-	stats.Record(ctx, c.metrics.ClaimAttempts.M(1))
+	stats.Record(ctx, mClaimAttempts.M(1))
 	if _, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod); err != nil {
-		stats.Record(ctx, c.metrics.ClaimErrors.M(1))
+		stats.Record(ctx, mClaimErrors.M(1))
 		return fmt.Errorf("failed to claim cleanup: %w", err)
 	}
 	return nil
@@ -102,42 +95,42 @@ func (c *Controller) HandleCleanup() http.Handler {
 		var merr *multierror.Error
 
 		// Verification codes
-		stats.Record(ctx, c.metrics.PurgeVerificationCodesAttempts.M(1))
+		stats.Record(ctx, mPurgeVerificationCodesAttempts.M(1))
 		if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
-			stats.Record(ctx, c.metrics.PurgeVerificationCodesErrors.M(1))
+			stats.Record(ctx, mPurgeVerificationCodesErrors.M(1))
 			merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
 		} else {
-			stats.Record(ctx, c.metrics.PurgeVerificationCodesPurged.M(count))
+			stats.Record(ctx, mPurgeVerificationCodesPurged.M(count))
 			c.logger.Infow("purged verification codes", "count", count)
 		}
 
 		// Verification tokens
-		stats.Record(ctx, c.metrics.PurgeVerificationTokensAttempts.M(1))
+		stats.Record(ctx, mPurgeVerificationTokensAttempts.M(1))
 		if count, err := c.db.PurgeTokens(c.config.VerificationTokenMaxAge); err != nil {
-			stats.Record(ctx, c.metrics.PurgeVerificationTokensErrors.M(1))
+			stats.Record(ctx, mPurgeVerificationTokensErrors.M(1))
 			merr = multierror.Append(merr, fmt.Errorf("failed to purge tokens: %w", err))
 		} else {
-			stats.Record(ctx, c.metrics.PurgeVerificationTokensPurged.M(count))
+			stats.Record(ctx, mPurgeVerificationTokensPurged.M(count))
 			c.logger.Infow("purged verification tokens", "count", count)
 		}
 
 		// Mobile apps
-		stats.Record(ctx, c.metrics.PurgeMobileAppsAttempts.M(1))
+		stats.Record(ctx, mPurgeMobileAppsAttempts.M(1))
 		if count, err := c.db.PurgeMobileApps(c.config.MobileAppMaxAge); err != nil {
-			stats.Record(ctx, c.metrics.PurgeMobileAppsErrors.M(1))
+			stats.Record(ctx, mPurgeMobileAppsErrors.M(1))
 			merr = multierror.Append(merr, fmt.Errorf("failed to purge mobile apps: %w", err))
 		} else {
-			stats.Record(ctx, c.metrics.PurgeMobileAppsPurged.M(count))
+			stats.Record(ctx, mPurgeMobileAppsPurged.M(count))
 			c.logger.Infow("purged mobile apps", "count", count)
 		}
 
 		// Audit entries
-		stats.Record(ctx, c.metrics.PurgeAuditEntriesAttempts.M(1))
+		stats.Record(ctx, mPurgeAuditEntriesAttempts.M(1))
 		if count, err := c.db.PurgeAuditEntries(c.config.AuditEntryMaxAge); err != nil {
-			stats.Record(ctx, c.metrics.PurgeAuditEntriesErrors.M(1))
+			stats.Record(ctx, mPurgeAuditEntriesErrors.M(1))
 			merr = multierror.Append(merr, fmt.Errorf("failed to purge audit entries: %w", err))
 		} else {
-			stats.Record(ctx, c.metrics.PurgeAuditEntriesPurged.M(count))
+			stats.Record(ctx, mPurgeAuditEntriesPurged.M(count))
 			c.logger.Infow("purged audit entries", "count", count)
 		}
 
