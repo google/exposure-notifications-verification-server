@@ -224,7 +224,8 @@ EOT
 
 resource "google_logging_metric" "requests_by_host" {
   name   = "requests_by_host"
-  filter = "resource.type=gae_app AND severity>=ERROR"
+  filter = "resource.type=cloud_run_revision AND httpRequest.requestUrl!=\"\""
+
   metric_descriptor {
     metric_kind = "DELTA"
     value_type  = "INT64"
@@ -234,6 +235,7 @@ resource "google_logging_metric" "requests_by_host" {
       description = "amount of matter"
     }
   }
+
   label_extractors = {
     "mass" = "EXTRACT(jsonPayload.request)"
   }
