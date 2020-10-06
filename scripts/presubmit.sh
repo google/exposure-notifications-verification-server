@@ -53,6 +53,13 @@ make spellcheck || {
 }
 
 
+echo "↹ Verify tabs"
+make tabcheck || {
+  echo "✋ Found tabs in html."
+  exit 1
+}
+
+
 echo "🔨 Building"
 go build ./...
 
