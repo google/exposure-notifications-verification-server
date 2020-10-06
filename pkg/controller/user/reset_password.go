@@ -50,7 +50,7 @@ func (c *Controller) maybeResetPassword(ctx context.Context, reset bool, user *d
 	// Reset if we just created or a reset was asked for.
 	if created || reset {
 		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
-			flash.Error("Failed sending new user invitation: %v", err)
+			flash.Error("Could not send new user invitation: %v", err)
 			return true, err
 		}
 	}
