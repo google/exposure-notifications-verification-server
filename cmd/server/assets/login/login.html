@@ -112,7 +112,6 @@
           .then(function(userCredential) {
             loginSuccess();
           }).catch(function(error) {
-            console.error(error);
             if (error.code == 'auth/multi-factor-auth-required') {
               resolver = error.resolver;
               populatePinText(resolver.hints);
@@ -144,6 +143,7 @@
               flash.error(err.message);
               $submit.prop('disabled', false);
             } else {
+              console.error(error);
               flash.clear();
               flash.error("Sign-in failed. Please try again.");
               $submit.prop('disabled', false);
