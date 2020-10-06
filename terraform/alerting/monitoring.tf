@@ -223,7 +223,7 @@ EOT
 }
 
 resource "google_logging_metric" "requests_by_host" {
-    name   = "requests_by_host"
+  name   = "requests_by_host"
   filter = "resource.type=gae_app AND severity>=ERROR"
   metric_descriptor {
     metric_kind = "DELTA"
