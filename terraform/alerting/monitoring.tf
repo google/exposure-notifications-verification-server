@@ -223,7 +223,9 @@ EOT
 }
 
 resource "google_logging_metric" "requests_by_host" {
-  name   = "requests_by_host"
+  name    = "requests_by_host"
+  project = var.verification-server-project
+
   filter = <<-EOT
 resource.type=cloud_run_revision 
 httpRequest.requestUrl!=""
