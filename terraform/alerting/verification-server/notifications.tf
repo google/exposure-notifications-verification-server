@@ -1,6 +1,6 @@
 resource "google_monitoring_notification_channel" "email" {
   provider     = google-beta
-  project      = local.monitoring-host-project
+  project      = var.monitoring-host-project
   display_name = "Email Notification Channel"
   type         = "email"
   labels = {

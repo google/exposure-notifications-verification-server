@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-locals {
-  monitoring-host-project = (
-  var.monitoring-host-project != "" ? var.monitoring-host-project : var.verification-server-project)
-}
-
 resource "google_monitoring_dashboard" "verification-server" {
-  project        = local.monitoring-host-project
+  project        = var.monitoring-host-project
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/verification-server.yaml")))
   depends_on = [
     null_resource.manual-step-to-enable-workspace
@@ -26,7 +21,7 @@ resource "google_monitoring_dashboard" "verification-server" {
 }
 
 resource "google_monitoring_dashboard" "e2e" {
-  project        = local.monitoring-host-project
+  project        = var.monitoring-host-project
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/e2e.yaml")))
   depends_on = [
     null_resource.manual-step-to-enable-workspace
@@ -34,7 +29,7 @@ resource "google_monitoring_dashboard" "e2e" {
 }
 
 resource "google_monitoring_alert_policy" "five_xx" {
-  project      = local.monitoring-host-project
+  project      = var.monitoring-host-project
   display_name = "Elevated 5xx"
   combiner     = "OR"
   conditions {
@@ -80,7 +75,7 @@ EOT
 }
 
 resource "google_monitoring_alert_policy" "rate_limited_count" {
-  project      = local.monitoring-host-project
+  project      = var.monitoring-host-project
   display_name = "ElevatedRateLimitedCount"
   combiner     = "OR"
   conditions {
@@ -116,7 +111,7 @@ client app, or a potential DoS attack.
 
 View the metric here
 
-https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${local.monitoring-host-project}
+https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.monitoring-host-project}
 EOT
     mime_type = "text/markdown"
   }
