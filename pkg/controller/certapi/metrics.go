@@ -15,7 +15,6 @@
 package certapi
 
 import (
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
@@ -85,7 +84,7 @@ func init() {
 			Name:        metricPrefix + "/request_count",
 			Measure:     mAttempts,
 			Description: "The count of certificate issue requests",
-			TagKeys:     controller.APITagKeys(),
+			TagKeys:     observability.APITagKeys(),
 			Aggregation: view.Count(),
 		},
 	}...)
