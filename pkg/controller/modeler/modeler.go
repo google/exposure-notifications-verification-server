@@ -35,10 +35,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	oneWeek = 7 * 24 * time.Hour
-)
-
 // Controller is a controller for the modeler service.
 type Controller struct {
 	config  *config.Modeler
@@ -215,7 +211,7 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 		return fmt.Errorf("failed to digest realm id: %w", err)
 	}
 	key := fmt.Sprintf("realm:quota:%s", dig)
-	if err := c.limiter.Set(ctx, key, uint64(effective), oneWeek); err != nil {
+	if err := c.limiter.Set(ctx, key, uint64(effective), 24*time.Hour); err != nil {
 		return fmt.Errorf("failed to update limit: %w", err)
 	}
 
