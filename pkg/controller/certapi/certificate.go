@@ -40,10 +40,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		var blame = controller.BlameNone
 		var result = controller.APIResultOK()
 
-		defer func() {
-			mutators := []tag.Mutator{blame, result}
-			stats.RecordWithTags(ctx, mutators, mRequest.M(1))
-		}()
+		defer stats.RecordWithTags(ctx, []tag.Mutator{blame, result}, mRequest.M(1))
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
