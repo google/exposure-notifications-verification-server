@@ -34,7 +34,7 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		for hostname, region := range c.hostnameToRegion {
 			if host == hostname {
-				sendTo := fmt.Sprintf("ens:/%s&r=%s", path, region)
+				sendTo := fmt.Sprintf("ens://%s&r=%s", path, region)
 				http.Redirect(w, r, sendTo, http.StatusSeeOther)
 				return
 			}
