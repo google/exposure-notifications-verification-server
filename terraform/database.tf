@@ -58,11 +58,6 @@ resource "google_sql_database_instance" "db-inst" {
     }
   }
 
-  lifecycle {
-    # This prevents accidental deletion of the database.
-    prevent_destroy = true
-  }
-
   depends_on = [
     google_project_service.services["sqladmin.googleapis.com"],
     google_project_service.services["sql-component.googleapis.com"],

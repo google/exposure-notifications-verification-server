@@ -24,7 +24,7 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Code status</div>
       <div class="card-body">
-        <form method="POST" action="show" class="floating-form">
+        <form method="POST" id="code-form" action="show" class="floating-form">
           {{ .csrfField }}
           <div class="form-group">
             <div class="form-label-group ">
@@ -43,17 +43,36 @@
             </div>
           </div>
 
-          <button id="submit" class="btn btn-primary btn-block">Check status</button>
+          <button class="btn btn-primary btn-block">Check status</button>
         </form>
+      </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Recently issued codes</div>
+      <div class="card-body">
+        <div class="list-group">
+          {{range $code := .recentCodes}}
+          <a class="list-group-item list-group-item-action" onclick="clickCode('{{$code.UUID}}')">
+            {{$code.UUID}}
+            <small class="form-text text-muted">
+              Created at: {{$code.CreatedAt}}
+            </small>
+          </a>
+          {{end}}
+        </div>
       </div>
     </div>
   </main>
 
   {{template "scripts" .}}
   <script type="text/javascript">
+    let $uuid
+    let $form
 
     $(function() {
-      let $uuid = $('#uuid');
+      $uuid = $('#uuid');
+      $form = $('#code-form');
       let allowedChars = new RegExp("[0-9a-fA-F]");
       let dashLocations = [8, 13, 18, 23];
 
@@ -73,6 +92,11 @@
         $uuid.val(r);
       });
     });
+
+    function clickCode(uuid) {
+      $uuid.val(uuid);
+      $form.submit();
+    }
   </script>
 </body>
 

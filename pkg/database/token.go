@@ -145,7 +145,7 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 	})
 }
 
-// VerifyCodeAndIssueToken takes a previously issed verification code and exchanges
+// VerifyCodeAndIssueToken takes a previously issued verification code and exchanges
 // it for a long term token. The verification code must not have expired and must
 // not have been previously used. Both acctions are done in a single database
 // transaction.

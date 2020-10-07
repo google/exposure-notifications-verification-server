@@ -181,5 +181,5 @@ resource "google_compute_managed_ssl_certificate" "default" {
 }
 
 output "lb_ip" {
-  value = local.enable_lb ? google_compute_global_address.verification-server[0].address : null
+  value = local.enable_lb ? google_compute_global_address.verification-server.*.address : null
 }
