@@ -17,26 +17,31 @@ package login
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 
-	"github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleShowResetPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		c.renderResetPassword(ctx, w, nil)
+		c.renderResetPassword(ctx, w, nil, "", false)
 	})
 }
 
-func (c *Controller) renderResetPassword(ctx context.Context, w http.ResponseWriter, flash *flash.Flash) {
+func (c *Controller) renderResetPassword(
+	ctx context.Context, w http.ResponseWriter,
+	flash *flash.Flash, email string, reset bool) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["flash"] = flash
+	m["email"] = email
+	if reset {
+		m["firebase"] = c.config.Firebase
+	}
 	c.h.RenderHTML(w, "login/reset-password", m)
 }
 
@@ -53,33 +58,25 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Password reset failed. %v", err)
-			c.renderResetPassword(ctx, w, flash)
+			c.renderResetPassword(ctx, w, flash, "", false)
+			return
+		}
+		email := strings.TrimSpace(form.Email)
+
+		// Ensure that if we have a user, they have auth
+		user, err := c.db.FindUserByEmail(email)
+		if err != nil {
+			if database.IsNotFound(err) {
+				flash.Alert("Password reset email sent.")
+			}
+			c.renderResetPassword(ctx, w, flash, email, false)
 			return
 		}
 
-		// Ensure that if we have a user, they have auth
-		if user, err := c.db.FindUserByEmail(form.Email); err == nil {
-			if created, _ := user.CreateFirebaseUser(ctx, c.client); created {
-				stats.Record(ctx, controller.MFirebaseRecreates.M(1))
-			}
+		if created, _ := user.CreateFirebaseUser(ctx, c.client); created {
+			stats.Record(ctx, controller.MFirebaseRecreates.M(1))
 		}
 
-		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, strings.TrimSpace(form.Email)); err != nil {
-			if errors.Is(err, firebase.ErrTooManyAttempts) {
-				flash.Error("Too many attempts have been made. Please wait and try again later.")
-				c.renderResetPassword(ctx, w, flash)
-				return
-			}
-
-			// Treat not-found like success so we don't leak details.
-			if !errors.Is(err, firebase.ErrEmailNotFound) {
-				flash.Error("Password reset failed.")
-				c.renderResetPassword(ctx, w, flash)
-				return
-			}
-		}
-
-		flash.Alert("Password reset email sent.")
-		c.renderResetPassword(ctx, w, flash)
+		c.renderResetPassword(ctx, w, flash, email, true)
 	})
 }

@@ -1,4 +1,5 @@
 {{define "firebase"}}
+{{- if .firebase}}
 <script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-auth.js"></script>
 <script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
@@ -17,4 +18,5 @@
   };
   firebase.initializeApp(firebaseConfig);
 </script>
+{{end}}
 {{end}}
