@@ -24,8 +24,7 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Code status</div>
       <div class="card-body">
-        <form method="POST" id="code-form" action="show" class="floating-form">
-          {{ .csrfField }}
+        <form class="floating-form">
           <div class="form-group">
             <div class="form-label-group ">
               <input type="text" id="uuid" name="uuid"
@@ -41,10 +40,10 @@
                 Identifier given from the Issue Code form.
               </small>
             </div>
-          </div>
+          </form>
 
-          <button class="btn btn-primary btn-block">Check status</button>
-        </form>
+          <button class="btn btn-primary btn-block" id="check">Check status</button>
+        </div>
       </div>
     </div>
 
@@ -53,7 +52,7 @@
       <div class="card-body">
         <div class="list-group">
           {{range $code := .recentCodes}}
-          <a class="list-group-item list-group-item-action" onclick="clickCode('{{$code.UUID}}')">
+          <a href="/code/show/{{$code.UUID}}" class="list-group-item list-group-item-action">
             {{$code.UUID}}
             <small class="form-text text-muted">
               Created at: {{$code.CreatedAt}}
@@ -67,12 +66,10 @@
 
   {{template "scripts" .}}
   <script type="text/javascript">
-    let $uuid
-    let $form
-
     $(function() {
-      $uuid = $('#uuid');
-      $form = $('#code-form');
+      let $check= $('#check');
+      let $uuid = $('#uuid');
+
       let allowedChars = new RegExp("[0-9a-fA-F]");
       let dashLocations = [8, 13, 18, 23];
 
@@ -91,12 +88,12 @@
         }
         $uuid.val(r);
       });
-    });
 
-    function clickCode(uuid) {
-      $uuid.val(uuid);
-      $form.submit();
-    }
+      $check.click(function(e) {
+        e.preventDefault();
+        window.location.assign("/code/show/"+$uuid.val());
+      });
+    });
   </script>
 </body>
 
