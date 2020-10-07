@@ -17,6 +17,7 @@ package redirect
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -34,8 +35,15 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		for hostname, region := range c.hostnameToRegion {
 			if host == hostname {
-				sendTo := fmt.Sprintf("ens://%s&r=%s", path, region)
-				http.Redirect(w, r, sendTo, http.StatusSeeOther)
+				sendTo := &url.URL{
+					Scheme: "ens",
+					Host:   strings.Trim(path, "/"),
+				}
+				q := sendTo.Query()
+				q.Set("r", region)
+				sendTo.RawQuery = q.Encode()
+
+				http.Redirect(w, r, sendTo.String(), http.StatusSeeOther)
 				return
 			}
 		}
