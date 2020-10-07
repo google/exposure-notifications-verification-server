@@ -141,7 +141,7 @@ func realMain(ctx context.Context) error {
 
 	r.Handle("/health", controller.HandleHealthz(ctx, nil, h)).Methods("GET")
 
-	redirectController, err := redirect.New(ctx, cfg, h)
+	redirectController, err := redirect.New(ctx, db, cfg, cacher, h)
 	if err != nil {
 		return err
 	}
