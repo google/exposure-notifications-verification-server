@@ -60,7 +60,7 @@ resource "google_sql_database_instance" "db-inst" {
 
   lifecycle {
     # This prevents accidental deletion of the database.
-    prevent_destroy = var.prevent_destroy
+    prevent_destroy = true
   }
 
   depends_on = [

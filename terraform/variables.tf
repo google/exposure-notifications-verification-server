@@ -175,13 +175,6 @@ variable "enx_redirect_domain_map" {
   description = "Redirect domains and environments."
 }
 
-variable "prevent_destroy" {
-  type    = bool
-  default = true
-
-  description = "Prevent destruction of critical resources. Set this to false to actually destroy everything."
-}
-
 terraform {
   required_version = ">= 0.13.1"
 
