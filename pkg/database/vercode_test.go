@@ -105,6 +105,45 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	}
 }
 
+func TestVerificationCode_ListRecentCodes(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+	var realmID uint = 123
+	var userID uint = 456
+
+	vc := &VerificationCode{
+		RealmID:       realmID,
+		IssuingUserID: userID,
+		Code:          "123456",
+		LongCode:      "defghijk329024",
+		TestType:      "confirmed",
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(2 * time.Hour),
+	}
+
+	if err := db.SaveVerificationCode(vc, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+
+	uuid := vc.UUID
+	if uuid == "" {
+		t.Fatal("expected uuid")
+	}
+
+	{
+		r := &Realm{Model: gorm.Model{ID: realmID}}
+		u := &User{Model: gorm.Model{ID: userID}}
+		got, err := db.ListRecentCodes(r, u)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := got[0].ID, vc.ID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+	}
+}
+
 func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	t.Parallel()
 

@@ -33,6 +33,18 @@ func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
@@ -53,7 +65,9 @@ func (c *Controller) HandleShow() http.Handler {
 			var code database.VerificationCode
 			code.AddError("uuid", "cannot be blank")
 
-			c.renderStatus(ctx, w, &code)
+			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
+				controller.InternalError(w, r, c.h, err)
+			}
 			return
 		}
 
@@ -63,7 +77,9 @@ func (c *Controller) HandleShow() http.Handler {
 			code.UUID = form.UUID
 			code.AddError("uuid", apiErr.Error)
 
-			c.renderStatus(ctx, w, &code)
+			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
+				controller.InternalError(w, r, c.h, err)
+			}
 			return
 		}
 

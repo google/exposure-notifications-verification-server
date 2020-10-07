@@ -227,6 +227,33 @@ func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, 
 	return &vc, nil
 }
 
+// ListRecentCodes shows the last 5 recently issued codes for a given issuing user.
+// The code and longCode are removed, this is only intended to show metadata.
+func (db *Database) ListRecentCodes(realm *Realm, user *User) ([]*VerificationCode, error) {
+	var codes []*VerificationCode
+	if err := db.db.
+		Model(&VerificationCode{}).
+		Where("realm_id = ? AND issuing_user_id = ?", realm.ID, user.ID).
+		Order("created_at DESC").
+		Limit(5).
+		Find(&codes).
+		Error; err != nil {
+		return nil, err
+	}
+
+	// We're only showing meta details, not the encrypted codes.
+	for _, t := range codes {
+		if t.Code != "" {
+			t.Code = "short"
+		}
+		if t.LongCode != "" {
+			t.LongCode = "long"
+		}
+	}
+
+	return codes, nil
+}
+
 // ExpireCode saves a verification code as expired.
 func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
 	var vc VerificationCode
