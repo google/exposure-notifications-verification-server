@@ -199,9 +199,36 @@ func (c *Controller) HandleSettings() http.Handler {
 		}
 
 		// Abuse prevention
+		var abusePreventionJustEnabled bool
 		if form.AbusePrevention {
+			abusePreventionJustEnabled = !realm.AbusePreventionEnabled && form.AbusePreventionEnabled
+
 			realm.AbusePreventionEnabled = form.AbusePreventionEnabled
 			realm.AbusePreventionLimitFactor = form.AbusePreventionLimitFactor
+		}
+
+		// If abuse prevention was just enabled, create the initial bucket so
+		// enforcement works. We do this before actually saving the configuration on
+		// the realm to avoid a race where someone is issuing a code where abuse
+		// prevention has been enabled, but the quota has not been set. In that
+		// case, the quota would be the "default" quota for the limiter, which is
+		// not ideal or correct.
+		//
+		// Even if saving the realm fails, there's no harm in doing this early. It's
+		// an idempotent operation that TTLs out after a week anyway.
+		if abusePreventionJustEnabled {
+			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			key := fmt.Sprintf("realm:quota:%s", dig)
+			limit := uint64(realm.AbusePreventionEffectiveLimit())
+			ttl := 7 * 24 * time.Hour
+			if err := c.limiter.Set(ctx, key, limit, ttl); err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
 		}
 
 		// Save realm
