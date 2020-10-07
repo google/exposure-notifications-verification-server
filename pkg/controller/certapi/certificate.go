@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 )
@@ -36,11 +37,21 @@ func (c *Controller) HandleCertificate() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
 
+		var blame = controller.BlameNone
+		var result = controller.APIResultOK()
+
+		defer func() {
+			mutators := []tag.Mutator{blame, result}
+			stats.RecordWithTags(ctx, mutators, mRequest.M(1))
+		}()
+
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
 			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorf("missing authorized app")
 			controller.MissingAuthorizedApp(w, r, c.h)
+			blame = controller.BlameClient
+			result = controller.APIResultError("MISSING_AUTHORIZED_APP")
 			return
 		}
 
@@ -55,6 +66,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 			if err != nil {
 				c.logger.Errorw("failed to get public key", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
+				blame = controller.BlameServer
+				result = controller.APIResultError("FAILED_TO_GET_PUBLIC_KEY")
 				return
 			}
 			allowedPublicKeys[kid] = publicKey
@@ -65,6 +78,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 			c.logger.Errorw("failed to parse json request", "error", err)
 			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
+			blame = controller.BlameClient
+			result = controller.APIResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			return
 		}
 
@@ -73,6 +88,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 		if err != nil {
 			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
+			blame = controller.BlameClient
+			result = controller.APIResultError("FAILED_TO_VALIDATE_TOKEN")
 			return
 		}
 
@@ -82,12 +99,16 @@ func (c *Controller) HandleCertificate() http.Handler {
 			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not a valid base64: %v", err).WithCode(api.ErrHMACInvalid))
+			blame = controller.BlameClient
+			result = controller.APIResultError("FAILED_TO_DECODE_HMAC")
 			return
 		}
 		if len(hmacBytes) != 32 {
 			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", len(hmacBytes)).WithCode(api.ErrHMACInvalid))
+			blame = controller.BlameClient
+			result = controller.APIResultError("INVALID_HMAC_LENGTH")
 			return
 		}
 
@@ -97,6 +118,9 @@ func (c *Controller) HandleCertificate() http.Handler {
 			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
+			// FIXME: should we blame server here?
+			blame = controller.BlameServer
+			result = controller.APIResultError("FAILED_TO_GET_SIGNER")
 			return
 		}
 
@@ -123,6 +147,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorw("failed to sign certificate", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
+			blame = controller.BlameServer
+			result = controller.APIResultError("FAILED_TO_SIGN_JWT")
 			return
 		}
 
@@ -130,19 +156,24 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// client can retry.
 		if err := c.db.ClaimToken(authApp.RealmID, tokenID, subject); err != nil {
 			c.logger.Errorw("failed to claim token", "tokenID", tokenID, "error", err)
+			blame = controller.BlameClient
 			switch {
 			case errors.Is(err, database.ErrTokenExpired):
 				stats.Record(ctx, mTokenExpired.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenExpired))
+				result = controller.APIResultError("TOKEN_EXPIRED")
 			case errors.Is(err, database.ErrTokenUsed):
 				stats.Record(ctx, mTokenUsed.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
+				result = controller.APIResultError("TOKEN_USED")
 			case errors.Is(err, database.ErrTokenMetadataMismatch):
 				stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
+				result = controller.APIResultError("TOKEN_METADATA_MISMATCH")
 			default:
 				stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+				result = controller.APIResultError("UNKNOWN_TOKEN_CLAIM_ERROR")
 			}
 			return
 		}

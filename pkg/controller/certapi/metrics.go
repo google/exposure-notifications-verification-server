@@ -15,6 +15,7 @@
 package certapi
 
 import (
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
@@ -32,6 +33,8 @@ var (
 	mTokenInvalid      = stats.Int64(metricPrefix+"/invalid_token", "invalid tokens on certificate issue", stats.UnitDimensionless)
 	mCertificateIssued = stats.Int64(metricPrefix+"/issue", "certificates issued", stats.UnitDimensionless)
 	mCertificateErrors = stats.Int64(metricPrefix+"/errors", "certificate issue errors", stats.UnitDimensionless)
+
+	mRequest = stats.Int64(metricPrefix+"/request", "# of certificate issue requests", stats.UnitDimensionless)
 )
 
 func init() {
@@ -76,6 +79,13 @@ func init() {
 			Measure:     mCertificateErrors,
 			Description: "The count of certificate issue errors",
 			TagKeys:     observability.CommonTagKeys(),
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/request_count",
+			Measure:     mAttempts,
+			Description: "The count of certificate issue requests",
+			TagKeys:     controller.APITagKeys(),
 			Aggregation: view.Count(),
 		},
 	}...)
