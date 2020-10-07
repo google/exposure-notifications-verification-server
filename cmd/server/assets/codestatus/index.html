@@ -55,7 +55,7 @@
           <a href="/code/show/{{$code.UUID}}" class="list-group-item list-group-item-action">
             {{$code.UUID}}
             <small class="form-text text-muted">
-              Created at: {{$code.CreatedAt}}
+              Created at: {{$code.CreatedAt.Format "Mon Jan 02 15:04:05 MST"}}
             </small>
           </a>
           {{end}}
