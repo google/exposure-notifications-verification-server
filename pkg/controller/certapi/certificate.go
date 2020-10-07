@@ -40,7 +40,12 @@ func (c *Controller) HandleCertificate() http.Handler {
 		var blame = controller.BlameNone
 		var result = controller.APIResultOK()
 
-		defer stats.RecordWithTags(ctx, []tag.Mutator{blame, result}, mRequest.M(1))
+		defer func(blame, result *tag.Mutator) {
+			c.logger.Infow("tags", "blame", blame, "result", result)
+			if err := stats.RecordWithTags(ctx, []tag.Mutator{*blame, *result}, mRequest.M(1)); err != nil {
+				c.logger.Errorw("failed to record with additional tag", "error", err)
+			}
+		}(&blame, &result)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
