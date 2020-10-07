@@ -82,7 +82,7 @@ func init() {
 		},
 		{
 			Name:        metricPrefix + "/request_count",
-			Measure:     mAttempts,
+			Measure:     mRequest,
 			Description: "The count of certificate issue requests",
 			TagKeys:     observability.APITagKeys(),
 			Aggregation: view.Count(),
