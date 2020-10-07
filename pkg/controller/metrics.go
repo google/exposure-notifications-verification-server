@@ -59,7 +59,7 @@ var (
 	BlameServer = tag.Upsert(tagBlame, "SERVER")
 
 	// BlameExternal indicate some third party is at fault
-	BlameExternal = tag.Upsert(tagBlame, "SERVER")
+	BlameExternal = tag.Upsert(tagBlame, "EXTERNAL")
 
 	// BlameUnknown can be used for everything else
 	BlameUnknown = tag.Upsert(tagBlame, "UNKOWN")
