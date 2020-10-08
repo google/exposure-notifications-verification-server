@@ -50,12 +50,12 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Recently issued codes</div>
       <div class="card-body">
-        <div class="list-group">
+        <div class="list-group" id="recent-codes">
           {{range $code := .recentCodes}}
           <a href="/code/show/{{$code.UUID}}" class="list-group-item list-group-item-action">
             {{$code.UUID}}
             <small class="form-text text-muted">
-              Created at: {{$code.CreatedAt.Format "Mon Jan 02 15:04:05 MST"}}
+              Created at: {{$code.CreatedAt}}
             </small>
           </a>
           {{end}}
@@ -72,6 +72,12 @@
 
       let allowedChars = new RegExp("[0-9a-fA-F]");
       let dashLocations = [8, 13, 18, 23];
+
+      $('#recent-codes').children('a').each(function () {
+        let $dateText = $(this).find('small');
+        let date = new Date($dateText.text());
+        $dateText.text(date.toString());
+      });
 
       $uuid.on('keyup', function() {
         let s = $uuid.val();
