@@ -38,10 +38,6 @@ func (c *Controller) getAndroidData(region string) ([]AndroidData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup realm")
 	}
-	if realm == nil {
-		// no realm exists for this region
-		return nil, nil
-	}
 
 	apps, err := c.db.ListActiveAppsByOS(realm.ID, database.OSTypeAndroid)
 	if err != nil {

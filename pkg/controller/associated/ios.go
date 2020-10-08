@@ -71,10 +71,6 @@ func (c *Controller) getIosData(region string) (*IOSData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup realm")
 	}
-	if realm == nil {
-		// no realm exists for this region
-		return nil, nil
-	}
 
 	ids, err := c.getAppIds(realm.ID)
 	if err != nil {

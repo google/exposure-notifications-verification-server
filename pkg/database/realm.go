@@ -720,9 +720,6 @@ func (db *Database) FindRealmByRegion(region string) (*Realm, error) {
 	var realm Realm
 
 	if err := db.db.Where("region_code = ?", strings.ToUpper(region)).First(&realm).Error; err != nil {
-		if IsNotFound(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return &realm, nil
