@@ -40,6 +40,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -140,6 +141,16 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to configure firebase: %w", err)
 	}
 	firebaseInternal, err := iFB.New(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to configure internal firebase client: %w", err)
+	}
+
+	// Setup server emailer
+	cfg.Email.ProviderType = email.ProviderTypeFirebase
+	if cfg.Email.SmtpHost != "" {
+		cfg.Email.ProviderType = email.ProviderTypeSmtp
+	}
+	emailer, err := email.ProviderFor(ctx, &cfg.Email, auth)
 	if err != nil {
 		return fmt.Errorf("failed to configure internal firebase client: %w", err)
 	}
@@ -366,7 +377,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
+		userController := user.New(ctx, auth, emailer, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
