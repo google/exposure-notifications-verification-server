@@ -71,8 +71,6 @@ represent best practices.
     export FIREBASE_AUTH_DOMAIN="${PROJECT_ID}.firebaseapp.com"
     export FIREBASE_DATABASE_URL="https://${PROJECT_ID}.firebaseio.com"
     export FIREBASE_STORAGE_BUCKET="${PROJECT_ID}.appspot.com"
-    export FIREBASE_PRIVACY_POLICY_URL="TODO"
-    export FIREBASE_TERMS_OF_SERVICE_URL="TODO"
 
     # Disable local observability.
     export OBSERVABILITY_EXPORTER="NOOP"

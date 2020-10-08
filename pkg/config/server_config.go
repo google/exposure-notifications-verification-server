@@ -164,8 +164,8 @@ type FirebaseConfig struct {
 	AppID           string `env:"FIREBASE_APP_ID,required"`
 	MeasurementID   string `env:"FIREBASE_MEASUREMENT_ID,required"`
 
-	TermsOfServiceURL string `env:"FIREBASE_TERMS_OF_SERVICE_URL,required"`
-	PrivacyPolicyURL  string `env:"FIREBASE_PRIVACY_POLICY_URL,required"`
+	TermsOfServiceURL string `env:"FIREBASE_TERMS_OF_SERVICE_URL"`
+	PrivacyPolicyURL  string `env:"FIREBASE_PRIVACY_POLICY_URL"`
 }
 
 // FirebaseConfig returns the firebase SDK config based on the local env config.
