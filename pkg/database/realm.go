@@ -716,6 +716,15 @@ func (db *Database) CreateRealm(name string) (*Realm, error) {
 	return realm, nil
 }
 
+func (db *Database) FindRealmByRegion(region string) (*Realm, error) {
+	var realm Realm
+
+	if err := db.db.Where("region_code = ?", strings.ToUpper(region)).First(&realm).Error; err != nil {
+		return nil, err
+	}
+	return &realm, nil
+}
+
 func (db *Database) FindRealmByName(name string) (*Realm, error) {
 	var realm Realm
 
