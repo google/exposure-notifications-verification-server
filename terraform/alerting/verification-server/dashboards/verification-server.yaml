@@ -15,7 +15,7 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.service_name, metric.response_code_class]
-    - title: OpenCensus/en-verification-server/api/issue/attempt_count by label.job [SUM]
+    - title: /api/issue/request count by result
       xyChart:
         chartOptions:
           mode: COLOR
@@ -24,10 +24,10 @@ gridLayout:
             timeSeriesQuery:
               timeSeriesQueryLanguage: >
                 generic_task ::
-                custom.googleapis.com/opencensus/en-verification-server/api/issue/attempt_count
+                custom.googleapis.com/opencensus/en-verification-server/api/issue/request_count
                 | align rate()
                 | every 1m
-                | [resource.job, metric.realm]
+                | [metric.result]
     - title: /ratelimit/limitware/rate_limited_count by label.job [SUM]
       xyChart:
         chartOptions:

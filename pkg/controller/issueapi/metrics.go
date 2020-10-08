@@ -31,13 +31,13 @@ var (
 	mQuotaExceeded       = stats.Int64(metricPrefix+"/quota_exceeded", "The number of times quota has been exceeded", stats.UnitDimensionless)
 	mCodesIssued         = stats.Int64(metricPrefix+"/codes_issued", "The number of verification codes issued", stats.UnitDimensionless)
 	mCodeIssueErrors     = stats.Int64(metricPrefix+"/code_issue_error", "The number of failed code issues", stats.UnitDimensionless)
-	mSMSSent             = stats.Int64(metricPrefix+"/sms_sent", "The number of SMS messages sent", stats.UnitDimensionless)
-	mSMSSendErrors       = stats.Int64(metricPrefix+"/sms_send_error", "The number of failed SMS sends", stats.UnitDimensionless)
 	mRealmTokenRemaining = stats.Int64(metricPrefix+"/realm_token_remaining", "Remaining number of verification codes", stats.UnitDimensionless)
 	mRealmTokenIssued    = stats.Int64(metricPrefix+"/realm_token_issued", "Total issued verification codes", stats.UnitDimensionless)
 	mRealmTokenCapacity  = stats.Float64(metricPrefix+"/realm_token_capacity", "Capacity utilization for issuing verification codes", stats.UnitDimensionless)
 
 	mRequest = stats.Int64(metricPrefix+"/request", "# of code issue requests", stats.UnitDimensionless)
+
+	mSMSRequest = stats.Int64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitDimensionless)
 
 	mRealmToken = stats.Int64(metricPrefix+"/realm_token", "# of realm tokens", stats.UnitDimensionless)
 )
@@ -89,18 +89,6 @@ func init() {
 			TagKeys:     observability.CommonTagKeys(),
 			Aggregation: view.Count(),
 		}, {
-			Name:        metricPrefix + "/sms_sent_count",
-			Measure:     mSMSSent,
-			Description: "The count of verification codes sent over SMS",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/sms_send_error_count",
-			Measure:     mSMSSendErrors,
-			Description: "The count of the number of a code issue failed due to SMS send failure",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
 			Name:        metricPrefix + "/realm_token_remaining_latest",
 			Description: "Latest realm remaining tokens",
 			TagKeys:     observability.CommonTagKeys(),
@@ -123,6 +111,12 @@ func init() {
 			Measure:     mRequest,
 			Description: "Count of code issue requests",
 			TagKeys:     observability.APITagKeys(),
+			Aggregation: view.Count(),
+		}, {
+			Name:        metricPrefix + "/sms_request_count",
+			Measure:     mSMSRequest,
+			Description: "The # of SMS requests",
+			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
 			Aggregation: view.Count(),
 		}, {
 			Name:        metricPrefix + "/realm_token_latest",
