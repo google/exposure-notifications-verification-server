@@ -304,7 +304,7 @@ func realMain(ctx context.Context) error {
 
 		codeStatusController := codestatus.NewServer(ctx, cfg, db, h)
 		sub.Handle("/status", codeStatusController.HandleIndex()).Methods("GET")
-		sub.Handle("/show", codeStatusController.HandleShow()).Methods("POST")
+		sub.Handle("/show/{uuid}", codeStatusController.HandleShow()).Methods("GET")
 		sub.Handle("/{uuid}/expire", codeStatusController.HandleExpirePage()).Methods("PATCH")
 	}
 

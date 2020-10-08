@@ -76,12 +76,7 @@ This is for a POC. You should **not** use this method for production.
     $ cat <<EOF > terraform.tfvars
       project = "${PROJECT_ID}"
 
-      service_environment = {
-        server = {
-          FIREBASE_PRIVACY_POLICY_URL   = "TODO"
-          FIREBASE_TERMS_OF_SERVICE_URL = "TODO"
-        }
-      }
+      EOF
       ```
 
 1.  Run `terraform init`. Terraform will automatically download the plugins

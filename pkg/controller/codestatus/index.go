@@ -28,15 +28,39 @@ func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// TODO(whaught): load a list of recent codes to show
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
 
 		var code database.VerificationCode
-		c.renderStatus(ctx, w, &code)
+		if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
+			controller.InternalError(w, r, c.h, err)
+		}
 	})
 }
 
-func (c *Controller) renderStatus(ctx context.Context, w http.ResponseWriter, code *database.VerificationCode) {
+func (c *Controller) renderStatus(
+	ctx context.Context,
+	w http.ResponseWriter,
+	realm *database.Realm,
+	user *database.User,
+	code *database.VerificationCode) error {
+	recentCodes, err := c.db.ListRecentCodes(realm, user)
+	if err != nil {
+		return err
+	}
+
 	m := controller.TemplateMapFromContext(ctx)
 	m["code"] = code
+	m["recentCodes"] = recentCodes
 	c.h.RenderHTML(w, "code/status", m)
+	return nil
 }

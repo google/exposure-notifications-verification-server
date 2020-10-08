@@ -15,8 +15,8 @@
 package redirect
 
 import (
-	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -34,7 +34,7 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		for hostname, region := range c.hostnameToRegion {
 			if host == hostname {
-				sendTo := fmt.Sprintf("ens:/%s&r=%s", path, region)
+				sendTo := buildURL(path, region)
 				http.Redirect(w, r, sendTo, http.StatusSeeOther)
 				return
 			}
@@ -43,7 +43,24 @@ func (c *Controller) HandleIndex() http.Handler {
 		c.logger.Warnw("unknown host", "host", host)
 		ctx := r.Context()
 		m := controller.TemplateMapFromContext(ctx)
-		m["requestURI"] = fmt.Sprintf("https://%s%s", host, path)
+		m["requestURI"] = (&url.URL{
+			Scheme: "https",
+			Host:   host,
+			Path:   strings.TrimPrefix(path, "/"),
+		}).String()
 		c.h.RenderHTMLStatus(w, http.StatusNotFound, "404", m)
 	})
+}
+
+// buildURL returns the ens:// URL for the given path and region.
+func buildURL(path, region string) string {
+	u := &url.URL{
+		Scheme: "ens",
+		Path:   strings.TrimPrefix(path, "/"),
+	}
+	q := u.Query()
+	q.Set("r", region)
+	u.RawQuery = q.Encode()
+
+	return u.String()
 }

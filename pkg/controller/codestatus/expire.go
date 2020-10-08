@@ -58,6 +58,18 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		ctx := r.Context()
 		vars := mux.Vars(r)
 
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
@@ -69,7 +81,9 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
 			flash.Error("Failed to expire code: %v.", apiErr.Error)
-			c.renderStatus(ctx, w, code)
+			if err := c.renderStatus(ctx, w, realm, currentUser, code); err != nil {
+				controller.InternalError(w, r, c.h, err)
+			}
 			return
 		}
 

@@ -23,47 +23,52 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/gorilla/mux"
 )
 
 func (c *Controller) HandleShow() http.Handler {
-	type FormData struct {
-		UUID string `form:"uuid"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
-		flash := controller.Flash(session)
-
 		retCode := Code{}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, retCode)
-			return
-		}
-
-		if form.UUID == "" {
+		if vars["uuid"] == "" {
 			var code database.VerificationCode
 			code.AddError("uuid", "cannot be blank")
 
-			c.renderStatus(ctx, w, &code)
+			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
+				controller.InternalError(w, r, c.h, err)
+			}
 			return
 		}
 
-		code, _, apiErr := c.CheckCodeStatus(r, form.UUID)
+		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
 			var code database.VerificationCode
-			code.UUID = form.UUID
+			code.UUID = vars["uuid"]
 			code.AddError("uuid", apiErr.Error)
 
-			c.renderStatus(ctx, w, &code)
+			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
+				controller.InternalError(w, r, c.h, err)
+			}
 			return
 		}
 

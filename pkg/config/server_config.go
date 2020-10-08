@@ -77,7 +77,7 @@ type ServerConfig struct {
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
-	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=false"`
+	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
@@ -164,8 +164,8 @@ type FirebaseConfig struct {
 	AppID           string `env:"FIREBASE_APP_ID,required"`
 	MeasurementID   string `env:"FIREBASE_MEASUREMENT_ID,required"`
 
-	TermsOfServiceURL string `env:"FIREBASE_TERMS_OF_SERVICE_URL,required"`
-	PrivacyPolicyURL  string `env:"FIREBASE_PRIVACY_POLICY_URL,required"`
+	TermsOfServiceURL string `env:"FIREBASE_TERMS_OF_SERVICE_URL"`
+	PrivacyPolicyURL  string `env:"FIREBASE_PRIVACY_POLICY_URL"`
 }
 
 // FirebaseConfig returns the firebase SDK config based on the local env config.
