@@ -17,7 +17,11 @@ package associated
 // The iOS format is specified by:
 //   https://developer.apple.com/documentation/safariservices/supporting_associated_domains
 
-import "github.com/google/exposure-notifications-verification-server/pkg/database"
+import (
+	"fmt"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+)
 
 type IOSData struct {
 	Applinks Applinks `json:"applinks"`
@@ -49,8 +53,8 @@ type Appstrings struct {
 }
 
 // getAppIds finds all the iOS app ids we know about.
-func (c *Controller) getAppIds() ([]string, error) {
-	apps, err := c.db.ListActiveAppsByOS(database.OSTypeIOS)
+func (c *Controller) getAppIds(realmID uint) ([]string, error) {
+	apps, err := c.db.ListActiveAppsByOS(realmID, database.OSTypeIOS)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +66,19 @@ func (c *Controller) getAppIds() ([]string, error) {
 }
 
 // getIosData gets the iOS app data.
-func (c *Controller) getIosData() (*IOSData, error) {
-	var ids []string
-	var err error
+func (c *Controller) getIosData(region string) (*IOSData, error) {
+	realm, err := c.db.FindRealmByRegion(region)
+	if err != nil {
+		return nil, fmt.Errorf("unable to lookup realm: %w", err)
+	}
 
-	ids, err = c.getAppIds()
+	ids, err := c.getAppIds(realm.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(ids) == 0 {
+		return nil, nil
 	}
 
 	return &IOSData{

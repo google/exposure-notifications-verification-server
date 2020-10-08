@@ -25,23 +25,19 @@ import (
 
 func (c *Controller) HandleResetPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c.Show(w, r, true)
+		c.Show(w, r, true /*resetPassword*/)
 	})
 }
 
-func (c *Controller) resetPassword(ctx context.Context, user *database.User) error {
-	created, err := c.maybeResetPassword(ctx, true, user)
+func (c *Controller) resetPasswordUserAssertion(ctx context.Context, user *database.User) error {
+	created, err := c.ensureFirebaseUserExists(ctx, user)
 	if created {
 		stats.Record(ctx, controller.MFirebaseRecreates.M(1))
 	}
 	return err
 }
 
-func (c *Controller) createFirebaseUser(ctx context.Context, user *database.User) (bool, error) {
-	return c.maybeResetPassword(ctx, false, user)
-}
-
-func (c *Controller) maybeResetPassword(ctx context.Context, reset bool, user *database.User) (bool, error) {
+func (c *Controller) ensureFirebaseUserExists(ctx context.Context, user *database.User) (bool, error) {
 	session := controller.SessionFromContext(ctx)
 	flash := controller.Flash(session)
 
@@ -52,9 +48,8 @@ func (c *Controller) maybeResetPassword(ctx context.Context, reset bool, user *d
 		return created, err
 	}
 
-	// Reset if we just created or a reset was asked for.
-	if created || reset {
-		if err := c.firebaseInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
+	if created {
+		if err := c.firebaseInternal.SendNewUserInvitation(ctx, user.Email); err != nil {
 			flash.Error("Could not send new user invitation: %v", err)
 			return true, err
 		}

@@ -23,11 +23,14 @@ package associated
 
 import (
 	"context"
+	"fmt"
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -35,26 +38,47 @@ import (
 )
 
 type Controller struct {
-	cacher cache.Cacher
-	db     *database.Database
-	h      *render.Renderer
-	logger *zap.SugaredLogger
+	config           *config.RedirectConfig
+	hostnameToRegion map[string]string
+	cacher           cache.Cacher
+	db               *database.Database
+	h                *render.Renderer
+	logger           *zap.SugaredLogger
 }
 
-// cacheTTL is the amount of time for which to cache these values.
-const cacheTTL = 30 * time.Minute
+func (c *Controller) getRegion(r *http.Request) string {
+	// Get the hostname first
+	host := strings.ToLower(r.Host)
+	if i := strings.Index(host, ":"); i > 0 {
+		host = host[0:i]
+	}
+
+	// return the mapped region code (or default, "", if not found)
+	return c.hostnameToRegion[host]
+}
 
 func (c *Controller) HandleIos() http.Handler {
+	notFound := api.Errorf("not found")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		cacheKey := r.URL.String()
+		region := c.getRegion(r)
+		if region == "" {
+			c.h.RenderJSON(w, http.StatusNotFound, notFound)
+			return
+		}
 
-		var iosData IOSData
-		if err := c.cacher.Fetch(ctx, cacheKey, &iosData, cacheTTL, func() (interface{}, error) {
+		cacheKey := fmt.Sprintf("iosapps:by_region:%s", region)
+		var iosData *IOSData
+		if err := c.cacher.Fetch(ctx, cacheKey, &iosData, c.config.AppCacheTTL, func() (interface{}, error) {
 			c.logger.Debug("fetching new ios data")
-			return c.getIosData()
+			return c.getIosData(region)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		if iosData == nil {
+			c.h.RenderJSON(w, http.StatusNotFound, notFound)
 			return
 		}
 
@@ -63,16 +87,27 @@ func (c *Controller) HandleIos() http.Handler {
 }
 
 func (c *Controller) HandleAndroid() http.Handler {
+	notFound := api.Errorf("not found")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		cacheKey := r.URL.String()
+		region := c.getRegion(r)
+		if region == "" {
+			c.h.RenderJSON(w, http.StatusNotFound, notFound)
+			return
+		}
 
+		cacheKey := fmt.Sprintf("androidapps:by_region:%s", region)
 		var androidData []AndroidData
-		if err := c.cacher.Fetch(ctx, cacheKey, &androidData, cacheTTL, func() (interface{}, error) {
+		if err := c.cacher.Fetch(ctx, cacheKey, &androidData, c.config.AppCacheTTL, func() (interface{}, error) {
 			c.logger.Debug("fetching new android data")
-			return c.getAndroidData()
+			return c.getAndroidData(region)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		if len(androidData) == 0 {
+			c.h.RenderJSON(w, http.StatusNotFound, notFound)
 			return
 		}
 
@@ -80,13 +115,20 @@ func (c *Controller) HandleAndroid() http.Handler {
 	})
 }
 
-func New(ctx context.Context, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
+func New(ctx context.Context, config *config.RedirectConfig, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
 	logger := logging.FromContext(ctx).Named("associated")
 
+	cfgMap, err := config.HostnameToRegion()
+	if err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
+	}
+
 	return &Controller{
-		db:     db,
-		cacher: cacher,
-		h:      h,
-		logger: logger,
+		config:           config,
+		db:               db,
+		cacher:           cacher,
+		h:                h,
+		logger:           logger,
+		hostnameToRegion: cfgMap,
 	}, nil
 }

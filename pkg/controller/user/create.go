@@ -81,7 +81,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		// Create firebase user first, if this fails we don't want a db.User entry
-		if _, err := c.createFirebaseUser(ctx, user); err != nil {
+		if _, err := c.ensureFirebaseUserExists(ctx, user); err != nil {
 			c.renderNew(ctx, w)
 			return
 		}
@@ -106,7 +106,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		c.renderShow(ctx, w, user, stats)
+		c.renderShow(ctx, w, user, stats, false /*resetPassword*/)
 	})
 }
 

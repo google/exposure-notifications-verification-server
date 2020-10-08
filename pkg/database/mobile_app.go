@@ -135,13 +135,13 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
-// ListActiveAppsByOS finds all mobile apps by their OS.
-func (db *Database) ListActiveAppsByOS(os OSType) ([]*MobileApp, error) {
+// ListActiveAppsByOS finds mobile apps by their realm and OS.
+func (db *Database) ListActiveAppsByOS(realmID uint, os OSType) ([]*MobileApp, error) {
 	// Find the apps.
 	var apps []*MobileApp
 	if err := db.db.
 		Model(&MobileApp{}).
-		Where("os = ?", os).
+		Where("realm_id = ? AND os = ?", realmID, os).
 		Find(&apps).
 		Error; err != nil {
 		if IsNotFound(err) {

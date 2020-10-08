@@ -31,6 +31,8 @@ var (
 	mCodeVerifyInvalid     = stats.Int64(metricPrefix+"/code_invalid", "The number of attempted claims on invalid codes", stats.UnitDimensionless)
 	mCodeVerified          = stats.Int64(metricPrefix+"/code_verified", "The number of successfully claimed codes", stats.UnitDimensionless)
 	mCodeVerificationError = stats.Int64(metricPrefix+"/error", "The number of other errors in code issue", stats.UnitDimensionless)
+
+	mRequest = stats.Int64(metricPrefix+"/request", "# of verify requests", stats.UnitDimensionless)
 )
 
 func init() {
@@ -70,6 +72,12 @@ func init() {
 			Measure:     mCodeVerificationError,
 			Description: "The count of errors issuing verification codes",
 			TagKeys:     observability.CommonTagKeys(),
+			Aggregation: view.Count(),
+		}, {
+			Name:        metricPrefix + "/request_count",
+			Measure:     mRequest,
+			Description: "Count of verify requests",
+			TagKeys:     observability.APITagKeys(),
 			Aggregation: view.Count(),
 		},
 	}...)

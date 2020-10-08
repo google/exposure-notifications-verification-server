@@ -29,10 +29,14 @@ type sendPasswordResetEmailRequest struct {
 	Email       string `json:"email"`
 }
 
-// SendPasswordResetEmail sends a password reset email to the user.
+// SendNewUserInvitation sends a password reset email to the user.
+//
+// TODO(whaught): we're heading towards deprecating this in favor of directly sending our own email
+// this currently sends password-reset and needs to be sending an invitation, but also may
+// face rate-limiting on the firebase side if called too quickly.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
-func (c *Client) SendPasswordResetEmail(ctx context.Context, email string) error {
+func (c *Client) SendNewUserInvitation(ctx context.Context, email string) error {
 	r := &sendPasswordResetEmailRequest{
 		RequestType: "PASSWORD_RESET",
 		Email:       email,

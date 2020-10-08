@@ -181,23 +181,29 @@ func realMain(ctx context.Context) error {
 }
 
 func defaultHandler(ctx context.Context, c *config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
+	logger := logging.FromContext(ctx)
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.DoRevise = false
 		if err := clients.RunEndToEnd(ctx, c); err != nil {
+			logger.Errorw("could not run default end to end", "error", err)
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
-		} else {
-			fmt.Fprint(w, "ok")
+			return
 		}
+
+		fmt.Fprint(w, "ok")
 	}
 }
 
 func reviseHandler(ctx context.Context, c *config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
+	logger := logging.FromContext(ctx)
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.DoRevise = true
 		if err := clients.RunEndToEnd(ctx, c); err != nil {
+			logger.Errorw("could not run revise end to end", "error", err)
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
-		} else {
-			fmt.Fprint(w, "ok")
+			return
 		}
+
+		fmt.Fprint(w, "ok")
 	}
 }
