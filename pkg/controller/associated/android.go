@@ -36,7 +36,7 @@ type Target struct {
 func (c *Controller) getAndroidData(region string) ([]AndroidData, error) {
 	realm, err := c.db.FindRealmByRegion(region)
 	if err != nil {
-		return nil, fmt.Errorf("unable to lookup realm")
+		return nil, fmt.Errorf("unable to lookup realm: %w", err)
 	}
 
 	apps, err := c.db.ListActiveAppsByOS(realm.ID, database.OSTypeAndroid)
