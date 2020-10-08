@@ -53,7 +53,7 @@ func (c *Controller) getRegion(r *http.Request) string {
 		host = host[0:i]
 	}
 
-	// return the mapped region code (or defualt, "", if not found)
+	// return the mapped region code (or default, "", if not found)
 	return c.hostnameToRegion[host]
 }
 
