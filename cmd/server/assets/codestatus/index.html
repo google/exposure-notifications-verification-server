@@ -53,9 +53,11 @@
         <div class="list-group">
           {{range $code := .recentCodes}}
           <a href="/code/show/{{$code.UUID}}" class="list-group-item list-group-item-action">
-            {{$code.UUID}}
-            <small class="form-text text-muted">
-              Created at: {{$code.CreatedAt}}
+            {{$code.UUID}}<br />
+            <small
+              data-timestamp="{{$code.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}"
+              data-toggle="tooltip" title="{{$code.CreatedAt.Format "2006-02-01 15:04 UTC"}}">
+              {{$code.CreatedAt.Format "2006-02-01 15:04"}}
             </small>
           </a>
           {{end}}
