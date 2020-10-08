@@ -27,7 +27,7 @@ import (
 
 func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c.Show(w, r, false)
+		c.Show(w, r, false /*resetPassword*/)
 	})
 }
 
@@ -40,7 +40,6 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 		controller.MissingSession(w, r, c.h)
 		return
 	}
-	flash := controller.Flash(session)
 
 	realm := controller.RealmFromContext(ctx)
 	if realm == nil {
@@ -61,9 +60,7 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 	}
 
 	if resetPassword {
-		if err := c.resetPassword(ctx, user); err == nil {
-			flash.Alert("Password reset email sent.")
-		}
+		c.resetPasswordUserAssertion(ctx, user)
 	}
 
 	userStats, err := c.getStats(ctx, user, realm)
@@ -72,7 +69,7 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 		return
 	}
 
-	c.renderShow(ctx, w, user, userStats)
+	c.renderShow(ctx, w, user, userStats, resetPassword)
 }
 
 // Get and cache the stats for this user.
@@ -89,10 +86,12 @@ func (c *Controller) getStats(ctx context.Context, user *database.User, realm *d
 	return stats, nil
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats []*database.UserStats) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats []*database.UserStats, resetPassword bool) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
 	m["stats"] = stats
-	m["firebase"] = c.config.Firebase
+	if resetPassword {
+		m["firebase"] = c.config.Firebase
+	}
 	c.h.RenderHTML(w, "users/show", m)
 }

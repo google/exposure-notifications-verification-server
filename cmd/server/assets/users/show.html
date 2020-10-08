@@ -89,8 +89,8 @@
   {{template "scripts" .}}
 
   {{if $stats}}
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
-  <script>
+  <script src="https://www.gstatic.com/charts/loader.js" type="text/javascript"></script>
+  <script type="text/javascript">
     google.charts.load('current', {packages: ['line']});
     google.charts.setOnLoadCallback(drawChart)
 
@@ -111,6 +111,25 @@
       var chart = new google.charts.Line(document.getElementById('chart'));
       chart.draw(data, google.charts.Line.convertOptions(options));
     }
+  </script>
+  {{end}}
+
+  {{if .firebase}}
+  <script type="text/javascript">
+  $(function() {
+    firebase.auth().sendPasswordResetEmail('{{$user.Email}}')
+    .then(function() {
+      flash.clear();
+      flash.alert('Password reset email sent.');
+      $('#submit').prop('disabled', true);
+    }).catch(function(error) {
+      if (error.code == "auth/too-many-requests") {
+        $('#submit').prop('disabled', true);
+      }
+      flash.clear();
+      flash.error(error.message);
+    });
+  });
   </script>
   {{end}}
 </body>
