@@ -378,6 +378,7 @@ func realMain(ctx context.Context) error {
 		userSub.Handle("/{id}", userController.HandleShow()).Methods("GET")
 		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
 		userSub.Handle("/{id}", userController.HandleDelete()).Methods("DELETE")
+		userSub.Handle("/{id}", userController.HandleResetPassword()).Methods("POST")
 	}
 
 	// realms
