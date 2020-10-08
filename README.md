@@ -8,8 +8,8 @@ This is a reference implementation for an Exposure Notifications [verification s
 This server follows the [high level flow](https://developers.google.com/android/exposure-notifications/verification-system#flow-overview)
 for a verification system:
 
-1.  Authenticates and authorizes humans using [Firebase
-    authentication](https://firebase.google.com/docs/auth).
+1.  Authenticates and authorizes humans using [Identity
+    Platform](https://cloud.google.com/identity-platform).
 
 1.  Provides a web interface for epidemiologists (epi) to enter test parameters
     (e.g. status + test date) to issue a _verification code_.
@@ -66,7 +66,7 @@ for a verification system:
 
 -   Redis for caching and distributed rate limiting.
 
--   Firebase authentication for login.
+-   Identity Platform for login.
 
 
 ## More resources
