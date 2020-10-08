@@ -38,7 +38,7 @@ var (
 	blameTagKey = tag.MustNewKey("blame")
 
 	// resultTagKey contains a free format text describing the result of the
-	// request. Preferrably ALL CAPS WITH UNDERSCORE.
+	// request. Preferably ALL CAPS WITH UNDERSCORE.
 	// OK indicating a successful request.
 	// You can losely base this string on
 	// https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
@@ -60,7 +60,7 @@ var (
 	BlameExternal = tag.Upsert(blameTagKey, "EXTERNAL")
 
 	// BlameUnknown can be used for everything else
-	BlameUnknown = tag.Upsert(blameTagKey, "UNKOWN")
+	BlameUnknown = tag.Upsert(blameTagKey, "UNKNOWN")
 )
 
 // APIResultOK add a tag indicating the API call is a success.
