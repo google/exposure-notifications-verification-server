@@ -12,32 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "google_monitoring_metric_descriptor" "ratelimit--limitware--rate_limited_count" {
-  project      = var.verification-server-project
-  description  = "rate limited requests"
-  display_name = "OpenCensus/en-verification-server/ratelimit/limitware/rate_limited_count"
-  type         = "custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/rate_limited_count"
-  metric_kind  = "CUMULATIVE"
-  value_type   = "INT64"
-  unit         = "1"
-  labels { key = "realm" }
-  labels { key = "build_id" }
-  labels { key = "build_tag" }
-}
-
-resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity_latest" {
-  project      = var.verification-server-project
-  description  = "Latest realm token capacity utilization"
-  display_name = "OpenCensus/en-verification-server/api/issue/realm_token_capacity_latest"
-  type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest"
-  metric_kind  = "GAUGE"
-  value_type   = "DOUBLE"
-  unit         = "1"
-  labels { key = "realm" }
-  labels { key = "build_id" }
-  labels { key = "build_tag" }
-}
-
 resource "google_monitoring_metric_descriptor" "api--issue--request_count" {
   project      = var.verification-server-project
   description  = "Count of code issue requests"
@@ -65,4 +39,30 @@ resource "google_monitoring_metric_descriptor" "api--verify--request_count" {
   labels { key = "build_tag" }
   labels { key = "blame" }
   labels { key = "result" }
+}
+
+resource "google_monitoring_metric_descriptor" "ratelimit--limitware--rate_limited_count" {
+  project      = var.verification-server-project
+  description  = "rate limited requests"
+  display_name = "OpenCensus/en-verification-server/ratelimit/limitware/rate_limited_count"
+  type         = "custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/rate_limited_count"
+  metric_kind  = "CUMULATIVE"
+  value_type   = "INT64"
+  unit         = "1"
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
+}
+
+resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity_latest" {
+  project      = var.verification-server-project
+  description  = "Latest realm token capacity utilization"
+  display_name = "OpenCensus/en-verification-server/api/issue/realm_token_capacity_latest"
+  type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest"
+  metric_kind  = "GAUGE"
+  value_type   = "DOUBLE"
+  unit         = "1"
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
