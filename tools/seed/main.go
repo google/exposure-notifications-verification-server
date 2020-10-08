@@ -172,7 +172,7 @@ func realMain(ctx context.Context) error {
 		{
 			Name:    "Example iOS app",
 			RealmID: realm1.ID,
-			URL:     "http://apple.com",
+			URL:     "",
 			OS:      database.OSTypeIOS,
 			AppID:   "ios.example.app",
 		},
