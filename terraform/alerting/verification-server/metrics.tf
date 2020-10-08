@@ -66,17 +66,3 @@ resource "google_monitoring_metric_descriptor" "api--verify--request_count" {
   labels { key = "blame" }
   labels { key = "result" }
 }
-
-resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity_latest" {
-  project      = var.verification-server-project
-  description  = "Latest realm token capacity utilization"
-  display_name = "OpenCensus/en-verification-server/api/issue/realm_token_capacity_latest"
-  type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest"
-  metric_kind  = "GAUGE"
-  value_type   = "DOUBLE"
-  unit         = "1"
-  labels { key = "realm" }
-  labels { key = "build_id" }
-  labels { key = "build_tag" }
-}
-
