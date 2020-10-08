@@ -16,7 +16,10 @@ resource "google_monitoring_dashboard" "verification-server" {
   project        = var.monitoring-host-project
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/verification-server.yaml")))
   depends_on = [
-    null_resource.manual-step-to-enable-workspace
+    null_resource.manual-step-to-enable-workspace,
+    google_monitoring_metric_descriptor.api--issue--attempt_count,
+    google_monitoring_metric_descriptor.api--issue--realm_token_capacity_latest,
+    google_monitoring_metric_descriptor.ratelimit--limitware--rate_limited_count
   ]
 }
 
@@ -24,7 +27,9 @@ resource "google_monitoring_dashboard" "e2e" {
   project        = var.monitoring-host-project
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/e2e.yaml")))
   depends_on = [
-    null_resource.manual-step-to-enable-workspace
+    null_resource.manual-step-to-enable-workspace,
+    google_monitoring_metric_descriptor.api--issue--codes_issued_count,
+    google_monitoring_metric_descriptor.api--verify--attempt_count,
   ]
 }
 
@@ -120,7 +125,8 @@ EOT
     google_monitoring_notification_channel.email.id
   ]
   depends_on = [
-    null_resource.manual-step-to-enable-workspace
+    null_resource.manual-step-to-enable-workspace,
+    google_monitoring_metric_descriptor.ratelimit--limitware--rate_limited_count,
   ]
 }
 
@@ -213,7 +219,8 @@ EOT
     google_monitoring_notification_channel.email.id
   ]
   depends_on = [
-    null_resource.manual-step-to-enable-workspace
+    null_resource.manual-step-to-enable-workspace,
+    google_monitoring_metric_descriptor.api--issue--realm_token_capacity_latest,
   ]
 }
 
