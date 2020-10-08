@@ -1440,7 +1440,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00059-AddVerCodeIndexes",
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
-					`CREATE INDEX IF NOT EXISTS idx_vercode_recent ON verification_codes(realm_id, user_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_vercode_recent ON verification_codes(realm_id, issuing_user_id)`,
 					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
 				}
 
