@@ -43,7 +43,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 		defer func(blame, result *tag.Mutator) {
 			ctx, err := tag.New(ctx, *blame, *result)
 			if err != nil {
-				c.logger.Errorw("failed to create context with additional tags", "error", err)
+				c.logger.Warnw("failed to create context with additional tags", "error", err)
+				// NOTE: do not return here. We should log it as success.
 			}
 			stats.Record(ctx, mRequest.M(1))
 		}(&blame, &result)
