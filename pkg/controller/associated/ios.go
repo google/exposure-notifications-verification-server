@@ -69,7 +69,7 @@ func (c *Controller) getAppIds(realmID uint) ([]string, error) {
 func (c *Controller) getIosData(region string) (*IOSData, error) {
 	realm, err := c.db.FindRealmByRegion(region)
 	if err != nil {
-		return nil, fmt.Errorf("unable to lookup realm")
+		return nil, fmt.Errorf("unable to lookup realm: %w", err)
 	}
 
 	ids, err := c.getAppIds(realm.ID)
