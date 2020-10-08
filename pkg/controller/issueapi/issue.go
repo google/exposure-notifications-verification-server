@@ -308,13 +308,14 @@ func (c *Controller) HandleIssue() http.Handler {
 				}
 
 				logger.Errorw("failed to send sms", "error", err)
-				stats.Record(ctx, mCodeIssueErrors.M(1), mSMSSendErrors.M(1))
+				stats.Record(ctx, mCodeIssueErrors.M(1))
+				stats.RecordWithTags(ctx, []tag.Mutator{observability.APIResultError("NOT_OK")}, mSMSRequest.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 				blame = observability.BlameServer
 				result = observability.APIResultError("FAILED_TO_SEND_SMS")
 				return
 			}
-			stats.Record(ctx, mSMSSent.M(1))
+			stats.RecordWithTags(ctx, []tag.Mutator{observability.APIResultOK()}, mSMSRequest.M(1))
 		}
 
 		stats.Record(ctx, mCodesIssued.M(1))
