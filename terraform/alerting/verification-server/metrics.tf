@@ -20,18 +20,9 @@ resource "google_monitoring_metric_descriptor" "ratelimit--limitware--rate_limit
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
 
 resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity_latest" {
@@ -42,18 +33,9 @@ resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity
   metric_kind  = "GAUGE"
   value_type   = "DOUBLE"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
 
 resource "google_monitoring_metric_descriptor" "api--issue--request_count" {
@@ -64,26 +46,11 @@ resource "google_monitoring_metric_descriptor" "api--issue--request_count" {
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "blame"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "result"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
+  labels { key = "blame" }
+  labels { key = "result" }
 }
 resource "google_monitoring_metric_descriptor" "api--verify--request_count" {
   project      = var.verification-server-project
@@ -93,25 +60,23 @@ resource "google_monitoring_metric_descriptor" "api--verify--request_count" {
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "blame"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "result"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
+  labels { key = "blame" }
+  labels { key = "result" }
+}
+
+resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity_latest" {
+  project      = var.verification-server-project
+  description  = "Latest realm token capacity utilization"
+  display_name = "OpenCensus/en-verification-server/api/issue/realm_token_capacity_latest"
+  type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest"
+  metric_kind  = "GAUGE"
+  value_type   = "DOUBLE"
+  unit         = "1"
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
 
