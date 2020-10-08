@@ -51,7 +51,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
-			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorf("missing authorized app")
 			controller.MissingAuthorizedApp(w, r, c.h)
 			blame = observability.BlameClient
@@ -60,8 +59,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		ctx = observability.WithRealmID(ctx, authApp.RealmID)
-
-		stats.Record(ctx, mAttempts.M(1))
 
 		// Get the public key for the token.
 		allowedPublicKeys := make(map[string]crypto.PublicKey)
@@ -80,7 +77,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 		var request api.VerificationCertificateRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.logger.Errorw("failed to parse json request", "error", err)
-			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			blame = observability.BlameClient
 			result = observability.APIResultError("FAILED_TO_PARSE_JSON_REQUEST")
@@ -90,7 +86,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Parse and validate the verification token.
 		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken, allowedPublicKeys)
 		if err != nil {
-			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			blame = observability.BlameClient
 			result = observability.APIResultError("FAILED_TO_VALIDATE_TOKEN")
@@ -100,7 +95,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Validate the HMAC length. SHA 256 HMAC must be 32 bytes in length.
 		hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
 		if err != nil {
-			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not a valid base64: %v", err).WithCode(api.ErrHMACInvalid))
 			blame = observability.BlameClient
@@ -108,7 +102,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 			return
 		}
 		if len(hmacBytes) != 32 {
-			stats.Record(ctx, mCertificateErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", len(hmacBytes)).WithCode(api.ErrHMACInvalid))
 			blame = observability.BlameClient
@@ -119,7 +112,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// determine the correct signing key to use.
 		signerInfo, err := c.getSignerForRealm(ctx, authApp)
 		if err != nil {
-			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			// FIXME: should we blame server here?
@@ -148,7 +140,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 		certToken.Header[verifyapi.KeyIDHeader] = signerInfo.KeyID
 		certificate, err := jwthelper.SignJWT(certToken, signerInfo.Signer)
 		if err != nil {
-			stats.Record(ctx, mCertificateErrors.M(1))
 			c.logger.Errorw("failed to sign certificate", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			blame = observability.BlameServer
@@ -163,26 +154,21 @@ func (c *Controller) HandleCertificate() http.Handler {
 			blame = observability.BlameClient
 			switch {
 			case errors.Is(err, database.ErrTokenExpired):
-				stats.Record(ctx, mTokenExpired.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenExpired))
 				result = observability.APIResultError("TOKEN_EXPIRED")
 			case errors.Is(err, database.ErrTokenUsed):
-				stats.Record(ctx, mTokenUsed.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 				result = observability.APIResultError("TOKEN_USED")
 			case errors.Is(err, database.ErrTokenMetadataMismatch):
-				stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 				result = observability.APIResultError("TOKEN_METADATA_MISMATCH")
 			default:
-				stats.Record(ctx, mTokenInvalid.M(1), mCertificateErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 				result = observability.APIResultError("UNKNOWN_TOKEN_CLAIM_ERROR")
 			}
 			return
 		}
 
-		stats.Record(ctx, mCertificateIssued.M(1))
 		c.h.RenderJSON(w, http.StatusOK, &api.VerificationCertificateResponse{
 			Certificate: certificate,
 		})
