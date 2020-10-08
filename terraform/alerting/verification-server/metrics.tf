@@ -12,41 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "google_monitoring_metric_descriptor" "api--issue--codes_issued_count" {
+resource "google_monitoring_metric_descriptor" "api--issue--request_count" {
   project      = var.verification-server-project
-  description  = "The count of verification codes issued"
-  display_name = "OpenCensus/en-verification-server/api/issue/codes_issued_count"
-  type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/codes_issued_count"
+  description  = "Count of code issue requests"
+  display_name = "OpenCensus/en-verification-server/api/issue/request_count"
+  type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/request_count"
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
   labels { key = "realm" }
   labels { key = "build_id" }
   labels { key = "build_tag" }
+  labels { key = "blame" }
+  labels { key = "result" }
 }
-resource "google_monitoring_metric_descriptor" "api--verify--attempt_count" {
+resource "google_monitoring_metric_descriptor" "api--verify--request_count" {
   project      = var.verification-server-project
-  description  = "The count of attempted code verifications"
-  display_name = "OpenCensus/en-verification-server/api/verify/attempt_count"
-  type         = "custom.googleapis.com/opencensus/en-verification-server/api/verify/attempt_count"
+  description  = "Count of verify requests"
+  display_name = "OpenCensus/en-verification-server/api/verify/request_count"
+  type         = "custom.googleapis.com/opencensus/en-verification-server/api/verify/request_count"
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
   labels { key = "realm" }
   labels { key = "build_id" }
   labels { key = "build_tag" }
-}
-resource "google_monitoring_metric_descriptor" "api--issue--attempt_count" {
-  project      = var.verification-server-project
-  description  = "The count of the number of attempts to issue codes"
-  display_name = "OpenCensus/en-verification-server/api/issue/attempt_count"
-  type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/attempt_count"
-  metric_kind  = "CUMULATIVE"
-  value_type   = "INT64"
-  unit         = "1"
-  labels { key = "realm" }
-  labels { key = "build_id" }
-  labels { key = "build_tag" }
+  labels { key = "blame" }
+  labels { key = "result" }
 }
 
 resource "google_monitoring_metric_descriptor" "ratelimit--limitware--rate_limited_count" {

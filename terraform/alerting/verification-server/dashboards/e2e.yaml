@@ -2,7 +2,7 @@ displayName: e2e
 gridLayout:
   columns: "2"
   widgets:
-    - title: /api/issue/code_issued_count rate by job
+    - title: /api/issue/request count by result
       xyChart:
         chartOptions:
           mode: COLOR
@@ -11,11 +11,11 @@ gridLayout:
             timeSeriesQuery:
               timeSeriesQueryLanguage: >
                 generic_task ::
-                custom.googleapis.com/opencensus/en-verification-server/api/issue/codes_issued_count
+                custom.googleapis.com/opencensus/en-verification-server/api/issue/request_count
                 | align rate()
                 | every 1m
-                | [resource.job]
-    - title: /api/verify/attempt_count rate by job
+                | [metric.result]
+    - title: /api/verify/request count by result
       xyChart:
         chartOptions:
           mode: COLOR
@@ -24,7 +24,7 @@ gridLayout:
             timeSeriesQuery:
               timeSeriesQueryLanguage: >
                 generic_task ::
-                custom.googleapis.com/opencensus/en-verification-server/api/verify/attempt_count
+                custom.googleapis.com/opencensus/en-verification-server/api/verify/request_count
                 | align rate()
                 | every 1m
-                | [resource.job]
+                | [metric.result]
