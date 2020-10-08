@@ -131,7 +131,7 @@ func realMain(ctx context.Context) error {
 		wk := r.PathPrefix("/.well-known").Subrouter()
 
 		// Enable the iOS and Android redirect handler.
-		assocHandler, err := associated.New(ctx, db, cacher, h)
+		assocHandler, err := associated.New(ctx, cfg, db, cacher, h)
 		if err != nil {
 			return fmt.Errorf("failed to create associated links handler %w", err)
 		}

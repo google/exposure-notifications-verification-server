@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -35,6 +36,8 @@ type RedirectConfig struct {
 	Port string `env:"PORT, default=8080"`
 
 	AssetsPath string `env:"ASSETS_PATH, default=./cmd/enx-redirect/assets"`
+
+	AppCacheTTL time.Duration `env:"APP_CACHE_TTL, default=5m"`
 
 	// If Dev mode is true, extended logging is enabled and template
 	// auto-reload is enabled.
