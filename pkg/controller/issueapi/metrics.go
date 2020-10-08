@@ -37,6 +37,8 @@ var (
 	mRealmTokenCapacity  = stats.Float64(metricPrefix+"/realm_token_capacity", "Capacity utilization for issuing verification codes", stats.UnitDimensionless)
 
 	mRequest = stats.Int64(metricPrefix+"/request", "# of code issue requests", stats.UnitDimensionless)
+
+	mSMSRequest = stats.Int64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitDimensionless)
 )
 
 func init() {
@@ -106,6 +108,12 @@ func init() {
 			Measure:     mRequest,
 			Description: "Count of code issue requests",
 			TagKeys:     observability.APITagKeys(),
+			Aggregation: view.Count(),
+		}, {
+			Name:        metricPrefix + "/sms_request_count",
+			Measure:     mSMSRequest,
+			Description: "The # of SMS requests",
+			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
 			Aggregation: view.Count(),
 		},
 	}...)

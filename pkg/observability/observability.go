@@ -37,13 +37,13 @@ var (
 	// UNKNOWN: for everything else
 	blameTagKey = tag.MustNewKey("blame")
 
-	// resultTagKey contains a free format text describing the result of the
+	// ResultTagKey contains a free format text describing the result of the
 	// request. Preferably ALL CAPS WITH UNDERSCORE.
 	// OK indicating a successful request.
 	// You can losely base this string on
 	// https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
 	// but feel free to use any text as long as it's easy to filter.
-	resultTagKey = tag.MustNewKey("result")
+	ResultTagKey = tag.MustNewKey("result")
 )
 
 var (
@@ -65,12 +65,12 @@ var (
 
 // APIResultOK add a tag indicating the API call is a success.
 func APIResultOK() tag.Mutator {
-	return tag.Upsert(resultTagKey, "OK")
+	return tag.Upsert(ResultTagKey, "OK")
 }
 
 // APIResultError add a tag with the given string as the result.
 func APIResultError(result string) tag.Mutator {
-	return tag.Upsert(resultTagKey, result)
+	return tag.Upsert(ResultTagKey, result)
 }
 
 // CommonTagKeys returns the slice of common tag keys that should used in all
@@ -86,7 +86,7 @@ func CommonTagKeys() []tag.Key {
 // APITagKeys return a slice of tag.Key with common tag keys + additional API
 // specific tag keys.
 func APITagKeys() []tag.Key {
-	return append(CommonTagKeys(), blameTagKey, resultTagKey)
+	return append(CommonTagKeys(), blameTagKey, ResultTagKey)
 }
 
 // WithRealmID creates a new context with the realm id attached to the
