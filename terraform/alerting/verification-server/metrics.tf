@@ -20,18 +20,9 @@ resource "google_monitoring_metric_descriptor" "api--issue--codes_issued_count" 
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
 resource "google_monitoring_metric_descriptor" "api--verify--attempt_count" {
   project      = var.verification-server-project
@@ -41,18 +32,9 @@ resource "google_monitoring_metric_descriptor" "api--verify--attempt_count" {
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
 resource "google_monitoring_metric_descriptor" "api--issue--attempt_count" {
   project      = var.verification-server-project
@@ -62,18 +44,9 @@ resource "google_monitoring_metric_descriptor" "api--issue--attempt_count" {
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
 
 resource "google_monitoring_metric_descriptor" "ratelimit--limitware--rate_limited_count" {
@@ -84,18 +57,9 @@ resource "google_monitoring_metric_descriptor" "ratelimit--limitware--rate_limit
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
 
 resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity_latest" {
@@ -106,16 +70,7 @@ resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity
   metric_kind  = "GAUGE"
   value_type   = "DOUBLE"
   unit         = "1"
-  labels {
-    key        = "realm"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_id"
-    value_type = "STRING"
-  }
-  labels {
-    key        = "build_tag"
-    value_type = "STRING"
-  }
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
 }
