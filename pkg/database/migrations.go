@@ -1436,6 +1436,35 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS url").Error
 			},
 		},
+		{
+			ID: "00059-AddVerCodeIndexes",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`CREATE INDEX IF NOT EXISTS idx_vercode_recent ON verification_codes(realm_id, issuing_user_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`DROP INDEX IF EXISTS idx_vercode_recent`,
+					`DROP INDEX IF EXISTS idx_vercode_uuid`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
 	})
 }
 
