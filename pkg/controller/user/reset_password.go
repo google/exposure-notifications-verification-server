@@ -49,7 +49,8 @@ func (c *Controller) ensureFirebaseUserExists(ctx context.Context, user *databas
 	}
 
 	if created {
-		if err := c.firebaseInternal.SendNewUserInvitation(ctx, user.Email); err != nil {
+		err := c.emailer.SendNewUserInvitation(ctx, user.Email)
+		if err != nil {
 			flash.Error("Could not send new user invitation: %v", err)
 			return true, err
 		}
