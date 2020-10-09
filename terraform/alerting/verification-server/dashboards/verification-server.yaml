@@ -41,7 +41,7 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.job]
-    - title: /api/issue/realm_token_capacity_latest by label.realm [MAX]
+    - title: Realm Token Utilization by realm
       xyChart:
         chartOptions:
           mode: COLOR
@@ -50,7 +50,23 @@ gridLayout:
             timeSeriesQuery:
               timeSeriesQueryLanguage: >
                 generic_task ::
-                custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest
-                | align rate()
-                | every 1m
-                | group_by [metric.realm], [max(value.realm_token_capacity_latest)]
+                custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest
+                | {
+                    filter metric.state == "AVAILABLE";
+                    filter metric.state == "LIMIT"
+                }
+                | [metric.realm]
+                | ratio
+                | value if(val() > 1.0, 1.0, val())
+    - title: Available Realm Token by realm
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                generic_task ::
+                custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest
+                | filter metric.state == "AVAILABLE";
+                | [metric.realm]
