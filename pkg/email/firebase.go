@@ -24,7 +24,7 @@ import (
 
 var _ Provider = (*firebase.Client)(nil)
 
-// NewFirebase creates a new Smtp email sender with the given auth.
+// NewFirebase creates a new SMTP email sender with the given auth.
 func NewFirebase(ctx context.Context) (Provider, error) {
 	firebaseInternal, err := firebase.New(ctx)
 	if err != nil {

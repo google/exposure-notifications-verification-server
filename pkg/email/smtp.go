@@ -25,31 +25,31 @@ import (
 	"firebase.google.com/go/auth"
 )
 
-var _ Provider = (*SmtpProvider)(nil)
+var _ Provider = (*SMTPProvider)(nil)
 
-// Smtp sends messages via an external SMTP server.
-type SmtpProvider struct {
+// SMTP sends messages via an external SMTP server.
+type SMTPProvider struct {
 	FirebaseAuth *auth.Client
 
 	User     string
 	Password string
-	SmtpHost string
-	SmtpPort string
+	SMTPHost string
+	SMTPPort string
 }
 
 // NewSmtp creates a new Smtp email sender with the given auth.
-func NewSmtp(ctx context.Context, user, password, host, port string, auth *auth.Client) (Provider, error) {
-	return &SmtpProvider{
+func NewSMTP(ctx context.Context, user, password, host, port string, auth *auth.Client) (Provider, error) {
+	return &SMTPProvider{
 		FirebaseAuth: auth,
 		User:         user,
 		Password:     password,
-		SmtpHost:     host,
-		SmtpPort:     port,
+		SMTPHost:     host,
+		SMTPPort:     port,
 	}, nil
 }
 
 // SendNewUserInvitation sends a password reset email to the user.
-func (s *SmtpProvider) SendNewUserInvitation(ctx context.Context, toEmail string) error {
+func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string) error {
 	// Header
 	header := make(map[string]string)
 	header["From"] = s.User
@@ -57,7 +57,7 @@ func (s *SmtpProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 	header["Subject"] = "COVID-19 Verification Server Invitation"
 
 	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = fmt.Sprintf(`%s; charset="utf-8"`, "text/html")
+	header["Content-Type"] = `text/html; charset="utf-8"`
 	header["Content-Disposition"] = "inline"
 	header["Content-Transfer-Encoding"] = "quoted-printable"
 
@@ -83,10 +83,10 @@ func (s *SmtpProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 	finalMessage := headerMessage + "\r\n" + bodyMessage.String()
 
 	// Authentication.
-	auth := smtp.PlainAuth("", s.User, s.Password, s.SmtpHost)
+	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
 
 	// Sending email.
-	err = smtp.SendMail(s.SmtpHost+":"+s.SmtpPort, auth, s.User, []string{toEmail}, []byte(finalMessage))
+	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, []byte(finalMessage))
 	if err != nil {
 		return err
 	}

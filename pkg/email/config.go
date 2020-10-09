@@ -28,7 +28,7 @@ type ProviderType string
 const (
 	ProviderTypeNoop     ProviderType = "NOOP"
 	ProviderTypeFirebase ProviderType = "FIREBASE"
-	ProviderTypeSmtp     ProviderType = "SIMPLE_SMTP"
+	ProviderTypeSMTP     ProviderType = "SIMPLE_SMTP"
 )
 
 // Config represents the env var based configuration for email SMTP server connection.
@@ -37,8 +37,8 @@ type Config struct {
 
 	User     string `env:"EMAIL_USER" json:",omitempty"`
 	Password string `env:"EMAIL_PASSWORD" json:",omitempty"`
-	SmtpHost string `env:"EMAIL_SMTP_HOST" json:",omitempty"`
-	SmtpPort string `env:"EMAIL_SMTP_PORT" json:",omitempty"`
+	SMTPHost string `env:"EMAIL_SMTP_HOST" json:",omitempty"`
+	SMTPPort string `env:"EMAIL_SMTP_PORT" json:",omitempty"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
@@ -56,8 +56,8 @@ func ProviderFor(ctx context.Context, c *Config, auth *auth.Client) (Provider, e
 	switch typ := c.ProviderType; typ {
 	case ProviderTypeFirebase:
 		return NewFirebase(ctx)
-	case ProviderTypeSmtp:
-		return NewSmtp(ctx, c.User, c.Password, c.SmtpHost, c.SmtpPort, auth)
+	case ProviderTypeSMTP:
+		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort, auth)
 	default:
 		return nil, fmt.Errorf("unknown email provider type: %v", typ)
 	}
