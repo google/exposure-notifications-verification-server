@@ -74,9 +74,7 @@ func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 	// Message.
 	body := fmt.Sprintf(
 		`You've been invited to the COVID-19 Verification Server.
-		Use the link below to set up your account.
-
-		%s`, inviteLink)
+		Use the link below to set up your account.<br>%s`, inviteLink)
 	var bodyMessage bytes.Buffer
 	temp := quotedprintable.NewWriter(&bodyMessage)
 	temp.Write([]byte(body))
