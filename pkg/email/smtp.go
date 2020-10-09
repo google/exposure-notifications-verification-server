@@ -27,7 +27,7 @@ import (
 
 var _ Provider = (*SMTPProvider)(nil)
 
-// SMTP sends messages via an external SMTP server.
+// SMTPProvider sends messages via an external SMTP server.
 type SMTPProvider struct {
 	FirebaseAuth *auth.Client
 
@@ -37,7 +37,7 @@ type SMTPProvider struct {
 	SMTPPort string
 }
 
-// NewSmtp creates a new Smtp email sender with the given auth.
+// NewSMTP creates a new Smtp email sender with the given auth.
 func NewSMTP(ctx context.Context, user, password, host, port string, auth *auth.Client) (Provider, error) {
 	return &SMTPProvider{
 		FirebaseAuth: auth,
