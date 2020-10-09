@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"mime/quotedprintable"
+	"html/template"
 	"net/smtp"
 
 	"firebase.google.com/go/auth"
@@ -31,6 +31,8 @@ var _ Provider = (*SMTPProvider)(nil)
 type SMTPProvider struct {
 	FirebaseAuth *auth.Client
 
+	InviteTemplate *template.Template
+
 	User     string
 	Password string
 	SMTPHost string
@@ -38,13 +40,19 @@ type SMTPProvider struct {
 }
 
 // NewSMTP creates a new Smtp email sender with the given auth.
-func NewSMTP(ctx context.Context, user, password, host, port string, auth *auth.Client) (Provider, error) {
+func NewSMTP(ctx context.Context, user, password, host, port, assetsRoot string, auth *auth.Client) (Provider, error) {
+	t, err := template.ParseFiles(assetsRoot + "/email/default_invitation.html")
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing invite template %v", err)
+	}
+
 	return &SMTPProvider{
-		FirebaseAuth: auth,
-		User:         user,
-		Password:     password,
-		SMTPHost:     host,
-		SMTPPort:     port,
+		FirebaseAuth:   auth,
+		InviteTemplate: t,
+		User:           user,
+		Password:       password,
+		SMTPHost:       host,
+		SMTPPort:       port,
 	}, nil
 }
 
@@ -71,22 +79,16 @@ func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 		return err
 	}
 
-	// Message.
-	body := fmt.Sprintf(
-		`You've been invited to the COVID-19 Verification Server.
-		Use the link below to set up your account.<br>%s`, inviteLink)
-	var bodyMessage bytes.Buffer
-	temp := quotedprintable.NewWriter(&bodyMessage)
-	temp.Write([]byte(body))
-	temp.Close()
-
-	finalMessage := headerMessage + "\r\n" + bodyMessage.String()
+	// Compose message
+	var body bytes.Buffer
+	body.Write([]byte(headerMessage))
+	s.InviteTemplate.Execute(&body, struct{ InviteLink string }{InviteLink: inviteLink})
 
 	// Authentication.
 	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
 
 	// Sending email.
-	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, []byte(finalMessage))
+	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, body.Bytes())
 	if err != nil {
 		return err
 	}

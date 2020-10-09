@@ -150,7 +150,7 @@ func realMain(ctx context.Context) error {
 	if cfg.Email.HasSMTPCreds() {
 		cfg.Email.ProviderType = email.ProviderTypeSMTP
 	}
-	emailer, err := email.ProviderFor(ctx, &cfg.Email, auth)
+	emailer, err := email.ProviderFor(ctx, &cfg.Email, cfg.AssetsPath, auth)
 	if err != nil {
 		return fmt.Errorf("failed to configure internal firebase client: %w", err)
 	}

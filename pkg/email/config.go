@@ -35,10 +35,10 @@ const (
 type Config struct {
 	ProviderType ProviderType
 
-	User     string `env:"EMAIL_USER" json:",omitempty"`
-	Password string `env:"EMAIL_PASSWORD" json:",omitempty"`
-	SMTPHost string `env:"EMAIL_SMTP_HOST" json:",omitempty"`
-	SMTPPort string `env:"EMAIL_SMTP_PORT" json:",omitempty"`
+	User     string `env:"EMAIL_USER"`
+	Password string `env:"EMAIL_PASSWORD"`
+	SMTPHost string `env:"EMAIL_SMTP_HOST"`
+	SMTPPort string `env:"EMAIL_SMTP_PORT, default=587"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
@@ -56,12 +56,14 @@ func (c *Config) HasSMTPCreds() bool {
 	return c.User != "" && c.Password != "" && c.SMTPHost != "" && c.SMTPPort != ""
 }
 
-func ProviderFor(ctx context.Context, c *Config, auth *auth.Client) (Provider, error) {
+func ProviderFor(ctx context.Context, c *Config, assetsRoot string, auth *auth.Client) (Provider, error) {
 	switch typ := c.ProviderType; typ {
+	case ProviderTypeNoop:
+		return NewNoop()
 	case ProviderTypeFirebase:
 		return NewFirebase(ctx)
 	case ProviderTypeSMTP:
-		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort, auth)
+		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort, assetsRoot, auth)
 	default:
 		return nil, fmt.Errorf("unknown email provider type: %v", typ)
 	}
