@@ -57,7 +57,7 @@ func (s *SmtpProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 	header["Subject"] = "COVID-19 Verification Server Invitation"
 
 	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = fmt.Sprintf("%s; charset=\"utf-8\"", "text/html")
+	header["Content-Type"] = fmt.Sprintf(`%s; charset="utf-8"`, "text/html")
 	header["Content-Disposition"] = "inline"
 	header["Content-Transfer-Encoding"] = "quoted-printable"
 
@@ -73,8 +73,8 @@ func (s *SmtpProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 
 	// Message.
 	body := fmt.Sprintf(
-		"You've been invited to the COVID-19 Verification Server. Use the link below to set up your account."+
-			" \n\n %s", inviteLink)
+		`You've been invited to the COVID-19 Verification Server.
+		Use the link below to set up your account. \n\n %s`, inviteLink)
 	var bodyMessage bytes.Buffer
 	temp := quotedprintable.NewWriter(&bodyMessage)
 	temp.Write([]byte(body))
