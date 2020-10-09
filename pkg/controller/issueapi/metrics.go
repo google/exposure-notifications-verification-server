@@ -20,6 +20,7 @@ import (
 
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
 )
 
 const metricPrefix = observability.MetricRoot + "/api/issue"
@@ -37,7 +38,23 @@ var (
 	mRequest = stats.Int64(metricPrefix+"/request", "# of code issue requests", stats.UnitDimensionless)
 
 	mSMSRequest = stats.Int64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitDimensionless)
+
+	mRealmToken = stats.Int64(metricPrefix+"/realm_token", "# of realm tokens", stats.UnitDimensionless)
 )
+
+var (
+	// tokenStateTagKey indicate the state of the tokens. It's either "USED" or
+	// "AVAILABLE".
+	tokenStateTagKey = tag.MustNewKey("state")
+)
+
+func tokenAvailableTag() tag.Mutator {
+	return tag.Upsert(tokenStateTagKey, "AVAILABLE")
+}
+
+func tokenUsedTag() tag.Mutator {
+	return tag.Upsert(tokenStateTagKey, "USED")
+}
 
 func init() {
 	enobservability.CollectViews([]*view.View{
@@ -101,6 +118,12 @@ func init() {
 			Description: "The # of SMS requests",
 			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
 			Aggregation: view.Count(),
+		}, {
+			Name:        metricPrefix + "/realm_token_latest",
+			Description: "Latest realm token count",
+			TagKeys:     append(observability.CommonTagKeys(), tokenStateTagKey),
+			Measure:     mRealmToken,
+			Aggregation: view.LastValue(),
 		},
 	}...)
 }
