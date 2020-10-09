@@ -147,7 +147,7 @@ func realMain(ctx context.Context) error {
 
 	// Setup server emailer
 	cfg.Email.ProviderType = email.ProviderTypeFirebase
-	if cfg.Email.SMTPHost != "" {
+	if cfg.Email.HasSMTPCreds() {
 		cfg.Email.ProviderType = email.ProviderTypeSMTP
 	}
 	emailer, err := email.ProviderFor(ctx, &cfg.Email, auth)

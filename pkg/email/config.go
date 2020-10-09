@@ -52,6 +52,10 @@ type Provider interface {
 	SendNewUserInvitation(ctx context.Context, email string) error
 }
 
+func (c *Config) HasSMTPCreds() bool {
+	return c.User != "" && c.Password != "" && c.SMTPHost != "" && c.SMTPPort != ""
+}
+
 func ProviderFor(ctx context.Context, c *Config, auth *auth.Client) (Provider, error) {
 	switch typ := c.ProviderType; typ {
 	case ProviderTypeFirebase:
