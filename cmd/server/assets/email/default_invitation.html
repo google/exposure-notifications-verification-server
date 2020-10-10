@@ -1,8 +1,19 @@
+{{- /* Message Header */ -}}
+Subject: COVID-19 Verification Server Invitation
+To: {{.ToEmail}}
+From: {{.FromEmail}}
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+hContent-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+
+{{- /* Message Body */ -}}
 Welcome,<br/>
 
 You have been invited to join the {{.RealmName}} COVID-19 exposure notifications verification server.<br/>
 You many use the following link to set your password and sign-in:<br/>
-</br/>
+<br/>
 {{.InviteLink}}
 <br/>
 <br/>

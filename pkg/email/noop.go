@@ -23,8 +23,10 @@ import (
 
 var _ Provider = (*SMTPProvider)(nil)
 
+// NoopProvider is an email sender that logs without taking any actions.
 type NoopProvider struct{}
 
+// NewNoop returns No-op provider
 func NewNoop() (Provider, error) {
 	return &NoopProvider{}, nil
 }

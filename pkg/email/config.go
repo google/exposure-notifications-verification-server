@@ -26,9 +26,15 @@ import (
 type ProviderType string
 
 const (
-	ProviderTypeNoop     ProviderType = "NOOP"
+	// ProviderTypeNoop is a no-op provider
+	ProviderTypeNoop ProviderType = "NOOP"
+
+	// ProviderTypeFirebase falls back to firebase's default email template.
+	// it uses password-reset rather than a true invitation.
 	ProviderTypeFirebase ProviderType = "FIREBASE"
-	ProviderTypeSMTP     ProviderType = "SIMPLE_SMTP"
+
+	// ProviderTypeSMTP composes emails and sends them via an external SMTP server.
+	ProviderTypeSMTP ProviderType = "SIMPLE_SMTP"
 )
 
 // Config represents the env var based configuration for email SMTP server connection.
@@ -47,15 +53,18 @@ type Config struct {
 	Secrets secrets.Config
 }
 
+// Provider is an interface for email-sending mechanisms.
 type Provider interface {
 	// SendNewUserInvitation sends an invite to join the server.
 	SendNewUserInvitation(ctx context.Context, email string) error
 }
 
+// HasSMTPCreds returns true if required fields for connecting to SMTP are set.
 func (c *Config) HasSMTPCreds() bool {
 	return c.User != "" && c.Password != "" && c.SMTPHost != "" && c.SMTPPort != ""
 }
 
+// ProviderFor creates an email provider given a Config.
 func ProviderFor(ctx context.Context, c *Config, assetsRoot string, auth *auth.Client) (Provider, error) {
 	switch typ := c.ProviderType; typ {
 	case ProviderTypeNoop:

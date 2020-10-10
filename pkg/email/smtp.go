@@ -59,22 +59,6 @@ func NewSMTP(ctx context.Context, user, password, host, port, assetsRoot string,
 
 // SendNewUserInvitation sends a password reset email to the user.
 func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string) error {
-	// Header
-	header := make(map[string]string)
-	header["From"] = s.User
-	header["To"] = toEmail
-	header["Subject"] = "COVID-19 Verification Server Invitation"
-
-	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = `text/html; charset="utf-8"`
-	header["Content-Disposition"] = "inline"
-	header["Content-Transfer-Encoding"] = "quoted-printable"
-
-	headerMessage := ""
-	for key, value := range header {
-		headerMessage += fmt.Sprintf("%s: %s\r\n", key, value)
-	}
-
 	inviteLink, err := s.FirebaseAuth.PasswordResetLink(ctx, toEmail)
 	if err != nil {
 		return err
@@ -86,12 +70,15 @@ func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 	}
 
 	// Compose message
-	var body bytes.Buffer
-	body.Write([]byte(headerMessage))
-	s.InviteTemplate.Execute(&body, struct {
+	var message bytes.Buffer
+	s.InviteTemplate.Execute(&message, struct {
+		ToEmail    string
+		FromEmail  string
 		InviteLink string
 		RealmName  string
 	}{
+		ToEmail:    toEmail,
+		FromEmail:  s.User,
 		InviteLink: inviteLink,
 		RealmName:  realmName,
 	})
@@ -100,7 +87,7 @@ func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
 
 	// Sending email.
-	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, body.Bytes())
+	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, message.Bytes())
 	if err != nil {
 		return err
 	}
