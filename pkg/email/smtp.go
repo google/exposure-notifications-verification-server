@@ -23,6 +23,7 @@ import (
 	"net/smtp"
 
 	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
 var _ Provider = (*SMTPProvider)(nil)
@@ -79,10 +80,21 @@ func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 		return err
 	}
 
+	realmName := ""
+	if realm := controller.RealmFromContext(ctx); realm != nil {
+		realmName = realm.Name
+	}
+
 	// Compose message
 	var body bytes.Buffer
 	body.Write([]byte(headerMessage))
-	s.InviteTemplate.Execute(&body, struct{ InviteLink string }{InviteLink: inviteLink})
+	s.InviteTemplate.Execute(&body, struct {
+		InviteLink string
+		RealmName  string
+	}{
+		InviteLink: inviteLink,
+		RealmName:  realmName,
+	})
 
 	// Authentication.
 	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
