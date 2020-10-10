@@ -74,7 +74,7 @@
           </div>
 
           <div class="form-label-group">
-            <input type="text" id="certificateAudiance" name="certificateAudiance" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" placeholder="Audience (aud)" />
+            <input type="text" id="certificateAudience" name="certificateAudience" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" placeholder="Audience (aud)" />
             <label for="name">Audience (aud)</label>
             {{template "errorable" $realm.ErrorsFor "certificateAudience"}}
             <small class="form-text text-muted">
