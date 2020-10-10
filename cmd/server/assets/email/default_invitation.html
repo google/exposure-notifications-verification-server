@@ -1,3 +1,4 @@
+{{define "email/invite"}}
 {{- /* Message Header */ -}}
 Subject: COVID-19 Verification Server Invitation
 To: {{.ToEmail}}
@@ -6,7 +7,6 @@ MIME-Version: 1.0
 Content-Type: text/html; charset="utf-8"
 hContent-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
-
 
 {{- /* Message Body */ -}}
 Welcome,<br/>
@@ -19,3 +19,4 @@ You many use the following link to set your password and sign-in:<br/>
 <br/>
 Thanks,<br/>
 The encv team
+{{end}}

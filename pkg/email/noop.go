@@ -27,8 +27,8 @@ var _ Provider = (*SMTPProvider)(nil)
 type NoopProvider struct{}
 
 // NewNoop returns No-op provider
-func NewNoop() (Provider, error) {
-	return &NoopProvider{}, nil
+func NewNoop() Provider {
+	return &NoopProvider{}
 }
 
 // SendNewUserInvitation sends a password reset email to the user.

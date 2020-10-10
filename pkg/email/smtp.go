@@ -16,14 +16,12 @@
 package email
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"html/template"
 	"net/smtp"
 
 	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 var _ Provider = (*SMTPProvider)(nil)
@@ -32,7 +30,7 @@ var _ Provider = (*SMTPProvider)(nil)
 type SMTPProvider struct {
 	FirebaseAuth *auth.Client
 
-	InviteTemplate *template.Template
+	Renderer *render.Renderer
 
 	User     string
 	Password string
@@ -41,20 +39,15 @@ type SMTPProvider struct {
 }
 
 // NewSMTP creates a new Smtp email sender with the given auth.
-func NewSMTP(ctx context.Context, user, password, host, port, assetsRoot string, auth *auth.Client) (Provider, error) {
-	t, err := template.ParseFiles(assetsRoot + "/email/default_invitation.html")
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing invite template %v", err)
-	}
-
+func NewSMTP(ctx context.Context, user, password, host, port string, h *render.Renderer, auth *auth.Client) Provider {
 	return &SMTPProvider{
-		FirebaseAuth:   auth,
-		InviteTemplate: t,
-		User:           user,
-		Password:       password,
-		SMTPHost:       host,
-		SMTPPort:       port,
-	}, nil
+		FirebaseAuth: auth,
+		Renderer:     h,
+		User:         user,
+		Password:     password,
+		SMTPHost:     host,
+		SMTPPort:     port,
+	}
 }
 
 // SendNewUserInvitation sends a password reset email to the user.
@@ -70,24 +63,27 @@ func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 	}
 
 	// Compose message
-	var message bytes.Buffer
-	s.InviteTemplate.Execute(&message, struct {
-		ToEmail    string
-		FromEmail  string
-		InviteLink string
-		RealmName  string
-	}{
-		ToEmail:    toEmail,
-		FromEmail:  s.User,
-		InviteLink: inviteLink,
-		RealmName:  realmName,
-	})
+	message, err := s.Renderer.RenderEmail("email/invite",
+		struct {
+			ToEmail    string
+			FromEmail  string
+			InviteLink string
+			RealmName  string
+		}{
+			ToEmail:    toEmail,
+			FromEmail:  s.User,
+			InviteLink: inviteLink,
+			RealmName:  realmName,
+		})
+	if err != nil {
+		return err
+	}
 
 	// Authentication.
 	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
 
 	// Sending email.
-	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, message.Bytes())
+	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, message)
 	if err != nil {
 		return err
 	}

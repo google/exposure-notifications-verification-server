@@ -145,16 +145,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to configure internal firebase client: %w", err)
 	}
 
-	// Setup server emailer
-	cfg.Email.ProviderType = email.ProviderTypeFirebase
-	if cfg.Email.HasSMTPCreds() {
-		cfg.Email.ProviderType = email.ProviderTypeSMTP
-	}
-	emailer, err := email.ProviderFor(ctx, &cfg.Email, cfg.AssetsPath, auth)
-	if err != nil {
-		return fmt.Errorf("failed to configure internal firebase client: %w", err)
-	}
-
 	// Create the router
 	r := mux.NewRouter()
 
@@ -167,6 +157,16 @@ func realMain(ctx context.Context) error {
 	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
+	// Setup server emailer
+	cfg.Email.ProviderType = email.ProviderTypeFirebase
+	if cfg.Email.HasSMTPCreds() {
+		cfg.Email.ProviderType = email.ProviderTypeSMTP
+	}
+	emailer, err := email.ProviderFor(ctx, &cfg.Email, h, auth)
+	if err != nil {
+		return fmt.Errorf("failed to configure internal firebase client: %w", err)
 	}
 
 	// Rate limiting

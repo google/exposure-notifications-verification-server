@@ -20,6 +20,7 @@ import (
 
 	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 // ProviderType represents a type of email provider.
@@ -65,14 +66,14 @@ func (c *Config) HasSMTPCreds() bool {
 }
 
 // ProviderFor creates an email provider given a Config.
-func ProviderFor(ctx context.Context, c *Config, assetsRoot string, auth *auth.Client) (Provider, error) {
+func ProviderFor(ctx context.Context, c *Config, h *render.Renderer, auth *auth.Client) (Provider, error) {
 	switch typ := c.ProviderType; typ {
 	case ProviderTypeNoop:
-		return NewNoop()
+		return NewNoop(), nil
 	case ProviderTypeFirebase:
 		return NewFirebase(ctx)
 	case ProviderTypeSMTP:
-		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort, assetsRoot, auth)
+		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort, h, auth), nil
 	default:
 		return nil, fmt.Errorf("unknown email provider type: %v", typ)
 	}
