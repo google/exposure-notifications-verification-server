@@ -41,7 +41,7 @@
 
           <div class="form-label-group">
             <input type="text" class="form-control" value="{{$realm.RegionCode}} " disabled />
-            <label for="name">Region code</label>
+            <label for="code">Region code</label>
           </div>
 
           {{if .supportsPerRealmSigning}}
@@ -59,12 +59,12 @@
 
           <div class="form-label-group">
             <input type="text" class="form-control" value="{{$realm.CertificateIssuer}} " disabled />
-            <label for="name">Issuer (iss)</label>
+            <label for="iss">Issuer (iss)</label>
           </div>
 
           <div class="form-label-group">
             <input type="text" class="form-control" value="{{$realm.CertificateAudience}} " disabled />
-            <label for="name">Audience (aud)</label>
+            <label for="aud">Audience (aud)</label>
           </div>
           {{end}}
 

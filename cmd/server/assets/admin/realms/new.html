@@ -65,7 +65,7 @@
 
           <div class="form-label-group">
             <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}" value="{{$realm.CertificateIssuer}}" placeholder="Issuer (iss)" />
-            <label for="name">Issuer (iss)</label>
+            <label for="certificateIssuer">Issuer (iss)</label>
             {{template "errorable" $realm.ErrorsFor "certificateIssuer"}}
             <small class="form-text text-muted">
               This value is specific to the health authority. After created
@@ -75,7 +75,7 @@
 
           <div class="form-label-group">
             <input type="text" id="certificateAudience" name="certificateAudience" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" placeholder="Audience (aud)" />
-            <label for="name">Audience (aud)</label>
+            <label for="certificateAudience">Audience (aud)</label>
             {{template "errorable" $realm.ErrorsFor "certificateAudience"}}
             <small class="form-text text-muted">
               The audience (<code>aud</code>) value is provided the <em>key
