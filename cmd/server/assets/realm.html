@@ -68,7 +68,7 @@
           </div>
 
           <div class="form-group row">
-            <label for="name" class="col-sm-3">Region code:</label>
+            <label for="regionCode" class="col-sm-3">Region code:</label>
             <div class="col-sm-9">
               <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}" />
               {{if $realm.ErrorsFor "regionCode"}}
@@ -85,7 +85,7 @@
           </div>
 
           <div class="form-group row">
-            <label for="name" class="col-sm-3">Welcome message:</label>
+            <label for="welcomeMessage" class="col-sm-3">Welcome message:</label>
             <div class="col-sm-9">
               <textarea id="welcome-message" name="welcomeMessage" class="form-control text-monospace{{if $realm.ErrorsFor "welcomeMessage"}} is-invalid{{end}}" rows="5">{{$realm.WelcomeMessage}}</textarea>
               {{if $realm.ErrorsFor "welcomeMessage"}}
@@ -353,7 +353,7 @@
           {{end}}
 
           <div class="form-group row">
-            <label for="name" class="col-sm-3">SMS text template:</label>
+            <label for="SMSTextTemplate" class="col-sm-3">SMS text template:</label>
             <div class="col-sm-9">
               <textarea id="SMSTextTemplate" name="SMSTextTemplate" class="form-control{{if $realm.ErrorsFor "SMSTextTemplate"}} is-invalid{{end}}">{{$realm.SMSTextTemplate}}</textarea>
               {{if $realm.ErrorsFor "SMSTextTemplate"}}

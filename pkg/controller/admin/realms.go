@@ -45,7 +45,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		RegionCode             string `form:"regionCode"`
 		UseRealmCertificateKey bool   `form:"useRealmCertificateKey"`
 		CertificateIssuer      string `form:"certificateIssuer"`
-		CertificateAudience    string `form:"certificateAudiance"`
+		CertificateAudience    string `form:"certificateAudience"`
 		CanUseSystemSMSConfig  bool   `form:"can_use_system_sms_config"`
 	}
 
