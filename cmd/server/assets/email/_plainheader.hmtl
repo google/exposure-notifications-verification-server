@@ -4,6 +4,6 @@ To: {{.ToEmail}}
 From: {{.FromEmail}}
 MIME-Version: 1.0
 Content-Type: text/pain; charset="utf-8"
-hContent-Disposition: inline
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 {{end}}
