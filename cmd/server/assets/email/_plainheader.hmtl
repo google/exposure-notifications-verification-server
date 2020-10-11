@@ -1,0 +1,9 @@
+{{define "email/plainheader"}}
+Subject: COVID-19 Verification Server Invitation
+To: {{.ToEmail}}
+From: {{.FromEmail}}
+MIME-Version: 1.0
+Content-Type: text/pain; charset="utf-8"
+hContent-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+{{end}}
