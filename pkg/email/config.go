@@ -45,6 +45,9 @@ type Config struct {
 	User     string `env:"EMAIL_USER"`
 	Password string `env:"EMAIL_PASSWORD"`
 	SMTPHost string `env:"EMAIL_SMTP_HOST"`
+
+	// SMTPPort defines the email port to connect to.
+	// Note: legacy email port 25 is blocked on GCP and many other systems.
 	SMTPPort string `env:"EMAIL_SMTP_PORT, default=587"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
