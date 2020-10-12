@@ -40,9 +40,9 @@ const (
 
 // Config represents the env var based configuration for email SMTP server connection.
 //
-// Note: This may not work with email providers that do not accept external connections.
-//       The provider must accept TLS and users should consider the security of the
-//       email provder / account.
+// Note: This will only work with email providers that accept external connections.
+//       The provider must accept TLS and users should independently consider the security
+//       of the email provder / account.
 //   Gmail or Google Workspace accounts can be used with an app-password, but will
 //   not work with security features such as Advanced Protection enabled.
 type Config struct {
