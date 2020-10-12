@@ -355,5 +355,5 @@ func (c *Controller) recordCapacity(ctx context.Context, limit, remaining uint64
 	stats.Record(ctx, mRealmTokenCapacity.M(capacity))
 
 	stats.RecordWithTags(ctx, []tag.Mutator{tokenAvailableTag()}, mRealmToken.M(int64(remaining)))
-	stats.RecordWithTags(ctx, []tag.Mutator{tokenUsedTag()}, mRealmToken.M(int64(issued)))
+	stats.RecordWithTags(ctx, []tag.Mutator{tokenLimitTag()}, mRealmToken.M(int64(limit)))
 }

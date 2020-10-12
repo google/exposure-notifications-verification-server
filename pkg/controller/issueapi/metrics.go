@@ -54,8 +54,8 @@ func tokenAvailableTag() tag.Mutator {
 	return tag.Upsert(tokenStateTagKey, "AVAILABLE")
 }
 
-func tokenUsedTag() tag.Mutator {
-	return tag.Upsert(tokenStateTagKey, "USED")
+func tokenLimitTag() tag.Mutator {
+	return tag.Upsert(tokenStateTagKey, "LIMIT")
 }
 
 func init() {
