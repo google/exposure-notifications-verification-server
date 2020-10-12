@@ -68,5 +68,5 @@ gridLayout:
               timeSeriesQueryLanguage: >
                 generic_task ::
                 custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest
-                | filter metric.state == "AVAILABLE";
+                | filter metric.state == "AVAILABLE"
                 | [metric.realm]
