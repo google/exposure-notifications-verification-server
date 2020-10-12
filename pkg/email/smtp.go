@@ -16,13 +16,13 @@
 package email
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"mime/quotedprintable"
 	"net/smtp"
 
 	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 var _ Provider = (*SMTPProvider)(nil)
@@ -31,6 +31,8 @@ var _ Provider = (*SMTPProvider)(nil)
 type SMTPProvider struct {
 	FirebaseAuth *auth.Client
 
+	Renderer *render.Renderer
+
 	User     string
 	Password string
 	SMTPHost string
@@ -38,57 +40,59 @@ type SMTPProvider struct {
 }
 
 // NewSMTP creates a new Smtp email sender with the given auth.
-func NewSMTP(ctx context.Context, user, password, host, port string, auth *auth.Client) (Provider, error) {
+func NewSMTP(ctx context.Context, user, password, host, port string, h *render.Renderer, auth *auth.Client) Provider {
 	return &SMTPProvider{
 		FirebaseAuth: auth,
+		Renderer:     h,
 		User:         user,
 		Password:     password,
 		SMTPHost:     host,
 		SMTPPort:     port,
-	}, nil
+	}
 }
 
 // SendNewUserInvitation sends a password reset email to the user.
 func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string) error {
-	// Header
-	header := make(map[string]string)
-	header["From"] = s.User
-	header["To"] = toEmail
-	header["Subject"] = "COVID-19 Verification Server Invitation"
-
-	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = `text/html; charset="utf-8"`
-	header["Content-Disposition"] = "inline"
-	header["Content-Transfer-Encoding"] = "quoted-printable"
-
-	headerMessage := ""
-	for key, value := range header {
-		headerMessage += fmt.Sprintf("%s: %s\r\n", key, value)
-	}
-
 	inviteLink, err := s.FirebaseAuth.PasswordResetLink(ctx, toEmail)
 	if err != nil {
 		return err
 	}
 
-	// Message.
-	body := fmt.Sprintf(
-		`You've been invited to the COVID-19 Verification Server.
-		Use the link below to set up your account.<br>%s`, inviteLink)
-	var bodyMessage bytes.Buffer
-	temp := quotedprintable.NewWriter(&bodyMessage)
-	temp.Write([]byte(body))
-	temp.Close()
+	realmName := ""
+	if realm := controller.RealmFromContext(ctx); realm != nil {
+		realmName = realm.Name
+	}
 
-	finalMessage := headerMessage + "\r\n" + bodyMessage.String()
-
-	// Authentication.
-	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
-
-	// Sending email.
-	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, []byte(finalMessage))
+	// Compose message
+	message, err := s.Renderer.RenderEmail("email/invite",
+		struct {
+			ToEmail    string
+			FromEmail  string
+			InviteLink string
+			RealmName  string
+		}{
+			ToEmail:    toEmail,
+			FromEmail:  s.User,
+			InviteLink: inviteLink,
+			RealmName:  realmName,
+		})
 	if err != nil {
 		return err
 	}
+
+	// Authentication.
+	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
+	go s.sendMail(ctx, auth, toEmail, message)
+
 	return nil
+}
+
+func (s *SMTPProvider) sendMail(ctx context.Context, auth smtp.Auth, toEmail string, message []byte) {
+	logger := logging.FromContext(ctx)
+
+	// Sending email.
+	err := smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, message)
+	if err != nil {
+		logger.Warnw("failed to send invitation email", "error", err)
+	}
 }
