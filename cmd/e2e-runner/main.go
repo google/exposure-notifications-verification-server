@@ -155,6 +155,7 @@ func realMain(ctx context.Context) error {
 		app, err := db.FindAuthorizedAppByAPIKey(deviceKey)
 		if err != nil {
 			logger.Errorf("device API key cleanup failed: %w", err)
+			return
 		}
 		now := time.Now().UTC()
 		app.DeletedAt = &now
