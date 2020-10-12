@@ -39,7 +39,9 @@ var (
 
 	mSMSRequest = stats.Int64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitDimensionless)
 
-	mRealmToken = stats.Int64(metricPrefix+"/realm_token", "# of realm tokens", stats.UnitDimensionless)
+	mRealmToken = stats.Int64(metricPrefix+"/realm_token", "# of realm tokens from limiter", stats.UnitDimensionless)
+
+	mRealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
 )
 
 var (
@@ -124,6 +126,12 @@ func init() {
 			TagKeys:     append(observability.CommonTagKeys(), tokenStateTagKey),
 			Measure:     mRealmToken,
 			Aggregation: view.LastValue(),
+		}, {
+			Name:        metricPrefix + "/realm_token_used_count",
+			Description: "The count of # of realm token used.",
+			TagKeys:     observability.CommonTagKeys(),
+			Measure:     mRealmTokenUsed,
+			Aggregation: view.Count(),
 		},
 	}...)
 }

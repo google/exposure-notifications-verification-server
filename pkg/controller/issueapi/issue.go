@@ -239,7 +239,6 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 			key := fmt.Sprintf("realm:quota:%s", dig)
 			limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
-			c.recordCapacity(ctx, limit, remaining)
 			if err != nil {
 				logger.Errorw("failed to take from limiter", "error", err)
 				stats.Record(ctx, mQuotaErrors.M(1))
@@ -248,6 +247,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				result = observability.APIResultError("FAILED_TO_TAKE_FROM_LIMITER")
 				return
 			}
+			c.recordCapacity(ctx, limit, remaining)
 			if !ok {
 				logger.Warnw("realm has exceeded daily quota",
 					"realm", realm.ID,
@@ -349,6 +349,7 @@ func (c *Controller) recordCapacity(ctx context.Context, limit, remaining uint64
 
 	issued := uint64(limit) - remaining
 	stats.Record(ctx, mRealmTokenIssued.M(int64(issued)))
+	stats.Record(ctx, mRealmTokenUsed.M(1))
 
 	capacity := float64(issued) / float64(limit)
 	stats.Record(ctx, mRealmTokenCapacity.M(capacity))
