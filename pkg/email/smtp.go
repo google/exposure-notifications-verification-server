@@ -20,6 +20,7 @@ import (
 	"net/smtp"
 
 	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
@@ -81,11 +82,17 @@ func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string
 
 	// Authentication.
 	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
+	go s.sendMail(ctx, auth, toEmail, message)
+
+	return nil
+}
+
+func (s *SMTPProvider) sendMail(ctx context.Context, auth smtp.Auth, toEmail string, message []byte) {
+	logger := logging.FromContext(ctx)
 
 	// Sending email.
-	err = smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, message)
+	err := smtp.SendMail(s.SMTPHost+":"+s.SMTPPort, auth, s.User, []string{toEmail}, message)
 	if err != nil {
-		return err
+		logger.Warnw("failed to send invitation email", "error", err)
 	}
-	return nil
 }
