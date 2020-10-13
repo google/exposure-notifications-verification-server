@@ -40,6 +40,9 @@
             <a class="nav-link" id="sms-tab" data-toggle="tab" href="#sms" role="tab" aria-controls="sms" aria-selected="false">SMS</a>
           </li>
           <li class="nav-item" role="presentation">
+            <a class="nav-link" id="sms-email" data-toggle="tab" href="#email" role="tab" aria-controls="email" aria-selected="false">Email</a>
+          </li>
+          <li class="nav-item" role="presentation">
             <a class="nav-link" id="security-tab" data-toggle="tab" href="#security" role="tab" aria-controls="security" aria-selected="false">Security</a>
           </li>
           <li class="nav-item" role="presentation">
@@ -63,6 +66,9 @@
           </div>
           <div class="tab-pane" id="sms" role="tabpanel" aria-labelledby="sms-tab">
             {{template "realmadmin/_form_sms" .}}
+          </div>
+          <div class="tab-pane" id="email" role="tabpanel" aria-labelledby="email-tab">
+            {{template "realmadmin/_form_email" .}}
           </div>
           <div class="tab-pane" id="security" role="tabpanel" aria-labelledby="security-tab">
             {{template "realmadmin/_form_security" .}}
