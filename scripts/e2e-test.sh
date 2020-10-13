@@ -22,7 +22,7 @@ ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
 function smoke() {
     # PROW_JOB_ID is an env var set by prow, use project for prow when it's in prow
     if [[ -z "${PROJECT_ID:-}" && -n "${PROW_JOB_ID:-}" ]]; then
-        PROJECT_ID="$(boskos_acquire)"
+        PROJECT_ID="$(boskos_acquire verification-smoke-project)"
         trap "boskosctl_wrapper release --name \"${PROJECT_ID}\" --target-state dirty >&2" EXIT
         export PROJECT_ID
     fi
@@ -33,7 +33,7 @@ function smoke() {
 function incremental() {
    # PROW_JOB_ID is an env var set by prow, use project for prow when it's in prow
   if [[ -z "${PROJECT_ID:-}" && -n "${PROW_JOB_ID:-}" ]]; then
-      PROJECT_ID="$(boskos_acquire key-e2e-project)"
+      PROJECT_ID="$(boskos_acquire verification-e2e-project)"
       trap "boskosctl_wrapper release --name \"${PROJECT_ID}\" --target-state dirty >&2" EXIT
       export PROJECT_ID
   fi
@@ -44,7 +44,6 @@ function incremental() {
   export_terraform_output db_name DB_NAME
   export_terraform_output db_user DB_USER
   export_terraform_output db_password DB_PASSWORD
-  export_terraform_output export_bucket GOOGLE_CLOUD_BUCKET
   export_terraform_output apiserver_urls[0] APISERVER_URL
   export_terraform_output adminapi_urls[0] ADMINAPI_URL
   export DB_PASSWORD="secret://${DB_PASSWORD}"
@@ -91,11 +90,12 @@ function boskosctl_wrapper() {
 
 # Acquire GCP project from Boskos, the manager of projects pool
 # Return the project name being acquired
+# $1 ... boskos project type
 function boskos_acquire() {
     local resource
     local resource_name
     echo "Try to acquire project from boskos" >&2
-    resource="$(boskosctl_wrapper acquire --type verification-smoke-project --state free --target-state busy --timeout 10m)"
+    resource="$(boskosctl_wrapper acquire --type $1 --state free --target-state busy --timeout 10m)"
     resource_name="$(jq .name <<<"${resource}" | tr -d \")"
     echo "Acquired project from boskos: ${resource_name}" >&2
     # Send a heartbeat in the background to keep the lease while using the resource.
