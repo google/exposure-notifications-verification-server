@@ -98,56 +98,44 @@ func (c *Controller) HandleCleanup() http.Handler {
 		var merr *multierror.Error
 
 		// Verification codes
-		stats.Record(ctx, mPurgeVerificationCodesAttempts.M(1))
 		item = tag.Upsert(itemTagKey, "VERIFICATION_CODE")
 		if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
-			stats.Record(ctx, mPurgeVerificationCodesErrors.M(1))
 			merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
 			result = observability.ResultError("FAILED")
 		} else {
-			stats.Record(ctx, mPurgeVerificationCodesPurged.M(count))
 			c.logger.Infow("purged verification codes", "count", count)
 			result = observability.ResultOK()
 		}
 		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
 
 		// Verification tokens
-		stats.Record(ctx, mPurgeVerificationTokensAttempts.M(1))
 		item = tag.Upsert(itemTagKey, "VERIFICATION_TOKEN")
 		if count, err := c.db.PurgeTokens(c.config.VerificationTokenMaxAge); err != nil {
-			stats.Record(ctx, mPurgeVerificationTokensErrors.M(1))
 			result = observability.ResultError("FAILED")
 			merr = multierror.Append(merr, fmt.Errorf("failed to purge tokens: %w", err))
 		} else {
-			stats.Record(ctx, mPurgeVerificationTokensPurged.M(count))
 			c.logger.Infow("purged verification tokens", "count", count)
 			result = observability.ResultOK()
 		}
 		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
 
 		// Mobile apps
-		stats.Record(ctx, mPurgeMobileAppsAttempts.M(1))
 		item = tag.Upsert(itemTagKey, "MOBILE_APP")
 		if count, err := c.db.PurgeMobileApps(c.config.MobileAppMaxAge); err != nil {
-			stats.Record(ctx, mPurgeMobileAppsErrors.M(1))
 			merr = multierror.Append(merr, fmt.Errorf("failed to purge mobile apps: %w", err))
 			result = observability.ResultError("FAILED")
 		} else {
-			stats.Record(ctx, mPurgeMobileAppsPurged.M(count))
 			c.logger.Infow("purged mobile apps", "count", count)
 			result = observability.ResultOK()
 		}
 		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
 
 		// Audit entries
-		stats.Record(ctx, mPurgeAuditEntriesAttempts.M(1))
 		item = tag.Upsert(itemTagKey, "AUDIT_ENTRY")
 		if count, err := c.db.PurgeAuditEntries(c.config.AuditEntryMaxAge); err != nil {
-			stats.Record(ctx, mPurgeAuditEntriesErrors.M(1))
 			merr = multierror.Append(merr, fmt.Errorf("failed to purge audit entries: %w", err))
 			result = observability.ResultError("FAILED")
 		} else {
-			stats.Record(ctx, mPurgeAuditEntriesPurged.M(count))
 			c.logger.Infow("purged audit entries", "count", count)
 			result = observability.ResultOK()
 		}
