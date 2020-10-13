@@ -95,12 +95,8 @@ func (c *Controller) HandleIssue() http.Handler {
 			stats.Record(ctx, mRequest.M(1))
 		}(&blame, &result)
 
-		// Record the issue attempt.
-		stats.Record(ctx, mIssueAttempts.M(1))
-
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			blame = observability.BlameClient
 			result = observability.APIResultError("FAILED_TO_PARSE_JSON_REQUEST")
@@ -114,7 +110,6 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
-			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			blame = observability.BlameClient
 			result = observability.APIResultError("MISSING_AUTHORIZED_APP")
@@ -125,7 +120,6 @@ func (c *Controller) HandleIssue() http.Handler {
 		if authApp != nil {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
-				stats.Record(ctx, mCodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				blame = observability.BlameClient
 				result = observability.APIResultError("UNAUTHORIZED")
@@ -136,7 +130,6 @@ func (c *Controller) HandleIssue() http.Handler {
 			realm = controller.RealmFromContext(ctx)
 		}
 		if realm == nil {
-			stats.Record(ctx, mIssueAttempts.M(1), mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			blame = observability.BlameServer
 			result = observability.APIResultError("MISSING_REALM")
@@ -148,7 +141,6 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		// If this realm requires a date but no date was specified, return an error.
 		if request.SymptomDate == "" && realm.RequireDate {
-			stats.Record(ctx, mIssueAttempts.M(1), mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate))
 			blame = observability.BlameClient
 			result = observability.APIResultError("MISSING_REQUIRED_FIELDS")
@@ -158,7 +150,6 @@ func (c *Controller) HandleIssue() http.Handler {
 		// Validate that the request with the provided test type is valid for this
 		// realm.
 		if !realm.ValidTestType(request.TestType) {
-			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("unsupported test type: %v", request.TestType))
 			blame = observability.BlameClient
@@ -172,7 +163,6 @@ func (c *Controller) HandleIssue() http.Handler {
 			smsProvider, err = realm.SMSProvider(c.db)
 			if err != nil {
 				logger.Errorw("failed to get sms provider", "error", err)
-				stats.Record(ctx, mCodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
 				blame = observability.BlameServer
 				result = observability.APIResultError("FAILED_TO_GET_SMS_PROVIDER")
@@ -180,7 +170,6 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 			if smsProvider == nil {
 				err := fmt.Errorf("phone provided, but no sms provider is configured")
-				stats.Record(ctx, mCodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 				blame = observability.BlameServer
 				result = observability.APIResultError("FAILED_TO_GET_SMS_PROVIDER")
@@ -191,7 +180,6 @@ func (c *Controller) HandleIssue() http.Handler {
 		// Verify the test type
 		request.TestType = strings.ToLower(request.TestType)
 		if _, ok := c.validTestType[request.TestType]; !ok {
-			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid test type"))
 			blame = observability.BlameClient
 			result = observability.APIResultError("INVALID_TEST_TYPE")
@@ -201,7 +189,6 @@ func (c *Controller) HandleIssue() http.Handler {
 		var symptomDate *time.Time
 		if request.SymptomDate != "" {
 			if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
-				stats.Record(ctx, mCodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process symptom onset date: %v", err))
 				blame = observability.BlameClient
 				result = observability.APIResultError("FAILED_TO_PROCESS_SYMPTOM_ONSET_DATE")
@@ -218,7 +205,6 @@ func (c *Controller) HandleIssue() http.Handler {
 						maxDate.Format("2006-01-02"),
 						parsed.Format("2006-01-02"),
 					)
-					stats.Record(ctx, mCodeIssueErrors.M(1))
 					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 					blame = observability.BlameClient
 					result = observability.APIResultError("SYMPTOM_ONSET_DATE_NOT_IN_VALID_RANGE")
@@ -291,7 +277,6 @@ func (c *Controller) HandleIssue() http.Handler {
 		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
-			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			blame = observability.BlameServer
 			result = observability.APIResultError("FAILED_TO_ISSUE_CODE")
@@ -308,7 +293,6 @@ func (c *Controller) HandleIssue() http.Handler {
 				}
 
 				logger.Errorw("failed to send sms", "error", err)
-				stats.Record(ctx, mCodeIssueErrors.M(1))
 				stats.RecordWithTags(ctx, []tag.Mutator{observability.APIResultError("NOT_OK")}, mSMSRequest.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 				blame = observability.BlameServer
@@ -318,7 +302,6 @@ func (c *Controller) HandleIssue() http.Handler {
 			stats.RecordWithTags(ctx, []tag.Mutator{observability.APIResultOK()}, mSMSRequest.M(1))
 		}
 
-		stats.Record(ctx, mCodesIssued.M(1))
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
 				UUID:                   uuid,
@@ -348,12 +331,11 @@ func (c *Controller) recordCapacity(ctx context.Context, limit, remaining uint64
 	stats.Record(ctx, mRealmTokenRemaining.M(int64(remaining)))
 
 	issued := uint64(limit) - remaining
-	stats.Record(ctx, mRealmTokenIssued.M(int64(issued)))
-	stats.Record(ctx, mRealmTokenUsed.M(1))
 
 	capacity := float64(issued) / float64(limit)
 	stats.Record(ctx, mRealmTokenCapacity.M(capacity))
 
+	stats.Record(ctx, mRealmTokenUsed.M(1))
 	stats.RecordWithTags(ctx, []tag.Mutator{tokenAvailableTag()}, mRealmToken.M(int64(remaining)))
 	stats.RecordWithTags(ctx, []tag.Mutator{tokenLimitTag()}, mRealmToken.M(int64(limit)))
 }
