@@ -27,7 +27,6 @@ const metricPrefix = observability.MetricRoot + "/api/issue"
 
 var (
 	mRealmTokenRemaining = stats.Int64(metricPrefix+"/realm_token_remaining", "Remaining number of verification codes", stats.UnitDimensionless)
-	mRealmTokenIssued    = stats.Int64(metricPrefix+"/realm_token_issued", "Total issued verification codes", stats.UnitDimensionless)
 	mRealmTokenCapacity  = stats.Float64(metricPrefix+"/realm_token_capacity", "Capacity utilization for issuing verification codes", stats.UnitDimensionless)
 
 	mRequest = stats.Int64(metricPrefix+"/request", "# of code issue requests", stats.UnitDimensionless)
@@ -60,12 +59,6 @@ func init() {
 			Description: "Latest realm remaining tokens",
 			TagKeys:     observability.CommonTagKeys(),
 			Measure:     mRealmTokenRemaining,
-			Aggregation: view.LastValue(),
-		}, {
-			Name:        metricPrefix + "/realm_token_issued_latest",
-			Description: "Latest realm issued tokens",
-			TagKeys:     observability.CommonTagKeys(),
-			Measure:     mRealmTokenIssued,
 			Aggregation: view.LastValue(),
 		}, {
 			Name:        metricPrefix + "/realm_token_capacity_latest",
