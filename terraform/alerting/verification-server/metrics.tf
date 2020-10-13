@@ -66,3 +66,17 @@ resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity
   labels { key = "build_id" }
   labels { key = "build_tag" }
 }
+
+resource "google_monitoring_metric_descriptor" "api--issue--realm_token_latest" {
+  project      = var.verification-server-project
+  description  = "Latest realm token count"
+  display_name = "OpenCensus/en-verification-server/api/issue/realm_token_latest"
+  type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest"
+  metric_kind  = "GAUGE"
+  value_type   = "INT64"
+  unit         = "1"
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
+  labels { key = "state" }
+}
