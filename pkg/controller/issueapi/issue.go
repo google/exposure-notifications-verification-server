@@ -227,6 +227,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
 			if err != nil {
 				logger.Errorw("failed to take from limiter", "error", err)
+				stats.Record(ctx, mQuotaErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
 				blame = observability.BlameServer
 				result = observability.APIResultError("FAILED_TO_TAKE_FROM_LIMITER")
@@ -238,6 +239,7 @@ func (c *Controller) HandleIssue() http.Handler {
 					"realm", realm.ID,
 					"limit", limit,
 					"reset", reset)
+				stats.Record(ctx, mQuotaExceeded.M(1))
 
 				if c.config.GetEnforceRealmQuotas() {
 					c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
