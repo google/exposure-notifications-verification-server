@@ -122,11 +122,11 @@ func populatePageStrip(offset, count int) *Pages {
 	}
 
 	// Previous button data
-	if offset != 0 {
+	if offset > 0 {
 		pages.Previous = max(offset-pageSize, 0)
 	}
 	// Next button data
-	if offset != count-pageSize {
+	if offset < count-pageSize {
 		pages.Next = min(offset+pageSize, count-pageSize)
 	}
 	return pages
