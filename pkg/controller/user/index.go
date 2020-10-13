@@ -88,21 +88,15 @@ func populatePageStrip(offset, count int) *Pages {
 		Offsets:  []PageLabel{},
 		Previous: -1,
 		Next:     -1,
-		Footer:   fmt.Sprintf("%d-%d of %d", offset, offset+pageSize, count),
+		Footer:   fmt.Sprintf("%d-%d of %d", offset+1, min(offset+pageSize, count), count),
 	}
 
 	// Calc start and end for paging as +/- 5 pages from current
-	iStart := offset - pageSize*5
-	if iStart <= 0 {
-		iStart = 0
-	}
-	iEnd := iStart + pageSize*11
-	if iEnd > count-pageSize {
-		iEnd = count - pageSize
-	}
+	iStart := max(offset-pageSize*5, 0)
+	iEnd := min(iStart+pageSize*11, count-pageSize)
 
 	// Page number series
-	for i := iStart; i <= iEnd; i += pageSize {
+	for i := iStart; i < iEnd+pageSize; i += pageSize {
 		pl := PageLabel{
 			Offset: i,
 			Label:  strconv.Itoa((i / pageSize) + 1),
@@ -129,17 +123,11 @@ func populatePageStrip(offset, count int) *Pages {
 
 	// Previous button data
 	if offset != 0 {
-		pages.Previous = offset - pageSize
-		if pages.Previous < 0 {
-			pages.Previous = 0
-		}
+		pages.Previous = max(offset-pageSize, 0)
 	}
 	// Next button data
 	if offset != count-pageSize {
-		pages.Next = offset + pageSize
-		if pages.Next > count-pageSize {
-			pages.Next = count - pageSize
-		}
+		pages.Next = min(offset+pageSize, count-pageSize)
 	}
 	return pages
 }
@@ -155,4 +143,18 @@ func (c *Controller) renderIndex(
 	m["users"] = users
 	m["pages"] = pages
 	c.h.RenderHTML(w, "users/index", m)
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
