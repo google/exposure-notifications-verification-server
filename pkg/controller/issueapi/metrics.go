@@ -26,11 +26,6 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/issue"
 
 var (
-	mIssueAttempts       = stats.Int64(metricPrefix+"/attempts", "The number of attempts to issue codes", stats.UnitDimensionless)
-	mQuotaErrors         = stats.Int64(metricPrefix+"/quota_errors", "The number of errors when taking from the limiter", stats.UnitDimensionless)
-	mQuotaExceeded       = stats.Int64(metricPrefix+"/quota_exceeded", "The number of times quota has been exceeded", stats.UnitDimensionless)
-	mCodesIssued         = stats.Int64(metricPrefix+"/codes_issued", "The number of verification codes issued", stats.UnitDimensionless)
-	mCodeIssueErrors     = stats.Int64(metricPrefix+"/code_issue_error", "The number of failed code issues", stats.UnitDimensionless)
 	mRealmTokenRemaining = stats.Int64(metricPrefix+"/realm_token_remaining", "Remaining number of verification codes", stats.UnitDimensionless)
 	mRealmTokenIssued    = stats.Int64(metricPrefix+"/realm_token_issued", "Total issued verification codes", stats.UnitDimensionless)
 	mRealmTokenCapacity  = stats.Float64(metricPrefix+"/realm_token_capacity", "Capacity utilization for issuing verification codes", stats.UnitDimensionless)
@@ -61,36 +56,6 @@ func tokenLimitTag() tag.Mutator {
 func init() {
 	enobservability.CollectViews([]*view.View{
 		{
-			Name:        metricPrefix + "/attempt_count",
-			Measure:     mIssueAttempts,
-			Description: "The count of the number of attempts to issue codes",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/quota_errors_count",
-			Measure:     mQuotaErrors,
-			Description: "The count of the number of errors to the limiter",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/quota_exceeded_count",
-			Measure:     mQuotaExceeded,
-			Description: "The count of the number of times quota has been exceeded",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/codes_issued_count",
-			Measure:     mCodesIssued,
-			Description: "The count of verification codes issued",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/code_issue_error_count",
-			Measure:     mCodeIssueErrors,
-			Description: "The count of the number of times a code fails to issue",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
 			Name:        metricPrefix + "/realm_token_remaining_latest",
 			Description: "Latest realm remaining tokens",
 			TagKeys:     observability.CommonTagKeys(),
