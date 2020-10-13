@@ -18,7 +18,7 @@ resource "google_monitoring_dashboard" "verification-server" {
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
     google_monitoring_metric_descriptor.api--issue--request_count,
-    google_monitoring_metric_descriptor.api--issue--realm_token_capacity_latest,
+    google_monitoring_metric_descriptor.api--issue--realm_token_latest,
     google_monitoring_metric_descriptor.ratelimit--limitware--rate_limited_count
   ]
 }
