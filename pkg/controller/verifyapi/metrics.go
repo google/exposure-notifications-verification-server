@@ -25,55 +25,12 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/verify"
 
 var (
-	mCodeVerifyAttempts    = stats.Int64(metricPrefix+"/attempts", "The number of attempted code verifications", stats.UnitDimensionless)
-	mCodeVerifyExpired     = stats.Int64(metricPrefix+"/code_expired", "The number of attempted claims on expired codes", stats.UnitDimensionless)
-	mCodeVerifyCodeUsed    = stats.Int64(metricPrefix+"/code_used", "The number of attempted claims on already used codes", stats.UnitDimensionless)
-	mCodeVerifyInvalid     = stats.Int64(metricPrefix+"/code_invalid", "The number of attempted claims on invalid codes", stats.UnitDimensionless)
-	mCodeVerified          = stats.Int64(metricPrefix+"/code_verified", "The number of successfully claimed codes", stats.UnitDimensionless)
-	mCodeVerificationError = stats.Int64(metricPrefix+"/error", "The number of other errors in code issue", stats.UnitDimensionless)
-
 	mRequest = stats.Int64(metricPrefix+"/request", "# of verify requests", stats.UnitDimensionless)
 )
 
 func init() {
 	enobservability.CollectViews([]*view.View{
 		{
-			Name:        metricPrefix + "/attempt_count",
-			Measure:     mCodeVerifyAttempts,
-			Description: "The count of attempted code verifications",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/code_expired_count",
-			Measure:     mCodeVerifyExpired,
-			Description: "The count of attempted claims on expired verification codes",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/code_used_count",
-			Measure:     mCodeVerifyCodeUsed,
-			Description: "The count of attempted claims on an already used verification codes",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/code_invalid_count",
-			Measure:     mCodeVerifyInvalid,
-			Description: "The count of attempted claims on invalid verification codes",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/code_verified_count",
-			Measure:     mCodeVerified,
-			Description: "The count of successfully verified codes",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/error_count",
-			Measure:     mCodeVerificationError,
-			Description: "The count of errors issuing verification codes",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
 			Name:        metricPrefix + "/request_count",
 			Measure:     mRequest,
 			Description: "Count of verify requests",
