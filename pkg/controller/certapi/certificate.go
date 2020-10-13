@@ -38,7 +38,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		ctx := observability.WithBuildInfo(r.Context())
 
 		var blame = observability.BlameNone
-		var result = observability.APIResultOK()
+		var result = observability.ResultOK()
 
 		defer func(blame, result *tag.Mutator) {
 			ctx, err := tag.New(ctx, *blame, *result)
@@ -54,7 +54,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 			c.logger.Errorf("missing authorized app")
 			controller.MissingAuthorizedApp(w, r, c.h)
 			blame = observability.BlameClient
-			result = observability.APIResultError("MISSING_AUTHORIZED_APP")
+			result = observability.ResultError("MISSING_AUTHORIZED_APP")
 			return
 		}
 
@@ -68,7 +68,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 				c.logger.Errorw("failed to get public key", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 				blame = observability.BlameServer
-				result = observability.APIResultError("FAILED_TO_GET_PUBLIC_KEY")
+				result = observability.ResultError("FAILED_TO_GET_PUBLIC_KEY")
 				return
 			}
 			allowedPublicKeys[kid] = publicKey
@@ -79,7 +79,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 			c.logger.Errorw("failed to parse json request", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			blame = observability.BlameClient
-			result = observability.APIResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			return
 		}
 
@@ -88,7 +88,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			blame = observability.BlameClient
-			result = observability.APIResultError("FAILED_TO_VALIDATE_TOKEN")
+			result = observability.ResultError("FAILED_TO_VALIDATE_TOKEN")
 			return
 		}
 
@@ -98,14 +98,14 @@ func (c *Controller) HandleCertificate() http.Handler {
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not a valid base64: %v", err).WithCode(api.ErrHMACInvalid))
 			blame = observability.BlameClient
-			result = observability.APIResultError("FAILED_TO_DECODE_HMAC")
+			result = observability.ResultError("FAILED_TO_DECODE_HMAC")
 			return
 		}
 		if len(hmacBytes) != 32 {
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", len(hmacBytes)).WithCode(api.ErrHMACInvalid))
 			blame = observability.BlameClient
-			result = observability.APIResultError("INVALID_HMAC_LENGTH")
+			result = observability.ResultError("INVALID_HMAC_LENGTH")
 			return
 		}
 
@@ -116,7 +116,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			// FIXME: should we blame server here?
 			blame = observability.BlameServer
-			result = observability.APIResultError("FAILED_TO_GET_SIGNER")
+			result = observability.ResultError("FAILED_TO_GET_SIGNER")
 			return
 		}
 
@@ -143,7 +143,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 			c.logger.Errorw("failed to sign certificate", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			blame = observability.BlameServer
-			result = observability.APIResultError("FAILED_TO_SIGN_JWT")
+			result = observability.ResultError("FAILED_TO_SIGN_JWT")
 			return
 		}
 
@@ -155,16 +155,16 @@ func (c *Controller) HandleCertificate() http.Handler {
 			switch {
 			case errors.Is(err, database.ErrTokenExpired):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenExpired))
-				result = observability.APIResultError("TOKEN_EXPIRED")
+				result = observability.ResultError("TOKEN_EXPIRED")
 			case errors.Is(err, database.ErrTokenUsed):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
-				result = observability.APIResultError("TOKEN_USED")
+				result = observability.ResultError("TOKEN_USED")
 			case errors.Is(err, database.ErrTokenMetadataMismatch):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
-				result = observability.APIResultError("TOKEN_METADATA_MISMATCH")
+				result = observability.ResultError("TOKEN_METADATA_MISMATCH")
 			default:
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
-				result = observability.APIResultError("UNKNOWN_TOKEN_CLAIM_ERROR")
+				result = observability.ResultError("UNKNOWN_TOKEN_CLAIM_ERROR")
 			}
 			return
 		}

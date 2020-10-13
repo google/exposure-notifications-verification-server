@@ -84,7 +84,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		ctx := observability.WithBuildInfo(r.Context())
 
 		var blame = observability.BlameNone
-		var result = observability.APIResultOK()
+		var result = observability.ResultOK()
 
 		defer func(blame, result *tag.Mutator) {
 			ctx, err := tag.New(ctx, *blame, *result)
@@ -103,7 +103,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			blame = observability.BlameClient
-			result = observability.APIResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			return
 		}
 
@@ -117,7 +117,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			blame = observability.BlameClient
-			result = observability.APIResultError("MISSING_AUTHORIZED_APP")
+			result = observability.ResultError("MISSING_AUTHORIZED_APP")
 			return
 		}
 
@@ -128,7 +128,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				stats.Record(ctx, mCodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				blame = observability.BlameClient
-				result = observability.APIResultError("UNAUTHORIZED")
+				result = observability.ResultError("UNAUTHORIZED")
 				return
 			}
 		} else {
@@ -139,7 +139,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			stats.Record(ctx, mIssueAttempts.M(1), mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			blame = observability.BlameServer
-			result = observability.APIResultError("MISSING_REALM")
+			result = observability.ResultError("MISSING_REALM")
 			return
 		}
 
@@ -151,7 +151,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			stats.Record(ctx, mIssueAttempts.M(1), mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate))
 			blame = observability.BlameClient
-			result = observability.APIResultError("MISSING_REQUIRED_FIELDS")
+			result = observability.ResultError("MISSING_REQUIRED_FIELDS")
 			return
 		}
 
@@ -162,7 +162,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("unsupported test type: %v", request.TestType))
 			blame = observability.BlameClient
-			result = observability.APIResultError("UNSUPPORTED_TEST_TYPE")
+			result = observability.ResultError("UNSUPPORTED_TEST_TYPE")
 			return
 		}
 
@@ -175,7 +175,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				stats.Record(ctx, mCodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
 				blame = observability.BlameServer
-				result = observability.APIResultError("FAILED_TO_GET_SMS_PROVIDER")
+				result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
 				return
 			}
 			if smsProvider == nil {
@@ -183,7 +183,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				stats.Record(ctx, mCodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 				blame = observability.BlameServer
-				result = observability.APIResultError("FAILED_TO_GET_SMS_PROVIDER")
+				result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
 				return
 			}
 		}
@@ -194,7 +194,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid test type"))
 			blame = observability.BlameClient
-			result = observability.APIResultError("INVALID_TEST_TYPE")
+			result = observability.ResultError("INVALID_TEST_TYPE")
 			return
 		}
 
@@ -204,7 +204,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				stats.Record(ctx, mCodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process symptom onset date: %v", err))
 				blame = observability.BlameClient
-				result = observability.APIResultError("FAILED_TO_PROCESS_SYMPTOM_ONSET_DATE")
+				result = observability.ResultError("FAILED_TO_PROCESS_SYMPTOM_ONSET_DATE")
 				return
 			} else {
 				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
@@ -221,7 +221,7 @@ func (c *Controller) HandleIssue() http.Handler {
 					stats.Record(ctx, mCodeIssueErrors.M(1))
 					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 					blame = observability.BlameClient
-					result = observability.APIResultError("SYMPTOM_ONSET_DATE_NOT_IN_VALID_RANGE")
+					result = observability.ResultError("SYMPTOM_ONSET_DATE_NOT_IN_VALID_RANGE")
 					return
 				}
 			}
@@ -234,7 +234,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				blame = observability.BlameServer
-				result = observability.APIResultError("FAILED_TO_GENERATE_HMAC")
+				result = observability.ResultError("FAILED_TO_GENERATE_HMAC")
 				return
 			}
 			key := fmt.Sprintf("realm:quota:%s", dig)
@@ -244,7 +244,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				stats.Record(ctx, mQuotaErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
 				blame = observability.BlameServer
-				result = observability.APIResultError("FAILED_TO_TAKE_FROM_LIMITER")
+				result = observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER")
 				return
 			}
 			c.recordCapacity(ctx, limit, remaining)
@@ -258,7 +258,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				if c.config.GetEnforceRealmQuotas() {
 					c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
 					blame = observability.BlameClient
-					result = observability.APIResultError("QUOTA_EXCEEDED")
+					result = observability.ResultError("QUOTA_EXCEEDED")
 					return
 				}
 			}
@@ -294,7 +294,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			stats.Record(ctx, mCodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			blame = observability.BlameServer
-			result = observability.APIResultError("FAILED_TO_ISSUE_CODE")
+			result = observability.ResultError("FAILED_TO_ISSUE_CODE")
 			return
 		}
 
@@ -308,14 +308,13 @@ func (c *Controller) HandleIssue() http.Handler {
 				}
 
 				logger.Errorw("failed to send sms", "error", err)
-				stats.Record(ctx, mCodeIssueErrors.M(1))
-				stats.RecordWithTags(ctx, []tag.Mutator{observability.APIResultError("NOT_OK")}, mSMSRequest.M(1))
+				stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultError("NOT_OK")}, mSMSRequest.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 				blame = observability.BlameServer
-				result = observability.APIResultError("FAILED_TO_SEND_SMS")
+				result = observability.ResultError("FAILED_TO_SEND_SMS")
 				return
 			}
-			stats.RecordWithTags(ctx, []tag.Mutator{observability.APIResultOK()}, mSMSRequest.M(1))
+			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mSMSRequest.M(1))
 		}
 
 		stats.Record(ctx, mCodesIssued.M(1))
