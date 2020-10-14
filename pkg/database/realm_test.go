@@ -16,6 +16,7 @@ package database
 
 import (
 	"testing"
+	"time"
 )
 
 func TestSMS(t *testing.T) {
@@ -34,5 +35,69 @@ func TestSMS(t *testing.T) {
 	want = "State of Wonder, COVID-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
 	if got != want {
 		t.Errorf("SMS text wrong, want: %q got %q", want, got)
+	}
+}
+
+func TestPerUserRealmStats(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+
+	numDays := 7
+	endDate := time.Now().Truncate(24 * time.Hour)
+	startDate := endDate.Add(time.Duration(numDays) * -24 * time.Hour).Truncate(24 * time.Hour)
+
+	// Create a new realm
+	realm := NewRealmWithDefaults("test")
+	if err := db.SaveRealm(realm, System); err != nil {
+		t.Fatalf("error saving realm: %v", err)
+	}
+
+	// Create the users.
+	users := []*User{}
+	for userIdx, name := range []string{"Rocky", "Bullwinkle", "Boris", "Natasha"} {
+		user := &User{
+			Realms: []*Realm{realm},
+			Name:   name,
+			Email:  name + "@gmail.com",
+			Admin:  false,
+		}
+
+		if err := db.SaveUser(user, System); err != nil {
+			t.Fatalf("[%v] error creating user: %v", name, err)
+		}
+		users = append(users, user)
+
+		// Add some stats per user.
+		for i := 0; i < numDays; i++ {
+			stat := &UserStats{
+				RealmID:     realm.ID,
+				UserID:      user.ID,
+				Date:        startDate.Add(time.Duration(i) * 24 * time.Hour),
+				CodesIssued: uint(10 + i + userIdx),
+			}
+			if err := db.SaveUserStats(stat); err != nil {
+				t.Fatalf("error saving user stats %v", err)
+			}
+		}
+	}
+
+	if len(users) == 0 { // sanity check
+		t.Error("len(users) = 0, expected ≠ 0")
+	}
+
+	stats, err := realm.CodesPerUser(db, startDate, endDate)
+	if err != nil {
+		t.Fatalf("error getting stats: %v", err)
+	}
+
+	if len(stats) != numDays*len(users) {
+		t.Errorf("len(stats) = %d, expected %d", len(stats), numDays*len(users))
+	}
+
+	for i := 0; i < len(stats)-1; i++ {
+		if stats[i].Date.After(stats[i+1].Date) {
+			t.Errorf("[%d] dates should be in ascending order: %v.After(%v) = true", i, stats[i].Date, stats[i+1].Date)
+		}
 	}
 }
