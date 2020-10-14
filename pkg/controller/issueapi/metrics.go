@@ -26,8 +26,6 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/issue"
 
 var (
-	mQuotaErrors         = stats.Int64(metricPrefix+"/quota_errors", "The number of errors when taking from the limiter", stats.UnitDimensionless)
-	mQuotaExceeded       = stats.Int64(metricPrefix+"/quota_exceeded", "The number of times quota has been exceeded", stats.UnitDimensionless)
 	mRealmTokenRemaining = stats.Int64(metricPrefix+"/realm_token_remaining", "Remaining number of verification codes", stats.UnitDimensionless)
 	mRealmTokenCapacity  = stats.Float64(metricPrefix+"/realm_token_capacity", "Capacity utilization for issuing verification codes", stats.UnitDimensionless)
 
@@ -57,18 +55,6 @@ func tokenLimitTag() tag.Mutator {
 func init() {
 	enobservability.CollectViews([]*view.View{
 		{
-			Name:        metricPrefix + "/quota_errors_count",
-			Measure:     mQuotaErrors,
-			Description: "The count of the number of errors to the limiter",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
-			Name:        metricPrefix + "/quota_exceeded_count",
-			Measure:     mQuotaExceeded,
-			Description: "The count of the number of times quota has been exceeded",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		}, {
 			Name:        metricPrefix + "/realm_token_remaining_latest",
 			Description: "Latest realm remaining tokens",
 			TagKeys:     observability.CommonTagKeys(),
