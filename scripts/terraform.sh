@@ -41,7 +41,7 @@ function init() {
   echo "project = \"${PROJECT_ID}\"" > ./terraform.tfvars
   # Don't fail if it already exists
   gsutil mb -p ${PROJECT_ID} gs://${PROJECT_ID}-tf-state 2>/dev/null || true
-  cat <<EOF > "${ROOT}/terraform-e2e/terraform.tf"
+  cat <<EOF > "${ROOT}/terraform-e2e/state.tf"
 terraform {
   backend "gcs" {
     bucket = "${PROJECT_ID}-tf-state"
