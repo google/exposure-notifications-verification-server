@@ -1,11 +1,11 @@
 {{define "realmadmin/_form_email"}}
 
 {{$realm := .realm}}
-{{$smsConfig := .smsConfig}}
+{{$emailConfig := .smtpConfig}}
 {{$countries := .countries}}
 
 <p class="mb-4">
-  These are the settings for configuring an email provider. The verification server
+  These are the settings for configuring an SMTP email provider. The verification server
   may use this email account to send invitations, password resets, and account-verifications
   for the realm.
 </p>
@@ -14,30 +14,30 @@
   {{ .csrfField }}
   <input type="hidden" name="email" value="1" />
 
-  {{if $realm.CanUseSystemSMSConfig}}
-    {{if $realm.UseSystemSMSConfig}}
+  {{if $realm.CanUseSystemSMTPConfig}}
+    {{if $realm.UseSystemSMTPConfig}}
       <div class="alert alert-danger">
         <strong>Warning!</strong> You are currently using the system-provided
-        SMS configuration. Specifying values below will override the system
+        SMTP email configuration. Specifying values below will override the system
         configuration to use your supplied credentials.
       </div>
     {{end}}
 
     <div class="form-group form-check">
-      <input type="checkbox" name="use_system_sms_config" id="use-system-sms-config" class="form-check-input" value="1" {{if $realm.UseSystemSMSConfig}} checked{{end}}
-        data-toggle="collapse" data-target="#sms-form">
-      <label class="form-check-label" for="use-system-sms-config">
-        Use system SMS configuration
+      <input type="checkbox" name="use_system_smtp_config" id="use-system-smtp-config" class="form-check-input" value="1" {{if $realm.UseSystemSMTPConfig}} checked{{end}}
+        data-toggle="collapse" data-target="#smtp-form">
+      <label class="form-check-label" for="use-system-smtp-config">
+        Use system SMTP configuration
       </label>
     </div>
   {{end}}
 
-  <div id="email-form" class="collapse{{if not $realm.UseSystemSMSConfig}} show{{end}}">
+  <div id="smtp-form" class="collapse{{if not $realm.UseSystemSMSConfig}} show{{end}}">
     <div class="form-label-group">
-      <input type="text" name="email_account" id="email-account" class="form-control text-monospace{{if $smsConfig.ErrorsFor "emailAccount"}} is-invalid{{end}}"
-        placeholder="SMTP account" value="{{if $smsConfig}}{{$smsConfig.TwilioAccountSid}}{{end}}" />
-      <label for="email-account">SMTP account</label>
-      {{template "errorable" $smsConfig.ErrorsFor "emailAccount"}}
+      <input type="text" name="smtp_account" id="smtp-account" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpAccount"}} is-invalid{{end}}"
+        placeholder="SMTP account" value="{{if $emailConfig}}{{$emailConfig.SMTPAccount}}{{end}}" />
+      <label for="smtp-account">SMTP account</label>
+      {{template "errorable" $emailConfig.ErrorsFor "smtpAccount"}}
       <small class="form-text text-muted">
         This is the SMTP email account eg. noreply@myrealm.com
       </small>
@@ -45,8 +45,8 @@
 
     <div class="form-label-group">
       <div class="input-group">
-        <input type="password" name="smtp_password" id="smtp-password" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
-          placeholder="SMTP password" value="{{if $smsConfig}}{{$smsConfig.TwilioAuthToken}}{{end}}">
+        <input type="password" name="smtp_password" id="smtp-password" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPassword"}} is-invalid{{end}}" autocomplete="new-password"
+          placeholder="SMTP password" value="{{if $emailConfig}}{{$emailConfig.SMTPPassword}}{{end}}">
         <label for="smtp-password">SMTP password</label>
         <div class="input-group-append">
           <a class="input-group-text" data-toggle-password="smtp-password">
@@ -54,27 +54,27 @@
           </a>
         </div>
       </div>
-      {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
+      {{template "errorable" $emailConfig.ErrorsFor "smtpPassword"}}
       <small class="form-text text-muted">
         This is the password for your SMTP email.
       </small>
     </div>
 
     <div class="form-label-group">
-      <input name="smtp_host" id="smtp-host" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioFromNumber"}} is-invalid{{end}}" autocomplete="new-password"
-        placeholder="SMTP host" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
+      <input name="smtp_host" id="smtp-host" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
+        placeholder="SMTP host" value="{{if $emailConfig}}{{$emailConfig.SMTPHost}}{{end}}" />
       <label for="smtp-port">SMTP host</label>
-      {{template "errorable" $smsConfig.ErrorsFor "smtpHost"}}
+      {{template "errorable" $emailConfig.ErrorsFor "smtpHost"}}
       <small class="form-text text-muted">
         SMTP host is the hostname for the SMTP server.
       </small>
     </div>
 
     <div class="form-label-group">
-      <input name="twilio_from_number" id="twilio-from-number" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioFromNumber"}} is-invalid{{end}}" autocomplete="new-password"
-        placeholder="SMTP port" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
-      <label for="twilio-from-number">SMTP port</label>
-      {{template "errorable" $smsConfig.ErrorsFor "smtpPort"}}
+      <input name="smtp_port" id="smtp-port" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
+        placeholder="SMTP port" value="{{if $emailConfig}}{{$emailConfig.SMTPPort}}{{end}}" />
+      <label for="smtp-port">SMTP port</label>
+      {{template "errorable" $emailConfig.ErrorsFor "smtpPort"}}
       <small class="form-text text-muted">
         SMTP port is the port number to connect to.
       </small>
@@ -82,7 +82,7 @@
   </div>
 
   <div class="mt-4">
-    <input type="submit" class="btn btn-primary btn-block" value="Update Email settings" />
+    <input type="submit" class="btn btn-primary btn-block" value="Update SMTP settings" />
   </div>
 </form>
 
