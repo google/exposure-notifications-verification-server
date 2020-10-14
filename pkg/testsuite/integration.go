@@ -41,7 +41,14 @@ type IntegrationSuite struct {
 func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 	tb.Helper()
 	cfg, db := config.NewIntegrationTestConfig(ctx, tb)
-
+	if err := db.Open(ctx); err != nil {
+		tb.Fatalf("failed to connect to database: %v", err)
+	}
+	tb.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			tb.Errorf("failed to close db: %v", err)
+		}
+	})
 	// Create or reuse the existing realm
 	realm, err := db.FindRealmByName(realmName)
 	if err != nil {

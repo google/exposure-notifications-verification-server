@@ -48,8 +48,11 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 	if err := db.Open(ctx); err != nil {
 		tb.Fatalf("failed to connect to database: %v", err)
 	}
-	defer db.Close()
-
+	tb.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			tb.Errorf("failed to close db: %v", err)
+		}
+	})
 	// Create or reuse the existing realm
 	realm, err := db.FindRealmByName(realmName)
 	if err != nil {
