@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -42,7 +43,13 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 		realm, err := c.db.FindRealmByRegion(hostRegion)
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.NotFound(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		// Get App Store Data.
