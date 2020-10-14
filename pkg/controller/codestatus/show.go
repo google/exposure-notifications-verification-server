@@ -153,10 +153,6 @@ func (c *Controller) getAuthAppName(ctx context.Context, r *http.Request, id uin
 		return
 	}
 
-	if authApp == nil {
-		return ""
-	}
-
 	return authApp.Name
 }
 
