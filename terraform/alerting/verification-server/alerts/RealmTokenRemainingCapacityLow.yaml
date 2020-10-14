@@ -1,0 +1,29 @@
+combiner: OR
+conditions:
+- conditionMonitoringQueryLanguage:
+    duration: 600s
+    query: >
+        fetch
+          generic_task ::
+          custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest
+        | {
+            AVAILABLE: filter metric.state == 'AVAILABLE' | align
+            ;
+            LIMIT: filter metric.state == 'LIMIT' | align
+        }
+        | group_by [metric.realm], [val: sum(value.realm_token_latest)]
+        | ratio
+        | value [capped_ratio: if(ratio > 1.0, 1.0, ratio)]
+        | window 1m
+        | condition capped_ratio < 0.1
+    trigger:
+      count: 1
+  displayName: Per-realm issue API token remaining capacity
+displayName: RealmTokenRemainingCapacityLow
+enabled: true
+documentation:
+  content: |
+    ## ${policy.display_name}
+
+    Realm ${metric.label.realm} daily verification code issuing remaining capacity below 10%.
+  mimeType: text/markdown
