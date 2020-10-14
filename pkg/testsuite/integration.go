@@ -1,30 +1,10 @@
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// Package integration contains verification server integration tests.
-package integration
+package testsuite
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha1"
-	"fmt"
-	"math/big"
-	"net/http"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -44,15 +24,8 @@ import (
 	"github.com/mikehelmick/go-chaff"
 )
 
-const (
-	realmName       = "test-realm"
-	realmRegionCode = "test"
-	adminKeyName    = "integration-admin-key"
-	deviceKeyName   = "integration-device-key"
-)
-
-// Suite contains the integration test configs and other useful data.
-type Suite struct {
+// IntegrationSuite contains the integration test configs and other useful data.
+type IntegrationSuite struct {
 	cfg *config.IntegrationTestConfig
 
 	db    *database.Database
@@ -64,8 +37,8 @@ type Suite struct {
 	apiSrv   *server.Server
 }
 
-// NewTestSuite creates a Suite for integration tests.
-func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
+// NewIntegrationSuite creates a IntegrationSuite for integration tests.
+func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 	tb.Helper()
 	cfg, db := config.NewIntegrationTestConfig(ctx, tb)
 
@@ -104,7 +77,7 @@ func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
 		tb.Fatalf("error trying to create a new Device API Key: %v", err)
 	}
 
-	return &Suite{
+	return &IntegrationSuite{
 		cfg:       cfg,
 		db:        db,
 		realm:     realm,
@@ -113,21 +86,21 @@ func NewTestSuite(tb testing.TB, ctx context.Context) *Suite {
 	}
 }
 
-// NewAdminAPIServer runs an Admin API Server and returns a corresponding client.
-func (s *Suite) NewAdminAPIServer(ctx context.Context, tb testing.TB) *AdminClient {
+// NewAdminAPIClient runs an Admin API Server and returns a corresponding client.
+func (s *IntegrationSuite) NewAdminAPIClient(ctx context.Context, tb testing.TB) *AdminClient {
 	srv := s.newAdminAPIServer(ctx, tb)
 	s.adminSrv = srv
 	return NewAdminClient(srv.Addr(), s.adminKey)
 }
 
-// NewAPIServer runs an API Server and returns a corresponding client.
-func (s *Suite) NewAPIServer(ctx context.Context, tb testing.TB) *APIClient {
+// NewAPIClient runs an API Server and returns a corresponding client.
+func (s *IntegrationSuite) NewAPIClient(ctx context.Context, tb testing.TB) *APIClient {
 	srv := s.newAPIServer(ctx, tb)
 	s.apiSrv = srv
 	return NewAPIClient(srv.Addr(), s.deviceKey)
 }
 
-func (s *Suite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Server {
+func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Server {
 	// Create the router
 	adminRouter := mux.NewRouter()
 	// Install common security headers
@@ -203,7 +176,7 @@ func (s *Suite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Se
 	return srv
 }
 
-func (s *Suite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server {
+func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server {
 	// Create the renderer
 	h, err := render.New(ctx, "", s.cfg.APISrvConfig.DevMode)
 	if err != nil {
@@ -282,62 +255,4 @@ func (s *Suite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server 
 		}
 	}()
 	return srv
-}
-
-type prefixRoundTripper struct {
-	addr string
-	rt   http.RoundTripper
-}
-
-// RoundTrip wraps transport's RoutTrip and sets the scheme and host address.
-func (p *prefixRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	u := r.URL
-	if u.Scheme == "" {
-		u.Scheme = "http"
-	}
-	if u.Host == "" {
-		u.Host = p.addr
-	}
-
-	return p.rt.RoundTrip(r)
-}
-
-// NewAdminClient creates an Admin API test client.
-func NewAdminClient(addr, key string) *AdminClient {
-	prt := &prefixRoundTripper{
-		addr: addr,
-		rt:   http.DefaultTransport,
-	}
-	httpClient := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: prt,
-	}
-	return &AdminClient{
-		client: httpClient,
-		key:    key,
-	}
-}
-
-// NewAPIClient creates an API server test client.
-func NewAPIClient(addr, key string) *APIClient {
-	prt := &prefixRoundTripper{
-		addr: addr,
-		rt:   http.DefaultTransport,
-	}
-	httpClient := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: prt,
-	}
-	return &APIClient{
-		client: httpClient,
-		key:    key,
-	}
-}
-
-func randomString() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(10000))
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%04x", n), nil
 }

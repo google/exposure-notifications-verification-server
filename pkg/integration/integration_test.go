@@ -17,6 +17,7 @@ package integration
 import (
 	"context"
 	"encoding/base64"
+	"flag"
 	"strings"
 	"testing"
 	"time"
@@ -26,12 +27,17 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/verification"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
 )
 
 const (
 	oneDay         = 24 * time.Hour
 	intervalLength = 10 * time.Minute
 	maxInterval    = 144
+)
+
+var (
+	isE2E = flag.Bool("is_e2e", false, "Set to true when run as E2E tests.")
 )
 
 func TestIntegration(t *testing.T) {
@@ -52,10 +58,9 @@ func TestIntegration(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	suite := NewTestSuite(t, ctx)
-
-	adminClient := suite.NewAdminAPIServer(ctx, t)
-	apiClient := suite.NewAPIServer(ctx, t)
+	testSuite := testsuite.NewTestSuite(t, ctx, *isE2E)
+	adminClient := testSuite.NewAdminAPIClient(ctx, t)
+	apiClient := testSuite.NewAPIClient(ctx, t)
 
 	for _, tc := range cases {
 		tc := tc

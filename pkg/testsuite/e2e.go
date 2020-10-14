@@ -12,48 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package e2e contains E2E tests and utility.
-package e2e
+package testsuite
 
 import (
 	"context"
-	"crypto/rand"
-	"fmt"
-	"math/big"
 	"testing"
 
-	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/integration"
-	"github.com/sethvargo/go-envconfig"
 )
 
-const (
-	realmName       = "e2e-test-realm"
-	realmRegionCode = "test"
-	adminKeyName    = "e2e-admin-key"
-	deviceKeyName   = "e2e-device-key"
-)
-
-// Suite contains E2E test configs and other useful data.
-type Suite struct {
-	cfg   *Config
+// E2ESuite contains E2E test configs and other useful data.
+type E2ESuite struct {
+	cfg   *config.E2EConfig
 	db    *database.Database
 	realm *database.Realm
 
 	adminKey, deviceKey string
 }
 
-func (s *Suite) NewAdminAPIClient() *integration.AdminClient {
-	return integration.NewAdminClient(s.cfg.AdminAPIURL, s.adminKey)
+func (s *E2ESuite) NewAdminAPIClient(context.Context, testing.TB) *AdminClient {
+	return NewAdminClient(s.cfg.AdminAPIURL, s.adminKey)
 }
 
-func (s *Suite) NewAPIClient() *integration.APIClient {
-	return integration.NewAPIClient(s.cfg.APIServerURL, s.deviceKey)
+func (s *E2ESuite) NewAPIClient(context.Context, testing.TB) *APIClient {
+	return NewAPIClient(s.cfg.APIServerURL, s.deviceKey)
 }
 
-func NewE2ESuite(tb testing.TB, ctx context.Context) *Suite {
-	cfg := initConfig(tb, ctx)
+func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
+	cfg := config.NewE2EConfig(tb, ctx)
 	db, err := cfg.DBConfig.Load(ctx)
 	if err != nil {
 		tb.Fatalf("failed to connect to database: %v", err)
@@ -94,39 +81,11 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *Suite {
 		tb.Fatalf("error trying to create a new Device API Key: %v", err)
 	}
 
-	return &Suite{
+	return &E2ESuite{
 		cfg:       cfg,
 		db:        db,
 		realm:     realm,
 		adminKey:  adminKey,
 		deviceKey: deviceKey,
 	}
-}
-
-type Config struct {
-	DBName       string `env:"DB_NAME"`
-	APIServerURL string `env:"APISERVER_URL"`
-	AdminAPIURL  string `env:"ADMINAPI_URL"`
-	ProjectID    string `env:"PROJECT_ID"`
-	DBConfig     *database.Config
-}
-
-func initConfig(tb testing.TB, ctx context.Context) *Config {
-	c := &Config{}
-	sm, err := secrets.SecretManagerFor(ctx, secrets.SecretManagerTypeGoogleSecretManager)
-	if err != nil {
-		tb.Fatalf("unable to connect to secret manager: %v", err)
-	}
-	if err := envconfig.ProcessWith(ctx, c, envconfig.OsLookuper(), secrets.Resolver(sm, &secrets.Config{})); err != nil {
-		tb.Fatalf("Unable to process environment: %v", err)
-	}
-	return c
-}
-
-func randomString() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(10000))
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%04x", n), nil
 }

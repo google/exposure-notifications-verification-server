@@ -69,9 +69,10 @@ test-acc:
 
 e2e-test:
 	@go test \
+	  -is_e2e \
 		-count=1 \
 		-timeout=30m \
 		-v \
 		-tags=e2e \
-		./pkg/e2e
+		./pkg/integration
 .PHONY: e2e-test
