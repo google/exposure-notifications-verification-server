@@ -43,6 +43,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		realm, err := c.db.FindRealmByRegion(hostRegion)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		// Get App Store Data.
