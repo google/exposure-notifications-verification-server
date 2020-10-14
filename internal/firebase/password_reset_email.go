@@ -36,7 +36,7 @@ type sendPasswordResetEmailRequest struct {
 // face rate-limiting on the firebase side if called too quickly.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
-func (c *Client) SendNewUserInvitation(ctx context.Context, email string) error {
+func (c *Client) SendNewUserInvitation(ctx context.Context, email, realmName string) error {
 	r := &sendPasswordResetEmailRequest{
 		RequestType: "PASSWORD_RESET",
 		Email:       email,

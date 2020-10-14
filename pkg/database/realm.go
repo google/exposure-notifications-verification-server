@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -139,6 +140,26 @@ type Realm struct {
 	// Without this, a realm would always fallback to the system-level SMS
 	// configuration, making it impossible to opt out of text message sending.
 	UseSystemSMSConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
+
+	// EmailInviteTemplate is the template for inviting new users.
+	EmailInviteTemplate string `gorm:"type:varchar(400);"`
+
+	// EmailPasswordResetTemplate is the template for resetting password.
+	EmailPasswordResetTemplate string `gorm:"type:varchar(400);"`
+
+	// EmailVerifyTemplate is the template used for email verification.
+	EmailVerifyTemplate string `gorm:"type:varchar(400);"`
+
+	// CanUseSystemEmailConfig is configured by system administrators to share the
+	// system email config with this realm. Note that the system email config could be
+	// empty and a local SMS config is preferred over the system value.
+	CanUseSystemEmailConfig bool `gorm:"column:can_use_system_sms_config; type:bool; not null; default:false;"`
+
+	// UseSystemEmailConfig is a realm-level configuration that lets a realm opt-out
+	// of sending email messages using the system-provided email configuration.
+	// Without this, a realm would always fallback to the system-level email
+	// configuration, making it impossible to opt out of text message sending.
+	UseSystemEmailConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
@@ -452,6 +473,75 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		TwilioAccountSid: smsConfig.TwilioAccountSid,
 		TwilioAuthToken:  smsConfig.TwilioAuthToken,
 		TwilioFromNumber: smsConfig.TwilioFromNumber,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return provider, nil
+}
+
+// EmailConfig returns the SMS configuration for this realm, if one exists. If the
+// realm is configured to use the system SMS configuration, that configuration
+// is preferred.
+func (r *Realm) EmailConfig(db *Database) (*EmailConfig, error) {
+	q := db.db.
+		Model(&EmailConfig{}).
+		Order("is_system DESC").
+		Where("realm_id = ?", r.ID)
+
+	if r.UseSystemEmailConfig {
+		q = q.Or("is_system IS TRUE")
+	}
+
+	var emailConfig EmailConfig
+	if err := q.First(&emailConfig).Error; err != nil {
+		return nil, err
+	}
+	return &emailConfig, nil
+}
+
+// HasEmailConfig returns true if the realm has an email config, false otherwise.
+// This does not perform the KMS encryption/decryption, so it's more efficient
+// that loading the full email config.
+func (r *Realm) HasEmailConfig(db *Database) (bool, error) {
+	q := db.db.
+		Model(&EmailConfig{}).
+		Select("id").
+		Order("is_system DESC").
+		Where("realm_id = ?", r.ID)
+
+	if r.UseSystemEmailConfig {
+		q = q.Or("is_system IS TRUE")
+	}
+
+	var id []uint64
+	if err := q.Pluck("id", &id).Error; err != nil {
+		if IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return len(id) > 0, nil
+}
+
+// EmailProvider returns the email provider for the realm. If no email configuration
+// exists, it returns nil. If any errors occur creating the provider, they are
+// returned.
+func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
+	emailConfig, err := r.EmailConfig(db)
+	if err != nil {
+		if IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	ctx := context.Background()
+	provider, err := email.ProviderFor(ctx, &email.Config{
+		User:     emailConfig.SMTPAccount,
+		Password: emailConfig.SMTPPassword,
+		SMTPHost: emailConfig.SMTPHost,
+		SMTPPort: emailConfig.SMTPPort,
 	})
 	if err != nil {
 		return nil, err

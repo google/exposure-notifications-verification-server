@@ -17,10 +17,10 @@ package database
 import (
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
 )
 
-func TestSMSConfig_Lifecycle(t *testing.T) {
+func TestEmailConfig_Lifecycle(t *testing.T) {
 	t.Parallel()
 
 	db := NewTestDatabase(t)
@@ -34,7 +34,7 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 
 	// Initial config should be nil
 	{
-		got, err := realm.SMSConfig(db)
+		got, err := realm.EmailConfig(db)
 		if !IsNotFound(err) {
 			t.Errorf("expected %#v to be %#v", err, "not found")
 		}
@@ -43,87 +43,87 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 		}
 	}
 
-	// Create SMS config on the realm
-	smsConfig := &SMSConfig{
-		RealmID:          realm.ID,
-		ProviderType:     sms.ProviderType("TWILIO"),
-		TwilioAccountSid: "abc123",
-		TwilioAuthToken:  "def123",
-		TwilioFromNumber: "+11234567890",
+	// Create email config on the realm
+	emailConfig := &EmailConfig{
+		RealmID:      realm.ID,
+		ProviderType: email.ProviderType("TWILIO"),
+		SMTPAccount:  "noreply@sendemails.meh",
+		SMTPPassword: "my-secret-ref",
+		SMTPHost:     "smtp.sendemails.meh",
 	}
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
+	if err := db.SaveEmailConfig(emailConfig); err != nil {
 		t.Fatal(err)
 	}
 
-	// Get the realm to verify SMS configs are NOT preloaded
+	// Get the realm to verify email configs are NOT preloaded
 	realm, err = db.FindRealm(realm.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Load the SMS config
+	// Load the email config
 	{
-		got, err := realm.SMSConfig(db)
+		got, err := realm.EmailConfig(db)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if got == nil {
-			t.Fatalf("expected SMSConfig, got %#v", got)
+			t.Fatalf("expected emailConfig, got %#v", got)
 		}
 
-		if got, want := got.ID, smsConfig.ID; got != want {
+		if got, want := got.ID, emailConfig.ID; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
-		if got, want := got.RealmID, smsConfig.RealmID; got != want {
+		if got, want := got.RealmID, emailConfig.RealmID; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
-		if got, want := got.ProviderType, smsConfig.ProviderType; got != want {
+		if got, want := got.ProviderType, emailConfig.ProviderType; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
-		if got, want := got.TwilioAccountSid, smsConfig.TwilioAccountSid; got != want {
+		if got, want := got.SMTPAccount, emailConfig.SMTPAccount; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
-		if got, want := got.TwilioAuthToken, smsConfig.TwilioAuthToken; got != want {
+		if got, want := got.SMTPPassword, emailConfig.SMTPPassword; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
-		if got, want := got.TwilioFromNumber, smsConfig.TwilioFromNumber; got != want {
+		if got, want := got.SMTPHost, emailConfig.SMTPHost; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 	}
 
 	// Update value
-	smsConfig.TwilioAuthToken = "banana123"
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
+	emailConfig.SMTPPassword = "banana123"
+	if err := db.SaveEmailConfig(emailConfig); err != nil {
 		t.Fatal(err)
 	}
 
 	// Read back updated value
 	{
-		got, err := realm.SMSConfig(db)
+		got, err := realm.EmailConfig(db)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if got == nil {
-			t.Fatalf("expected SMSConfig, got %#v", got)
+			t.Fatalf("expected EmailConfig, got %#v", got)
 		}
 
-		if got, want := got.TwilioAuthToken, "banana123"; got != want {
+		if got, want := got.SMTPPassword, "banana123"; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 	}
 }
 
-func TestSMSProvider(t *testing.T) {
+func TestEmailProvider(t *testing.T) {
 	t.Parallel()
 
 	db := NewTestDatabase(t)
 
-	realm, err := db.CreateRealm("test-sms-realm-1")
+	realm, err := db.CreateRealm("test-email-realm-1")
 	if err != nil {
 		t.Fatalf("realm create failed: %v", err)
 	}
 
-	provider, err := realm.SMSProvider(db)
+	provider, err := realm.EmailProvider(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,18 +131,18 @@ func TestSMSProvider(t *testing.T) {
 		t.Errorf("expected %v to be %v", provider, nil)
 	}
 
-	smsConfig := &SMSConfig{
-		RealmID:          realm.ID,
-		ProviderType:     sms.ProviderType("TWILIO"),
-		TwilioAccountSid: "abc123",
-		TwilioAuthToken:  "my-secret-ref",
-		TwilioFromNumber: "+11234567890",
+	emailConfig := &EmailConfig{
+		RealmID:      realm.ID,
+		ProviderType: email.ProviderType(email.ProviderTypeSMTP),
+		SMTPAccount:  "noreply@sendemails.meh",
+		SMTPPassword: "my-secret-ref",
+		SMTPHost:     "smtp.sendemails.meh",
 	}
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
+	if err := db.SaveEmailConfig(emailConfig); err != nil {
 		t.Fatal(err)
 	}
 
-	provider, err = realm.SMSProvider(db)
+	provider, err = realm.EmailProvider(db)
 	if err != nil {
 		t.Fatal(err)
 	}

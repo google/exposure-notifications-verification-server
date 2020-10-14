@@ -50,12 +50,12 @@ type EmailConfig struct {
 }
 
 func (s *EmailConfig) BeforeSave(tx *gorm.DB) error {
-	// Twilio config is all or nothing
-	if (s.TwilioAccountSid != "" || s.TwilioAuthToken != "" || s.TwilioFromNumber != "") &&
-		(s.TwilioAccountSid == "" || s.TwilioAuthToken == "" || s.TwilioFromNumber == "") {
-		s.AddError("twilioAccountSid", "all must be specified or all must be blank")
-		s.AddError("twilioAuthToken", "all must be specified or all must be blank")
-		s.AddError("twilioFromNumber", "all must be specified or all must be blank")
+	// Email config is all or nothing
+	if (s.SMTPAccount != "" || s.SMTPPassword != "" || s.SMTPHost != "") &&
+		(s.SMTPAccount == "" || s.SMTPPassword == "" || s.SMTPHost == "") {
+		s.AddError("SMTPAccount", "all must be specified or all must be blank")
+		s.AddError("SMTPPassword", "all must be specified or all must be blank")
+		s.AddError("SMTPHost", "all must be specified or all must be blank")
 	}
 
 	if len(s.Errors()) > 0 {
@@ -66,7 +66,7 @@ func (s *EmailConfig) BeforeSave(tx *gorm.DB) error {
 
 // SystemEmailConfig returns the system email config, if one exists
 func (db *Database) SystemEmailConfig() (*EmailConfig, error) {
-	var emailConfig emailConfig
+	var emailConfig EmailConfig
 	if err := db.db.
 		Model(&EmailConfig{}).
 		Where("is_system IS TRUE").
@@ -79,7 +79,7 @@ func (db *Database) SystemEmailConfig() (*EmailConfig, error) {
 
 // SaveEmailConfig creates or updates an email configuration record.
 func (db *Database) SaveEmailConfig(s *EmailConfig) error {
-	if s.TwilioAccountSid == "" && s.TwilioAuthToken == "" && s.TwilioFromNumber == "" {
+	if s.SMTPAccount == "" && s.SMTPPassword == "" && s.SMTPHost == "" {
 		if db.db.NewRecord(s) {
 			// The fields are all blank, do not create the record.
 			return nil

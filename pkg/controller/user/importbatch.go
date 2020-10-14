@@ -74,7 +74,14 @@ func (c *Controller) HandleImportBatch() http.Handler {
 				continue
 			} else if created {
 				newUsers = append(newUsers, &batchUser)
-				if err := c.emailer.SendNewUserInvitation(ctx, user.Email); err != nil {
+				message, err := controller.ComposeInviteEmail(c.h, c.client, user.Email, currentUser.Email, realm.Name)
+				if err != nil {
+					c.logger.Warnw("failed composing invitation", "error", err)
+					batchErr = multierror.Append(batchErr, errors.New("send invitation failed"))
+					continue
+				}
+
+				if err := c.emailer.SendNewUserInvitation(ctx, user.Email, realm.Name); err != nil {
 					c.logger.Warnw("failed sending invitation", "error", err)
 					batchErr = multierror.Append(batchErr, errors.New("send invitation failed"))
 					continue

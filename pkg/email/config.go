@@ -18,9 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 // ProviderType represents a type of email provider.
@@ -29,10 +27,6 @@ type ProviderType string
 const (
 	// ProviderTypeNoop is a no-op provider
 	ProviderTypeNoop ProviderType = "NOOP"
-
-	// ProviderTypeFirebase falls back to firebase's default email template.
-	// it uses password-reset rather than a true invitation.
-	ProviderTypeFirebase ProviderType = "FIREBASE"
 
 	// ProviderTypeSMTP composes emails and sends them via an external SMTP server.
 	ProviderTypeSMTP ProviderType = "SIMPLE_SMTP"
@@ -65,8 +59,8 @@ type Config struct {
 
 // Provider is an interface for email-sending mechanisms.
 type Provider interface {
-	// SendNewUserInvitation sends an invite to join the server.
-	SendNewUserInvitation(ctx context.Context, email string) error
+	// SendEmail sends an email with the given message.
+	SendEmail(ctx context.Context, toEmail string, message []byte) error
 }
 
 // HasSMTPCreds returns true if required fields for connecting to SMTP are set.
@@ -75,14 +69,12 @@ func (c *Config) HasSMTPCreds() bool {
 }
 
 // ProviderFor creates an email provider given a Config.
-func ProviderFor(ctx context.Context, c *Config, h *render.Renderer, auth *auth.Client) (Provider, error) {
+func ProviderFor(ctx context.Context, c *Config) (Provider, error) {
 	switch typ := c.ProviderType; typ {
 	case ProviderTypeNoop:
 		return NewNoop(), nil
-	case ProviderTypeFirebase:
-		return NewFirebase(ctx)
 	case ProviderTypeSMTP:
-		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort, h, auth), nil
+		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort), nil
 	default:
 		return nil, fmt.Errorf("unknown email provider type: %v", typ)
 	}

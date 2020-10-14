@@ -19,20 +19,13 @@ import (
 	"context"
 	"net/smtp"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 var _ Provider = (*SMTPProvider)(nil)
 
 // SMTPProvider sends messages via an external SMTP server.
 type SMTPProvider struct {
-	FirebaseAuth *auth.Client
-
-	Renderer *render.Renderer
-
 	User     string
 	Password string
 	SMTPHost string
@@ -40,45 +33,17 @@ type SMTPProvider struct {
 }
 
 // NewSMTP creates a new Smtp email sender with the given auth.
-func NewSMTP(ctx context.Context, user, password, host, port string, h *render.Renderer, auth *auth.Client) Provider {
+func NewSMTP(ctx context.Context, user, password, host, port string) Provider {
 	return &SMTPProvider{
-		FirebaseAuth: auth,
-		Renderer:     h,
-		User:         user,
-		Password:     password,
-		SMTPHost:     host,
-		SMTPPort:     port,
+		User:     user,
+		Password: password,
+		SMTPHost: host,
+		SMTPPort: port,
 	}
 }
 
-// SendNewUserInvitation sends a password reset email to the user.
-func (s *SMTPProvider) SendNewUserInvitation(ctx context.Context, toEmail string) error {
-	inviteLink, err := s.FirebaseAuth.PasswordResetLink(ctx, toEmail)
-	if err != nil {
-		return err
-	}
-
-	realmName := ""
-	if realm := controller.RealmFromContext(ctx); realm != nil {
-		realmName = realm.Name
-	}
-
-	// Compose message
-	message, err := s.Renderer.RenderEmail("email/invite",
-		struct {
-			ToEmail    string
-			FromEmail  string
-			InviteLink string
-			RealmName  string
-		}{
-			ToEmail:    toEmail,
-			FromEmail:  s.User,
-			InviteLink: inviteLink,
-			RealmName:  realmName,
-		})
-	if err != nil {
-		return err
-	}
+// SendEmail sends an email to the user.
+func (s *SMTPProvider) SendEmail(ctx context.Context, toEmail string, message []byte) error {
 
 	// Authentication.
 	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)

@@ -31,9 +31,9 @@ func NewNoop() Provider {
 	return &NoopProvider{}
 }
 
-// SendNewUserInvitation sends a password reset email to the user.
-func (s *NoopProvider) SendNewUserInvitation(ctx context.Context, toEmail string) error {
+// SendEmail sends a password reset email to the user.
+func (s *NoopProvider) SendEmail(ctx context.Context, toEmail string, message []byte) error {
 	logger := logging.FromContext(ctx)
-	logger.Infow("Noop send invitation", "email", toEmail)
+	logger.Infow("Noop send email", "email", toEmail)
 	return nil
 }
