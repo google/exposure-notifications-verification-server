@@ -14,8 +14,8 @@
   {{ .csrfField }}
   <input type="hidden" name="email" value="1" />
 
-  {{if $realm.CanUseSystemSMTPConfig}}
-    {{if $realm.UseSystemSMTPConfig}}
+  {{if $realm.CanUseSystemEmailConfig}}
+    {{if $realm.UseSystemEmailConfig}}
       <div class="alert alert-danger">
         <strong>Warning!</strong> You are currently using the system-provided
         SMTP email configuration. Specifying values below will override the system
@@ -24,7 +24,7 @@
     {{end}}
 
     <div class="form-group form-check">
-      <input type="checkbox" name="use_system_smtp_config" id="use-system-smtp-config" class="form-check-input" value="1" {{if $realm.UseSystemSMTPConfig}} checked{{end}}
+      <input type="checkbox" name="use_system_smtp_config" id="use-system-smtp-config" class="form-check-input" value="1" {{if $realm.UseSystemEmailConfig}} checked{{end}}
         data-toggle="collapse" data-target="#smtp-form">
       <label class="form-check-label" for="use-system-smtp-config">
         Use system SMTP configuration
