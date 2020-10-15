@@ -46,7 +46,7 @@ func TestEmailConfig_Lifecycle(t *testing.T) {
 	// Create email config on the realm
 	emailConfig := &EmailConfig{
 		RealmID:      realm.ID,
-		ProviderType: email.ProviderType("TWILIO"),
+		ProviderType: email.ProviderType(email.ProviderTypeSMTP),
 		SMTPAccount:  "noreply@sendemails.meh",
 		SMTPPassword: "my-secret-ref",
 		SMTPHost:     "smtp.sendemails.meh",
