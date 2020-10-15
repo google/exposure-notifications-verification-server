@@ -33,7 +33,7 @@ var caches = map[string]*cacheItem{
 	"jwks:":            {"JWKs", "JSON web key sets"},
 	"realms:":          {"Realms", "All realm data"},
 	"stats:":           {"Statistics", "API key, user, and realm statistics"},
-	"publickeys:":      {"Public keys", "PEM data from upstream key provider"},
+	"public_keys:":     {"Public keys", "PEM data from upstream key provider"},
 	"users:":           {"Users", "All user data"},
 }
 

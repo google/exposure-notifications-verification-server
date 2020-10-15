@@ -46,7 +46,7 @@ func NewPublicKeyCache(ctx context.Context, cacher cache.Cacher, ttl time.Durati
 // GetPublicKey returns the public key for the provided ID.
 func (c *PublicKeyCache) GetPublicKey(ctx context.Context, id string, kms keys.KeyManager) (crypto.PublicKey, error) {
 	cacheKey := &cache.Key{
-		Namespace: "publickeys",
+		Namespace: "public_keys",
 		Key:       id,
 	}
 
