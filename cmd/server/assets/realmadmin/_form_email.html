@@ -72,7 +72,7 @@
 
     <div class="form-label-group">
       <input name="smtp_port" id="smtp-port" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
-        placeholder="SMTP port" value="{{if $emailConfig}}{{$emailConfig.SMTPPort}}{{end}}" />
+        placeholder="SMTP port" value="{{if $emailConfig}}{{$emailConfig.SMTPPort}}{{else}}587{{end}}" />
       <label for="smtp-port">SMTP port</label>
       {{template "errorable" $emailConfig.ErrorsFor "smtpPort"}}
       <small class="form-text text-muted">
