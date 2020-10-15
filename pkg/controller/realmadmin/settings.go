@@ -69,10 +69,10 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		Email                bool   `form:"email"`
 		UseSystemEmailConfig bool   `form:"use_system_email_config"`
-		SMTPAccount          string `form:"smtp-account"`
-		SMTPPassword         string `form:"smtp-password"`
-		SMTPHost             string `form:"smtp-host"`
-		SMTPPort             string `form:"smtp-port"`
+		SMTPAccount          string `form:"smtp_account"`
+		SMTPPassword         string `form:"smtp_password"`
+		SMTPHost             string `form:"smtp_host"`
+		SMTPPort             string `form:"smtp_port"`
 
 		Security                    bool   `form:"security"`
 		MFAMode                     int16  `form:"mfa_mode"`

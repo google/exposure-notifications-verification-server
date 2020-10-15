@@ -482,8 +482,8 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 	return provider, nil
 }
 
-// EmailConfig returns the SMS configuration for this realm, if one exists. If the
-// realm is configured to use the system SMS configuration, that configuration
+// EmailConfig returns the email configuration for this realm, if one exists. If the
+// realm is configured to use the system email configuration, that configuration
 // is preferred.
 func (r *Realm) EmailConfig(db *Database) (*EmailConfig, error) {
 	q := db.db.
