@@ -108,8 +108,3 @@ func (db *Database) SaveEmailConfig(s *EmailConfig) error {
 	}
 	return db.db.Save(s).Error
 }
-
-// DeleteEmailConfig removes an email configuration record.
-func (db *Database) DeleteEmailConfig(s *EmailConfig) error {
-	return db.db.Unscoped().Delete(s).Error
-}

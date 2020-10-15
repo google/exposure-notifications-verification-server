@@ -108,8 +108,3 @@ func (db *Database) SaveSMSConfig(s *SMSConfig) error {
 	}
 	return db.db.Save(s).Error
 }
-
-// DeleteSMSConfig removes an SMS configuration record.
-func (db *Database) DeleteSMSConfig(s *SMSConfig) error {
-	return db.db.Unscoped().Delete(s).Error
-}

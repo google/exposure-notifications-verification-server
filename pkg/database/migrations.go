@@ -1505,6 +1505,11 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					`UPDATE realms SET use_system_email_config = FALSE WHERE use_system_email_config IS NULL`,
 					`ALTER TABLE realms ALTER COLUMN use_system_email_config SET DEFAULT FALSE`,
 					`ALTER TABLE realms ALTER COLUMN use_system_email_config SET NOT NULL`,
+
+					// Add templates
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_invite_template text`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_password_reset_template text`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verify_template text`,
 				}
 
 				for _, sql := range sqls {
@@ -1517,13 +1522,17 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				sqls := []string{
-					`ALTER TABLE sms_configs DROP COLUMN IF EXISTS is_system`,
-					`DROP INDEX IF EXISTS uix_sms_configs_is_system_true`,
-					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS nn_sms_configs_realm_id`,
-					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS uix_sms_configs_realm_id`,
+					`ALTER TABLE email_configs DROP COLUMN IF EXISTS is_system`,
+					`DROP INDEX IF EXISTS uix_email_configs_is_system_true`,
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS nn_email_configs_realm_id`,
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS uix_email_configs_realm_id`,
 
-					`ALTER TABLE realms DROP COLUMN IF EXISTS can_use_system_sms_config`,
-					`ALTER TABLE realms DROP COLUMN IF EXISTS use_system_sms_config`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS can_use_system_email_config`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS use_system_email_config`,
+
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_invite_template`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_password_reset_template`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_verify_template`,
 				}
 
 				for _, sql := range sqls {
