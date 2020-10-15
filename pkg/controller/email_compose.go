@@ -16,6 +16,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -29,7 +30,7 @@ func ComposeInviteEmail(
 	auth *auth.Client, toEmail, fromEmail, realmName string) ([]byte, error) {
 	inviteLink, err := auth.PasswordResetLink(ctx, toEmail)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed generating reset link: %w", err)
 	}
 
 	// Compose message
@@ -46,7 +47,7 @@ func ComposeInviteEmail(
 			RealmName:  realmName,
 		})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed rendering invite template: %w", err)
 	}
 	return message, nil
 }

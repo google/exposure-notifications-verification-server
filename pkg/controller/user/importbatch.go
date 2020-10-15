@@ -17,6 +17,7 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -119,11 +120,11 @@ func (c *Controller) sendInvitation(ctx context.Context, toEmail string) error {
 		message, err := controller.ComposeInviteEmail(ctx, c.h, c.client, toEmail, from, realmName)
 		if err != nil {
 			c.logger.Warnw("failed composing invitation", "error", err)
-			return err
+			return fmt.Errorf("failed composing invitation: %w", err)
 		}
 		if err := c.emailer.SendEmail(ctx, toEmail, message); err != nil {
 			c.logger.Warnw("failed sending invitation", "error", err)
-			return err
+			return fmt.Errorf("failed sending invitation: %w", err)
 		}
 
 		return nil
@@ -133,7 +134,7 @@ func (c *Controller) sendInvitation(ctx context.Context, toEmail string) error {
 
 	if err := c.firebaseInternal.SendNewUserInvitation(ctx, toEmail); err != nil {
 		c.logger.Warnw("failed sending invitation", "error", err)
-		return err
+		return fmt.Errorf("failed sending invitation: %w", err)
 	}
 	return nil
 }
