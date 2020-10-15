@@ -144,17 +144,17 @@ type Realm struct {
 	UseSystemSMSConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
 
 	// EmailInviteTemplate is the template for inviting new users.
-	EmailInviteTemplate string `gorm:"type:varchar(400);"`
+	EmailInviteTemplate string `gorm:"type:text;"`
 
 	// EmailPasswordResetTemplate is the template for resetting password.
-	EmailPasswordResetTemplate string `gorm:"type:varchar(400);"`
+	EmailPasswordResetTemplate string `gorm:"type:text;"`
 
 	// EmailVerifyTemplate is the template used for email verification.
-	EmailVerifyTemplate string `gorm:"type:varchar(400);"`
+	EmailVerifyTemplate string `gorm:"type:text;"`
 
 	// CanUseSystemEmailConfig is configured by system administrators to share the
 	// system email config with this realm. Note that the system email config could be
-	// empty and a local SMS config is preferred over the system value.
+	// empty and a local email config is preferred over the system value.
 	CanUseSystemEmailConfig bool `gorm:"column:can_use_system_email_config; type:bool; not null; default:false;"`
 
 	// UseSystemEmailConfig is a realm-level configuration that lets a realm opt-out

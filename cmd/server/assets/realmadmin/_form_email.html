@@ -32,7 +32,7 @@
     </div>
   {{end}}
 
-  <div id="smtp-form" class="collapse{{if not $realm.UseSystemSMSConfig}} show{{end}}">
+  <div id="smtp-form" class="collapse{{if not $realm.UseSystemEmailConfig}} show{{end}}">
     <div class="form-label-group">
       <input type="text" name="smtp_account" id="smtp-account" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpAccount"}} is-invalid{{end}}"
         placeholder="SMTP account" value="{{if $emailConfig}}{{$emailConfig.SMTPAccount}}{{end}}" />

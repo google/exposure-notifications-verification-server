@@ -28,7 +28,7 @@ type EmailConfig struct {
 	Errorable
 
 	// email Config belongs to exactly one realm.
-	RealmID uint
+	RealmID uint `gorm:"type:integer"`
 
 	// ProviderType is the email provider type - it's used to determine the
 	// underlying configuration.
