@@ -160,13 +160,13 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Setup server emailer
-	cfg.Email.ProviderType = email.ProviderTypeFirebase
+	var emailer email.Provider
 	if cfg.Email.HasSMTPCreds() {
 		cfg.Email.ProviderType = email.ProviderTypeSMTP
-	}
-	emailer, err := email.ProviderFor(ctx, &cfg.Email, h, auth)
-	if err != nil {
-		return fmt.Errorf("failed to configure internal firebase client: %w", err)
+		emailer, err = email.ProviderFor(ctx, &cfg.Email)
+		if err != nil {
+			return fmt.Errorf("failed to configure internal firebase client: %w", err)
+		}
 	}
 
 	// Rate limiting
@@ -377,7 +377,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, auth, emailer, cacher, cfg, db, h)
+		userController := user.New(ctx, firebaseInternal, auth, emailer, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
