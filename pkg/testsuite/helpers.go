@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"time"
@@ -34,21 +35,34 @@ func randomString() (string, error) {
 }
 
 type prefixRoundTripper struct {
-	addr string
-	rt   http.RoundTripper
+	host   string
+	scheme string
+	rt     http.RoundTripper
 }
 
 // RoundTrip wraps transport's RoutTrip and sets the scheme and host address.
 func (p *prefixRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	u := r.URL
 	if u.Scheme == "" {
-		u.Scheme = "http"
+		u.Scheme = p.scheme
 	}
 	if u.Host == "" {
-		u.Host = p.addr
+		u.Host = p.host
 	}
 
 	return p.rt.RoundTrip(r)
+}
+
+func newPrefixRoutTripper(host, scheme string) *prefixRoundTripper {
+	log.Printf("host %s, scheme %s", host, scheme)
+	if scheme == "" {
+		scheme = "http"
+	}
+	return &prefixRoundTripper{
+		host:   host,
+		rt:     http.DefaultTransport,
+		scheme: scheme,
+	}
 }
 
 // Eventually retries the given function n times, sleeping 1s between each

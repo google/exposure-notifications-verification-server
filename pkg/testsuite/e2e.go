@@ -32,12 +32,12 @@ type E2ESuite struct {
 }
 
 // NewAdminAPIClient returns an admin API client.
-func (s *E2ESuite) NewAdminAPIClient(context.Context, testing.TB) *AdminClient {
+func (s *E2ESuite) NewAdminAPIClient(context.Context, testing.TB) (*AdminClient, error) {
 	return NewAdminClient(s.cfg.AdminAPIURL, s.adminKey)
 }
 
 // NewAPIClient returns an API client.
-func (s *E2ESuite) NewAPIClient(context.Context, testing.TB) *APIClient {
+func (s *E2ESuite) NewAPIClient(context.Context, testing.TB) (*APIClient, error) {
 	return NewAPIClient(s.cfg.APIServerURL, s.deviceKey)
 }
 

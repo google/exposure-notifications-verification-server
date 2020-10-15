@@ -28,8 +28,8 @@ const (
 )
 
 type TestSuite interface {
-	NewAdminAPIClient(ctx context.Context, tb testing.TB) *AdminClient
-	NewAPIClient(ctx context.Context, tb testing.TB) *APIClient
+	NewAdminAPIClient(ctx context.Context, tb testing.TB) (*AdminClient, error)
+	NewAPIClient(ctx context.Context, tb testing.TB) (*APIClient, error)
 }
 
 // NewTestSuite returns environment specific test suite.

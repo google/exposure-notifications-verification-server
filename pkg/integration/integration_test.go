@@ -61,9 +61,14 @@ func TestIntegration(t *testing.T) {
 
 	ctx := context.Background()
 	testSuite := testsuite.NewTestSuite(t, ctx, *isE2E)
-	adminClient := testSuite.NewAdminAPIClient(ctx, t)
-	apiClient := testSuite.NewAPIClient(ctx, t)
-
+	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
+	if err != nil {
+		t.Fatalf("failed to create admin API client, err: %v", err)
+	}
+	apiClient, err := testSuite.NewAPIClient(ctx, t)
+	if err != nil {
+		t.Fatalf("failed to create API client, err: %v", err)
+	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.Name, func(t *testing.T) {

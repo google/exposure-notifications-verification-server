@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	urlpkg "net/url"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -29,7 +30,6 @@ import (
 type AdminClient struct {
 	client        *http.Client
 	key           string
-	host          string
 	retry         bool
 	retryTimes    uint64
 	retryInterval time.Duration
@@ -60,7 +60,7 @@ func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.host+url, bytes.NewReader(j))
+	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
@@ -90,7 +90,6 @@ func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 type APIClient struct {
 	client *http.Client
 	key    string
-	host   string
 }
 
 // GetToken wraps the VerifyCode API call.
@@ -102,7 +101,7 @@ func (c *APIClient) GetToken(req api.VerifyCodeRequest) (*api.VerifyCodeResponse
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.host+url, bytes.NewReader(j))
+	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
@@ -137,7 +136,7 @@ func (c *APIClient) GetCertificate(req api.VerificationCertificateRequest) (*api
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.host+url, bytes.NewReader(j))
+	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
@@ -179,11 +178,12 @@ func checkResp(r *http.Response) ([]byte, error) {
 }
 
 // NewAdminClient creates an Admin API test client.
-func NewAdminClient(addr, key string) *AdminClient {
-	prt := &prefixRoundTripper{
-		addr: addr,
-		rt:   http.DefaultTransport,
+func NewAdminClient(addr, key string) (*AdminClient, error) {
+	url, err := urlpkg.Parse(addr)
+	if err != nil {
+		return nil, err
 	}
+	prt := newPrefixRoutTripper(url.Host, url.Scheme)
 	httpClient := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: prt,
@@ -191,16 +191,16 @@ func NewAdminClient(addr, key string) *AdminClient {
 	return &AdminClient{
 		client: httpClient,
 		key:    key,
-		host:   addr,
-	}
+	}, nil
 }
 
 // NewAPIClient creates an API server test client.
-func NewAPIClient(addr, key string) *APIClient {
-	prt := &prefixRoundTripper{
-		addr: addr,
-		rt:   http.DefaultTransport,
+func NewAPIClient(addr, key string) (*APIClient, error) {
+	url, err := urlpkg.Parse(addr)
+	if err != nil {
+		return nil, err
 	}
+	prt := newPrefixRoutTripper(url.Host, url.Scheme)
 	httpClient := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: prt,
@@ -208,6 +208,5 @@ func NewAPIClient(addr, key string) *APIClient {
 	return &APIClient{
 		client: httpClient,
 		key:    key,
-		host:   addr,
-	}
+	}, nil
 }
