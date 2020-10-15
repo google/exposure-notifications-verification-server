@@ -38,8 +38,8 @@
             </tr>
           </thead>
           <tbody>
-            {{range $stat := $stats}}
-            <tr>
+            {{range $i, $stat := $stats}}
+            <tr onclick="highlightRow({{$i}})">
               <td>{{$stat.Date.Format "2006-01-02"}}</td>
               <td>{{$stat.CodesIssued}}</td>
               <td>{{$stat.CodesClaimed}}</td>
@@ -99,32 +99,47 @@
   {{end}}
     }
 
+    // fixDate converts the first element in an array to a Date.
+    // This is just to properly munge types for Google Charts, and the
+    // per-user-per-realm chart.
     function fixDate(arr) {
       arr[0] = new Date(arr[0])
       return arr
     }
 
-  function drawUsersChart() {
+    // holds the per-user-per-realm chart & data created by Google Charts.
+    var userChart, userChartData;
+
+    // highlightRow highlights a given row in the per-user-per-realm chart.
+    function highlightRow(index) {
+      var s = [];
+      for (var i = 0; i < userChartData.getNumberOfColumns(); i++) {
+        s = s.concat({row:index, column:i})
+      }
+      userChart.setSelection(s);
+    }
+
+    function drawUsersChart() {
   {{if $userStats}}
-    var data = new google.visualization.DataTable();
+        userChartData = new google.visualization.DataTable();
 
-      data.addColumn('date', 'Day');
-    {{range $name := $names}}
-      data.addColumn('number', '{{$name}}');
-    {{end}}  
-       data.addRows([
-    {{range $stat := $userStats}}
-       fixDate({{$stat}}),
-    {{end}}
-      ]);
+        userChartData.addColumn('date', 'Day');
+      {{range $name := $names}}
+        userChartData.addColumn('number', '{{$name}}');
+      {{end}}
+         userChartData.addRows([
+      {{range $stat := $userStats}}
+         fixDate({{$stat}}),
+      {{end}}
+        ]);
 
-    var options = {
-    legend: {position: 'bottom'},
-    tooltip: {trigger: 'focus'},
-    };
+      var options = {
+      legend: {position: 'bottom'},
+      tooltip: {trigger: 'focus'},
+      };
 
-    var chart = new google.charts.Line(document.getElementById('per_user_chart'));
-    chart.draw(data, google.charts.Line.convertOptions(options));
+      userChart = new google.charts.Line(document.getElementById('per_user_chart'));
+      userChart.draw(userChartData, google.charts.Line.convertOptions(options));
   {{end}}
     }
   </script>
