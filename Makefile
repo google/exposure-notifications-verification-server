@@ -66,3 +66,13 @@ test-acc:
 		-vet="${VETTERS}" \
 		./...
 .PHONY: test-acc
+
+e2e-test:
+	@go test \
+		-count=1 \
+		-timeout=30m \
+		-v \
+		-tags=e2e \
+		./pkg/integration \
+	  -is_e2e
+.PHONY: e2e-test

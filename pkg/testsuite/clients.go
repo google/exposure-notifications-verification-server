@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package integration
+package testsuite
 
 import (
 	"bytes"
@@ -20,18 +20,39 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	urlpkg "net/url"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 )
 
 // AdminClient is a test client for admin API.
 type AdminClient struct {
-	client *http.Client
-	key    string
+	client        *http.Client
+	key           string
+	retry         bool
+	retryTimes    uint64
+	retryInterval time.Duration
 }
 
 // IssueCode wraps the IssueCode API call.
 func (c *AdminClient) IssueCode(req api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
+	var resp *api.IssueCodeResponse
+	var err error
+	if c.retry {
+		finalErr := Eventually(c.retryTimes, c.retryInterval, func() error {
+			resp, err = c.issueCode(req)
+			return err
+		})
+		if finalErr != nil {
+			return nil, finalErr
+		}
+		return resp, nil
+	}
+	return c.issueCode(req)
+}
+
+func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
 	url := "/api/issue"
 
 	j, err := json.Marshal(req)
@@ -154,4 +175,38 @@ func checkResp(r *http.Response) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// NewAdminClient creates an Admin API test client.
+func NewAdminClient(addr, key string) (*AdminClient, error) {
+	url, err := urlpkg.Parse(addr)
+	if err != nil {
+		return nil, err
+	}
+	prt := newPrefixRoutTripper(url.Host, url.Scheme)
+	httpClient := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: prt,
+	}
+	return &AdminClient{
+		client: httpClient,
+		key:    key,
+	}, nil
+}
+
+// NewAPIClient creates an API server test client.
+func NewAPIClient(addr, key string) (*APIClient, error) {
+	url, err := urlpkg.Parse(addr)
+	if err != nil {
+		return nil, err
+	}
+	prt := newPrefixRoutTripper(url.Host, url.Scheme)
+	httpClient := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: prt,
+	}
+	return &APIClient{
+		client: httpClient,
+		key:    key,
+	}, nil
 }
