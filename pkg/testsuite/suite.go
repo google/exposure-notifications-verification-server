@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package integration contains verification server integration tests.
-
+// Package testsuite provides test environment to run E2E and integration tests..
 package testsuite
 
 import (
@@ -33,6 +32,7 @@ type TestSuite interface {
 	NewAPIClient(ctx context.Context, tb testing.TB) *APIClient
 }
 
+// NewTestSuite returns environment specific test suite.
 func NewTestSuite(tb testing.TB, ctx context.Context, isE2E bool) TestSuite {
 	if isE2E {
 		return NewE2ESuite(tb, ctx)

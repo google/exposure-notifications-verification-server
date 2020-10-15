@@ -31,14 +31,17 @@ type E2ESuite struct {
 	adminKey, deviceKey string
 }
 
+// NewAdminAPIClient returns an admin API client.
 func (s *E2ESuite) NewAdminAPIClient(context.Context, testing.TB) *AdminClient {
 	return NewAdminClient(s.cfg.AdminAPIURL, s.adminKey)
 }
 
+// NewAPIClient returns an API client.
 func (s *E2ESuite) NewAPIClient(context.Context, testing.TB) *APIClient {
 	return NewAPIClient(s.cfg.APIServerURL, s.deviceKey)
 }
 
+// NewE2ESiu returns an E2E test suite.
 func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 	cfg := config.NewE2EConfig(tb, ctx)
 	db, err := cfg.DBConfig.Load(ctx)

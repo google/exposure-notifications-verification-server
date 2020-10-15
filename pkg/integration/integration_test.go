@@ -43,17 +43,19 @@ var (
 func TestIntegration(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		Name   string
-		expire bool
-		ErrMsg string
+		Name    string
+		expire  bool
+		ErrMsg  string
+		SkipE2E bool
 	}{
 		{
 			Name: "valid token",
 		},
 		{
-			Name:   "expired token",
-			expire: true,
-			ErrMsg: "verification token expired",
+			Name:    "expired token",
+			expire:  true,
+			ErrMsg:  "verification token expired",
+			SkipE2E: true,
 		},
 	}
 
@@ -66,6 +68,10 @@ func TestIntegration(t *testing.T) {
 		tc := tc
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
+
+			if *isE2E && tc.SkipE2E {
+				t.Skip("Skip in E2E test mode.")
+			}
 
 			now := time.Now().UTC()
 			curDayInterval := timeToInterval(now)

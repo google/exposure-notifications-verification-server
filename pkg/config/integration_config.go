@@ -139,6 +139,7 @@ func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationT
 	return &cfg, db
 }
 
+// IntegrationTestConfig represents configurations to run server E2E tests.
 type E2EConfig struct {
 	DBName       string `env:"DB_NAME"`
 	APIServerURL string `env:"APISERVER_URL"`
@@ -147,6 +148,7 @@ type E2EConfig struct {
 	DBConfig     *database.Config
 }
 
+// NewE2EConfig returns a new E2E test config.
 func NewE2EConfig(tb testing.TB, ctx context.Context) *E2EConfig {
 	c := &E2EConfig{}
 	sm, err := secrets.SecretManagerFor(ctx, secrets.SecretManagerTypeGoogleSecretManager)
