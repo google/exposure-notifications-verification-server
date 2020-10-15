@@ -62,7 +62,7 @@ func (s *SMTPProvider) sendMail(ctx context.Context, auth smtp.Auth, toEmail str
 	}
 }
 
-// From returns who the invitation should be send from.
+// From returns who shown as the sender of the email.
 func (s *SMTPProvider) From() string {
 	return s.User
 }

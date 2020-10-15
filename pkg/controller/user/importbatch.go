@@ -108,28 +108,32 @@ func (c *Controller) HandleImportBatch() http.Handler {
 }
 
 func (c *Controller) sendInvitation(ctx context.Context, toEmail string) error {
-	realm := controller.RealmFromContext(ctx)
+	// Send email with emailer
+	if c.emailer != nil {
+		realmName := ""
+		if realm := controller.RealmFromContext(ctx); realm != nil {
+			realmName = realm.Name
+		}
 
-	// Fallback to Firebase
-	if c.emailer == nil {
-		if err := c.firebaseInternal.SendNewUserInvitation(ctx, toEmail); err != nil {
+		from := c.emailer.From()
+		message, err := controller.ComposeInviteEmail(ctx, c.h, c.client, toEmail, from, realmName)
+		if err != nil {
+			c.logger.Warnw("failed composing invitation", "error", err)
+			return err
+		}
+		if err := c.emailer.SendEmail(ctx, toEmail, message); err != nil {
 			c.logger.Warnw("failed sending invitation", "error", err)
 			return err
 		}
+
 		return nil
 	}
 
-	// Send email with emailer
-	from := c.emailer.From()
-	message, err := controller.ComposeInviteEmail(ctx, c.h, c.client, toEmail, from, realm.Name)
-	if err != nil {
-		c.logger.Warnw("failed composing invitation", "error", err)
-		return err
-	}
-	if err := c.emailer.SendEmail(ctx, toEmail, message); err != nil {
+	// Fallback to Firebase
+
+	if err := c.firebaseInternal.SendNewUserInvitation(ctx, toEmail); err != nil {
 		c.logger.Warnw("failed sending invitation", "error", err)
 		return err
 	}
-
 	return nil
 }
