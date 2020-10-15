@@ -97,7 +97,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 func (s *IntegrationSuite) NewAdminAPIClient(ctx context.Context, tb testing.TB) *AdminClient {
 	srv := s.newAdminAPIServer(ctx, tb)
 	s.adminSrv = srv
-	return NewAdminClient(srv.Addr(), s.adminKey)
+	return NewAdminClient("https://adminapi-4akk7kqf4q-uc.a.run.app", s.adminKey)
 }
 
 // NewAPIClient runs an API Server and returns a corresponding client.

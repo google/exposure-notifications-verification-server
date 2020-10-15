@@ -27,9 +27,9 @@ import (
 
 // AdminClient is a test client for admin API.
 type AdminClient struct {
-	client *http.Client
-	key    string
-
+	client        *http.Client
+	key           string
+	host          string
 	retry         bool
 	retryTimes    uint64
 	retryInterval time.Duration
@@ -60,7 +60,7 @@ func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
+	httpReq, err := http.NewRequest("POST", c.host+url, bytes.NewReader(j))
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
@@ -90,6 +90,7 @@ func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 type APIClient struct {
 	client *http.Client
 	key    string
+	host   string
 }
 
 // GetToken wraps the VerifyCode API call.
@@ -101,7 +102,7 @@ func (c *APIClient) GetToken(req api.VerifyCodeRequest) (*api.VerifyCodeResponse
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
+	httpReq, err := http.NewRequest("POST", c.host+url, bytes.NewReader(j))
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
@@ -136,7 +137,7 @@ func (c *APIClient) GetCertificate(req api.VerificationCertificateRequest) (*api
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
+	httpReq, err := http.NewRequest("POST", c.host+url, bytes.NewReader(j))
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
@@ -190,6 +191,7 @@ func NewAdminClient(addr, key string) *AdminClient {
 	return &AdminClient{
 		client: httpClient,
 		key:    key,
+		host:   addr,
 	}
 }
 
@@ -206,5 +208,6 @@ func NewAPIClient(addr, key string) *APIClient {
 	return &APIClient{
 		client: httpClient,
 		key:    key,
+		host:   addr,
 	}
 }
