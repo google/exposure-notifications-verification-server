@@ -59,6 +59,11 @@ make tabcheck || {
   exit 1
 }
 
+echo "© Verify Copyrights"
+make copyrightcheck || {
+  echo "✋ Missing copyrights."
+  exit 1
+}
 
 echo "🔨 Building"
 go build ./...
