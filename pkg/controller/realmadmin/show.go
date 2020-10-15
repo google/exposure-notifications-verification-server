@@ -16,10 +16,11 @@ package realmadmin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -40,7 +41,10 @@ func (c *Controller) HandleShow() http.Handler {
 
 		// Get and cache the stats for this realm.
 		var stats []*database.RealmStats
-		cacheKey := fmt.Sprintf("stats:realm:%d", realm.ID)
+		cacheKey := &cache.Key{
+			Namespace: "stats:realm",
+			Key:       strconv.FormatUint(uint64(realm.ID), 10),
+		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &stats, timeout, func() (interface{}, error) {
 			return realm.Stats(c.db, past, now)
 		}); err != nil {
@@ -50,7 +54,10 @@ func (c *Controller) HandleShow() http.Handler {
 
 		// Also get the per-user stats.
 		var userStats []*database.RealmUserStats
-		cacheKey = fmt.Sprintf("userstats:realm:%d", realm.ID)
+		cacheKey = &cache.Key{
+			Namespace: "stats:realm:per_user",
+			Key:       strconv.FormatUint(uint64(realm.ID), 10),
+		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &userStats, timeout, func() (interface{}, error) {
 			return realm.CodesPerUser(c.db, past, now)
 		}); err != nil {

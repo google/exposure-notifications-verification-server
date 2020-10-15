@@ -106,10 +106,7 @@ func realMain(ctx context.Context) error {
 	sessions.Options.SameSite = http.SameSiteStrictMode
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey),
-		cache.PrefixKeyFunc("cache:"),
-	))
+	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
@@ -444,7 +441,7 @@ func realMain(ctx context.Context) error {
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
-		adminController := admin.New(ctx, cfg, db, auth, h)
+		adminController := admin.New(ctx, cfg, cacher, db, auth, h)
 		adminSub.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
@@ -460,6 +457,9 @@ func realMain(ctx context.Context) error {
 		adminSub.Handle("/users", adminController.HandleUsersCreate()).Methods("POST")
 		adminSub.Handle("/users/new", adminController.HandleUsersCreate()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUsersDelete()).Methods("DELETE")
+
+		adminSub.Handle("/caches", adminController.HandleCachesIndex()).Methods("GET")
+		adminSub.Handle("/caches/clear/{id}", adminController.HandleCachesClear()).Methods("POST")
 
 		adminSub.Handle("/info", adminController.HandleInfoShow()).Methods("GET")
 	}

@@ -25,7 +25,6 @@ import (
 	"github.com/gonum/matrix/mat64"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
 
@@ -206,11 +205,10 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 	logger.Debugw("next effective limit", "value", effective)
 
 	// Update the limiter to use the new value.
-	dig, err := digest.HMACUint64(id, c.config.RateLimit.HMACKey)
+	key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
 	if err != nil {
 		return fmt.Errorf("failed to digest realm id: %w", err)
 	}
-	key := fmt.Sprintf("realm:quota:%s", dig)
 	if err := c.limiter.Set(ctx, key, uint64(effective), 24*time.Hour); err != nil {
 		return fmt.Errorf("failed to update limit: %w", err)
 	}

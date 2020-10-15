@@ -15,11 +15,11 @@
 package redirect
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -53,8 +53,11 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		// Get App Store Data.
-		cacheKey := fmt.Sprintf("appstoredata:by_region:%s", hostRegion)
 		var appStoreData AppStoreData
+		cacheKey := &cache.Key{
+			Namespace: "apps:appstoredata:by_region",
+			Key:       hostRegion,
+		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &appStoreData, c.config.AppCacheTTL, func() (interface{}, error) {
 			c.logger.Debug("fetching new app store data")
 			return c.getAppStoreData(realm.ID)

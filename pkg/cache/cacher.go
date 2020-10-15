@@ -33,6 +33,33 @@ var (
 // FetchFunc is a function used to Fetch in a cacher.
 type FetchFunc func() (interface{}, error)
 
+// Key is a cache key. It has an optional Namespace. Any KeyFunc are applied to
+// the Key, but not the Namespace.
+type Key struct {
+	Namespace string
+	Key       string
+}
+
+// Compute builds the final value of the key. If f is not nil, it is called on
+// the value of Key. If Namespace is not "", the result is prefixed with
+// Namespace + ":".
+func (k *Key) Compute(f KeyFunc) (string, error) {
+	key := k.Key
+
+	if f != nil {
+		var err error
+		key, err = f(key)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if k.Namespace != "" {
+		return k.Namespace + ":" + key, nil
+	}
+	return key, nil
+}
+
 // KeyFunc is a function that mutates the provided cache key before storing it
 // in Redis. This can be used to hash or HMAC values to prevent their plaintext
 // from appearing in Redis. A good example might be an API key lookup that you
@@ -54,17 +81,6 @@ func MultiKeyFunc(fns ...KeyFunc) KeyFunc {
 			}
 		}
 
-		return in, nil
-	}
-}
-
-// PrefixKeyFunc returns a KeyFunc that prefixes the key with the given constant
-// before passing it to the cacher for storage.
-func PrefixKeyFunc(prefix string) KeyFunc {
-	return func(in string) (string, error) {
-		if prefix != "" {
-			in = prefix + in
-		}
 		return in, nil
 	}
 }
@@ -105,16 +121,20 @@ type Cacher interface {
 	// it calls FetchFunc to create the item. If FetchFunc returns an error, the
 	// error is bubbled up the stack and no value is cached. If FetchFunc
 	// succeeds, the value is cached for the provided TTL.
-	Fetch(context.Context, string, interface{}, time.Duration, FetchFunc) error
+	Fetch(context.Context, *Key, interface{}, time.Duration, FetchFunc) error
 
 	// Read gets an item from the cache and reads it into the provided interface.
 	// If it does not exist, it returns ErrNotFound.
-	Read(context.Context, string, interface{}) error
+	Read(context.Context, *Key, interface{}) error
 
 	// Write adds an item to the cache, overwriting if it already exists, caching
 	// for TTL. It returns any errors that occur on writing.
-	Write(context.Context, string, interface{}, time.Duration) error
+	Write(context.Context, *Key, interface{}, time.Duration) error
 
 	// Delete removes an item from the cache, returning any errors that occur.
-	Delete(context.Context, string) error
+	Delete(context.Context, *Key) error
+
+	// DeletePrefix removes all items from the cache that begin with the given
+	// value.
+	DeletePrefix(context.Context, string) error
 }

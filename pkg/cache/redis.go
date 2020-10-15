@@ -29,6 +29,9 @@ import (
 	"go.opencensus.io/stats/view"
 )
 
+var deletePrefixScript = redigo.NewScript(0,
+	`local keys = redis.call("KEYS", ARGV[1]); return #keys > 0 and redis.call("UNLINK", unpack(keys)) or 0`)
+
 var _ Cacher = (*redisCacher)(nil)
 
 // redisCacher is a shared cache implementation backed by Redis. It's ideal for
@@ -98,17 +101,14 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 // returns the value. If the value does not exist, it calls f and caches the
 // result of f in the cache for ttl. The ttl is calculated from the time the
 // value is inserted, not the time the function is called.
-func (c *redisCacher) Fetch(ctx context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
+func (c *redisCacher) Fetch(ctx context.Context, k *Key, out interface{}, ttl time.Duration, f FetchFunc) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
 
-	if c.keyFunc != nil {
-		var err error
-		key, err = c.keyFunc(key)
-		if err != nil {
-			return fmt.Errorf("failed to execute keyFunc: %w", err)
-		}
+	key, err := k.Compute(c.keyFunc)
+	if err != nil {
+		return fmt.Errorf("failed to compute key: %w", err)
 	}
 
 	fn := func(conn redigo.ConnWithContext) (io.Reader, error) {
@@ -163,7 +163,6 @@ func (c *redisCacher) Fetch(ctx context.Context, key string, out interface{}, tt
 	}
 
 	// This is a CAS operation, so retry
-	var err error
 	for i := 0; i < 5; i++ {
 		err = c.withConn(func(c redigo.ConnWithContext) error {
 			r, err := fn(c)
@@ -187,17 +186,14 @@ func (c *redisCacher) Fetch(ctx context.Context, key string, out interface{}, tt
 }
 
 // Write adds a new item to the cache with the given TTL.
-func (c *redisCacher) Write(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (c *redisCacher) Write(ctx context.Context, k *Key, value interface{}, ttl time.Duration) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
 
-	if c.keyFunc != nil {
-		var err error
-		key, err = c.keyFunc(key)
-		if err != nil {
-			return fmt.Errorf("failed to execute keyFunc: %w", err)
-		}
+	key, err := k.Compute(c.keyFunc)
+	if err != nil {
+		return fmt.Errorf("failed to compute key: %w", err)
 	}
 
 	return c.withConn(func(conn redigo.ConnWithContext) error {
@@ -215,17 +211,14 @@ func (c *redisCacher) Write(ctx context.Context, key string, value interface{}, 
 
 // Read fetches the value at the key. If the value does not exist, it returns
 // ErrNotFound.
-func (c *redisCacher) Read(ctx context.Context, key string, out interface{}) error {
+func (c *redisCacher) Read(ctx context.Context, k *Key, out interface{}) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
 
-	if c.keyFunc != nil {
-		var err error
-		key, err = c.keyFunc(key)
-		if err != nil {
-			return fmt.Errorf("failed to execute keyFunc: %w", err)
-		}
+	key, err := k.Compute(c.keyFunc)
+	if err != nil {
+		return fmt.Errorf("failed to compute key: %w", err)
 	}
 
 	return c.withConn(func(conn redigo.ConnWithContext) error {
@@ -247,22 +240,34 @@ func (c *redisCacher) Read(ctx context.Context, key string, out interface{}) err
 }
 
 // Delete removes an item from the cache, if it exists, regardless of TTL.
-func (c *redisCacher) Delete(ctx context.Context, key string) error {
+func (c *redisCacher) Delete(ctx context.Context, k *Key) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
 
-	if c.keyFunc != nil {
-		var err error
-		key, err = c.keyFunc(key)
-		if err != nil {
-			return fmt.Errorf("failed to execute keyFunc: %w", err)
-		}
+	key, err := k.Compute(c.keyFunc)
+	if err != nil {
+		return fmt.Errorf("failed to compute key: %w", err)
 	}
 
 	return c.withConn(func(conn redigo.ConnWithContext) error {
-		if _, err := conn.DoContext(ctx, "DEL", key); err != nil && !errors.Is(err, redigo.ErrNil) {
-			return fmt.Errorf("failed to DEL: %w", err)
+		if _, err := conn.DoContext(ctx, "UNLINK", key); err != nil && !errors.Is(err, redigo.ErrNil) {
+			return fmt.Errorf("failed to UNLINK: %w", err)
+		}
+		return nil
+	})
+}
+
+// DeletePrefix removes all items that start with the given prefix.
+func (c *redisCacher) DeletePrefix(ctx context.Context, prefix string) error {
+	if c.isStopped() {
+		return ErrStopped
+	}
+
+	search := prefix + "*"
+	return c.withConn(func(conn redigo.ConnWithContext) error {
+		if _, err := deletePrefixScript.Do(conn, search); err != nil {
+			return fmt.Errorf("failed to delete prefix: %w", err)
 		}
 		return nil
 	})

@@ -114,16 +114,21 @@ func exerciseCacher(t *testing.T, cacher Cacher) {
 			t.Fatal(err)
 		}
 
-		if err := cacher.Read(ctx, "foo", nil); !errors.Is(err, ErrStopped) {
+		key := &Key{
+			Namespace: "foo",
+			Key:       "bar",
+		}
+
+		if err := cacher.Read(ctx, key, nil); !errors.Is(err, ErrStopped) {
 			t.Errorf("expected %#v to be %#v", err, ErrStopped)
 		}
-		if err := cacher.Write(ctx, "foo", nil, 0); !errors.Is(err, ErrStopped) {
+		if err := cacher.Write(ctx, key, nil, 0); !errors.Is(err, ErrStopped) {
 			t.Errorf("expected %#v to be %#v", err, ErrStopped)
 		}
-		if err := cacher.Delete(ctx, "foo"); !errors.Is(err, ErrStopped) {
+		if err := cacher.Delete(ctx, key); !errors.Is(err, ErrStopped) {
 			t.Errorf("expected %#v to be %#v", err, ErrStopped)
 		}
-		if err := cacher.Fetch(ctx, "foo", nil, 0, nil); !errors.Is(err, ErrStopped) {
+		if err := cacher.Fetch(ctx, key, nil, 0, nil); !errors.Is(err, ErrStopped) {
 			t.Errorf("expected %#v to be %#v", err, ErrStopped)
 		}
 
@@ -138,7 +143,10 @@ func exerciseType(tb testing.TB, cacher Cacher, in, out interface{}) {
 	tb.Helper()
 
 	ctx := context.Background()
-	key := testRandomKey(tb)
+	key := &Key{
+		Namespace: testRandomKey(tb),
+		Key:       testRandomKey(tb),
+	}
 
 	// Ensure the value isn't cached already
 	if err := cacher.Read(ctx, key, out); !errors.Is(err, ErrNotFound) {
@@ -187,5 +195,31 @@ func exerciseType(tb testing.TB, cacher Cacher, in, out interface{}) {
 	// Delete cached value
 	if err := cacher.Delete(ctx, key); err != nil {
 		tb.Fatal(err)
+	}
+
+	// Ensure value is deleted
+	if err := cacher.Read(ctx, key, out); !errors.Is(err, ErrNotFound) {
+		tb.Fatalf("expected %#v to be %#v", err, ErrNotFound)
+	}
+
+	// Create caches with the same namespace
+	for i := 0; i < 10; i++ {
+		key = &Key{
+			Namespace: key.Namespace,
+			Key:       testRandomKey(tb),
+		}
+		if err := cacher.Write(ctx, key, in, 5*time.Minute); err != nil {
+			tb.Fatal(err)
+		}
+	}
+
+	// Delete the prefix
+	if err := cacher.DeletePrefix(ctx, key.Namespace); err != nil {
+		tb.Fatal(err)
+	}
+
+	// Ensure value is deleted
+	if err := cacher.Read(ctx, key, out); !errors.Is(err, ErrNotFound) {
+		tb.Fatalf("expected %#v to be %#v", err, ErrNotFound)
 	}
 }
