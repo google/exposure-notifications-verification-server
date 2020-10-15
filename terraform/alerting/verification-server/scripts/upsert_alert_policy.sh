@@ -8,7 +8,9 @@ function eexit() {
     exit 1
 }
 
-[[ -x $(command -v gcloud) ]] || "gcloud is not installed"
+[[ -x $(command -v gcloud) ]] || eexit "gcloud is not installed"
+
+[[ $(gcloud components list --filter='id=alpha state.name=Installed' --format=json) != "[]" ]] || eexit "gcloud alpha component not installed. Install using: gcloud components install alpha"
 
 cat <<EOF
 
