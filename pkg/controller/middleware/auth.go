@@ -95,7 +95,10 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 			// Load the user by using the cache to alleviate pressure on the database
 			// layer.
 			var user database.User
-			cacheKey := fmt.Sprintf("users:by_email:%s", email)
+			cacheKey := &cache.Key{
+				Namespace: "users:by_email",
+				Key:       email,
+			}
 			if err := cacher.Fetch(ctx, cacheKey, &user, cacheTTL, func() (interface{}, error) {
 				return db.FindUserByEmail(email)
 			}); err != nil {

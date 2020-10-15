@@ -35,6 +35,10 @@
   </li>
 
   <li class="nav-item">
+    <a class="nav-link{{if .currentPath.IsDir "/admin/caches"}} active{{end}}" href="/admin/caches">Caches</a>
+  </li>
+
+  <li class="nav-item">
     <a class="nav-link{{if .currentPath.IsDir "/admin/info"}} active{{end}}" href="/admin/info">Info</a>
   </li>
 </ul>

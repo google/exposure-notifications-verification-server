@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -1123,6 +1124,16 @@ func (r *Realm) RenderWelcomeMessage() string {
 
 	raw := blackfriday.Run([]byte(msg))
 	return string(bluemonday.UGCPolicy().SanitizeBytes(raw))
+}
+
+// QuotaKey returns the unique and consistent key to use for storing quota data
+// for this realm, given the provided HMAC key.
+func (r *Realm) QuotaKey(hmacKey []byte) (string, error) {
+	dig, err := digest.HMACUint(r.ID, hmacKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to create realm quota key: %w", err)
+	}
+	return fmt.Sprintf("realm:quota:%s", dig), nil
 }
 
 // ToCIDRList converts the newline-separated and/or comma-separated CIDR list

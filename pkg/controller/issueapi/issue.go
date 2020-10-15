@@ -25,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
@@ -216,14 +215,13 @@ func (c *Controller) HandleIssue() http.Handler {
 		// If we got this far, we're about to issue a code - take from the limiter
 		// to ensure this is permitted.
 		if realm.AbusePreventionEnabled {
-			dig, err := digest.HMACUint(realm.ID, c.config.GetRateLimitConfig().HMACKey)
+			key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				blame = observability.BlameServer
 				result = observability.APIResultError("FAILED_TO_GENERATE_HMAC")
 				return
 			}
-			key := fmt.Sprintf("realm:quota:%s", dig)
 			limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
 			if err != nil {
 				logger.Errorw("failed to take from limiter", "error", err)
