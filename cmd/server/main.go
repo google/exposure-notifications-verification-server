@@ -106,10 +106,7 @@ func realMain(ctx context.Context) error {
 	sessions.Options.SameSite = http.SameSiteStrictMode
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey),
-		cache.PrefixKeyFunc("cache:"),
-	))
+	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
@@ -145,16 +142,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to configure internal firebase client: %w", err)
 	}
 
-	// Setup server emailer
-	cfg.Email.ProviderType = email.ProviderTypeFirebase
-	if cfg.Email.HasSMTPCreds() {
-		cfg.Email.ProviderType = email.ProviderTypeSMTP
-	}
-	emailer, err := email.ProviderFor(ctx, &cfg.Email, auth)
-	if err != nil {
-		return fmt.Errorf("failed to configure internal firebase client: %w", err)
-	}
-
 	// Create the router
 	r := mux.NewRouter()
 
@@ -167,6 +154,16 @@ func realMain(ctx context.Context) error {
 	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
+	// Setup server emailer
+	var emailer email.Provider
+	if cfg.Email.HasSMTPCreds() {
+		cfg.Email.ProviderType = email.ProviderTypeSMTP
+		emailer, err = email.ProviderFor(ctx, &cfg.Email)
+		if err != nil {
+			return fmt.Errorf("failed to configure internal firebase client: %w", err)
+		}
 	}
 
 	// Rate limiting
@@ -377,7 +374,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, auth, emailer, cacher, cfg, db, h)
+		userController := user.New(ctx, firebaseInternal, auth, emailer, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
@@ -444,7 +441,7 @@ func realMain(ctx context.Context) error {
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
-		adminController := admin.New(ctx, cfg, db, auth, h)
+		adminController := admin.New(ctx, cfg, cacher, db, auth, h)
 		adminSub.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
@@ -460,6 +457,9 @@ func realMain(ctx context.Context) error {
 		adminSub.Handle("/users", adminController.HandleUsersCreate()).Methods("POST")
 		adminSub.Handle("/users/new", adminController.HandleUsersCreate()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUsersDelete()).Methods("DELETE")
+
+		adminSub.Handle("/caches", adminController.HandleCachesIndex()).Methods("GET")
+		adminSub.Handle("/caches/clear/{id}", adminController.HandleCachesClear()).Methods("POST")
 
 		adminSub.Handle("/info", adminController.HandleInfoShow()).Methods("GET")
 	}

@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 )
 
@@ -26,19 +25,30 @@ import (
 type ProviderType string
 
 const (
-	ProviderTypeNoop     ProviderType = "NOOP"
-	ProviderTypeFirebase ProviderType = "FIREBASE"
-	ProviderTypeSMTP     ProviderType = "SIMPLE_SMTP"
+	// ProviderTypeNoop is a no-op provider
+	ProviderTypeNoop ProviderType = "NOOP"
+
+	// ProviderTypeSMTP composes emails and sends them via an external SMTP server.
+	ProviderTypeSMTP ProviderType = "SIMPLE_SMTP"
 )
 
 // Config represents the env var based configuration for email SMTP server connection.
+//
+// Note: This will only work with email providers that accept external connections.
+//       The provider must accept TLS, and users should independently consider the security
+//       of the email provider / account.
+//   Gmail or Google Workspace accounts can be used with an app-password, but will
+//   not work with security features such as Advanced Protection enabled.
 type Config struct {
 	ProviderType ProviderType
 
-	User     string `env:"EMAIL_USER" json:",omitempty"`
-	Password string `env:"EMAIL_PASSWORD" json:",omitempty"`
-	SMTPHost string `env:"EMAIL_SMTP_HOST" json:",omitempty"`
-	SMTPPort string `env:"EMAIL_SMTP_PORT" json:",omitempty"`
+	User     string `env:"EMAIL_USER"`
+	Password string `env:"EMAIL_PASSWORD"`
+	SMTPHost string `env:"EMAIL_SMTP_HOST"`
+
+	// SMTPPort defines the email port to connect to.
+	// Note: legacy email port 25 is blocked on GCP and many other systems.
+	SMTPPort string `env:"EMAIL_SMTP_PORT, default=587"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
@@ -47,21 +57,27 @@ type Config struct {
 	Secrets secrets.Config
 }
 
+// Provider is an interface for email-sending mechanisms.
 type Provider interface {
-	// SendNewUserInvitation sends an invite to join the server.
-	SendNewUserInvitation(ctx context.Context, email string) error
+	// SendEmail sends an email with the given message.
+	SendEmail(ctx context.Context, toEmail string, message []byte) error
+
+	// From returns who shown as the sender of the email.
+	From() string
 }
 
+// HasSMTPCreds returns true if required fields for connecting to SMTP are set.
 func (c *Config) HasSMTPCreds() bool {
 	return c.User != "" && c.Password != "" && c.SMTPHost != "" && c.SMTPPort != ""
 }
 
-func ProviderFor(ctx context.Context, c *Config, auth *auth.Client) (Provider, error) {
+// ProviderFor creates an email provider given a Config.
+func ProviderFor(ctx context.Context, c *Config) (Provider, error) {
 	switch typ := c.ProviderType; typ {
-	case ProviderTypeFirebase:
-		return NewFirebase(ctx)
+	case ProviderTypeNoop:
+		return NewNoop(), nil
 	case ProviderTypeSMTP:
-		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort, auth)
+		return NewSMTP(ctx, c.User, c.Password, c.SMTPHost, c.SMTPPort), nil
 	default:
 		return nil, fmt.Errorf("unknown email provider type: %v", typ)
 	}

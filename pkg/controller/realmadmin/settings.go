@@ -16,13 +16,11 @@ package realmadmin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
@@ -108,12 +106,11 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		var quotaLimit, quotaRemaining uint64
 		if realm.AbusePreventionEnabled {
-			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			key := fmt.Sprintf("realm:quota:%s", dig)
 
 			quotaLimit, quotaRemaining, err = c.limiter.Get(ctx, key)
 			if err != nil {
@@ -217,12 +214,11 @@ func (c *Controller) HandleSettings() http.Handler {
 		// Even if saving the realm fails, there's no harm in doing this early. It's
 		// an idempotent operation that TTLs out after a week anyway.
 		if abusePreventionJustEnabled {
-			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			key := fmt.Sprintf("realm:quota:%s", dig)
 			limit := uint64(realm.AbusePreventionEffectiveLimit())
 			ttl := 7 * 24 * time.Hour
 			if err := c.limiter.Set(ctx, key, limit, ttl); err != nil {
@@ -280,12 +276,11 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		// Process temporary abuse prevention bursts
 		if burst := form.AbusePreventionBurst; burst > 0 {
-			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			key := fmt.Sprintf("realm:quota:%s", dig)
 			if err := c.limiter.Burst(ctx, key, burst); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return

@@ -18,7 +18,7 @@ resource "google_monitoring_dashboard" "verification-server" {
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
     google_monitoring_metric_descriptor.api--issue--request_count,
-    google_monitoring_metric_descriptor.api--issue--realm_token_capacity_latest,
+    google_monitoring_metric_descriptor.api--issue--realm_token_latest,
     google_monitoring_metric_descriptor.ratelimit--limitware--rate_limited_count
   ]
 }
@@ -81,7 +81,7 @@ EOT
 
 resource "google_monitoring_alert_policy" "rate_limited_count" {
   project      = var.monitoring-host-project
-  display_name = "ElevatedRateLimitedCount"
+  display_name = "Elevated Rate Limited Count"
   combiner     = "OR"
   conditions {
     display_name = "/rate_limited_count"
@@ -177,7 +177,7 @@ EOT
 
 resource "google_monitoring_alert_policy" "realm_token_capacity" {
   project      = var.verification-server-project
-  display_name = "RealmTokenCapacityUtilizationAboveThreshold"
+  display_name = "Realm Token Capacity Utilization Above Threshold"
   combiner     = "OR"
   conditions {
     display_name = "/realm_capacity_latest"

@@ -140,10 +140,7 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 	}
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &s.cfg.APISrvConfig.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, s.cfg.APISrvConfig.Cache.HMACKey),
-		cache.PrefixKeyFunc("apiserver:cache:"),
-	))
+	cacher, err := cache.CacherFor(ctx, &s.cfg.APISrvConfig.Cache, cache.HMACKeyFunc(sha1.New, s.cfg.APISrvConfig.Cache.HMACKey))
 	if err != nil {
 		tb.Fatalf("failed to create cacher: %v", err)
 	}
@@ -207,10 +204,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 	}
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &s.cfg.APISrvConfig.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, s.cfg.APISrvConfig.Cache.HMACKey),
-		cache.PrefixKeyFunc("apiserver:cache:"),
-	))
+	cacher, err := cache.CacherFor(ctx, &s.cfg.APISrvConfig.Cache, cache.HMACKeyFunc(sha1.New, s.cfg.APISrvConfig.Cache.HMACKey))
 	if err != nil {
 		tb.Fatalf("failed to create cacher: %v", err)
 	}

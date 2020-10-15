@@ -45,10 +45,13 @@ func NewPublicKeyCache(ctx context.Context, cacher cache.Cacher, ttl time.Durati
 
 // GetPublicKey returns the public key for the provided ID.
 func (c *PublicKeyCache) GetPublicKey(ctx context.Context, id string, kms keys.KeyManager) (crypto.PublicKey, error) {
-	key := fmt.Sprintf("publickey:%s", id)
+	cacheKey := &cache.Key{
+		Namespace: "public_keys",
+		Key:       id,
+	}
 
 	var b []byte
-	if err := c.cacher.Fetch(ctx, key, &b, c.ttl, func() (interface{}, error) {
+	if err := c.cacher.Fetch(ctx, cacheKey, &b, c.ttl, func() (interface{}, error) {
 		signer, err := kms.NewSigner(ctx, id)
 		if err != nil {
 			return nil, err

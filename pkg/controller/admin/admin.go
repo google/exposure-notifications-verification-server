@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -29,6 +30,7 @@ import (
 )
 
 type Controller struct {
+	cacher       cache.Cacher
 	config       *config.ServerConfig
 	db           *database.Database
 	firebaseAuth *auth.Client
@@ -36,11 +38,12 @@ type Controller struct {
 	logger       *zap.SugaredLogger
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, firebaseAuth *auth.Client, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, firebaseAuth *auth.Client, h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("admin")
 
 	return &Controller{
 		config:       config,
+		cacher:       cacher,
 		db:           db,
 		firebaseAuth: firebaseAuth,
 		h:            h,

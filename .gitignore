@@ -27,3 +27,6 @@ bin/
 local/
 .env
 .env.*
+
+# Editor temporary files
+*.swp

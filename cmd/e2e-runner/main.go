@@ -18,8 +18,8 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
-	"math/big"
 	"net/http"
 	"os"
 	"strconv"
@@ -65,12 +65,13 @@ func main() {
 	logger.Info("successful shutdown")
 }
 
+// Generate random string of 32 characters in length
 func randomString() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(10000))
-	if err != nil {
-		return "", err
+	b := make([]byte, 512)
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("failed to generate random: %v", err)
 	}
-	return fmt.Sprintf("%04x", n), nil
+	return fmt.Sprintf("%x", sha256.Sum256(b[:])), nil
 }
 
 func realMain(ctx context.Context) error {
@@ -155,6 +156,7 @@ func realMain(ctx context.Context) error {
 		app, err := db.FindAuthorizedAppByAPIKey(deviceKey)
 		if err != nil {
 			logger.Errorf("device API key cleanup failed: %w", err)
+			return
 		}
 		now := time.Now().UTC()
 		app.DeletedAt = &now

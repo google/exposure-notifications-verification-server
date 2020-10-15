@@ -17,18 +17,28 @@ package email
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/google/exposure-notifications-verification-server/internal/firebase"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
-var _ Provider = (*firebase.Client)(nil)
+var _ Provider = (*SMTPProvider)(nil)
 
-// NewFirebase creates a new SMTP email sender with the given auth.
-func NewFirebase(ctx context.Context) (Provider, error) {
-	firebaseInternal, err := firebase.New(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to configure internal firebase client: %w", err)
-	}
-	return firebaseInternal, nil
+// NoopProvider is an email sender that logs without taking any actions.
+type NoopProvider struct{}
+
+// NewNoop returns No-op provider
+func NewNoop() Provider {
+	return &NoopProvider{}
+}
+
+// SendEmail sends a password reset email to the user.
+func (s *NoopProvider) SendEmail(ctx context.Context, toEmail string, message []byte) error {
+	logger := logging.FromContext(ctx)
+	logger.Infow("Noop send email", "email", toEmail)
+	return nil
+}
+
+// From returns who the invitation should be send from.
+func (s *NoopProvider) From() string {
+	return ""
 }

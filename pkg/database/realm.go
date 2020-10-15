@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -62,6 +63,7 @@ func (t TestType) Display() string {
 
 var (
 	ErrNoSigningKeyManagement = errors.New("no signing key management")
+	ErrBadDateRange           = errors.New("bad date range")
 )
 
 const (
@@ -1124,6 +1126,16 @@ func (r *Realm) RenderWelcomeMessage() string {
 	return string(bluemonday.UGCPolicy().SanitizeBytes(raw))
 }
 
+// QuotaKey returns the unique and consistent key to use for storing quota data
+// for this realm, given the provided HMAC key.
+func (r *Realm) QuotaKey(hmacKey []byte) (string, error) {
+	dig, err := digest.HMACUint(r.ID, hmacKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to create realm quota key: %w", err)
+	}
+	return fmt.Sprintf("realm:quota:%s", dig), nil
+}
+
 // ToCIDRList converts the newline-separated and/or comma-separated CIDR list
 // into an array of strings.
 func ToCIDRList(s string) ([]string, error) {
@@ -1158,4 +1170,39 @@ func ToCIDRList(s string) ([]string, error) {
 
 	sort.Strings(cidrs)
 	return cidrs, nil
+}
+
+// RealmUserStats carries the per-user-per-day-per-realm Codes issued.
+// This is a structure joined from multiple tables in the DB.
+type RealmUserStats struct {
+	UserID      uint
+	Name        string
+	CodesIssued uint
+	Date        time.Time
+}
+
+// CodesPerUser returns a set of UserStats for a given date range.
+func (r *Realm) CodesPerUser(db *Database, start, stop time.Time) ([]*RealmUserStats, error) {
+	start = start.Truncate(time.Hour * 24)
+	stop = stop.Truncate(time.Hour * 24)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	var stats []*RealmUserStats
+	if err := db.db.
+		Model(&UserStats{}).
+		Select("users.id, users.name, codes_issued, date").
+		Where("realm_id = ?", r.ID).
+		Where("date >= ? AND date <= ?", start, stop).
+		Joins("INNNER JOIN users ON users.id = user_id").
+		Order("date ASC").
+		Scan(&stats).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+	return stats, nil
 }
