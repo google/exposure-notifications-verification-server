@@ -111,16 +111,14 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 func (s *IntegrationSuite) NewAdminAPIClient(ctx context.Context, tb testing.TB) (*AdminClient, error) {
 	srv := s.newAdminAPIServer(ctx, tb)
 	s.adminSrv = srv
-	addr := "http://[::1]:" + srv.Port()
-	return NewAdminClient(addr, s.adminKey)
+	return NewAdminClient("http://"+srv.Addr(), s.adminKey)
 }
 
 // NewAPIClient runs an API Server and returns a corresponding client.
 func (s *IntegrationSuite) NewAPIClient(ctx context.Context, tb testing.TB) (*APIClient, error) {
 	srv := s.newAPIServer(ctx, tb)
 	s.apiSrv = srv
-	addr := "http://[::1]:" + srv.Port()
-	return NewAPIClient(addr, s.deviceKey)
+	return NewAPIClient("http://"+srv.Addr(), s.deviceKey)
 }
 
 func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Server {
