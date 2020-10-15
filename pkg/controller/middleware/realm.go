@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,7 +61,10 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 			// Load the realm by using the cache to alleviate pressure on the database
 			// layer.
 			var realm database.Realm
-			cacheKey := fmt.Sprintf("realms:by_id:%d", realmID)
+			cacheKey := &cache.Key{
+				Namespace: "realms:by_id",
+				Key:       strconv.FormatUint(uint64(realmID), 10),
+			}
 			if err := cacher.Fetch(ctx, cacheKey, &realm, cacheTTL, func() (interface{}, error) {
 				return db.FindRealm(realmID)
 			}); err != nil {

@@ -67,7 +67,10 @@ func (c *Controller) HandleIos() http.Handler {
 			return
 		}
 
-		cacheKey := fmt.Sprintf("iosapps:by_region:%s", region)
+		cacheKey := &cache.Key{
+			Namespace: "apps:ios:by_region",
+			Key:       region,
+		}
 		var iosData *IOSData
 		if err := c.cacher.Fetch(ctx, cacheKey, &iosData, c.config.AppCacheTTL, func() (interface{}, error) {
 			c.logger.Debug("fetching new ios data")
@@ -96,7 +99,10 @@ func (c *Controller) HandleAndroid() http.Handler {
 			return
 		}
 
-		cacheKey := fmt.Sprintf("androidapps:by_region:%s", region)
+		cacheKey := &cache.Key{
+			Namespace: "apps:android:by_region",
+			Key:       region,
+		}
 		var androidData []AndroidData
 		if err := c.cacher.Fetch(ctx, cacheKey, &androidData, c.config.AppCacheTTL, func() (interface{}, error) {
 			c.logger.Debug("fetching new android data")

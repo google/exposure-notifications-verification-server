@@ -18,7 +18,8 @@ import (
 	"time"
 )
 
-// AuthorizedAppStats represents statistics related to a user in the database.
+// AuthorizedAppStats represents statistics related to an API key in the
+// database.
 type AuthorizedAppStats struct {
 	Date            time.Time `gorm:"date"`
 	AuthorizedAppID uint      `gorm:"authorized_app_id"`

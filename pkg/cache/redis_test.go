@@ -90,7 +90,7 @@ func TestRedis(t *testing.T) {
 	b = retry.WithCappedDuration(2*time.Second, b)
 
 	if err := retry.Do(ctx, b, func(_ context.Context) error {
-		if err := cacher.Delete(ctx, "foo"); err != nil {
+		if err := cacher.Delete(ctx, &Key{}); err != nil {
 			return retry.RetryableError(err)
 		}
 		return nil

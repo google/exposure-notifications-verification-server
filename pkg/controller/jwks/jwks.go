@@ -54,7 +54,10 @@ func (c *Controller) HandleIndex() http.Handler {
 		ctx := r.Context()
 
 		// key is the key in the cacher where the values for this JWK are cached.
-		key := r.URL.String()
+		key := &cache.Key{
+			Namespace: "jwks",
+			Key:       r.URL.String(),
+		}
 
 		// See if there's a cached value. Note we cannot use Fetch here because our
 		// fetch function also depends on the cacher to lookup pubic keys and
