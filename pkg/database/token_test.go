@@ -77,7 +77,6 @@ func TestSubject(t *testing.T) {
 
 func TestIssueToken(t *testing.T) {
 	t.Parallel()
-	db := NewTestDatabase(t)
 
 	codeAge := time.Hour
 	symptomDate := time.Now().UTC().Truncate(24 * time.Hour)
@@ -239,6 +238,7 @@ func TestIssueToken(t *testing.T) {
 
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
+			db := NewTestDatabase(t)
 
 			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
 			if err := db.SaveRealm(realm, System); err != nil {
