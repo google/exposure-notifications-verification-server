@@ -41,7 +41,7 @@ func (s *E2ESuite) NewAPIClient(context.Context, testing.TB) (*APIClient, error)
 	return NewAPIClient(s.cfg.APIServerURL, s.deviceKey)
 }
 
-// NewE2ESiu returns an E2E test suite.
+// NewE2ESuite returns an E2E test suite.
 func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 	cfg := config.NewE2EConfig(tb, ctx)
 	db, err := cfg.DBConfig.Load(ctx)

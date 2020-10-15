@@ -139,7 +139,7 @@ func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationT
 	return &cfg, db
 }
 
-// IntegrationTestConfig represents configurations to run server E2E tests.
+// E2EConfig represents configurations to run server E2E tests.
 type E2EConfig struct {
 	DBName       string `env:"DB_NAME"`
 	APIServerURL string `env:"APISERVER_URL"`
