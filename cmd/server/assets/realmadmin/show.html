@@ -2,6 +2,8 @@
 
 {{$realm := .realm}}
 {{$stats := .stats}}
+{{$names := .names}}
+{{$userStats := .userStats}}
 
 <!doctype html>
 <html lang="en">
@@ -24,7 +26,7 @@
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}
-        <div id="chart" class="mb-3" style="height: 300px;">
+        <div id="realm_chart" class="mb-3" style="height: 300px;">
           <span>Loading chart...</span>
         </div>
         <table class="table table-bordered table-striped">
@@ -45,6 +47,15 @@
             {{end}}
           </tbody>
         </table>
+        {{end}}
+
+    {{if $userStats}}
+        <div id="per_user_chart" class="mb-3" style="height: 300px;">
+          <span>Loading chart...</span>
+        </div>
+    {{end}}
+
+        {{if or $stats $userStats}}
         <div class="font-italic">
           This data is refreshed every 5 minutes.
         </div>
@@ -58,13 +69,18 @@
 
   {{template "scripts" .}}
 
-  {{if $stats}}
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
     google.charts.load('current', {packages: ['line']});
     google.charts.setOnLoadCallback(drawChart)
 
     function drawChart() {
+      drawRealmChart();
+      drawUsersChart();
+    }
+
+    function drawRealmChart() {
+  {{if $stats}}
       var data = google.visualization.arrayToDataTable([
         ['Date', 'Issued', "Claimed"],
         {{range $stat := $stats}}
@@ -78,11 +94,40 @@
         tooltip: {trigger: 'focus'},
       };
 
-      var chart = new google.charts.Line(document.getElementById('chart'));
+      var chart = new google.charts.Line(document.getElementById('realm_chart'));
       chart.draw(data, google.charts.Line.convertOptions(options));
+  {{end}}
+    }
+
+    function fixDate(arr) {
+      arr[0] = new Date(arr[0])
+      return arr
+    }
+
+  function drawUsersChart() {
+  {{if $userStats}}
+    var data = new google.visualization.DataTable();
+
+      data.addColumn('date', 'Day');
+    {{range $name := $names}}
+      data.addColumn('number', '{{$name}}');
+    {{end}}  
+       data.addRows([
+    {{range $stat := $userStats}}
+       fixDate({{$stat}}),
+    {{end}}
+      ]);
+
+    var options = {
+    legend: {position: 'bottom'},
+    tooltip: {trigger: 'focus'},
+    };
+
+    var chart = new google.charts.Line(document.getElementById('per_user_chart'));
+    chart.draw(data, google.charts.Line.convertOptions(options));
+  {{end}}
     }
   </script>
-  {{end}}
 </body>
 </html>
 {{end}}

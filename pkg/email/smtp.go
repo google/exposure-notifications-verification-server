@@ -61,3 +61,8 @@ func (s *SMTPProvider) sendMail(ctx context.Context, auth smtp.Auth, toEmail str
 		logger.Warnw("failed to send invitation email", "error", err)
 	}
 }
+
+// From returns who shown as the sender of the email.
+func (s *SMTPProvider) From() string {
+	return s.User
+}

@@ -49,24 +49,7 @@ func (c *Controller) ensureFirebaseUserExists(ctx context.Context, user *databas
 	}
 
 	if created {
-		if c.emailer == nil {
-			// fallback to firebase
-			c.config.Firebase
-		}
-
-		realm := controller.RealmFromContext(ctx)
-		currentUser := controller.UserFromContext(ctx)
-
-		message, err := controller.ComposeInviteEmail(c.h, c.client, user.Email, currentUser.Email, realm.Name)
-		if err != nil {
-			c.logger.Warnw("failed composing invitation", "error", err)
-			flash.Error("Could not send new user invitation.")
-			return true, err
-		}
-
-		err := c.emailer.SendEmail(ctx, user.Email, message)
-		if err != nil {
-			c.logger.Warnw("failed sending invitation", "error", err)
+		if err := c.sendInvitation(ctx, user.Email); err != nil {
 			flash.Error("Could not send new user invitation.")
 			return true, err
 		}

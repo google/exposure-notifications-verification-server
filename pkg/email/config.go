@@ -61,6 +61,9 @@ type Config struct {
 type Provider interface {
 	// SendEmail sends an email with the given message.
 	SendEmail(ctx context.Context, toEmail string, message []byte) error
+
+	// From returns who shown as the sender of the email.
+	From() string
 }
 
 // HasSMTPCreds returns true if required fields for connecting to SMTP are set.

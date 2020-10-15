@@ -17,8 +17,8 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -63,7 +63,10 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 			// Load the authorized app by using the cache to alleviate pressure on the
 			// database layer.
 			var authApp database.AuthorizedApp
-			authAppCacheKey := fmt.Sprintf("authorized_apps:by_api_key:%s", apiKey)
+			authAppCacheKey := &cache.Key{
+				Namespace: "authorized_apps:by_api_key",
+				Key:       apiKey,
+			}
 			if err := cacher.Fetch(ctx, authAppCacheKey, &authApp, cacheTTL, func() (interface{}, error) {
 				return db.FindAuthorizedAppByAPIKey(apiKey)
 			}); err != nil {
@@ -87,7 +90,10 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 
 			// Lookup the realm.
 			var realm database.Realm
-			realmCacheKey := fmt.Sprintf("realms:by_id:%d", authApp.RealmID)
+			realmCacheKey := &cache.Key{
+				Namespace: "realms:by_id",
+				Key:       strconv.FormatUint(uint64(authApp.RealmID), 10),
+			}
 			if err := cacher.Fetch(ctx, realmCacheKey, &realm, cacheTTL, func() (interface{}, error) {
 				return authApp.Realm(db)
 			}); err != nil {

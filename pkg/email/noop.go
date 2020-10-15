@@ -37,3 +37,8 @@ func (s *NoopProvider) SendEmail(ctx context.Context, toEmail string, message []
 	logger.Infow("Noop send email", "email", toEmail)
 	return nil
 }
+
+// From returns who the invitation should be send from.
+func (s *NoopProvider) From() string {
+	return ""
+}

@@ -65,6 +65,21 @@ func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, e
 	}
 }
 
+// NotFound returns an error indicating the URL was not found.
+func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	accept := strings.Split(r.Header.Get("Accept"), ",")
+	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+
+	switch {
+	case prefixInList(accept, ContentTypeHTML):
+		h.RenderHTMLStatus(w, http.StatusNotFound, "400", nil)
+	case prefixInList(accept, ContentTypeJSON):
+		h.RenderJSON(w, http.StatusNotFound, http.StatusText(http.StatusNotFound))
+	default:
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	}
+}
+
 // Unauthorized returns an error indicating the request was unauthorized.
 func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")

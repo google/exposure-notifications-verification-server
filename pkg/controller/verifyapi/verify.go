@@ -64,12 +64,9 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		ctx = observability.WithRealmID(ctx, authApp.RealmID)
 
-		stats.Record(ctx, mCodeVerifyAttempts.M(1))
-
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.logger.Errorw("bad request", "error", err)
-			stats.Record(ctx, mCodeVerificationError.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			blame = observability.BlameClient
 			result = observability.APIResultError("FAILED_TO_PARSE_JSON_REQUEST")
@@ -80,7 +77,6 @@ func (c *Controller) HandleVerify() http.Handler {
 		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.ActiveKey())
 		if err != nil {
 			c.logger.Errorw("failed to get signer", "error", err)
-			stats.Record(ctx, mCodeVerificationError.M(1))
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			blame = observability.BlameServer
 			result = observability.APIResultError("FAILED_TO_GET_SIGNER")
@@ -91,7 +87,6 @@ func (c *Controller) HandleVerify() http.Handler {
 		acceptTypes, err := request.GetAcceptedTestTypes()
 		if err != nil {
 			c.logger.Errorf("invalid accept test types", "error", err)
-			stats.Record(ctx, mCodeVerificationError.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			blame = observability.BlameClient
 			result = observability.APIResultError("INVALID_ACCEPT_TEST_TYPES")
@@ -105,24 +100,19 @@ func (c *Controller) HandleVerify() http.Handler {
 			blame = observability.BlameClient
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
-				stats.Record(ctx, mCodeVerifyExpired.M(1), mCodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
 				result = observability.APIResultError("VERIFICATION_CODE_EXPIRED")
 			case errors.Is(err, database.ErrVerificationCodeUsed):
-				stats.Record(ctx, mCodeVerifyCodeUsed.M(1), mCodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 				result = observability.APIResultError("VERIFICATION_CODE_INVALID")
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
-				stats.Record(ctx, mCodeVerifyInvalid.M(1), mCodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 				result = observability.APIResultError("VERIFICATION_CODE_NOT_FOUND")
 			case errors.Is(err, database.ErrUnsupportedTestType):
-				stats.Record(ctx, mCodeVerifyInvalid.M(1), mCodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 				result = observability.APIResultError("VERIFICATION_CODE_UNSUPPORTED_TEST_TYPE")
 			default:
 				c.logger.Errorw("failed to issue verification token", "error", err)
-				stats.Record(ctx, mCodeVerificationError.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 				result = observability.APIResultError("UNKNOWN_ERROR")
 			}
@@ -143,7 +133,6 @@ func (c *Controller) HandleVerify() http.Handler {
 		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigning.ActiveKeyID()
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
-			stats.Record(ctx, mCodeVerificationError.M(1))
 			c.logger.Errorw("failed to sign token", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			blame = observability.BlameServer
@@ -151,7 +140,6 @@ func (c *Controller) HandleVerify() http.Handler {
 			return
 		}
 
-		stats.Record(ctx, mCodeVerified.M(1))
 		c.h.RenderJSON(w, http.StatusOK, api.VerifyCodeResponse{
 			TestType:          verificationToken.TestType,
 			SymptomDate:       verificationToken.FormatSymptomDate(),

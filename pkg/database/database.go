@@ -215,20 +215,20 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	// Cache clearing
 	if cacher != nil {
 		// Apps
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
 
 		// Realms
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
 
 		// Users
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
 
 		// Users (by email)
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
 	}
 
 	db.db = rawDB
@@ -315,7 +315,7 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 }
 
 // callbackPurgeCache purges the cache key for the given record.
-func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, keyFormat, table, column string) func(scope *gorm.Scope) {
+func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, table, column string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {
 			return
@@ -341,7 +341,10 @@ func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, keyFormat, tab
 			return
 		}
 
-		key := fmt.Sprintf(keyFormat, val)
+		key := &cache.Key{
+			Namespace: namespace,
+			Key:       fmt.Sprintf("%v", val),
+		}
 		if err := cacher.Delete(ctx, key); err != nil {
 			scope.Log(fmt.Sprintf("failed to delete cache key: %v", err))
 			return

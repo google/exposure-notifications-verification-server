@@ -148,7 +148,7 @@ func (c *Controller) getAuthAppName(ctx context.Context, r *http.Request, id uin
 		return
 	}
 
-	authApp, err = realm.FindAuthorizedApp(c.db, authApp.ID)
+	authApp, err = realm.FindAuthorizedApp(c.db, id)
 	if err != nil {
 		return
 	}
