@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -154,13 +155,13 @@ type Realm struct {
 	// CanUseSystemEmailConfig is configured by system administrators to share the
 	// system email config with this realm. Note that the system email config could be
 	// empty and a local SMS config is preferred over the system value.
-	CanUseSystemEmailConfig bool `gorm:"column:can_use_system_sms_config; type:bool; not null; default:false;"`
+	CanUseSystemEmailConfig bool `gorm:"column:can_use_system_email_config; type:bool; not null; default:false;"`
 
 	// UseSystemEmailConfig is a realm-level configuration that lets a realm opt-out
 	// of sending email messages using the system-provided email configuration.
 	// Without this, a realm would always fallback to the system-level email
 	// configuration, making it impossible to opt out of text message sending.
-	UseSystemEmailConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
+	UseSystemEmailConfig bool `gorm:"column:use_system_email_config; type:bool; not null; default:false;"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`

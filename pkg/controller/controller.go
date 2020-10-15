@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"strings"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
@@ -139,33 +138,6 @@ func RedirectToMFA(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 // RedirectToChangePassword redirects to the password reset page.
 func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	http.Redirect(w, r, "/login/change-password", http.StatusSeeOther)
-}
-
-// ComposeInviteEmail uses the renderer and auth client to generate a password reset link
-// and emit an invite email
-func ComposeInviteEmail(h *render.Renderer, auth *auth.Client, toEmail, fromEmail, realmName string) (string, error) {
-	inviteLink, err := auth.PasswordResetLink(ctx, toEmail)
-	if err != nil {
-		return err
-	}
-
-	// Compose message
-	message, err := h.RenderEmail("email/invite",
-		struct {
-			ToEmail    string
-			FromEmail  string
-			InviteLink string
-			RealmName  string
-		}{
-			ToEmail:    toEmail,
-			FromEmail:  fromEmail,
-			InviteLink: inviteLink,
-			RealmName:  realmName,
-		})
-	if err != nil {
-		return nil, err
-	}
-	return message, nil
 }
 
 func prefixInList(list []string, prefix string) bool {
