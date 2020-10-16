@@ -89,9 +89,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	}
 
 	a.URL = strings.TrimSpace(a.URL)
-	if a.URL != "" {
-		a.URLPtr = stringPtr(a.URL)
-	}
+	a.URLPtr = stringPtr(a.URL)
 
 	// Ensure OS is valid
 	if a.OS < OSTypeIOS || a.OS > OSTypeAndroid {
