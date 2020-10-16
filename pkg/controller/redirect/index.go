@@ -102,23 +102,10 @@ func decideRedirect(region, userAgent string, url url.URL,
 	onAndroid := isAndroid(userAgent)
 	onIOS := isIOS(userAgent)
 
-	// A subset of SMS clients (e.g. Facebook Messenger) open links
-	// in inline WebViews without giving https Intents a opportunity
-	// to trigger App Links.
-	// Redirect to ourselves once to attempt to trigger the link.
-	// Bounce to self if we haven't already (on Android only).
-	// Keep track of state by including an extra bounce=1 url param.
-	if onAndroid && url.Query().Get("bounce") == "" {
-		q := url.Query()
-		q.Set("bounce", "1")
-		url.RawQuery = q.Encode()
-		return url.String(), true
-	}
-
 	// On Android redirect to Play Store if App Link doesn't trigger
 	// and an a link is set up.
-	if onAndroid && appStoreData.AndroidURL != "" {
-		return appStoreData.AndroidURL, true
+	if onAndroid && appStoreData.AndroidURL != "" && appStoreData.AndroidAppID != "" {
+		return buildIntentURL(path, url.Query(), region, appStoreData.AndroidAppID, appStoreData.AndroidURL), true
 	}
 
 	// On iOS redirect to App Store if App Link doesn't trigger
@@ -143,8 +130,30 @@ func buildEnsURL(path string, query url.Values, region string) string {
 	u.RawQuery = query.Encode()
 	q := u.Query()
 	q.Set("r", region)
-	q.Del("bounce")
 	u.RawQuery = q.Encode()
 
 	return u.String()
+}
+
+// buildIntentURL returns the ens:// URL with fallback
+// for the given path, query, and region.
+func buildIntentURL(path string, query url.Values, region, appID, fallback string) string {
+	u := &url.URL{
+		Scheme: "intent",
+		Path:   strings.TrimPrefix(path, "/"),
+	}
+	u.RawQuery = query.Encode()
+	q := u.Query()
+	q.Set("r", region)
+	u.RawQuery = q.Encode()
+
+	suffix := "#Intent"
+	suffix += ";scheme=ens"
+	suffix += ";package=" + appID
+	suffix += ";action=android.intent.action.VIEW"
+	suffix += ";category=android.intent.category.BROWSABLE"
+	suffix += ";S.browser_fallback_url=" + url.QueryEscape(fallback)
+	suffix += ";end"
+
+	return u.String() + suffix
 }
