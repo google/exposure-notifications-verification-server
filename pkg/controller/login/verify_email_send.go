@@ -85,9 +85,6 @@ func (c *Controller) sendVerificationFromRealmEmailer(ctx context.Context, toEma
 	}
 
 	emailer, err := realm.EmailProvider(c.db)
-	if emailer == nil {
-		return errors.New("no emailer found")
-	}
 	if err != nil {
 		c.logger.Warnw("failed to get emailer for realm:", "error", err)
 		return fmt.Errorf("failed to get emailer for realm: %w", err)

@@ -44,9 +44,6 @@ func (c *Controller) sendInvitationFromRealmEmailer(ctx context.Context, toEmail
 	}
 
 	emailer, err := realm.EmailProvider(c.db)
-	if emailer == nil {
-		return errors.New("no emailer found")
-	}
 	if err != nil {
 		c.logger.Warnw("failed to get emailer for realm:", "error", err)
 		return fmt.Errorf("failed to get emailer for realm: %w", err)

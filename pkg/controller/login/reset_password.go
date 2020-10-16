@@ -17,7 +17,6 @@ package login
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -94,18 +93,12 @@ func (c *Controller) sendResetFromSystemEmailer(ctx context.Context, toEmail str
 	// Send email with system email config
 
 	emailConfig, err := c.db.SystemEmailConfig()
-	if emailConfig == nil {
-		return fmt.Errorf("no email config found for system: %w", err)
-	}
 	if err != nil {
 		c.logger.Warnw("failed to get email config for system:", "error", err)
 		return fmt.Errorf("failed to get email config for system: %w", err)
 	}
 
 	emailer, err := emailConfig.Provider()
-	if emailer == nil {
-		return errors.New("no emailer found")
-	}
 	if err != nil {
 		c.logger.Warnw("failed to get emailer for realm:", "error", err)
 		return fmt.Errorf("failed to get emailer for realm: %w", err)
