@@ -141,11 +141,10 @@ func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationT
 
 // E2EConfig represents configurations to run server E2E tests.
 type E2EConfig struct {
-	DBName       string `env:"DB_NAME"`
-	APIServerURL string `env:"APISERVER_URL"`
-	AdminAPIURL  string `env:"ADMINAPI_URL"`
-	ProjectID    string `env:"PROJECT_ID"`
-	DBConfig     *database.Config
+	APIServerURL string           `env:"APISERVER_URL"`
+	AdminAPIURL  string           `env:"ADMINAPI_URL"`
+	ProjectID    string           `env:"PROJECT_ID"`
+	DBConfig     *database.Config `env:",prefix:E2E_"`
 }
 
 // NewE2EConfig returns a new E2E test config.

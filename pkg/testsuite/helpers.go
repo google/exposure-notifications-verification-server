@@ -17,21 +17,22 @@ package testsuite
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"log"
-	"math/big"
 	"net/http"
 	"time"
 
 	"github.com/sethvargo/go-retry"
 )
 
+// randomString generates random string of 32 characters in length.
 func randomString() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(10000))
-	if err != nil {
-		return "", err
+	b := make([]byte, 512)
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("failed to generate random: %v", err)
 	}
-	return fmt.Sprintf("%04x", n), nil
+	return fmt.Sprintf("%x", sha256.Sum256(b[:])), nil
 }
 
 type prefixRoundTripper struct {
