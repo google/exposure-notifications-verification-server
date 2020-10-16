@@ -124,7 +124,7 @@ func TestEmailProvider(t *testing.T) {
 	}
 
 	provider, err := realm.EmailProvider(db)
-	if err != nil {
+	if !IsNotFound(err) {
 		t.Fatal(err)
 	}
 	if provider != nil {
@@ -142,8 +142,11 @@ func TestEmailProvider(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = realm.EmailProvider(db)
-	if !IsNotFound(err) {
+	provider, err = realm.EmailProvider(db)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if provider == nil {
+		t.Errorf("expected %v to be not nil", provider)
 	}
 }
