@@ -50,29 +50,29 @@ type EmailConfig struct {
 	IsSystem bool `gorm:"type:bool; not null; default:false;"`
 }
 
-func (s *EmailConfig) BeforeSave(tx *gorm.DB) error {
+func (e *EmailConfig) BeforeSave(tx *gorm.DB) error {
 	// Email config is all or nothing
-	if (s.SMTPAccount != "" || s.SMTPPassword != "" || s.SMTPHost != "") &&
-		(s.SMTPAccount == "" || s.SMTPPassword == "" || s.SMTPHost == "") {
-		s.AddError("SMTPAccount", "all must be specified or all must be blank")
-		s.AddError("SMTPPassword", "all must be specified or all must be blank")
-		s.AddError("SMTPHost", "all must be specified or all must be blank")
+	if (e.SMTPAccount != "" || e.SMTPPassword != "" || e.SMTPHost != "") &&
+		(e.SMTPAccount == "" || e.SMTPPassword == "" || e.SMTPHost == "") {
+		e.AddError("SMTPAccount", "all must be specified or all must be blank")
+		e.AddError("SMTPPassword", "all must be specified or all must be blank")
+		e.AddError("SMTPHost", "all must be specified or all must be blank")
 	}
 
-	if len(s.Errors()) > 0 {
-		return fmt.Errorf("email config validation failed: %s", strings.Join(s.ErrorMessages(), ", "))
+	if len(e.Errors()) > 0 {
+		return fmt.Errorf("email config validation failed: %s", strings.Join(e.ErrorMessages(), ", "))
 	}
 	return nil
 }
 
-func (emailConfig *EmailConfig) Provider() (email.Provider, error) {
+func (e *EmailConfig) Provider() (email.Provider, error) {
 	ctx := context.Background()
 	provider, err := email.ProviderFor(ctx, &email.Config{
-		ProviderType: email.ProviderType(emailConfig.ProviderType),
-		User:         emailConfig.SMTPAccount,
-		Password:     emailConfig.SMTPPassword,
-		SMTPHost:     emailConfig.SMTPHost,
-		SMTPPort:     emailConfig.SMTPPort,
+		ProviderType: email.ProviderType(e.ProviderType),
+		User:         e.SMTPAccount,
+		Password:     e.SMTPPassword,
+		SMTPHost:     e.SMTPHost,
+		SMTPPort:     e.SMTPPort,
 	})
 	if err != nil {
 		return nil, err
