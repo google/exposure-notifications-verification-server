@@ -40,7 +40,7 @@ type SMSConfig struct {
 
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
-	TwilioAuthToken                string `gorm:"type:varchar(250)"`
+	TwilioAuthToken                string `gorm:"type:varchar(250)" json:"-"` // ignored by zap's JSON formatter
 	TwilioAuthTokenPlaintextCache  string `gorm:"-"`
 	TwilioAuthTokenCiphertextCache string `gorm:"-"`
 
