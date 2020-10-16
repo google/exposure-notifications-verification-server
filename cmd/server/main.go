@@ -40,7 +40,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
-	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -154,16 +153,6 @@ func realMain(ctx context.Context) error {
 	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
-	}
-
-	// Setup server emailer
-	var emailer email.Provider
-	if cfg.Email.HasSMTPCreds() {
-		cfg.Email.ProviderType = email.ProviderTypeSMTP
-		emailer, err = email.ProviderFor(ctx, &cfg.Email)
-		if err != nil {
-			return fmt.Errorf("failed to configure internal firebase client: %w", err)
-		}
 	}
 
 	// Rate limiting
@@ -374,7 +363,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, firebaseInternal, auth, emailer, cacher, cfg, db, h)
+		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
