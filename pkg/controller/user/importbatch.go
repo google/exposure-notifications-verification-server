@@ -136,7 +136,7 @@ func (c *Controller) sendInvitationFromRealmEmailer(ctx context.Context, toEmail
 	}
 	if err != nil {
 		c.logger.Warnw("failed to get emailer for realm:", "error", err)
-		return errors.New("failed to get emailer for realm: %w", err)
+		return fmt.Errorf("failed to get emailer for realm: %w", err)
 	}
 
 	message, err := controller.ComposeInviteEmail(ctx, c.h, c.client, toEmail, emailer.From(), realm.Name)
