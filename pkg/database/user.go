@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/jinzhu/gorm"
 	"github.com/sethvargo/go-password/password"
 )
@@ -204,8 +205,8 @@ func (db *Database) FindUserByEmail(email string) (*User, error) {
 func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*UserStats, error) {
 	var stats []*UserStats
 
-	start = start.Truncate(24 * time.Hour)
-	stop = stop.Truncate(24 * time.Hour)
+	start = timeutils.Midnight(start)
+	stop = timeutils.Midnight(stop)
 
 	if err := db.db.
 		Model(&UserStats{}).

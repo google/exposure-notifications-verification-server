@@ -20,12 +20,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func TestFormatStats(t *testing.T) {
-	now := time.Now().Truncate(24 * time.Hour)
-	yesterday := now.Add(-24 * time.Hour).Truncate(24 * time.Hour)
+	now := timeutils.Midnight(time.Now())
+	yesterday := timeutils.Midnight(now.Add(-24 * time.Hour))
 	tests := []struct {
 		data    []*database.RealmUserStats
 		names   []string

@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -194,8 +195,8 @@ func (c *Controller) HandleIssue() http.Handler {
 				return
 			} else {
 				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
-				maxDate := time.Now().UTC().Truncate(24 * time.Hour)
-				minDate := maxDate.Add(-1 * c.config.GetAllowedSymptomAge()).Truncate(24 * time.Hour)
+				maxDate := timeutils.UTCMidnight(time.Now())
+				minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
 
 				symptomDate, err = validateDate(parsed, minDate, maxDate, int(request.TZOffset))
 				if err != nil {
