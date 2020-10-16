@@ -144,7 +144,7 @@ type E2EConfig struct {
 	APIServerURL string           `env:"E2E_APISERVER_URL"`
 	AdminAPIURL  string           `env:"E2E_ADMINAPI_URL"`
 	ProjectID    string           `env:"PROJECT_ID"`
-	DBConfig     *database.Config `env:",prefix:E2E_"`
+	DBConfig     *database.Config `env:",prefix=E2E_"`
 }
 
 // NewE2EConfig returns a new E2E test config.
@@ -154,7 +154,7 @@ func NewE2EConfig(tb testing.TB, ctx context.Context) *E2EConfig {
 	if err != nil {
 		tb.Fatalf("unable to connect to secret manager: %v", err)
 	}
-	if err := envconfig.ProcessWith(ctx, c, envconfig.PrefixLookuper("E2E_", envconfig.OsLookuper()), secrets.Resolver(sm, &secrets.Config{})); err != nil {
+	if err := envconfig.ProcessWith(ctx, c, envconfig.OsLookuper(), secrets.Resolver(sm, &secrets.Config{})); err != nil {
 		tb.Fatalf("Unable to process environment: %v", err)
 	}
 	return c
