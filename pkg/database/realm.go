@@ -538,18 +538,7 @@ func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 		return nil, err
 	}
 
-	ctx := context.Background()
-	provider, err := email.ProviderFor(ctx, &email.Config{
-		ProviderType: email.ProviderType(emailConfig.ProviderType),
-		User:         emailConfig.SMTPAccount,
-		Password:     emailConfig.SMTPPassword,
-		SMTPHost:     emailConfig.SMTPHost,
-		SMTPPort:     emailConfig.SMTPPort,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return provider, nil
+	return emailConfig.Provider()
 }
 
 func (r *Realm) Audits(db *Database) ([]*AuditEntry, error) {

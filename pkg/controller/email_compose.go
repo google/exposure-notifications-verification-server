@@ -81,3 +81,32 @@ func ComposeEmailVerifyEmail(
 	}
 	return message, nil
 }
+
+// ComposePasswordResetEmail uses the renderer and auth client to generate an email for resetting
+// a user password
+func ComposePasswordResetEmail(
+	ctx context.Context,
+	h *render.Renderer,
+	auth *auth.Client, toEmail, fromEmail string) ([]byte, error) {
+	resetLink, err := auth.PasswordResetLink(ctx, toEmail)
+	if err != nil {
+		return nil, fmt.Errorf("failed generating password reset link: %w", err)
+	}
+
+	// Compose message
+	message, err := h.RenderEmail("email/passwordresetemail",
+		struct {
+			ToEmail   string
+			FromEmail string
+			ResetLink string
+			RealmName string
+		}{
+			ToEmail:   toEmail,
+			FromEmail: fromEmail,
+			ResetLink: resetLink,
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed rendering password reset template: %w", err)
+	}
+	return message, nil
+}

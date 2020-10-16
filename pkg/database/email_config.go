@@ -15,6 +15,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -62,6 +63,21 @@ func (s *EmailConfig) BeforeSave(tx *gorm.DB) error {
 		return fmt.Errorf("email config validation failed: %s", strings.Join(s.ErrorMessages(), ", "))
 	}
 	return nil
+}
+
+func (emailConfig *EmailConfig) Provider() (email.Provider, error) {
+	ctx := context.Background()
+	provider, err := email.ProviderFor(ctx, &email.Config{
+		ProviderType: email.ProviderType(emailConfig.ProviderType),
+		User:         emailConfig.SMTPAccount,
+		Password:     emailConfig.SMTPPassword,
+		SMTPHost:     emailConfig.SMTPHost,
+		SMTPPort:     emailConfig.SMTPPort,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return provider, nil
 }
 
 // SystemEmailConfig returns the system email config, if one exists

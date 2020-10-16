@@ -17,6 +17,8 @@ package login
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -77,6 +79,48 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			stats.Record(ctx, controller.MFirebaseRecreates.M(1))
 		}
 
-		c.renderResetPassword(ctx, w, flash, email, true)
+		if err = c.sendResetFromSystemEmailer(ctx, email); err != nil {
+			// fallback to firebase
+			c.renderResetPassword(ctx, w, flash, email, true)
+			return
+		}
+
+		flash.Alert("Password reset email sent.")
+		c.renderResetPassword(ctx, w, flash, email, false)
 	})
+}
+
+func (c *Controller) sendResetFromSystemEmailer(ctx context.Context, toEmail string) error {
+	// Send email with system email config
+
+	emailConfig, err := c.db.SystemEmailConfig()
+	if emailConfig == nil {
+		return fmt.Errorf("no email config found for system: %w", err)
+	}
+	if err != nil {
+		c.logger.Warnw("failed to get email config for system:", "error", err)
+		return fmt.Errorf("failed to get email config for system: %w", err)
+	}
+
+	emailer, err := emailConfig.Provider()
+	if emailer == nil {
+		return errors.New("no emailer found")
+	}
+	if err != nil {
+		c.logger.Warnw("failed to get emailer for realm:", "error", err)
+		return fmt.Errorf("failed to get emailer for realm: %w", err)
+	}
+
+	message, err := controller.ComposePasswordResetEmail(ctx, c.h, c.client, toEmail, emailer.From())
+	if err != nil {
+		c.logger.Warnw("failed composing password reset email", "error", err)
+		return fmt.Errorf("failed composing password reset email: %w", err)
+	}
+
+	if err := emailer.SendEmail(ctx, toEmail, message); err != nil {
+		c.logger.Warnw("failed sending password reset email", "error", err)
+		return fmt.Errorf("failed sending password reset email: %w", err)
+	}
+
+	return nil
 }
