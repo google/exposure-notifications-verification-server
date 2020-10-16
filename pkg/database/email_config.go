@@ -39,9 +39,9 @@ type EmailConfig struct {
 	SMTPHost    string `gorm:"type:varchar(250)"`
 	SMTPPort    string `gorm:"type:varchar(250)"`
 
-	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
+	// SMTPPassword is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
-	SMTPPassword                string `gorm:"type:varchar(250)"`
+	SMTPPassword                string `gorm:"type:varchar(250)" json:"-"` // ignored by zap's JSON formatter
 	SMTPPasswordPlaintextCache  string `gorm:"-"`
 	SMTPPasswordCiphertextCache string `gorm:"-"`
 

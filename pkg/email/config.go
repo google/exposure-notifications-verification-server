@@ -43,7 +43,7 @@ type Config struct {
 	ProviderType ProviderType
 
 	User     string `env:"EMAIL_USER"`
-	Password string `env:"EMAIL_PASSWORD"`
+	Password string `env:"EMAIL_PASSWORD" json:"-"` // ignored by zap's JSON formatter
 	SMTPHost string `env:"EMAIL_SMTP_HOST"`
 
 	// SMTPPort defines the email port to connect to.
