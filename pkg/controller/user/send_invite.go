@@ -20,10 +20,14 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
 )
 
 func (c *Controller) sendInvitation(ctx context.Context, toEmail string) error {
-	sent, err := c.sendInvitationFromRealmEmailer(ctx, toEmail)
+	compose := func(emailer email.Provider, realm *database.Realm, toEmail string) ([]byte, error) {
+		return controller.ComposeInviteEmail(ctx, c.h, c.client, toEmail, emailer.From(), realm.Name)
+	}
+	sent, err := controller.SendRealmEmail(ctx, c.db, compose, toEmail)
 	if err != nil {
 		c.logger.Warnw("failed sending invitation", "error", err)
 	}
@@ -36,31 +40,4 @@ func (c *Controller) sendInvitation(ctx context.Context, toEmail string) error {
 	}
 
 	return nil
-}
-
-// sendInvitationFromRealmEmailer send email with the realm email config
-func (c *Controller) sendInvitationFromRealmEmailer(ctx context.Context, toEmail string) (bool, error) {
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		return false, nil
-	}
-
-	emailer, err := realm.EmailProvider(c.db)
-	if err != nil {
-		if !database.IsNotFound(err) {
-			return false, nil
-		}
-		return false, fmt.Errorf("failed creating email provider: %w", err)
-	}
-
-	message, err := controller.ComposeInviteEmail(ctx, c.h, c.client, toEmail, emailer.From(), realm.Name)
-	if err != nil {
-		return false, fmt.Errorf("failed composing email verification: %w", err)
-	}
-
-	if err := emailer.SendEmail(ctx, toEmail, message); err != nil {
-		return false, fmt.Errorf("failed sending email verification: %w", err)
-	}
-
-	return true, nil
 }

@@ -19,8 +19,12 @@ import (
 	"fmt"
 
 	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
+
+type ComposeFn func(provider email.Provider, realm *database.Realm, toEmail string) ([]byte, error)
 
 // ComposeInviteEmail uses the renderer and auth client to generate a password reset link
 // and emit an invite email
@@ -109,4 +113,30 @@ func ComposePasswordResetEmail(
 		return nil, fmt.Errorf("failed rendering password reset template: %w", err)
 	}
 	return message, nil
+}
+
+func SendRealmEmail(ctx context.Context, db *database.Database, compose ComposeFn, toEmail string) (bool, error) {
+	realm := RealmFromContext(ctx)
+	if realm == nil {
+		return false, nil
+	}
+
+	emailer, err := realm.EmailProvider(db)
+	if err != nil {
+		if !database.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed creating email provider: %w", err)
+	}
+
+	message, err := compose(emailer, realm, toEmail)
+	if err != nil {
+		return false, fmt.Errorf("failed composing email verification: %w", err)
+	}
+
+	if err := emailer.SendEmail(ctx, toEmail, message); err != nil {
+		return false, fmt.Errorf("failed sending email verification: %w", err)
+	}
+
+	return true, nil
 }
