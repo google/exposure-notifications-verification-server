@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/jinzhu/gorm"
 )
 
