@@ -508,9 +508,6 @@ func (r *Realm) EmailConfig(db *Database) (*EmailConfig, error) {
 func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 	emailConfig, err := r.EmailConfig(db)
 	if err != nil {
-		if IsNotFound(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 

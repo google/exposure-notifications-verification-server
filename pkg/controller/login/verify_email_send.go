@@ -17,11 +17,11 @@ package login
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleShowVerifyEmail() http.Handler {
@@ -58,15 +58,18 @@ func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
 			return
 		}
 
-		if err := c.sendVerificationFromRealmEmailer(ctx, currentUser.Email); err == nil {
-			flash.Alert("Verification email sent.")
-			c.renderEmailVerify(ctx, w, "sent")
+		sent, err := c.sendVerificationFromRealmEmailer(ctx, currentUser.Email)
+		if err != nil {
+			c.logger.Warnw("failed sending verification", "error", err)
+		}
+		if !sent {
+			// fallback to firebase
+			c.renderEmailVerify(ctx, w, "send")
 			return
 		}
 
-		// fallback to firebase
-
-		c.renderEmailVerify(ctx, w, "send")
+		flash.Alert("Verification email sent.")
+		c.renderEmailVerify(ctx, w, "sent")
 	})
 }
 
@@ -77,29 +80,29 @@ func (c *Controller) renderEmailVerify(ctx context.Context, w http.ResponseWrite
 	c.h.RenderHTML(w, "login/verify-email", m)
 }
 
-func (c *Controller) sendVerificationFromRealmEmailer(ctx context.Context, toEmail string) error {
-	// Send email with realm email config
+// sendVerificationFromRealmEmailer send email with the realm email config
+func (c *Controller) sendVerificationFromRealmEmailer(ctx context.Context, toEmail string) (bool, error) {
 	realm := controller.RealmFromContext(ctx)
 	if realm == nil {
-		return errors.New("no realm found")
+		return false, nil
 	}
 
 	emailer, err := realm.EmailProvider(c.db)
 	if err != nil {
-		c.logger.Warnw("failed to get emailer for realm:", "error", err)
-		return fmt.Errorf("failed to get emailer for realm: %w", err)
+		if !database.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed creating email provider: %w", err)
 	}
 
 	message, err := controller.ComposeInviteEmail(ctx, c.h, c.client, toEmail, emailer.From(), realm.Name)
 	if err != nil {
-		c.logger.Warnw("failed composing email verification", "error", err)
-		return fmt.Errorf("failed composing email verification: %w", err)
+		return false, fmt.Errorf("failed composing email verification: %w", err)
 	}
 
 	if err := emailer.SendEmail(ctx, toEmail, message); err != nil {
-		c.logger.Warnw("failed sending email verification", "error", err)
-		return fmt.Errorf("failed sending email verification: %w", err)
+		return false, fmt.Errorf("failed sending email verification: %w", err)
 	}
 
-	return nil
+	return true, nil
 }

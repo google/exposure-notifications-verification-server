@@ -119,8 +119,5 @@ func (db *Database) SaveEmailConfig(s *EmailConfig) error {
 		return db.db.Unscoped().Delete(s).Error
 	}
 
-	if db.db.NewRecord(s) {
-		return db.db.Create(s).Error
-	}
 	return db.db.Save(s).Error
 }

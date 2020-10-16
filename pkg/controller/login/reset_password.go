@@ -78,7 +78,11 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			stats.Record(ctx, controller.MFirebaseRecreates.M(1))
 		}
 
-		if err = c.sendResetFromSystemEmailer(ctx, email); err != nil {
+		sent, err := c.sendResetFromSystemEmailer(ctx, email)
+		if err != nil {
+			c.logger.Warnw("failed sending password reset", "error", err)
+		}
+		if !sent {
 			// fallback to firebase
 			c.renderResetPassword(ctx, w, flash, email, true)
 			return
@@ -89,31 +93,30 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 	})
 }
 
-func (c *Controller) sendResetFromSystemEmailer(ctx context.Context, toEmail string) error {
+func (c *Controller) sendResetFromSystemEmailer(ctx context.Context, toEmail string) (bool, error) {
 	// Send email with system email config
 
 	emailConfig, err := c.db.SystemEmailConfig()
 	if err != nil {
-		c.logger.Warnw("failed to get email config for system:", "error", err)
-		return fmt.Errorf("failed to get email config for system: %w", err)
+		if !database.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get email config for system: %w", err)
 	}
 
 	emailer, err := emailConfig.Provider()
 	if err != nil {
-		c.logger.Warnw("failed to get emailer for realm:", "error", err)
-		return fmt.Errorf("failed to get emailer for realm: %w", err)
+		return false, fmt.Errorf("failed to get emailer for realm: %w", err)
 	}
 
 	message, err := controller.ComposePasswordResetEmail(ctx, c.h, c.client, toEmail, emailer.From())
 	if err != nil {
-		c.logger.Warnw("failed composing password reset email", "error", err)
-		return fmt.Errorf("failed composing password reset email: %w", err)
+		return false, fmt.Errorf("failed composing password reset email: %w", err)
 	}
 
 	if err := emailer.SendEmail(ctx, toEmail, message); err != nil {
-		c.logger.Warnw("failed sending password reset email", "error", err)
-		return fmt.Errorf("failed sending password reset email: %w", err)
+		return false, fmt.Errorf("failed sending password reset email: %w", err)
 	}
 
-	return nil
+	return true, nil
 }
