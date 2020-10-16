@@ -48,15 +48,15 @@ function incremental() {
   export_terraform_output db_apikey_signature_key_secret E2E_DB_APIKEY_SIGNATURE_KEY
   export_terraform_output db_encreption_key_secret E2E_DB_ENCRYPTION_KEY
   export_terraform_output db_verification_code_key_secret E2E_DB_VERIFICATION_CODE_DATABASE_KEY
-  export_terraform_output apiserver_urls[0] APISERVER_URL
-  export_terraform_output adminapi_urls[0] ADMINAPI_URL
-  export E2E_DB_PASSWORD="secret://${DB_PASSWORD}"
+  export_terraform_output apiserver_urls[0] E2E_APISERVER_URL
+  export_terraform_output adminapi_urls[0] E2E_ADMINAPI_URL
+  export E2E_DB_PASSWORD="secret://${E2E_DB_PASSWORD}"
   export E2E_DB_SSLMODE=disable
 
   ${ROOT}/scripts/build
   ${ROOT}/scripts/deploy
   ${ROOT}/scripts/promote
-  ${ROOT}/scripts/migrate
+  ${ROOT}/scripts/migrate-e2e
 
   run_e2e_test
 }
