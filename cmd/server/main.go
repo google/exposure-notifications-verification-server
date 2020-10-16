@@ -229,7 +229,7 @@ func realMain(ctx context.Context) error {
 				Queries("oobCode", "", "mode", "resetPassword").Methods("GET")
 			sub.Handle("/login/manage-account", loginController.HandleSubmitNewPassword()).
 				Queries("oobCode", "", "mode", "resetPassword").Methods("POST")
-			sub.Handle("/login/manage-account", loginController.HandleSubmitVerifyEmail()).
+			sub.Handle("/login/manage-account", loginController.HandleReceiveVerifyEmail()).
 				Queries("oobCode", "{oobCode:.+}", "mode", "{mode:(?:verifyEmail|recoverEmail)}").Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
@@ -255,6 +255,8 @@ func realMain(ctx context.Context) error {
 			sub.Use(processFirewall)
 			sub.Handle("/login/manage-account", loginController.HandleShowVerifyEmail()).
 				Queries("mode", "verifyEmail").Methods("GET")
+			sub.Handle("/login/manage-account", loginController.HandleSubmitVerifyEmail()).
+				Queries("mode", "verifyEmail").Methods("POST")
 
 			// SMS auth registration is realm-specific, so it needs to load the current realm.
 			sub = r.PathPrefix("").Subrouter()

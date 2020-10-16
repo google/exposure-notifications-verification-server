@@ -51,3 +51,33 @@ func ComposeInviteEmail(
 	}
 	return message, nil
 }
+
+// ComposeEmailVerifyEmail uses the renderer and auth client to generate an email to verify
+// the user's email address.
+func ComposeEmailVerifyEmail(
+	ctx context.Context,
+	h *render.Renderer,
+	auth *auth.Client, toEmail, fromEmail, realmName string) ([]byte, error) {
+	verifyLink, err := auth.EmailVerificationLink(ctx, toEmail)
+	if err != nil {
+		return nil, fmt.Errorf("failed generating verification link: %w", err)
+	}
+
+	// Compose message
+	message, err := h.RenderEmail("email/verifyemail",
+		struct {
+			ToEmail    string
+			FromEmail  string
+			VerifyLink string
+			RealmName  string
+		}{
+			ToEmail:    toEmail,
+			FromEmail:  fromEmail,
+			VerifyLink: verifyLink,
+			RealmName:  realmName,
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed rendering email verification template: %w", err)
+	}
+	return message, nil
+}

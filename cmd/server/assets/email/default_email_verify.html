@@ -1,0 +1,10 @@
+{{- define "email/verifyemail" -}}
+{{template "email/plainheader" .}}
+
+Hello,
+
+A request was made to verify this email address for {{.RealmName}} COVID-19 exposure notifications verification server.
+Follow the link below to confirm your ownership of this address:
+
+{{.VerifyLink}}
+{{end}}

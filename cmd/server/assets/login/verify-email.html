@@ -30,10 +30,13 @@
               <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.
               </p>
 
-              <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
+              <form method="POST">
+                <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
 
-              <small class="form-text text-muted">Click to send an email containing a verification
-                link.</small>
+                <small class="form-text text-muted">
+                  Click to send an email containing a verification link.
+                </small>
+              </form>
 
               {{if ne .currentRealm.EmailVerifiedMode.String "required"}}
               <a id="skip" class="card-link float-right mt-3" href="/home">Skip for now</a>
@@ -52,18 +55,18 @@
     let $skip = $('#skip');
     let $not = $('#not');
 
+    {{if eq .emailVerify "send"}}
     $(function() {
-      $verify.on('click', function(event) {
-        let user = firebase.auth().currentUser
-        if (!user.emailVerified) {
-          user.sendEmailVerification().then(function() {
-            flash.clear();
-            flash.alert('Verification email sent.');
-            $verify.prop('disabled', true);
-          });
-        }
-      });
+      let user = firebase.auth().currentUser
+      if (!user.emailVerified) {
+        user.sendEmailVerification().then(function() {
+          flash.clear();
+          flash.alert('Verification email sent.');
+          $verify.prop('disabled', true);
+        });
+      }
     });
+    {{end}}
 
     firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
@@ -71,7 +74,7 @@
         return;
       }
 
-      if (user.emailVerified) {
+      if ({{if eq .emailVerify "sent"}}true{{else}}user.emailVerified{{end}}) {
         $not.hide();
         $skip.text("Go home");
       } else {
