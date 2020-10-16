@@ -154,7 +154,7 @@ func NewE2EConfig(tb testing.TB, ctx context.Context) *E2EConfig {
 	if err != nil {
 		tb.Fatalf("unable to connect to secret manager: %v", err)
 	}
-	if err := envconfig.ProcessWith(ctx, c, envconfig.OsLookuper(), secrets.Resolver(sm, &secrets.Config{})); err != nil {
+	if err := envconfig.ProcessWith(ctx, c, envconfig.PrefixLookuper("E2E_", envconfig.OsLookuper()), secrets.Resolver(sm, &secrets.Config{})); err != nil {
 		tb.Fatalf("Unable to process environment: %v", err)
 	}
 	return c
