@@ -68,6 +68,19 @@ func TestMobileApp_Validation(t *testing.T) {
 		}
 	})
 
+	t.Run("url", func(t *testing.T) {
+		t.Parallel()
+
+		var m MobileApp
+		m.URL = ""
+		_ = m.BeforeSave(db.RawDB())
+
+		urlErrors := m.ErrorsFor("url")
+		if len(urlErrors) != 0 {
+			t.Fatal("no xpected error")
+		}
+	})
+
 	t.Run("sha", func(t *testing.T) {
 		t.Parallel()
 
