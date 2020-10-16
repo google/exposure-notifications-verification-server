@@ -64,9 +64,12 @@ func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
 		sent, err := controller.SendRealmEmail(ctx, c.db, compose, currentUser.Email)
 		if err != nil {
 			c.logger.Warnw("failed sending verification", "error", err)
+			flash.Error("Failed to send verification email.")
+			c.renderEmailVerify(ctx, w, "")
+			return
 		}
 		if !sent {
-			// fallback to firebase
+			// fallback to Firebase if not SMTP found
 			c.renderEmailVerify(ctx, w, "send")
 			return
 		}

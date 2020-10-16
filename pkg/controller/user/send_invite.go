@@ -30,9 +30,10 @@ func (c *Controller) sendInvitation(ctx context.Context, toEmail string) error {
 	sent, err := controller.SendRealmEmail(ctx, c.db, compose, toEmail)
 	if err != nil {
 		c.logger.Warnw("failed sending invitation", "error", err)
+		return fmt.Errorf("failed sending invitation: %w", err)
 	}
 	if !sent {
-		// fallback to Firebase
+		// fallback to Firebase if not SMTP found
 		if err := c.firebaseInternal.SendNewUserInvitation(ctx, toEmail); err != nil {
 			c.logger.Warnw("failed sending invitation", "error", err)
 			return fmt.Errorf("failed sending invitation: %w", err)
