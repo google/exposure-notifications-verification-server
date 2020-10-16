@@ -502,30 +502,6 @@ func (r *Realm) EmailConfig(db *Database) (*EmailConfig, error) {
 	return &emailConfig, nil
 }
 
-// HasEmailConfig returns true if the realm has an email config, false otherwise.
-// This does not perform the KMS encryption/decryption, so it's more efficient
-// that loading the full email config.
-func (r *Realm) HasEmailConfig(db *Database) (bool, error) {
-	q := db.db.
-		Model(&EmailConfig{}).
-		Select("id").
-		Order("is_system DESC").
-		Where("realm_id = ?", r.ID)
-
-	if r.UseSystemEmailConfig {
-		q = q.Or("is_system IS TRUE")
-	}
-
-	var id []uint64
-	if err := q.Pluck("id", &id).Error; err != nil {
-		if IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	return len(id) > 0, nil
-}
-
 // EmailProvider returns the email provider for the realm. If no email configuration
 // exists, it returns nil. If any errors occur creating the provider, they are
 // returned.

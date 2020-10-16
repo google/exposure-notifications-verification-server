@@ -38,7 +38,7 @@
       <label for="smtp-account">SMTP account</label>
       {{template "errorable" $emailConfig.ErrorsFor "smtpAccount"}}
       <small class="form-text text-muted">
-        This is the SMTP email account eg. noreply@myrealm.com
+        This is the SMTP email account eg. noreply@example.com
       </small>
     </div>
 
@@ -76,6 +76,7 @@
       {{template "errorable" $emailConfig.ErrorsFor "smtpPort"}}
       <small class="form-text text-muted">
         SMTP port is the port number to connect to.
+        587 is the default port for SMTP, and legacy port 25 is blocked.
       </small>
     </div>
   </div>
