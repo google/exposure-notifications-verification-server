@@ -65,7 +65,7 @@ function run_e2e_test() {
     wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O /usr/bin/cloud_sql_proxy
     chmod +x /usr/bin/cloud_sql_proxy
   }
-  cloud_sql_proxy -instances=${DB_CONN}=tcp:5432 &
+  cloud_sql_proxy -instances=${E2E_DB_CONN}=tcp:5432 &
   last_thread_pid=$!
   trap "kill ${last_thread_pid} || true" EXIT
 

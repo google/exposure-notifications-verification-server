@@ -49,7 +49,7 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 		tb.Fatalf("failed to connect to database: %v", err)
 	}
 	if err := db.Open(ctx); err != nil {
-		tb.Fatalf("failed to connect to database: %v", err)
+		tb.Fatalf("failed to open database: %v", err)
 	}
 	tb.Cleanup(func() {
 		if err := db.Close(); err != nil {
