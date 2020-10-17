@@ -40,19 +40,17 @@ function incremental() {
 
   ${ROOT}/scripts/terraform.sh init
 
-  export_terraform_output db_conn E2E_DB_CONN
-  export_terraform_output db_name E2E_DB_NAME
-  export_terraform_output db_user E2E_DB_USER
-  export_terraform_output db_host E2E_DB_HOST
-  export_terraform_output db_password E2E_DB_PASSWORD
   export_terraform_output db_apikey_database_key_secret E2E_DB_APIKEY_DATABASE_KEY
   export_terraform_output db_apikey_signature_key_secret E2E_DB_APIKEY_SIGNATURE_KEY
+  export_terraform_output db_conn E2E_DB_CONN
   export_terraform_output db_encryption_key_secret E2E_DB_ENCRYPTION_KEY
+  export_terraform_output db_name E2E_DB_NAME
+  export_terraform_output db_password E2E_DB_PASSWORD
+  export_terraform_output db_user E2E_DB_USER
   export_terraform_output db_verification_code_key_secret E2E_DB_VERIFICATION_CODE_DATABASE_KEY
   export_terraform_output apiserver_urls[0] E2E_APISERVER_URL
   export_terraform_output adminapi_urls[0] E2E_ADMINAPI_URL
   export E2E_DB_PASSWORD="secret://${E2E_DB_PASSWORD}"
-  export E2E_DB_SSLMODE=disable
 
   ${ROOT}/scripts/build
   ${ROOT}/scripts/deploy
