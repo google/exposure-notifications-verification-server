@@ -52,6 +52,8 @@ function incremental() {
   export_terraform_output adminapi_urls[0] E2E_ADMINAPI_URL
   export E2E_DB_PASSWORD="secret://${E2E_DB_PASSWORD}"
 
+  export DB_SSLMODE=disable
+
   ${ROOT}/scripts/build
   ${ROOT}/scripts/deploy
   ${ROOT}/scripts/promote
