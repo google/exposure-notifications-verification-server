@@ -96,7 +96,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		if err := batchErr.ErrorOrNil(); err != nil {
 			response.Error = err.Error()
-			response.ErrorCode = string(http.StatusInternalServerError)
+			response.ErrorCode = fmt.Sprintf("%d", http.StatusInternalServerError)
 
 			if len(newUsers) == 0 { // We return partial success if any succeeded.
 				c.h.RenderJSON(w, http.StatusInternalServerError, response)
