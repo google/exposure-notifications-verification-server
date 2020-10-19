@@ -77,13 +77,13 @@ var (
 	BlameUnknown = tag.Upsert(blameTagKey, "UNKNOWN")
 )
 
-// APIResultOK add a tag indicating the API call is a success.
-func APIResultOK() tag.Mutator {
+// ResultOK add a tag indicating the API call is a success.
+func ResultOK() tag.Mutator {
 	return tag.Upsert(ResultTagKey, "OK")
 }
 
-// APIResultError add a tag with the given string as the result.
-func APIResultError(result string) tag.Mutator {
+// ResultError add a tag with the given string as the result.
+func ResultError(result string) tag.Mutator {
 	return tag.Upsert(ResultTagKey, result)
 }
 

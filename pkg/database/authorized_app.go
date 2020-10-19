@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/jinzhu/gorm"
 )
 
@@ -205,8 +206,8 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) ([]*AuthorizedAppStats, error) {
 	var stats []*AuthorizedAppStats
 
-	start = start.Truncate(24 * time.Hour)
-	stop = stop.Truncate(24 * time.Hour)
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
 
 	if err := db.db.
 		Model(&AuthorizedAppStats{}).

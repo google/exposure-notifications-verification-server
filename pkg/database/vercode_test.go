@@ -303,3 +303,106 @@ func TestPurgeVerificationCodes(t *testing.T) {
 		t.Fatalf("purge record count mismatch, want: 2, got: %v", count)
 	}
 }
+
+func TestStatDatesOnCreate(t *testing.T) {
+	// Please note, this test is NOT exhaustive. A better engineer would try
+	// all dates, and a bunch of corner cases. This is intended as a
+	// smokescreen.
+	t.Parallel()
+	db := NewTestDatabase(t)
+	db.db.LogMode(true)
+	fmtString := "2006-01-02"
+	now := time.Now()
+	nowStr := now.Format(fmtString)
+	maxAge := time.Hour
+
+	tests := []struct {
+		code     *VerificationCode
+		statDate string
+	}{
+		{
+			&VerificationCode{
+				Code:          "111111",
+				LongCode:      "111111",
+				TestType:      "negative",
+				ExpiresAt:     now.Add(time.Second),
+				LongExpiresAt: now.Add(time.Second),
+				IssuingUserID: 100, // need for RealmUserStats
+				IssuingAppID:  200, // need for AuthorizedAppStats
+				RealmID:       300, // need for RealmStats
+			},
+			nowStr},
+	}
+
+	for i, test := range tests {
+		if err := db.SaveVerificationCode(test.code, maxAge); err != nil {
+			t.Errorf("[%d] error saving code: %v", i, err)
+		}
+
+		{
+			var stats []*RealmUserStats
+			if err := db.db.
+				Model(&UserStats{}).
+				Select("*").
+				Scan(&stats).
+				Error; err != nil {
+				if IsNotFound(err) {
+					t.Fatalf("[%d] Error grabbing user stats %v", i, err)
+				}
+			}
+			if len(stats) != 1 {
+				t.Fatalf("[%d] expected one user stat", i)
+			}
+			if stats[0].CodesIssued != uint(i+1) {
+				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
+			}
+			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+		}
+
+		{
+			var stats []*AuthorizedAppStats
+			if err := db.db.
+				Model(&AuthorizedAppStats{}).
+				Select("*").
+				Scan(&stats).
+				Error; err != nil {
+				if IsNotFound(err) {
+					t.Fatalf("[%d] Error grabbing app stats %v", i, err)
+				}
+			}
+			if len(stats) != 1 {
+				t.Fatalf("[%d] expected one user stat", i)
+			}
+			if stats[0].CodesIssued != uint(i+1) {
+				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
+			}
+			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+		}
+
+		{
+			var stats []*RealmStats
+			if err := db.db.
+				Model(&RealmStats{}).
+				Select("*").
+				Scan(&stats).
+				Error; err != nil {
+				if IsNotFound(err) {
+					t.Fatalf("[%d] Error grabbing realm stats %v", i, err)
+				}
+			}
+			if len(stats) != 1 {
+				t.Fatalf("[%d] expected one user stat", i)
+			}
+			if stats[0].CodesIssued != uint(i+1) {
+				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
+			}
+			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+		}
+	}
+}

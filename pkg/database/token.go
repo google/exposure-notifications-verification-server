@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/jinzhu/gorm"
 )
@@ -199,7 +200,7 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 		}
 
 		// Update statistics
-		now := time.Now().Truncate(24 * time.Hour)
+		now := timeutils.Midnight(vc.CreatedAt)
 		sql := `
 			INSERT INTO realm_stats(date, realm_id, codes_claimed)
 				VALUES ($1, $2, 1)
