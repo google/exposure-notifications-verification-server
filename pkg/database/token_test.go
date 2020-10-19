@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -79,7 +80,7 @@ func TestIssueToken(t *testing.T) {
 	t.Parallel()
 
 	codeAge := time.Hour
-	symptomDate := time.Now().UTC().Truncate(24 * time.Hour)
+	symptomDate := timeutils.UTCMidnight(time.Now())
 	wrongSymptomDate := symptomDate.Add(-48 * time.Hour)
 
 	acceptConfirmed := api.AcceptTypes{

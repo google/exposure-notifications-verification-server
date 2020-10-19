@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
@@ -1096,8 +1097,8 @@ func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id i
 func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error) {
 	var stats []*RealmStats
 
-	start = start.Truncate(24 * time.Hour)
-	stop = stop.Truncate(24 * time.Hour)
+	start = timeutils.Midnight(start)
+	stop = timeutils.Midnight(stop)
 
 	if err := db.db.
 		Model(&RealmStats{}).
@@ -1183,8 +1184,8 @@ type RealmUserStats struct {
 
 // CodesPerUser returns a set of UserStats for a given date range.
 func (r *Realm) CodesPerUser(db *Database, start, stop time.Time) ([]*RealmUserStats, error) {
-	start = start.Truncate(time.Hour * 24)
-	stop = stop.Truncate(time.Hour * 24)
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}

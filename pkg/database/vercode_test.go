@@ -364,7 +364,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 		{
 			var stats []*AuthorizedAppStats
 			if err := db.db.
-				Model(&UserStats{}).
+				Model(&AuthorizedAppStats{}).
 				Select("*").
 				Scan(&stats).
 				Error; err != nil {
@@ -386,7 +386,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 		{
 			var stats []*RealmStats
 			if err := db.db.
-				Model(&UserStats{}).
+				Model(&RealmStats{}).
 				Select("*").
 				Scan(&stats).
 				Error; err != nil {

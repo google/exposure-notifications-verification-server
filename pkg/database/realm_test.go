@@ -17,6 +17,8 @@ package database
 import (
 	"testing"
 	"time"
+
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 )
 
 func TestSMS(t *testing.T) {
@@ -44,8 +46,8 @@ func TestPerUserRealmStats(t *testing.T) {
 	db := NewTestDatabase(t)
 
 	numDays := 7
-	endDate := time.Now().Truncate(24 * time.Hour)
-	startDate := endDate.Add(time.Duration(numDays) * -24 * time.Hour).Truncate(24 * time.Hour)
+	endDate := timeutils.Midnight(time.Now())
+	startDate := timeutils.Midnight(endDate.Add(time.Duration(numDays) * -24 * time.Hour))
 
 	// Create a new realm
 	realm := NewRealmWithDefaults("test")
