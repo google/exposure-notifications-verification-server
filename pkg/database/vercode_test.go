@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 func TestVerificationCode_FindVerificationCode(t *testing.T) {
@@ -310,7 +310,6 @@ func TestStatDatesOnCreate(t *testing.T) {
 	// smokescreen.
 	t.Parallel()
 	db := NewTestDatabase(t)
-	db.db.LogMode(true)
 	fmtString := "2006-01-02"
 	now := time.Now()
 	nowStr := now.Format(fmtString)

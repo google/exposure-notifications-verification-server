@@ -20,6 +20,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func (c *Controller) HandleEnable() http.Handler {
@@ -57,7 +58,7 @@ func (c *Controller) HandleEnable() http.Handler {
 			return
 		}
 
-		app.DeletedAt = nil
+		app.DeletedAt = gorm.DeletedAt{}
 		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
 			flash.Error("Failed to enable mobile app: %v", err)
 			http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)

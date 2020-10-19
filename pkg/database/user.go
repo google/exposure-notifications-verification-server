@@ -23,8 +23,8 @@ import (
 
 	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
-	"github.com/jinzhu/gorm"
 	"github.com/sethvargo/go-password/password"
+	"gorm.io/gorm"
 )
 
 const minDuration = -1 << 63

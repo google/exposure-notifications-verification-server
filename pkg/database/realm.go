@@ -29,9 +29,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
-	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/russross/blackfriday/v2"
+	"gorm.io/gorm"
 )
 
 // TestType is a test type in the database.
@@ -104,7 +104,7 @@ type Realm struct {
 	Errorable
 
 	// Name is the name of the realm.
-	Name string `gorm:"type:varchar(200);unique_index"`
+	Name string `gorm:"column:name; type:varchar(200); unique_index;"`
 
 	// RegionCode is both a display attribute and required field for ENX. To
 	// handle NULL and uniqueness, the field is converted from it's ptr type to a
@@ -119,13 +119,13 @@ type Realm struct {
 	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
 
 	// Code configuration
-	CodeLength       uint            `gorm:"type:smallint; not null; default: 8"`
-	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900"` // default 15m (in seconds)
-	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16"`
-	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
+	CodeLength       uint            `gorm:"type:smallint; not null; default:8;"`
+	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default:900;"` // default 15m (in seconds)
+	LongCodeLength   uint            `gorm:"type:smallint; not null; default:16;"`
+	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default:86400;"` // default 24h
 
 	// SMS configuration
-	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+	SMSTextTemplate string `gorm:"type:varchar(400); not null; default:'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
 
 	// SMSCountry is an optional field to hint the default phone picker country
 	// code.
@@ -144,22 +144,22 @@ type Realm struct {
 	UseSystemSMSConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
-	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
+	MFAMode AuthRequirement `gorm:"type:smallint; not null; default:0;"`
 
 	// MFARequiredGracePeriod defines how long after creation a user may skip adding
 	// a second auth factor before the server requires it.
-	MFARequiredGracePeriod DurationSeconds `gorm:"type:bigint; not null; default: 0"`
+	MFARequiredGracePeriod DurationSeconds `gorm:"type:bigint; not null; default:0;"`
 
 	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
-	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
+	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default:0;"`
 
 	// PasswordRotationPeriodDays is the number of days before the user must
 	// rotate their password.
-	PasswordRotationPeriodDays uint `gorm:"type:smallint; not null; default: 0"`
+	PasswordRotationPeriodDays uint `gorm:"type:smallint; not null; default:0;"`
 
 	// PasswordRotationWarningDays is the number of days before Password expiry
 	// that the user should receive a warning.
-	PasswordRotationWarningDays uint `gorm:"type:smallint; not null; default: 0"`
+	PasswordRotationWarningDays uint `gorm:"type:smallint; not null; default:0;"`
 
 	// AllowedCIDRs is the list of allowed IPs to the various services.
 	AllowedCIDRsAdminAPI  pq.StringArray `gorm:"column:allowed_cidrs_adminapi; type:varchar(50)[];"`
@@ -168,28 +168,28 @@ type Realm struct {
 
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
-	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
+	AllowedTestTypes TestType `gorm:"type:smallint; not null; default:14;"`
 
 	// RequireDate requires that verifications on this realm require a test or
 	// symptom date (either). The default behavior is to not require a date.
-	RequireDate bool `gorm:"type:boolean; not null; default:false"`
+	RequireDate bool `gorm:"type:boolean; not null; default:false;"`
 
 	// Signing Key Settings
-	UseRealmCertificateKey bool            `gorm:"type:boolean; default: false"`
-	CertificateIssuer      string          `gorm:"type:varchar(150); default: ''"`
-	CertificateAudience    string          `gorm:"type:varchar(150); default: ''"`
-	CertificateDuration    DurationSeconds `gorm:"type:bigint; default: 900"` // 15m
+	UseRealmCertificateKey bool            `gorm:"type:boolean; default:false;"`
+	CertificateIssuer      string          `gorm:"type:varchar(150); default:'';"`
+	CertificateAudience    string          `gorm:"type:varchar(150); default:'';"`
+	CertificateDuration    DurationSeconds `gorm:"type:bigint; default:900;"` // 15m
 
 	// EN Express
-	EnableENExpress bool `gorm:"type:boolean; default: false"`
+	EnableENExpress bool `gorm:"type:boolean; default:false;"`
 
 	// AbusePreventionEnabled determines if abuse protection is enabled.
-	AbusePreventionEnabled bool `gorm:"type:boolean; not null; default:false"`
+	AbusePreventionEnabled bool `gorm:"type:boolean; not null; default:false;"`
 
 	// AbusePreventionLimit is the configured daily limit for the realm. This value is populated
 	// by the nightly aggregation job and is based on a statistical model from
 	// historical code issuance data.
-	AbusePreventionLimit uint `gorm:"type:integer; not null; default:10"`
+	AbusePreventionLimit uint `gorm:"type:integer; not null; default:10;"`
 
 	// AbusePreventionLimitFactor is the factor against the predicted model for the day which
 	// determines the total number of codes that can be issued for the realm on
@@ -197,17 +197,17 @@ type Realm struct {
 	// the realm could generate 75 codes today before triggering abuse prevention.
 	// Similarly, if this value was 0.5, the realm could only generate 25 codes
 	// before triggering abuse protections.
-	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0"`
+	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0;"`
 
 	// These are here for gorm to setup the association. You should NOT call them
 	// directly, ever. Use the ListUsers function instead. The have to be public
 	// for reflection.
-	RealmUsers  []*User `gorm:"many2many:user_realms; PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
-	RealmAdmins []*User `gorm:"many2many:admin_realms; PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
+	RealmUsers  []*User `gorm:"many2many:user_realms; PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
+	RealmAdmins []*User `gorm:"many2many:admin_realms; PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
 
 	// Relations to items that belong to a realm.
-	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
-	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
+	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
+	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
 }
 
 // EffectiveMFAMode returns the realm's default MFAMode but first
@@ -572,8 +572,8 @@ func (r *Realm) ListSigningKeys(db *Database) ([]*SigningKey, error) {
 	if err := db.db.
 		Model(r).
 		Order("signing_keys.created_at DESC").
-		Related(&keys).
-		Error; err != nil {
+		Association("SigningKeys").
+		Find(&keys); err != nil {
 		if IsNotFound(err) {
 			return keys, nil
 		}
@@ -589,8 +589,8 @@ func (r *Realm) ListAuthorizedApps(db *Database) ([]*AuthorizedApp, error) {
 		Unscoped().
 		Model(r).
 		Order("authorized_apps.deleted_at DESC, LOWER(authorized_apps.name)").
-		Related(&authApps).
-		Error; err != nil {
+		Association("AuthorizedApps").
+		Find(&authApps); err != nil {
 		if IsNotFound(err) {
 			return nil, nil
 		}
@@ -622,8 +622,8 @@ func (r *Realm) ListMobileApps(db *Database) ([]*MobileApp, error) {
 		Unscoped().
 		Model(r).
 		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
-		Related(&apps).
-		Error; err != nil {
+		Association("MobileApp").
+		Find(&apps); err != nil {
 		if IsNotFound(err) {
 			return apps, nil
 		}
@@ -648,15 +648,7 @@ func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) 
 
 // CountUsers returns the count users on this realm.
 func (r *Realm) CountUsers(db *Database) (int, error) {
-	var count int
-	if err := db.db.
-		Model(&User{}).
-		Joins("INNER JOIN user_realms ON user_realms.user_id = users.id and realm_id = ?", r.ID).
-		Count(&count).
-		Error; err != nil {
-		return 0, err
-	}
-	return count, nil
+	return int(db.db.Model(r).Association("RealmUsers").Count()), nil
 }
 
 // ListUsers returns the list of users on this realm.
@@ -675,8 +667,8 @@ func (r *Realm) ListUsers(db *Database, offset, limit int, emailPrefix string) (
 	if err := realmDB.
 		Offset(offset).Limit(limit).
 		Order("LOWER(name)").
-		Related(&users, "RealmUsers").
-		Error; err != nil {
+		Association("RealmUsers").
+		Find(&users); err != nil {
 		return nil, err
 	}
 	return users, nil

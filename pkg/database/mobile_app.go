@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type OSType int
@@ -208,7 +208,7 @@ func (db *Database) SaveMobileApp(a *MobileApp, actor Auditable) error {
 
 			if existing.DeletedAt != a.DeletedAt {
 				audit := BuildAuditEntry(actor, "updated mobile app enabled", a, a.RealmID)
-				audit.Diff = boolDiff(existing.DeletedAt == nil, a.DeletedAt == nil)
+				audit.Diff = boolDiff(existing.DeletedAt.Valid, existing.DeletedAt.Valid)
 				audits = append(audits, audit)
 			}
 		}

@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // SMSConfig represents and SMS configuration.
@@ -80,7 +80,7 @@ func (db *Database) SystemSMSConfig() (*SMSConfig, error) {
 // SaveSMSConfig creates or updates an SMS configuration record.
 func (db *Database) SaveSMSConfig(s *SMSConfig) error {
 	if s.TwilioAccountSid == "" && s.TwilioAuthToken == "" && s.TwilioFromNumber == "" {
-		if db.db.NewRecord(s) {
+		if s.ID == 0 {
 			// The fields are all blank, do not create the record.
 			return nil
 		}
@@ -103,9 +103,6 @@ func (db *Database) SaveSMSConfig(s *SMSConfig) error {
 		return db.db.Unscoped().Delete(s).Error
 	}
 
-	if db.db.NewRecord(s) {
-		return db.db.Create(s).Error
-	}
 	return db.db.Save(s).Error
 }
 

@@ -17,7 +17,7 @@ package database
 import (
 	"fmt"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // SigningKey represents a reference to a KMS backed signing key

@@ -17,7 +17,7 @@ package database
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // UserStats represents statistics related to a user in the database.

@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func (c *Controller) HandleDisable() http.Handler {
@@ -58,8 +59,10 @@ func (c *Controller) HandleDisable() http.Handler {
 			return
 		}
 
-		now := time.Now().UTC()
-		authApp.DeletedAt = &now
+		authApp.DeletedAt = gorm.DeletedAt{
+			Time:  time.Now().UTC(),
+			Valid: true,
+		}
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			flash.Error("Failed to disable API Key: %v", err)
 			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)

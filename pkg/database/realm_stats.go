@@ -33,7 +33,7 @@ func (RealmStats) TableName() string {
 
 // HistoricalCodesIssued returns a slice of the historical codes issued for
 // this realm by date descending.
-func (r *Realm) HistoricalCodesIssued(db *Database, limit uint64) ([]uint64, error) {
+func (r *Realm) HistoricalCodesIssued(db *Database, limit int) ([]uint64, error) {
 	var stats []uint64
 	if err := db.db.
 		Model(&RealmStats{}).

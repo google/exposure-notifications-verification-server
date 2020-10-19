@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
+	"gorm.io/gorm"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
@@ -136,8 +137,10 @@ func realMain(ctx context.Context) error {
 		if err != nil {
 			logger.Errorf("admin API key cleanup failed: %w", err)
 		}
-		now := time.Now().UTC()
-		app.DeletedAt = &now
+		app.DeletedAt = gorm.DeletedAt{
+			Time:  time.Now().UTC(),
+			Valid: true,
+		}
 		if err := db.SaveAuthorizedApp(app, database.System); err != nil {
 			logger.Errorf("admin API key disable failed: %w", err)
 		}
@@ -158,8 +161,10 @@ func realMain(ctx context.Context) error {
 			logger.Errorf("device API key cleanup failed: %w", err)
 			return
 		}
-		now := time.Now().UTC()
-		app.DeletedAt = &now
+		app.DeletedAt = gorm.DeletedAt{
+			Time:  time.Now().UTC(),
+			Valid: true,
+		}
 		if err := db.SaveAuthorizedApp(app, database.System); err != nil {
 			logger.Errorf("device API key disable failed: %w", err)
 		}

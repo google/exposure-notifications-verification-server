@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 const (
@@ -73,7 +73,7 @@ func (VerificationCode) TableName() string {
 // AfterCreate runs after the verification code has been saved, primarily used
 // to update statistics about usage. If the executions fail, an error is logged
 // but the transaction continues. This is called automatically by gorm.
-func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
+func (v *VerificationCode) AfterCreate(tx *gorm.DB) error {
 	date := timeutils.Midnight(v.CreatedAt)
 
 	// If the issuer was a user, update the user stats for the day.
@@ -85,8 +85,8 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 				SET codes_issued = user_stats.codes_issued + 1
 		`
 
-		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
-			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		if err := tx.Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
+			return fmt.Errorf("failed to update stats: %v", err)
 		}
 	}
 
@@ -99,8 +99,8 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 				SET codes_issued = authorized_app_stats.codes_issued + 1
 		`
 
-		if err := scope.DB().Exec(sql, date, v.IssuingAppID).Error; err != nil {
-			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		if err := tx.Exec(sql, date, v.IssuingAppID).Error; err != nil {
+			return fmt.Errorf("failed to update stats: %v", err)
 		}
 	}
 
@@ -113,10 +113,12 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 				SET codes_issued = realm_stats.codes_issued + 1
 		`
 
-		if err := scope.DB().Exec(sql, date, v.RealmID).Error; err != nil {
-			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		if err := tx.Exec(sql, date, v.RealmID).Error; err != nil {
+			return fmt.Errorf("failed to update stats: %v", err)
 		}
 	}
+
+	return nil
 }
 
 // TODO(mikehelmick) - Add method to soft delete expired codes

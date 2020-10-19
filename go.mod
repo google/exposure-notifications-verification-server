@@ -17,6 +17,7 @@ require (
 	github.com/client9/misspell v0.3.4
 	github.com/containerd/continuity v0.0.0-20200928162600-f2cc35102c2a // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	github.com/gonum/blas v0.0.0-20181208220705-f22b278b28ac // indirect
 	github.com/gonum/floats v0.0.0-20181209220543-c233463c7e82 // indirect
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
@@ -31,8 +32,6 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/jinzhu/gorm v1.9.16
-	github.com/jinzhu/now v1.1.1 // indirect
 	github.com/lib/pq v1.8.0
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/microcosm-cc/bluemonday v1.0.4
@@ -59,6 +58,7 @@ require (
 	golang.org/x/tools v0.0.0-20201005185003-576e169c3de7
 	google.golang.org/api v0.32.0
 	google.golang.org/genproto v0.0.0-20201002142447-3860012362da
-	gopkg.in/gormigrate.v1 v1.6.0
+	gorm.io/driver/postgres v1.0.2
+	gorm.io/gorm v1.20.2
 	honnef.co/go/tools v0.0.1-2020.1.5
 )

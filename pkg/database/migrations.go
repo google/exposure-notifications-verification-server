@@ -22,8 +22,8 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"github.com/jinzhu/gorm"
-	"gopkg.in/gormigrate.v1"
+	"github.com/go-gormigrate/gormigrate/v2"
+	"gorm.io/gorm"
 )
 
 const initState = "00000-Init"
@@ -47,56 +47,50 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Migrate: func(tx *gorm.DB) error {
 				// This is "out of order" as it were, but is needed to bootstrap fresh systems.
 				// Also in migration 8
-				logger.Debugw("creating realms table")
-				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&Realm{}); err != nil {
 					return err
 				}
 
-				logger.Debugw("creating users table")
-				return tx.AutoMigrate(&User{}).Error
+				return tx.Migrator().AutoMigrate(&User{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.DropTable("users").Error; err != nil {
+				if err := tx.Migrator().DropTable("users"); err != nil {
 					return err
 				}
-				return tx.DropTable("realms").Error
+				return tx.Migrator().DropTable("realms")
 			},
 		},
 		{
 			ID: "00002-CreateVerificationCodes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating verification codes table")
-				return tx.AutoMigrate(&VerificationCode{}).Error
+				return tx.Migrator().AutoMigrate(&VerificationCode{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("verification_codes").Error
+				return tx.Migrator().DropTable("verification_codes")
 			},
 		},
 		{
 			ID: "00003-CreateAuthorizedApps",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating authorized apps table")
-				return tx.AutoMigrate(&AuthorizedApp{}).Error
+				return tx.Migrator().AutoMigrate(&AuthorizedApp{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("authorized_apps").Error
+				return tx.Migrator().DropTable("authorized_apps")
 			},
 		},
 		{
 			ID: "00004-CreateTokens",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating tokens table")
-				return tx.AutoMigrate(&Token{}).Error
+				return tx.Migrator().AutoMigrate(&Token{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("tokens").Error
+				return tx.Migrator().DropTable("tokens")
 			},
 		},
 		{
 			ID: "00005-CreateCleanups",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating cleanup status table")
-				if err := tx.AutoMigrate(&CleanupStatus{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&CleanupStatus{}); err != nil {
 					return err
 				}
 				// Seed database w/ cleanup record.
@@ -106,127 +100,100 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("cleanup_statuses").Error
+				return tx.Migrator().DropTable("cleanup_statuses")
 			},
 		},
 		{
 			ID: "00006-AddIndexes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("add users purge index")
-				if err := tx.Model(&User{}).AddIndex("users_purge_index", "updated_at").Error; err != nil {
-					return err
-				}
-				logger.Debugw("add verification code purge index")
-				if err := tx.Model(&VerificationCode{}).AddIndex("ver_code_purge_index", "expires_at").Error; err != nil {
-					return err
-				}
-				logger.Debugw("add tokens purge index")
-				if err := tx.Model(&VerificationCode{}).AddIndex("token_purge_index", "expires_at").Error; err != nil {
-					return err
-				}
-				return nil
+				return exec(tx,
+					`CREATE INDEX IF NOT EXISTS users_purge_index ON users(updated_at)`,
+					`CREATE INDEX IF NOT EXISTS ver_code_purge_index ON verification_codes(expires_at)`,
+					`CREATE INDEX IF NOT EXISTS token_purge_index ON tokens(expires_at)`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				logger.Debugw("drop users purge index")
-				if err := tx.Model(&User{}).RemoveIndex("users_purge_index").Error; err != nil {
-					return err
-				}
-				logger.Debugw("drop verification code purge index")
-				if err := tx.Model(&VerificationCode{}).RemoveIndex("ver_code_purge_index").Error; err != nil {
-					return err
-				}
-				logger.Debugw("drop tokens purge index")
-				if err := tx.Model(&VerificationCode{}).RemoveIndex("token_purge_index").Error; err != nil {
-					return err
-				}
-				return nil
+				return exec(tx,
+					`DROP INDEX IF EXISTS users_purge_index`,
+					`DROP INDEX IF EXISTS ver_code_purge_index`,
+					`DROP INDEX IF EXISTS token_purge_index`,
+				)
 			},
 		},
 		{
 			ID: "00007-AddSymptomOnset",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("rename test_date to symptom_date")
 				// AutoMigrate will add missing fields.
-				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&VerificationCode{}); err != nil {
 					return err
-				}
-				// If not upgrading from an old version, this column will have never been created.
-				if tx.NewScope(&VerificationCode{}).HasColumn("test_date") {
-					if err := tx.Model(&VerificationCode{}).DropColumn("test_date").Error; err != nil {
-						return err
-					}
 				}
 
-				if err := tx.AutoMigrate(&Token{}).Error; err != nil {
+				// If not upgrading from an old version, this column will have never
+				// been created.
+				if err := tx.Exec(`ALTER TABLE verification_codes DROP COLUMN IF EXISTS test_date`).Error; err != nil {
 					return err
 				}
-				// If not upgrading from an old version, this column will have never been created.
-				if tx.NewScope(&Token{}).HasColumn("test_date") {
-					if err := tx.Model(&Token{}).DropColumn("test_date").Error; err != nil {
-						return err
-					}
+
+				if err := tx.Migrator().AutoMigrate(&Token{}); err != nil {
+					return err
 				}
+
+				// If not upgrading from an old version, this column will have never
+				// been created.
+				if err := tx.Exec(`ALTER TABLE tokens DROP COLUMN IF EXISTS test_date`).Error; err != nil {
+					return err
+				}
+
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				logger.Debugw("rename symptom_date to test_date")
-				if err := tx.Model(&VerificationCode{}).DropColumn("symptom_date").Error; err != nil {
-					return err
-				}
-				if err := tx.Model(&Token{}).DropColumn("symptom_date").Error; err != nil {
-					return err
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE verification_codes DROP COLUMN IF EXISTS symptom_date`,
+					`ALTER TABLE tokens DROP COLUMN IF EXISTS symptom_date`,
+				)
 			},
 		},
 		{
 			ID: "00008-AddKeyTypes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("upgrading authorized_apps table.")
-				return tx.AutoMigrate(&AuthorizedApp{}).Error
+				return tx.Migrator().AutoMigrate(&AuthorizedApp{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Model(&AuthorizedApp{}).DropColumn("admin_key").Error; err != nil {
-					return err
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE authorized_apps DROP COLUMN IF EXISTS admin_key`,
+				)
 			},
 		},
 		{
 			ID: "00009-AddIssuerColumns",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding issuer columns to issued codes")
-				return tx.AutoMigrate(&VerificationCode{}).Error
+				return tx.Migrator().AutoMigrate(&VerificationCode{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_user").Error; err != nil {
-					return err
-				}
-				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_app").Error; err != nil {
-					return err
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE verification_codes DROP COLUMN IF EXISTS issuing_user`,
+					`ALTER TABLE verification_codes DROP COLUMN IF EXISTS issuing_app`,
+				)
 			},
 		},
 		{
 			ID: "00010-AddSMSConfig",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding sms_configs table")
-				return tx.AutoMigrate(&SMSConfig{}).Error
+				return tx.Migrator().AutoMigrate(&SMSConfig{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("sms_configs").Error
+				return exec(tx,
+					`DROP TABLE IF EXISTS sms_configs`,
+				)
 			},
 		},
 		{
 			ID: "00011-AddRealms",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating realms table")
 				// Add the realms table.
-				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&Realm{}); err != nil {
 					return err
 				}
-				logger.Debugw("creating default realm")
 				// Create the default realm with all of the default settings.
 				defaultRealm := NewRealmWithDefaults("Default")
 				if err := tx.FirstOrCreate(defaultRealm).Error; err != nil {
@@ -234,18 +201,15 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 
 				// Add realm relations to the rest of the tables.
-				logger.Debugw("adding RealmID to users")
-				if err := tx.AutoMigrate(&User{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&User{}); err != nil {
 					return err
 				}
-				logger.Debugw("joining users to the default realm")
 				var users []*User
 				if err := tx.Find(&users).Error; err != nil {
 					return err
 				}
-				for _, u := range users {
-					logger.Debugw("adding user to default realm", "user", u.ID)
 
+				for _, u := range users {
 					u.AddRealm(defaultRealm)
 					if u.Admin {
 						u.AddRealmAdmin(defaultRealm)
@@ -256,8 +220,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					}
 				}
 
-				logger.Debugw("adding RealmID to authorized_apps")
-				if err := tx.AutoMigrate(&AuthorizedApp{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&AuthorizedApp{}); err != nil {
 					return err
 				}
 				var authApps []*AuthorizedApp
@@ -265,44 +228,37 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					return err
 				}
 				for _, a := range authApps {
-					logger.Debugw("added auth app to default realm", "app", a.Name)
 					a.RealmID = defaultRealm.ID
 					if err := tx.Save(a).Error; err != nil {
 						return err
 					}
 				}
 
-				logger.Debugw("adding RealmID to VerificationCodes")
-				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&VerificationCode{}); err != nil {
 					return err
 				}
-				logger.Debugw("joining existing VerificationCodes to default realm")
-				if err := tx.Exec("UPDATE verification_codes SET realm_id=?", defaultRealm.ID).Error; err != nil {
-					return err
-				}
-
-				logger.Debugw("adding RealmID to Tokens")
-				if err := tx.AutoMigrate(&Token{}).Error; err != nil {
-					return err
-				}
-				logger.Debugw("joining existing tokens to default realm")
-				if err := tx.Exec("UPDATE tokens SET realm_id=?", defaultRealm.ID).Error; err != nil {
+				if err := tx.Exec("UPDATE verification_codes SET realm_id = ?", defaultRealm.ID).Error; err != nil {
 					return err
 				}
 
-				logger.Debugw("adding RealmID to SMSConfig")
-				if err := tx.AutoMigrate(&SMSConfig{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&Token{}); err != nil {
 					return err
 				}
-				logger.Debugw("joining existing SMS config to default realm")
-				if err := tx.Exec("UPDATE sms_configs SET realm_id=?", defaultRealm.ID).Error; err != nil {
+				if err := tx.Exec("UPDATE tokens SET realm_id = ?", defaultRealm.ID).Error; err != nil {
+					return err
+				}
+
+				if err := tx.Migrator().AutoMigrate(&SMSConfig{}); err != nil {
+					return err
+				}
+				if err := tx.Exec("UPDATE sms_configs SET realm_id = ?", defaultRealm.ID).Error; err != nil {
 					return err
 				}
 
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				ddl := []string{
+				return exec(tx,
 					"ALTER TABLE sms_configs DROP COLUMN realm_id",
 					"ALTER TABLE tokens DROP COLUMN realm_id",
 					"ALTER TABLE verification_codes DROP COLUMN realm_id",
@@ -310,24 +266,15 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					"DROP TABLE admin_realms",
 					"DROP TABLE user_realms",
 					"DROP TABLE realms",
-				}
-				for _, stmt := range ddl {
-					if err := tx.Exec(stmt).Error; err != nil {
-						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
-					}
-				}
-				return nil
+				)
 			},
 		},
 		{
 			ID: "00012-DropAuthorizedAppUniqueNameIndex",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("dropping authorized apps unique name index")
-				sql := "DROP INDEX IF EXISTS uix_authorized_apps_name"
-				if err := tx.Exec(sql).Error; err != nil {
-					return err
-				}
-				return nil
+				return exec(tx,
+					`DROP INDEX IF EXISTS uix_authorized_apps_name`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -336,11 +283,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00013-AddCompositeIndexOnAuthorizedApp",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding authorized apps realm/name composite index")
-				if err := tx.AutoMigrate(&AuthorizedApp{}).Error; err != nil {
-					return err
-				}
-				return nil
+				return tx.Migrator().AutoMigrate(&AuthorizedApp{})
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -349,31 +292,32 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00014-DropUserPurgeIndex",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("dropping user purge index")
-				sql := "DROP INDEX IF EXISTS users_purge_index"
-				return tx.Exec(sql).Error
+				return exec(tx,
+					`DROP INDEX IF EXISTS users_purge_index`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Model(&User{}).AddIndex("users_purge_index", "updated_at").Error
+				return exec(tx,
+					`CREATE INDEX IF NOT EXISTS users_purge_index ON users(updated_at)`,
+				)
 			},
 		},
 		{
 			ID: "00015-DropUserDisabled",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("dropping user disabled column")
-				sql := "ALTER TABLE users DROP COLUMN IF EXISTS disabled"
-				return tx.Exec(sql).Error
+				return exec(tx,
+					`ALTER TABLE users DROP COLUMN IF EXISTS disabled`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sql := "ALTER TABLE users ADD COLUMN disabled bool NOT NULL DEFAULT true"
-				return tx.Exec(sql).Error
+				return exec(tx,
+					`ALTER TABLE users ADD COLUMN disabled bool NOT NULL DEFAULT true`,
+				)
 			},
 		},
 		{
 			ID: "00016-MigrateSMSConfigs",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("migrating sms configs")
-
 				var sms SMSConfig
 				rows, err := tx.Model(&SMSConfig{}).Rows()
 				if err != nil {
@@ -412,41 +356,31 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00017-AddIssuerIDColumns",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding issuer id columns to verification codes")
-				err := tx.AutoMigrate(&VerificationCode{}, &UserStats{}, &AuthorizedAppStats{}).Error
-				return err
-
+				return tx.Migrator().AutoMigrate(&VerificationCode{}, &UserStats{}, &AuthorizedAppStats{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_user_id").Error; err != nil {
-					return err
-				}
-				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_app_id").Error; err != nil {
-					return err
-				}
-				if err := tx.DropTable(&UserStats{}).Error; err != nil {
-					return err
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE verification_codes DROP COLUMN IF EXISTS issuing_user_id`,
+					`ALTER TABLE verification_codes DROP COLUMN IF EXISTS issuing_app_id`,
+					`DROP TABLE IF EXISTS user_stats`,
+				)
 			},
 		},
 		{
 			ID: "00018-IncreaseAPIKeySize",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("increasing API key size")
-				sql := "ALTER TABLE authorized_apps ALTER COLUMN api_key TYPE varchar(512)"
-				return tx.Exec(sql).Error
+				return exec(tx,
+					`ALTER TABLE authorized_apps ALTER COLUMN api_key TYPE varchar(512)`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sql := "ALTER TABLE authorized_apps ALTER COLUMN api_key TYPE varchar(100)"
-				return tx.Exec(sql).Error
+				return nil
 			},
 		},
 		{
 			ID: "00019-AddAPIKeyPreviewAuthApp",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("migrating authapp")
-				return tx.AutoMigrate(AuthorizedApp{}).Error
+				return tx.Migrator().AutoMigrate(AuthorizedApp{})
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -455,7 +389,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00020-HMACAPIKeys",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("HMACing existing api keys")
 
 				var apps []AuthorizedApp
 				if err := tx.Model(AuthorizedApp{}).Find(&apps).Error; err != nil {
@@ -490,8 +423,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00021-AddUUIDExtension",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding uuid extension")
-				return tx.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
+				return exec(tx,
+					`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -500,218 +434,139 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00022-AddUUIDToVerificationCodes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("migrating verification code uuid")
-
-				if err := tx.AutoMigrate(VerificationCode{}).Error; err != nil {
-					return fmt.Errorf("failed to auto migrate: %w", err)
+				if err := tx.Migrator().AutoMigrate(VerificationCode{}); err != nil {
+					return err
 				}
 
-				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid SET DEFAULT uuid_generate_v4()").Error; err != nil {
-					return fmt.Errorf("failed to set default: %w", err)
-				}
-
-				if err := tx.Exec("UPDATE verification_codes SET uuid = uuid_generate_v4() WHERE uuid IS NULL").Error; err != nil {
-					return fmt.Errorf("failed to add defaults: %w", err)
-				}
-
-				return nil
+				return exec(tx,
+					`ALTER TABLE verification_codes ALTER COLUMN uuid SET DEFAULT uuid_generate_v4()`,
+					`UPDATE verification_codes SET uuid = uuid_generate_v4() WHERE uuid IS NULL`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid DROP DEFAULT").Error; err != nil {
-					return fmt.Errorf("failed to set default: %w", err)
-				}
-
-				return nil
+				return exec(tx,
+					`ALTER TABLE verification_codes ALTER COLUMN uuid DROP DEFAULT`,
+				)
 			},
 		},
 		{
 			ID: "00023-MakeUUIDVerificationCodesNotNull",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("making verification code uuid not null")
-
-				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid SET NOT NULL").Error; err != nil {
-					return fmt.Errorf("failed to set null: %w", err)
-				}
-
-				return nil
+				return exec(tx,
+					`ALTER TABLE verification_codes ALTER COLUMN uuid SET NOT NULL`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid DROP NOT NULL").Error; err != nil {
-					return fmt.Errorf("failed to set null: %w", err)
-				}
-
-				return nil
+				return exec(tx,
+					`ALTER TABLE verification_codes ALTER COLUMN uuid DROP NOT NULL`,
+				)
 			},
 		},
 		{
 			ID: "00024-AddTestTypesToRealms",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding test types to realm")
-
-				sql := fmt.Sprintf("ALTER TABLE realms ADD COLUMN IF NOT EXISTS allowed_test_types INTEGER DEFAULT %d",
-					TestTypeConfirmed|TestTypeLikely|TestTypeNegative)
-				if err := tx.Exec(sql).Error; err != nil {
-					return err
-				}
-
-				return nil
+				return exec(tx,
+					fmt.Sprintf("ALTER TABLE realms ADD COLUMN IF NOT EXISTS allowed_test_types INTEGER DEFAULT %d", TestTypeConfirmed|TestTypeLikely|TestTypeNegative),
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS allowed_test_types").Error; err != nil {
-					return err
-				}
-
-				return nil
+				return exec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_test_types`,
+				)
 			},
 		},
 		{
 			ID: "00025-SetTestTypesNotNull",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("setting test types to not-null")
-
-				if err := tx.Exec("ALTER TABLE realms ALTER COLUMN allowed_test_types SET NOT NULL").Error; err != nil {
-					return err
-				}
-
-				return nil
+				return exec(tx,
+					`ALTER TABLE realms ALTER COLUMN allowed_test_types SET NOT NULL`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Exec("ALTER TABLE realms ALTER COLUMN allowed_test_types DROP NOT NULL").Error; err != nil {
-					return err
-				}
-
-				return nil
+				return exec(tx,
+					`ALTER TABLE realms ALTER COLUMN allowed_test_types DROP NOT NULL`,
+				)
 			},
 		},
 		{
 			ID: "00026-EnableExtension_citext",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("enabling citext extension")
-				return tx.Exec("CREATE EXTENSION citext").Error
+				return exec(tx,
+					`CREATE EXTENSION citext`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("DROP EXTENSION citext").Error
+				return nil
 			},
 		},
 		{
 			ID: "00027-AlterColumns_citext",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("setting columns to case insensitive")
-				sqls := []string{
-					"ALTER TABLE authorized_apps ALTER COLUMN name TYPE CITEXT",
-					"ALTER TABLE realms ALTER COLUMN name TYPE CITEXT",
-					"ALTER TABLE users ALTER COLUMN email TYPE CITEXT",
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE authorized_apps ALTER COLUMN name TYPE CITEXT`,
+					`ALTER TABLE realms ALTER COLUMN name TYPE CITEXT`,
+					`ALTER TABLE users ALTER COLUMN email TYPE CITEXT`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
-					"ALTER TABLE authorized_apps ALTER COLUMN name TYPE TEXT",
-					"ALTER TABLE realms ALTER COLUMN name TYPE TEXT",
-					"ALTER TABLE users ALTER COLUMN email TYPE TEXT",
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE authorized_apps ALTER COLUMN name TYPE TEXT`,
+					`ALTER TABLE realms ALTER COLUMN name TYPE TEXT`,
+					`ALTER TABLE users ALTER COLUMN email TYPE TEXT`,
+				)
 			},
 		},
 		{
 			ID: "00028-AddSMSDeeplinkFields",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding long_code and SMS deeplink settings")
 				// long_code cannot be auto migrated because of unique index.
 				// manually create long_code and long_expires_at and backfill with existing data.
-				sqls := []string{
-					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_code VARCHAR(20)",
-					"UPDATE verification_codes SET long_code = code",
-					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_long_code ON verification_codes(long_code)",
-					"ALTER TABLE verification_codes ALTER COLUMN long_code SET NOT NULL",
-					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_expires_at TIMESTAMPTZ",
-					"UPDATE verification_codes SET long_expires_at = expires_at",
-				}
-				for _, stmt := range sqls {
-					if err := tx.Exec(stmt).Error; err != nil {
-						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
-					}
+				if err := exec(tx,
+					`ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_code VARCHAR(20)`,
+					`UPDATE verification_codes SET long_code = code`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_long_code ON verification_codes(long_code)`,
+					`ALTER TABLE verification_codes ALTER COLUMN long_code SET NOT NULL`,
+					`ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_expires_at TIMESTAMPTZ`,
+					`UPDATE verification_codes SET long_expires_at = expires_at`,
+				); err != nil {
+					return nil
 				}
 
-				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
-					return err
-				}
-				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&Realm{}, &VerificationCode{}); err != nil {
 					return err
 				}
 
-				logger.Debugw("add verification code purge index")
-				if err := tx.Model(&VerificationCode{}).AddIndex("ver_code_long_purge_index", "long_expires_at").Error; err != nil {
-					return err
-				}
-
-				return nil
+				return exec(tx,
+					`CREATE INDEX IF NOT EXISTS ver_code_long_purge_index ON verification_codes(long_expires_at)`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				dropColumns := []string{
-					"long_code_length",
-					"long_code_duration",
-					"region_code",
-					"code_length",
-					"code_duration",
-					"sms_text_template",
-				}
-				for _, col := range dropColumns {
-					stmt := fmt.Sprintf("ALTER TABLE realms DROP COLUMN %s", col)
-					if err := tx.Exec(stmt).Error; err != nil {
-						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
-					}
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS long_code_length`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS long_code_duration`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS region_code`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS code_length`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS code_duration`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS sms_text_template`,
+				)
 			},
 		},
 		{
 			ID: "00029-IncreaseVerificationCodeSizes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("increasing verification code sizes")
-				sqls := []string{
-					"ALTER TABLE verification_codes ALTER COLUMN code TYPE varchar(512)",
-					"ALTER TABLE verification_codes ALTER COLUMN long_code TYPE varchar(512)",
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE verification_codes ALTER COLUMN code TYPE varchar(512)`,
+					`ALTER TABLE verification_codes ALTER COLUMN long_code TYPE varchar(512)`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
-					"ALTER TABLE verification_codes ALTER COLUMN code TYPE varchar(20)",
-					"ALTER TABLE verification_codes ALTER COLUMN long_code TYPE varchar(20)",
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
 				return nil
 			},
 		},
 		{
 			ID: "00030-HMACCodes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("HMACing existing tokens")
-				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&Realm{}); err != nil {
 					return err
 				}
 
@@ -758,50 +613,42 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00031-AlterStatsColumns",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("changing stats columns")
 
-				sqls := []string{
+				return exec(tx,
 					// AuthorizedApps
-					"CREATE UNIQUE INDEX IF NOT EXISTS idx_authorized_app_stats_date_authorized_app_id ON authorized_app_stats (date, authorized_app_id)",
-					"DROP INDEX IF EXISTS idx_date_app_realm",
-					"DROP INDEX IF EXISTS idx_authorized_app_stats_deleted_at",
-					"CREATE INDEX IF NOT EXISTS idx_authorized_app_stats_date ON authorized_app_stats (date)",
-					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS id",
-					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS created_at",
-					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS updated_at",
-					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS deleted_at",
-					"ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS realm_id",
-					"ALTER TABLE authorized_app_stats ALTER COLUMN date TYPE date",
-					"ALTER TABLE authorized_app_stats ALTER COLUMN date SET NOT NULL",
-					"ALTER TABLE authorized_app_stats ALTER COLUMN authorized_app_id SET NOT NULL",
-					"ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued TYPE INTEGER",
-					"ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued SET DEFAULT 0",
-					"ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued SET NOT NULL",
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_authorized_app_stats_date_authorized_app_id ON authorized_app_stats (date, authorized_app_id)`,
+					`DROP INDEX IF EXISTS idx_date_app_realm`,
+					`DROP INDEX IF EXISTS idx_authorized_app_stats_deleted_at`,
+					`CREATE INDEX IF NOT EXISTS idx_authorized_app_stats_date ON authorized_app_stats (date)`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS id`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS created_at`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS updated_at`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS deleted_at`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS realm_id`,
+					`ALTER TABLE authorized_app_stats ALTER COLUMN date TYPE date`,
+					`ALTER TABLE authorized_app_stats ALTER COLUMN date SET NOT NULL`,
+					`ALTER TABLE authorized_app_stats ALTER COLUMN authorized_app_id SET NOT NULL`,
+					`ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued TYPE INTEGER`,
+					`ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued SET DEFAULT 0`,
+					`ALTER TABLE authorized_app_stats ALTER COLUMN codes_issued SET NOT NULL`,
 
 					// Users
-					"CREATE UNIQUE INDEX IF NOT EXISTS idx_user_stats_date_realm_id_user_id ON user_stats (date, realm_id, user_id)",
-					"DROP INDEX IF EXISTS idx_date_user_realm",
-					"DROP INDEX IF EXISTS idx_user_stats_deleted_at",
-					"CREATE INDEX IF NOT EXISTS idx_user_stats_date ON user_stats (date)",
-					"ALTER TABLE user_stats DROP COLUMN IF EXISTS id",
-					"ALTER TABLE user_stats DROP COLUMN IF EXISTS created_at",
-					"ALTER TABLE user_stats DROP COLUMN IF EXISTS updated_at",
-					"ALTER TABLE user_stats DROP COLUMN IF EXISTS deleted_at",
-					"ALTER TABLE user_stats ALTER COLUMN date TYPE date",
-					"ALTER TABLE user_stats ALTER COLUMN date SET NOT NULL",
-					"ALTER TABLE user_stats ALTER COLUMN realm_id SET NOT NULL",
-					"ALTER TABLE user_stats ALTER COLUMN user_id SET NOT NULL",
-					"ALTER TABLE user_stats ALTER COLUMN codes_issued TYPE INTEGER",
-					"ALTER TABLE user_stats ALTER COLUMN codes_issued SET DEFAULT 0",
-					"ALTER TABLE user_stats ALTER COLUMN codes_issued SET NOT NULL",
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return fmt.Errorf("%s: %w", sql, err)
-					}
-				}
-				return nil
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_stats_date_realm_id_user_id ON user_stats (date, realm_id, user_id)`,
+					`DROP INDEX IF EXISTS idx_date_user_realm`,
+					`DROP INDEX IF EXISTS idx_user_stats_deleted_at`,
+					`CREATE INDEX IF NOT EXISTS idx_user_stats_date ON user_stats (date)`,
+					`ALTER TABLE user_stats DROP COLUMN IF EXISTS id`,
+					`ALTER TABLE user_stats DROP COLUMN IF EXISTS created_at`,
+					`ALTER TABLE user_stats DROP COLUMN IF EXISTS updated_at`,
+					`ALTER TABLE user_stats DROP COLUMN IF EXISTS deleted_at`,
+					`ALTER TABLE user_stats ALTER COLUMN date TYPE date`,
+					`ALTER TABLE user_stats ALTER COLUMN date SET NOT NULL`,
+					`ALTER TABLE user_stats ALTER COLUMN realm_id SET NOT NULL`,
+					`ALTER TABLE user_stats ALTER COLUMN user_id SET NOT NULL`,
+					`ALTER TABLE user_stats ALTER COLUMN codes_issued TYPE INTEGER`,
+					`ALTER TABLE user_stats ALTER COLUMN codes_issued SET DEFAULT 0`,
+					`ALTER TABLE user_stats ALTER COLUMN codes_issued SET NOT NULL`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -810,17 +657,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00032-RegionCodeSize",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("increasing region code sizes")
-				sqls := []string{
-					"ALTER TABLE realms ALTER COLUMN region_code TYPE varchar(10)",
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-				return nil
+				return exec(tx,
+					`ALTER TABLE realms ALTER COLUMN region_code TYPE varchar(10)`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -829,14 +668,12 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00033-PerlRealmSigningKeys",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding signing_keys table")
-				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&Realm{}); err != nil {
 					return err
 				}
-				if err := tx.AutoMigrate(&SigningKey{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&SigningKey{}); err != nil {
 					return err
 				}
-
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -847,12 +684,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00034-AddENExpressSettings",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding EN Express settings")
-				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
-					return err
-				}
-
-				return nil
+				return tx.Migrator().AutoMigrate(&Realm{})
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -861,73 +693,77 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00035-AddMFARequiredToRealms",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding MFA required to realm")
-				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_mode INTEGER DEFAULT 0").Error
+				return exec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_mode INTEGER DEFAULT 0`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_mode").Error
+				return exec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS mfa_mode`,
+				)
 			},
 		},
 		{
 			ID: "00036-AddRealmStats",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: adding realm stats")
-				if err := tx.AutoMigrate(&RealmStats{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&RealmStats{}); err != nil {
 					return err
 				}
-				statements := []string{
-					"CREATE UNIQUE INDEX IF NOT EXISTS idx_realm_stats_stats_date_realm_id ON realm_stats (date, realm_id)",
-					"CREATE INDEX IF NOT EXISTS idx_realm_stats_date ON realm_stats (date)",
-				}
-				for _, sql := range statements {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-				return nil
+
+				return exec(tx,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_realm_stats_stats_date_realm_id ON realm_stats (date, realm_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_realm_stats_date ON realm_stats (date)`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.DropTable(&RealmStats{}).Error; err != nil {
-					return err
-				}
-				return nil
+				return exec(tx,
+					`DROP TABLE IF EXISTS realm_stats`,
+				)
 			},
 		},
 		{
 			ID: "00037-AddRealmRequireDate",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: adding require_date to realms")
-				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS require_date bool DEFAULT false").Error
+				return exec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS require_date bool DEFAULT false`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS require_date").Error
+				return exec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS require_date`,
+				)
 			},
 		},
 		{
 			ID: "00038-AddRealmRequireDateNotNull",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: adding not null requirement to require_date on realms")
-				return tx.Exec("ALTER TABLE realms ALTER COLUMN require_date SET NOT NULL").Error
+				return exec(tx,
+					`ALTER TABLE realms ALTER COLUMN require_date SET NOT NULL`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realms ALTER COLUMN require_date SET NULL").Error
+				return exec(tx,
+					`ALTER TABLE realms ALTER COLUMN require_date SET NULL`,
+				)
 			},
 		},
 		{
 			ID: "00039-RealmStatsToDate",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: changing realm stats to date")
-				return tx.Exec("ALTER TABLE realm_stats ALTER COLUMN date TYPE date").Error
+				return exec(tx,
+					`ALTER TABLE realm_stats ALTER COLUMN date TYPE date`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realm_stats ALTER COLUMN date TYPE timestamp with time zone").Error
+				return exec(tx,
+					`ALTER TABLE realm_stats ALTER COLUMN date TYPE timestamp with time zone`,
+				)
 			},
 		},
 		{
 			ID: "00040-BackfillRealmStats",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: back-filling realm stats")
-				sqls := []string{
+				return exec(tx,
 					`
 					INSERT INTO realm_stats (
 						SELECT date, realm_id, SUM(codes_issued) AS codes_issued
@@ -950,15 +786,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					) ON CONFLICT(date, realm_id) DO UPDATE
 						SET codes_issued = realm_stats.codes_issued + excluded.codes_issued
 					`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -967,69 +795,37 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00041-AddRealmAbusePrevention",
 			Migrate: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS abuse_prevention_enabled bool NOT NULL DEFAULT false`,
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS abuse_prevention_limit integer NOT NULL DEFAULT 100`,
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS abuse_prevention_limit_factor numeric(8, 5) NOT NULL DEFAULT 1.0`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS abuse_prevention_enabled`,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS abuse_prevention_limit`,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS abuse_prevention_limit_factor`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 		},
 		{
 			ID: "00042-ChangeRealmAbusePreventionLimitDefault",
 			Migrate: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE realms ALTER COLUMN abuse_prevention_limit SET DEFAULT 10`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE realms ALTER COLUMN abuse_prevention_limit SET DEFAULT 100`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 		},
 		{
 			ID: "00043-CreateModelerStatus",
 			Migrate: func(tx *gorm.DB) error {
-				if err := tx.AutoMigrate(&ModelerStatus{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&ModelerStatus{}); err != nil {
 					return err
 				}
 				if err := tx.Create(&ModelerStatus{}).Error; err != nil {
@@ -1038,17 +834,22 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("modeler_statuses").Error
+				return exec(tx,
+					`DROP TABLE IF EXISTS modeler_statuses`,
+				)
 			},
 		},
 		{
 			ID: "00044-AddEmailVerifiedRequiredToRealms",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding email verification required to realm")
-				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verified_mode INTEGER DEFAULT 0").Error
+				return exec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verified_mode INTEGER DEFAULT 0`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS email_verified_mode").Error
+				return exec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_verified_mode`,
+				)
 			},
 		},
 		{
@@ -1072,10 +873,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					Admin: true,
 				}
 
-				if err := tx.Save(&user).Error; err != nil {
-					return err
-				}
-				return nil
+				return tx.Save(&user).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -1084,66 +882,54 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00046-AddWelcomeMessageToRealm",
 			Migrate: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS welcome_message text").Error
+				return exec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS welcome_message text`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS welcome_message").Error
+				return exec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS welcome_message`,
+				)
 			},
 		},
 		{
 			ID: "00047-AddPasswordLastChangedToUsers",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding email verification required to realm")
-				return tx.Exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_password_change DATE DEFAULT CURRENT_DATE").Error
+				return exec(tx,
+					`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_password_change DATE DEFAULT CURRENT_DATE`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE users DROP COLUMN IF EXISTS last_password_change").Error
+				return exec(tx,
+					`ALTER TABLE users DROP COLUMN IF EXISTS last_password_change`,
+				)
 			},
 		},
 		{
 			ID: "00048-AddPasswordRotateToRealm",
 			Migrate: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS password_rotation_period_days integer NOT NULL DEFAULT 0`,
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS password_rotation_warning_days integer NOT NULL DEFAULT 0`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS password_rotation_period_days`,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS password_rotation_warning_days `,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 		},
 		{
 			ID: "00049-MakeRegionCodeUnique",
 			Migrate: func(tx *gorm.DB) error {
-				sqls := []string{
+				if err := exec(tx,
 					// Make region code case insensitive and unique.
 					"ALTER TABLE realms ALTER COLUMN region_code TYPE CITEXT",
 					"ALTER TABLE realms ALTER COLUMN region_code DROP DEFAULT",
 					"ALTER TABLE realms ALTER COLUMN region_code DROP NOT NULL",
-				}
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
+				); err != nil {
+					return err
 				}
 
 				// Make any existing empty string region codes to NULL. Without this,
@@ -1198,25 +984,18 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					}
 				}
 
-				sqls = []string{
+				return exec(tx,
 					// There's already a runtime constraint and validation on names, this
 					// is just an extra layer of protection at the database layer.
-					"ALTER TABLE realms ALTER COLUMN name SET NOT NULL",
+					`ALTER TABLE realms ALTER COLUMN name SET NOT NULL`,
 
 					// Alter the unique index on realm names to be a column constraint.
-					"DROP INDEX IF EXISTS uix_realms_name",
-					"ALTER TABLE realms ADD CONSTRAINT uix_realms_name UNIQUE (name)",
+					`DROP INDEX IF EXISTS uix_realms_name`,
+					`ALTER TABLE realms ADD CONSTRAINT uix_realms_name UNIQUE (name)`,
 
 					// Now finally add a unique constraint on region codes.
-					"ALTER TABLE realms ADD CONSTRAINT uix_realms_region_code UNIQUE (region_code)",
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-				return nil
+					`ALTER TABLE realms ADD CONSTRAINT uix_realms_region_code UNIQUE (region_code)`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -1225,17 +1004,18 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00050-CreateMobileApps",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating authorized apps table")
-				return tx.AutoMigrate(&MobileApp{}).Error
+				return tx.Migrator().AutoMigrate(&MobileApp{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable("mobile_apps").Error
+				return exec(tx,
+					`DROP TABLE IF EXISTS mobile_apps`,
+				)
 			},
 		},
 		{
 			ID: "00051-CreateSystemSMSConfig",
 			Migrate: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					// Add a new is_system boolean column and a constraint to ensure that
 					// only one row can have a value of true.
 					`ALTER TABLE sms_configs ADD COLUMN IF NOT EXISTS is_system BOOL`,
@@ -1266,18 +1046,10 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					`UPDATE realms SET use_system_sms_config = FALSE WHERE use_system_sms_config IS NULL`,
 					`ALTER TABLE realms ALTER COLUMN use_system_sms_config SET DEFAULT FALSE`,
 					`ALTER TABLE realms ALTER COLUMN use_system_sms_config SET NOT NULL`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE sms_configs DROP COLUMN IF EXISTS is_system`,
 					`DROP INDEX IF EXISTS uix_sms_configs_is_system_true`,
 					`ALTER TABLE sms_configs DROP CONSTRAINT IF EXISTS nn_sms_configs_realm_id`,
@@ -1285,133 +1057,79 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 
 					`ALTER TABLE realms DROP COLUMN IF EXISTS can_use_system_sms_config`,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS use_system_sms_config`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 		},
 		{
 			ID: "00052-CreateRealmAllowedCIDRs",
 			Migrate: func(tx *gorm.DB) error {
-				return tx.AutoMigrate(&Realm{}).Error
+				return tx.Migrator().AutoMigrate(&Realm{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_adminapi`,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_apiserver`,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS allowed_cidrs_server`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 		},
 		{
 			ID: "00053-AddRealmSMSCountry",
 			Migrate: func(tx *gorm.DB) error {
-				return tx.AutoMigrate(&Realm{}).Error
+				return tx.Migrator().AutoMigrate(&Realm{})
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE realms DROP COLUMN IF EXISTS sms_country`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 		},
 		{
 			ID: "00054-ChangeMobileAppNameUniqueness",
 			Migrate: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`DROP INDEX IF EXISTS realm_app_name`,
 					`ALTER TABLE mobile_apps ADD CONSTRAINT uix_name_realm_id_os UNIQUE (name, realm_id, os)`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`CREATE UNIQUE INDEX realm_app_name ON mobile_apps (name, realm_id)`,
 					`ALTER TABLE mobile_apps DROP CONSTRAINT uix_name_realm_id_os UNIQUE (name, realm_id, os)`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 		},
 		{
 			ID: "00055-AddAuditEntries",
 			Migrate: func(tx *gorm.DB) error {
-				if err := tx.AutoMigrate(&AuditEntry{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&AuditEntry{}); err != nil {
 					return err
 				}
 
-				sqls := []string{
+				return exec(tx,
 					`CREATE INDEX IF NOT EXISTS idx_audit_entries_realm_id ON audit_entries (realm_id)`,
 					`CREATE INDEX IF NOT EXISTS idx_audit_entries_actor_id ON audit_entries (actor_id)`,
 					`CREATE INDEX IF NOT EXISTS idx_audit_entries_target_id ON audit_entries (target_id)`,
 					`CREATE INDEX IF NOT EXISTS idx_audit_entries_created_at ON audit_entries (created_at)`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec(`DROP TABLE audit_entries`).Error
+				return exec(tx,
+					`DROP TABLE IF EXISTS audit_entries`,
+				)
 			},
 		},
 		{
 			ID: "00056-AuthorzedAppsAPIKeyTypeBasis",
 			Migrate: func(tx *gorm.DB) error {
-				if err := tx.AutoMigrate(&AuditEntry{}).Error; err != nil {
+				if err := tx.Migrator().AutoMigrate(&AuditEntry{}); err != nil {
 					return err
 				}
 
-				sqls := []string{
+				return exec(tx,
 					`ALTER TABLE authorized_apps ALTER COLUMN api_key_type DROP DEFAULT`,
 					`ALTER TABLE authorized_apps ALTER COLUMN api_key_type SET NOT NULL`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -1420,49 +1138,42 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00057-AddMFARequiredGracePeriod",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding email verification required to realm")
-				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_required_grace_period BIGINT DEFAULT 0").Error
+				return exec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_required_grace_period BIGINT DEFAULT 0`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_required_grace_period").Error
+				return exec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS mfa_required_grace_period`,
+				)
 			},
 		},
 		{
 			ID: "00058-AddAppStoreLink",
 			Migrate: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE mobile_apps ADD COLUMN IF NOT EXISTS url TEXT").Error
+				return exec(tx,
+					`ALTER TABLE mobile_apps ADD COLUMN IF NOT EXISTS url TEXT`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS url").Error
+				return exec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS url`,
+				)
 			},
 		},
 		{
 			ID: "00059-AddVerCodeIndexes",
 			Migrate: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`CREATE INDEX IF NOT EXISTS idx_vercode_recent ON verification_codes(realm_id, issuing_user_id)`,
 					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-				return nil
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
+				return exec(tx,
 					`DROP INDEX IF EXISTS idx_vercode_recent`,
 					`DROP INDEX IF EXISTS idx_vercode_uuid`,
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
-				return nil
+				)
 			},
 		},
 	})
@@ -1474,7 +1185,6 @@ func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool)
 	ctx = logging.WithLogger(ctx, logger)
 
 	m := db.getMigrations(ctx)
-	logger.Debugw("migrations starting")
 
 	var err error
 	if target == "" {
@@ -1495,7 +1205,6 @@ func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool)
 		logger.Errorw("failed to migrate", "error", err)
 		return nil
 	}
-	logger.Debugw("migrations complete")
 	return nil
 }
 
@@ -1505,11 +1214,19 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 	ctx = logging.WithLogger(ctx, logger)
 
 	m := db.getMigrations(ctx)
-	logger.Debugw("migrations starting")
 	if err := m.Migrate(); err != nil {
 		logger.Errorw("failed to migrate", "error", err)
 		return err
 	}
-	logger.Debugw("migrations complete")
+	return nil
+}
+
+// exec is just like tx.Exec, except it runs all the provided SQLs.
+func exec(tx *gorm.DB, sqls ...string) error {
+	for _, sql := range sqls {
+		if err := tx.Exec(sql).Error; err != nil {
+			return fmt.Errorf("failed to run `%s`: %w", sql, err)
+		}
+	}
 	return nil
 }

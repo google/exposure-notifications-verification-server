@@ -21,9 +21,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -31,21 +31,15 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
-	"github.com/jinzhu/gorm"
 	"github.com/sethvargo/go-retry"
-	"go.opencensus.io/stats"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 
 	// ensure the postgres dialiect is compiled in.
 	"contrib.go.opencensus.io/integrations/ocsql"
-	postgres "github.com/lib/pq"
-)
-
-var (
-	// callbackLock prevents multiple callbacks from being registered
-	// simultaneously because that's a data race in gorm.
-	callbackLock sync.Mutex
+	"github.com/lib/pq"
+	"gorm.io/driver/postgres"
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -79,7 +73,7 @@ func init() {
 		}
 	}
 	ocsql.RegisterAllViews()
-	sql.Register(driverName, ocsql.Wrap(&postgres.Driver{}))
+	sql.Register(driverName, ocsql.Wrap(&pq.Driver{}))
 }
 
 // SupportsPerRealmSigning returns true if the configuration supports
@@ -158,7 +152,11 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 		var err error
 		// Need to give postgres dialect as otherwise gorm starts running
 		// in compatibility mode
-		rawDB, err = gorm.Open("postgres", rawSQL)
+		rawDB, err = gorm.Open(postgres.New(postgres.Config{
+			Conn: rawSQL,
+		}), &gorm.Config{
+			PrepareStmt: true,
+		})
 		if err != nil {
 			return retry.RetryableError(err)
 		}
@@ -170,56 +168,49 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 		return fmt.Errorf("failed to initialize gorm")
 	}
 
+	// Set context
+	rawDB = rawDB.WithContext(ctx)
+
 	// Set connection configuration.
-	rawDB.DB().SetConnMaxLifetime(c.MaxConnectionLifetime)
-	rawDB.DB().SetConnMaxIdleTime(c.MaxConnectionIdleTime)
+	rawSQL.SetConnMaxLifetime(c.MaxConnectionLifetime)
+	rawSQL.SetConnMaxIdleTime(c.MaxConnectionIdleTime)
 
 	// Log SQL statements in debug mode.
 	if c.Debug {
-		rawDB = rawDB.LogMode(true)
+		rawDB = rawDB.Debug()
 	}
 
-	// Enable auto-preloading.
-	rawDB = rawDB.Set("gorm:auto_preload", true)
-
-	// Prevent multiple simultaneous callback registrations due to a data race in
-	// gorm.
-	callbackLock.Lock()
-	defer callbackLock.Unlock()
-
 	// SMS configs
-	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
-	rawDB.Callback().Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks := rawDB.Callback()
+	callbacks.Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
-	rawDB.Callback().Update().Before("gorm:update").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
-	rawDB.Callback().Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Update().Before("gorm:update").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
-	rawDB.Callback().Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+	callbacks.Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
 	// Verification codes
-	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
-	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
-
-	// Metrics
-	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, mAuditEntryCreated, "audit_entries"))
+	callbacks.Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
+	callbacks.Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
 
 	// Cache clearing
 	if cacher != nil {
 		// Apps
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
+		callbacks.Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
+		callbacks.Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
 
 		// Realms
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
+		callbacks.Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
+		callbacks.Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
 
 		// Users
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
+		callbacks.Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
+		callbacks.Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
 
 		// Users (by email)
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
+		callbacks.Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
+		callbacks.Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
 	}
 
 	db.db = rawDB
@@ -229,12 +220,21 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 // Close will close the database connection. Should be deferred right after Open.
 func (db *Database) Close() error {
 	db.statsCloser()
-	return db.db.Close()
+
+	rawSQL, err := db.db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get raw db: %w", err)
+	}
+	return rawSQL.Close()
 }
 
 // Ping attempts a connection and closes it to the database.
 func (db *Database) Ping(ctx context.Context) error {
-	return db.db.DB().PingContext(ctx)
+	rawSQL, err := db.db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get raw db: %w", err)
+	}
+	return rawSQL.PingContext(ctx)
 }
 
 // RawDB returns the underlying gorm database.
@@ -244,173 +244,103 @@ func (db *Database) RawDB() *gorm.DB {
 
 // IsNotFound determines if an error is a record not found.
 func IsNotFound(err error) bool {
-	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
-}
-
-// callbackIncremementMetric incremements the provided metric
-func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table string) func(scope *gorm.Scope) {
-	return func(scope *gorm.Scope) {
-		if scope.TableName() != table {
-			return
-		}
-
-		if scope.HasError() {
-			return
-		}
-
-		// Add realm so that metrics are groupable on a per-realm basis.
-		field, ok := scope.FieldByName("realm_id")
-		if ok && field.Field.CanInterface() && field.Field.Interface() != nil {
-			realmIDRaw := field.Field.Interface()
-
-			var realmID uint
-			switch t := realmIDRaw.(type) {
-			case uint:
-				realmID = t
-			case uint8:
-				realmID = uint(t)
-			case uint16:
-				realmID = uint(t)
-			case uint32:
-				realmID = uint(t)
-			case uint64:
-				realmID = uint(t)
-			case int:
-				realmID = uint(t)
-			case int8:
-				realmID = uint(t)
-			case int16:
-				realmID = uint(t)
-			case int32:
-				realmID = uint(t)
-			case int64:
-				realmID = uint(t)
-			case string:
-				raw, err := strconv.ParseUint(t, 10, 64)
-				if err != nil {
-					_ = scope.Err(fmt.Errorf("failed to parse realm_id: %w", err))
-					return
-				}
-				realmID = uint(raw)
-			default:
-				_ = scope.Err(fmt.Errorf("realm_id is of unknown type %v", t))
-				return
-			}
-
-			ctx = observability.WithRealmID(ctx, realmID)
-		}
-
-		ctx = observability.WithBuildInfo(ctx)
-		stats.Record(ctx, m.M(1))
-	}
+	return errors.Is(err, gorm.ErrRecordNotFound)
 }
 
 // callbackPurgeCache purges the cache key for the given record.
-func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, table, column string) func(scope *gorm.Scope) {
-	return func(scope *gorm.Scope) {
-		if scope.TableName() != table {
+func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, table, column string) func(*gorm.DB) {
+	return func(tx *gorm.DB) {
+		if tx.Statement == nil || tx.Statement.Schema == nil || tx.Statement.Table != table {
 			return
 		}
 
-		if scope.HasError() {
+		if tx.Error != nil {
 			return
 		}
 
-		field, ok := scope.FieldByName(column)
-		if !ok {
-			_ = scope.Err(fmt.Errorf("table %q has no column %q", table, column))
-			return
-		}
+		schema := tx.Statement.Schema
 
-		if !field.Field.CanInterface() {
-			_ = scope.Err(fmt.Errorf("%q.%q cannot interface", table, column))
-			return
-		}
-
-		val := field.Field.Interface()
-		if val == nil {
-			return
-		}
+		field := schema.LookUpField(column)
+		val, _ := field.ValueOf(reflect.ValueOf(nil))
 
 		key := &cache.Key{
 			Namespace: namespace,
 			Key:       fmt.Sprintf("%v", val),
 		}
 		if err := cacher.Delete(ctx, key); err != nil {
-			scope.Log(fmt.Sprintf("failed to delete cache key: %v", err))
+			tx.Logger.Error(ctx, fmt.Sprintf("failed to delete cache key: %v", err))
 			return
 		}
 
-		scope.Log(fmt.Sprintf("cleared cache for %v", key))
+		tx.Logger.Error(ctx, fmt.Sprintf("cleared cache for %v", key))
 	}
 }
 
 // callbackKMSDecrypt decrypts the given column in the table using the key
 // manager and key id.
-func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, table, column string) func(scope *gorm.Scope) {
-	return func(scope *gorm.Scope) {
-		// Do nothing if not the target table
-		if scope.TableName() != table {
+func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, table, column string) func(*gorm.DB) {
+	return func(tx *gorm.DB) {
+		if tx.Statement == nil || tx.Statement.Schema == nil || tx.Statement.Table != table {
 			return
 		}
 
-		// Do nothing if there are errors
-		if scope.HasError() {
+		if tx.Error != nil {
 			return
 		}
 
-		realField, ciphertext, hasRealField := getFieldString(scope, column)
+		schema := tx.Statement.Schema
+		realField, ciphertext, hasRealField := getFieldString(schema, column)
 		if !hasRealField {
-			scope.Log(fmt.Sprintf("skipping decryption, %s is not a string", column))
+			tx.Logger.Error(ctx, fmt.Sprintf("skipping decryption, %s is not a string", column))
 			return
 		}
 		if ciphertext == "" {
-			scope.Log(fmt.Sprintf("skipping decryption, %s is blank", column))
+			tx.Logger.Error(ctx, fmt.Sprintf("skipping decryption, %s is blank", column))
 			return
 		}
 
-		plaintextCacheField, plaintextCache, hasPlaintextCache := getFieldString(scope, column+"PlaintextCache")
-		ciphertextCacheField, ciphertextCache, hasCiphertextCache := getFieldString(scope, column+"CiphertextCache")
+		plaintextCacheField, plaintextCache, hasPlaintextCache := getFieldString(schema, column+"PlaintextCache")
+		ciphertextCacheField, ciphertextCache, hasCiphertextCache := getFieldString(schema, column+"CiphertextCache")
 
 		// Optimization - if PlaintextCache and CiphertextCache columns exist and the
 		// ciphertext is unchanged, do not decrypt.
 		if hasPlaintextCache && hasCiphertextCache && ciphertext == ciphertextCache {
-			if err := realField.Set(plaintextCache); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to re-use plaintext: %w", err))
+			if err := realField.Set(tx.Statement.ReflectValue, plaintextCache); err != nil {
+				tx.AddError(fmt.Errorf("failed to re-use plaintext: %w", err))
 				return
 			}
 		}
 
 		ciphertextBytes, err := base64util.DecodeString(ciphertext)
 		if err != nil {
-			_ = scope.Err(fmt.Errorf("cannot decrypt %s, invalid ciphertext", column))
+			tx.AddError(fmt.Errorf("cannot decrypt %s, invalid ciphertext", column))
 			return
 		}
 
 		plaintextBytes, err := keyManager.Decrypt(ctx, keyID, ciphertextBytes, nil)
 		if err != nil {
-			_ = scope.Err(fmt.Errorf("failed to decrypt %s: %w", column, err))
+			tx.AddError(fmt.Errorf("failed to decrypt %s: %w", column, err))
 			return
 		}
 		plaintext := string(plaintextBytes)
 
 		if hasRealField {
-			if err := realField.Set(plaintext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", column, err))
+			if err := realField.Set(tx.Statement.ReflectValue, plaintext); err != nil {
+				tx.AddError(fmt.Errorf("failed to set column %s: %w", column, err))
 				return
 			}
 		}
 
 		if hasPlaintextCache {
-			if err := plaintextCacheField.Set(plaintext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", plaintextCacheField.Name, err))
+			if err := plaintextCacheField.Set(tx.Statement.ReflectValue, plaintext); err != nil {
+				tx.AddError(fmt.Errorf("failed to set column %s: %w", plaintextCacheField.Name, err))
 				return
 			}
 		}
 
 		if hasCiphertextCache {
-			if err := ciphertextCacheField.Set(ciphertext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", ciphertextCacheField.Name, err))
+			if err := ciphertextCacheField.Set(tx.Statement.ReflectValue, ciphertext); err != nil {
+				tx.AddError(fmt.Errorf("failed to set column %s: %w", ciphertextCacheField.Name, err))
 				return
 			}
 		}
@@ -419,64 +349,64 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 // callbackKMSEncrypt encrypts the given column in the table using the key
 // manager and key id before saving in the database.
-func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, table, column string) func(scope *gorm.Scope) {
-	return func(scope *gorm.Scope) {
-		// Do nothing if not the target table
-		if scope.TableName() != table {
+func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, table, column string) func(*gorm.DB) {
+	return func(tx *gorm.DB) {
+		if tx.Statement == nil || tx.Statement.Schema == nil || tx.Statement.Table != table {
 			return
 		}
 
-		// Do nothing if there are errors
-		if scope.HasError() {
+		if tx.Error != nil {
 			return
 		}
 
-		realField, plaintext, hasRealField := getFieldString(scope, column)
+		schema := tx.Statement.Schema
+
+		realField, plaintext, hasRealField := getFieldString(schema, column)
 		if !hasRealField {
-			scope.Log(fmt.Sprintf("skipping encryption, %s is not a string", column))
+			tx.Logger.Error(ctx, fmt.Sprintf("skipping encryption, %s is not a string", column))
 			return
 		}
 		if plaintext == "" {
-			scope.Log(fmt.Sprintf("skipping encryption, %s is blank", column))
+			tx.Logger.Error(ctx, fmt.Sprintf("skipping encryption, %s is blank", column))
 			return
 		}
 
-		plaintextCacheField, plaintextCache, hasPlaintextCache := getFieldString(scope, column+"PlaintextCache")
-		ciphertextCacheField, ciphertextCache, hasCiphertextCache := getFieldString(scope, column+"CiphertextCache")
+		plaintextCacheField, plaintextCache, hasPlaintextCache := getFieldString(schema, column+"PlaintextCache")
+		ciphertextCacheField, ciphertextCache, hasCiphertextCache := getFieldString(schema, column+"CiphertextCache")
 
 		// Optimization - if PlaintextCache and CiphertextCache columns exist and the
 		// plaintext is unchanged, do not re-encrypt.
 		if hasPlaintextCache && hasCiphertextCache && plaintext == plaintextCache {
-			if err := realField.Set(ciphertextCache); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to re-use encrypted ciphertext: %w", err))
+			if err := realField.Set(tx.Statement.ReflectValue, ciphertextCache); err != nil {
+				tx.AddError(fmt.Errorf("failed to re-use encrypted ciphertext: %w", err))
 				return
 			}
 		}
 
 		b, err := keyManager.Encrypt(ctx, keyID, []byte(plaintext), nil)
 		if err != nil {
-			_ = scope.Err(fmt.Errorf("failed to encrypt %s: %w", column, err))
+			tx.AddError(fmt.Errorf("failed to encrypt %s: %w", column, err))
 			return
 		}
 		ciphertext := base64.RawStdEncoding.EncodeToString(b)
 
 		if hasRealField {
-			if err := realField.Set(ciphertext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", column, err))
+			if err := realField.Set(tx.Statement.ReflectValue, ciphertext); err != nil {
+				tx.AddError(fmt.Errorf("failed to set column %s: %w", column, err))
 				return
 			}
 		}
 
 		if hasPlaintextCache {
-			if err := plaintextCacheField.Set(plaintext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", plaintextCacheField.Name, err))
+			if err := plaintextCacheField.Set(tx.Statement.ReflectValue, plaintext); err != nil {
+				tx.AddError(fmt.Errorf("failed to set column %s: %w", plaintextCacheField.Name, err))
 				return
 			}
 		}
 
 		if hasCiphertextCache {
-			if err := ciphertextCacheField.Set(ciphertext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", ciphertextCacheField.Name, err))
+			if err := ciphertextCacheField.Set(tx.Statement.ReflectValue, ciphertext); err != nil {
+				tx.AddError(fmt.Errorf("failed to set column %s: %w", ciphertextCacheField.Name, err))
 				return
 			}
 		}
@@ -484,55 +414,45 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 }
 
 // callbackHMAC alters HMACs the value with the given key before saving.
-func callbackHMAC(ctx context.Context, hashFunc func(string) (string, error), table, column string) func(scope *gorm.Scope) {
-	return func(scope *gorm.Scope) {
-		// Do nothing if not the target table
-		if scope.TableName() != table {
+func callbackHMAC(ctx context.Context, hashFunc func(string) (string, error), table, column string) func(*gorm.DB) {
+	return func(tx *gorm.DB) {
+		if tx.Statement == nil || tx.Statement.Schema == nil || tx.Statement.Table != table {
 			return
 		}
 
-		// Do nothing if there are errors
-		if scope.HasError() {
+		if tx.Error != nil {
 			return
 		}
 
-		field, value, ok := getFieldString(scope, column)
+		schema := tx.Statement.Schema
+
+		field, value, ok := getFieldString(schema, column)
 		if !ok {
-			scope.Log(fmt.Sprintf("skipping HMAC, %s is not a string", field.Name))
+			tx.Logger.Error(ctx, fmt.Sprintf("skipping HMAC, %s is not a string", field.Name))
 			return
 		}
 		if value == "" {
-			scope.Log(fmt.Sprintf("skipping HMAC, %s is blank", field.Name))
+			tx.Logger.Error(ctx, fmt.Sprintf("skipping HMAC, %s is blank", field.Name))
 			return
 		}
 
 		sig, err := hashFunc(value)
 		if err != nil {
-			_ = scope.Err(fmt.Errorf("failed to generate HMAC for column %s: %w", field.Name, err))
+			tx.AddError(fmt.Errorf("failed to generate HMAC for column %s: %w", field.Name, err))
 			return
 		}
 
-		if err := field.Set(sig); err != nil {
-			_ = scope.Err(fmt.Errorf("failed to set column %s: %w", field.Name, err))
+		if err := field.Set(tx.Statement.ReflectValue, sig); err != nil {
+			tx.AddError(fmt.Errorf("failed to set column %s: %w", field.Name, err))
 			return
 		}
 	}
 }
 
-func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) {
-	field, ok := scope.FieldByName(name)
-	if !ok {
-		return field, "", false
-	}
+func getFieldString(schema *schema.Schema, name string) (*schema.Field, string, bool) {
+	field := schema.LookUpField(name)
 
-	if !field.Field.CanInterface() {
-		return field, "", false
-	}
-
-	val := field.Field.Interface()
-	if val == nil {
-		return field, "", false
-	}
+	val, _ := field.ValueOf(reflect.ValueOf(""))
 
 	typ, ok := val.(string)
 	if !ok {

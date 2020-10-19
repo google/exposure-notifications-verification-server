@@ -125,7 +125,6 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	if err := db.Open(ctx); err != nil {
 		tb.Fatal(err)
 	}
-	db.db.LogMode(false)
 
 	if err := db.RunMigrations(ctx); err != nil {
 		tb.Fatalf("failed to migrate database: %v", err)
@@ -133,7 +132,9 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 
 	// Close db when done.
 	tb.Cleanup(func() {
-		db.db.Close()
+		if err := db.Close(); err != nil {
+			tb.Fatal(err)
+		}
 	})
 
 	return db, config

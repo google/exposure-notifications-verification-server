@@ -28,7 +28,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
 )

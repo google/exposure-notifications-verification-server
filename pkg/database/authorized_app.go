@@ -26,7 +26,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 const (
@@ -111,7 +111,10 @@ func (a *AuthorizedApp) IsDeviceType() bool {
 // Realm returns the associated realm for this app.
 func (a *AuthorizedApp) Realm(db *Database) (*Realm, error) {
 	var realm Realm
-	if err := db.db.Model(a).Related(&realm).Error; err != nil {
+	if err := db.db.
+		Model(a).
+		Association("Realms").
+		Find(&realm); err != nil {
 		return nil, err
 	}
 	return &realm, nil
@@ -266,7 +269,7 @@ func (db *Database) SaveAuthorizedApp(a *AuthorizedApp, actor Auditable) error {
 
 			if existing.DeletedAt != a.DeletedAt {
 				audit := BuildAuditEntry(actor, "updated API key enabled", a, a.RealmID)
-				audit.Diff = boolDiff(existing.DeletedAt == nil, a.DeletedAt == nil)
+				audit.Diff = boolDiff(existing.DeletedAt.Valid, a.DeletedAt.Valid)
 				audits = append(audits, audit)
 			}
 		}

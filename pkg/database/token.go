@@ -24,7 +24,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 const (
@@ -170,7 +170,7 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			Where("(code IN (?) OR long_code IN (?))", hmacedCodes, hmacedCodes).
 			First(&vc).
 			Error; err != nil {
-			if gorm.IsRecordNotFoundError(err) {
+			if IsNotFound(err) {
 				return ErrVerificationCodeNotFound
 			}
 			return err

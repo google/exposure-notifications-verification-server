@@ -20,6 +20,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func (c *Controller) HandleEnable() http.Handler {
@@ -57,7 +58,7 @@ func (c *Controller) HandleEnable() http.Handler {
 			return
 		}
 
-		authApp.DeletedAt = nil
+		authApp.DeletedAt = gorm.DeletedAt{}
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			flash.Error("Failed to enable API Key: %v", err)
 			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)

@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func (c *Controller) HandleDisable() http.Handler {
@@ -58,8 +59,10 @@ func (c *Controller) HandleDisable() http.Handler {
 			return
 		}
 
-		now := time.Now().UTC()
-		app.DeletedAt = &now
+		app.DeletedAt = gorm.DeletedAt{
+			Time:  time.Now().UTC(),
+			Valid: true,
+		}
 		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
 			flash.Error("Failed to disable mobile app: %v", err)
 			http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
