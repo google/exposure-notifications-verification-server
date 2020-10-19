@@ -53,6 +53,7 @@ function incremental() {
   export E2E_DB_PASSWORD="secret://${E2E_DB_PASSWORD}"
 
   export DB_SSLMODE=disable
+  export E2E_DB_SSLMODE=disable
 
   ${ROOT}/scripts/build
   ${ROOT}/scripts/deploy
