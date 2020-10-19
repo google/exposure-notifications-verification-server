@@ -372,7 +372,7 @@ func (c *Controller) renderSettings(
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			emailConfig = new(database.EmailConfig)
+			emailConfig = &database.EmailConfig{SMTPPort: "587"}
 		}
 	}
 
