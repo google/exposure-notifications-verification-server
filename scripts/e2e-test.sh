@@ -118,21 +118,18 @@ function help() {
   echo 1>&2 "  incremental  incremental e2e test"
 }
 
-#ACTION="${1:-}"
-#case "${ACTION}" in
-#  "" | "help" | "-h" | "--help" )
-#    help
-#    ;;
-#
-#  "smoke" | "incremental" )
-#    "${ACTION}"
-#    ;;
-#
-#  *)
-#    help
-#    exit 1
-#    ;;
-#esac
+ACTION="${1:-}"
+case "${ACTION}" in
+  "" | "help" | "-h" | "--help" )
+    help
+    ;;
 
-# Always run incremental for testing purpose.
-incremental
+  "smoke" | "incremental" )
+    "${ACTION}"
+    ;;
+
+  *)
+    help
+    exit 1
+    ;;
+esac
