@@ -123,7 +123,7 @@ func SendRealmEmail(ctx context.Context, db *database.Database, compose ComposeF
 
 	emailer, err := realm.EmailProvider(db)
 	if err != nil {
-		if !database.IsNotFound(err) {
+		if database.IsNotFound(err) {
 			return false, nil
 		}
 		return false, fmt.Errorf("failed creating email provider: %w", err)

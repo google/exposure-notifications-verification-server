@@ -98,7 +98,7 @@ func (c *Controller) sendResetFromSystemEmailer(ctx context.Context, toEmail str
 
 	emailConfig, err := c.db.SystemEmailConfig()
 	if err != nil {
-		if !database.IsNotFound(err) {
+		if database.IsNotFound(err) {
 			return false, nil
 		}
 		return false, fmt.Errorf("failed to get email config for system: %w", err)
