@@ -44,18 +44,17 @@ readonly PROTECTED_DB_INSTANCE_NAMES=(
   "en-verification"
   "en-server"
 )
-for protected_db_instance_name in ${PROTECTED_DB_INSTANCE_NAMES[@]}; do
-  # gcloud --filter will change its `name=value` behavior to regex matching, and recommending
-  # `name<=value AND name>=value` if desire an equality checking. See:
-  # https://cloud.google.com/sdk/gcloud/reference/topic/filters
-  LIST_PROTECTED_DB="$(gcloud sql instances list --project=${PROJECT_ID} --filter="(name <= ${protected_db_instance_name}) AND (name >= ${protected_db_instance_name})")"
-  if [[ -n "${LIST_PROTECTED_DB}" ]]; then
-    # The output will only exist when the database exist
-    echo "✋ Running this script is prohibited when database below exist:"
-    echo "${LIST_PROTECTED_DB}"
-    echo "${COMMON_ERROR_MESSAGE}"
-    exit 100
-  fi
+EXISTING_DB_INSTANCES="$(gcloud sql instances list --project=${PROJECT_ID} --format="value(name)")"
+for existing_db_instance in ${EXISTING_DB_INSTANCES[@]}; do
+  for protected_db_instance_name in ${PROTECTED_DB_INSTANCE_NAMES[@]}; do
+    if [[ "${existing_db_instance}" == "${protected_db_instance_name}" ]]; then
+      # The output will only exist when the database exist
+      echo "✋ Running this script is prohibited when database below exist:"
+      echo "${existing_db_instance}"
+      echo "${COMMON_ERROR_MESSAGE}"
+      exit 100
+    fi
+  done
 done
 
 
