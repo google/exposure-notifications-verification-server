@@ -24,6 +24,7 @@ if [[ -z "${PROJECT_ID:-}" ]]; then
 fi
 
 # Ensure not running on prod resources
+readonly COMMON_ERROR_MESSAGE="⚠️ ${PROGNAME} is meant for running e2e test only, it deletes resources aggressively. Please don't run it against prod instances!"
 readonly PROTECTED_PROJECT_IDS=(
   "apollo-server-273118"
   "apollo-server-us"
@@ -33,7 +34,8 @@ readonly PROTECTED_PROJECT_IDS=(
 )
 for protected_project_id in ${PROTECTED_PROJECT_IDS[@]}; do
   if [[ "${protected_project_id}" == "${PROJECT_ID}" ]]; then
-    echo "✋ Running this script on prod servers is prohibited"
+    echo "✋ Running this script on prod servers is prohibited."
+    echo "${COMMON_ERROR_MESSAGE}"
     exit 100
   fi
 done
@@ -44,6 +46,7 @@ if [[ -n "${LIST_PROJECTED_DB}" ]]; then
   # The output will only exist when the database exist
   echo "✋ Running this script is prohibited when database below exist:"
   echo "${LIST_PROJECTED_DB}"
+  echo "${COMMON_ERROR_MESSAGE}"
   exit 100
 fi
 
