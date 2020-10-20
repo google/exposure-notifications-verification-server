@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	"github.com/google/exposure-notifications-server/pkg/observability"
@@ -52,7 +51,6 @@ type ServerConfig struct {
 	Database      database.Config
 	Observability observability.Config
 	Cache         cache.Config
-	Email         email.Config
 
 	Port string `env:"PORT,default=8080"`
 

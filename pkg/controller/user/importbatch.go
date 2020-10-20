@@ -15,7 +15,6 @@
 package user
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -106,35 +105,4 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK, response)
 	})
-}
-
-func (c *Controller) sendInvitation(ctx context.Context, toEmail string) error {
-	// Send email with emailer
-	if c.emailer != nil {
-		realmName := ""
-		if realm := controller.RealmFromContext(ctx); realm != nil {
-			realmName = realm.Name
-		}
-
-		from := c.emailer.From()
-		message, err := controller.ComposeInviteEmail(ctx, c.h, c.client, toEmail, from, realmName)
-		if err != nil {
-			c.logger.Warnw("failed composing invitation", "error", err)
-			return fmt.Errorf("failed composing invitation: %w", err)
-		}
-		if err := c.emailer.SendEmail(ctx, toEmail, message); err != nil {
-			c.logger.Warnw("failed sending invitation", "error", err)
-			return fmt.Errorf("failed sending invitation: %w", err)
-		}
-
-		return nil
-	}
-
-	// Fallback to Firebase
-
-	if err := c.firebaseInternal.SendNewUserInvitation(ctx, toEmail); err != nil {
-		c.logger.Warnw("failed sending invitation", "error", err)
-		return fmt.Errorf("failed sending invitation: %w", err)
-	}
-	return nil
 }

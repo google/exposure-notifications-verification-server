@@ -40,7 +40,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
-	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -156,16 +155,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	// Setup server emailer
-	var emailer email.Provider
-	if cfg.Email.HasSMTPCreds() {
-		cfg.Email.ProviderType = email.ProviderTypeSMTP
-		emailer, err = email.ProviderFor(ctx, &cfg.Email)
-		if err != nil {
-			return fmt.Errorf("failed to configure internal firebase client: %w", err)
-		}
-	}
-
 	// Rate limiting
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)
 	if err != nil {
@@ -240,7 +229,7 @@ func realMain(ctx context.Context) error {
 				Queries("oobCode", "", "mode", "resetPassword").Methods("GET")
 			sub.Handle("/login/manage-account", loginController.HandleSubmitNewPassword()).
 				Queries("oobCode", "", "mode", "resetPassword").Methods("POST")
-			sub.Handle("/login/manage-account", loginController.HandleSubmitVerifyEmail()).
+			sub.Handle("/login/manage-account", loginController.HandleReceiveVerifyEmail()).
 				Queries("oobCode", "{oobCode:.+}", "mode", "{mode:(?:verifyEmail|recoverEmail)}").Methods("GET")
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
@@ -266,6 +255,8 @@ func realMain(ctx context.Context) error {
 			sub.Use(processFirewall)
 			sub.Handle("/login/manage-account", loginController.HandleShowVerifyEmail()).
 				Queries("mode", "verifyEmail").Methods("GET")
+			sub.Handle("/login/manage-account", loginController.HandleSubmitVerifyEmail()).
+				Queries("mode", "verifyEmail").Methods("POST")
 
 			// SMS auth registration is realm-specific, so it needs to load the current realm.
 			sub = r.PathPrefix("").Subrouter()
@@ -374,7 +365,7 @@ func realMain(ctx context.Context) error {
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, firebaseInternal, auth, emailer, cacher, cfg, db, h)
+		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")

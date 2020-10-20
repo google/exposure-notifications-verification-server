@@ -1465,6 +1465,85 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00060-AddEmailConfig",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email_configs table")
+				return tx.AutoMigrate(&EmailConfig{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("email_configs").Error
+			},
+		},
+		{
+			ID: "00061-CreateSystemEmailConfig",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					// Add a new is_system boolean column and a constraint to ensure that
+					// only one row can have a value of true.
+					`CREATE UNIQUE INDEX IF NOT EXISTS uix_email_configs_is_system_true ON email_configs (is_system) WHERE (is_system IS TRUE)`,
+
+					// Require realm_id be set on all rows except system configs, and
+					// ensure that realm_id is unique.
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS nn_email_configs_realm_id`,
+					`DROP INDEX IF EXISTS nn_email_configs_realm_id`,
+					`ALTER TABLE email_configs ADD CONSTRAINT nn_email_configs_realm_id CHECK (is_system IS TRUE OR realm_id IS NOT NULL)`,
+
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS uix_email_configs_realm_id`,
+					`DROP INDEX IF EXISTS uix_email_configs_realm_id`,
+					`ALTER TABLE email_configs ADD CONSTRAINT uix_email_configs_realm_id UNIQUE (realm_id)`,
+
+					// Realm option set by system admins to share the system Email config
+					// with the realm.
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS can_use_system_email_config BOOL`,
+					`UPDATE realms SET can_use_system_email_config = FALSE WHERE can_use_system_email_config IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN can_use_system_email_config SET DEFAULT FALSE`,
+					`ALTER TABLE realms ALTER COLUMN can_use_system_email_config SET NOT NULL`,
+
+					// If true, the realm is set to use the system Email config.
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS use_system_email_config BOOL`,
+					`UPDATE realms SET use_system_email_config = FALSE WHERE use_system_email_config IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN use_system_email_config SET DEFAULT FALSE`,
+					`ALTER TABLE realms ALTER COLUMN use_system_email_config SET NOT NULL`,
+
+					// Add templates
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_invite_template text`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_password_reset_template text`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verify_template text`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE email_configs DROP COLUMN IF EXISTS is_system`,
+					`DROP INDEX IF EXISTS uix_email_configs_is_system_true`,
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS nn_email_configs_realm_id`,
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS uix_email_configs_realm_id`,
+
+					`ALTER TABLE realms DROP COLUMN IF EXISTS can_use_system_email_config`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS use_system_email_config`,
+
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_invite_template`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_password_reset_template`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_verify_template`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 

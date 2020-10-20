@@ -196,6 +196,15 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	rawDB.Callback().Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
+	// Email configs
+	rawDB.Callback().Create().Before("gorm:create").Register("email_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+	rawDB.Callback().Create().After("gorm:create").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+
+	rawDB.Callback().Update().Before("gorm:update").Register("email_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+	rawDB.Callback().Update().After("gorm:update").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+
+	rawDB.Callback().Query().After("gorm:after_query").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+
 	// Verification codes
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
@@ -247,7 +256,7 @@ func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
 }
 
-// callbackIncremementMetric incremements the provided metric
+// callbackIncrementMetric increments the provided metric
 func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {

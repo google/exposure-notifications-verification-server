@@ -1,0 +1,89 @@
+{{define "realmadmin/_form_email"}}
+
+{{$realm := .realm}}
+{{$emailConfig := .emailConfig}}
+
+<p class="mb-4">
+  These are the settings for configuring an SMTP email provider. The verification server
+  will use this email account to send invitations, password resets, and account-verifications
+  for the realm.
+</p>
+
+<form method="POST" action="/realm/settings#email" class="floating-form">
+  {{ .csrfField }}
+  <input type="hidden" name="email" value="1" />
+
+  {{if $realm.CanUseSystemEmailConfig}}
+    {{if $realm.UseSystemEmailConfig}}
+      <div class="alert alert-danger">
+        <strong>Warning!</strong> You are currently using the system-provided
+        SMTP email configuration. Specifying values below will override the system
+        configuration to use your supplied credentials.
+      </div>
+    {{end}}
+
+    <div class="form-group form-check">
+      <input type="checkbox" name="use_system_smtp_config" id="use-system-smtp-config" class="form-check-input" value="1" {{if $realm.UseSystemEmailConfig}} checked{{end}}
+        data-toggle="collapse" data-target="#smtp-form">
+      <label class="form-check-label" for="use-system-smtp-config">
+        Use system SMTP configuration
+      </label>
+    </div>
+  {{end}}
+
+  <div id="smtp-form" class="collapse{{if not $realm.UseSystemEmailConfig}} show{{end}}">
+    <div class="form-label-group">
+      <input type="text" name="smtp_account" id="smtp-account" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpAccount"}} is-invalid{{end}}"
+        placeholder="SMTP account" value="{{if $emailConfig}}{{$emailConfig.SMTPAccount}}{{end}}" />
+      <label for="smtp-account">SMTP account</label>
+      {{template "errorable" $emailConfig.ErrorsFor "smtpAccount"}}
+      <small class="form-text text-muted">
+        This is the SMTP email account eg. noreply@example.com
+      </small>
+    </div>
+
+    <div class="form-label-group">
+      <div class="input-group">
+        <input type="password" name="smtp_password" id="smtp-password" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPassword"}} is-invalid{{end}}" autocomplete="new-password"
+          placeholder="SMTP password" value="{{if $emailConfig}}{{$emailConfig.SMTPPassword}}{{end}}">
+        <label for="smtp-password">SMTP password</label>
+        <div class="input-group-append">
+          <a class="input-group-text" data-toggle-password="smtp-password">
+            <span class="oi oi-lock-locked" aria-hidden="true"></span>
+          </a>
+        </div>
+      </div>
+      {{template "errorable" $emailConfig.ErrorsFor "smtpPassword"}}
+      <small class="form-text text-muted">
+        This is the password for your SMTP email.
+      </small>
+    </div>
+
+    <div class="form-label-group">
+      <input name="smtp_host" id="smtp-host" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
+        placeholder="SMTP host" value="{{if $emailConfig}}{{$emailConfig.SMTPHost}}{{end}}" />
+      <label for="smtp-port">SMTP host</label>
+      {{template "errorable" $emailConfig.ErrorsFor "smtpHost"}}
+      <small class="form-text text-muted">
+        SMTP host is the hostname for the SMTP server.
+      </small>
+    </div>
+
+    <div class="form-label-group">
+      <input name="smtp_port" id="smtp-port" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
+        placeholder="SMTP port" value="{{if $emailConfig}}{{$emailConfig.SMTPPort}}{{else}}587{{end}}" />
+      <label for="smtp-port">SMTP port</label>
+      {{template "errorable" $emailConfig.ErrorsFor "smtpPort"}}
+      <small class="form-text text-muted">
+        SMTP port is the port number to connect to.
+        587 is the default port for SMTP, and legacy port 25 is blocked.
+      </small>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <input type="submit" class="btn btn-primary btn-block" value="Update SMTP settings" />
+  </div>
+</form>
+
+{{end}}
