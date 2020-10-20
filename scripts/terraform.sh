@@ -23,6 +23,31 @@ if [[ -z "${PROJECT_ID:-}" ]]; then
   echo "✋ PROJECT_ID must be set"
 fi
 
+# Ensure not running on prod resources
+readonly PROTECTED_PROJECT_IDS=(
+  "apollo-server-273118"
+  "apollo-server-us"
+  "apollo-verification-us"
+  "encv-prod"
+  "encv-test"
+)
+for protected_project_id in ${PROTECTED_PROJECT_IDS[@]}; do
+  if [[ "${protected_project_id}" == "${PROJECT_ID}" ]]; then
+    echo "✋ Running this script on prod servers is prohibited"
+    exit 100
+  fi
+done
+
+readonly PROTECTED_DB_INSTANCE_NAMES="en-verification en-server"
+LIST_PROJECTED_DB="$(gcloud sql instances list --project=${PROJECT_ID} --filter="name=( ${PROTECTED_DB_INSTANCE_NAMES} )")"
+if [[ -n "${LIST_PROJECTED_DB}" ]]; then
+  # The output will only exist when the database exist
+  echo "✋ Running this script if prohibited when database below exist:"
+  echo "${LIST_PROJECTED_DB}"
+  exit 100
+fi
+
+
 if [[ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "This is local development, authenticate using gcloud"
   echo "gcloud auth login"
