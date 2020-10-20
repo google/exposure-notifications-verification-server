@@ -40,6 +40,13 @@ function incremental() {
 
   ${ROOT}/scripts/terraform.sh init
 
+  pushd "${ROOT}/terraform-e2e" >/dev/null 2>&1
+  terraform taint module.en.null_resource.build
+  terraform taint module.en.null_resource.migrate
+  popd >/dev/null 2>&1
+  ${ROOT}/scripts/terraform.sh deploy
+
+  export_terraform_output project_id E2E_PROJECT_ID
   export_terraform_output db_apikey_database_key_secret E2E_DB_APIKEY_DATABASE_KEY
   export_terraform_output db_apikey_signature_key_secret E2E_DB_APIKEY_SIGNATURE_KEY
   export_terraform_output db_conn E2E_DB_CONN
@@ -51,14 +58,7 @@ function incremental() {
   export_terraform_output apiserver_urls[0] E2E_APISERVER_URL
   export_terraform_output adminapi_urls[0] E2E_ADMINAPI_URL
   export E2E_DB_PASSWORD="secret://${E2E_DB_PASSWORD}"
-
-  export DB_SSLMODE=disable
   export E2E_DB_SSLMODE=disable
-
-  ${ROOT}/scripts/build
-  ${ROOT}/scripts/deploy
-  ${ROOT}/scripts/promote
-  ${ROOT}/scripts/migrate-e2e
 
   run_e2e_test
 }

@@ -54,7 +54,7 @@ func (p *prefixRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 	return p.rt.RoundTrip(r)
 }
 
-func newPrefixRoutTripper(host, scheme string) *prefixRoundTripper {
+func newPrefixRoundTripper(host, scheme string) *prefixRoundTripper {
 	log.Printf("host %s, scheme %s", host, scheme)
 	if scheme == "" {
 		scheme = "http"

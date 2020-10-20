@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	realmName       = "test-realm"
+	realmNamePrefix = "test-realm"
 	realmRegionCode = "test"
 	adminKeyName    = "integration-admin-key"
 	deviceKeyName   = "integration-device-key"

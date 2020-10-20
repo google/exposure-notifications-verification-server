@@ -63,6 +63,11 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 			tb.Errorf("failed to close db: %v", err)
 		}
 	})
+	randomStr, err := randomString()
+	if err != nil {
+		tb.Fatalf("failed to generate random string: %v", err)
+	}
+	realmName := realmNamePrefix + randomStr
 	// Create or reuse the existing realm
 	realm, err := db.FindRealmByName(realmName)
 	if err != nil {

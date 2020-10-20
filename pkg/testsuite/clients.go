@@ -183,7 +183,7 @@ func NewAdminClient(addr, key string) (*AdminClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	prt := newPrefixRoutTripper(url.Host, url.Scheme)
+	prt := newPrefixRoundTripper(url.Host, url.Scheme)
 	httpClient := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: prt,
@@ -200,7 +200,7 @@ func NewAPIClient(addr, key string) (*APIClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	prt := newPrefixRoutTripper(url.Host, url.Scheme)
+	prt := newPrefixRoundTripper(url.Host, url.Scheme)
 	httpClient := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: prt,
