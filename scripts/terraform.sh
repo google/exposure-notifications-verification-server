@@ -42,7 +42,7 @@ readonly PROTECTED_DB_INSTANCE_NAMES="en-verification en-server"
 LIST_PROJECTED_DB="$(gcloud sql instances list --project=${PROJECT_ID} --filter="name=( ${PROTECTED_DB_INSTANCE_NAMES} )")"
 if [[ -n "${LIST_PROJECTED_DB}" ]]; then
   # The output will only exist when the database exist
-  echo "✋ Running this script if prohibited when database below exist:"
+  echo "✋ Running this script is prohibited when database below exist:"
   echo "${LIST_PROJECTED_DB}"
   exit 100
 fi
