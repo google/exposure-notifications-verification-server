@@ -40,15 +40,23 @@ for protected_project_id in ${PROTECTED_PROJECT_IDS[@]}; do
   fi
 done
 
-readonly PROTECTED_DB_INSTANCE_NAMES="en-verification en-server"
-LIST_PROJECTED_DB="$(gcloud sql instances list --project=${PROJECT_ID} --filter="name=( ${PROTECTED_DB_INSTANCE_NAMES} )")"
-if [[ -n "${LIST_PROJECTED_DB}" ]]; then
-  # The output will only exist when the database exist
-  echo "✋ Running this script is prohibited when database below exist:"
-  echo "${LIST_PROJECTED_DB}"
-  echo "${COMMON_ERROR_MESSAGE}"
-  exit 100
-fi
+readonly PROTECTED_DB_INSTANCE_NAMES=(
+  "en-verification"
+  "en-server"
+)
+for protected_db_instance_name in ${PROTECTED_DB_INSTANCE_NAMES[@]}; do
+  # gcloud --filter will change its `name=value` behavior to regex matching, and recommending
+  # `name<=value AND name>=value` if desire an equality checking. See:
+  # https://cloud.google.com/sdk/gcloud/reference/topic/filters
+  LIST_PROTECTED_DB="$(gcloud sql instances list --project=${PROJECT_ID} --filter="(name <= ${protected_db_instance_name}) AND (name >= ${protected_db_instance_name})")"
+  if [[ -n "${LIST_PROTECTED_DB}" ]]; then
+    # The output will only exist when the database exist
+    echo "✋ Running this script is prohibited when database below exist:"
+    echo "${LIST_PROTECTED_DB}"
+    echo "${COMMON_ERROR_MESSAGE}"
+    exit 100
+  fi
+done
 
 
 if [[ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
