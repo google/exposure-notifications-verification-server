@@ -120,6 +120,7 @@ resource "google_secret_manager_secret_version" "db-secret-version" {
 
 # Create secret for the database HMAC for API keys
 resource "random_id" "db-apikey-db-hmac" {
+  count       = var.db_apikey_db_hmac_count
   byte_length = 128
 }
 
@@ -137,11 +138,12 @@ resource "google_secret_manager_secret" "db-apikey-db-hmac" {
 
 resource "google_secret_manager_secret_version" "db-apikey-db-hmac" {
   secret      = google_secret_manager_secret.db-apikey-db-hmac.id
-  secret_data = random_id.db-apikey-db-hmac.b64_std
+  secret_data = join(",", reverse(random_id.db-apikey-db-hmac.*.b64_std))
 }
 
 # Create secret for signature HMAC for api keys
 resource "random_id" "db-apikey-sig-hmac" {
+  count       = var.db_apikey_sig_hmac_count
   byte_length = 128
 }
 
@@ -159,11 +161,12 @@ resource "google_secret_manager_secret" "db-apikey-sig-hmac" {
 
 resource "google_secret_manager_secret_version" "db-apikey-sig-hmac" {
   secret      = google_secret_manager_secret.db-apikey-sig-hmac.id
-  secret_data = random_id.db-apikey-sig-hmac.b64_std
+  secret_data = join(",", reverse(random_id.db-apikey-sig-hmac.*.b64_std))
 }
 
 # Create secret for the database HMAC for verification codes
 resource "random_id" "db-verification-code-hmac" {
+  count       = var.db_verification_code_hmac_count
   byte_length = 128
 }
 
@@ -181,7 +184,7 @@ resource "google_secret_manager_secret" "db-verification-code-hmac" {
 
 resource "google_secret_manager_secret_version" "db-verification-code-hmac" {
   secret      = google_secret_manager_secret.db-verification-code-hmac.id
-  secret_data = random_id.db-verification-code-hmac.b64_std
+  secret_data = join(",", reverse(random_id.db-verification-code-hmac.*.b64_std))
 }
 
 
