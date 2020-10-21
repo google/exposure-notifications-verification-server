@@ -71,7 +71,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		c.logger.Warnw("unknown host", "host", r.Host)
+		c.logger.Warnw("not a mobile user agent", "host", r.Host, "userAgent", r.UserAgent())
 		m := controller.TemplateMapFromContext(ctx)
 		m["requestURI"] = (&url.URL{
 			Scheme: "https",
@@ -93,8 +93,7 @@ func isIOS(userAgent string) bool {
 }
 
 // decideRedirect selects where to redirect based on several signals.
-func decideRedirect(region, userAgent string, url url.URL,
-	appStoreData AppStoreData) (string, bool) {
+func decideRedirect(region, userAgent string, url url.URL, appStoreData AppStoreData) (string, bool) {
 	// Canonicalize path as lowercase.
 	path := strings.ToLower(url.Path)
 
