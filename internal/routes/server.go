@@ -48,6 +48,7 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+// Server defines routes for the UI server.
 func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database, cacher cache.Cacher, certificateSigner keys.KeyManager, limiterStore limiter.Store) (http.Handler, error) {
 	// Setup sessions
 	sessions := sessions.NewCookieStore(cfg.CookieKeys.AsBytes()...)
