@@ -42,7 +42,7 @@ type Controller struct {
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) (*Controller, error) {
+func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
 	return &Controller{
 		config:  config,
 		db:      db,
@@ -54,5 +54,5 @@ func New(ctx context.Context, config config.IssueAPIConfig, db *database.Databas
 			api.TestTypeLikely:    {},
 			api.TestTypeNegative:  {},
 		},
-	}, nil
+	}
 }

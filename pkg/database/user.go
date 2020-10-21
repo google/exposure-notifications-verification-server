@@ -109,7 +109,7 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 	}
 
 	if len(u.Errors()) > 0 {
-		return fmt.Errorf("validation failed")
+		return fmt.Errorf("validation failed: %s", strings.Join(u.ErrorMessages(), ", "))
 	}
 
 	return nil

@@ -171,10 +171,7 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
 
-		issueapiController, err := issueapi.New(ctx, &s.cfg.AdminAPISrvConfig, s.db, limiterStore, h)
-		if err != nil {
-			tb.Fatalf("failed to create issue api controller: %v", err)
-		}
+		issueapiController := issueapi.New(ctx, &s.cfg.AdminAPISrvConfig, s.db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 
 		codeStatusController := codestatus.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.db, h)

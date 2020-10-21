@@ -148,10 +148,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
 
-		issueapiController, err := issueapi.New(ctx, cfg, db, limiterStore, h)
-		if err != nil {
-			return fmt.Errorf("issueapi.New: %w", err)
-		}
+		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 
 		codeStatusController := codestatus.NewAPI(ctx, cfg, db, h)
