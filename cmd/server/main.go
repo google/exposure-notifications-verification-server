@@ -251,7 +251,6 @@ func realMain(ctx context.Context) error {
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentRealm)
-			sub.Use(requireRealm)
 			sub.Use(processFirewall)
 			sub.Handle("/login/manage-account", loginController.HandleShowVerifyEmail()).
 				Queries("mode", "verifyEmail").Methods("GET")
