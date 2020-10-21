@@ -107,6 +107,18 @@ Terraform module.
     $ gsutil mb -p ${PROJECT_ID} gs://${PROJECT_ID}-terraform
     ```
 
+    It is also **strongly recommended** that you enable versioning of this
+    bucket. That will enable you to access old versions of the Terraform state
+    for disaster recovery.
+
+    ```text
+    $ gsutil versioning set on gs://${PROJECT_ID}-terraform
+    ```
+
+    You can also create a [lifecycle
+    policy](https://cloud.google.com/storage/docs/managing-lifecycles) to only
+    keep recent versions.
+
 1.  Create a new source control repository dedicated to managing infrastructure.
     This example assumes the repo is named `"en-infra"`.
 
