@@ -310,6 +310,7 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
 		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
+		realmSub.Handle("/stats/{date}", realmadminController.HandleStats()).Methods("GET")
 		realmSub.Handle("/events", realmadminController.HandleEvents()).Methods("GET")
 
 		realmKeysController, err := realmkeys.New(ctx, cfg, db, certificateSigner, cacher, h)
