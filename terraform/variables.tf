@@ -61,6 +61,13 @@ variable "database_backup_location" {
   description = "Location in which to backup the database."
 }
 
+variable "database_backup_schedule" {
+  type    = string
+  default = "0 */6 * * *"
+
+  description = "Cron schedule in which to do a full backup of the database to Cloud Storage."
+}
+
 variable "storage_location" {
   type    = string
   default = "US"
