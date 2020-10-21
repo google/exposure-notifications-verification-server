@@ -298,6 +298,10 @@ resource "google_storage_bucket" "backups" {
     enabled = true
   }
 
+  retention_policy {
+    retention_period = "2592000" // 30 days in seconds
+  }
+
   lifecycle_rule {
     action {
       type = "Delete"
