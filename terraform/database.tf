@@ -429,3 +429,7 @@ output "db_apikey_signature_key_secret" {
 output "db_verification_code_key_secret" {
   value = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
 }
+
+output "db_backup_command" {
+  value = "gcloud scheduler jobs run backup-database-worker --project ${var.project}"
+}
