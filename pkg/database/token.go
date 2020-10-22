@@ -98,7 +98,7 @@ func ParseSubject(sub string) (*Subject, error) {
 	}
 
 	var testDate *time.Time
-	if len(parts) == 3 {
+	if len(parts) == 3 && parts[2] != "" {
 		parsedDate, err := time.Parse("2006-01-02", parts[2])
 		if err != nil {
 			return nil, fmt.Errorf("subject contains invalid test date: %w", err)
