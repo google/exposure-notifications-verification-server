@@ -60,7 +60,7 @@
     let $skip = $('#skip');
     let $not = $('#not');
 
-    {{if eq .emailVerify "send"}}
+    {{if eq .sendInvite "send"}}
     $(function() {
       let user = firebase.auth().currentUser
       if (!user.emailVerified) {
@@ -79,7 +79,7 @@
         return;
       }
 
-      if ({{if eq .emailVerify "sent"}}true{{else}}user.emailVerified{{end}}) {
+      if ({{if eq .sendInvite "sent"}}true{{else}}user.emailVerified{{end}}) {
         $not.hide();
         $skip.text("Go home");
       } else {
