@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/ory/dockertest"
@@ -34,13 +35,7 @@ var (
 	approxTime = cmp.Options{cmpopts.EquateApproxTime(time.Second)}
 )
 
-// NewTestDatabaseWithConfig creates a new database suitable for use in testing.
-// This should not be used outside of testing, but it is exposed in the main
-// package so it can be shared with other packages.
-//
-// All database tests can be skipped by running `go test -short` or by setting
-// the `SKIP_DATABASE_TESTS` environment variable.
-func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
+func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *Config) {
 	tb.Helper()
 
 	if testing.Short() {
@@ -62,7 +57,6 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 
 	// Start the container.
 	dbname, username, password := "en-verification-server", "my-username", "abcd1234"
-	tb.Log("Starting database")
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: "postgres",
 		Tag:        "12-alpine",
@@ -122,10 +116,10 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	db.keyManager = keys.TestKeyManager(tb)
 	db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
 
-	if err := db.Open(ctx); err != nil {
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		tb.Fatal(err)
 	}
-	db.db.LogMode(false)
+	db.db = db.db.LogMode(false)
 
 	if err := db.RunMigrations(ctx); err != nil {
 		tb.Fatalf("failed to migrate database: %v", err)
@@ -137,6 +131,16 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	})
 
 	return db, config
+}
+
+// NewTestDatabaseWithConfig creates a new database suitable for use in testing.
+// This should not be used outside of testing, but it is exposed in the main
+// package so it can be shared with other packages.
+//
+// All database tests can be skipped by running `go test -short` or by setting
+// the `SKIP_DATABASE_TESTS` environment variable.
+func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
+	return NewTestDatabaseWithCacher(tb, nil)
 }
 
 func NewTestDatabase(tb testing.TB) *Database {
