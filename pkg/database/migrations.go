@@ -1544,6 +1544,26 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00062-AddTestDate",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding verification code test date")
+				return tx.AutoMigrate(&VerificationCode{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE verification_codes DROP COLUMN IF EXISTS test_date").Error
+			},
+		},
+		{
+			ID: "00063-AddTokenTestDate",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding token test date")
+				return tx.AutoMigrate(&Token{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE tokens DROP COLUMN IF EXISTS test_date").Error
+			},
+		},
 	})
 }
 

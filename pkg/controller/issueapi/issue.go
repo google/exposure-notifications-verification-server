@@ -34,8 +34,27 @@ import (
 	"go.opencensus.io/tag"
 )
 
-// Cache the UTC time.Location, to speed runtime.
-var utc *time.Location
+type dateParseSettings struct {
+	Name          string
+	ParseError    string
+	ValidateError string
+}
+
+var (
+	// Cache the UTC time.Location, to speed runtime.
+	utc *time.Location
+
+	onsetSettings = dateParseSettings{
+		Name:          "symptom onset",
+		ParseError:    "FAILED_TO_PROCESS_SYMPTOM_ONSET_DATE",
+		ValidateError: "SYMPTOM_ONSET_DATE_NOT_IN_VALID_RANGE",
+	}
+	testSettings = dateParseSettings{
+		Name:          "test",
+		ParseError:    "FAILED_TO_PROCESS_TEST_DATE",
+		ValidateError: "TEST_DATE_NOT_IN_VALID_RANGE",
+	}
+)
 
 func init() {
 	var err error
@@ -103,11 +122,6 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		// Use the symptom onset date if given, otherwise fallback to test date.
-		if request.SymptomDate == "" {
-			request.SymptomDate = request.TestDate
-		}
-
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
@@ -140,15 +154,14 @@ func (c *Controller) HandleIssue() http.Handler {
 		ctx = observability.WithRealmID(ctx, realm.ID)
 
 		// If this realm requires a date but no date was specified, return an error.
-		if request.SymptomDate == "" && realm.RequireDate {
+		if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate))
 			blame = observability.BlameClient
 			result = observability.ResultError("MISSING_REQUIRED_FIELDS")
 			return
 		}
 
-		// Validate that the request with the provided test type is valid for this
-		// realm.
+		// Validate that the request with the provided test type is valid for this realm.
 		if !realm.ValidTestType(request.TestType) {
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("unsupported test type: %v", request.TestType))
@@ -186,29 +199,37 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		var symptomDate *time.Time
-		if request.SymptomDate != "" {
-			if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process symptom onset date: %v", err))
-				blame = observability.BlameClient
-				result = observability.ResultError("FAILED_TO_PROCESS_SYMPTOM_ONSET_DATE")
-				return
-			} else {
-				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
-				maxDate := timeutils.UTCMidnight(time.Now())
-				minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
-
-				symptomDate, err = validateDate(parsed, minDate, maxDate, int(request.TZOffset))
-				if err != nil {
-					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v %v",
-						minDate.Format("2006-01-02"),
-						maxDate.Format("2006-01-02"),
-						parsed.Format("2006-01-02"),
-					)
-					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+		// Set up parallel arrays to leverage the observability reporting and connect the parse / valdiation errors
+		// to the correct date.
+		parsedDates := make([]*time.Time, 2)
+		input := []string{request.SymptomDate, request.TestDate}
+		dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
+		for i, d := range input {
+			if d != "" {
+				if parsed, err := time.Parse("2006-01-02", d); err != nil {
+					c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err))
 					blame = observability.BlameClient
-					result = observability.ResultError("SYMPTOM_ONSET_DATE_NOT_IN_VALID_RANGE")
+					result = observability.ResultError(dateSettings[i].ParseError)
 					return
+				} else {
+					// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+					maxDate := timeutils.UTCMidnight(time.Now())
+					minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+
+					validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
+					if err != nil {
+						err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
+							dateSettings[i].Name,
+							minDate.Format("2006-01-02"),
+							maxDate.Format("2006-01-02"),
+							parsed.Format("2006-01-02"),
+						)
+						c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+						blame = observability.BlameClient
+						result = observability.ResultError(dateSettings[i].ValidateError)
+						return
+					}
+					parsedDates[i] = validatedDate
 				}
 			}
 		}
@@ -264,7 +285,8 @@ func (c *Controller) HandleIssue() http.Handler {
 			LongLength:     realm.LongCodeLength,
 			LongExpiresAt:  longExpiryTime,
 			TestType:       request.TestType,
-			SymptomDate:    symptomDate,
+			SymptomDate:    parsedDates[0],
+			TestDate:       parsedDates[1],
 			MaxSymptomAge:  c.config.GetAllowedSymptomAge(),
 			IssuingUser:    user,
 			IssuingApp:     authApp,

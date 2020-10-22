@@ -196,7 +196,7 @@ func TestIssueToken(t *testing.T) {
 			Accept:     acceptConfirmed,
 			ClaimError: ErrTokenMetadataMismatch.Error(),
 			TokenAge:   time.Hour,
-			Subject:    &Subject{"negative", nil},
+			Subject:    &Subject{"negative", nil, nil},
 		},
 		{
 			Name: "wrong_test_date",
@@ -214,7 +214,7 @@ func TestIssueToken(t *testing.T) {
 			Accept:     acceptConfirmed,
 			ClaimError: ErrTokenMetadataMismatch.Error(),
 			TokenAge:   time.Hour,
-			Subject:    &Subject{"confirmed", &wrongSymptomDate},
+			Subject:    &Subject{"confirmed", &wrongSymptomDate, nil},
 		},
 		{
 			Name: "unsupported_test_type",
