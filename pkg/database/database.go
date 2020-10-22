@@ -21,6 +21,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -186,6 +189,13 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	// gorm.
 	callbackLock.Lock()
 	defer callbackLock.Unlock()
+
+	// Disable the gorm logger here unless were in debug mode. The logs for
+	// callbacks are really verbose and unnecessary.
+	if !c.Debug {
+		rawDB.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+		defer rawDB.SetLogger(gorm.Logger{LogWriter: log.New(os.Stdout, "\r\n", 0)})
+	}
 
 	// SMS configs
 	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
