@@ -1,4 +1,4 @@
-# terraform-e2e
+# terraform-e2e-ci
 
 This directory contains terraform configuration to be used for deploying verification servers with terraform, while being able to reuse a project to deploy repeatedly.
 
@@ -6,10 +6,10 @@ This directory contains terraform configuration to be used for deploying verific
 
 Terraform version > 1.13.1
 
-Follow steps from [Terrafrom instructions](https://github.com/google/exposure-notifications-verification-server/tree/main/terraform), going through from top until finishing `Instructions` section, then change into `terraform-e2e` directory:
+Follow steps from [Terrafrom instructions](https://github.com/google/exposure-notifications-verification-server/tree/main/terraform), going through from top until finishing `Instructions` section, then change into `terraform-e2e-ci` directory:
 
 ```shell
-cd terraform-e2e/
+cd terraform-e2e-ci/
 echo "project = \"${PROJECT_ID}\"" >> ./terraform.tfvars
 ```
 
