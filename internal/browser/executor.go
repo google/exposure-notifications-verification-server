@@ -16,7 +16,9 @@ package browser
 
 import (
 	"context"
+	"encoding/json"
 	"math"
+	"net/http"
 	"testing"
 
 	"github.com/chromedp/cdproto/emulation"
@@ -27,31 +29,31 @@ import (
 // defaultOptions are the default Chrome options.
 var defaultOptions = [...]chromedp.ExecAllocatorOption{
 	chromedp.NoFirstRun,
-	chromedp.NoDefaultBrowserCheck,
+	// chromedp.NoDefaultBrowserCheck,
 
-	// After Puppeteer's default behavior.
-	chromedp.Flag("disable-background-networking", true),
-	chromedp.Flag("enable-features", "NetworkService,NetworkServiceInProcess"),
-	chromedp.Flag("disable-background-timer-throttling", true),
-	chromedp.Flag("disable-backgrounding-occluded-windows", true),
-	chromedp.Flag("disable-breakpad", true),
-	chromedp.Flag("disable-client-side-phishing-detection", true),
-	chromedp.Flag("disable-default-apps", true),
-	chromedp.Flag("disable-dev-shm-usage", true),
-	chromedp.Flag("disable-extensions", true),
-	chromedp.Flag("disable-features", "site-per-process,TranslateUI,BlinkGenPropertyTrees"),
-	chromedp.Flag("disable-hang-monitor", true),
-	chromedp.Flag("disable-ipc-flooding-protection", true),
-	chromedp.Flag("disable-popup-blocking", true),
-	chromedp.Flag("disable-prompt-on-repost", true),
-	chromedp.Flag("disable-renderer-backgrounding", true),
-	chromedp.Flag("disable-sync", true),
-	chromedp.Flag("force-color-profile", "srgb"),
-	chromedp.Flag("metrics-recording-only", true),
-	chromedp.Flag("safebrowsing-disable-auto-update", true),
-	chromedp.Flag("enable-automation", true),
-	chromedp.Flag("password-store", "basic"),
-	chromedp.Flag("use-mock-keychain", true),
+	// // After Puppeteer's default behavior.
+	// chromedp.Flag("disable-background-networking", true),
+	// chromedp.Flag("enable-features", "NetworkService,NetworkServiceInProcess"),
+	// chromedp.Flag("disable-background-timer-throttling", true),
+	// chromedp.Flag("disable-backgrounding-occluded-windows", true),
+	// chromedp.Flag("disable-breakpad", true),
+	// chromedp.Flag("disable-client-side-phishing-detection", true),
+	// chromedp.Flag("disable-default-apps", true),
+	// chromedp.Flag("disable-dev-shm-usage", true),
+	// chromedp.Flag("disable-extensions", true),
+	// chromedp.Flag("disable-features", "site-per-process,TranslateUI,BlinkGenPropertyTrees"),
+	// chromedp.Flag("disable-hang-monitor", true),
+	// chromedp.Flag("disable-ipc-flooding-protection", true),
+	// chromedp.Flag("disable-popup-blocking", true),
+	// chromedp.Flag("disable-prompt-on-repost", true),
+	// chromedp.Flag("disable-renderer-backgrounding", true),
+	// chromedp.Flag("disable-sync", true),
+	// chromedp.Flag("force-color-profile", "srgb"),
+	// chromedp.Flag("metrics-recording-only", true),
+	// chromedp.Flag("safebrowsing-disable-auto-update", true),
+	// chromedp.Flag("enable-automation", true),
+	// chromedp.Flag("password-store", "basic"),
+	// chromedp.Flag("use-mock-keychain", true),
 }
 
 // New creates a new headless browser context. Se NewFromOptions for usage.
@@ -70,6 +72,20 @@ func NewHeadful(tb testing.TB) context.Context {
 	return NewFromOptions(tb, opts)
 }
 
+func getDebugURL(tb testing.TB) string {
+	resp, err := http.Get("http://localhost:9222/json/version")
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	var result map[string]interface{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		tb.Fatal(err)
+	}
+	return result["webSocketDebuggerUrl"].(string)
+}
+
 // NewFromOptions creates a new browser instance. All future calls to `Run` must
 // use the context returned by this function!
 //
@@ -77,18 +93,25 @@ func NewHeadful(tb testing.TB) context.Context {
 // used. It's recommended that you wrap the returned context in a timeout.
 func NewFromOptions(tb testing.TB, opts []chromedp.ExecAllocatorOption) context.Context {
 	tb.Helper()
-
-	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	opts = append(opts, chromedp.DisableGPU)
+	opts = append(opts, chromedp.Headless)
+	opts = append(opts, chromedp.NoSandbox)
+	// opts = append(opts, chromedp.ExecPath("/headless-shell/headless-shell"))
+	tb.Log("Create new execallocator")
+	// allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	allocCtx, cancel := chromedp.NewRemoteAllocator(context.Background(), getDebugURL(tb))
 	tb.Cleanup(cancel)
 
-	taskCtx, cancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(tb.Logf))
+	tb.Log("Create new context")
+	taskCtx, cancel := chromedp.NewContext(allocCtx)
 	tb.Cleanup(cancel)
 
 	// Start browser
+	tb.Log("Start browser")
 	if err := chromedp.Run(taskCtx); err != nil {
 		tb.Fatal(err)
 	}
-
+	tb.Log("Done new execallocator")
 	return taskCtx
 }
 

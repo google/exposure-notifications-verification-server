@@ -51,7 +51,42 @@ func TestHandleHome_IssueCode(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
+	var body string
+	if err := chromedp.Run(taskCtx,
+		chromedp.Navigate("https://www.google.com"),
+		chromedp.OuterHTML(`body`, &body),
+	); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("body is: %q", body)
+
 	var code string
+	actions := []chromedp.Action{
+		chromedp.Navigate(`http://` + harness.Server.Addr()),
+		Login("admin@example.com", "Password"),
+
+		// Post-login action is /home.
+		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
+
+		// Click the issue button.
+		chromedp.Click(`#submit`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#code`, chromedp.ByQuery),
+
+		// Get the code
+		chromedp.TextContent(`#code`, &code, chromedp.ByQuery),
+	}
+
+	for l := 1; l <= len(actions); l++ {
+		t.Logf("Testing %d %v", l, actions[:l])
+		c, done := context.WithTimeout(browserCtx, 30*time.Second)
+		defer done()
+		if err := chromedp.Run(c,
+			actions[:l]...,
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	if err := chromedp.Run(taskCtx,
 		chromedp.Navigate(`http://`+harness.Server.Addr()),
 		Login("admin@example.com", "Password"),

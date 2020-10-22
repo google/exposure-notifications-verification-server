@@ -64,16 +64,17 @@ test:
 		-short \
 		-timeout=5m \
 		-vet="${VETTERS}" \
-		./...
+		./pkg/controller/home/...
 .PHONY: test
 
 test-acc:
 	@go test \
+		-v \
 		-count=1 \
 		-race \
 		-timeout=10m \
 		-vet="${VETTERS}" \
-		./...
+		./pkg/controller/home/...
 .PHONY: test-acc
 
 e2e-test:
