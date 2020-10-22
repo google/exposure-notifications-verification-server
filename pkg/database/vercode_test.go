@@ -207,12 +207,22 @@ func TestVerCodeValidate(t *testing.T) {
 			Err: ErrInvalidTestType,
 		},
 		{
-			Name: "invalid_test_date",
+			Name: "invalid_symptom_date",
 			Code: VerificationCode{
 				Code:        "123456",
 				LongCode:    "123456",
 				TestType:    "negative",
 				SymptomDate: &oldTest,
+			},
+			Err: ErrTestTooOld,
+		},
+		{
+			Name: "invalid_test_date",
+			Code: VerificationCode{
+				Code:     "123456",
+				LongCode: "123456",
+				TestType: "negative",
+				TestDate: &oldTest,
 			},
 			Err: ErrTestTooOld,
 		},

@@ -59,6 +59,7 @@ type VerificationCode struct {
 	Claimed       bool   `gorm:"default:false"`
 	TestType      string `gorm:"type:varchar(20)"`
 	SymptomDate   *time.Time
+	TestDate      *time.Time
 	ExpiresAt     time.Time
 	LongExpiresAt time.Time
 	IssuingUserID uint
@@ -189,9 +190,14 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	if _, ok := ValidTestTypes[v.TestType]; !ok {
 		return ErrInvalidTestType
 	}
+	minSymptomDate := timeutils.UTCMidnight(now.Add(-1 * maxAge))
 	if v.SymptomDate != nil {
-		minSymptomDate := now.Add(-1 * maxAge).Truncate(oneDay)
 		if minSymptomDate.After(*v.SymptomDate) {
+			return ErrTestTooOld
+		}
+	}
+	if v.TestDate != nil {
+		if minSymptomDate.After(*v.TestDate) {
 			return ErrTestTooOld
 		}
 	}

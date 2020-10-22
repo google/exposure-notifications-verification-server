@@ -143,6 +143,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		c.h.RenderJSON(w, http.StatusOK, api.VerifyCodeResponse{
 			TestType:          verificationToken.TestType,
 			SymptomDate:       verificationToken.FormatSymptomDate(),
+			TestDate:          verificationToken.FormatTestDate(),
 			VerificationToken: signedJWT,
 		})
 	})
