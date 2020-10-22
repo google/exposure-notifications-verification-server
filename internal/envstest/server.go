@@ -16,6 +16,7 @@ package envstest
 
 import (
 	"context"
+	"net/http"
 	"path/filepath"
 	"testing"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/gorilla/securecookie"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/memorystore"
@@ -43,6 +45,23 @@ type TestServerResponse struct {
 	Server      *server.Server
 }
 
+func (r *TestServerResponse) Banana(id uint) (*http.Cookie, error) {
+	sessionName := "verification-server-session"
+
+	codecs := securecookie.CodecsFromPairs(r.Config.CookieKeys.AsBytes()...)
+	encoded, err := securecookie.EncodeMulti(sessionName, "TODO", codecs...)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &http.Cookie{
+		// TODO get from constant.
+		Name:  sessionName,
+		Value: encoded,
+	}
+	return c, nil
+}
+
 // NewServer creates a new test UI server instance. When this function returns,
 // a full UI server will be running locally on a random port. Cleanup is handled
 // automatically.
@@ -54,7 +73,7 @@ func NewServer(tb testing.TB) *TestServerResponse {
 	}
 
 	// Create the config and requirements.
-	response := NewServerConfig(tb)
+	response := newServerConfig(tb)
 
 	// Build the routing.
 	ctx := context.Background()
@@ -91,8 +110,8 @@ func NewServer(tb testing.TB) *TestServerResponse {
 	}
 }
 
-// ServerConfigResponse is the response from creating a server config.
-type ServerConfigResponse struct {
+// serverConfigResponse is the response from creating a server config.
+type serverConfigResponse struct {
 	Config      *config.ServerConfig
 	Database    *database.Database
 	Cacher      cache.Cacher
@@ -100,10 +119,10 @@ type ServerConfigResponse struct {
 	RateLimiter limiter.Store
 }
 
-// NewServerConfig creates a new server configuration. It creates all the keys,
+// newServerConfig creates a new server configuration. It creates all the keys,
 // databases, and cacher, but does not actually start the server. All cleanup is
 // scheduled by t.Cleanup.
-func NewServerConfig(tb testing.TB) *ServerConfigResponse {
+func newServerConfig(tb testing.TB) *serverConfigResponse {
 	tb.Helper()
 
 	if testing.Short() {
@@ -192,7 +211,7 @@ func NewServerConfig(tb testing.TB) *ServerConfigResponse {
 		tb.Fatal(err)
 	}
 
-	return &ServerConfigResponse{
+	return &serverConfigResponse{
 		Config:      cfg,
 		Database:    db,
 		Cacher:      cacher,

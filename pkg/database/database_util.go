@@ -17,6 +17,8 @@ package database
 import (
 	"context"
 	"crypto/rand"
+	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"testing"
@@ -27,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jinzhu/gorm"
 	"github.com/ory/dockertest"
 	"github.com/sethvargo/go-envconfig"
 )
@@ -35,6 +38,11 @@ var (
 	approxTime = cmp.Options{cmpopts.EquateApproxTime(time.Second)}
 )
 
+// NewTestDatabaseWithCacher creates a database configured with a cacher for use
+// in testing.
+//
+// All database tests can be skipped by running `go test -short` or by setting
+// the `SKIP_DATABASE_TESTS` environment variable.
 func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *Config) {
 	tb.Helper()
 
@@ -119,11 +127,18 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		tb.Fatal(err)
 	}
+
+	// Disable logging temporarily for migrations. The callback registration is
+	// really quite chatty.
+	db.db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
 	db.db = db.db.LogMode(false)
 
 	if err := db.RunMigrations(ctx); err != nil {
 		tb.Fatalf("failed to migrate database: %v", err)
 	}
+
+	// Re-enable logging.
+	db.db.SetLogger(gorm.Logger{LogWriter: log.New(os.Stdout, "", 0)})
 
 	// Close db when done.
 	tb.Cleanup(func() {
@@ -143,6 +158,10 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	return NewTestDatabaseWithCacher(tb, nil)
 }
 
+// NewTestDatabase creates a new test database with the defautl configuration.
+//
+// All database tests can be skipped by running `go test -short` or by setting
+// the `SKIP_DATABASE_TESTS` environment variable.
 func NewTestDatabase(tb testing.TB) *Database {
 	tb.Helper()
 

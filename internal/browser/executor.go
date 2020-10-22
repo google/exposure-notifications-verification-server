@@ -16,10 +16,15 @@ package browser
 
 import (
 	"context"
+	"fmt"
 	"math"
+	"net/http"
 	"testing"
+	"time"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
@@ -54,19 +59,29 @@ var defaultOptions = [...]chromedp.ExecAllocatorOption{
 	chromedp.Flag("use-mock-keychain", true),
 }
 
-// NewContext creates a new browser instance with the given options. Set
-// `headless` to false to watch the actual browser interaction. All future calls
-// to `Run` must use the context returned by this function!
+// New creates a new headless browser context. Se NewFromOptions for usage.
+func New(tb testing.TB) context.Context {
+	tb.Helper()
+	return NewFromOptions(tb, defaultOptions[:])
+}
+
+// NewHeadful creates a new browser context so you can actually watch the test.
+// This is for local debugging and will fail on CI where a browser isn't
+// actually available.
+func NewHeadful(tb testing.TB) context.Context {
+	tb.Helper()
+	opts := defaultOptions[:]
+	opts = append(opts, chromedp.Headless)
+	return NewFromOptions(tb, opts)
+}
+
+// NewFromOptions creates a new browser instance. All future calls to `Run` must
+// use the context returned by this function!
 //
 // If this function returns successfully, a browser is running and ready to be
-// used. It's recommended that you wrap the returned function in a timeout.
-func NewContext(tb testing.TB, headless bool) context.Context {
+// used. It's recommended that you wrap the returned context in a timeout.
+func NewFromOptions(tb testing.TB, opts []chromedp.ExecAllocatorOption) context.Context {
 	tb.Helper()
-
-	opts := defaultOptions[:]
-	if headless {
-		opts = append(opts, chromedp.Headless)
-	}
 
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	tb.Cleanup(cancel)
@@ -118,6 +133,84 @@ func Screenshot(dst *[]byte) chromedp.Action {
 		if err != nil {
 			return err
 		}
+		return nil
+	})
+}
+
+// SetCookie sets a cookie with the provided parameters. This can be used to
+// bypass login and force a specific user be logged in during the test.
+func SetCookie(c *http.Cookie) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		exp := cdp.TimeSinceEpoch(c.Expires.UTC())
+
+		var sameSite network.CookieSameSite
+		switch c.SameSite {
+		case http.SameSiteLaxMode:
+			sameSite = network.CookieSameSiteLax
+		case http.SameSiteStrictMode:
+			sameSite = network.CookieSameSiteStrict
+		case http.SameSiteNoneMode, http.SameSiteDefaultMode:
+			sameSite = network.CookieSameSiteNone
+		default:
+			return fmt.Errorf("unknown samesite mode %q", c.SameSite)
+		}
+
+		ok, err := network.
+			SetCookie(c.Name, c.Value).
+			WithPath(c.Path).
+			WithDomain(c.Domain).
+			WithExpires(&exp).
+			WithSecure(c.Secure).
+			WithHTTPOnly(c.HttpOnly).
+			WithSameSite(sameSite).
+			Do(ctx)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("failed to set cookie %q", c.Name)
+		}
+		return nil
+	})
+}
+
+// Cookies sets the current list of cookies into the provided destination.
+func Cookies(dst *[]*http.Cookie) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		networkCookies, err := network.GetAllCookies().Do(ctx)
+		if err != nil {
+			return err
+		}
+
+		httpCookies := make([]*http.Cookie, len(networkCookies))
+		for i, c := range networkCookies {
+			exp := time.Unix(int64(c.Expires), 0)
+
+			var sameSite http.SameSite
+			switch c.SameSite {
+			case network.CookieSameSiteLax:
+				sameSite = http.SameSiteLaxMode
+			case network.CookieSameSiteStrict:
+				sameSite = http.SameSiteStrictMode
+			case network.CookieSameSiteNone:
+				sameSite = http.SameSiteNoneMode
+			default:
+				return fmt.Errorf("unknown samesite mode %q", c.SameSite)
+			}
+
+			httpCookies[i] = &http.Cookie{
+				Name:     c.Name,
+				Value:    c.Value,
+				Path:     c.Path,
+				Domain:   c.Domain,
+				Expires:  exp,
+				Secure:   c.Secure,
+				HttpOnly: c.HTTPOnly,
+				SameSite: sameSite,
+			}
+		}
+		*dst = httpCookies
+
 		return nil
 	})
 }

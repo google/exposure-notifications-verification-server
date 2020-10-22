@@ -26,7 +26,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHome(t *testing.T) {
+func TestHandleHome_IssueCode(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t)
@@ -46,15 +46,23 @@ func TestHome(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	browserCtx := browser.NewContext(t, true)
+	c, err := harness.Banana(admin.ID)
+	if err != nil {
+		panic(err)
+	}
+
+	browserCtx := browser.NewHeadful(t)
 
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
 	var code string
 	if err := chromedp.Run(taskCtx,
-		chromedp.Navigate(`http://`+harness.Server.Addr()),
-		Login("admin@example.com", "Password"),
+		// Force the user be be logged in.
+		browser.SetCookie(c),
+
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/home`),
+		// Login("admin@example.com", "Password"),
 
 		// Post-login action is /home.
 		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
