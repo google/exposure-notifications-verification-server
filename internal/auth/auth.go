@@ -24,7 +24,8 @@ import (
 )
 
 var (
-	ErrSessionMissing = fmt.Errorf("session is missing")
+	ErrSessionMissing     = fmt.Errorf("session is missing")
+	ErrSessionInfoMissing = fmt.Errorf("session info is missing")
 )
 
 // InviteUserEmailFunc sends email with the given inviteLink.
@@ -85,8 +86,9 @@ type Provider interface {
 // SessionInfo is a generic struct used to store session information. Not all
 // providers use all fields.
 type SessionInfo struct {
-	// IDToken is a unique string or ID. It is usually a JWT token.
-	IDToken string
+	// Data is provider-specific information. The schema is determined by the
+	// provider.
+	Data map[string]interface{}
 
 	// TTL is the session duration.
 	TTL time.Duration
