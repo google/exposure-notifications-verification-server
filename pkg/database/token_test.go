@@ -39,7 +39,7 @@ func TestSubject(t *testing.T) {
 		Error string
 	}{
 		{
-			Name: "normal parse",
+			Name: "legacy_version",
 			Sub:  "confirmed.2020-07-07",
 			Want: &Subject{
 				TestType:    "confirmed",
@@ -47,12 +47,49 @@ func TestSubject(t *testing.T) {
 			},
 		},
 		{
-			Name: "no date",
+			Name: "legacy_version_no_date",
 			Sub:  "confirmed.",
 			Want: &Subject{
 				TestType:    "confirmed",
 				SymptomDate: nil,
 			},
+		},
+		{
+			Name: "current_version_no_test_date",
+			Sub:  "confirmed.2020-07-07.",
+			Want: &Subject{
+				TestType:    "confirmed",
+				SymptomDate: &testDay,
+			},
+		},
+		{
+			Name: "current_version_no_symptom_date",
+			Sub:  "confirmed..2020-07-07",
+			Want: &Subject{
+				TestType: "confirmed",
+				TestDate: &testDay,
+			},
+		},
+		{
+			Name: "all_fields",
+			Sub:  "confirmed.2020-07-07.2020-07-07",
+			Want: &Subject{
+				TestType:    "confirmed",
+				SymptomDate: &testDay,
+				TestDate:    &testDay,
+			},
+		},
+		{
+			Name:  "invalid_segments",
+			Sub:   "confirmed",
+			Want:  nil,
+			Error: "subject must contain 2 or 3 parts, got: 1",
+		},
+		{
+			Name:  "too_many_segments",
+			Sub:   "confirmed.date.date.whomp",
+			Want:  nil,
+			Error: "subject must contain 2 or 3 parts, got: 4",
 		},
 	}
 
