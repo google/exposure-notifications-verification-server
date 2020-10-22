@@ -128,6 +128,11 @@ func loadTemplates(tmpl *template.Template, root string) error {
 	})
 }
 
+// safeHTML un-escapes known safe html.
+func safeHTML(s string) template.HTML {
+	return template.HTML(s)
+}
+
 func templateFuncs() template.FuncMap {
 	return map[string]interface{}{
 		"joinStrings":    strings.Join,
@@ -135,6 +140,7 @@ func templateFuncs() template.FuncMap {
 		"stringContains": strings.Contains,
 		"toLower":        strings.ToLower,
 		"toUpper":        strings.ToUpper,
+		"safeHTML":       safeHTML,
 	}
 }
 
