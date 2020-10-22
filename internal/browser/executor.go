@@ -54,19 +54,29 @@ var defaultOptions = [...]chromedp.ExecAllocatorOption{
 	chromedp.Flag("use-mock-keychain", true),
 }
 
-// NewContext creates a new browser instance with the given options. Set
-// `headless` to false to watch the actual browser interaction. All future calls
-// to `Run` must use the context returned by this function!
+// New creates a new headless browser context. Se NewFromOptions for usage.
+func New(tb testing.TB) context.Context {
+	tb.Helper()
+	return NewFromOptions(tb, defaultOptions[:])
+}
+
+// NewHeadful creates a new browser context so you can actually watch the test.
+// This is for local debugging and will fail on CI where a browser isn't
+// actually available.
+func NewHeadful(tb testing.TB) context.Context {
+	tb.Helper()
+	opts := defaultOptions[:]
+	opts = append(opts, chromedp.Headless)
+	return NewFromOptions(tb, opts)
+}
+
+// NewFromOptions creates a new browser instance. All future calls to `Run` must
+// use the context returned by this function!
 //
 // If this function returns successfully, a browser is running and ready to be
-// used. It's recommended that you wrap the returned function in a timeout.
-func NewContext(tb testing.TB, headless bool) context.Context {
+// used. It's recommended that you wrap the returned context in a timeout.
+func NewFromOptions(tb testing.TB, opts []chromedp.ExecAllocatorOption) context.Context {
 	tb.Helper()
-
-	opts := defaultOptions[:]
-	if headless {
-		opts = append(opts, chromedp.Headless)
-	}
 
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	tb.Cleanup(cancel)

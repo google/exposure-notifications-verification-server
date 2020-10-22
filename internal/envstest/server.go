@@ -54,7 +54,7 @@ func NewServer(tb testing.TB) *TestServerResponse {
 	}
 
 	// Create the config and requirements.
-	response := NewServerConfig(tb)
+	response := newServerConfig(tb)
 
 	// Build the routing.
 	ctx := context.Background()
@@ -91,8 +91,8 @@ func NewServer(tb testing.TB) *TestServerResponse {
 	}
 }
 
-// ServerConfigResponse is the response from creating a server config.
-type ServerConfigResponse struct {
+// serverConfigResponse is the response from creating a server config.
+type serverConfigResponse struct {
 	Config      *config.ServerConfig
 	Database    *database.Database
 	Cacher      cache.Cacher
@@ -100,10 +100,10 @@ type ServerConfigResponse struct {
 	RateLimiter limiter.Store
 }
 
-// NewServerConfig creates a new server configuration. It creates all the keys,
+// newServerConfig creates a new server configuration. It creates all the keys,
 // databases, and cacher, but does not actually start the server. All cleanup is
 // scheduled by t.Cleanup.
-func NewServerConfig(tb testing.TB) *ServerConfigResponse {
+func newServerConfig(tb testing.TB) *serverConfigResponse {
 	tb.Helper()
 
 	if testing.Short() {
@@ -192,7 +192,7 @@ func NewServerConfig(tb testing.TB) *ServerConfigResponse {
 		tb.Fatal(err)
 	}
 
-	return &ServerConfigResponse{
+	return &serverConfigResponse{
 		Config:      cfg,
 		Database:    db,
 		Cacher:      cacher,

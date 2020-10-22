@@ -26,7 +26,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHome(t *testing.T) {
+func TestHandleHome_IssueCode(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t)
@@ -46,7 +46,7 @@ func TestHome(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	browserCtx := browser.NewContext(t, true)
+	browserCtx := browser.New(t)
 
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()

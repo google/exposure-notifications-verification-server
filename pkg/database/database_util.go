@@ -35,6 +35,11 @@ var (
 	approxTime = cmp.Options{cmpopts.EquateApproxTime(time.Second)}
 )
 
+// NewTestDatabaseWithCacher creates a database configured with a cacher for use
+// in testing.
+//
+// All database tests can be skipped by running `go test -short` or by setting
+// the `SKIP_DATABASE_TESTS` environment variable.
 func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *Config) {
 	tb.Helper()
 
@@ -143,6 +148,10 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	return NewTestDatabaseWithCacher(tb, nil)
 }
 
+// NewTestDatabase creates a new test database with the defautl configuration.
+//
+// All database tests can be skipped by running `go test -short` or by setting
+// the `SKIP_DATABASE_TESTS` environment variable.
 func NewTestDatabase(tb testing.TB) *Database {
 	tb.Helper()
 
