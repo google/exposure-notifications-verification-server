@@ -36,6 +36,7 @@
               </p>
 
               <form method="POST">
+                {{ .csrfField }}
                 <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
 
                 <small class="form-text text-muted">
@@ -60,19 +61,6 @@
     let $skip = $('#skip');
     let $not = $('#not');
 
-    {{if eq .sendInvite "send"}}
-    $(function() {
-      let user = firebase.auth().currentUser
-      if (!user.emailVerified) {
-        user.sendEmailVerification().then(function() {
-          flash.clear();
-          flash.alert('Verification email sent.');
-          $verify.prop('disabled', true);
-        });
-      }
-    });
-    {{end}}
-
     firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
         window.location.assign("/signout");
@@ -85,6 +73,16 @@
       } else {
         $verify.prop('disabled', false);
       }
+
+      {{if eq .sendInvite "send"}}
+      if (!user.emailVerified) {
+        user.sendEmailVerification().then(function() {
+          flash.clear();
+          flash.alert('Verification email sent.');
+          $verify.prop('disabled', true);
+        });
+      }
+      {{end}}
     });
   </script>
 </body>
