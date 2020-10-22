@@ -20,7 +20,12 @@
           <div class="card mb-3 shadow-sm">
             <div class="card-header">Email verification</div>
             <div class="card-body">
-              {{if eq .currentRealm.EmailVerifiedMode.String "required"}}
+              {{if not .currentRealm}}
+              <div class="alert alert-warning">
+                <span class="oi oi-warning"></span>
+                Email address verification is required to administer with no realm selected.
+              </div>
+              {{else if eq .currentRealm.EmailVerifiedMode.String "required"}}
               <div class="alert alert-warning">
                 <span class="oi oi-warning"></span>
                 This realm <strong>requires</strong> email address verification.
@@ -38,8 +43,10 @@
                 </small>
               </form>
 
+              {{if .currentRealm}}
               {{if ne .currentRealm.EmailVerifiedMode.String "required"}}
               <a id="skip" class="card-link float-right mt-3" href="/home">Skip for now</a>
+              {{end}}
               {{end}}
             </div>
           </div>

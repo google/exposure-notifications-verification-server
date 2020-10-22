@@ -169,13 +169,6 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 			sub.Handle("/login/change-password", loginController.HandleShowChangePassword()).Methods("GET")
 			sub.Handle("/login/change-password", loginController.HandleSubmitChangePassword()).Methods("POST")
 			sub.Handle("/account", loginController.HandleAccountSettings()).Methods("GET")
-
-			// Verifying email requires the user is logged in
-			sub = r.PathPrefix("").Subrouter()
-			sub.Use(requireAuth)
-			sub.Use(rateLimit)
-			sub.Use(loadCurrentRealm)
-			sub.Use(processFirewall)
 			sub.Handle("/login/manage-account", loginController.HandleShowVerifyEmail()).
 				Queries("mode", "verifyEmail").Methods("GET")
 			sub.Handle("/login/manage-account", loginController.HandleSubmitVerifyEmail()).

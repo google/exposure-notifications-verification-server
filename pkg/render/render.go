@@ -128,6 +128,10 @@ func loadTemplates(tmpl *template.Template, root string) error {
 	})
 }
 
+func unescape(s string) template.HTML {
+	return template.HTML(s)
+}
+
 func templateFuncs() template.FuncMap {
 	return map[string]interface{}{
 		"joinStrings":    strings.Join,
@@ -135,6 +139,7 @@ func templateFuncs() template.FuncMap {
 		"stringContains": strings.Contains,
 		"toLower":        strings.ToLower,
 		"toUpper":        strings.ToUpper,
+		"unescape":       unescape,
 	}
 }
 
