@@ -84,7 +84,7 @@ Exchange a verification code for a long term verification token.
 
 * `symptomDate` and `testDate` will be present of that information was
   provided when the verification code was generated. These fields are
-  omitted in the reponse body if corresponding date was not set.
+  omitted in the response body if corresponding date was not set.
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
   base64-encoded bytes into this field. The client should not process the
