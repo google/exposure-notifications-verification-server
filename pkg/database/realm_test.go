@@ -98,8 +98,10 @@ func TestPerUserRealmStats(t *testing.T) {
 	}
 
 	for i := 0; i < len(stats)-1; i++ {
-		if stats[i].Date.After(stats[i+1].Date) {
-			t.Errorf("[%d] dates should be in ascending order: %v.After(%v) = true", i, stats[i].Date, stats[i+1].Date)
+		if stats[i].Date != stats[i+1].Date {
+			if !stats[i].Date.After(stats[i+1].Date) {
+				t.Errorf("[%d] dates should be in descending order: %v.After(%v)", i, stats[i].Date, stats[i+1].Date)
+			}
 		}
 	}
 }

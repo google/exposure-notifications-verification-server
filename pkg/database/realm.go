@@ -1157,7 +1157,7 @@ func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error
 		Model(&RealmStats{}).
 		Where("realm_id = ?", r.ID).
 		Where("(date >= ? AND date <= ?)", start, stop).
-		Order("date ASC").
+		Order("date DESC").
 		Find(&stats).
 		Error; err != nil {
 		if IsNotFound(err) {
@@ -1229,10 +1229,10 @@ func ToCIDRList(s string) ([]string, error) {
 // RealmUserStats carries the per-user-per-day-per-realm Codes issued.
 // This is a structure joined from multiple tables in the DB.
 type RealmUserStats struct {
-	UserID      uint
-	Name        string
-	CodesIssued uint
-	Date        time.Time
+	UserID      uint      `json:"user_id"`
+	Name        string    `json:"name"`
+	CodesIssued uint      `json:"codes_issued"`
+	Date        time.Time `json:"date"`
 }
 
 // CodesPerUser returns a set of UserStats for a given date range.
@@ -1250,7 +1250,7 @@ func (r *Realm) CodesPerUser(db *Database, start, stop time.Time) ([]*RealmUserS
 		Where("realm_id = ?", r.ID).
 		Where("date >= ? AND date <= ?", start, stop).
 		Joins("INNNER JOIN users ON users.id = user_id").
-		Order("date ASC").
+		Order("date DESC").
 		Scan(&stats).
 		Error; err != nil {
 		if IsNotFound(err) {

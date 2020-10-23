@@ -25,6 +25,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
+var cacheTimeout = 5 * time.Minute
+
 func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -37,7 +39,6 @@ func (c *Controller) HandleShow() http.Handler {
 
 		now := time.Now().UTC()
 		past := now.Add(-30 * 24 * time.Hour)
-		timeout := 5 * time.Minute
 
 		// Get and cache the stats for this realm.
 		var stats []*database.RealmStats
@@ -45,7 +46,7 @@ func (c *Controller) HandleShow() http.Handler {
 			Namespace: "stats:realm",
 			Key:       strconv.FormatUint(uint64(realm.ID), 10),
 		}
-		if err := c.cacher.Fetch(ctx, cacheKey, &stats, timeout, func() (interface{}, error) {
+		if err := c.cacher.Fetch(ctx, cacheKey, &stats, cacheTimeout, func() (interface{}, error) {
 			return realm.Stats(c.db, past, now)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -58,7 +59,7 @@ func (c *Controller) HandleShow() http.Handler {
 			Namespace: "stats:realm:per_user",
 			Key:       strconv.FormatUint(uint64(realm.ID), 10),
 		}
-		if err := c.cacher.Fetch(ctx, cacheKey, &userStats, timeout, func() (interface{}, error) {
+		if err := c.cacher.Fetch(ctx, cacheKey, &userStats, cacheTimeout, func() (interface{}, error) {
 			return realm.CodesPerUser(c.db, past, now)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -95,7 +96,7 @@ func formatData(userStats []*database.RealmUserStats) ([]string, [][]interface{}
 	data := make([][]interface{}, len(datesLUT))
 	for date, i := range datesLUT {
 		data[i] = make([]interface{}, len(names)+1)
-		data[i][0] = date.Format("Jan 2")
+		data[i][0] = date.Format("Jan 2 2006")
 	}
 	for _, stat := range userStats {
 		i := datesLUT[stat.Date]
