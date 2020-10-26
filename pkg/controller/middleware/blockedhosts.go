@@ -38,11 +38,15 @@ func CheckBlockedHosts(ctx context.Context, blockedHosts []string, h *render.Ren
 				next.ServeHTTP(w, r)
 			}
 
+			hName := r.URL.Hostname()
 			for _, host := range blockedHosts {
-				if strings.HasSuffix(r.URL.Hostname(), host) {
-					logger.Warnf("received request from blocked domain %s", r.Host)
-					controller.Unauthorized(w, r, h)
-					return
+				if strings.HasSuffix(hName, host) {
+					lDiff := len(hName) - len(host)
+					if lDiff <= 0 || string(hName[lDiff-1]) == "." { // exact match or subdomain prefix
+						logger.Warnf("received request from blocked domain %s", r.Host)
+						controller.Unauthorized(w, r, h)
+						return
+					}
 				}
 			}
 			next.ServeHTTP(w, r)
