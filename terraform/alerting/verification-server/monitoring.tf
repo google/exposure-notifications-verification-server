@@ -19,7 +19,7 @@ resource "google_monitoring_dashboard" "verification-server" {
     null_resource.manual-step-to-enable-workspace,
     google_monitoring_metric_descriptor.api--issue--request_count,
     google_monitoring_metric_descriptor.api--issue--realm_token_latest,
-    google_monitoring_metric_descriptor.ratelimit--limitware--rate_limited_count
+    google_monitoring_metric_descriptor.ratelimit--limitware--request_count
   ]
 }
 
@@ -84,12 +84,16 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
   display_name = "Elevated Rate Limited Count"
   combiner     = "OR"
   conditions {
-    display_name = "/rate_limited_count"
+    display_name = "Rate Limited count by service_name"
     condition_threshold {
       duration        = "300s"
       threshold_value = 1
       comparison      = "COMPARISON_GT"
-      filter          = "metric.type=\"custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/rate_limited_count\" resource.type=\"generic_task\""
+      filter          = <<-EOT
+      metric.type="custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count"
+      resource.type="generic_task"
+      metric.result="RATE_LIMITED"
+EOT
 
       aggregations {
         alignment_period     = "60s"
@@ -126,7 +130,7 @@ EOT
   ]
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
-    google_monitoring_metric_descriptor.ratelimit--limitware--rate_limited_count,
+    google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
   ]
 }
 
