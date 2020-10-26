@@ -123,9 +123,9 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		limit, remaining, reset, ok, err := m.store.Take(ctx, key)
 		if err != nil {
 			m.logger.Errorw("failed to take", "error", err)
-			result = observability.ResultError("FAILED_TO_TAKE")
 
 			if !m.allowOnError {
+				result = observability.ResultError("FAILED_TO_TAKE")
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
