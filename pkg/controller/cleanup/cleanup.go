@@ -66,7 +66,7 @@ func (c *Controller) shouldCleanup(ctx context.Context) error {
 
 	// Attempt to advance the generation.
 	if _, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod); err != nil {
-		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultError("FAILED")}, mClaimRequests.M(1))
+		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
 		return fmt.Errorf("failed to claim cleanup: %w", err)
 	}
 	stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
