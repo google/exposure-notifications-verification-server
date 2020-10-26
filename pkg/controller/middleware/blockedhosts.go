@@ -17,6 +17,7 @@ package middleware
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"strings"
 
@@ -38,8 +39,13 @@ func CheckBlockedHosts(ctx context.Context, blockedHosts []string, h *render.Ren
 				next.ServeHTTP(w, r)
 			}
 
+			rHost, _, err := net.SplitHostPort(r.Host)
+			if err != nil { // No port or invalid address
+				rHost = r.Host
+			}
+
 			for _, host := range blockedHosts {
-				if strings.HasSuffix(r.Host, host) {
+				if strings.HasSuffix(rHost, host) {
 					logger.Warnf("received request from blocked domain %s", r.Host)
 					controller.Unauthorized(w, r, h)
 					return
