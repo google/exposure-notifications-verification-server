@@ -75,11 +75,11 @@ func TestBuildEnsURL(t *testing.T) {
 			exp:    "ens://v?r=US-AA",
 		},
 		{
-			name:   "drop_bounce",
+			name:   "replace_just_region",
 			path:   "v",
-			query:  url.Values{"c": []string{"12345678"}, "bounce": []string{"123"}},
-			region: "US-AA",
-			exp:    "ens://v?c=12345678&r=US-AA",
+			query:  url.Values{"c": []string{"12345678"}, "r": []string{"DE"}},
+			region: "US-BB",
+			exp:    "ens://v?c=12345678&r=US-BB",
 		},
 	}
 
@@ -90,6 +90,86 @@ func TestBuildEnsURL(t *testing.T) {
 			t.Parallel()
 
 			got, want := buildEnsURL(tc.path, tc.query, tc.region), tc.exp
+			if got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestBuildIntentURL(t *testing.T) {
+	t.Parallel()
+
+	expectedSuffix := "#Intent" +
+		";scheme=ens" +
+		";package=gov.moosylvania.app" +
+		";action=android.intent.action.VIEW" +
+		";category=android.intent.category.BROWSABLE" +
+		";S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dgov.moosylvania.app" +
+		";end"
+	cases := []struct {
+		name   string
+		path   string
+		query  url.Values
+		region string
+		exp    string
+	}{
+		{
+			name:   "leading_slash_region",
+			path:   "v",
+			region: "/US-AA",
+			exp:    "intent://v?r=%2FUS-AA" + expectedSuffix,
+		},
+		{
+			name:   "trailing_slash_region",
+			path:   "v",
+			region: "US-AA/",
+			exp:    "intent://v?r=US-AA%2F" + expectedSuffix,
+		},
+		{
+			name:   "leading_slash_path",
+			path:   "/v",
+			region: "US-AA",
+			exp:    "intent://v?r=US-AA" + expectedSuffix,
+		},
+		{
+			name:   "trailing_slash_path",
+			path:   "v/",
+			region: "US-AA",
+			exp:    "intent://v/?r=US-AA" + expectedSuffix,
+		},
+		{
+			name:   "includes_code",
+			path:   "v",
+			query:  url.Values{"c": []string{"1234567890abcdef"}},
+			region: "US-AA",
+			exp:    "intent://v?c=1234567890abcdef&r=US-AA" + expectedSuffix,
+		},
+		{
+			name:   "includes_other",
+			path:   "v",
+			query:  url.Values{"foo": []string{"bar"}},
+			region: "US-AA",
+			exp:    "intent://v?foo=bar&r=US-AA" + expectedSuffix,
+		},
+		{
+			name:   "replace_region",
+			path:   "v",
+			query:  url.Values{"r": []string{"US-XX"}},
+			region: "US-AA",
+			exp:    "intent://v?r=US-AA" + expectedSuffix,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			appID := "gov.moosylvania.app"
+			fallback := "https://play.google.com/store/apps/details?id=gov.moosylvania.app"
+			got, want := buildIntentURL(tc.path, tc.query, tc.region, appID, fallback), tc.exp
 			if got != want {
 				t.Errorf("expected %q to be %q", got, want)
 			}
@@ -168,17 +248,28 @@ func TestAgentDetection(t *testing.T) {
 func TestDecideRedirect(t *testing.T) {
 	t.Parallel()
 
+	expectedSuffix := "#Intent" +
+		";scheme=ens" +
+		";package=gov.moosylvania.app" +
+		";action=android.intent.action.VIEW" +
+		";category=android.intent.category.BROWSABLE" +
+		";S.browser_fallback_url=https%3A%2F%2Fandroid.example.com%2Fstore%2Fmoosylvania" +
+		";end"
+
 	appLinkBoth := AppStoreData{
-		AndroidURL: "https://android.example.com/store/moosylvania",
-		IOSURL:     "https://ios.example.com/store/moosylvania",
+		AndroidURL:   "https://android.example.com/store/moosylvania",
+		AndroidAppID: "gov.moosylvania.app",
+		IOSURL:       "https://ios.example.com/store/moosylvania",
 	}
 	appLinkOnlyAndroid := AppStoreData{
-		AndroidURL: "https://android.example.com/store/moosylvania",
-		IOSURL:     "",
+		AndroidURL:   "https://android.example.com/store/moosylvania",
+		AndroidAppID: "gov.moosylvania.app",
+		IOSURL:       "",
 	}
 	appLinkNeither := AppStoreData{
-		AndroidURL: "",
-		IOSURL:     "",
+		AndroidURL:   "",
+		AndroidAppID: "",
+		IOSURL:       "",
 	}
 
 	userAgentAndroid := "Android"
@@ -202,36 +293,22 @@ func TestDecideRedirect(t *testing.T) {
 		expected     string
 	}{
 		{
-			name:         "moosylvania_android_pre_bounce",
+			name:         "moosylvania_android_both",
 			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkBoth,
-			expected:     "https://moosylvania.gov/v?bounce=1&c=1234567890abcdef",
+			expected:     "intent://v?c=1234567890abcdef&r=US-MOO" + expectedSuffix,
 		},
 		{
-			name:         "moosylvania_android_post_bounce",
-			url:          "https://moosylvania.gov/v?bounce=1&c=1234567890abcdef",
-			userAgent:    userAgentAndroid,
-			appStoreData: &appLinkBoth,
-			expected:     "https://android.example.com/store/moosylvania",
-		},
-		{
-			name:         "moosylvania_android_pre_bounce_relative",
+			name:         "moosylvania_android_both_relative",
 			altURL:       &relativePinURL,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkBoth,
-			expected:     "/v?bounce=1&c=1234567890abcdef",
+			expected:     "intent://v?c=1234567890abcdef&r=US-MOO" + expectedSuffix,
 		},
 		{
-			name:         "moosylvania_android_no_applink_pre_bounce",
+			name:         "moosylvania_android_no_applink",
 			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
-			userAgent:    userAgentAndroid,
-			appStoreData: &appLinkNeither,
-			expected:     "https://moosylvania.gov/v?bounce=1&c=1234567890abcdef",
-		},
-		{
-			name:         "moosylvania_android_no_applink_post_bounce",
-			url:          "https://moosylvania.gov/v?c=1234567890abcdef&bounce=1",
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkNeither,
 			expected:     "ens://v?c=1234567890abcdef&r=US-MOO",

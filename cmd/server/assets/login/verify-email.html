@@ -20,7 +20,12 @@
           <div class="card mb-3 shadow-sm">
             <div class="card-header">Email verification</div>
             <div class="card-body">
-              {{if eq .currentRealm.EmailVerifiedMode.String "required"}}
+              {{if not .currentRealm}}
+              <div class="alert alert-warning">
+                <span class="oi oi-warning"></span>
+                Email address verification is required to administer with no realm selected.
+              </div>
+              {{else if eq .currentRealm.EmailVerifiedMode.String "required"}}
               <div class="alert alert-warning">
                 <span class="oi oi-warning"></span>
                 This realm <strong>requires</strong> email address verification.
@@ -30,13 +35,19 @@
               <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.
               </p>
 
-              <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
+              <form method="POST">
+                {{ .csrfField }}
+                <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
 
-              <small class="form-text text-muted">Click to send an email containing a verification
-                link.</small>
+                <small class="form-text text-muted">
+                  Click to send an email containing a verification link.
+                </small>
+              </form>
 
+              {{if .currentRealm}}
               {{if ne .currentRealm.EmailVerifiedMode.String "required"}}
               <a id="skip" class="card-link float-right mt-3" href="/home">Skip for now</a>
+              {{end}}
               {{end}}
             </div>
           </div>
@@ -45,25 +56,10 @@
     </div>
   </main>
 
-  {{template "scripts" .}}
-
   <script>
     let $verify = $('#verify');
     let $skip = $('#skip');
     let $not = $('#not');
-
-    $(function() {
-      $verify.on('click', function(event) {
-        let user = firebase.auth().currentUser
-        if (!user.emailVerified) {
-          user.sendEmailVerification().then(function() {
-            flash.clear();
-            flash.alert('Verification email sent.');
-            $verify.prop('disabled', true);
-          });
-        }
-      });
-    });
 
     firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
@@ -71,12 +67,22 @@
         return;
       }
 
-      if (user.emailVerified) {
+      if ({{if eq .sendInvite "sent"}}true{{else}}user.emailVerified{{end}}) {
         $not.hide();
         $skip.text("Go home");
       } else {
         $verify.prop('disabled', false);
       }
+
+      {{if eq .sendInvite "send"}}
+      if (!user.emailVerified) {
+        user.sendEmailVerification().then(function() {
+          flash.clear();
+          flash.alert('Verification email sent.');
+          $verify.prop('disabled', true);
+        });
+      }
+      {{end}}
     });
   </script>
 </body>

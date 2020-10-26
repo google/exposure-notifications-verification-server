@@ -16,6 +16,7 @@ package user
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -74,8 +75,8 @@ func (c *Controller) HandleImportBatch() http.Handler {
 				continue
 			} else if created {
 				newUsers = append(newUsers, &batchUser)
-				if err := c.emailer.SendNewUserInvitation(ctx, user.Email); err != nil {
-					c.logger.Warnw("failed sending invitation", "error", err)
+
+				if err := c.sendInvitation(ctx, user.Email); err != nil {
 					batchErr = multierror.Append(batchErr, errors.New("send invitation failed"))
 					continue
 				}
@@ -94,7 +95,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		if err := batchErr.ErrorOrNil(); err != nil {
 			response.Error = err.Error()
-			response.ErrorCode = string(http.StatusInternalServerError)
+			response.ErrorCode = fmt.Sprintf("%d", http.StatusInternalServerError)
 
 			if len(newUsers) == 0 { // We return partial success if any succeeded.
 				c.h.RenderJSON(w, http.StatusInternalServerError, response)

@@ -16,13 +16,12 @@ package realmadmin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/digest"
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
@@ -68,6 +67,13 @@ func (c *Controller) HandleSettings() http.Handler {
 		TwilioAuthToken    string `form:"twilio_auth_token"`
 		TwilioFromNumber   string `form:"twilio_from_number"`
 
+		Email                bool   `form:"email"`
+		UseSystemEmailConfig bool   `form:"use_system_email_config"`
+		SMTPAccount          string `form:"smtp_account"`
+		SMTPPassword         string `form:"smtp_password"`
+		SMTPHost             string `form:"smtp_host"`
+		SMTPPort             string `form:"smtp_port"`
+
 		Security                    bool   `form:"security"`
 		MFAMode                     int16  `form:"mfa_mode"`
 		MFARequiredGracePeriod      int64  `form:"mfa_grace_period"`
@@ -108,12 +114,11 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		var quotaLimit, quotaRemaining uint64
 		if realm.AbusePreventionEnabled {
-			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			key := fmt.Sprintf("realm:quota:%s", dig)
 
 			quotaLimit, quotaRemaining, err = c.limiter.Get(ctx, key)
 			if err != nil {
@@ -123,14 +128,14 @@ func (c *Controller) HandleSettings() http.Handler {
 		}
 
 		if r.Method == http.MethodGet {
-			c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
+			c.renderSettings(ctx, w, r, realm, nil, nil, quotaLimit, quotaRemaining)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
+			c.renderSettings(ctx, w, r, realm, nil, nil, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -162,6 +167,11 @@ func (c *Controller) HandleSettings() http.Handler {
 			realm.SMSCountry = form.SMSCountry
 		}
 
+		// Email
+		if form.Email {
+			realm.UseSystemEmailConfig = form.UseSystemEmailConfig
+		}
+
 		// Security
 		if form.Security {
 			realm.EmailVerifiedMode = database.AuthRequirement(form.EmailVerifiedMode)
@@ -174,7 +184,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				realm.AddError("allowedCIDRsAdminAPI", err.Error())
 				flash.Error("Failed to update realm")
-				c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
+				c.renderSettings(ctx, w, r, realm, nil, nil, quotaLimit, quotaRemaining)
 				return
 			}
 			realm.AllowedCIDRsAdminAPI = allowedCIDRsAdminADPI
@@ -183,7 +193,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				realm.AddError("allowedCIDRsAPIServer", err.Error())
 				flash.Error("Failed to update realm")
-				c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
+				c.renderSettings(ctx, w, r, realm, nil, nil, quotaLimit, quotaRemaining)
 				return
 			}
 			realm.AllowedCIDRsAPIServer = allowedCIDRsAPIServer
@@ -192,7 +202,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				realm.AddError("allowedCIDRsServer", err.Error())
 				flash.Error("Failed to update realm")
-				c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
+				c.renderSettings(ctx, w, r, realm, nil, nil, quotaLimit, quotaRemaining)
 				return
 			}
 			realm.AllowedCIDRsServer = allowedCIDRsServer
@@ -217,12 +227,11 @@ func (c *Controller) HandleSettings() http.Handler {
 		// Even if saving the realm fails, there's no harm in doing this early. It's
 		// an idempotent operation that TTLs out after a week anyway.
 		if abusePreventionJustEnabled {
-			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			key := fmt.Sprintf("realm:quota:%s", dig)
 			limit := uint64(realm.AbusePreventionEffectiveLimit())
 			ttl := 7 * 24 * time.Hour
 			if err := c.limiter.Set(ctx, key, limit, ttl); err != nil {
@@ -234,7 +243,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		// Save realm
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to update realm: %v", err)
-			c.renderSettings(ctx, w, r, realm, nil, quotaLimit, quotaRemaining)
+			c.renderSettings(ctx, w, r, realm, nil, nil, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -256,7 +265,7 @@ func (c *Controller) HandleSettings() http.Handler {
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, realm, smsConfig, quotaLimit, quotaRemaining)
+					c.renderSettings(ctx, w, r, realm, smsConfig, nil, quotaLimit, quotaRemaining)
 					return
 				}
 			} else {
@@ -272,7 +281,49 @@ func (c *Controller) HandleSettings() http.Handler {
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, realm, smsConfig, quotaLimit, quotaRemaining)
+					c.renderSettings(ctx, w, r, realm, smsConfig, nil, quotaLimit, quotaRemaining)
+					return
+				}
+			}
+		}
+
+		// Email
+		if form.Email && !form.UseSystemEmailConfig {
+			// Fetch the existing Email config record, if one exists
+			emailConfig, err := realm.EmailConfig(c.db)
+			if err != nil && !database.IsNotFound(err) {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			if emailConfig != nil && !emailConfig.IsSystem {
+				// We have an existing record and the existing record is NOT the system
+				// record.
+				emailConfig.ProviderType = email.ProviderTypeSMTP
+				emailConfig.SMTPAccount = form.SMTPAccount
+				emailConfig.SMTPPassword = form.SMTPPassword
+				emailConfig.SMTPHost = form.SMTPHost
+				emailConfig.SMTPPort = form.SMTPPort
+
+				if err := c.db.SaveEmailConfig(emailConfig); err != nil {
+					flash.Error("Failed to update realm: %v", err)
+					c.renderSettings(ctx, w, r, realm, nil, emailConfig, quotaLimit, quotaRemaining)
+					return
+				}
+			} else {
+				// There's no record or the existing record was the system config so we
+				// want to create our own.
+				emailConfig := &database.EmailConfig{
+					RealmID:      realm.ID,
+					ProviderType: email.ProviderTypeSMTP,
+					SMTPAccount:  form.SMTPAccount,
+					SMTPPassword: form.SMTPPassword,
+					SMTPHost:     form.SMTPHost,
+					SMTPPort:     form.SMTPPort,
+				}
+
+				if err := c.db.SaveEmailConfig(emailConfig); err != nil {
+					flash.Error("Failed to update realm: %v", err)
+					c.renderSettings(ctx, w, r, realm, nil, emailConfig, quotaLimit, quotaRemaining)
 					return
 				}
 			}
@@ -280,12 +331,11 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		// Process temporary abuse prevention bursts
 		if burst := form.AbusePreventionBurst; burst > 0 {
-			dig, err := digest.HMACUint(realm.ID, c.config.RateLimit.HMACKey)
+			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			key := fmt.Sprintf("realm:quota:%s", dig)
 			if err := c.limiter.Burst(ctx, key, burst); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
@@ -299,7 +349,9 @@ func (c *Controller) HandleSettings() http.Handler {
 	})
 }
 
-func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm, smsConfig *database.SMSConfig, quotaLimit, quotaRemaining uint64) {
+func (c *Controller) renderSettings(
+	ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm,
+	smsConfig *database.SMSConfig, emailConfig *database.EmailConfig, quotaLimit, quotaRemaining uint64) {
 	if smsConfig == nil {
 		var err error
 		smsConfig, err = realm.SMSConfig(c.db)
@@ -309,6 +361,18 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 				return
 			}
 			smsConfig = new(database.SMSConfig)
+		}
+	}
+
+	if emailConfig == nil {
+		var err error
+		emailConfig, err = realm.EmailConfig(c.db)
+		if err != nil {
+			if !database.IsNotFound(err) {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			emailConfig = &database.EmailConfig{SMTPPort: "587"}
 		}
 	}
 
@@ -333,9 +397,26 @@ func (c *Controller) renderSettings(ctx context.Context, w http.ResponseWriter, 
 		}
 	}
 
+	if emailConfig.IsSystem {
+		var tmpRealm database.Realm
+		tmpRealm.ID = realm.ID
+		tmpRealm.UseSystemEmailConfig = false
+
+		var err error
+		emailConfig, err = tmpRealm.EmailConfig(c.db)
+		if err != nil {
+			if !database.IsNotFound(err) {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+			emailConfig = new(database.EmailConfig)
+		}
+	}
+
 	m := controller.TemplateMapFromContext(ctx)
 	m["realm"] = realm
 	m["smsConfig"] = smsConfig
+	m["emailConfig"] = emailConfig
 	m["countries"] = database.Countries
 	m["testTypes"] = map[string]database.TestType{
 		"confirmed": database.TestTypeConfirmed,

@@ -1,3 +1,17 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Package observability provides tools for working with open census.
 package observability
 
@@ -63,13 +77,18 @@ var (
 	BlameUnknown = tag.Upsert(blameTagKey, "UNKNOWN")
 )
 
-// APIResultOK add a tag indicating the API call is a success.
-func APIResultOK() tag.Mutator {
+// ResultOK add a tag indicating the API call is a success.
+func ResultOK() tag.Mutator {
 	return tag.Upsert(ResultTagKey, "OK")
 }
 
-// APIResultError add a tag with the given string as the result.
-func APIResultError(result string) tag.Mutator {
+// ResultNotOK add a tag indicating the API call is a failure.
+func ResultNotOK() tag.Mutator {
+	return ResultError("NOT_OK")
+}
+
+// ResultError add a tag with the given string as the result.
+func ResultError(result string) tag.Mutator {
 	return tag.Upsert(ResultTagKey, result)
 }
 

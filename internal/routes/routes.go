@@ -12,23 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package email is logic for sending email invitations
-package email
-
-import (
-	"context"
-	"fmt"
-
-	"github.com/google/exposure-notifications-verification-server/internal/firebase"
-)
-
-var _ Provider = (*firebase.Client)(nil)
-
-// NewFirebase creates a new SMTP email sender with the given auth.
-func NewFirebase(ctx context.Context) (Provider, error) {
-	firebaseInternal, err := firebase.New(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to configure internal firebase client: %w", err)
-	}
-	return firebaseInternal, nil
-}
+// Package routes defines the routing for services. It's in a central package so
+// it can be shared among tests.
+package routes

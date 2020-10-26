@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/jinzhu/gorm"
 )
 
@@ -58,6 +59,7 @@ type VerificationCode struct {
 	Claimed       bool   `gorm:"default:false"`
 	TestType      string `gorm:"type:varchar(20)"`
 	SymptomDate   *time.Time
+	TestDate      *time.Time
 	ExpiresAt     time.Time
 	LongExpiresAt time.Time
 	IssuingUserID uint
@@ -73,7 +75,7 @@ func (VerificationCode) TableName() string {
 // to update statistics about usage. If the executions fail, an error is logged
 // but the transaction continues. This is called automatically by gorm.
 func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
-	date := v.CreatedAt.Truncate(24 * time.Hour)
+	date := timeutils.Midnight(v.CreatedAt)
 
 	// If the issuer was a user, update the user stats for the day.
 	if v.IssuingUserID != 0 {
@@ -188,9 +190,14 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	if _, ok := ValidTestTypes[v.TestType]; !ok {
 		return ErrInvalidTestType
 	}
+	minSymptomDate := timeutils.UTCMidnight(now.Add(-1 * maxAge))
 	if v.SymptomDate != nil {
-		minSymptomDate := now.Add(-1 * maxAge).Truncate(oneDay)
 		if minSymptomDate.After(*v.SymptomDate) {
+			return ErrTestTooOld
+		}
+	}
+	if v.TestDate != nil {
+		if minSymptomDate.After(*v.TestDate) {
 			return ErrTestTooOld
 		}
 	}

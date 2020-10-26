@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -73,15 +74,12 @@ func NewInMemory(i *InMemoryConfig) (Cacher, error) {
 // returns the value. If the value does not exist, it calls f and caches the
 // result of f in the cache for ttl. The ttl is calculated from the time the
 // value is inserted, not the time the function is called.
-func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
+func (c *inMemory) Fetch(_ context.Context, k *Key, out interface{}, ttl time.Duration, f FetchFunc) error {
 	now := time.Now().UnixNano()
 
-	if c.keyFunc != nil {
-		var err error
-		key, err = c.keyFunc(key)
-		if err != nil {
-			return fmt.Errorf("failed to execute keyFunc: %w", err)
-		}
+	key, err := k.Compute(c.keyFunc)
+	if err != nil {
+		return fmt.Errorf("failed to compute key: %w", err)
 	}
 
 	// Try a read-only lock first
@@ -136,7 +134,7 @@ func (c *inMemory) Fetch(_ context.Context, key string, out interface{}, ttl tim
 }
 
 // Write adds a new item to the cache with the given TTL.
-func (c *inMemory) Write(_ context.Context, key string, val interface{}, ttl time.Duration) error {
+func (c *inMemory) Write(_ context.Context, k *Key, val interface{}, ttl time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -144,12 +142,9 @@ func (c *inMemory) Write(_ context.Context, key string, val interface{}, ttl tim
 		return ErrStopped
 	}
 
-	if c.keyFunc != nil {
-		var err error
-		key, err = c.keyFunc(key)
-		if err != nil {
-			return fmt.Errorf("failed to execute keyFunc: %w", err)
-		}
+	key, err := k.Compute(c.keyFunc)
+	if err != nil {
+		return fmt.Errorf("failed to compute key: %w", err)
 	}
 
 	b, err := json.Marshal(val)
@@ -166,7 +161,7 @@ func (c *inMemory) Write(_ context.Context, key string, val interface{}, ttl tim
 
 // Read fetches the value at the key. If the value does not exist, it returns
 // ErrNotFound. If the types are incompatible, it returns an error.
-func (c *inMemory) Read(_ context.Context, key string, out interface{}) error {
+func (c *inMemory) Read(_ context.Context, k *Key, out interface{}) error {
 	now := time.Now().UnixNano()
 
 	c.mu.RLock()
@@ -175,12 +170,9 @@ func (c *inMemory) Read(_ context.Context, key string, out interface{}) error {
 		return ErrStopped
 	}
 
-	if c.keyFunc != nil {
-		var err error
-		key, err = c.keyFunc(key)
-		if err != nil {
-			return fmt.Errorf("failed to execute keyFunc: %w", err)
-		}
+	key, err := k.Compute(c.keyFunc)
+	if err != nil {
+		return fmt.Errorf("failed to compute key: %w", err)
 	}
 
 	if i, ok := c.data[key]; ok {
@@ -199,7 +191,7 @@ func (c *inMemory) Read(_ context.Context, key string, out interface{}) error {
 }
 
 // Delete removes an item from the cache, if it exists, regardless of TTL.
-func (c *inMemory) Delete(_ context.Context, key string) error {
+func (c *inMemory) Delete(_ context.Context, k *Key) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -207,15 +199,30 @@ func (c *inMemory) Delete(_ context.Context, key string) error {
 		return ErrStopped
 	}
 
-	if c.keyFunc != nil {
-		var err error
-		key, err = c.keyFunc(key)
-		if err != nil {
-			return fmt.Errorf("failed to execute keyFunc: %w", err)
-		}
+	key, err := k.Compute(c.keyFunc)
+	if err != nil {
+		return fmt.Errorf("failed to compute key: %w", err)
 	}
 
 	delete(c.data, key)
+	return nil
+}
+
+// DeletePrefix removes all items that start with the given prefix.
+func (c *inMemory) DeletePrefix(_ context.Context, prefix string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.data == nil {
+		return ErrStopped
+	}
+
+	for k := range c.data {
+		if strings.HasPrefix(k, prefix) {
+			delete(c.data, k)
+		}
+	}
+
 	return nil
 }
 

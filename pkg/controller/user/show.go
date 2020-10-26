@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
@@ -75,7 +76,10 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 // Get and cache the stats for this user.
 func (c *Controller) getStats(ctx context.Context, user *database.User, realm *database.Realm) ([]*database.UserStats, error) {
 	var stats []*database.UserStats
-	cacheKey := fmt.Sprintf("stats:user:%d:%d", realm.ID, user.ID)
+	cacheKey := &cache.Key{
+		Namespace: "stats:user",
+		Key:       fmt.Sprintf("%d:%d", realm.ID, user.ID),
+	}
 	if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
 		now := time.Now().UTC()
 		past := now.Add(-14 * 24 * time.Hour)

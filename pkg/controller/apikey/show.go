@@ -16,10 +16,11 @@ package apikey
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -70,7 +71,10 @@ func (c *Controller) HandleShow() http.Handler {
 
 		// Get and cache the stats for this user.
 		var stats []*database.AuthorizedAppStats
-		cacheKey := fmt.Sprintf("stats:app:%d:%d", realm.ID, authApp.ID)
+		cacheKey := &cache.Key{
+			Namespace: "stats:app",
+			Key:       strconv.FormatUint(uint64(authApp.ID), 10),
+		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
 			now := time.Now().UTC()
 			past := now.Add(-14 * 24 * time.Hour)

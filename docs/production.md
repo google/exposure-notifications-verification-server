@@ -251,6 +251,8 @@ DB_APIKEY_SIGNATURE_KEY="gSEGlr482MSTm0eGRm2VvS86iQin3+/+80ALBkKKBYgu2EJyhGkvi8B
 Note: Removing any of the keys from this list will invalidate API keys signed by
 that version.
 
+If you are using Terraform, increment the `db_apikey_sig_hmac_count` by 1.
+
 
 ### API Key database HMAC keys
 
@@ -276,6 +278,8 @@ DB_APIKEY_SIGNATURE_KEY="1do5HM96Bk9WD15BQC3qbW9e3T2V6T0DHn2i1xGJRKX8tZubxuaeziv
 
 Note: Removing any of the keys from this list will invalidate API keys HMACed by
 that version.
+
+If you are using Terraform, increment the `db_apikey_db_hmac_count` by 1.
 
 
 ### Verification Code database HMAC keys
@@ -304,6 +308,8 @@ DB_APIKEY_SIGNATURE_KEY="g7GdsjuN+eydQIUCena2gleSHsmu46Gs+62ENViXsaV123AoVEwZ94y
 Note: Removing any of the keys from this list will invalidate verification codes
 HMACed by that version. However, given verification a verification code's
 lifetime is short, it is probably safe to remove the key beyond 30 days.
+
+If you are using Terraform, increment the `db_verification_code_hmac_count` by 1.
 
 
 ### Certificate and token signing keys

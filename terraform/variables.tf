@@ -61,6 +61,13 @@ variable "database_backup_location" {
   description = "Location in which to backup the database."
 }
 
+variable "database_backup_schedule" {
+  type    = string
+  default = "0 */6 * * *"
+
+  description = "Cron schedule in which to do a full backup of the database to Cloud Storage."
+}
+
 variable "storage_location" {
   type    = string
   default = "US"
@@ -175,11 +182,25 @@ variable "enx_redirect_domain_map" {
   description = "Redirect domains and environments."
 }
 
-variable "prevent_destroy" {
-  type    = bool
-  default = true
+variable "db_apikey_db_hmac_count" {
+  type    = number
+  default = 1
 
-  description = "Prevent destruction of critical resources. Set this to false to actually destroy everything."
+  description = "Number of HMAC keys to create for HMACing API keys in the database. Increase by 1 to force a rotation."
+}
+
+variable "db_apikey_sig_hmac_count" {
+  type    = number
+  default = 1
+
+  description = "Number of HMAC keys to create for HMACing API key signatures. Increase by 1 to force a rotation."
+}
+
+variable "db_verification_code_hmac_count" {
+  type    = number
+  default = 1
+
+  description = "Number of HMAC keys to create for HMACing verification codes in the database. Increase by 1 to force a rotation."
 }
 
 terraform {

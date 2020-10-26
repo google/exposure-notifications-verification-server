@@ -43,7 +43,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		ctx := observability.WithBuildInfo(r.Context())
 
 		var blame = observability.BlameNone
-		var result = observability.APIResultOK()
+		var result = observability.ResultOK()
 
 		defer func(blame, result *tag.Mutator) {
 			ctx, err := tag.New(ctx, *blame, *result)
@@ -58,7 +58,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		if authApp == nil {
 			controller.MissingAuthorizedApp(w, r, c.h)
 			blame = observability.BlameClient
-			result = observability.APIResultError("MISSING_AUTHORIZED_APP")
+			result = observability.ResultError("MISSING_AUTHORIZED_APP")
 			return
 		}
 
@@ -69,7 +69,7 @@ func (c *Controller) HandleVerify() http.Handler {
 			c.logger.Errorw("bad request", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			blame = observability.BlameClient
-			result = observability.APIResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			return
 		}
 
@@ -79,7 +79,7 @@ func (c *Controller) HandleVerify() http.Handler {
 			c.logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			blame = observability.BlameServer
-			result = observability.APIResultError("FAILED_TO_GET_SIGNER")
+			result = observability.ResultError("FAILED_TO_GET_SIGNER")
 			return
 		}
 
@@ -89,7 +89,7 @@ func (c *Controller) HandleVerify() http.Handler {
 			c.logger.Errorf("invalid accept test types", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			blame = observability.BlameClient
-			result = observability.APIResultError("INVALID_ACCEPT_TEST_TYPES")
+			result = observability.ResultError("INVALID_ACCEPT_TEST_TYPES")
 			return
 		}
 
@@ -101,20 +101,20 @@ func (c *Controller) HandleVerify() http.Handler {
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
-				result = observability.APIResultError("VERIFICATION_CODE_EXPIRED")
+				result = observability.ResultError("VERIFICATION_CODE_EXPIRED")
 			case errors.Is(err, database.ErrVerificationCodeUsed):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
-				result = observability.APIResultError("VERIFICATION_CODE_INVALID")
+				result = observability.ResultError("VERIFICATION_CODE_INVALID")
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
-				result = observability.APIResultError("VERIFICATION_CODE_NOT_FOUND")
+				result = observability.ResultError("VERIFICATION_CODE_NOT_FOUND")
 			case errors.Is(err, database.ErrUnsupportedTestType):
 				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
-				result = observability.APIResultError("VERIFICATION_CODE_UNSUPPORTED_TEST_TYPE")
+				result = observability.ResultError("VERIFICATION_CODE_UNSUPPORTED_TEST_TYPE")
 			default:
 				c.logger.Errorw("failed to issue verification token", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
-				result = observability.APIResultError("UNKNOWN_ERROR")
+				result = observability.ResultError("UNKNOWN_ERROR")
 			}
 			return
 		}
@@ -136,13 +136,14 @@ func (c *Controller) HandleVerify() http.Handler {
 			c.logger.Errorw("failed to sign token", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			blame = observability.BlameServer
-			result = observability.APIResultError("FAILED_TO_SIGN_TOKEN")
+			result = observability.ResultError("FAILED_TO_SIGN_TOKEN")
 			return
 		}
 
 		c.h.RenderJSON(w, http.StatusOK, api.VerifyCodeResponse{
 			TestType:          verificationToken.TestType,
 			SymptomDate:       verificationToken.FormatSymptomDate(),
+			TestDate:          verificationToken.FormatTestDate(),
 			VerificationToken: signedJWT,
 		})
 	})
