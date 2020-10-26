@@ -82,6 +82,11 @@ func ResultOK() tag.Mutator {
 	return tag.Upsert(ResultTagKey, "OK")
 }
 
+// ResultNotOK add a tag indicating the API call is a failure.
+func ResultNotOK() tag.Mutator {
+	return ResultError("NOT_OK")
+}
+
 // ResultError add a tag with the given string as the result.
 func ResultError(result string) tag.Mutator {
 	return tag.Upsert(ResultTagKey, result)
