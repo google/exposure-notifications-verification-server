@@ -96,6 +96,9 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 	// Install common security headers
 	r.Use(middleware.SecureHeaders(ctx, cfg.DevMode, "html"))
 
+	// Check disallowed host names
+	r.Use(middleware.CheckBlockedHosts(ctx, cfg.BlockedHosts, h))
+
 	// Enable debug headers
 	processDebug := middleware.ProcessDebug(ctx)
 	r.Use(processDebug)

@@ -78,6 +78,7 @@ type ServerConfig struct {
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
+	BlockedHosts        []string      `env:"BLOCKED_HOSTS"` // Disallowed host names
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
 
