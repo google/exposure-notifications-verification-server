@@ -45,7 +45,7 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.R
 		// Render the message invitation.
 		message, err := h.RenderEmail("email/invite", map[string]interface{}{
 			"ToEmail":    email,
-			"FromEmail":  emailer.From,
+			"FromEmail":  emailer.From(),
 			"InviteLink": inviteLink,
 			"RealmName":  realm.Name,
 		})
@@ -83,7 +83,7 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 		// Render the reset email.
 		message, err := h.RenderEmail("email/passwordresetemail", map[string]interface{}{
 			"ToEmail":   email,
-			"FromEmail": emailer.From,
+			"FromEmail": emailer.From(),
 			"ResetLink": resetLink,
 			"RealmName": realm.Name,
 		})
@@ -121,7 +121,7 @@ func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, 
 		// Render the reset email.
 		message, err := h.RenderEmail("email/verifyemail", map[string]interface{}{
 			"ToEmail":    email,
-			"FromEmail":  emailer.From,
+			"FromEmail":  emailer.From(),
 			"VerifyLink": verifyLink,
 			"RealmName":  realm.Name,
 		})

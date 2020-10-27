@@ -204,7 +204,7 @@ func (c *Controller) inviteComposer(ctx context.Context, email string) (auth.Inv
 		// Render the message invitation.
 		message, err := c.h.RenderEmail("email/invite", map[string]interface{}{
 			"ToEmail":    email,
-			"FromEmail":  emailer.From,
+			"FromEmail":  emailer.From(),
 			"InviteLink": inviteLink,
 			"RealmName":  "System Admin",
 		})
