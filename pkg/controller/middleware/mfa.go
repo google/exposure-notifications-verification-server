@@ -18,18 +18,18 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 )
 
 // RequireMFA checks the realm's MFA requirements and enforces them.
 // Use requireRealm before requireMFA to ensure the currently selected realm is on context.
 // If no realm is selected, this assumes MFA is required.
-func RequireMFA(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
+func RequireMFA(ctx context.Context, authProvider auth.Provider, h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -46,25 +46,27 @@ func RequireMFA(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
-			realm := controller.RealmFromContext(ctx)
-			if NeedsMFARedirect(session, currentUser, realm) {
-				controller.RedirectToMFA(w, r, h)
+			mfaEnabled, err := authProvider.MFAEnabled(ctx, session)
+			if err != nil {
+				controller.InternalError(w, r, h, err)
 				return
+			}
+
+			if !mfaEnabled {
+				realm := controller.RealmFromContext(ctx)
+				if realm == nil {
+					controller.MissingRealm(w, r, h)
+					return
+				}
+
+				mode := realm.EffectiveMFAMode(currentUser)
+				if mode == database.MFARequired || (mode == database.MFAOptionalPrompt && !controller.MFAPromptedFromSession(session)) {
+					controller.RedirectToMFA(w, r, h)
+					return
+				}
 			}
 
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-func NeedsMFARedirect(session *sessions.Session, user *database.User, realm *database.Realm) bool {
-	if controller.FactorCountFromSession(session) > 0 {
-		return false
-	}
-	if mode := realm.EffectiveMFAMode(user); mode == database.MFARequired ||
-		mode == database.MFAOptionalPrompt && !controller.MFAPromptedFromSession(session) {
-		return true
-	}
-
-	return false
 }

@@ -17,14 +17,14 @@ package login
 import (
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
 func (c *Controller) HandleCreateSession() http.Handler {
 	type FormData struct {
-		IDToken     string `form:"idToken,required"`
-		FactorCount uint   `form:"factorCount"`
+		IDToken string `form:"idToken,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,24 +45,15 @@ func (c *Controller) HandleCreateSession() http.Handler {
 			return
 		}
 
-		// TODO: when the Identity Platform go client supports MFA, switch to directly
-		// grabbing this from the auth user struct
-		controller.StoreSessionFactorCount(session, form.FactorCount)
-		if form.FactorCount > 0 {
-			controller.StoreSessionMFAPrompted(session, true)
-		}
-
-		// Get the session cookie from firebase.
-		ttl := c.config.SessionDuration
-		cookie, err := c.client.SessionCookie(ctx, form.IDToken, ttl)
-		if err != nil {
+		// Create the session cookie.
+		if err := c.authProvider.StoreSession(ctx, session, &auth.SessionInfo{
+			IDToken: form.IDToken,
+			TTL:     c.config.SessionDuration,
+		}); err != nil {
 			flash.Error("Failed to create session: %v", err)
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
-
-		// Set the firebase cookie value in our session.
-		controller.StoreSessionFirebaseCookie(session, cookie)
 
 		c.h.RenderJSON(w, http.StatusOK, nil)
 	})

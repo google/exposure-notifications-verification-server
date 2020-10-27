@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	iFB "github.com/google/exposure-notifications-verification-server/internal/firebase"
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -43,13 +43,20 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 
-	firebase "firebase.google.com/go"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
 
 // Server defines routes for the UI server.
-func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database, cacher cache.Cacher, certificateSigner keys.KeyManager, limiterStore limiter.Store) (http.Handler, error) {
+func Server(
+	ctx context.Context,
+	cfg *config.ServerConfig,
+	db *database.Database,
+	authProvider auth.Provider,
+	cacher cache.Cacher,
+	certificateSigner keys.KeyManager,
+	limiterStore limiter.Store,
+) (http.Handler, error) {
 	// Setup sessions
 	sessions := sessions.NewCookieStore(cfg.CookieKeys.AsBytes()...)
 	sessions.Options.Path = "/"
@@ -57,20 +64,6 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 	sessions.Options.MaxAge = int(cfg.SessionDuration.Seconds())
 	sessions.Options.Secure = !cfg.DevMode
 	sessions.Options.SameSite = http.SameSiteStrictMode
-
-	// Setup firebase
-	app, err := firebase.NewApp(ctx, cfg.FirebaseConfig())
-	if err != nil {
-		return nil, fmt.Errorf("failed to setup firebase: %w", err)
-	}
-	auth, err := app.Auth(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to configure firebase: %w", err)
-	}
-	firebaseInternal, err := iFB.New(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to configure internal firebase client: %w", err)
-	}
 
 	// Create the router
 	r := mux.NewRouter()
@@ -113,13 +106,13 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 	r.Use(currentPath)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, cacher, auth, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
-	requireVerified := middleware.RequireVerified(ctx, auth, db, h, cfg.SessionDuration)
+	requireAuth := middleware.RequireAuth(ctx, cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
+	requireVerified := middleware.RequireVerified(ctx, authProvider, db, h, cfg.SessionDuration)
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	loadCurrentRealm := middleware.LoadCurrentRealm(ctx, cacher, db, h)
 	requireRealm := middleware.RequireRealm(ctx, h)
 	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
-	requireMFA := middleware.RequireMFA(ctx, h)
+	requireMFA := middleware.RequireMFA(ctx, authProvider, h)
 	processFirewall := middleware.ProcessFirewall(ctx, h, "server")
 	rateLimit := httplimiter.Handle
 
@@ -141,7 +134,7 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 	}
 
 	{
-		loginController := login.New(ctx, firebaseInternal, auth, cfg, db, h)
+		loginController := login.New(ctx, authProvider, cfg, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
@@ -278,7 +271,7 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 		userSub.Use(requireMFA)
 		userSub.Use(rateLimit)
 
-		userController := user.New(ctx, firebaseInternal, auth, cacher, cfg, db, h)
+		userController := user.New(ctx, authProvider, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleIndex()).
 			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
@@ -290,7 +283,7 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 		userSub.Handle("/{id}", userController.HandleShow()).Methods("GET")
 		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
 		userSub.Handle("/{id}", userController.HandleDelete()).Methods("DELETE")
-		userSub.Handle("/{id}", userController.HandleResetPassword()).Methods("POST")
+		userSub.Handle("/{id}/reset-password", userController.HandleResetPassword()).Methods("POST")
 	}
 
 	// realms
@@ -342,11 +335,10 @@ func Server(ctx context.Context, cfg *config.ServerConfig, db *database.Database
 		adminSub := r.PathPrefix("/admin").Subrouter()
 		adminSub.Use(requireAuth)
 		adminSub.Use(loadCurrentRealm)
-		adminSub.Use(requireVerified)
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
-		adminController := admin.New(ctx, cfg, cacher, db, auth, h)
+		adminController := admin.New(ctx, cfg, cacher, db, authProvider, h)
 		adminSub.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")

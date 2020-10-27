@@ -15,16 +15,13 @@
 package database
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
-	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/jinzhu/gorm"
-	"github.com/sethvargo/go-password/password"
 )
 
 const minDuration = -1 << 63
@@ -251,35 +248,6 @@ func (db *Database) TouchUserRevokeCheck(u *User) error {
 		Model(u).
 		UpdateColumn("last_revoke_check", time.Now().UTC()).
 		Error
-}
-
-// CreateFirebaseUser creates the associated Firebase user for this database
-// user. It does nothing if the firebase user already exists. If the firebase
-// user does not exist, it generates a random password. The returned boolean
-// indicates if the user was created.
-func (u *User) CreateFirebaseUser(ctx context.Context, firebaseAuth *auth.Client) (bool, error) {
-	if _, err := firebaseAuth.GetUserByEmail(ctx, u.Email); err != nil {
-		if auth.IsInvalidEmail(err) {
-			return false, fmt.Errorf("invalid email: %q", u.Email)
-		}
-		if !auth.IsUserNotFound(err) {
-			return false, fmt.Errorf("failed lookup firebase user: %w", err)
-		}
-
-		pwd, err := password.Generate(24, 8, 8, false, true)
-		if err != nil {
-			return false, fmt.Errorf("failed to generate password: %w", err)
-		}
-
-		firebaseUser := &auth.UserToCreate{}
-		firebaseUser.Email(u.Email).Password(pwd).DisplayName(u.Name)
-		if _, err := firebaseAuth.CreateUser(ctx, firebaseUser); err != nil {
-			return false, fmt.Errorf("failed to create firebase user: %w", err)
-		}
-		return true, nil
-	}
-
-	return false, nil
 }
 
 // PasswordChanged updates the last password change timestamp of the user.
