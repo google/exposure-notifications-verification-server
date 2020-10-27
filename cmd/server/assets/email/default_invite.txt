@@ -6,5 +6,5 @@ Welcome,
 You have been invited to join the {{.RealmName}} COVID-19 exposure notifications verification server.
 You many use the following link to set your password and sign-in:
 
-{{safeHTML .InviteLink}}
+{{.InviteLink}}
 {{end}}

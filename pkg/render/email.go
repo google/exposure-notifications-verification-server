@@ -44,7 +44,7 @@ func (r *Renderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 	defer r.rendererPool.Put(b)
 
 	// Render into the renderer
-	if err := r.templates.ExecuteTemplate(b, tmpl, data); err != nil {
+	if err := r.texttemplates.ExecuteTemplate(b, tmpl, data); err != nil {
 		return nil, fmt.Errorf("error executing email template %v", err)
 	}
 	return b.Bytes(), nil

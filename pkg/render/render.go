@@ -19,11 +19,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
+	htmltemplate "html/template"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	texttemplate "text/template"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -31,7 +32,7 @@ import (
 )
 
 // allowedResponseCodes are the list of allowed response codes. This is
-// primarily here to catch if someone, in the future, accidentially includes a
+// primarily here to catch if someone, in the future, accidentally includes a
 // bad status code.
 var allowedResponseCodes = map[int]struct{}{
 	200: {},
@@ -62,7 +63,8 @@ type Renderer struct {
 	// templates is the actually collection of templates. templatesLoader is a
 	// function for (re)loading templates. templatesLock is a mutex to prevent
 	// concurrent modification of the templates field.
-	templates     *template.Template
+	templates     *htmltemplate.Template
+	textTemplates *texttemplate.Template
 	templatesRoot string
 }
 
@@ -95,18 +97,20 @@ func (r *Renderer) loadTemplates() error {
 		return nil
 	}
 
-	tmpl := template.New("").
+	tmpl := htmltemplate.New("").
 		Option("missingkey=zero").
 		Funcs(templateFuncs())
-	if err := loadTemplates(tmpl, r.templatesRoot); err != nil {
+	txttmpl := texttemplate.New("")
+	if err := loadTemplates(tmpl, txttmpl, r.templatesRoot); err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
 	}
 
 	r.templates = tmpl
+	r.textTemplates = txttmpl
 	return nil
 }
 
-func loadTemplates(tmpl *template.Template, root string) error {
+func loadTemplates(tmpl *htmltemplate.Template, txttmpl *texttemplate.Template, root string) error {
 	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -116,12 +120,16 @@ func loadTemplates(tmpl *template.Template, root string) error {
 			return nil
 		}
 
-		if !strings.HasSuffix(info.Name(), ".html") {
-			return nil
+		if strings.HasSuffix(info.Name(), ".html") {
+			if _, err := tmpl.ParseFiles(path); err != nil {
+				return fmt.Errorf("failed to parse %s: %w", path, err)
+			}
 		}
 
-		if _, err := tmpl.ParseFiles(path); err != nil {
-			return fmt.Errorf("failed to parse %s: %w", path, err)
+		if strings.HasSuffix(info.Name(), ".txt") {
+			if _, err := txttmpl.ParseFiles(path); err != nil {
+				return fmt.Errorf("failed to parse %s: %w", path, err)
+			}
 		}
 
 		return nil
@@ -129,11 +137,11 @@ func loadTemplates(tmpl *template.Template, root string) error {
 }
 
 // safeHTML un-escapes known safe html.
-func safeHTML(s string) template.HTML {
-	return template.HTML(s)
+func safeHTML(s string) htmltemplate.HTML {
+	return htmltemplate.HTML(s)
 }
 
-func templateFuncs() template.FuncMap {
+func templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
 		"joinStrings":    strings.Join,
 		"trimSpace":      strings.TrimSpace,
