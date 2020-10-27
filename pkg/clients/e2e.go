@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	timeout        = 2 * time.Second
+	timeout        = 60 * time.Second
 	oneDay         = 24 * time.Hour
 	intervalLength = 10 * time.Minute
 	maxInterval    = 144
