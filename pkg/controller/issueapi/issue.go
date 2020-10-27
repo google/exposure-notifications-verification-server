@@ -252,6 +252,12 @@ func (c *Controller) HandleIssue() http.Handler {
 				result = observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER")
 				return
 			}
+
+			// Override limit if there has been a burst for this realm.
+			if remaining > limit {
+				remaining = limit
+			}
+
 			c.recordCapacity(ctx, limit, remaining)
 			if !ok {
 				logger.Warnw("realm has exceeded daily quota",
