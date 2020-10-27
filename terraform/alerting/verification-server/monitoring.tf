@@ -92,7 +92,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
       filter          = <<-EOT
       metric.type="custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count"
       resource.type="generic_task"
-      metric.result="RATE_LIMITED"
+      metric.label.result="RATE_LIMITED"
 EOT
 
       aggregations {
