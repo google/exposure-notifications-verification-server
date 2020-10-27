@@ -97,6 +97,17 @@ func (c *Controller) HandleCleanup() http.Handler {
 		// attempt the other purges.
 		var merr *multierror.Error
 
+		// API keys
+		item = tag.Upsert(itemTagKey, "API_KEYS")
+		if count, err := c.db.PurgeAuthorizedApps(c.config.AuthorizedAppMaxAge); err != nil {
+			merr = multierror.Append(merr, fmt.Errorf("failed to purge authorized apps: %w", err))
+			result = observability.ResultError("FAILED")
+		} else {
+			c.logger.Infow("purged authorized apps", "count", count)
+			result = observability.ResultOK()
+		}
+		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
+
 		// Verification codes
 		item = tag.Upsert(itemTagKey, "VERIFICATION_CODE")
 		if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
