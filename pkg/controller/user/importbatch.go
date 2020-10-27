@@ -15,7 +15,6 @@
 package user
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -69,23 +68,31 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			}
 			user.Realms = append(user.Realms, realm)
 
-			if created, err := user.CreateFirebaseUser(ctx, c.client); err != nil {
-				logger.Errorw("Error creating firebase user", "error", err)
-				batchErr = multierror.Append(batchErr, err)
-				continue
-			} else if created {
-				newUsers = append(newUsers, &batchUser)
-
-				if err := c.sendInvitation(ctx, user.Email); err != nil {
-					batchErr = multierror.Append(batchErr, errors.New("send invitation failed"))
-					continue
-				}
-			}
-
+			// Save the user in the database.
 			if err := c.db.SaveUser(user, currentUser); err != nil {
 				logger.Errorw("Error saving user", "error", err)
 				batchErr = multierror.Append(batchErr, err)
 				continue
+			}
+
+			// Create the invitation email composer.
+			inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+
+			// Create the user in the auth provider. This could be a noop depending on
+			// the auth provider.
+			created, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", inviteComposer)
+			if err != nil {
+				logger.Errorw("failed to import user", "user", user.Email, "error", err)
+				batchErr = multierror.Append(batchErr, err)
+				continue
+			}
+
+			if created {
+				newUsers = append(newUsers, &batchUser)
 			}
 		}
 

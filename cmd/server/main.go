@@ -21,6 +21,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -106,7 +107,13 @@ func realMain(ctx context.Context) error {
 	}
 	defer limiterStore.Close(ctx)
 
-	mux, err := routes.Server(ctx, cfg, db, cacher, certificateSigner, limiterStore)
+	// Setup auth provider
+	authProvider, err := auth.NewFirebase(ctx, cfg.FirebaseConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create firebase auth provider: %w", err)
+	}
+
+	mux, err := routes.Server(ctx, cfg, db, authProvider, cacher, certificateSigner, limiterStore)
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
 	}

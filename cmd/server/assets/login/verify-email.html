@@ -32,12 +32,12 @@
               </div>
               {{end}}
 
-              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.
-              </p>
+              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.</p>
 
-              <form method="POST">
+              <form method="POST" id="verify-email">
                 {{ .csrfField }}
-                <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
+                <input type="submit" id="verify-button" class="btn btn-primary btn-block"
+                  value="Send verification email" disabled>
 
                 <small class="form-text text-muted">
                   Click to send an email containing a verification link.
@@ -56,10 +56,12 @@
     </div>
   </main>
 
+  {{if .firebase}}
   <script>
-    let $verify = $('#verify');
-    let $skip = $('#skip');
-    let $not = $('#not');
+    let $form = $("#verify-email");
+    let $verifyButton = $("#verify-button");
+    let $skip = $("#skip");
+    let $not = $("#not");
 
     firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
@@ -67,24 +69,28 @@
         return;
       }
 
-      if ({{if eq .sendInvite "sent"}}true{{else}}user.emailVerified{{end}}) {
-        $not.hide();
-        $skip.text("Go home");
-      } else {
-        $verify.prop('disabled', false);
+      // If the email is already verified, move along.
+      if (user.emailVerified) {
+        flash.clear();
+        flash.alert("Your email address is already verified.");
+        window.location.assign("/home");
+        return;
       }
 
-      {{if eq .sendInvite "send"}}
-      if (!user.emailVerified) {
-        user.sendEmailVerification().then(function() {
-          flash.clear();
-          flash.alert('Verification email sent.');
-          $verify.prop('disabled', true);
-        });
-      }
-      {{end}}
+      // Get an ID token and embed it onto the page.
+      user.getIdToken().then(idToken => {
+        let $idTokenField = $("<input>");
+        $idTokenField.attr("type", "hidden");
+        $idTokenField.attr("name", "idToken");
+        $idTokenField.attr("value", idToken);
+        $form.append($idTokenField);
+
+        // Now that we have a user, enable the form.
+        $verifyButton.prop("disabled", false);
+      });
     });
   </script>
+  {{end}}
 </body>
 
 </html>
