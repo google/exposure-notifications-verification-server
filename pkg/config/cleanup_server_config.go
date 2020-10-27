@@ -41,7 +41,7 @@ type CleanupConfig struct {
 
 	// Cleanup config
 	AuditEntryMaxAge        time.Duration `env:"AUDIT_ENTRY_MAX_AGE,default=720h"`
-	AuthorizedAppMaxAge     time.Duration `env:"AUTHORIZED_APP_MAX_AGE,default=168h"`
+	AuthorizedAppMaxAge     time.Duration `env:"AUTHORIZED_APP_MAX_AGE,default=336h"`
 	CleanupPeriod           time.Duration `env:"CLEANUP_PERIOD,default=15m"`
 	MobileAppMaxAge         time.Duration `env:"MOBILE_APP_MAX_AGE,default=168h"`
 	VerificationCodeMaxAge  time.Duration `env:"VERIFICATION_CODE_MAX_AGE,default=24h"`
