@@ -12,24 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-locals {
-  realm_token_remaining_capacity_low = "RealmTokenRemainingCapacityLow.yaml"
-}
-
 resource "null_resource" "RealmTokenRemainingCapacityLowAlert" {
   triggers = {
     # trigger a provision if the content changes.
-    file_content = file("${path.module}/alerts/${local.realm_token_remaining_capacity_low}"),
+    file_content = file("${path.module}/alerts/RealmTokenRemainingCapacityLow.yaml"),
   }
   provisioner "local-exec" {
     command = "${path.module}/scripts/upsert_alert_policy.sh"
     environment = {
       CLOUDSDK_CORE_PROJECT = var.monitoring-host-project
       POLICY                = self.triggers.file_content
-      DISPLAY_NAME          = trimsuffix(local.realm_token_remaining_capacity_low, ".yaml")
+      DISPLAY_NAME          = "RealmTokenRemainingCapacityLow"
     }
   }
   depends_on = [
     google_monitoring_metric_descriptor.api--issue--realm_token_latest,
+  ]
+}
+
+resource "null_resource" "E2ETestErrorRatioHigh" {
+  triggers = {
+    # trigger a provision if the content changes.
+    file_content = file("${path.module}/alerts/E2ETestErrorRatioHigh.yaml"),
+  }
+  provisioner "local-exec" {
+    command = "${path.module}/scripts/upsert_alert_policy.sh"
+    environment = {
+      CLOUDSDK_CORE_PROJECT = var.monitoring-host-project
+      POLICY                = self.triggers.file_content
+      DISPLAY_NAME          = "E2ETestErrorRatioHigh"
+    }
+  }
+  depends_on = [
+    google_monitoring_metric_descriptor.e2e--request_count
   ]
 }
