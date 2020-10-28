@@ -59,6 +59,23 @@ func TestHandleHome_IssueCode(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
+	t.Log(`http://` + harness.Server.Addr() + `/home`)
+	var html string
+	if err := chromedp.Run(taskCtx,
+		// Pre-authenticate the user.
+		browser.SetCookie(cookie),
+
+		// Visit /home.
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/home`),
+
+		chromedp.InnerHTML(`body`, &html),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("html is:\n%s", html)
+	t.Fatal("failed intentionally")
+
 	var code string
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
