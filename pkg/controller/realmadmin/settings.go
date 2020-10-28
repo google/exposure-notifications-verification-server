@@ -73,6 +73,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		SMTPPassword         string `form:"smtp_password"`
 		SMTPHost             string `form:"smtp_host"`
 		SMTPPort             string `form:"smtp_port"`
+		EmailInviteTemplate  string `form:"email_invite_template"`
 
 		Security                    bool   `form:"security"`
 		MFAMode                     int16  `form:"mfa_mode"`
@@ -170,6 +171,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		// Email
 		if form.Email {
 			realm.UseSystemEmailConfig = form.UseSystemEmailConfig
+			realm.EmailInviteTemplate = form.EmailInviteTemplate
 		}
 
 		// Security
