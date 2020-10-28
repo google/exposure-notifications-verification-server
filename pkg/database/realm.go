@@ -968,6 +968,36 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 				audits = append(audits, audit)
 			}
 
+			if existing.EmailInviteTemplate != r.EmailInviteTemplate {
+				audit := BuildAuditEntry(actor, "updated email invite template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailInviteTemplate, r.EmailInviteTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.EmailPasswordResetTemplate != r.EmailPasswordResetTemplate {
+				audit := BuildAuditEntry(actor, "updated email password reset template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailPasswordResetTemplate, r.EmailPasswordResetTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.EmailVerifyTemplate != r.EmailVerifyTemplate {
+				audit := BuildAuditEntry(actor, "updated email verify template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailVerifyTemplate, r.EmailVerifyTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.CanUseSystemEmailConfig != r.CanUseSystemEmailConfig {
+				audit := BuildAuditEntry(actor, "updated ability to use system email config", r, r.ID)
+				audit.Diff = boolDiff(existing.CanUseSystemEmailConfig, r.CanUseSystemEmailConfig)
+				audits = append(audits, audit)
+			}
+
+			if existing.UseSystemEmailConfig != r.UseSystemEmailConfig {
+				audit := BuildAuditEntry(actor, "updated use system email config", r, r.ID)
+				audit.Diff = boolDiff(existing.UseSystemEmailConfig, r.UseSystemEmailConfig)
+				audits = append(audits, audit)
+			}
+
 			if existing.MFAMode != r.MFAMode {
 				audit := BuildAuditEntry(actor, "updated MFA mode", r, r.ID)
 				audit.Diff = stringDiff(existing.MFAMode.String(), r.MFAMode.String())
