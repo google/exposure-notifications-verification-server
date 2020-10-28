@@ -93,7 +93,7 @@ resource "google_monitoring_metric_descriptor" "e2e--request_count" {
   labels { key = "realm" }
   labels { key = "build_id" }
   labels { key = "build_tag" }
-  labels { key = "result" }
   labels { key = "test_type" }
+  labels { key = "result" }
   labels { key = "step" }
 }
