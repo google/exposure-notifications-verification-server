@@ -66,7 +66,15 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		c.renderShow(ctx, w, realm, stats, userStats)
+		if controller.AcceptsType(r, controller.ContentTypeJSON) {
+			resp := struct {
+				RealmStats []*database.RealmStats     `json:"realm_stats"`
+				UserStats  []*database.RealmUserStats `json:"per_user_stats"`
+			}{stats, userStats}
+			c.h.RenderJSON(w, http.StatusOK, resp)
+		} else {
+			c.renderShow(ctx, w, realm, stats, userStats)
+		}
 	})
 }
 

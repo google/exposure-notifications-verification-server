@@ -45,14 +45,20 @@ func Back(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 }
 
+// getAcceptedTypes returns all content types accepted by a given http.Request.
+func getAcceptedTypes(r *http.Request) []string {
+	accept := strings.Split(r.Header.Get("Accept"), ",")
+	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+	return accept
+}
+
 // InternalError handles an internal error, returning the right response to the
 // client.
 func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, err error) {
 	logger := logging.FromContext(r.Context())
 	logger.Errorw("internal error", "error", err)
 
-	accept := strings.Split(r.Header.Get("Accept"), ",")
-	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+	accept := getAcceptedTypes(r)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
@@ -66,8 +72,7 @@ func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, e
 
 // NotFound returns an error indicating the URL was not found.
 func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
-	accept := strings.Split(r.Header.Get("Accept"), ",")
-	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+	accept := getAcceptedTypes(r)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
@@ -81,8 +86,7 @@ func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 
 // Unauthorized returns an error indicating the request was unauthorized.
 func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
-	accept := strings.Split(r.Header.Get("Accept"), ",")
-	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+	accept := getAcceptedTypes(r)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
@@ -99,8 +103,7 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 // MissingRealm returns an error indicating that the request requires a realm
 // selection, but one was not present.
 func MissingRealm(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
-	accept := strings.Split(r.Header.Get("Accept"), ",")
-	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+	accept := getAcceptedTypes(r)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
@@ -140,6 +143,8 @@ func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h *render.
 	http.Redirect(w, r, "/login/change-password", http.StatusSeeOther)
 }
 
+// prefixInList looks for a string in the prefix of a slice of strings,
+// returning true if found.
 func prefixInList(list []string, prefix string) bool {
 	for _, v := range list {
 		if strings.HasPrefix(v, prefix) {
@@ -147,4 +152,9 @@ func prefixInList(list []string, prefix string) bool {
 		}
 	}
 	return false
+}
+
+// AcceptsType returns true if an http.Request accepts a certain content type.
+func AcceptsType(r *http.Request, t string) bool {
+	return prefixInList(getAcceptedTypes(r), t)
 }
