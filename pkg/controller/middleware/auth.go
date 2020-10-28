@@ -49,7 +49,6 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, authProvider auth.Pro
 				controller.MissingSession(w, r, h)
 				return
 			}
-
 			flash := controller.Flash(session)
 
 			// Check session idle timeout.

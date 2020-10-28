@@ -16,50 +16,105 @@ package envstest
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/server"
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+
 	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/memorystore"
 )
 
+const (
+	// sessionName is the name of the session. This must match the session name in
+	// the sessions middleware, but cannot be pulled from there due to a cyclical
+	// dependency.
+	sessionName = "verification-server-session"
+)
+
 // TestServerResponse is used as the reply to creating a test UI server.
 type TestServerResponse struct {
-	Config      *config.ServerConfig
-	Database    *database.Database
-	Cacher      cache.Cacher
-	KeyManager  keys.KeyManager
-	RateLimiter limiter.Store
-	Server      *server.Server
+	AuthProvider auth.Provider
+	Cacher       cache.Cacher
+	Config       *config.ServerConfig
+	Database     *database.Database
+	KeyManager   keys.KeyManager
+	RateLimiter  limiter.Store
+	Server       *server.Server
 }
 
-func (r *TestServerResponse) Banana(id uint) (*http.Cookie, error) {
-	sessionName := "verification-server-session"
+// SessionCookie returns an encrypted cookie for the given session information,
+// capable of being injected into the browser instance and read by the
+// application. Since the cookie contains the session, it can be used to mutate
+// any server state, including the currently-authenticated user.
+func (r *TestServerResponse) SessionCookie(session *sessions.Session) (*http.Cookie, error) {
+	if session == nil {
+		return nil, fmt.Errorf("session cannot be nil")
+	}
 
+	// Update options to be the server domain
+	if session.Options == nil {
+		session.Options = &sessions.Options{}
+	}
+	session.Options.Domain = r.Server.Addr()
+	session.Options.Path = "/"
+
+	// Encode and encrypt the cookie using the same configuration as the server.
 	codecs := securecookie.CodecsFromPairs(r.Config.CookieKeys.AsBytes()...)
-	encoded, err := securecookie.EncodeMulti(sessionName, "TODO", codecs...)
+	encoded, err := securecookie.EncodeMulti(sessionName, session.Values, codecs...)
 	if err != nil {
+		return nil, fmt.Errorf("failed to encode session cookie: %w", err)
+	}
+
+	return sessions.NewCookie(sessionName, encoded, session.Options), nil
+}
+
+// LoggedInCookie returns an encrypted cookie with the provided email address
+// logged in. It also stores that email verification and MFA prompting have
+// already occurred for a consistent post-login experience.
+//
+// The provided email is marked as verified, has MFA enabled, and is not
+// revoked. To test other journeys, manually build the session.
+func (r *TestServerResponse) LoggedInCookie(email string) (*http.Cookie, error) {
+	session := &sessions.Session{
+		Values:  map[interface{}]interface{}{},
+		Options: &sessions.Options{},
+		IsNew:   true,
+	}
+
+	controller.StoreSessionEmailVerificationPrompted(session, true)
+	controller.StoreSessionMFAPrompted(session, false)
+
+	ctx := context.Background()
+	if err := r.AuthProvider.StoreSession(ctx, session, &auth.SessionInfo{
+		Data: map[string]interface{}{
+			"email":          email,
+			"email_verified": true,
+			"mfa_enabled":    true,
+			"revoked":        false,
+		},
+		TTL: 5 * time.Minute,
+	}); err != nil {
 		return nil, err
 	}
 
-	c := &http.Cookie{
-		// TODO get from constant.
-		Name:  sessionName,
-		Value: encoded,
-	}
-	return c, nil
+	return r.SessionCookie(session)
 }
 
 // NewServer creates a new test UI server instance. When this function returns,
@@ -75,9 +130,12 @@ func NewServer(tb testing.TB) *TestServerResponse {
 	// Create the config and requirements.
 	response := newServerConfig(tb)
 
+	// Configure logging
+	logger := logging.NewLogger(true)
+	ctx := logging.WithLogger(context.Background(), logger)
+
 	// Build the routing.
-	ctx := context.Background()
-	mux, err := routes.Server(ctx, response.Config, response.Database, response.Cacher, response.KeyManager, response.RateLimiter)
+	mux, err := routes.Server(ctx, response.Config, response.Database, response.AuthProvider, response.Cacher, response.KeyManager, response.RateLimiter)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -101,22 +159,24 @@ func NewServer(tb testing.TB) *TestServerResponse {
 	}()
 
 	return &TestServerResponse{
-		Config:      response.Config,
-		Database:    response.Database,
-		Cacher:      response.Cacher,
-		KeyManager:  response.KeyManager,
-		RateLimiter: response.RateLimiter,
-		Server:      srv,
+		AuthProvider: response.AuthProvider,
+		Config:       response.Config,
+		Database:     response.Database,
+		Cacher:       response.Cacher,
+		KeyManager:   response.KeyManager,
+		RateLimiter:  response.RateLimiter,
+		Server:       srv,
 	}
 }
 
 // serverConfigResponse is the response from creating a server config.
 type serverConfigResponse struct {
-	Config      *config.ServerConfig
-	Database    *database.Database
-	Cacher      cache.Cacher
-	KeyManager  keys.KeyManager
-	RateLimiter limiter.Store
+	AuthProvider auth.Provider
+	Config       *config.ServerConfig
+	Database     *database.Database
+	Cacher       cache.Cacher
+	KeyManager   keys.KeyManager
+	RateLimiter  limiter.Store
 }
 
 // newServerConfig creates a new server configuration. It creates all the keys,
@@ -127,6 +187,12 @@ func newServerConfig(tb testing.TB) *serverConfigResponse {
 
 	if testing.Short() {
 		tb.Skip()
+	}
+
+	// Create the auth provider
+	authProvider, err := auth.NewLocal(context.Background())
+	if err != nil {
+		tb.Fatal(err)
 	}
 
 	// Create the cacher.
@@ -171,24 +237,22 @@ func newServerConfig(tb testing.TB) *serverConfigResponse {
 			HMACKey: RandomBytes(tb, 64),
 		},
 		Database: *dbConfig,
-
-		// TODO(sethvargo): source these from the environment. They aren't
-		// "secrets", but people should be able to use their own.
+		// Firebase is not used for browser tests.
 		Firebase: config.FirebaseConfig{
-			APIKey:          "AIzaSyAm3J2LnU95nl4imVISqZk_zTdRbUzzlow",
-			AuthDomain:      "apollo-server-273118.firebaseapp.com",
-			DatabaseURL:     "https://apollo-server-273118.firebaseio.com",
-			ProjectID:       "apollo-server-273118",
-			StorageBucket:   "apollo-server-273118.appspot.com",
-			MessageSenderID: "38554818207",
-			AppID:           "1:38554818207:web:b55eca99f6d233ed08b4aa",
-			MeasurementID:   "G-J04182V10C",
+			APIKey:          "test",
+			AuthDomain:      "test.firebaseapp.com",
+			DatabaseURL:     "https://test.firebaseio.com",
+			ProjectID:       "test",
+			StorageBucket:   "test.appspot.com",
+			MessageSenderID: "test",
+			AppID:           "1:test:web:test",
+			MeasurementID:   "G-TEST",
 		},
-
 		CookieKeys:  config.Base64ByteSlice{RandomBytes(tb, 64), RandomBytes(tb, 32)},
 		CSRFAuthKey: RandomBytes(tb, 32),
 		CertificateSigning: config.CertificateSigningConfig{
-			CertificateSigningKey: "UPDATE_ME", // TODO(sethvargo): configure this when the first test requires it
+			// TODO(sethvargo): configure this when the first test requires it
+			CertificateSigningKey: "UPDATE_ME",
 			Keys: keys.Config{
 				KeyManagerType: keys.KeyManagerTypeFilesystem,
 				FilesystemRoot: filepath.Join(project.Root(), "local", "test", RandomString(tb, 8)),
@@ -205,18 +269,18 @@ func newServerConfig(tb testing.TB) *serverConfigResponse {
 
 	// Process the config - this simulates production setups and also ensures we
 	// get the defaults for any unset values.
-	ctx := context.Background()
 	emptyLookuper := envconfig.MapLookuper(nil)
-	if err := config.ProcessWith(ctx, cfg, emptyLookuper); err != nil {
+	if err := config.ProcessWith(context.Background(), cfg, emptyLookuper); err != nil {
 		tb.Fatal(err)
 	}
 
 	return &serverConfigResponse{
-		Config:      cfg,
-		Database:    db,
-		Cacher:      cacher,
-		KeyManager:  keyManager,
-		RateLimiter: limiterStore,
+		AuthProvider: authProvider,
+		Config:       cfg,
+		Database:     db,
+		Cacher:       cacher,
+		KeyManager:   keyManager,
+		RateLimiter:  limiterStore,
 	}
 }
 

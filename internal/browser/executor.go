@@ -62,7 +62,9 @@ var defaultOptions = [...]chromedp.ExecAllocatorOption{
 // New creates a new headless browser context. Se NewFromOptions for usage.
 func New(tb testing.TB) context.Context {
 	tb.Helper()
-	return NewFromOptions(tb, defaultOptions[:])
+	opts := defaultOptions[:]
+	opts = append(opts, chromedp.Headless)
+	return NewFromOptions(tb, opts)
 }
 
 // NewHeadful creates a new browser context so you can actually watch the test.
@@ -70,9 +72,7 @@ func New(tb testing.TB) context.Context {
 // actually available.
 func NewHeadful(tb testing.TB) context.Context {
 	tb.Helper()
-	opts := defaultOptions[:]
-	opts = append(opts, chromedp.Headless)
-	return NewFromOptions(tb, opts)
+	return NewFromOptions(tb, defaultOptions[:])
 }
 
 // NewFromOptions creates a new browser instance. All future calls to `Run` must
@@ -141,7 +141,7 @@ func Screenshot(dst *[]byte) chromedp.Action {
 // bypass login and force a specific user be logged in during the test.
 func SetCookie(c *http.Cookie) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
-		exp := cdp.TimeSinceEpoch(c.Expires.UTC())
+		exp := cdp.TimeSinceEpoch(time.Now().Add(24 * time.Hour)) // TODO use c.Expires
 
 		var sameSite network.CookieSameSite
 		switch c.SameSite {
@@ -149,11 +149,10 @@ func SetCookie(c *http.Cookie) chromedp.Action {
 			sameSite = network.CookieSameSiteLax
 		case http.SameSiteStrictMode:
 			sameSite = network.CookieSameSiteStrict
-		case http.SameSiteNoneMode, http.SameSiteDefaultMode:
-			sameSite = network.CookieSameSiteNone
 		default:
-			return fmt.Errorf("unknown samesite mode %q", c.SameSite)
+			sameSite = network.CookieSameSiteNone
 		}
+		_ = sameSite
 
 		ok, err := network.
 			SetCookie(c.Name, c.Value).
@@ -162,7 +161,7 @@ func SetCookie(c *http.Cookie) chromedp.Action {
 			WithExpires(&exp).
 			WithSecure(c.Secure).
 			WithHTTPOnly(c.HttpOnly).
-			WithSameSite(sameSite).
+			// WithSameSite(sameSite).
 			Do(ctx)
 		if err != nil {
 			return err
@@ -192,10 +191,8 @@ func Cookies(dst *[]*http.Cookie) chromedp.Action {
 				sameSite = http.SameSiteLaxMode
 			case network.CookieSameSiteStrict:
 				sameSite = http.SameSiteStrictMode
-			case network.CookieSameSiteNone:
-				sameSite = http.SameSiteNoneMode
 			default:
-				return fmt.Errorf("unknown samesite mode %q", c.SameSite)
+				sameSite = http.SameSiteNoneMode
 			}
 
 			httpCookies[i] = &http.Cookie{

@@ -31,11 +31,13 @@ func TestHandleHome_IssueCode(t *testing.T) {
 
 	harness := envstest.NewServer(t)
 
+	// Get the default realm
 	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	// Create a user
 	admin := &database.User{
 		Email:       "admin@example.com",
 		Name:        "Admin",
@@ -46,53 +48,54 @@ func TestHandleHome_IssueCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c, err := harness.Banana(admin.ID)
+	// Create a cookie that logs this user in.
+	cookie, err := harness.LoggedInCookie(admin.Email)
 	if err != nil {
 		panic(err)
 	}
 
-	browserCtx := browser.NewHeadful(t)
-
-	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+	// Create a browser runner.
+	browserCtx := browser.New(t)
+	taskCtx, done := context.WithTimeout(browserCtx, 15*time.Second)
 	defer done()
 
 	var code string
 	if err := chromedp.Run(taskCtx,
-		// Force the user be be logged in.
-		browser.SetCookie(c),
+		// Pre-authenticate the user.
+		browser.SetCookie(cookie),
 
+		// Visit /home.
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/home`),
-		// Login("admin@example.com", "Password"),
 
-		// Post-login action is /home.
+		// Wait for render.
 		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
 
 		// Click the issue button.
 		chromedp.Click(`#submit`, chromedp.ByQuery),
 		chromedp.WaitVisible(`#code`, chromedp.ByQuery),
 
-		// Get the code
+		// Get the code.
 		chromedp.TextContent(`#code`, &code, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}
 
+	// Verify code length.
 	if got, want := len(code), 8; got != want {
 		t.Errorf("expected %v to be %v", got, want)
 	}
-}
 
-// Login executes a login for the given user.
-// TODO(sethvargo): move to global helper.
-func Login(email, password string) chromedp.Action {
-	return chromedp.Tasks{
-		chromedp.WaitVisible(`body#login`, chromedp.ByQuery),
-		chromedp.SendKeys(`#email`, email, chromedp.NodeReady, chromedp.ByQuery),
-		chromedp.SendKeys(`#password`, password, chromedp.NodeReady, chromedp.ByQuery),
-		chromedp.Click(`#login-form #submit`, chromedp.NodeReady, chromedp.ByQuery),
+	// Verify the code exists.
+	dbCode, err := harness.Database.FindVerificationCode(code)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		// Skip mobile phone verification for tests.
-		chromedp.WaitVisible(`body#login-register-phone`, chromedp.ByQuery),
-		chromedp.Click(`#skip`, chromedp.NodeReady, chromedp.ByQuery),
+	if got, want := dbCode.TestType, "confirmed"; got != want {
+		t.Errorf("expected %v to be %v", got, want)
+	}
+
+	if got, want := dbCode.Claimed, false; got != want {
+		t.Errorf("expected %v to be %v", got, want)
 	}
 }
