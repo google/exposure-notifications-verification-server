@@ -42,15 +42,29 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.R
 
 	// Return a function that does the actual sending.
 	return func(ctx context.Context, inviteLink string) error {
-		// Render the message invitation.
-		message, err := h.RenderEmail("email/invite", map[string]interface{}{
-			"ToEmail":    email,
-			"FromEmail":  emailer.From(),
-			"InviteLink": inviteLink,
-			"RealmName":  realm.Name,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to render invite template: %w", err)
+		var message []byte
+		if realm.EmailInviteTemplate != "" {
+			// Render from the realm template with the plain header.
+			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
+				"ToEmail":   email,
+				"FromEmail": emailer.From(),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to render email header template: %w", err)
+			}
+			body := []byte(realm.BuildInviteEmail(inviteLink))
+			message = append(header, body...)
+		} else {
+			// Render the message invitation from the default template.
+			message, err = h.RenderEmail("email/invite", map[string]interface{}{
+				"ToEmail":    email,
+				"FromEmail":  emailer.From(),
+				"InviteLink": inviteLink,
+				"RealmName":  realm.Name,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to render invite template: %w", err)
+			}
 		}
 
 		// Send the message.
@@ -80,15 +94,29 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 	}
 
 	return func(ctx context.Context, resetLink string) error {
-		// Render the reset email.
-		message, err := h.RenderEmail("email/passwordresetemail", map[string]interface{}{
-			"ToEmail":   email,
-			"FromEmail": emailer.From(),
-			"ResetLink": resetLink,
-			"RealmName": realm.Name,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to render password reset template: %w", err)
+		var message []byte
+		if realm.EmailInviteTemplate != "" {
+			// Render from the realm template with the plain header.
+			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
+				"ToEmail":   email,
+				"FromEmail": emailer.From(),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to render email header template: %w", err)
+			}
+			body := []byte(realm.BuildPasswordResetEmail(resetLink))
+			message = append(header, body...)
+		} else {
+			// Render the reset email.
+			message, err = h.RenderEmail("email/passwordresetemail", map[string]interface{}{
+				"ToEmail":   email,
+				"FromEmail": emailer.From(),
+				"ResetLink": resetLink,
+				"RealmName": realm.Name,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to render password reset template: %w", err)
+			}
 		}
 
 		// Send the message.
@@ -118,15 +146,29 @@ func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, 
 	}
 
 	return func(ctx context.Context, verifyLink string) error {
-		// Render the reset email.
-		message, err := h.RenderEmail("email/verifyemail", map[string]interface{}{
-			"ToEmail":    email,
-			"FromEmail":  emailer.From(),
-			"VerifyLink": verifyLink,
-			"RealmName":  realm.Name,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to render password reset template: %w", err)
+		var message []byte
+		if realm.EmailInviteTemplate != "" {
+			// Render from the realm template with the plain header.
+			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
+				"ToEmail":   email,
+				"FromEmail": emailer.From(),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to render email header template: %w", err)
+			}
+			body := []byte(realm.BuildVerifyEmail(verifyLink))
+			message = append(header, body...)
+		} else {
+			// Render the reset email.
+			message, err = h.RenderEmail("email/verifyemail", map[string]interface{}{
+				"ToEmail":    email,
+				"FromEmail":  emailer.From(),
+				"VerifyLink": verifyLink,
+				"RealmName":  realm.Name,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to render password reset template: %w", err)
+			}
 		}
 
 		// Send the message.
