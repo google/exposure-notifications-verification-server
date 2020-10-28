@@ -81,8 +81,8 @@
     </div>
 
     <div class="form-label-group">
-      <textarea name="email_invite_template" id="email-invite-template" class="form-control text-monospace{{if $realm.ErrorsFor "SMSTextTemplate"}} is-invalid{{end}}"
-        rows="5" placeholder="SMS text template">{{$realm.EmailInviteTemplate}}</textarea>
+      <textarea name="email_invite_template" id="email-invite-template" class="form-control text-monospace{{if $realm.ErrorsFor "EmailInviteTemplate"}} is-invalid{{end}}"
+        rows="5" placeholder="Email invite template">{{$realm.EmailInviteTemplate}}</textarea>
       <label for="email-invite-template">Email invitation template</label>
       {{if $realm.ErrorsFor "EmailInviteTemplate"}}
       <div class="invalid-feedback">
