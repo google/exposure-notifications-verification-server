@@ -16,9 +16,11 @@ package admin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
@@ -108,17 +110,15 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 			return
 		}
 
-		created, err := user.CreateFirebaseUser(ctx, c.firebaseAuth)
+		inviteComposer, err := c.inviteComposer(ctx, email)
 		if err != nil {
-			flash.Alert("Failed to create user: %v", err)
-			c.renderNewUser(ctx, w, user)
+			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
-		// Once the Go SDK supports server-side password reset emails, we can drop
-		// this.
-		if created {
-			flash.Alert(`Successfully created user %v with a random password. `+
-				`Have them set a password using the "Forgot Password" function.`, user.Email)
+		if _, err := c.authProvider.CreateUser(ctx, name, email, "", inviteComposer); err != nil {
+			flash.Alert("Failed to create user: %v", err)
+			c.renderNewUser(ctx, w, user)
 		}
 
 		flash.Alert("Successfully created system admin '%v'", user.Name)
@@ -178,4 +178,44 @@ func (c *Controller) HandleUsersDelete() http.Handler {
 		flash.Alert("Successfully removed %v as a system admin", user.Email)
 		controller.Back(w, r, c.h)
 	})
+}
+
+// inviteComposer returns an email composer function that invites a user using
+// the system email config.
+func (c *Controller) inviteComposer(ctx context.Context, email string) (auth.InviteUserEmailFunc, error) {
+	// Figure out email sending - since this is a system admin, only the system
+	// credentials can be used.
+	emailConfig, err := c.db.SystemEmailConfig()
+	if err != nil {
+		if database.IsNotFound(err) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	emailer, err := emailConfig.Provider()
+	if err != nil {
+		return nil, err
+	}
+
+	// Return a function that does the actual sending.
+	return func(ctx context.Context, inviteLink string) error {
+		// Render the message invitation.
+		message, err := c.h.RenderEmail("email/invite", map[string]interface{}{
+			"ToEmail":    email,
+			"FromEmail":  emailer.From(),
+			"InviteLink": inviteLink,
+			"RealmName":  "System Admin",
+		})
+		if err != nil {
+			return fmt.Errorf("failed to render invite template: %w", err)
+		}
+
+		// Send the message.
+		if err := emailer.SendEmail(ctx, email, message); err != nil {
+			return fmt.Errorf("failed to send email: %w", err)
+		}
+		return nil
+	}, nil
 }

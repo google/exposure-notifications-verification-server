@@ -15,44 +15,58 @@
 package user
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"go.opencensus.io/stats"
+	"github.com/gorilla/mux"
 )
 
 func (c *Controller) HandleResetPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c.Show(w, r, true /*resetPassword*/)
-	})
-}
+		ctx := r.Context()
+		vars := mux.Vars(r)
 
-func (c *Controller) resetPasswordUserAssertion(ctx context.Context, user *database.User) error {
-	created, err := c.ensureFirebaseUserExists(ctx, user)
-	if created {
-		stats.Record(ctx, controller.MFirebaseRecreates.M(1))
-	}
-	return err
-}
-
-func (c *Controller) ensureFirebaseUserExists(ctx context.Context, user *database.User) (bool, error) {
-	session := controller.SessionFromContext(ctx)
-	flash := controller.Flash(session)
-
-	// Ensure the firebase user is created
-	created, err := user.CreateFirebaseUser(ctx, c.client)
-	if err != nil {
-		flash.Alert("Failed to create user auth: %v", err)
-		return created, err
-	}
-
-	if created {
-		if err := c.sendInvitation(ctx, user.Email); err != nil {
-			flash.Error("Could not send new user invitation.")
-			return true, err
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
 		}
-	}
-	return created, nil
+		flash := controller.Flash(session)
+
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
+
+		// Pull the user from the id.
+		user, err := realm.FindUser(c.db, vars["id"])
+		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// Build the emailer.
+		resetComposer, err := controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// Reset the password.
+		if err := c.authProvider.SendResetPasswordEmail(ctx, user.Email, resetComposer); err != nil {
+			flash.Error("Failed to reset password: %v", err)
+			controller.Back(w, r, c.h)
+			return
+		}
+
+		flash.Alert("Successfully sent password reset to %v", user.Email)
+		controller.Back(w, r, c.h)
+	})
 }

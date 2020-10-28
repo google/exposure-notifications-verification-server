@@ -31,7 +31,7 @@ func (c *Controller) HandleLogin() http.Handler {
 		// cookie from the session, and kick them back here.
 		session := controller.SessionFromContext(ctx)
 		if session != nil {
-			if c := controller.FirebaseCookieFromSession(session); c != "" {
+			if err := c.authProvider.CheckRevoked(ctx, session); err == nil {
 				http.Redirect(w, r, "/home", http.StatusSeeOther)
 				return
 			}

@@ -34,7 +34,11 @@ $(function () {
       }
     }
 
-    let $csrfField = $("{{.csrfField}}");
+    let csrfToken = $("meta[name=csrf-token]").attr("content");
+    let $csrfField = $("<input>")
+      .attr("type", "hidden")
+      .attr("name", "gorilla.csrf.Token")
+      .attr("value", csrfToken);
 
     let $inputField = $("<input>")
       .attr("type", "hidden")

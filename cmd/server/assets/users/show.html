@@ -8,7 +8,6 @@
 <html lang="en">
 <head>
   {{template "head" .}}
-  {{template "firebase" .}}
 </head>
 
 <body class="tab-content">
@@ -43,11 +42,7 @@
           {{$user.CanAdminRealm $currentRealm.ID}}
         </div>
 
-        <form class="floating-form" action="/users/{{$user.ID}}" method="POST">
-          {{ .csrfField }}
-          <input type="hidden" name="email" value="{{$user.Email}}"/>
-          <button type="password-reset" id="submit" class="btn btn-primary btn-block">Send password reset</button>
-        </form>
+        <a href="/users/{{$user.ID}}/reset-password" data-method="POST" class="btn btn-primary btn-block">Send password reset</a>
       </div>
     </div>
 
@@ -109,25 +104,6 @@
       var chart = new google.charts.Line(document.getElementById('chart'));
       chart.draw(data, google.charts.Line.convertOptions(options));
     }
-  </script>
-  {{end}}
-
-  {{if .firebase}}
-  <script type="text/javascript">
-  $(function() {
-    firebase.auth().sendPasswordResetEmail('{{$user.Email}}')
-    .then(function() {
-      flash.clear();
-      flash.alert('Password reset email sent.');
-      $('#submit').prop('disabled', true);
-    }).catch(function(error) {
-      if (error.code == "auth/too-many-requests") {
-        $('#submit').prop('disabled', true);
-      }
-      flash.clear();
-      flash.error(error.message);
-    });
-  });
   </script>
   {{end}}
 </body>

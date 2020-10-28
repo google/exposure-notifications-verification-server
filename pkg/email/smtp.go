@@ -18,6 +18,7 @@ package email
 import (
 	"context"
 	"net/smtp"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 )
@@ -44,10 +45,14 @@ func NewSMTP(ctx context.Context, user, password, host, port string) Provider {
 
 // SendEmail sends an email to the user.
 func (s *SMTPProvider) SendEmail(ctx context.Context, toEmail string, message []byte) error {
+	ctx, done := context.WithTimeout(context.Background(), 60*time.Second)
 
 	// Authentication.
 	auth := smtp.PlainAuth("", s.User, s.Password, s.SMTPHost)
-	go s.sendMail(ctx, auth, toEmail, message)
+	go func() {
+		defer done()
+		s.sendMail(ctx, auth, toEmail, message)
+	}()
 
 	return nil
 }

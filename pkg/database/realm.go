@@ -78,6 +78,11 @@ const (
 	SMSLongCode      = "[longcode]"
 	SMSLongExpires   = "[longexpires]"
 	SMSENExpressLink = "[enslink]"
+
+	EmailInviteLink        = "[invitelink]"
+	EmailPasswordResetLink = "[passwordresetlink]"
+	EmailVerifyLink        = "[verifylink]"
+	RealmName              = "[realmname]"
 )
 
 // AuthRequirement represents authentication requirements for the realm
@@ -345,7 +350,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSCode, SMSENExpressLink))
 		}
 		if strings.Contains(r.SMSTextTemplate, SMSExpires) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allwoed for expiration", SMSExpires, SMSLongExpires))
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allowed for expiration", SMSExpires, SMSLongExpires))
 		}
 		if strings.Contains(r.SMSTextTemplate, SMSLongCode) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
@@ -355,6 +360,28 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
 		if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
 			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+		}
+	}
+
+	if r.UseSystemEmailConfig && !r.CanUseSystemEmailConfig {
+		r.AddError("useSystemEmailConfig", "is not allowed on this realm")
+	}
+
+	if r.EmailInviteTemplate != "" {
+		if !strings.Contains(r.EmailInviteTemplate, EmailInviteLink) {
+			r.AddError("EmailInviteLink", fmt.Sprintf("must contain %q", EmailInviteLink))
+		}
+	}
+
+	if r.EmailPasswordResetTemplate != "" {
+		if !strings.Contains(r.EmailPasswordResetTemplate, EmailPasswordResetLink) {
+			r.AddError("EmailPasswordResetTemplate", fmt.Sprintf("must contain %q", EmailPasswordResetLink))
+		}
+	}
+
+	if r.EmailVerifyTemplate != "" {
+		if !strings.Contains(r.EmailVerifyTemplate, EmailVerifyLink) {
+			r.AddError("EmailVerifyTemplate", fmt.Sprintf("must contain %q", EmailVerifyLink))
 		}
 	}
 
@@ -411,6 +438,30 @@ func (r *Realm) BuildSMSText(code, longCode string, enxDomain string) string {
 	text = strings.ReplaceAll(text, SMSLongCode, longCode)
 	text = strings.ReplaceAll(text, SMSLongExpires, fmt.Sprintf("%d", r.GetLongCodeDurationHours()))
 
+	return text
+}
+
+// BuildInviteEmail replaces certain strings with the right values for invitations.
+func (r *Realm) BuildInviteEmail(inviteLink string) string {
+	text := r.EmailInviteTemplate
+	text = strings.ReplaceAll(text, EmailInviteLink, inviteLink)
+	text = strings.ReplaceAll(text, RealmName, r.Name)
+	return text
+}
+
+// BuildPasswordResetEmail replaces certain strings with the right values for password reset.
+func (r *Realm) BuildPasswordResetEmail(passwordResetLink string) string {
+	text := r.EmailPasswordResetTemplate
+	text = strings.ReplaceAll(text, EmailPasswordResetLink, passwordResetLink)
+	text = strings.ReplaceAll(text, RealmName, r.Name)
+	return text
+}
+
+// BuildVerifyEmail replaces certain strings with the right values for email verification.
+func (r *Realm) BuildVerifyEmail(verifyLink string) string {
+	text := r.EmailVerifyTemplate
+	text = strings.ReplaceAll(text, EmailVerifyLink, verifyLink)
+	text = strings.ReplaceAll(text, RealmName, r.Name)
 	return text
 }
 
@@ -914,6 +965,36 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 			if existing.UseSystemSMSConfig != r.UseSystemSMSConfig {
 				audit := BuildAuditEntry(actor, "updated use system SMS config", r, r.ID)
 				audit.Diff = boolDiff(existing.UseSystemSMSConfig, r.UseSystemSMSConfig)
+				audits = append(audits, audit)
+			}
+
+			if existing.EmailInviteTemplate != r.EmailInviteTemplate {
+				audit := BuildAuditEntry(actor, "updated email invite template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailInviteTemplate, r.EmailInviteTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.EmailPasswordResetTemplate != r.EmailPasswordResetTemplate {
+				audit := BuildAuditEntry(actor, "updated email password reset template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailPasswordResetTemplate, r.EmailPasswordResetTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.EmailVerifyTemplate != r.EmailVerifyTemplate {
+				audit := BuildAuditEntry(actor, "updated email verify template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailVerifyTemplate, r.EmailVerifyTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.CanUseSystemEmailConfig != r.CanUseSystemEmailConfig {
+				audit := BuildAuditEntry(actor, "updated ability to use system email config", r, r.ID)
+				audit.Diff = boolDiff(existing.CanUseSystemEmailConfig, r.CanUseSystemEmailConfig)
+				audits = append(audits, audit)
+			}
+
+			if existing.UseSystemEmailConfig != r.UseSystemEmailConfig {
+				audit := BuildAuditEntry(actor, "updated use system email config", r, r.ID)
+				audit.Diff = boolDiff(existing.UseSystemEmailConfig, r.UseSystemEmailConfig)
 				audits = append(audits, audit)
 			}
 

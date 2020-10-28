@@ -16,6 +16,7 @@ package middleware
 
 import (
 	"context"
+	"html/template"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -44,12 +45,10 @@ func ConfigureCSRF(ctx context.Context, config *config.ServerConfig, h *render.R
 
 			// Save csrf configuration on the template map.
 			m := controller.TemplateMapFromContext(ctx)
-			if _, ok := m["csrfField"]; !ok {
-				m["csrfField"] = csrf.TemplateField(r)
-			}
-			if _, ok := m["csrfToken"]; !ok {
-				m["csrfToken"] = csrf.Token(r)
-			}
+			m["csrfField"] = csrf.TemplateField(r)
+			m["csrfToken"] = csrf.Token(r)
+			m["csrfMeta"] = template.HTML(
+				`<meta name="csrf-token" content="` + csrf.Token(r) + `">`)
 
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)

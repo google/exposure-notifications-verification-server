@@ -418,3 +418,18 @@ func (a *AuthorizedApp) AuditID() string {
 func (a *AuthorizedApp) AuditDisplay() string {
 	return a.Name
 }
+
+// PurgeAuthorizedApps will delete authorized apps that have been deleted for
+// more than the specified time.
+func (db *Database) PurgeAuthorizedApps(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+
+	result := db.db.
+		Unscoped().
+		Where("deleted_at IS NOT NULL AND deleted_at < ?", deleteBefore).
+		Delete(&AuthorizedApp{})
+	return result.RowsAffected, result.Error
+}

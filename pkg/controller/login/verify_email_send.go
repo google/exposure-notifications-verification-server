@@ -20,8 +20,6 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/email"
 )
 
 func (c *Controller) HandleShowVerifyEmail() http.Handler {
@@ -37,11 +35,15 @@ func (c *Controller) HandleShowVerifyEmail() http.Handler {
 		// Mark prompted so we only prompt once.
 		controller.StoreSessionEmailVerificationPrompted(session, true)
 
-		c.renderEmailVerify(ctx, w, "")
+		c.renderEmailVerify(ctx, w)
 	})
 }
 
 func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
+	type FormData struct {
+		IDToken string `form:"idToken"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -58,30 +60,33 @@ func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
 			return
 		}
 
-		compose := func(emailer email.Provider, realm *database.Realm, toEmail string) ([]byte, error) {
-			return controller.ComposeEmailVerifyEmail(ctx, c.h, c.client, toEmail, emailer.From(), realm.Name)
-		}
-		sent, err := controller.SendRealmEmail(ctx, c.db, compose, currentUser.Email)
-		if err != nil {
-			c.logger.Warnw("failed sending verification", "error", err)
-			flash.Error("Failed to send verification email.")
-			c.renderEmailVerify(ctx, w, "")
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			flash.Error("Failed to verify email: %v", err)
+			c.renderEmailVerify(ctx, w)
 			return
 		}
-		if !sent {
-			// fallback to Firebase if not SMTP found
-			c.renderEmailVerify(ctx, w, "send")
+
+		// Build the email template.
+		verifyComposer, err := controller.SendEmailVerificationEmailFunc(ctx, c.db, c.h, currentUser.Email)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// Send an email to verify the users email address.
+		if err := c.authProvider.SendEmailVerificationEmail(ctx, currentUser.Email, form.IDToken, verifyComposer); err != nil {
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
 		flash.Alert("Verification email sent.")
-		c.renderEmailVerify(ctx, w, "sent")
+		c.renderEmailVerify(ctx, w)
 	})
 }
 
-func (c *Controller) renderEmailVerify(ctx context.Context, w http.ResponseWriter, sendInvite string) {
+func (c *Controller) renderEmailVerify(ctx context.Context, w http.ResponseWriter) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["sendInvite"] = sendInvite
 	m["firebase"] = c.config.Firebase
 	c.h.RenderHTML(w, "login/verify-email", m)
 }

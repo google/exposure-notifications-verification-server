@@ -252,6 +252,12 @@ func (c *Controller) HandleIssue() http.Handler {
 				result = observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER")
 				return
 			}
+
+			// Override limit if there has been a burst for this realm.
+			if remaining > limit {
+				remaining = limit
+			}
+
 			c.recordCapacity(ctx, limit, remaining)
 			if !ok {
 				logger.Warnw("realm has exceeded daily quota",
@@ -312,7 +318,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				}
 
 				logger.Errorw("failed to send sms", "error", err)
-				stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultError("NOT_OK")}, mSMSRequest.M(1))
+				stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mSMSRequest.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 				blame = observability.BlameServer
 				result = observability.ResultError("FAILED_TO_SEND_SMS")
