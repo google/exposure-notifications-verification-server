@@ -98,13 +98,8 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer func() {
-		// In main, wait for metric exporter to finish.
-		<-metricCtx.Done()
-	}()
-	go func() {
 		<-ctx.Done()
 		oe.Close()
-		// Notify main() to exit.
 		cancel()
 	}()
 	logger.Infow("observability exporter", "config", e2eConfig.Observability)
