@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package email is logic for sending email invitations
-package email
+// Package login defines the controller for the login page.
+package login
 
 import (
-	"context"
-	"fmt"
+	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/internal/firebase"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-var _ Provider = (*firebase.Client)(nil)
+func (c *Controller) HandleReceiveVerifyEmail() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 
-// NewFirebase creates a new SMTP email sender with the given auth.
-func NewFirebase(ctx context.Context) (Provider, error) {
-	firebaseInternal, err := firebase.New(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to configure internal firebase client: %w", err)
-	}
-	return firebaseInternal, nil
+		m := controller.TemplateMapFromContext(ctx)
+		m["firebase"] = c.config.Firebase
+		c.h.RenderHTML(w, "login/verify-email-check", m)
+	})
 }

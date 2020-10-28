@@ -18,65 +18,74 @@ package login
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleShowResetPassword() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		c.renderResetPassword(ctx, w, nil, "", false)
+		c.renderResetPassword(ctx, w, "")
 	})
 }
 
-func (c *Controller) renderResetPassword(
-	ctx context.Context, w http.ResponseWriter,
-	flash *flash.Flash, email string, reset bool) {
+func (c *Controller) renderResetPassword(ctx context.Context, w http.ResponseWriter, email string) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["flash"] = flash
 	m["email"] = email
-	if reset {
-		m["firebase"] = c.config.Firebase
-	}
 	c.h.RenderHTML(w, "login/reset-password", m)
 }
 
 func (c *Controller) HandleSubmitResetPassword() http.Handler {
 	type FormData struct {
-		Email string `form:"email"`
+		Email string `form:"email,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
 		session := controller.SessionFromContext(ctx)
-		flash := flash.New(session.Values)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Password reset failed. %v", err)
-			c.renderResetPassword(ctx, w, flash, "", false)
+			flash.Error("Failed to reset password: %v", err)
+			c.renderResetPassword(ctx, w, "")
 			return
 		}
-		email := strings.TrimSpace(form.Email)
 
-		// Ensure that if we have a user, they have auth
-		user, err := c.db.FindUserByEmail(email)
+		// Does the user exist?
+		user, err := c.db.FindUserByEmail(form.Email)
 		if err != nil {
 			if database.IsNotFound(err) {
-				flash.Alert("Password reset email sent.")
+				flash.Error("No such user exists.")
+				c.renderResetPassword(ctx, w, form.Email)
+				return
 			}
-			c.renderResetPassword(ctx, w, flash, email, false)
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		if created, _ := user.CreateFirebaseUser(ctx, c.client); created {
-			stats.Record(ctx, controller.MFirebaseRecreates.M(1))
+		// Build the emailer.
+		resetComposer, err := controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
-		c.renderResetPassword(ctx, w, flash, email, true)
+		// Reset the password.
+		if err := c.authProvider.SendResetPasswordEmail(ctx, user.Email, resetComposer); err != nil {
+			flash.Error("Failed to reset password: %v", err)
+			controller.Back(w, r, c.h)
+			return
+		}
+
+		flash.Alert("Password reset email sent.")
+		c.renderResetPassword(ctx, w, user.Email)
 	})
 }

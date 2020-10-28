@@ -81,7 +81,7 @@ EOT
 
 resource "google_monitoring_alert_policy" "rate_limited_count" {
   project      = var.monitoring-host-project
-  display_name = "ElevatedRateLimitedCount"
+  display_name = "Elevated Rate Limited Count"
   combiner     = "OR"
   conditions {
     display_name = "/rate_limited_count"
@@ -177,7 +177,7 @@ EOT
 
 resource "google_monitoring_alert_policy" "realm_token_capacity" {
   project      = var.verification-server-project
-  display_name = "RealmTokenCapacityUtilizationAboveThreshold"
+  display_name = "Realm Token Capacity Utilization Above Threshold"
   combiner     = "OR"
   conditions {
     display_name = "/realm_capacity_latest"

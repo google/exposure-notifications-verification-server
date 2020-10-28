@@ -290,6 +290,7 @@ type VerifyCodeResponse struct {
 
 	TestType          string `json:"testtype,omitempty"`
 	SymptomDate       string `json:"symptomDate,omitempty"` // ISO 8601 formatted date, YYYY-MM-DD
+	TestDate          string `json:"testDate,omitempty"`    // ISO 8601 formatted date, YYYY-MM-DD
 	VerificationToken string `json:"token,omitempty"`       // JWT - signed, not encrypted.
 	Error             string `json:"error,omitempty"`
 	ErrorCode         string `json:"errorCode,omitempty"`

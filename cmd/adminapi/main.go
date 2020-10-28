@@ -85,10 +85,7 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey),
-		cache.PrefixKeyFunc("cache:"),
-	))
+	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
@@ -151,10 +148,7 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
 
-		issueapiController, err := issueapi.New(ctx, cfg, db, limiterStore, h)
-		if err != nil {
-			return fmt.Errorf("issueapi.New: %w", err)
-		}
+		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 
 		codeStatusController := codestatus.NewAPI(ctx, cfg, db, h)

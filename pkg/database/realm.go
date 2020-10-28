@@ -24,6 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/pkg/digest"
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -62,6 +65,7 @@ func (t TestType) Display() string {
 
 var (
 	ErrNoSigningKeyManagement = errors.New("no signing key management")
+	ErrBadDateRange           = errors.New("bad date range")
 )
 
 const (
@@ -74,6 +78,11 @@ const (
 	SMSLongCode      = "[longcode]"
 	SMSLongExpires   = "[longexpires]"
 	SMSENExpressLink = "[enslink]"
+
+	EmailInviteLink        = "[invitelink]"
+	EmailPasswordResetLink = "[passwordresetlink]"
+	EmailVerifyLink        = "[verifylink]"
+	RealmName              = "[realmname]"
 )
 
 // AuthRequirement represents authentication requirements for the realm
@@ -139,6 +148,26 @@ type Realm struct {
 	// Without this, a realm would always fallback to the system-level SMS
 	// configuration, making it impossible to opt out of text message sending.
 	UseSystemSMSConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
+
+	// EmailInviteTemplate is the template for inviting new users.
+	EmailInviteTemplate string `gorm:"type:text;"`
+
+	// EmailPasswordResetTemplate is the template for resetting password.
+	EmailPasswordResetTemplate string `gorm:"type:text;"`
+
+	// EmailVerifyTemplate is the template used for email verification.
+	EmailVerifyTemplate string `gorm:"type:text;"`
+
+	// CanUseSystemEmailConfig is configured by system administrators to share the
+	// system email config with this realm. Note that the system email config could be
+	// empty and a local email config is preferred over the system value.
+	CanUseSystemEmailConfig bool `gorm:"column:can_use_system_email_config; type:bool; not null; default:false;"`
+
+	// UseSystemEmailConfig is a realm-level configuration that lets a realm opt-out
+	// of sending email messages using the system-provided email configuration.
+	// Without this, a realm would always fallback to the system-level email
+	// configuration, making it impossible to opt out of text message sending.
+	UseSystemEmailConfig bool `gorm:"column:use_system_email_config; type:bool; not null; default:false;"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
 	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
@@ -321,7 +350,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSCode, SMSENExpressLink))
 		}
 		if strings.Contains(r.SMSTextTemplate, SMSExpires) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allwoed for expiration", SMSExpires, SMSLongExpires))
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allowed for expiration", SMSExpires, SMSLongExpires))
 		}
 		if strings.Contains(r.SMSTextTemplate, SMSLongCode) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
@@ -331,6 +360,28 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
 		if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
 			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+		}
+	}
+
+	if r.UseSystemEmailConfig && !r.CanUseSystemEmailConfig {
+		r.AddError("useSystemEmailConfig", "is not allowed on this realm")
+	}
+
+	if r.EmailInviteTemplate != "" {
+		if !strings.Contains(r.EmailInviteTemplate, EmailInviteLink) {
+			r.AddError("EmailInviteLink", fmt.Sprintf("must contain %q", EmailInviteLink))
+		}
+	}
+
+	if r.EmailPasswordResetTemplate != "" {
+		if !strings.Contains(r.EmailPasswordResetTemplate, EmailPasswordResetLink) {
+			r.AddError("EmailPasswordResetTemplate", fmt.Sprintf("must contain %q", EmailPasswordResetLink))
+		}
+	}
+
+	if r.EmailVerifyTemplate != "" {
+		if !strings.Contains(r.EmailVerifyTemplate, EmailVerifyLink) {
+			r.AddError("EmailVerifyTemplate", fmt.Sprintf("must contain %q", EmailVerifyLink))
 		}
 	}
 
@@ -387,6 +438,30 @@ func (r *Realm) BuildSMSText(code, longCode string, enxDomain string) string {
 	text = strings.ReplaceAll(text, SMSLongCode, longCode)
 	text = strings.ReplaceAll(text, SMSLongExpires, fmt.Sprintf("%d", r.GetLongCodeDurationHours()))
 
+	return text
+}
+
+// BuildInviteEmail replaces certain strings with the right values for invitations.
+func (r *Realm) BuildInviteEmail(inviteLink string) string {
+	text := r.EmailInviteTemplate
+	text = strings.ReplaceAll(text, EmailInviteLink, inviteLink)
+	text = strings.ReplaceAll(text, RealmName, r.Name)
+	return text
+}
+
+// BuildPasswordResetEmail replaces certain strings with the right values for password reset.
+func (r *Realm) BuildPasswordResetEmail(passwordResetLink string) string {
+	text := r.EmailPasswordResetTemplate
+	text = strings.ReplaceAll(text, EmailPasswordResetLink, passwordResetLink)
+	text = strings.ReplaceAll(text, RealmName, r.Name)
+	return text
+}
+
+// BuildVerifyEmail replaces certain strings with the right values for email verification.
+func (r *Realm) BuildVerifyEmail(verifyLink string) string {
+	text := r.EmailVerifyTemplate
+	text = strings.ReplaceAll(text, EmailVerifyLink, verifyLink)
+	text = strings.ReplaceAll(text, RealmName, r.Name)
 	return text
 }
 
@@ -457,6 +532,38 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		return nil, err
 	}
 	return provider, nil
+}
+
+// EmailConfig returns the email configuration for this realm, if one exists. If the
+// realm is configured to use the system email configuration, that configuration
+// is preferred.
+func (r *Realm) EmailConfig(db *Database) (*EmailConfig, error) {
+	q := db.db.
+		Model(&EmailConfig{}).
+		Order("is_system DESC").
+		Where("realm_id = ?", r.ID)
+
+	if r.UseSystemEmailConfig {
+		q = q.Or("is_system IS TRUE")
+	}
+
+	var emailConfig EmailConfig
+	if err := q.First(&emailConfig).Error; err != nil {
+		return nil, err
+	}
+	return &emailConfig, nil
+}
+
+// EmailProvider returns the email provider for the realm. If no email configuration
+// exists, it returns nil. If any errors occur creating the provider, they are
+// returned.
+func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
+	emailConfig, err := r.EmailConfig(db)
+	if err != nil {
+		return nil, err
+	}
+
+	return emailConfig.Provider()
 }
 
 func (r *Realm) Audits(db *Database) ([]*AuditEntry, error) {
@@ -861,6 +968,36 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 				audits = append(audits, audit)
 			}
 
+			if existing.EmailInviteTemplate != r.EmailInviteTemplate {
+				audit := BuildAuditEntry(actor, "updated email invite template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailInviteTemplate, r.EmailInviteTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.EmailPasswordResetTemplate != r.EmailPasswordResetTemplate {
+				audit := BuildAuditEntry(actor, "updated email password reset template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailPasswordResetTemplate, r.EmailPasswordResetTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.EmailVerifyTemplate != r.EmailVerifyTemplate {
+				audit := BuildAuditEntry(actor, "updated email verify template", r, r.ID)
+				audit.Diff = stringDiff(existing.EmailVerifyTemplate, r.EmailVerifyTemplate)
+				audits = append(audits, audit)
+			}
+
+			if existing.CanUseSystemEmailConfig != r.CanUseSystemEmailConfig {
+				audit := BuildAuditEntry(actor, "updated ability to use system email config", r, r.ID)
+				audit.Diff = boolDiff(existing.CanUseSystemEmailConfig, r.CanUseSystemEmailConfig)
+				audits = append(audits, audit)
+			}
+
+			if existing.UseSystemEmailConfig != r.UseSystemEmailConfig {
+				audit := BuildAuditEntry(actor, "updated use system email config", r, r.ID)
+				audit.Diff = boolDiff(existing.UseSystemEmailConfig, r.UseSystemEmailConfig)
+				audits = append(audits, audit)
+			}
+
 			if existing.MFAMode != r.MFAMode {
 				audit := BuildAuditEntry(actor, "updated MFA mode", r, r.ID)
 				audit.Diff = stringDiff(existing.MFAMode.String(), r.MFAMode.String())
@@ -1094,14 +1231,14 @@ func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id i
 func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error) {
 	var stats []*RealmStats
 
-	start = start.Truncate(24 * time.Hour)
-	stop = stop.Truncate(24 * time.Hour)
+	start = timeutils.Midnight(start)
+	stop = timeutils.Midnight(stop)
 
 	if err := db.db.
 		Model(&RealmStats{}).
 		Where("realm_id = ?", r.ID).
 		Where("(date >= ? AND date <= ?)", start, stop).
-		Order("date ASC").
+		Order("date DESC").
 		Find(&stats).
 		Error; err != nil {
 		if IsNotFound(err) {
@@ -1122,6 +1259,16 @@ func (r *Realm) RenderWelcomeMessage() string {
 
 	raw := blackfriday.Run([]byte(msg))
 	return string(bluemonday.UGCPolicy().SanitizeBytes(raw))
+}
+
+// QuotaKey returns the unique and consistent key to use for storing quota data
+// for this realm, given the provided HMAC key.
+func (r *Realm) QuotaKey(hmacKey []byte) (string, error) {
+	dig, err := digest.HMACUint(r.ID, hmacKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to create realm quota key: %w", err)
+	}
+	return fmt.Sprintf("realm:quota:%s", dig), nil
 }
 
 // ToCIDRList converts the newline-separated and/or comma-separated CIDR list
@@ -1158,4 +1305,39 @@ func ToCIDRList(s string) ([]string, error) {
 
 	sort.Strings(cidrs)
 	return cidrs, nil
+}
+
+// RealmUserStats carries the per-user-per-day-per-realm Codes issued.
+// This is a structure joined from multiple tables in the DB.
+type RealmUserStats struct {
+	UserID      uint      `json:"user_id"`
+	Name        string    `json:"name"`
+	CodesIssued uint      `json:"codes_issued"`
+	Date        time.Time `json:"date"`
+}
+
+// CodesPerUser returns a set of UserStats for a given date range.
+func (r *Realm) CodesPerUser(db *Database, start, stop time.Time) ([]*RealmUserStats, error) {
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	var stats []*RealmUserStats
+	if err := db.db.
+		Model(&UserStats{}).
+		Select("users.id, users.name, codes_issued, date").
+		Where("realm_id = ?", r.ID).
+		Where("date >= ? AND date <= ?", start, stop).
+		Joins("INNNER JOIN users ON users.id = user_id").
+		Order("date DESC").
+		Scan(&stats).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+	return stats, nil
 }

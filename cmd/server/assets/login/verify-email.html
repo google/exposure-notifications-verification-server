@@ -20,23 +20,34 @@
           <div class="card mb-3 shadow-sm">
             <div class="card-header">Email verification</div>
             <div class="card-body">
-              {{if eq .currentRealm.EmailVerifiedMode.String "required"}}
+              {{if not .currentRealm}}
+              <div class="alert alert-warning">
+                <span class="oi oi-warning"></span>
+                Email address verification is required to administer with no realm selected.
+              </div>
+              {{else if eq .currentRealm.EmailVerifiedMode.String "required"}}
               <div class="alert alert-warning">
                 <span class="oi oi-warning"></span>
                 This realm <strong>requires</strong> email address verification.
               </div>
               {{end}}
 
-              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.
-              </p>
+              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.</p>
 
-              <button id="verify" class="btn btn-primary btn-block" disabled>Send verification email</button>
+              <form method="POST" id="verify-email">
+                {{ .csrfField }}
+                <input type="submit" id="verify-button" class="btn btn-primary btn-block"
+                  value="Send verification email" disabled>
 
-              <small class="form-text text-muted">Click to send an email containing a verification
-                link.</small>
+                <small class="form-text text-muted">
+                  Click to send an email containing a verification link.
+                </small>
+              </form>
 
+              {{if .currentRealm}}
               {{if ne .currentRealm.EmailVerifiedMode.String "required"}}
               <a id="skip" class="card-link float-right mt-3" href="/home">Skip for now</a>
+              {{end}}
               {{end}}
             </div>
           </div>
@@ -45,25 +56,12 @@
     </div>
   </main>
 
-  {{template "scripts" .}}
-
+  {{if .firebase}}
   <script>
-    let $verify = $('#verify');
-    let $skip = $('#skip');
-    let $not = $('#not');
-
-    $(function() {
-      $verify.on('click', function(event) {
-        let user = firebase.auth().currentUser
-        if (!user.emailVerified) {
-          user.sendEmailVerification().then(function() {
-            flash.clear();
-            flash.alert('Verification email sent.');
-            $verify.prop('disabled', true);
-          });
-        }
-      });
-    });
+    let $form = $("#verify-email");
+    let $verifyButton = $("#verify-button");
+    let $skip = $("#skip");
+    let $not = $("#not");
 
     firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
@@ -71,14 +69,28 @@
         return;
       }
 
+      // If the email is already verified, move along.
       if (user.emailVerified) {
-        $not.hide();
-        $skip.text("Go home");
-      } else {
-        $verify.prop('disabled', false);
+        flash.clear();
+        flash.alert("Your email address is already verified.");
+        window.location.assign("/home");
+        return;
       }
+
+      // Get an ID token and embed it onto the page.
+      user.getIdToken().then(idToken => {
+        let $idTokenField = $("<input>");
+        $idTokenField.attr("type", "hidden");
+        $idTokenField.attr("name", "idToken");
+        $idTokenField.attr("value", idToken);
+        $form.append($idTokenField);
+
+        // Now that we have a user, enable the form.
+        $verifyButton.prop("disabled", false);
+      });
     });
   </script>
+  {{end}}
 </body>
 
 </html>

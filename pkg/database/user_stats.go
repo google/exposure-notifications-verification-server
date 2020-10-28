@@ -16,6 +16,8 @@ package database
 
 import (
 	"time"
+
+	"github.com/jinzhu/gorm"
 )
 
 // UserStats represents statistics related to a user in the database.
@@ -29,4 +31,15 @@ type UserStats struct {
 // TableName sets the UserStats table name
 func (UserStats) TableName() string {
 	return "user_stats"
+}
+
+// SaveUserStats saves some UserStats to the database.
+// This function is provided for testing only.
+func (db *Database) SaveUserStats(u *UserStats) error {
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(u).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }

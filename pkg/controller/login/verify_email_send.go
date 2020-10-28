@@ -16,6 +16,7 @@
 package login
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -34,18 +35,58 @@ func (c *Controller) HandleShowVerifyEmail() http.Handler {
 		// Mark prompted so we only prompt once.
 		controller.StoreSessionEmailVerificationPrompted(session, true)
 
-		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/verify-email", m)
+		c.renderEmailVerify(ctx, w)
 	})
 }
 
 func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
+	type FormData struct {
+		IDToken string `form:"idToken"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		m := controller.TemplateMapFromContext(ctx)
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/verify-email-check", m)
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		var form FormData
+		if err := controller.BindForm(w, r, &form); err != nil {
+			flash.Error("Failed to verify email: %v", err)
+			c.renderEmailVerify(ctx, w)
+			return
+		}
+
+		// Build the email template.
+		verifyComposer, err := controller.SendEmailVerificationEmailFunc(ctx, c.db, c.h, currentUser.Email)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// Send an email to verify the users email address.
+		if err := c.authProvider.SendEmailVerificationEmail(ctx, currentUser.Email, form.IDToken, verifyComposer); err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		flash.Alert("Verification email sent.")
+		c.renderEmailVerify(ctx, w)
 	})
+}
+
+func (c *Controller) renderEmailVerify(ctx context.Context, w http.ResponseWriter) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["firebase"] = c.config.Firebase
+	c.h.RenderHTML(w, "login/verify-email", m)
 }

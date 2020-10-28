@@ -23,6 +23,41 @@ if [[ -z "${PROJECT_ID:-}" ]]; then
   echo "✋ PROJECT_ID must be set"
 fi
 
+# Ensure not running on prod resources
+readonly COMMON_ERROR_MESSAGE="⚠️ ${PROGNAME} is meant for running e2e test only, it deletes resources aggressively. Please don't run it against prod instances!"
+readonly PROTECTED_PROJECT_IDS=(
+  "apollo-server-273118"
+  "apollo-server-us"
+  "apollo-verification-us"
+  "encv-prod"
+  "encv-test"
+)
+for protected_project_id in ${PROTECTED_PROJECT_IDS[@]}; do
+  if [[ "${protected_project_id}" == "${PROJECT_ID}" ]]; then
+    echo "✋ Running this script on prod servers is prohibited."
+    echo "${COMMON_ERROR_MESSAGE}"
+    exit 100
+  fi
+done
+
+readonly PROTECTED_DB_INSTANCE_NAMES=(
+  "en-verification"
+  "en-server"
+)
+EXISTING_DB_INSTANCES="$(gcloud sql instances list --project=${PROJECT_ID} --format="value(name)")"
+for existing_db_instance in ${EXISTING_DB_INSTANCES[@]}; do
+  for protected_db_instance_name in ${PROTECTED_DB_INSTANCE_NAMES[@]}; do
+    if [[ "${existing_db_instance}" == "${protected_db_instance_name}" ]]; then
+      # The output will only exist when the database exist
+      echo "✋ Running this script is prohibited when database below exist:"
+      echo "${existing_db_instance}"
+      echo "${COMMON_ERROR_MESSAGE}"
+      exit 100
+    fi
+  done
+done
+
+
 if [[ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "This is local development, authenticate using gcloud"
   echo "gcloud auth login"
@@ -35,13 +70,13 @@ else
 fi
 
 function init() {
-  pushd "${ROOT}/terraform-e2e" > /dev/null
+  pushd "${ROOT}/terraform-e2e-ci" > /dev/null
 
   # Preparing for deployment
   echo "project = \"${PROJECT_ID}\"" > ./terraform.tfvars
   # Don't fail if it already exists
   gsutil mb -p ${PROJECT_ID} gs://${PROJECT_ID}-tf-state 2>/dev/null || true
-  cat <<EOF > "${ROOT}/terraform-e2e/state.tf"
+  cat <<EOF > "${ROOT}/terraform-e2e-ci/state.tf"
 terraform {
   backend "gcs" {
     bucket = "${PROJECT_ID}-tf-state"
@@ -56,7 +91,7 @@ EOF
 }
 
 function deploy() {
-  pushd "${ROOT}/terraform-e2e" > /dev/null
+  pushd "${ROOT}/terraform-e2e-ci" > /dev/null
 
   init
 
@@ -89,7 +124,7 @@ function deploy() {
 }
 
 function destroy() {
-  pushd "${ROOT}/terraform-e2e" > /dev/null
+  pushd "${ROOT}/terraform-e2e-ci" > /dev/null
 
   init
 
@@ -125,6 +160,7 @@ function help() {
   echo 1>&2 "Usage: ${PROGNAME} <command>"
   echo 1>&2 ""
   echo 1>&2 "Commands:"
+  echo 1>&2 "  init         init terraform"
   echo 1>&2 "  deploy       deploy server"
   echo 1>&2 "  destroy      destroy server"
   echo 1>&2 "  smoke        deploy then destroy server"

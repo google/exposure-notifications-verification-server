@@ -21,20 +21,23 @@ import (
 )
 
 type AppStoreData struct {
-	AndroidURL string `json:"androidURL"`
-	IOSURL     string `json:"iosURL"`
+	AndroidURL   string `json:"androidURL"`
+	AndroidAppID string `json:"androidAppID"`
+	IOSURL       string `json:"iosURL"`
 }
 
 // getAppStoreData finds data tied to app store listings.
 func (c *Controller) getAppStoreData(realmID uint) (*AppStoreData, error) {
 	// Pick first Android app (in the realm) for Play Store redirect.
 	androidURL := ""
+	androidAppID := ""
 	androidApps, err := c.db.ListActiveAppsByOS(realmID, database.OSTypeAndroid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Android Apps: %w", err)
 	}
 	if len(androidApps) > 0 {
 		androidURL = androidApps[0].URL
+		androidAppID = androidApps[0].AppID
 	}
 
 	// Pick first iOS app (in the realm) for Store redirect.
@@ -48,7 +51,8 @@ func (c *Controller) getAppStoreData(realmID uint) (*AppStoreData, error) {
 	}
 
 	return &AppStoreData{
-		AndroidURL: androidURL,
-		IOSURL:     iosURL,
+		AndroidURL:   androidURL,
+		AndroidAppID: androidAppID,
+		IOSURL:       iosURL,
 	}, nil
 }

@@ -18,11 +18,10 @@ package user
 import (
 	"context"
 
-	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -32,20 +31,18 @@ import (
 
 // Controller manages users
 type Controller struct {
-	cacher  cache.Cacher
-	client  *auth.Client
-	emailer email.Provider
-	config  *config.ServerConfig
-	db      *database.Database
-	h       *render.Renderer
-	logger  *zap.SugaredLogger
+	cacher       cache.Cacher
+	authProvider auth.Provider
+	config       *config.ServerConfig
+	db           *database.Database
+	h            *render.Renderer
+	logger       *zap.SugaredLogger
 }
 
 // New creates a new controller for managing users.
 func New(
 	ctx context.Context,
-	client *auth.Client,
-	emailer email.Provider,
+	authProvider auth.Provider,
 	cacher cache.Cacher,
 	config *config.ServerConfig,
 	db *database.Database,
@@ -53,12 +50,11 @@ func New(
 	logger := logging.FromContext(ctx)
 
 	return &Controller{
-		cacher:  cacher,
-		client:  client,
-		emailer: emailer,
-		config:  config,
-		db:      db,
-		h:       h,
-		logger:  logger,
+		cacher:       cacher,
+		authProvider: authProvider,
+		config:       config,
+		db:           db,
+		h:            h,
+		logger:       logger,
 	}
 }

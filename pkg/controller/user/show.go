@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
@@ -59,23 +60,22 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 		return
 	}
 
-	if resetPassword {
-		c.resetPasswordUserAssertion(ctx, user)
-	}
-
 	userStats, err := c.getStats(ctx, user, realm)
 	if err != nil {
 		controller.InternalError(w, r, c.h, err)
 		return
 	}
 
-	c.renderShow(ctx, w, user, userStats, resetPassword)
+	c.renderShow(ctx, w, user, userStats)
 }
 
 // Get and cache the stats for this user.
 func (c *Controller) getStats(ctx context.Context, user *database.User, realm *database.Realm) ([]*database.UserStats, error) {
 	var stats []*database.UserStats
-	cacheKey := fmt.Sprintf("stats:user:%d:%d", realm.ID, user.ID)
+	cacheKey := &cache.Key{
+		Namespace: "stats:user",
+		Key:       fmt.Sprintf("%d:%d", realm.ID, user.ID),
+	}
 	if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
 		now := time.Now().UTC()
 		past := now.Add(-14 * 24 * time.Hour)
@@ -86,12 +86,9 @@ func (c *Controller) getStats(ctx context.Context, user *database.User, realm *d
 	return stats, nil
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats []*database.UserStats, resetPassword bool) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats []*database.UserStats) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
 	m["stats"] = stats
-	if resetPassword {
-		m["firebase"] = c.config.Firebase
-	}
 	c.h.RenderHTML(w, "users/show", m)
 }

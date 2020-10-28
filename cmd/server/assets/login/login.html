@@ -4,7 +4,6 @@
 
 <head>
   {{template "head" .}}
-  {{template "floatingform" .}}
   {{template "firebase" .}}
 </head>
 
@@ -40,7 +39,7 @@
                 </div>
 
                 <button type="submit" id="submit" class="btn btn-primary btn-block">Login</button>
-                <a class="card-link btn-block" href="login/reset-password">Forgot password</a>
+                <a class="card-link btn-block" href="/login/reset-password">Forgot password</a>
               </form>
             </div>
           </div>
@@ -61,7 +60,6 @@
     <div id="recaptcha-container" class="center-block"></div>
   </main>
 
-  {{template "scripts" .}}
   {{template "loginscripts" .}}
 
   <script type="text/javascript">

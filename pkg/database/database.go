@@ -21,6 +21,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -187,6 +190,13 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	callbackLock.Lock()
 	defer callbackLock.Unlock()
 
+	// Disable the gorm logger here unless were in debug mode. The logs for
+	// callbacks are really verbose and unnecessary.
+	if !c.Debug {
+		rawDB.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+		defer rawDB.SetLogger(gorm.Logger{LogWriter: log.New(os.Stdout, "\r\n", 0)})
+	}
+
 	// SMS configs
 	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 	rawDB.Callback().Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
@@ -195,6 +205,15 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	rawDB.Callback().Update().After("gorm:update").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
 	rawDB.Callback().Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
+
+	// Email configs
+	rawDB.Callback().Create().Before("gorm:create").Register("email_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+	rawDB.Callback().Create().After("gorm:create").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+
+	rawDB.Callback().Update().Before("gorm:update").Register("email_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+	rawDB.Callback().Update().After("gorm:update").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+
+	rawDB.Callback().Query().After("gorm:after_query").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
 
 	// Verification codes
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
@@ -206,20 +225,20 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	// Cache clearing
 	if cacher != nil {
 		// Apps
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
 
 		// Realms
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
 
 		// Users
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
 
 		// Users (by email)
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
 	}
 
 	db.db = rawDB
@@ -247,7 +266,7 @@ func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
 }
 
-// callbackIncremementMetric incremements the provided metric
+// callbackIncrementMetric increments the provided metric
 func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {
@@ -306,7 +325,7 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 }
 
 // callbackPurgeCache purges the cache key for the given record.
-func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, keyFormat, table, column string) func(scope *gorm.Scope) {
+func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, table, column string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {
 			return
@@ -332,7 +351,10 @@ func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, keyFormat, tab
 			return
 		}
 
-		key := fmt.Sprintf(keyFormat, val)
+		key := &cache.Key{
+			Namespace: namespace,
+			Key:       fmt.Sprintf("%v", val),
+		}
 		if err := cacher.Delete(ctx, key); err != nil {
 			scope.Log(fmt.Sprintf("failed to delete cache key: %v", err))
 			return

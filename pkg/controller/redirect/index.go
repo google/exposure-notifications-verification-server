@@ -15,12 +15,13 @@
 package redirect
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -42,12 +43,21 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 		realm, err := c.db.FindRealmByRegion(hostRegion)
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.NotFound(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		// Get App Store Data.
-		cacheKey := fmt.Sprintf("appstoredata:by_region:%s", hostRegion)
 		var appStoreData AppStoreData
+		cacheKey := &cache.Key{
+			Namespace: "apps:appstoredata:by_region",
+			Key:       hostRegion,
+		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &appStoreData, c.config.AppCacheTTL, func() (interface{}, error) {
 			c.logger.Debug("fetching new app store data")
 			return c.getAppStoreData(realm.ID)
@@ -61,7 +71,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		c.logger.Warnw("unknown host", "host", r.Host)
+		c.logger.Warnw("not a mobile user agent", "host", r.Host, "userAgent", r.UserAgent())
 		m := controller.TemplateMapFromContext(ctx)
 		m["requestURI"] = (&url.URL{
 			Scheme: "https",
@@ -83,8 +93,7 @@ func isIOS(userAgent string) bool {
 }
 
 // decideRedirect selects where to redirect based on several signals.
-func decideRedirect(region, userAgent string, url url.URL,
-	appStoreData AppStoreData) (string, bool) {
+func decideRedirect(region, userAgent string, url url.URL, appStoreData AppStoreData) (string, bool) {
 	// Canonicalize path as lowercase.
 	path := strings.ToLower(url.Path)
 
@@ -92,23 +101,10 @@ func decideRedirect(region, userAgent string, url url.URL,
 	onAndroid := isAndroid(userAgent)
 	onIOS := isIOS(userAgent)
 
-	// A subset of SMS clients (e.g. Facebook Messenger) open links
-	// in inline WebViews without giving https Intents a opportunity
-	// to trigger App Links.
-	// Redirect to ourselves once to attempt to trigger the link.
-	// Bounce to self if we haven't already (on Android only).
-	// Keep track of state by including an extra bounce=1 url param.
-	if onAndroid && url.Query().Get("bounce") == "" {
-		q := url.Query()
-		q.Set("bounce", "1")
-		url.RawQuery = q.Encode()
-		return url.String(), true
-	}
-
 	// On Android redirect to Play Store if App Link doesn't trigger
 	// and an a link is set up.
-	if onAndroid && appStoreData.AndroidURL != "" {
-		return appStoreData.AndroidURL, true
+	if onAndroid && appStoreData.AndroidURL != "" && appStoreData.AndroidAppID != "" {
+		return buildIntentURL(path, url.Query(), region, appStoreData.AndroidAppID, appStoreData.AndroidURL), true
 	}
 
 	// On iOS redirect to App Store if App Link doesn't trigger
@@ -133,8 +129,30 @@ func buildEnsURL(path string, query url.Values, region string) string {
 	u.RawQuery = query.Encode()
 	q := u.Query()
 	q.Set("r", region)
-	q.Del("bounce")
 	u.RawQuery = q.Encode()
 
 	return u.String()
+}
+
+// buildIntentURL returns the ens:// URL with fallback
+// for the given path, query, and region.
+func buildIntentURL(path string, query url.Values, region, appID, fallback string) string {
+	u := &url.URL{
+		Scheme: "intent",
+		Path:   strings.TrimPrefix(path, "/"),
+	}
+	u.RawQuery = query.Encode()
+	q := u.Query()
+	q.Set("r", region)
+	u.RawQuery = q.Encode()
+
+	suffix := "#Intent"
+	suffix += ";scheme=ens"
+	suffix += ";package=" + appID
+	suffix += ";action=android.intent.action.VIEW"
+	suffix += ";category=android.intent.category.BROWSABLE"
+	suffix += ";S.browser_fallback_url=" + url.QueryEscape(fallback)
+	suffix += ";end"
+
+	return u.String() + suffix
 }

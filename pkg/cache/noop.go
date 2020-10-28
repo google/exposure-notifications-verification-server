@@ -35,7 +35,7 @@ func NewNoop() (Cacher, error) {
 }
 
 // Fetch calls FetchFunc and does no caching.
-func (c *noop) Fetch(_ context.Context, key string, out interface{}, ttl time.Duration, f FetchFunc) error {
+func (c *noop) Fetch(_ context.Context, _ *Key, out interface{}, ttl time.Duration, f FetchFunc) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
@@ -55,7 +55,7 @@ func (c *noop) Fetch(_ context.Context, key string, out interface{}, ttl time.Du
 }
 
 // Write does nothing.
-func (c *noop) Write(_ context.Context, _ string, _ interface{}, ttl time.Duration) error {
+func (c *noop) Write(_ context.Context, _ *Key, _ interface{}, ttl time.Duration) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
@@ -63,7 +63,7 @@ func (c *noop) Write(_ context.Context, _ string, _ interface{}, ttl time.Durati
 }
 
 // Read always returns ErrNotFound.
-func (c *noop) Read(_ context.Context, _ string, _ interface{}) error {
+func (c *noop) Read(_ context.Context, _ *Key, _ interface{}) error {
 	if c.isStopped() {
 		return ErrStopped
 	}
@@ -71,7 +71,15 @@ func (c *noop) Read(_ context.Context, _ string, _ interface{}) error {
 }
 
 // Delete does nothing.
-func (c *noop) Delete(_ context.Context, _ string) error {
+func (c *noop) Delete(_ context.Context, _ *Key) error {
+	if c.isStopped() {
+		return ErrStopped
+	}
+	return nil
+}
+
+// DeletePrefix does nothing.
+func (c *noop) DeletePrefix(_ context.Context, _ string) error {
 	if c.isStopped() {
 		return ErrStopped
 	}

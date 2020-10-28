@@ -1,6 +1,5 @@
 {{define "loginscripts"}}
 <script type="text/javascript">
-
   firebase.auth().onAuthStateChanged(function(user) {
     if (!user) {
       return
@@ -9,14 +8,12 @@
   });
 
   function setSession(user) {
-    let factorCount = user.multiFactor.enrolledFactors.length;
     user.getIdToken().then(idToken => {
       $.ajax({
         type: 'POST',
         url: '/session',
         data: {
           idToken: idToken,
-          factorCount: factorCount,
         },
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/x-www-form-urlencoded',

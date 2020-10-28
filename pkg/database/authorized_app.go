@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/jinzhu/gorm"
 )
 
@@ -205,8 +206,8 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) ([]*AuthorizedAppStats, error) {
 	var stats []*AuthorizedAppStats
 
-	start = start.Truncate(24 * time.Hour)
-	stop = stop.Truncate(24 * time.Hour)
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
 
 	if err := db.db.
 		Model(&AuthorizedAppStats{}).
@@ -416,4 +417,19 @@ func (a *AuthorizedApp) AuditID() string {
 
 func (a *AuthorizedApp) AuditDisplay() string {
 	return a.Name
+}
+
+// PurgeAuthorizedApps will delete authorized apps that have been deleted for
+// more than the specified time.
+func (db *Database) PurgeAuthorizedApps(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+
+	result := db.db.
+		Unscoped().
+		Where("deleted_at IS NOT NULL AND deleted_at < ?", deleteBefore).
+		Delete(&AuthorizedApp{})
+	return result.RowsAffected, result.Error
 }

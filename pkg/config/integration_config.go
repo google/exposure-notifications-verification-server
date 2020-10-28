@@ -23,9 +23,11 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/sethvargo/go-envconfig"
 )
 
 const (
@@ -135,4 +137,25 @@ func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationT
 	}
 
 	return &cfg, db
+}
+
+// E2EConfig represents configurations to run server E2E tests.
+type E2EConfig struct {
+	APIServerURL string           `env:"E2E_APISERVER_URL"`
+	AdminAPIURL  string           `env:"E2E_ADMINAPI_URL"`
+	ProjectID    string           `env:"E2E_PROJECT_ID"`
+	DBConfig     *database.Config `env:",prefix=E2E_"`
+}
+
+// NewE2EConfig returns a new E2E test config.
+func NewE2EConfig(tb testing.TB, ctx context.Context) *E2EConfig {
+	c := &E2EConfig{}
+	sm, err := secrets.SecretManagerFor(ctx, secrets.SecretManagerTypeGoogleSecretManager)
+	if err != nil {
+		tb.Fatalf("unable to connect to secret manager: %v", err)
+	}
+	if err := envconfig.ProcessWith(ctx, c, envconfig.OsLookuper(), secrets.Resolver(sm, &secrets.Config{})); err != nil {
+		tb.Fatalf("Unable to process environment: %v", err)
+	}
+	return c
 }

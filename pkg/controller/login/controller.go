@@ -18,42 +18,38 @@ package login
 import (
 	"context"
 
-	"github.com/google/exposure-notifications-verification-server/internal/firebase"
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"firebase.google.com/go/auth"
 	"go.uber.org/zap"
 )
 
 type Controller struct {
-	firebaseInternal *firebase.Client
-	client           *auth.Client
-	config           *config.ServerConfig
-	db               *database.Database
-	h                *render.Renderer
-	logger           *zap.SugaredLogger
+	authProvider auth.Provider
+	config       *config.ServerConfig
+	db           *database.Database
+	h            *render.Renderer
+	logger       *zap.SugaredLogger
 }
 
 // New creates a new login controller.
 func New(
 	ctx context.Context,
-	firebaseInternal *firebase.Client,
-	client *auth.Client,
+	authProvider auth.Provider,
 	config *config.ServerConfig,
 	db *database.Database,
 	h *render.Renderer) *Controller {
 	logger := logging.FromContext(ctx).Named("login")
 
 	return &Controller{
-		firebaseInternal: firebaseInternal,
-		client:           client,
-		config:           config,
-		db:               db,
-		h:                h,
-		logger:           logger,
+		authProvider: authProvider,
+		config:       config,
+		db:           db,
+		h:            h,
+		logger:       logger,
 	}
 }

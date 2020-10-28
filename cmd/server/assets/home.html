@@ -216,7 +216,6 @@
     </div>
   </main>
 
-  {{template "scripts" .}}
   {{template "codescripts" .}}
 
   <script type="text/javascript">
@@ -342,7 +341,6 @@
     });
 
     function getCode(data) {
-      console.log('data: ',data);
       $.ajax({
         url: '/home/issue',
         type: 'POST',
