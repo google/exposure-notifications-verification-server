@@ -28,5 +28,5 @@ documentation:
     ${metric.label.test_type}.
 
     This could be caused by many reasons. Please check the e2e-runner service
-    log around and see why it failed.
+    log and see why it failed.
   mimeType: text/markdown
