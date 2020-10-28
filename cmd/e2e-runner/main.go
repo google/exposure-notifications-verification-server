@@ -85,14 +85,28 @@ func realMain(ctx context.Context) error {
 
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
-	oe, err := observability.NewFromEnv(ctx, e2eConfig.Observability)
+	// Create a separate ctx to allow metric exporter to finish uploading the
+	// last batch of metrics when SIGTERM is received.
+	metricCtx, cancel := context.WithCancel(context.Background())
+	oe, err := observability.NewFromEnv(metricCtx, e2eConfig.Observability)
 	if err != nil {
+		cancel()
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
 	if err := oe.StartExporter(); err != nil {
+		cancel()
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
-	defer oe.Close()
+	defer func() {
+		// In main, wait for metric exporter to finish.
+		<-metricCtx.Done()
+	}()
+	go func() {
+		<-ctx.Done()
+		oe.Close()
+		// Notify main() to exit.
+		cancel()
+	}()
 	logger.Infow("observability exporter", "config", e2eConfig.Observability)
 
 	db, err := e2eConfig.Database.Load(ctx)
