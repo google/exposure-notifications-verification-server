@@ -56,7 +56,7 @@ func TestHandleHome_IssueCode(t *testing.T) {
 
 	// Create a browser runner.
 	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, 15*time.Second)
+	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
 	var code string
