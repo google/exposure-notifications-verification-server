@@ -26,6 +26,7 @@ EOF
 [[ ${CLOUDSDK_CORE_PROJECT:?} ]]
 [[ ${POLICY:?} ]]
 [[ ${DISPLAY_NAME:?} ]]
+[[ ${NOTIFICATION_CHANNEL:?} ]]
 
 # Sanity check: ensure DISPLAY_NAME matches the POLICY
 DISPLAY_NAME_IN_POLICY=$(echo "${POLICY}"|sed -n 's/^displayName: \(.*\)/\1/p')
@@ -36,12 +37,15 @@ EXISTING_POLICIES=($(gcloud alpha monitoring policies list --filter="display_nam
 case ${#EXISTING_POLICIES[@]} in
     0)
         echo "Creating policy..."
-        gcloud alpha monitoring policies create --policy="${POLICY}"
+        gcloud alpha monitoring policies create --policy="${POLICY}" \
+            --notification_channels=${NOTIFICATION_CHANNEL}
         ;;
     1)
         TO_UPDATE=${EXISTING_POLICIES[0]}
         echo "Updating policy [${TO_UPDATE}]..."
-        gcloud alpha monitoring policies update ${TO_UPDATE} --policy="${POLICY}"
+        gcloud alpha monitoring policies update ${TO_UPDATE} \
+            --policy="${POLICY}" \
+            --notification_channels=${NOTIFICATION_CHANNEL}
         ;;
     *)
         cat <<HERE

@@ -16,6 +16,8 @@ resource "null_resource" "RealmTokenRemainingCapacityLowAlert" {
   triggers = {
     # trigger a provision if the content changes.
     file_content = file("${path.module}/alerts/RealmTokenRemainingCapacityLow.yaml"),
+
+    notification_channel = google_monitoring_notification_channel.email.id
   }
   provisioner "local-exec" {
     command = "${path.module}/scripts/upsert_alert_policy.sh"
@@ -23,6 +25,7 @@ resource "null_resource" "RealmTokenRemainingCapacityLowAlert" {
       CLOUDSDK_CORE_PROJECT = var.monitoring-host-project
       POLICY                = self.triggers.file_content
       DISPLAY_NAME          = "RealmTokenRemainingCapacityLow"
+      NOTIFICATION_CHANNEL  = self.triggers.notification_channel
     }
   }
   depends_on = [
@@ -34,6 +37,8 @@ resource "null_resource" "E2ETestErrorRatioHigh" {
   triggers = {
     # trigger a provision if the content changes.
     file_content = file("${path.module}/alerts/E2ETestErrorRatioHigh.yaml"),
+
+    notification_channel = google_monitoring_notification_channel.email.id
   }
   provisioner "local-exec" {
     command = "${path.module}/scripts/upsert_alert_policy.sh"
@@ -41,6 +46,7 @@ resource "null_resource" "E2ETestErrorRatioHigh" {
       CLOUDSDK_CORE_PROJECT = var.monitoring-host-project
       POLICY                = self.triggers.file_content
       DISPLAY_NAME          = "E2ETestErrorRatioHigh"
+      NOTIFICATION_CHANNEL  = self.triggers.notification_channel
     }
   }
   depends_on = [
