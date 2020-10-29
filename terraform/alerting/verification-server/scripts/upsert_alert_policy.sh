@@ -38,14 +38,14 @@ case ${#EXISTING_POLICIES[@]} in
     0)
         echo "Creating policy..."
         gcloud alpha monitoring policies create --policy="${POLICY}" \
-            --notification_channels=${NOTIFICATION_CHANNEL}
+            --set-notification-channels=${NOTIFICATION_CHANNEL}
         ;;
     1)
         TO_UPDATE=${EXISTING_POLICIES[0]}
         echo "Updating policy [${TO_UPDATE}]..."
         gcloud alpha monitoring policies update ${TO_UPDATE} \
             --policy="${POLICY}" \
-            --notification_channels=${NOTIFICATION_CHANNEL}
+            --set-notification-channels=${NOTIFICATION_CHANNEL}
         ;;
     *)
         cat <<HERE
