@@ -302,7 +302,9 @@ func Server(
 		realmSub.Handle("/settings", realmadminController.HandleSettings()).Methods("GET", "POST")
 		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
 		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
-		realmSub.Handle("/stats", realmadminController.HandleShow()).Methods("GET")
+		realmSub.Handle("/stats", realmadminController.HandleShow(realmadmin.HTML)).Methods("GET")
+		realmSub.Handle("/stats.json", realmadminController.HandleShow(realmadmin.JSON)).Methods("GET")
+		realmSub.Handle("/stats.csv", realmadminController.HandleShow(realmadmin.CSV)).Methods("GET")
 		realmSub.Handle("/stats/{date}", realmadminController.HandleStats()).Methods("GET")
 		realmSub.Handle("/events", realmadminController.HandleEvents()).Methods("GET")
 

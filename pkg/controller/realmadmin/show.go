@@ -16,6 +16,7 @@ package realmadmin
 
 import (
 	"context"
+	"encoding/csv"
 	"net/http"
 	"strconv"
 	"time"
@@ -27,46 +28,87 @@ import (
 
 var cacheTimeout = 5 * time.Minute
 
-func (c *Controller) HandleShow() http.Handler {
+// ResultType specfies which type of renderer you want.
+type ResultType int
+
+const (
+	HTML ResultType = iota
+	JSON
+	CSV
+)
+
+// wantUser returns true if we want per-user requests.
+func wantUser(r *http.Request) bool {
+	_, has := r.URL.Query()["user"]
+	return has
+}
+
+// getRealmStats returns the realm stats for a given date range.
+func (c *Controller) getRealmStats(ctx context.Context, realm *database.Realm, now, past time.Time) ([]*database.RealmStats, error) {
+	var stats []*database.RealmStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm",
+		Key:       strconv.FormatUint(uint64(realm.ID), 10),
+	}
+	if err := c.cacher.Fetch(ctx, cacheKey, &stats, cacheTimeout, func() (interface{}, error) {
+		return realm.Stats(c.db, past, now)
+	}); err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+// getUserStats gets the per-user realm stats for a given date range.
+func (c *Controller) getUserStats(ctx context.Context, realm *database.Realm, now, past time.Time) ([]*database.RealmUserStats, error) {
+	var userStats []*database.RealmUserStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:per_user",
+		Key:       strconv.FormatUint(uint64(realm.ID), 10),
+	}
+	if err := c.cacher.Fetch(ctx, cacheKey, &userStats, cacheTimeout, func() (interface{}, error) {
+		return realm.CodesPerUser(c.db, past, now)
+	}); err != nil {
+		return nil, err
+	}
+	return userStats, nil
+}
+
+func (c *Controller) HandleShow(result ResultType) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
 
 		now := time.Now().UTC()
 		past := now.Add(-30 * 24 * time.Hour)
 
-		// Get and cache the stats for this realm.
-		var stats []*database.RealmStats
-		cacheKey := &cache.Key{
-			Namespace: "stats:realm",
-			Key:       strconv.FormatUint(uint64(realm.ID), 10),
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
 		}
-		if err := c.cacher.Fetch(ctx, cacheKey, &stats, cacheTimeout, func() (interface{}, error) {
-			return realm.Stats(c.db, past, now)
-		}); err != nil {
+
+		// Get the realm stats.
+		stats, err := c.getRealmStats(ctx, realm, now, past)
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
-			return
 		}
 
 		// Also get the per-user stats.
-		var userStats []*database.RealmUserStats
-		cacheKey = &cache.Key{
-			Namespace: "stats:realm:per_user",
-			Key:       strconv.FormatUint(uint64(realm.ID), 10),
-		}
-		if err := c.cacher.Fetch(ctx, cacheKey, &userStats, cacheTimeout, func() (interface{}, error) {
-			return realm.CodesPerUser(c.db, past, now)
-		}); err != nil {
+		userStats, err := c.getUserStats(ctx, realm, now, past)
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
-			return
 		}
 
-		c.renderShow(ctx, w, realm, stats, userStats)
+		switch result {
+		case CSV:
+			err = c.renderCSV(r, w, stats, userStats)
+		case JSON:
+			err = c.renderJSON(r, w, stats, userStats)
+		case HTML:
+			err = c.renderHTML(ctx, w, realm, stats, userStats)
+		}
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+		}
 	})
 }
 
@@ -107,7 +149,7 @@ func formatData(userStats []*database.RealmUserStats) ([]string, [][]interface{}
 	return names, data
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats, userStats []*database.RealmUserStats) {
+func (c *Controller) renderHTML(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats, userStats []*database.RealmUserStats) error {
 	names, format := formatData(userStats)
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = realm
@@ -115,4 +157,51 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, real
 	m["names"] = names
 	m["userStats"] = format
 	c.h.RenderHTML(w, "realmadmin/show", m)
+
+	return nil
+}
+
+// renderCSV renders a CSV response.
+func (c *Controller) renderCSV(r *http.Request, w http.ResponseWriter, stats []*database.RealmStats, userStats []*database.RealmUserStats) error {
+	wr := csv.NewWriter(w)
+	defer wr.Flush()
+
+	// Check if we want the realm stats or the per-user stats. We
+	// default to realm stats.
+	if wantUser(r) {
+		if err := wr.Write(database.RealmUserStatsCSVHeader); err != nil {
+			return err
+		}
+
+		for _, u := range userStats {
+			if err := wr.Write(u.CSV()); err != nil {
+				return err
+			}
+		}
+	} else {
+		if err := wr.Write(database.RealmStatsCSVHeader); err != nil {
+			return err
+		}
+
+		for _, s := range stats {
+			if err := wr.Write(s.CSV()); err != nil {
+				return err
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment;filename=stats.csv")
+	return nil
+}
+
+// renderJSON renders a JSON response.
+func (c *Controller) renderJSON(r *http.Request, w http.ResponseWriter, stats []*database.RealmStats, userStats []*database.RealmUserStats) error {
+	if wantUser(r) {
+		c.h.RenderJSON(w, http.StatusOK, userStats)
+	} else {
+		c.h.RenderJSON(w, http.StatusOK, stats)
+	}
+	w.Header().Set("Content-Disposition", "attachment;filename=stats.json")
+	return nil
 }

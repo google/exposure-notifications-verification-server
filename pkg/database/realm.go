@@ -1319,6 +1319,19 @@ type RealmUserStats struct {
 	Date        time.Time `json:"date"`
 }
 
+// RealmUserStatsCSVHeader is a header for CSV stats
+var RealmUserStatsCSVHeader = []string{"User ID", "Name", "Codes Issued", "Date"}
+
+// CSV returns a slice of the data from a RealmUserStats for CSV writing.
+func (s *RealmUserStats) CSV() []string {
+	return []string{
+		fmt.Sprintf("%d", s.UserID),
+		s.Name,
+		fmt.Sprintf("%d", s.CodesIssued),
+		s.Date.Format("2006-01-02"),
+	}
+}
+
 // CodesPerUser returns a set of UserStats for a given date range.
 func (r *Realm) CodesPerUser(db *Database, start, stop time.Time) ([]*RealmUserStats, error) {
 	start = timeutils.UTCMidnight(start)
