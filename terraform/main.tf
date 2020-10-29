@@ -35,12 +35,14 @@ data "google_project" "project" {
 resource "google_project_service" "services" {
   project = var.project
   for_each = toset([
+    "binaryauthorization.googleapis.com",
     "cloudbuild.googleapis.com",
     "cloudidentity.googleapis.com",
     "cloudkms.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "cloudscheduler.googleapis.com",
     "compute.googleapis.com",
+    "containeranalysis.googleapis.com",
     "containerregistry.googleapis.com",
     "firebase.googleapis.com",
     "iam.googleapis.com",
