@@ -24,7 +24,7 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Statistics</div>
-      <div class="card-body table-responsive">
+      <div class="card-body">
         {{if $stats}}
         <div id="realm_chart" class="mb-3" style="height: 300px;" align="center">
           <span>Loading chart...</span>
@@ -36,7 +36,24 @@
           <span>Loading chart...</span>
         </div>
         {{end}}
+      </div>
+    </div>
 
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Export</div>
+      <div class="card-body">
+        <p class="card-text"> Realm stats
+          (<a href="/realm/stats.csv">CSV</a>/<a href="/realm/stats.json">JSON</a>)
+        </p>
+        <p class="card-text">Realm per-user stats
+          (<a href="/realm/stats.csv?user">CSV</a>/<a href="/realm/stats.json?user">JSON</a>)
+        </p>
+      </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+    <div class="card-header">Data</div>
+      <div class="card-body table-responsive">
         {{if $stats}}
         <table class="table table-bordered table-striped">
           <thead>
@@ -65,18 +82,6 @@
         {{else}}
           <p>No codes have been issued in this realm.</p>
         {{end}}
-      </div>
-    </div>
-
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Export</div>
-      <div class="card-body">
-        <p class="card-text"> Realm stats
-          (<a href="/realm/stats.csv">CSV</a>/<a href="/realm/stats.json">JSON</a>)
-        </p>
-        <p class="card-text">Realm per-user stats
-          (<a href="/realm/stats.csv?user">CSV</a>/<a href="/realm/stats.json?user">JSON</a>)
-        </p>
       </div>
     </div>
   </main>
