@@ -30,31 +30,20 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"github.com/opencensus-integrations/redigo/redis"
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"go.opencensus.io/stats"
-	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
 	"go.uber.org/zap"
-)
-
-var (
-	MetricPrefix = observability.MetricRoot + "/ratelimit/limitware"
-	OkTag, _     = tag.NewKey("ok")
 )
 
 // Middleware is a handler/mux that can wrap other middlware to implement HTTP
 // rate limiting. It can rate limit based on an arbitrary KeyFunc, and supports
 // anything that implements limiter.Store.
 type Middleware struct {
-	store       limiter.Store
-	keyFunc     httplimit.KeyFunc
-	reqCounter  *stats.Int64Measure
-	keyErrors   *stats.Int64Measure
-	takeErrors  *stats.Int64Measure
-	rateLimited *stats.Int64Measure
-	logger      *zap.SugaredLogger
+	store   limiter.Store
+	keyFunc httplimit.KeyFunc
+	logger  *zap.SugaredLogger
 
 	allowOnError bool
 }
@@ -84,58 +73,10 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc, op
 
 	logger := logging.FromContext(ctx).Named("ratelimit")
 
-	rc := stats.Int64(MetricPrefix+"/request", "requests seen by middleware", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/request_count",
-		Measure:     rc,
-		Aggregation: view.Count(),
-		TagKeys:     []tag.Key{},
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	ke := stats.Int64(MetricPrefix+"/key_errors", "errors seen from key function", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/key_errors_count",
-		Measure:     ke,
-		Aggregation: view.Count(),
-		TagKeys:     []tag.Key{},
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	te := stats.Int64(MetricPrefix+"/take_errors", "errors seen from take function", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/take_errors_count",
-		Measure:     te,
-		Aggregation: view.Count(),
-		TagKeys:     []tag.Key{},
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	rl := stats.Int64(MetricPrefix+"/rate_limited", "rate limited requests", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/rate_limited_count",
-		Measure:     rl,
-		Aggregation: view.Count(),
-		TagKeys:     []tag.Key{},
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	if err := view.Register(redis.ObservabilityMetricViews...); err != nil {
-		return nil, fmt.Errorf("redis view registration failure: %w", err)
-	}
-
 	m := &Middleware{
-		store:       s,
-		keyFunc:     f,
-		reqCounter:  rc,
-		keyErrors:   ke,
-		takeErrors:  te,
-		rateLimited: rl,
-		logger:      logger,
+		store:   s,
+		keyFunc: f,
+		logger:  logger,
 	}
 
 	for _, opt := range opts {
@@ -158,11 +99,22 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
 
+		var result = observability.ResultOK()
+
+		defer func(result *tag.Mutator) {
+			ctx, err := tag.New(ctx, *result)
+			if err != nil {
+				m.logger.Warnw("failed to create context with additional tags", "error", err)
+				// NOTE: do not return here. We should log it as success.
+			}
+			stats.Record(ctx, mRequest.M(1))
+		}(&result)
+
 		// Call the key function - if this fails, it's an internal server error.
 		key, err := m.keyFunc(r)
 		if err != nil {
 			m.logger.Errorw("could not call key function", "error", err)
-			stats.Record(ctx, m.keyErrors.M(1))
+			result = observability.ResultError("FAILED_TO_CALL_KEY_FUNCTION")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -171,9 +123,9 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		limit, remaining, reset, ok, err := m.store.Take(ctx, key)
 		if err != nil {
 			m.logger.Errorw("failed to take", "error", err)
-			stats.Record(ctx, m.takeErrors.M(1))
 
 			if !m.allowOnError {
+				result = observability.ResultError("FAILED_TO_TAKE")
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -186,18 +138,9 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		w.Header().Set(httplimit.HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
 		w.Header().Set(httplimit.HeaderRateLimitReset, resetTime)
 
-		// Record request status
-		ctx, err = tag.New(ctx, tag.Insert(OkTag, fmt.Sprintf("%v", ok)))
-		if err != nil {
-			m.logger.Errorw("could not create tag", "error", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		stats.Record(ctx, m.reqCounter.M(1))
-
 		// Fail if there were no tokens remaining.
 		if !ok {
-			stats.Record(ctx, m.rateLimited.M(1))
+			result = observability.ResultError("RATE_LIMITED")
 			w.Header().Set(httplimit.HeaderRetryAfter, resetTime)
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return

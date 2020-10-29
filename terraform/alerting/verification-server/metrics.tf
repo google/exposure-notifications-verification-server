@@ -41,19 +41,6 @@ resource "google_monitoring_metric_descriptor" "api--verify--request_count" {
   labels { key = "result" }
 }
 
-resource "google_monitoring_metric_descriptor" "ratelimit--limitware--rate_limited_count" {
-  project      = var.verification-server-project
-  description  = "rate limited requests"
-  display_name = "OpenCensus/en-verification-server/ratelimit/limitware/rate_limited_count"
-  type         = "custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/rate_limited_count"
-  metric_kind  = "CUMULATIVE"
-  value_type   = "INT64"
-  unit         = "1"
-  labels { key = "realm" }
-  labels { key = "build_id" }
-  labels { key = "build_tag" }
-}
-
 resource "google_monitoring_metric_descriptor" "api--issue--realm_token_capacity_latest" {
   project      = var.verification-server-project
   description  = "Latest realm token capacity utilization"
@@ -79,6 +66,20 @@ resource "google_monitoring_metric_descriptor" "api--issue--realm_token_latest" 
   labels { key = "build_id" }
   labels { key = "build_tag" }
   labels { key = "state" }
+}
+
+resource "google_monitoring_metric_descriptor" "ratelimit--limitware--request_count" {
+  project      = var.verification-server-project
+  description  = "requests seen by middleware"
+  display_name = "OpenCensus/en-verification-server/ratelimit/limitware/request_count"
+  type         = "custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count"
+  metric_kind  = "CUMULATIVE"
+  value_type   = "INT64"
+  unit         = "1"
+  labels { key = "realm" }
+  labels { key = "build_id" }
+  labels { key = "build_tag" }
+  labels { key = "result" }
 }
 
 resource "google_monitoring_metric_descriptor" "e2e--request_count" {
