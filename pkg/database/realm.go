@@ -385,6 +385,8 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
+	r.CertificateIssuer = trim(r.CertificateIssuer)
+	r.CertificateAudience = trim(r.CertificateIssuer)
 	if r.UseRealmCertificateKey {
 		if r.CertificateIssuer == "" {
 			r.AddError("certificateIssuer", "cannot be blank")
@@ -743,6 +745,7 @@ func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) 
 		Unscoped().
 		Model(MobileApp{}).
 		Where("id = ?", id).
+		Where("realm_id = ?", r.ID).
 		First(&app).
 		Error; err != nil {
 		return nil, err
@@ -1314,6 +1317,19 @@ type RealmUserStats struct {
 	Name        string    `json:"name"`
 	CodesIssued uint      `json:"codes_issued"`
 	Date        time.Time `json:"date"`
+}
+
+// RealmUserStatsCSVHeader is a header for CSV stats
+var RealmUserStatsCSVHeader = []string{"User ID", "Name", "Codes Issued", "Date"}
+
+// CSV returns a slice of the data from a RealmUserStats for CSV writing.
+func (s *RealmUserStats) CSV() []string {
+	return []string{
+		fmt.Sprintf("%d", s.UserID),
+		s.Name,
+		fmt.Sprintf("%d", s.CodesIssued),
+		s.Date.Format("2006-01-02"),
+	}
 }
 
 // CodesPerUser returns a set of UserStats for a given date range.

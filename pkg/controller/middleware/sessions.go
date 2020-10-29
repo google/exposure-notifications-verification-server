@@ -48,6 +48,8 @@ func RequireSession(ctx context.Context, store sessions.Store, h *render.Rendere
 			// Get or create a session from the store.
 			session, err := store.Get(r, sessionName)
 			if err != nil {
+				logger.Errorw("failed to get session", "error", err)
+
 				// We couldn't get a session (invalid cookie, can't talk to redis,
 				// whatever). According to the spec, this can return an error but can never
 				// return an empty session. We intentionally discard the error to ensure we

@@ -81,8 +81,19 @@ func (f *firebaseAuth) CheckRevoked(ctx context.Context, session *sessions.Sessi
 
 // StoreSession stores information about the session.
 func (f *firebaseAuth) StoreSession(ctx context.Context, session *sessions.Session, i *SessionInfo) error {
+	if i == nil || i.Data == nil {
+		f.ClearSession(ctx, session)
+		return ErrSessionInfoMissing
+	}
+
+	idToken, ok := i.Data["id_token"].(string)
+	if !ok {
+		f.ClearSession(ctx, session)
+		return fmt.Errorf("missing id_token: %w", ErrSessionInfoMissing)
+	}
+
 	// Convert ID token to long-lived cookie
-	cookie, err := f.firebaseAuth.SessionCookie(ctx, i.IDToken, i.TTL)
+	cookie, err := f.firebaseAuth.SessionCookie(ctx, idToken, i.TTL)
 	if err != nil {
 		f.ClearSession(ctx, session)
 		return err
@@ -150,15 +161,6 @@ func (f *firebaseAuth) CreateUser(ctx context.Context, name, email, pass string,
 	}
 
 	return true, nil
-}
-
-// IDToken extracts the users IDtoken from the session.
-func (f *firebaseAuth) IDToken(ctx context.Context, session *sessions.Session) (string, error) {
-	data, err := f.loadCookie(ctx, session)
-	if err != nil {
-		return "", err
-	}
-	return data.IDToken, nil
 }
 
 // EmailAddress extracts the users email from the session.
@@ -286,8 +288,7 @@ func (f *firebaseAuth) emailVerificationLink(ctx context.Context, email string) 
 	return verify, nil
 }
 
-type cookieData struct {
-	IDToken       string
+type firebaseCookieData struct {
 	Email         string
 	EmailVerified bool
 	MFAEnabled    bool
@@ -295,7 +296,7 @@ type cookieData struct {
 
 // dataFromCookie extracts the information from the provided firebase cookie, if
 // it exists.
-func (f *firebaseAuth) dataFromCookie(ctx context.Context, cookie string) (*cookieData, error) {
+func (f *firebaseAuth) dataFromCookie(ctx context.Context, cookie string) (*firebaseCookieData, error) {
 	token, err := f.firebaseAuth.VerifySessionCookie(ctx, cookie)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify firebase cookie: %w", err)
@@ -303,12 +304,6 @@ func (f *firebaseAuth) dataFromCookie(ctx context.Context, cookie string) (*cook
 
 	if token.Claims == nil {
 		return nil, fmt.Errorf("token claims are empty")
-	}
-
-	// IDToken
-	idToken, ok := token.Claims["user_id"].(string)
-	if !ok {
-		return nil, fmt.Errorf("token claims for id are not a string")
 	}
 
 	// Email
@@ -330,8 +325,7 @@ func (f *firebaseAuth) dataFromCookie(ctx context.Context, cookie string) (*cook
 	}
 	_, mfaEnabled := firebase["sign_in_second_factor"]
 
-	return &cookieData{
-		IDToken:       idToken,
+	return &firebaseCookieData{
 		Email:         email,
 		EmailVerified: emailVerified,
 		MFAEnabled:    mfaEnabled,
@@ -339,7 +333,7 @@ func (f *firebaseAuth) dataFromCookie(ctx context.Context, cookie string) (*cook
 }
 
 // loadCookie loads and parses the firebase cookie from the session.
-func (f *firebaseAuth) loadCookie(ctx context.Context, session *sessions.Session) (*cookieData, error) {
+func (f *firebaseAuth) loadCookie(ctx context.Context, session *sessions.Session) (*firebaseCookieData, error) {
 	raw, err := sessionGet(session, sessionKeyFirebaseCookie)
 	if err != nil {
 		f.ClearSession(ctx, session)

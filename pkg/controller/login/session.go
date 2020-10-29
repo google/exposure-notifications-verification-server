@@ -47,8 +47,10 @@ func (c *Controller) HandleCreateSession() http.Handler {
 
 		// Create the session cookie.
 		if err := c.authProvider.StoreSession(ctx, session, &auth.SessionInfo{
-			IDToken: form.IDToken,
-			TTL:     c.config.SessionDuration,
+			Data: map[string]interface{}{
+				"id_token": form.IDToken,
+			},
+			TTL: c.config.SessionDuration,
 		}); err != nil {
 			flash.Error("Failed to create session: %v", err)
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))

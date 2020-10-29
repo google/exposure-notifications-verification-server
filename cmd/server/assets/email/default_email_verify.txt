@@ -1,6 +1,5 @@
 {{- define "email/verifyemail" -}}
 {{template "email/plainheader" .}}
-
 Hello,
 
 Click the link below to verify your email address for {{.RealmName}} on the COVID-19 exposure notifications verification server:

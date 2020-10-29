@@ -28,7 +28,7 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [metric.result]
-    - title: /ratelimit/limitware/rate_limited_count by label.job [SUM]
+    - title: Rate Limited count by label.job [SUM]
       xyChart:
         chartOptions:
           mode: COLOR
@@ -37,7 +37,8 @@ gridLayout:
             timeSeriesQuery:
               timeSeriesQueryLanguage: >
                 generic_task ::
-                custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/rate_limited_count
+                custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count
+                | filter metric.result == "RATE_LIMITED"
                 | align rate()
                 | every 1m
                 | [resource.job]

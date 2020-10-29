@@ -95,7 +95,7 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 
 	return func(ctx context.Context, resetLink string) error {
 		var message []byte
-		if realm.EmailInviteTemplate != "" {
+		if realm.EmailPasswordResetTemplate != "" {
 			// Render from the realm template with the plain header.
 			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
 				"ToEmail":   email,
@@ -147,7 +147,7 @@ func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, 
 
 	return func(ctx context.Context, verifyLink string) error {
 		var message []byte
-		if realm.EmailInviteTemplate != "" {
+		if realm.EmailVerifyTemplate != "" {
 			// Render from the realm template with the plain header.
 			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
 				"ToEmail":   email,

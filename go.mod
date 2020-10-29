@@ -14,6 +14,8 @@ require (
 	github.com/Azure/azure-sdk-for-go v46.4.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.8 // indirect
 	github.com/aws/aws-sdk-go v1.35.3 // indirect
+	github.com/chromedp/cdproto v0.0.0-20201009231348-1c6a710e77de
+	github.com/chromedp/chromedp v0.5.3
 	github.com/client9/misspell v0.3.4
 	github.com/containerd/continuity v0.0.0-20200928162600-f2cc35102c2a // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -28,6 +30,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
+	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.0

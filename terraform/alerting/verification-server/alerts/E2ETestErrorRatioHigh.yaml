@@ -1,0 +1,32 @@
+combiner: OR
+conditions:
+- conditionMonitoringQueryLanguage:
+    duration: 600s
+    query: >
+        fetch
+          generic_task ::
+          custom.googleapis.com/opencensus/en-verification-server/e2e/request_count
+        | {
+            NOT_OK: filter metric.result == 'NOT_OK' | align
+            ;
+            ALL: ident | align
+        }
+        | group_by [metric.step, metric.test_type], [val: sum(value.request_count)]
+        | ratio
+        | window 1m
+        | condition ratio > 0.1
+    trigger:
+      count: 1
+  displayName: E2E test per-step per-test_type error ratio
+displayName: E2ETestErrorRatioHigh
+enabled: true
+documentation:
+  content: |
+    ## ${policy.display_name}
+
+    The e2e test is failing at step ${metric.label.step} with test_type
+    ${metric.label.test_type}.
+
+    This could be caused by many reasons. Please check the e2e-runner service
+    log and see why it failed.
+  mimeType: text/markdown

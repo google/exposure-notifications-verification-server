@@ -105,3 +105,62 @@ func TestPerUserRealmStats(t *testing.T) {
 		}
 	}
 }
+
+func TestRealm_FindMobileApp(t *testing.T) {
+	t.Parallel()
+
+	t.Run("access_across_realms", func(t *testing.T) {
+		db := NewTestDatabase(t)
+
+		realm1 := NewRealmWithDefaults("realm1")
+		if err := db.SaveRealm(realm1, System); err != nil {
+			t.Fatal(err)
+		}
+
+		realm2 := NewRealmWithDefaults("realm2")
+		if err := db.SaveRealm(realm2, System); err != nil {
+			t.Fatal(err)
+		}
+
+		app1 := &MobileApp{
+			Name:    "app1",
+			RealmID: realm1.ID,
+			URL:     "https://example1.com",
+			OS:      OSTypeIOS,
+			AppID:   "app1",
+		}
+		if err := db.SaveMobileApp(app1, System); err != nil {
+			t.Fatal(err)
+		}
+
+		app2 := &MobileApp{
+			Name:    "app2",
+			RealmID: realm1.ID,
+			URL:     "https://example2.com",
+			OS:      OSTypeIOS,
+			AppID:   "app2",
+		}
+		if err := db.SaveMobileApp(app2, System); err != nil {
+			t.Fatal(err)
+		}
+
+		// realm1 should be able to lookup app1
+		{
+			found, err := realm1.FindMobileApp(db, app1.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := found.ID, app1.ID; got != want {
+				t.Errorf("expected %v to be %v", got, want)
+			}
+		}
+
+		// realm2 should NOT be able to lookup app1
+		{
+			if _, err := realm2.FindMobileApp(db, app1.ID); err == nil {
+				t.Fatal("expected error")
+			}
+		}
+	})
+}
