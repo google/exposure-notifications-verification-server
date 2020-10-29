@@ -386,7 +386,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	r.CertificateIssuer = trim(r.CertificateIssuer)
-	r.CertificateAudience = trim(r.CertificateIssuer)
+	r.CertificateAudience = trim(r.CertificateAudience)
 	if r.UseRealmCertificateKey {
 		if r.CertificateIssuer == "" {
 			r.AddError("certificateIssuer", "cannot be blank")
