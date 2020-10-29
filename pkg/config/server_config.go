@@ -76,7 +76,7 @@ type ServerConfig struct {
 	// Application Config
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
-	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=648h"` // 648h is 27 days.
+	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=660h"` // 660h is 28 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
 	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
