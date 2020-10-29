@@ -49,6 +49,8 @@ var (
 	// callbackLock prevents multiple callbacks from being registered
 	// simultaneously because that's a data race in gorm.
 	callbackLock sync.Mutex
+
+	ExtraCutset = fmt.Sprintf("%v", '\uFEFF')
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -71,6 +73,10 @@ type Database struct {
 	secretManager secrets.SecretManager
 
 	statsCloser func()
+}
+
+func trim(s string) string {
+	return strings.Trim(strings.TrimSpace(s), ExtraCutset)
 }
 
 // Overrides the postgresql driver with
