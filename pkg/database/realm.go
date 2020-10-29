@@ -743,6 +743,7 @@ func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) 
 		Unscoped().
 		Model(MobileApp{}).
 		Where("id = ?", id).
+		Where("realm_id = ?", r.ID).
 		First(&app).
 		Error; err != nil {
 		return nil, err
