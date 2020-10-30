@@ -26,7 +26,7 @@ import (
 const metricPrefix = observability.MetricRoot + "/e2e"
 
 var (
-	mLatencyMs = stats.Int64(metricPrefix+"/request", "request latency", stats.UnitDimensionless)
+	mLatencyMs = stats.Int64(metricPrefix+"/request", "request latency", stats.UnitMilliseconds)
 
 	// The name of step in e2e test.
 	stepTagKey = tag.MustNewKey("step")
