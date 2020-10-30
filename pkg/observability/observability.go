@@ -157,17 +157,16 @@ func WithBuildInfo(octx context.Context) context.Context {
 // RecordLatency calculate and record the latency.
 // Usage example:
 // func foo() {
-// 	 defer RecordLatency(ctx, metric, tag1, tag2)()
+// 	 defer RecordLatency(ctx, time.Now(), metric, tag1, tag2)
 //   // remaining of the function body.
 // }
-func RecordLatency(ctx context.Context, m *stats.Float64Measure, mutators ...*tag.Mutator) func() {
-	start := time.Now()
-	return func() {
-		var additionalMutators []tag.Mutator
-		for _, t := range mutators {
-			additionalMutators = append(additionalMutators, *t)
-		}
-		latency := float64(time.Since(start)) / float64(time.Millisecond)
-		stats.RecordWithTags(ctx, additionalMutators, m.M(latency))
+func RecordLatency(ctx context.Context, start time.Time, m *stats.Float64Measure, mutators ...*tag.Mutator) {
+	var additionalMutators []tag.Mutator
+	for _, t := range mutators {
+		additionalMutators = append(additionalMutators, *t)
 	}
+	// Calculate the millisecond number as float64. time.Duration.Millisecond()
+	// returns an integer.
+	latency := float64(time.Since(start)) / float64(time.Millisecond)
+	stats.RecordWithTags(ctx, additionalMutators, m.M(latency))
 }
