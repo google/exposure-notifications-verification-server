@@ -34,8 +34,6 @@ import (
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 
 	"github.com/dgrijalva/jwt-go"
-	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 )
 
 func (c *Controller) HandleVerify() http.Handler {
@@ -45,14 +43,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
 
-		defer func(blame, result *tag.Mutator) {
-			ctx, err := tag.New(ctx, *blame, *result)
-			if err != nil {
-				c.logger.Warnw("failed to create context with additional tags", "error", err)
-				// NOTE: do not return here. We should log it as success.
-			}
-			stats.Record(ctx, mRequest.M(1))
-		}(&blame, &result)
+		defer observability.RecordLatency(ctx, mLatencyMs, &result, &blame)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {

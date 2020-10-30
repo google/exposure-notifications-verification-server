@@ -19,6 +19,7 @@ import (
 
 	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
 
+	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 )
@@ -26,17 +27,24 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/certificate"
 
 var (
-	mRequest = stats.Int64(metricPrefix+"/request", "# of certificate issue requests", stats.UnitDimensionless)
+	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of certificate issue requests", stats.UnitMilliseconds)
 )
 
 func init() {
 	enobservability.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/request_count",
-			Measure:     mRequest,
+			Measure:     mLatencyMs,
 			Description: "The count of certificate issue requests",
 			TagKeys:     observability.APITagKeys(),
 			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/request_latency",
+			Measure:     mLatencyMs,
+			Description: "The latency distribution of certificate issue requests",
+			TagKeys:     observability.APITagKeys(),
+			Aggregation: ochttp.DefaultLatencyDistribution,
 		},
 	}...)
 }
