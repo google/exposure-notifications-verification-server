@@ -160,8 +160,7 @@ func WithBuildInfo(octx context.Context) context.Context {
 // 	 defer RecordLatency(ctx, metric, tag1, tag2)()
 //   // remaining of the function body.
 // }
-func RecordLatency(ctx context.Context, m *stats.Float64Measure, mutators ...*tag.Mutator) func() {
-	start := time.Now()
+func RecordLatency(ctx context.Context, start time.Time, m *stats.Float64Measure, mutators ...*tag.Mutator) func() {
 	return func() {
 		var additionalMutators []tag.Mutator
 		for _, t := range mutators {
