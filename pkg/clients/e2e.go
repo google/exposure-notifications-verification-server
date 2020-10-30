@@ -48,7 +48,7 @@ func timeToInterval(t time.Time) int32 {
 func recordLatency(step string) func(context.Context, *tag.Mutator) {
 	start := time.Now()
 	return func(ctx context.Context, result *tag.Mutator) {
-		latency := time.Since(start).Milliseconds()
+		latency := float64(time.Since(start)) / float64(time.Millisecond)
 		step := tag.Upsert(stepTagKey, step)
 		stats.RecordWithTags(ctx, []tag.Mutator{*result, step}, mLatencyMs.M(latency))
 	}

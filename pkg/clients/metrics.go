@@ -18,6 +18,7 @@ import (
 	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
+	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
@@ -26,7 +27,7 @@ import (
 const metricPrefix = observability.MetricRoot + "/e2e"
 
 var (
-	mLatencyMs = stats.Int64(metricPrefix+"/request", "request latency", stats.UnitMilliseconds)
+	mLatencyMs = stats.Float64(metricPrefix+"/request", "request latency", stats.UnitMilliseconds)
 
 	// The name of step in e2e test.
 	stepTagKey = tag.MustNewKey("step")
@@ -49,7 +50,7 @@ func init() {
 			Measure:     mLatencyMs,
 			Description: "Distribution of e2e requests latency in ms",
 			TagKeys:     append(observability.CommonTagKeys(), stepTagKey, testTypeTagKey),
-			Aggregation: view.Distribution(0, 0.1, 1, 10, 100, 1000, 10000, 100000),
+			Aggregation: ochttp.DefaultLatencyDistribution,
 		},
 	}...)
 }
