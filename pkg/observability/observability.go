@@ -19,9 +19,11 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
+	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
 
@@ -150,4 +152,22 @@ func WithBuildInfo(octx context.Context) context.Context {
 	}
 
 	return ctx
+}
+
+// RecordLatency calculate and record the latency.
+// Usage example:
+// func foo() {
+// 	 defer RecordLatency(ctx, metric, tag1, tag2)()
+//   // remaining of the function body.
+// }
+func RecordLatency(ctx context.Context, m *stats.Float64Measure, mutators ...*tag.Mutator) func() {
+	start := time.Now()
+	return func() {
+		var additionalMutators []tag.Mutator
+		for _, t := range mutators {
+			additionalMutators = append(additionalMutators, *t)
+		}
+		latency := float64(time.Since(start)) / float64(time.Millisecond)
+		stats.RecordWithTags(ctx, additionalMutators, m.M(latency))
+	}
 }
