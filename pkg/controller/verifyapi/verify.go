@@ -43,7 +43,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
 
-		defer observability.RecordLatency(ctx, mLatencyMs, &result, &blame)
+		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {

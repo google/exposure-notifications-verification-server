@@ -104,7 +104,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
-		defer observability.RecordLatency(ctx, mLatencyMs, &blame, &result)()
+		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
@@ -302,7 +302,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		if request.Phone != "" && smsProvider != nil {
 			func() {
-				defer observability.RecordLatency(ctx, mSMSLatencyMs, &blame, &result)()
+				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 					// Delete the token
