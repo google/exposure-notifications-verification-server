@@ -165,6 +165,8 @@ func RecordLatency(ctx context.Context, start time.Time, m *stats.Float64Measure
 	for _, t := range mutators {
 		additionalMutators = append(additionalMutators, *t)
 	}
+	// Calculate the millisecond number as float64. time.Duration.Millisecond()
+	// returns an integer.
 	latency := float64(time.Since(start)) / float64(time.Millisecond)
 	stats.RecordWithTags(ctx, additionalMutators, m.M(latency))
 }
