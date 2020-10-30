@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/chromedp/chromedp"
@@ -96,6 +97,17 @@ func TestHandleHome_IssueCode(t *testing.T) {
 	}
 
 	if got, want := dbCode.Claimed, false; got != want {
+		t.Errorf("expected %v to be %v", got, want)
+	}
+
+	// Exchange the code for a verification certificate.
+	allowedTypes := api.AcceptTypes{api.TestTypeConfirmed: struct{}{}}
+	token, err := harness.Database.VerifyCodeAndIssueToken(realm.ID, code, allowedTypes, 30*time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := token.TestType, api.TestTypeConfirmed; got != want {
 		t.Errorf("expected %v to be %v", got, want)
 	}
 }
