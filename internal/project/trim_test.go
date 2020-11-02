@@ -18,20 +18,20 @@ import (
 	"testing"
 )
 
-func TestTrimSpaceAndNonASCII_unicode(t *testing.T) {
+func TestTrimSpaceAndNonPrintable_unicode(t *testing.T) {
 	extraChars := "state\uFEFF"
 	want := "state"
-	got := TrimSpaceAndNonASCII(extraChars)
+	got := TrimSpaceAndNonPrintable(extraChars)
 
 	if want != got {
 		t.Fatalf("wrong trim, want: %q got: %q", want, got)
 	}
 }
 
-func TestTrimSpaceAndNonASCII_space(t *testing.T) {
+func TestTrimSpaceAndNonPrintable_space(t *testing.T) {
 	extraChars := " state  \r\t"
 	want := "state"
-	got := TrimSpaceAndNonASCII(extraChars)
+	got := TrimSpaceAndNonPrintable(extraChars)
 
 	if want != got {
 		t.Fatalf("wrong trim, want: %q got: %q", want, got)

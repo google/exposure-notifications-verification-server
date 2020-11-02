@@ -26,9 +26,9 @@ func TrimSpace(s string) string {
 	})
 }
 
-// TrimSpaceAndNonASCII trims spaces and non-ascii chars from the beginning and end of a string.
-func TrimSpaceAndNonASCII(s string) string {
+// TrimSpaceAndNonPrintable trims spaces and non-printable chars from the beginning and end of a string.
+func TrimSpaceAndNonPrintable(s string) string {
 	return strings.TrimFunc(s, func(r rune) bool {
-		return unicode.IsSpace(r) || r > unicode.MaxASCII
+		return unicode.IsSpace(r) || !unicode.IsPrint(r)
 	})
 }

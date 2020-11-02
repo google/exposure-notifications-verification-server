@@ -386,8 +386,8 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
-	r.CertificateIssuer = project.TrimSpaceAndNonASCII(r.CertificateIssuer)
-	r.CertificateAudience = project.TrimSpaceAndNonASCII(r.CertificateAudience)
+	r.CertificateIssuer = project.TrimSpaceAndNonPrintable(r.CertificateIssuer)
+	r.CertificateAudience = project.TrimSpaceAndNonPrintable(r.CertificateAudience)
 	if r.UseRealmCertificateKey {
 		if r.CertificateIssuer == "" {
 			r.AddError("certificateIssuer", "cannot be blank")
