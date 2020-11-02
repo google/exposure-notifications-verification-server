@@ -32,6 +32,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/dgrijalva/jwt-go"
 	"go.opencensus.io/stats"
@@ -41,6 +42,7 @@ import (
 func (c *Controller) HandleVerify() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
+		ctx = logging.WithLogger(ctx, c.logger.Named("handleverify"))
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()

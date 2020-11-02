@@ -86,6 +86,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Parse and validate the verification token.
 		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken, allowedPublicKeys)
 		if err != nil {
+			c.logger.Debugw("verification token invalid", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			blame = observability.BlameClient
 			result = observability.ResultError("FAILED_TO_VALIDATE_TOKEN")
@@ -95,15 +96,17 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Validate the HMAC length. SHA 256 HMAC must be 32 bytes in length.
 		hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
 		if err != nil {
+			c.logger.Debugw("provided invalid hmac, not base64", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not a valid base64: %v", err).WithCode(api.ErrHMACInvalid))
 			blame = observability.BlameClient
 			result = observability.ResultError("FAILED_TO_DECODE_HMAC")
 			return
 		}
-		if len(hmacBytes) != 32 {
+		if l := len(hmacBytes); l != 32 {
+			c.logger.Debugw("provided invalid hmac, wrong length", "length", l)
 			c.h.RenderJSON(w, http.StatusBadRequest,
-				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", len(hmacBytes)).WithCode(api.ErrHMACInvalid))
+				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", l).WithCode(api.ErrHMACInvalid))
 			blame = observability.BlameClient
 			result = observability.ResultError("INVALID_HMAC_LENGTH")
 			return

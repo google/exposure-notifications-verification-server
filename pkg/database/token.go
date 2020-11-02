@@ -152,25 +152,30 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 		}
 
 		if !tok.ExpiresAt.After(time.Now().UTC()) {
+			db.logger.Debugw("tried to claim expired token", "ID", tok.ID)
 			return ErrTokenExpired
 		}
 
 		if tok.Used {
+			db.logger.Debugw("tried to claim used token", "ID", tok.ID)
 			return ErrTokenUsed
 		}
 
 		// The subject is made up of testtype.symptomDate
 		if tok.TestType != subject.TestType {
+			db.logger.Debugw("database testType changed after token issued", "ID", tok.ID)
 			return ErrTokenMetadataMismatch
 		}
 		if (tok.SymptomDate == nil && subject.SymptomDate != nil) ||
 			(tok.SymptomDate != nil && subject.SymptomDate == nil) ||
 			(tok.SymptomDate != nil && !tok.SymptomDate.Equal(*subject.SymptomDate)) {
+			db.logger.Debugw("database symptomDate changed after token issued", "ID", tok.ID)
 			return ErrTokenMetadataMismatch
 		}
 		if (tok.TestDate == nil && subject.TestDate != nil) ||
 			(tok.TestDate != nil && subject.TestDate == nil) ||
 			(tok.TestDate != nil && !tok.TestDate.Equal(*subject.TestDate)) {
+			db.logger.Debugw("database testDate changed after token issued", "ID", tok.ID)
 			return ErrTokenMetadataMismatch
 		}
 
@@ -210,19 +215,22 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 		}
 
 		// Validation
-		expired, err := db.IsCodeExpired(&vc, verCode)
+		expired, codeType, err := db.IsCodeExpired(&vc, verCode)
 		if err != nil {
-			db.logger.Errorw("failed to check code expiration", "error", err)
+			db.logger.Errorw("failed to check code expiration", "ID", vc.ID, "error", err)
 			return ErrVerificationCodeExpired
 		}
 		if expired {
+			db.logger.Debugw("checked expired code", "ID", vc.ID, "codeType", codeType)
 			return ErrVerificationCodeExpired
 		}
 		if vc.Claimed {
+			db.logger.Debugw("checked expired code already used", "ID", vc.ID, "codeType", codeType)
 			return ErrVerificationCodeUsed
 		}
 
 		if _, ok := acceptTypes[vc.TestType]; !ok {
+			db.logger.Debugw("checked not of accepted testType", "ID", vc.ID)
 			return ErrUnsupportedTestType
 		}
 
