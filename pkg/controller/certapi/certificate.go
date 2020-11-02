@@ -33,6 +33,10 @@ import (
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 )
 
+const (
+	HMACLength = 32
+)
+
 func (c *Controller) HandleCertificate() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
@@ -103,10 +107,10 @@ func (c *Controller) HandleCertificate() http.Handler {
 			result = observability.ResultError("FAILED_TO_DECODE_HMAC")
 			return
 		}
-		if l := len(hmacBytes); l != 32 {
+		if l := len(hmacBytes); l != HMACLength {
 			c.logger.Debugw("provided invalid hmac, wrong length", "length", l)
 			c.h.RenderJSON(w, http.StatusBadRequest,
-				api.Errorf("exposure key HMAC is not the correct length, want: 32 got: %v", l).WithCode(api.ErrHMACInvalid))
+				api.Errorf("exposure key HMAC is not the correct length, want: %v got: %v", HMACLength, l).WithCode(api.ErrHMACInvalid))
 			blame = observability.BlameClient
 			result = observability.ResultError("INVALID_HMAC_LENGTH")
 			return
