@@ -17,8 +17,8 @@ package user
 import (
 	"context"
 	"net/http"
-	"strings"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -64,7 +64,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			c.renderNew(ctx, w)
 			return
 		}
-		email := strings.TrimSpace(form.Email)
+		email := project.TrimSpace(form.Email)
 
 		// See if the user already exists by email - they may be a member of another
 		// realm.

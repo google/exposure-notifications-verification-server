@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
@@ -75,8 +75,8 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 
 		var form FormData
 		err := controller.BindForm(w, r, &form)
-		email := strings.TrimSpace(form.Email)
-		name := strings.TrimSpace(form.Name)
+		email := project.TrimSpace(form.Email)
+		name := project.TrimSpace(form.Name)
 		if err != nil {
 			user := &database.User{
 				Email: email,

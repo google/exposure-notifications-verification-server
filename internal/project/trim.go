@@ -12,19 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package database
+package project
 
 import (
-	"fmt"
-	"testing"
+	"strings"
+	"unicode"
 )
 
-func TestSpecialTrim(t *testing.T) {
-	extraChars := fmt.Sprintf("%s%v", "state", '\uFEFF')
-	want := "state"
-	got := trim(extraChars)
+// TrimSpace trims space and "zero-width no-break space"
+func TrimSpace(s string) string {
+	return strings.TrimFunc(s, func(r rune) bool {
+		return unicode.IsSpace(r) || r == '\uFEFF'
+	})
+}
 
-	if want != got {
-		t.Fatalf("wrong trim, want: %q got: %q", want, got)
-	}
+// TrimSpaceAndNonASCII trims spaces and non-ascii chars from the beginning and end of a string.
+func TrimSpaceAndNonASCII(s string) string {
+	return strings.TrimFunc(s, func(r rune) bool {
+		return unicode.IsSpace(r) || r > unicode.MaxASCII
+	})
 }

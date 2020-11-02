@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/jinzhu/gorm"
 )
 
@@ -84,7 +85,7 @@ type AuthorizedApp struct {
 
 // BeforeSave runs validations. If there are errors, the save fails.
 func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
-	a.Name = strings.TrimSpace(a.Name)
+	a.Name = project.TrimSpace(a.Name)
 
 	if a.Name == "" {
 		a.AddError("name", "cannot be blank")
