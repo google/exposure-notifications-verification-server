@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/jinzhu/gorm"
 )
 
@@ -74,7 +75,7 @@ type MobileApp struct {
 }
 
 func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
-	a.Name = strings.TrimSpace(a.Name)
+	a.Name = project.TrimSpace(a.Name)
 	if a.Name == "" {
 		a.AddError("name", "is required")
 	}
@@ -83,12 +84,12 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("realm_id", "is required")
 	}
 
-	a.AppID = strings.TrimSpace(a.AppID)
+	a.AppID = project.TrimSpace(a.AppID)
 	if a.AppID == "" {
 		a.AddError("app_id", "is required")
 	}
 
-	a.URL = strings.TrimSpace(a.URL)
+	a.URL = project.TrimSpace(a.URL)
 	a.URLPtr = stringPtr(a.URL)
 
 	// Ensure OS is valid
@@ -97,7 +98,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	}
 
 	// SHA is required for Android
-	a.SHA = strings.TrimSpace(a.SHA)
+	a.SHA = project.TrimSpace(a.SHA)
 	if a.OS == OSTypeAndroid {
 		if a.SHA == "" {
 			a.AddError("sha", "is required for Android apps")
@@ -108,7 +109,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	var shas []string
 	for _, line := range strings.Split(a.SHA, "\n") {
 		for _, entry := range strings.Split(line, ",") {
-			entry = strings.ToUpper(strings.TrimSpace(entry))
+			entry = strings.ToUpper(project.TrimSpace(entry))
 			if entry == "" {
 				continue
 			}

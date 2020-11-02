@@ -27,6 +27,7 @@ import (
 	texttemplate "text/template"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 
 	"go.uber.org/zap"
 )
@@ -144,7 +145,7 @@ func safeHTML(s string) htmltemplate.HTML {
 func templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
 		"joinStrings":    strings.Join,
-		"trimSpace":      strings.TrimSpace,
+		"trimSpace":      project.TrimSpace,
 		"stringContains": strings.Contains,
 		"toLower":        strings.ToLower,
 		"toUpper":        strings.ToUpper,
