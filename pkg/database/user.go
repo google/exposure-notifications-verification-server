@@ -93,7 +93,7 @@ func (u *User) PasswordAgeString() string {
 // BeforeSave runs validations. If there are errors, the save fails.
 func (u *User) BeforeSave(tx *gorm.DB) error {
 	// Validation
-	u.Email = project.TrimSpaceAndNonASCII(u.Email)
+	u.Email = project.TrimSpace(u.Email)
 	if u.Email == "" {
 		u.AddError("email", "cannot be blank")
 	}
