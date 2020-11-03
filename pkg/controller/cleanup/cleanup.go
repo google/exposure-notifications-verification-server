@@ -111,11 +111,11 @@ func (c *Controller) HandleCleanup() http.Handler {
 		}()
 
 		// Verification codes - purge codes from database entirerly.
-		// Their code/long_code hmac values will have already been zeored out.
+		// Their code/long_code hmac values will have been set to "".
 		func() {
 			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_CODE")
-			if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeStatusMaxAge); err != nil {
+			if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
 				result = observability.ResultError("FAILED")
 			} else {
@@ -124,11 +124,12 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
-		// Verification codes - recycle codes.
+		// Verification codes - recycle codes. Zero out the code/long_code values
+		// so status can be reported, but codes couldn't be recalculated or checked.
 		func() {
 			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_CODE_RECYCLE")
-			if count, err := c.db.RecycleVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
+			if count, err := c.db.RecycleVerificationCodes(c.config.VerificationCodeStatusMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
 				result = observability.ResultError("FAILED")
 			} else {
