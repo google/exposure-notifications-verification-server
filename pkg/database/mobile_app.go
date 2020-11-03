@@ -142,9 +142,19 @@ type ExtendedMobileApp struct {
 
 // ListActiveAppsWithRealm finds all active mobile apps with their associated realm.
 func (db *Database) ListActiveAppsWithRealm(p *pagination.PageParams) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
+	return db.SearchActiveAppsWithRealm(p, "")
+}
+
+// SearchActiveAppsWithRealm finds all active mobile apps with their associated realm.
+func (db *Database) SearchActiveAppsWithRealm(p *pagination.PageParams, q string) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
 	query := db.db.Table("mobile_apps").
 		Select("mobile_apps.*, realms.*").
 		Joins("left join realms on realms.id = mobile_apps.realm_id")
+
+	if q != "" {
+		q = `%` + q + `%`
+		query = query.Where("(mobile_apps.name ILIKE ? OR realms.name ILIKE ?)", q, q)
+	}
 
 	if p == nil {
 		p = new(pagination.PageParams)

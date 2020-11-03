@@ -788,14 +788,13 @@ func (r *Realm) ListUsers(db *Database, p *pagination.PageParams) ([]*User, *pag
 
 // SearchUsers returns the list of users which match the given criteria.
 func (r *Realm) SearchUsers(db *Database, q string, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
-	q = `%` + q + `%`
-
 	var users []*User
 	query := db.db.Model(&User{}).
 		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
 		Order("LOWER(users.name) ASC")
 
 	if q != "" {
+		q = `%` + q + `%`
 		query = query.Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q)
 	}
 

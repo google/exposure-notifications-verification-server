@@ -4,11 +4,6 @@
 {{$currentUser := .currentUser}}
 {{$currentRealm := .currentRealm}}
 {{$users := .users}}
-{{$s := .search}}
-{{$searchQuery := ""}}
-{{if $s}}
-  {{$searchQuery = printf "search=%s&" $s}}
-{{end}}
 
 <!doctype html>
 <html lang="en">

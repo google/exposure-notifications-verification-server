@@ -1,6 +1,11 @@
 {{define "admin/mobileapps/show"}}
 
 {{$apps := .apps}}
+{{$s := .search}}
+{{$searchQuery := ""}}
+{{if $s}}
+  {{$searchQuery = printf "search=%s&" $s}}
+{{end}}
 
 <!doctype html>
 <html lang="en">
@@ -16,6 +21,21 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Mobile apps</div>
+
+      <div class="card-body">
+        <form method="GET" action="/admin/mobileapps">
+          <div class="input-group">
+            <span class="input-group-prepend">
+              <div class="input-group-text bg-transparent">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+              </div>
+            </span>
+            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
+              autocomplete="off" class="form-control" />
+          </div>
+        </form>
+      </div>
+
       <div class="card-body">
 
         {{if .apps}}
