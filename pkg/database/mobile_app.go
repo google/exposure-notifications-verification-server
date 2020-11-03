@@ -133,6 +133,23 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
+// ListActiveApps finds all active mobile apps.
+func (db *Database) ListActiveApps() ([]*MobileApp, error) {
+	// Find the apps.
+	var apps []*MobileApp
+	if err := db.db.
+		Model(&MobileApp{}).
+		Find(&apps).
+		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
+		Error; err != nil {
+		if IsNotFound(err) {
+			return apps, nil
+		}
+		return nil, err
+	}
+	return apps, nil
+}
+
 // ListActiveAppsByOS finds mobile apps by their realm and OS.
 func (db *Database) ListActiveAppsByOS(realmID uint, os OSType) ([]*MobileApp, error) {
 	// Find the apps.
