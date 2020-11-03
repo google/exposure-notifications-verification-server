@@ -25,7 +25,6 @@
               <tr>
                 <th scope="col">App</th>
                 <th scope="col" width="95">Enabled</th>
-                <th scope="col" width="40"></th>
               </tr>
             </thead>
             <tbody>
@@ -43,27 +42,6 @@
                     <span class="badge badge-pill badge-success">Enabled</span>
                   {{end}}
                 </td>
-
-                <td class="text-center">
-                  {{if .DeletedAt}}
-                  <a href="/mobile-apps/{{.ID}}/enable" class="d-block text-danger"
-                    data-method="patch"
-                    data-confirm="Are you sure you want to restore '{{.Name}}'?"
-                    data-toggle="tooltip"
-                    title="Restore this mobile app">
-                    <span class="oi oi-loop-circular" aria-hidden="true"></span>
-                  </a>
-                  {{else}}
-                  <a href="/mobile-apps/{{.ID}}/disable" class="d-block text-danger"
-                    data-method="patch"
-                    data-confirm="Are you sure you want to disable '{{.Name}}'?"
-                    data-toggle="tooltip"
-                    title="Disable this mobile app">
-                    <span class="oi oi-trash" aria-hidden="true"></span>
-                  </a>
-                  {{end}}
-                </td>
-
               </tr>
             {{end}}
             </tbody>
