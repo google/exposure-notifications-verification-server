@@ -1,0 +1,60 @@
+{{define "admin/mobileapps/show"}}
+
+{{$apps := .apps}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Mobile apps</div>
+      <div class="card-body">
+
+        {{if .apps}}
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped bg-white">
+            <thead>
+              <tr>
+                <th scope="col">App</th>
+                <th scope="col" width="95">Enabled</th>
+              </tr>
+            </thead>
+            <tbody>
+            {{range .apps}}
+              <tr>
+
+                <td>
+                  <a href="/mobile-apps/{{.ID}}" class="text-truncate">{{.Name}}</a>
+                </td>
+
+                <td>
+                  {{if .DeletedAt}}
+                    <span class="badge badge-pill badge-danger">Deleted</span>
+                  {{else}}
+                    <span class="badge badge-pill badge-success">Enabled</span>
+                  {{end}}
+                </td>
+              </tr>
+            {{end}}
+            </tbody>
+          </table>
+        </div>
+        {{else}}
+        <p class="text-center">
+          <em>There are no mobile apps.</em>
+        </p>
+        {{end}}
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+{{end}}
