@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
 // HandleMobileAppsShow shows the configured mobile apps.
@@ -27,18 +28,26 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		apps, err := c.db.ListActiveAppsWithRealm()
+		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderShowMobileApps(ctx, w, apps)
+		apps, paginator, err := c.db.ListActiveAppsWithRealm(pageParams)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		c.renderShowMobileApps(ctx, w, apps, paginator)
 	})
 }
 
-func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter, apps []*database.ExtendedMobileApp) {
+func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter,
+	apps []*database.ExtendedMobileApp, paginator *pagination.Paginator) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["apps"] = apps
+	m["paginator"] = paginator
 	c.h.RenderHTML(w, "admin/mobileapps/show", m)
 }
