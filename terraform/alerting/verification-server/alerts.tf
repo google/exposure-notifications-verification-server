@@ -74,3 +74,47 @@ resource "null_resource" "E2ETestErrorRatioHigh" {
     google_monitoring_metric_descriptor.e2e--request_count
   ]
 }
+
+resource "google_monitoring_alert_policy" "backend_latency" {
+  count        = var.https-forwarding-rule == "" ? 0 : 1
+  project      = var.verification-server-project
+  display_name = "Elevated Latency Greater than 2s"
+  combiner     = "OR"
+  conditions {
+    display_name = "/backend_latencies"
+    condition_monitoring_query_language {
+      duration = "300s"
+      query    = <<-EOT
+      fetch
+      https_lb_rule :: loadbalancing.googleapis.com/https/backend_latencies
+      | filter
+      (resource.backend_name != 'NO_BACKEND_SELECTED'
+      && resource.forwarding_rule_name == '${var.https-forwarding-rule}')
+      | align delta(1m)
+      | every 1m
+      | group_by [resource.backend_target_name], [percentile: percentile(value.backend_latencies, 99)]
+      | condition val() > 2000 '1'
+      EOT
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+
+Latency has been above 2s for > 5 minutes on $${resource.label.backend_target_name}.
+
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
+  ]
+}

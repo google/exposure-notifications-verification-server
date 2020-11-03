@@ -40,6 +40,12 @@ variable "extra-hosts" {
   description = "Extra hosts to probe and monitor."
 }
 
+variable "https-forwarding-rule" {
+  type        = string
+  default     = ""
+  description = "GCP Cloud Load Balancer forwarding rule name."
+}
+
 terraform {
   required_version = ">= 0.13"
 
