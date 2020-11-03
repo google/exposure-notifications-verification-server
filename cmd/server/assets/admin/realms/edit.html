@@ -85,6 +85,9 @@
           <button type="submit" class="btn btn-primary btn-block">Update realm</button>
         </form>
       </div>
+      <div class="card-body">
+        <a href="/admin/mobileapps?q={{$realm.Name}}">Mobile apps</a>
+      </div>
     </div>
 
     {{if $currentUser.CanAdminRealm $realm.ID}}
