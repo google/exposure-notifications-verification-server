@@ -86,6 +86,9 @@ if [ -n "${OUT}" ]; then
   exit 1
 fi
 
+while true; do docker ps >>"${ARTIFACTS}/docker.out"; done &
+docker_pid=$!
+trap "kill $docker_pid" EXIT
 
 echo "🧪 Test"
 make test-acc
