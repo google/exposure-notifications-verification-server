@@ -18,6 +18,7 @@ import (
 	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
+	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
@@ -26,9 +27,9 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/issue"
 
 var (
-	mRequest = stats.Int64(metricPrefix+"/request", "# of code issue requests", stats.UnitDimensionless)
+	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
 
-	mSMSRequest = stats.Int64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitDimensionless)
+	mSMSLatencyMs = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
 
 	mRealmToken = stats.Int64(metricPrefix+"/realm_token", "# of realm tokens from limiter", stats.UnitDimensionless)
 
@@ -53,23 +54,40 @@ func init() {
 	enobservability.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/request_count",
-			Measure:     mRequest,
+			Measure:     mLatencyMs,
 			Description: "Count of code issue requests",
 			TagKeys:     observability.APITagKeys(),
 			Aggregation: view.Count(),
-		}, {
+		},
+		{
+			Name:        metricPrefix + "/request_latency",
+			Measure:     mLatencyMs,
+			Description: "The latency distribution of code issue requests",
+			TagKeys:     observability.APITagKeys(),
+			Aggregation: ochttp.DefaultLatencyDistribution,
+		},
+		{
 			Name:        metricPrefix + "/sms_request_count",
-			Measure:     mSMSRequest,
+			Measure:     mSMSLatencyMs,
 			Description: "The # of SMS requests",
 			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
 			Aggregation: view.Count(),
-		}, {
+		},
+		{
+			Name:        metricPrefix + "/sms_request_latency",
+			Measure:     mSMSLatencyMs,
+			Description: "The # of SMS requests",
+			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
+			Aggregation: ochttp.DefaultLatencyDistribution,
+		},
+		{
 			Name:        metricPrefix + "/realm_token_latest",
 			Description: "Latest realm token count",
 			TagKeys:     append(observability.CommonTagKeys(), tokenStateTagKey),
 			Measure:     mRealmToken,
 			Aggregation: view.LastValue(),
-		}, {
+		},
+		{
 			Name:        metricPrefix + "/realm_token_used_count",
 			Description: "The count of # of realm token used.",
 			TagKeys:     observability.CommonTagKeys(),

@@ -104,15 +104,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
-
-		defer func(blame, result *tag.Mutator) {
-			ctx, err := tag.New(ctx, *blame, *result)
-			if err != nil {
-				c.logger.Warnw("failed to create context with additional tags", "error", err)
-				// NOTE: do not return here. We should log it as success.
-			}
-			stats.Record(ctx, mRequest.M(1))
-		}(&blame, &result)
+		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
@@ -309,22 +301,22 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
-			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
-				// Delete the token
-				if err := c.db.DeleteVerificationCode(code); err != nil {
-					logger.Errorw("failed to delete verification code", "error", err)
-					// fallthrough to the error
-				}
+			func() {
+				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
+				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
+					// Delete the token
+					if err := c.db.DeleteVerificationCode(code); err != nil {
+						logger.Errorw("failed to delete verification code", "error", err)
+						// fallthrough to the error
+					}
 
-				logger.Errorw("failed to send sms", "error", err)
-				stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mSMSRequest.M(1))
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_SEND_SMS")
-				return
-			}
-			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mSMSRequest.M(1))
+					logger.Errorw("failed to send sms", "error", err)
+					c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
+					blame = observability.BlameServer
+					result = observability.ResultError("FAILED_TO_SEND_SMS")
+				}
+			}()
 		}
 
 		c.h.RenderJSON(w, http.StatusOK,

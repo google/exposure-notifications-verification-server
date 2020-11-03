@@ -18,6 +18,7 @@ import (
 	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
+	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 )
@@ -25,17 +26,24 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/verify"
 
 var (
-	mRequest = stats.Int64(metricPrefix+"/request", "# of verify requests", stats.UnitDimensionless)
+	mLatencyMs = stats.Float64(metricPrefix+"/request", "verify requests latency", stats.UnitMilliseconds)
 )
 
 func init() {
 	enobservability.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/request_count",
-			Measure:     mRequest,
+			Measure:     mLatencyMs,
 			Description: "Count of verify requests",
 			TagKeys:     observability.APITagKeys(),
 			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/request_latency",
+			Measure:     mLatencyMs,
+			Description: "Latency distribution of verify requests",
+			TagKeys:     observability.APITagKeys(),
+			Aggregation: ochttp.DefaultLatencyDistribution,
 		},
 	}...)
 }
