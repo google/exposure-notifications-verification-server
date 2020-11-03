@@ -16,10 +16,12 @@ package apikey
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -32,20 +34,27 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		// Perform the lazy load on authorized apps for the realm.
-		apps, err := realm.ListAuthorizedApps(c.db)
+		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(ctx, w, apps)
+		apps, paginator, err := realm.ListAuthorizedApps(c.db, pageParams)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		c.renderIndex(ctx, w, apps, paginator)
 	})
 }
 
 // renderIndex renders the index page.
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.AuthorizedApp) {
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.AuthorizedApp, paginator *pagination.Paginator) {
 	m := controller.TemplateMapFromContext(ctx)
+	m["title"] = fmt.Sprintf("API keys - %s", m["title"])
 	m["apps"] = apps
+	m["paginator"] = paginator
 	c.h.RenderHTML(w, "apikeys/index", m)
 }

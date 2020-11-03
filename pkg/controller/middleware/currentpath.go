@@ -45,6 +45,10 @@ func InjectCurrentPath() mux.MiddlewareFunc {
 	}
 }
 
+func (p *Path) String() string {
+	return p.uri.String()
+}
+
 func (p *Path) IsPath(s string) bool {
 	return p.uri.RequestURI() == s
 }

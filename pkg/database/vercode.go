@@ -33,6 +33,14 @@ const (
 	MinCodeLength = 6
 )
 
+type CodeType int
+
+const (
+	InvalidCode CodeType = iota
+	ShortCode
+	LongCode
+)
+
 var (
 	// ValidTestTypes is a map containing the valid test types.
 	ValidTestTypes = map[string]struct{}{
@@ -134,15 +142,15 @@ func (v *VerificationCode) FormatSymptomDate() string {
 
 // IsCodeExpired checks to see if the actual code provided is the short or long
 // code, and determines if it is expired based on that.
-func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error) {
+func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, CodeType, error) {
 	if v == nil {
-		return false, fmt.Errorf("provided code is nil")
+		return false, InvalidCode, fmt.Errorf("provided code is nil")
 	}
 
 	// It's possible that this could be called with the already HMACd version.
 	possibles, err := db.generateVerificationCodeHMACs(code)
 	if err != nil {
-		return false, fmt.Errorf("failed to create hmac: %w", err)
+		return false, InvalidCode, fmt.Errorf("failed to create hmac: %w", err)
 	}
 	possibles = append(possibles, code)
 
@@ -158,11 +166,11 @@ func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error
 	now := time.Now().UTC()
 	switch {
 	case inList(v.Code, possibles):
-		return !v.ExpiresAt.After(now), nil
+		return !v.ExpiresAt.After(now), ShortCode, nil
 	case inList(v.LongCode, possibles):
-		return !v.LongExpiresAt.After(now), nil
+		return !v.LongExpiresAt.After(now), LongCode, nil
 	default:
-		return true, fmt.Errorf("not found")
+		return true, InvalidCode, fmt.Errorf("not found")
 	}
 }
 

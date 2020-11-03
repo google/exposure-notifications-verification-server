@@ -96,6 +96,7 @@ func (c *Controller) HandleCreate() http.Handler {
 // renderNew renders the edit page.
 func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp) {
 	m := controller.TemplateMapFromContext(ctx)
+	m["title"] = fmt.Sprintf("New API key - %s", m["title"])
 	m["authApp"] = authApp
 	m["typeAdmin"] = database.APIKeyTypeAdmin
 	m["typeDevice"] = database.APIKeyTypeDevice

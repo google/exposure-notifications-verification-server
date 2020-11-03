@@ -16,6 +16,7 @@ package apikey
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -102,6 +103,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 // renderEdit renders the edit page.
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp) {
 	m := controller.TemplateMapFromContext(ctx)
+	m["title"] = fmt.Sprintf("%s - Edit API key - %s", authApp.Name, m["title"])
 	m["authApp"] = authApp
 	c.h.RenderHTML(w, "apikeys/edit", m)
 }

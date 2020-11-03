@@ -8,81 +8,84 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="apikeys-index" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>API keys</h1>
-    <p>
-      These are the API keys and the associated application for this realm. You
-      can also <a href="/apikeys/new">create a new API key</a>.
-    </p>
+    <div class="card mt-4 mb-3">
+      <div class="card-header">
+        API keys
+        <a href="/apikeys/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New API key">
+          <span class="oi oi-plus small" aria-hidden="true"></span>
+        </a>
+      </div>
 
-    {{if .apps}}
-    <div class="table-responsive">
-      <table class="table table-bordered table-striped bg-white">
-        <thead>
-          <tr>
-            <th scope="col">App</th>
-            <th scope="col" width="75">Key</th>
-            <th scope="col" width="75">Type</th>
-            <th scope="col" width="95">Enabled</th>
-            <th scope="col" width="40"></th>
-          </tr>
-        </thead>
-        <tbody>
-        {{range .apps}}
-          <tr>
-            <td>
-              <a href="/apikeys/{{.ID}}" class="text-truncate">{{.Name}}</a>
-            </td>
-            <td>
-              <div class="text-monospace">
+      {{if .apps}}
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only mb-0">
+          <thead>
+            <tr>
+              <th scope="col" width="40"></th>
+              <th scope="col">App</th>
+              <th scope="col" width="90">Key</th>
+              <th scope="col" width="90">Type</th>
+              <th scope="col" width="40"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {{range .apps}}
+            <tr>
+              <td class="text-center">
+                {{if .DeletedAt}}
+                  <span class="oi oi-circle-x text-danger"
+                    data-toggle="tooltip" title="API key is disabled - it will be deleted in a few days"></span>
+                {{else}}
+                  <span class="oi oi-circle-check text-success"
+                    data-toggle="tooltip" title="API key is enabled"></span>
+                {{end}}
+              </td>
+              <td class="text-truncate">
+                <a href="/apikeys/{{.ID}}">{{.Name}}</a>
+              </td>
+              <td class="text-center text-monospace">
                 {{.APIKeyPreview}}
-              </div>
-            </td>
-            <td>
-              {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" data-placement="top" title="Can be used to issue verification codes">Admin</span>{{end}}
-              {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" data-placement="top" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
-            </td>
-            <td>
-              {{if .DeletedAt}}
-                <span class="badge badge-pill badge-danger">Disabled</span>
-              {{else}}
-                <span class="badge badge-pill badge-success">Enabled</span>
-              {{end}}
-            </td>
-            <td class="text-center">
-              {{if .DeletedAt}}
-              <a href="/apikeys/{{.ID}}/enable" class="d-block text-danger"
-                data-method="patch"
-                data-confirm="Are you sure you want to restore '{{.Name}}'?"
-                data-toggle="tooltip"
-                title="Restore this API key">
-                <span class="oi oi-loop-circular" aria-hidden="true"></span>
-              </a>
-              {{else}}
-              <a href="/apikeys/{{.ID}}/disable" class="d-block text-danger"
-                data-method="patch"
-                data-confirm="Are you sure you want to disable '{{.Name}}'?"
-                data-toggle="tooltip"
-                title="Disable this API key">
-                <span class="oi oi-trash" aria-hidden="true"></span>
-              </a>
-              {{end}}
-            </td>
-          </tr>
-        {{end}}
-        </tbody>
-      </table>
+              </td>
+              <td class="text-center">
+                {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" title="Can be used to issue verification codes">Admin</span>{{end}}
+                {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
+              </td>
+              <td class="text-center">
+                {{if .DeletedAt}}
+                <a href="/apikeys/{{.ID}}/enable" class="d-block text-danger"
+                  data-method="patch"
+                  data-confirm="Are you sure you want to restore '{{.Name}}'?"
+                  data-toggle="tooltip"
+                  title="Restore this API key">
+                  <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                </a>
+                {{else}}
+                <a href="/apikeys/{{.ID}}/disable" class="d-block text-danger"
+                  data-method="patch"
+                  data-confirm="Are you sure you want to disable '{{.Name}}'?"
+                  data-toggle="tooltip"
+                  title="Disable this API key">
+                  <span class="oi oi-trash" aria-hidden="true"></span>
+                </a>
+                {{end}}
+              </td>
+            </tr>
+          {{end}}
+          </tbody>
+        </table>
+      {{else}}
+        <p class="text-center mb-0">
+          <em>There are no API keys.</em>
+        </p>
+      {{end}}
     </div>
-    {{else}}
-    <p class="text-center">
-      <em>There are no API keys.</em>
-    </p>
-    {{end}}
+
+    {{template "shared/pagination" .}}
   </main>
 </body>
 </html>
