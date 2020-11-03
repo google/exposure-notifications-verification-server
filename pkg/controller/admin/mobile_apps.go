@@ -27,7 +27,7 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		apps, err := c.db.ListActiveApps()
+		apps, err := c.db.ListActiveAppsWithRealm()
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -37,7 +37,7 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 	})
 }
 
-func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp) {
+func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter, apps []*database.ExtendedMobileApp) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["apps"] = apps
 	c.h.RenderHTML(w, "admin/mobileapps/show", m)

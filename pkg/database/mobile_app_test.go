@@ -142,3 +142,62 @@ func TestMobileApp_Validation(t *testing.T) {
 		}
 	})
 }
+
+func TestMobileApp_List(t *testing.T) {
+	t.Parallel()
+
+	t.Run("access_mobileapps_and_realms", func(t *testing.T) {
+		db := NewTestDatabase(t)
+
+		realm1 := NewRealmWithDefaults("realm1")
+		if err := db.SaveRealm(realm1, System); err != nil {
+			t.Fatal(err)
+		}
+
+		realm2 := NewRealmWithDefaults("realm2")
+		if err := db.SaveRealm(realm2, System); err != nil {
+			t.Fatal(err)
+		}
+
+		app1 := &MobileApp{
+			Name:    "app1",
+			RealmID: realm1.ID,
+			URL:     "https://example1.com",
+			OS:      OSTypeIOS,
+			AppID:   "app1",
+		}
+		if err := db.SaveMobileApp(app1, System); err != nil {
+			t.Fatal(err)
+		}
+
+		app2 := &MobileApp{
+			Name:    "app2",
+			RealmID: realm1.ID,
+			URL:     "https://example2.com",
+			OS:      OSTypeAndroid,
+			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
+			AppID:   "app2",
+		}
+		if err := db.SaveMobileApp(app2, System); err != nil {
+			t.Fatal(err)
+		}
+
+		extapp, err := db.ListActiveAppsWithRealm()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(extapp) != 2 {
+			t.Errorf("got %v apps, wanted: 2", len(extapp))
+		}
+
+		apps, err := db.ListActiveAppsByOS(realm1.ID, OSTypeAndroid)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(apps) != 1 {
+			t.Errorf("got %v apps, wanted: 1", len(apps))
+		}
+	})
+}
