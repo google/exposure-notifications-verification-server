@@ -140,3 +140,11 @@ main.container[role="main"] {
     color: #777;
   }
 }
+
+.table-fixed {
+  table-layout: fixed;
+}
+
+.table-inner-border-only {
+  border-style: hidden;
+}

@@ -16,6 +16,7 @@ package apikey
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -91,6 +92,7 @@ func (c *Controller) HandleShow() http.Handler {
 // renderShow renders the edit page.
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp, stats []*database.AuthorizedAppStats) {
 	m := controller.TemplateMapFromContext(ctx)
+	m["title"] = fmt.Sprintf("%s - API keys - %s", authApp.Name, m["title"])
 	m["authApp"] = authApp
 	m["stats"] = stats
 	c.h.RenderHTML(w, "apikeys/show", m)

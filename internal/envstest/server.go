@@ -86,17 +86,19 @@ func (r *TestServerResponse) SessionCookie(session *sessions.Session) (*http.Coo
 	return sessions.NewCookie(sessionName, encoded, session.Options), nil
 }
 
-// LoggedInCookie returns an encrypted cookie with the provided email address
-// logged in. It also stores that email verification and MFA prompting have
-// already occurred for a consistent post-login experience.
+// LoggedInSession returns an session with the provided email address logged in.
+// It also stores that email verification and MFA prompting have already
+// occurred for a consistent post-login experience.
 //
 // The provided email is marked as verified, has MFA enabled, and is not
 // revoked. To test other journeys, manually build the session.
-func (r *TestServerResponse) LoggedInCookie(email string) (*http.Cookie, error) {
-	session := &sessions.Session{
-		Values:  map[interface{}]interface{}{},
-		Options: &sessions.Options{},
-		IsNew:   true,
+func (r *TestServerResponse) LoggedInSession(session *sessions.Session, email string) (*sessions.Session, error) {
+	if session == nil {
+		session = &sessions.Session{
+			Values:  map[interface{}]interface{}{},
+			Options: &sessions.Options{},
+			IsNew:   true,
+		}
 	}
 
 	controller.StoreSessionEmailVerificationPrompted(session, true)
@@ -110,12 +112,12 @@ func (r *TestServerResponse) LoggedInCookie(email string) (*http.Cookie, error) 
 			"mfa_enabled":    true,
 			"revoked":        false,
 		},
-		TTL: 5 * time.Minute,
+		TTL: 30 * time.Minute,
 	}); err != nil {
 		return nil, err
 	}
 
-	return r.SessionCookie(session)
+	return session, nil
 }
 
 // NewServer creates a new test UI server instance. When this function returns,
