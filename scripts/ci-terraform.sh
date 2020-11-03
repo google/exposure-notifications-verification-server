@@ -23,6 +23,9 @@ if [[ -z "${PROJECT_ID:-}" ]]; then
   echo "✋ PROJECT_ID must be set"
 fi
 
+# Disable colored output because it reads better in logs.
+export TF_CLI_ARGS="-no-color"
+
 # Ensure not running on prod resources
 readonly COMMON_ERROR_MESSAGE="⚠️ ${PROGNAME} is meant for running e2e test only, it deletes resources aggressively. Please don't run it against prod instances!"
 readonly PROTECTED_PROJECT_IDS=(
@@ -108,14 +111,14 @@ function deploy() {
   terraform import module.en.google_cloud_scheduler_job.cleanup-worker \
     projects/${PROJECT_ID}/locations/us-central1/jobs/cleanup-worker || best_effort
 
-  # Terraform deployment might fail intermittently with certain cloud run 
+  # Terraform deployment might fail intermittently with certain cloud run
   # services not up, retry to make it more resilient
   local failed=1
   for i in 1; do
     if [[ "${failed}" == "0" ]]; then
       break
     fi
-    if terraform apply -auto-approve; then
+    if terraform apply -input=false -auto-approve; then
       failed=0
     fi
   done
