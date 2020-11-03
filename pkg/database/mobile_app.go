@@ -134,16 +134,15 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 }
 
 type ExtendedMobileApp struct {
-	*MobileApp
-	Realm *Realm
+	MobileApp
+	Realm
 }
 
 // ListActiveApps finds all active mobile apps with their associated realm.
 func (db *Database) ListActiveAppsWithRealm() ([]*ExtendedMobileApp, error) {
 	rows, err := db.db.Table("mobile_apps").
-		Select("mobile_apps, realms").
+		Select("mobile_apps.*, realms.*").
 		Joins("left join realms on realms.id = mobile_apps.realm_id").
-		Debug().
 		Rows()
 	defer rows.Close()
 	if err != nil || rows == nil {
@@ -152,7 +151,7 @@ func (db *Database) ListActiveAppsWithRealm() ([]*ExtendedMobileApp, error) {
 	apps := make([]*ExtendedMobileApp, 0)
 	for rows.Next() {
 		app := &ExtendedMobileApp{}
-		rows.Scan(&app, &app.Realm)
+		db.db.ScanRows(rows, &app)
 		apps = append(apps, app)
 	}
 

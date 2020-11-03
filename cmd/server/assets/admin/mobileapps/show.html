@@ -33,7 +33,7 @@
               <tr>
 
                 <td>
-                  <a href="/mobile-apps/{{.ID}}" class="text-truncate">{{.Name}}</a>
+                  <a href="/mobile-apps/{{.MobileApp.ID}}" class="text-truncate">{{.MobileApp.Name}}</a>
                 </td>
 
                 <td>
@@ -41,7 +41,7 @@
                 </td>
 
                 <td>
-                  {{if .DeletedAt}}
+                  {{if .MobileApp.DeletedAt}}
                     <span class="badge badge-pill badge-danger">Deleted</span>
                   {{else}}
                     <span class="badge badge-pill badge-success">Enabled</span>
