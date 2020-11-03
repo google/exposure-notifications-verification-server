@@ -26,9 +26,6 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/issue"
 
 var (
-	mRealmTokenRemaining = stats.Int64(metricPrefix+"/realm_token_remaining", "Remaining number of verification codes", stats.UnitDimensionless)
-	mRealmTokenCapacity  = stats.Float64(metricPrefix+"/realm_token_capacity", "Capacity utilization for issuing verification codes", stats.UnitDimensionless)
-
 	mRequest = stats.Int64(metricPrefix+"/request", "# of code issue requests", stats.UnitDimensionless)
 
 	mSMSRequest = stats.Int64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitDimensionless)
@@ -55,18 +52,6 @@ func tokenLimitTag() tag.Mutator {
 func init() {
 	enobservability.CollectViews([]*view.View{
 		{
-			Name:        metricPrefix + "/realm_token_remaining_latest",
-			Description: "Latest realm remaining tokens",
-			TagKeys:     observability.CommonTagKeys(),
-			Measure:     mRealmTokenRemaining,
-			Aggregation: view.LastValue(),
-		}, {
-			Name:        metricPrefix + "/realm_token_capacity_latest",
-			Description: "Latest realm token capacity utilization",
-			TagKeys:     observability.CommonTagKeys(),
-			Measure:     mRealmTokenCapacity,
-			Aggregation: view.LastValue(),
-		}, {
 			Name:        metricPrefix + "/request_count",
 			Measure:     mRequest,
 			Description: "Count of code issue requests",
