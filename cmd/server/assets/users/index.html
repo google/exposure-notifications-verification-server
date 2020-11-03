@@ -17,35 +17,44 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="users-index" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Users</h1>
-    <p>Manage users of <strong>{{.currentRealm.Name}}</strong>.</p>
+    <div class="card mt-4 mb-3">
+      <div class="card-header">
+        <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
+        Users
+        <a href="/users/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New user">
+          <span class="oi oi-plus small" aria-hidden="true"></span>
+        </a>
+        <a href="/users/import" class="float-right mr-3 text-secondary" data-toggle="tooltip" title="Bulk import users">
+          <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
+        </a>
+      </div>
 
-    <div class="card mb-3 shadow-sm" style="min-width:550px;">
-      <div class="card-header">Users</div>
       <div class="card-body">
-        <div class="mb-3">
-          <a class="btn btn-sm" href="/users/new" data-toggle="tooltip" title="Create a new user">
-            <span class="oi oi-plus" aria-hidden="true"></span>
-            New user
-          </a>
-          <a class="btn btn-sm" href="/users/import" data-toggle="tooltip" title="Bulk import users">
-            <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
-            Import
-          </a>
-        </div>
-        {{if $users}}
-        <table class="table table-bordered table-striped bg-white">
+        <form method="GET" action="/users/search">
+          <div class="input-group">
+            <span class="input-group-prepend">
+              <div class="input-group-text bg-transparent">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+              </div>
+            </span>
+            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
+              autocomplete="off" class="form-control" />
+          </div>
+        </form>
+      </div>
+
+      {{if $users}}
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
               <th scope="col">Name</th>
               <th scope="col" width="300">Email</th>
-              <th scope="col" width="75">Options</th>
               <th scope="col" width="40"></th>
             </tr>
           </thead>
@@ -54,14 +63,12 @@
             <tr>
               <td>
                 <a href="/users/{{.ID}}">{{.Name}}</a>
+                {{if .CanAdminRealm $currentRealm.ID}}
+                  <span class="ml-1 badge badge-pill badge-primary">Admin</span>
+                {{end}}
               </td>
               <td>
                 {{.Email}}
-              </td>
-              <td class="text-center">
-                {{if .CanAdminRealm $currentRealm.ID}}
-                <span class="badge badge-pill badge-primary">Admin</span>
-                {{end}}
               </td>
               <td class="text-center">
                 {{if not (eq .ID $currentUser.ID)}}
@@ -77,42 +84,14 @@
             {{end}}
           </tbody>
         </table>
-        {{if .pages}}
-        <nav>
-          {{$pages := .pages}}
-          <ul class="pagination">
-            <li class="page-item {{if eq $pages.Previous -1}}disabled{{end}}"><a class="page-link"
-                href="?{{$searchQuery}}offset={{$pages.Previous}}">Previous</a>
-            </li>
-            {{range $pageOffset := $pages.Offsets}}
-            <li class="page-item {{if eq $pages.Current $pageOffset.Offset}}active{{end}}"><a class="page-link"
-                href="?{{$searchQuery}}offset={{$pageOffset.Offset}}">{{$pageOffset.Label}}</a>
-            </li>
-            {{end}}
-            <li class="page-item {{if eq $pages.Next -1}}disabled{{end}}"><a class="page-link"
-                href="?{{$searchQuery}}offset={{$pages.Next}}">Next</a></li>
-          </ul>
-          <small class="form-text text-muted pl-2">{{$pages.Footer}}</small>
-        </nav>
-
-        <div class="col-6">
-          <div class="row">
-            <form class="floating-form mb-3" method="GET">
-              <div class="form-label-group">
-                <input type="text" id="search-email" name="search" class="form-control" placeholder="Email address"
-                  aria-label="email" aria-describedby="button-addon2" {{if $s}}value="{{$s}}"{{end}} />
-                <label for="search-email">Email address</label>
-              </div>
-              <button class="btn btn-outline-secondary mt-n3" type="submit" id="button-addon2">Search</button>
-            </form>
-          </div>
-        </div>
-        {{end}}
-      </div>
       {{else}}
-      <p>There are no users. Create one above.</p>
+        <p class="card-body text-center mb-0">
+          <em>There are no users{{if .query}} that match the query{{end}}.</em>
+        </p>
       {{end}}
     </div>
+
+    {{template "shared/pagination" .}}
   </main>
 </body>
 
