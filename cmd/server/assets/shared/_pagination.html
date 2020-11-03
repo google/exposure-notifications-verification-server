@@ -1,0 +1,47 @@
+{{define "shared/pagination"}}
+  {{$currentPath := .currentPath.String}}
+
+  {{with .paginator}}
+    {{if or .PrevPages .NextPages}}
+    <nav aria-label="Pagination">
+      <ul class="pagination justify-content-center user-select-none">
+        {{with .PrevPage}}
+          <li class="page-item">
+            <a href="{{.Link $currentPath}}" class="page-link">Previous</a>
+          </li>
+        {{else}}
+          <li class="page-item disabled">
+            <a href="#" class="page-link" tab-index="-1">Previous</a>
+          </li>
+        {{end}}
+        {{range .PrevPages}}
+          <li class="page-item">
+            <a href="{{.Link $currentPath}}" class="page-link">{{.Number}}</a>
+          </li>
+        {{end}}
+
+        {{with .CurrPage}}
+          <li class="page-item active">
+            <a href="{{.Link $currentPath}}" class="page-link">{{.Number}}</a>
+          </li>
+        {{end}}
+
+        {{range .NextPages}}
+          <li class="page-item">
+            <a href="{{.Link $currentPath}}" class="page-link">{{.Number}}</a>
+          </li>
+        {{end}}
+        {{with .NextPage}}
+          <li class="page-item">
+            <a href="{{.Link $currentPath}}" class="page-link">Next</a>
+          </li>
+        {{else}}
+          <li class="page-item disabled">
+            <a href="#" class="page-link" tab-index="-1">Next</a>
+          </li>
+        {{end}}
+      </ul>
+    </nav>
+    {{end}}
+  {{end}}
+{{end}}
