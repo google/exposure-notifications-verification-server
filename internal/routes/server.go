@@ -273,9 +273,8 @@ func Server(
 
 		userController := user.New(ctx, authProvider, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
-		userSub.Handle("", userController.HandleIndex()).
-			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
+		userSub.Handle("/search", userController.HandleSearch()).Methods("GET")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
 		userSub.Handle("/import", userController.HandleImport()).Methods("GET")
 		userSub.Handle("/import", userController.HandleImportBatch()).Methods("POST")

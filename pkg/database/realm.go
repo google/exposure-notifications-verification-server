@@ -782,26 +782,52 @@ func (r *Realm) CountUsers(db *Database) (int, error) {
 }
 
 // ListUsers returns the list of users on this realm.
-func (r *Realm) ListUsers(db *Database, offset, limit int, emailPrefix string) ([]*User, error) {
-	if limit > MaxPageSize {
-		limit = MaxPageSize
+func (r *Realm) ListUsers(db *Database, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
+	var users []*User
+	query := db.db.
+		Model(&User{}).
+		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
+		Order("LOWER(users.name) ASC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
 
-	realmDB := db.db.Model(r)
-
-	if emailPrefix != "" {
-		realmDB = realmDB.Where("email like ?", fmt.Sprintf("%%%s%%", emailPrefix))
+	paginator, err := Paginate(query, &users, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return users, nil, nil
+		}
+		return nil, nil, err
 	}
+
+	return users, paginator, nil
+}
+
+// SearchUsers returns the list of users which match the given criteria.
+func (r *Realm) SearchUsers(db *Database, q string, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
+	q = `%` + q + `%`
 
 	var users []*User
-	if err := realmDB.
-		Offset(offset).Limit(limit).
-		Order("LOWER(name)").
-		Related(&users, "RealmUsers").
-		Error; err != nil {
-		return nil, err
+	query := db.db.
+		Model(&User{}).
+		Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q).
+		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
+		Order("LOWER(users.name) ASC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return users, nil
+
+	paginator, err := Paginate(query, &users, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return users, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return users, paginator, nil
 }
 
 // FindUser finds the given user in the realm by ID.
