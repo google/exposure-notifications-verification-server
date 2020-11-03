@@ -20,10 +20,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/jinzhu/gorm"
 )
 
@@ -179,11 +179,11 @@ func (v *VerificationCode) HasLongExpiration() bool {
 // Validate validates a verification code before save.
 func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	now := time.Now()
-	v.Code = strings.TrimSpace(v.Code)
+	v.Code = project.TrimSpace(v.Code)
 	if len(v.Code) < MinCodeLength {
 		return ErrCodeTooShort
 	}
-	v.LongCode = strings.TrimSpace(v.LongCode)
+	v.LongCode = project.TrimSpace(v.LongCode)
 	if len(v.LongCode) < MinCodeLength {
 		return ErrCodeTooShort
 	}

@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package home_test
+package apikey_test
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/chromedp/chromedp"
 )
 
-func TestHandleHome_IssueCode(t *testing.T) {
+func TestHandleCreate(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t)
@@ -64,60 +64,51 @@ func TestHandleHome_IssueCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	// Create a browser runner.
 	browserCtx := browser.New(t)
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
-	var code string
+	var apiKey string
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /home.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/home`),
+		// Visit /apikeys/new.
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/apikeys/new`),
 
 		// Wait for render.
-		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
+		chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
 
-		// Click the issue button.
+		// Fill out the form.
+		chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
+		chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
+
+		// Click the submit button.
 		chromedp.Click(`#submit`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#code`, chromedp.ByQuery),
 
-		// Get the code.
-		chromedp.TextContent(`#code`, &code, chromedp.ByQuery),
+		// Wait for the page to reload.
+		chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
+
+		// Get the API key.
+		chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}
 
-	// Verify code length.
-	if got, want := len(code), 8; got != want {
-		t.Errorf("expected %v to be %v", got, want)
-	}
-
-	// Verify the code exists.
-	dbCode, err := harness.Database.FindVerificationCode(code)
+	// Ensure API key is valid.
+	record, err := harness.Database.FindAuthorizedAppByAPIKey(apiKey)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if got, want := dbCode.TestType, "confirmed"; got != want {
+	// Verify name.
+	if got, want := record.Name, "Example API key"; got != want {
 		t.Errorf("expected %v to be %v", got, want)
 	}
 
-	if got, want := dbCode.Claimed, false; got != want {
-		t.Errorf("expected %v to be %v", got, want)
-	}
-
-	// Exchange the code for a verification certificate.
-	allowedTypes := api.AcceptTypes{api.TestTypeConfirmed: struct{}{}}
-	token, err := harness.Database.VerifyCodeAndIssueToken(realm.ID, code, allowedTypes, 30*time.Minute)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if got, want := token.TestType, api.TestTypeConfirmed; got != want {
+	// Verify API key type.
+	if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
 		t.Errorf("expected %v to be %v", got, want)
 	}
 }

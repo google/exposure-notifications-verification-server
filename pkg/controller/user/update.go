@@ -17,8 +17,8 @@ package user
 import (
 	"context"
 	"net/http"
-	"strings"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
@@ -75,7 +75,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 		err = controller.BindForm(w, r, &form)
 
 		// Build the user struct
-		user.Name = strings.TrimSpace(form.Name)
+		user.Name = project.TrimSpace(form.Name)
 		if err != nil {
 			if terr, ok := err.(schema.MultiError); ok {
 				for k, err := range terr {

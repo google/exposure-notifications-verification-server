@@ -19,10 +19,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 	"unicode"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
@@ -85,7 +85,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 			c.renderShowSelectPassword(ctx, w, "", code, false)
 			return
 		}
-		email := strings.TrimSpace(form.Email)
+		email := project.TrimSpace(form.Email)
 
 		if err := c.validateComplexity(form.Password); err != nil {
 			flash.Error("Select password failed: %v", err)

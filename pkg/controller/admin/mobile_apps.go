@@ -12,49 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+package admin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+// HandleMobileAppsShow shows the configured mobile apps.
+func (c *Controller) HandleMobileAppsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
-
-		pageParams, err := pagination.FromRequest(r)
+		apps, err := c.db.ListActiveApps()
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		apps, paginator, err := realm.ListAuthorizedApps(c.db, pageParams)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		c.renderIndex(ctx, w, apps, paginator)
+		c.renderShowMobileApps(ctx, w, apps)
 	})
 }
 
-// renderIndex renders the index page.
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.AuthorizedApp, paginator *pagination.Paginator) {
+func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["title"] = fmt.Sprintf("API keys - %s", m["title"])
 	m["apps"] = apps
-	m["paginator"] = paginator
-	c.h.RenderHTML(w, "apikeys/index", m)
+	c.h.RenderHTML(w, "admin/mobileapps/show", m)
 }

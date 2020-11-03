@@ -17,7 +17,6 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -39,9 +38,6 @@ func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig)
 			m["title"] = config.ServerName
 			m["buildID"] = buildinfo.BuildID
 			m["buildTag"] = buildinfo.BuildTag
-
-			// Current page variables.
-			m["currentPath"] = "/" + strings.Trim(r.URL.Path, "/")
 
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)

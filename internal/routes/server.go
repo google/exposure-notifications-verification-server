@@ -350,13 +350,14 @@ func Server(
 		adminSub.Handle("/realms/{id:[0-9]+}/leave", adminController.HandleRealmsLeave()).Methods("PATCH")
 		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
 
-		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
-		adminSub.Handle("/email", adminController.HandleEmailUpdate()).Methods("GET", "POST")
-
 		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
 		adminSub.Handle("/users", adminController.HandleUsersCreate()).Methods("POST")
 		adminSub.Handle("/users/new", adminController.HandleUsersCreate()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUsersDelete()).Methods("DELETE")
+
+		adminSub.Handle("/mobileapps", adminController.HandleMobileAppsShow()).Methods("GET")
+		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
+		adminSub.Handle("/email", adminController.HandleEmailUpdate()).Methods("GET", "POST")
 
 		adminSub.Handle("/caches", adminController.HandleCachesIndex()).Methods("GET")
 		adminSub.Handle("/caches/clear/{id}", adminController.HandleCachesClear()).Methods("POST")

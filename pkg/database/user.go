@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/jinzhu/gorm"
 )
 
@@ -92,7 +93,7 @@ func (u *User) PasswordAgeString() string {
 // BeforeSave runs validations. If there are errors, the save fails.
 func (u *User) BeforeSave(tx *gorm.DB) error {
 	// Validation
-	u.Email = strings.TrimSpace(u.Email)
+	u.Email = project.TrimSpace(u.Email)
 	if u.Email == "" {
 		u.AddError("email", "cannot be blank")
 	}
@@ -100,7 +101,7 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 		u.AddError("email", "appears to be invalid")
 	}
 
-	u.Name = strings.TrimSpace(u.Name)
+	u.Name = project.TrimSpace(u.Name)
 	if u.Name == "" {
 		u.AddError("name", "cannot be blank")
 	}

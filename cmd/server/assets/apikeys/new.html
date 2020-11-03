@@ -8,7 +8,7 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="apikeys-new" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -36,6 +36,7 @@
           </div>
 
           <div class="form-group">
+            <input type="hidden" name="type" value="-1">
             <select class="form-control{{if $authApp.ErrorsFor "type"}} is-invalid{{end}}" name="type" id="type">
               <option selected disabled>Select type...</option>
               <option value="{{.typeDevice}}" {{if (eq $authApp.APIKeyType .typeDevice)}}selected{{end}}>Device (can verify codes)</option>
@@ -48,7 +49,7 @@
             {{end}}
           </div>
 
-          <button type="submit" class="btn btn-primary btn-block">Create API key</button>
+          <button type="submit" id="submit" class="btn btn-primary btn-block">Create API key</button>
         </form>
       </div>
     </div>
