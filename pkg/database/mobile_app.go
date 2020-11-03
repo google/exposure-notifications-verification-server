@@ -133,20 +133,29 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
-// ListActiveApps finds all active mobile apps.
-func (db *Database) ListActiveApps() ([]*MobileApp, error) {
-	// Find the apps.
-	var apps []*MobileApp
-	if err := db.db.
-		Model(&MobileApp{}).
-		Find(&apps).
-		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
-		Error; err != nil {
-		if IsNotFound(err) {
-			return apps, nil
-		}
+type ExtendedMobileApp struct {
+	*MobileApp
+	Realm *Realm
+}
+
+// ListActiveApps finds all active mobile apps with their associated realm.
+func (db *Database) ListActiveAppsWithRealm() ([]*ExtendedMobileApp, error) {
+	rows, err := db.db.Table("mobile_apps").
+		Select("mobile_apps, realms").
+		Joins("left join realms on realms.id = mobile_apps.realm_id").
+		Debug().
+		Rows()
+	defer rows.Close()
+	if err != nil || rows == nil {
 		return nil, err
 	}
+	apps := make([]*ExtendedMobileApp, 0)
+	for rows.Next() {
+		app := &ExtendedMobileApp{}
+		rows.Scan(&app, &app.Realm)
+		apps = append(apps, app)
+	}
+
 	return apps, nil
 }
 
