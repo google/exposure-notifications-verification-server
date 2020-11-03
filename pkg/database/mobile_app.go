@@ -153,7 +153,9 @@ func (db *Database) ListActiveAppsWithRealm() ([]*ExtendedMobileApp, error) {
 	apps := make([]*ExtendedMobileApp, 0)
 	for rows.Next() {
 		app := &ExtendedMobileApp{}
-		db.db.ScanRows(rows, &app)
+		if err := db.db.ScanRows(rows, &app); err != nil {
+			return nil, err
+		}
 		apps = append(apps, app)
 	}
 
