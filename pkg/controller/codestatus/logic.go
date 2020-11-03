@@ -48,7 +48,7 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 		return nil, http.StatusBadRequest, api.Errorf("missing realm")
 	}
 
-	code, err := c.db.FindVerificationCodeByUUID(realm.ID, uuid)
+	code, err := realm.FindVerificationCodeByUUID(c.db, uuid)
 	if err != nil {
 		if database.IsNotFound(err) {
 			logger.Debugw("code not found by UUID", "error", err)
