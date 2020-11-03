@@ -45,18 +45,3 @@ variable "https-forwarding-rule" {
   default     = ""
   description = "GCP Cloud Load Balancer forwarding rule name."
 }
-
-terraform {
-  required_version = ">= 0.13"
-
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 3.36"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "~> 3.36"
-    }
-  }
-}
