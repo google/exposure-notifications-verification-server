@@ -142,7 +142,9 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 
 	// Close db when done.
 	tb.Cleanup(func() {
-		db.db.Close()
+		if err := db.db.Close(); err != nil {
+			tb.Fatal(err)
+		}
 	})
 
 	return db, config
