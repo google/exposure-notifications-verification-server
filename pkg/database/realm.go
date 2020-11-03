@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -689,21 +690,27 @@ func (r *Realm) ListSigningKeys(db *Database) ([]*SigningKey, error) {
 	return keys, nil
 }
 
-// ListAuthorizedApps gets all the authorized apps for the realm.
-func (r *Realm) ListAuthorizedApps(db *Database) ([]*AuthorizedApp, error) {
+func (r *Realm) ListAuthorizedApps(db *Database, p *pagination.PageParams) ([]*AuthorizedApp, *pagination.Paginator, error) {
 	var authApps []*AuthorizedApp
-	if err := db.db.
+	query := db.db.
 		Unscoped().
-		Model(r).
-		Order("authorized_apps.deleted_at DESC, LOWER(authorized_apps.name)").
-		Related(&authApps).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
+		Model(&AuthorizedApp{}).
+		Where("realm_id = ?", r.ID).
+		Order("authorized_apps.deleted_at DESC, LOWER(authorized_apps.name)")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return authApps, nil
+
+	paginator, err := Paginate(query, &authApps, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return authApps, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return authApps, paginator, nil
 }
 
 // FindAuthorizedApp finds the authorized app by the given id associated to the

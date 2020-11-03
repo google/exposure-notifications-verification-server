@@ -11,7 +11,7 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="apikeys-show" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -34,7 +34,7 @@
             must securely save this API key elsewhere!</strong>
         </div>
 
-        <textarea class="form-control" rows="4" readonly>{{$apiKey}}</textarea>
+        <textarea id="apikey-value" class="form-control" rows="4" readonly>{{$apiKey}}</textarea>
       </div>
     </div>
     {{end}}
