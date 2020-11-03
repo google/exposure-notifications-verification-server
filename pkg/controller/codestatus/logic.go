@@ -17,14 +17,12 @@
 package codestatus
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/jinzhu/gorm"
 )
 
 func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.VerificationCode, int, *api.ErrorReturn) {
@@ -52,7 +50,7 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 
 	code, err := c.db.FindVerificationCodeByUUID(realm.ID, uuid)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if database.IsNotFound(err) {
 			logger.Debugw("code not found by UUID", "error", err)
 			return nil, http.StatusNotFound,
 				api.Errorf("code not found, it may have expired and been removed").WithCode(api.ErrVerifyCodeNotFound)

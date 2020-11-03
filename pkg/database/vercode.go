@@ -225,17 +225,6 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 	return &vc, nil
 }
 
-// FindVerificationCodeByUUID find a verification codes by UUID.
-func (db *Database) FindVerificationCodeByUUID(realmID uint, uuid string) (*VerificationCode, error) {
-	var vc VerificationCode
-	if err := db.db.
-		Where("uuid = ? and realm_id = ?", uuid, realmID).
-		First(&vc).Error; err != nil {
-		return nil, err
-	}
-	return &vc, nil
-}
-
 // ListRecentCodes shows the last 5 recently issued codes for a given issuing user.
 // The code and longCode are removed, this is only intended to show metadata.
 func (db *Database) ListRecentCodes(realm *Realm, user *User) ([]*VerificationCode, error) {
@@ -325,8 +314,8 @@ func (db *Database) RecycleVerificationCodes(maxAge time.Duration) (int64, error
 	// Null out the codes where this can be done.
 	rtn := db.db.Model(&VerificationCode{}).
 		Select("code", "long_code").
-		Where("expires_at < ? AND long_expires_at < ? AND code IS NOT NULL", deleteBefore, deleteBefore).
-		Update(map[string]interface{}{"code": nil, "long_code": nil})
+		Where("expires_at < ? AND long_expires_at < ? AND (code != ? OR long_code != ?)", deleteBefore, deleteBefore, "", "").
+		Update(map[string]interface{}{"code": "", "long_code": ""})
 	return rtn.RowsAffected, rtn.Error
 }
 

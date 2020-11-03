@@ -138,7 +138,6 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 	}
 
 	// Re-enable logging.
-	db.db = db.db.LogMode(true)
 	db.db.SetLogger(gorm.Logger{LogWriter: log.New(os.Stdout, "", 0)})
 
 	// Close db when done.

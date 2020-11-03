@@ -79,13 +79,16 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	t.Parallel()
 
 	db := NewTestDatabase(t)
-	var realmID uint = 123
+	realm, err := db.CreateRealm("testRealm")
+	if err != nil {
+		t.Fatalf("failed to create realm: %v", err)
+	}
 
 	vc := &VerificationCode{
 		Code:          "123456",
 		LongCode:      "defghijk329024",
 		TestType:      "confirmed",
-		RealmID:       realmID,
+		RealmID:       realm.ID,
 		ExpiresAt:     time.Now().Add(time.Hour),
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
@@ -100,7 +103,7 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	}
 
 	t.Run("normal_find", func(t *testing.T) {
-		got, err := db.FindVerificationCodeByUUID(realmID, codeUUID)
+		got, err := realm.FindVerificationCodeByUUID(db, codeUUID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -110,14 +113,14 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	})
 
 	t.Run("wrong_realm", func(t *testing.T) {
-		_, err := db.FindVerificationCodeByUUID(realmID+1, codeUUID)
+		_, err := realm.FindVerificationCodeByUUID(db, codeUUID)
 		if err == nil || !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("expected error: not found, got: %v", err)
 		}
 	})
 
 	t.Run("wrong_uuid", func(t *testing.T) {
-		_, err := db.FindVerificationCodeByUUID(realmID, uuid.Must(uuid.NewRandom()).String())
+		_, err := realm.FindVerificationCodeByUUID(db, uuid.Must(uuid.NewRandom()).String())
 		if err == nil || !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("expected error: not found, got: %v", err)
 		}
@@ -312,14 +315,18 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	now := time.Now()
 	maxAge := time.Hour // not important to this test case
 
-	realmID := uint(42)
+	realm, err := db.CreateRealm("realmy")
+	if err != nil {
+		t.Fatalf("couldn't create test realm: %v", realm)
+	}
+
 	cleanUpTo := 1
 
 	testData := []*VerificationCode{
-		{Code: "111111", LongCode: "111111", RealmID: realmID, TestType: "negative", ExpiresAt: now.Add(time.Second), LongExpiresAt: now.Add(time.Second)},
-		{Code: "222222", LongCode: "222222", RealmID: realmID, TestType: "negative", ExpiresAt: now.Add(time.Second), LongExpiresAt: now.Add(time.Second)},
+		{Code: "111111", LongCode: "111111", RealmID: realm.ID, TestType: "negative", ExpiresAt: now.Add(time.Second), LongExpiresAt: now.Add(time.Second)},
+		{Code: "222222", LongCode: "222222", RealmID: realm.ID, TestType: "negative", ExpiresAt: now.Add(time.Second), LongExpiresAt: now.Add(time.Second)},
 		// Cleanup line - will be cleaned above here.
-		{Code: "333333", LongCode: "333333ABCDEF", RealmID: realmID, TestType: "negative", ExpiresAt: now.Add(time.Minute), LongExpiresAt: now.Add(time.Hour)},
+		{Code: "333333", LongCode: "333333ABCDEF", RealmID: realm.ID, TestType: "negative", ExpiresAt: now.Add(time.Minute), LongExpiresAt: now.Add(time.Hour)},
 	}
 	for _, rec := range testData {
 		if err := db.SaveVerificationCode(rec, maxAge); err != nil {
@@ -338,7 +345,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 
 	// Find first two by UUID.
 	for i, vc := range testData {
-		got, err := db.FindVerificationCodeByUUID(realmID, vc.UUID)
+		got, err := realm.FindVerificationCodeByUUID(db, vc.UUID)
 		if err != nil {
 			t.Fatalf("can't read back code by UUID")
 		}
@@ -370,7 +377,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	// Find first two by UUID, expect a not found error
 	for i, vc := range testData {
 
-		got, err := db.FindVerificationCodeByUUID(realmID, vc.UUID)
+		got, err := realm.FindVerificationCodeByUUID(db, vc.UUID)
 		if i <= cleanUpTo {
 			if err == nil {
 				t.Fatalf("expected error, got: %v", got)
