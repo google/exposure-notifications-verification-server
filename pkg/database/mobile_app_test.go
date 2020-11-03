@@ -14,7 +14,11 @@
 
 package database
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+)
 
 func TestMobileApp_Validation(t *testing.T) {
 	t.Parallel()
@@ -182,7 +186,11 @@ func TestMobileApp_List(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		extapp, err := db.ListActiveAppsWithRealm()
+		page := &pagination.PageParams{
+			Page:  0,
+			Limit: pagination.DefaultLimit,
+		}
+		extapp, _, err := db.ListActiveAppsWithRealm(page)
 		if err != nil {
 			t.Fatal(err)
 		}
