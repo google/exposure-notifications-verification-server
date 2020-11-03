@@ -33,6 +33,50 @@ resource "google_monitoring_dashboard" "e2e" {
   ]
 }
 
+resource "google_monitoring_alert_policy" "five_xx" {
+  project      = var.monitoring-host-project
+  display_name = "Elevated 5xx"
+  combiner     = "OR"
+  conditions {
+    display_name = "Elevated 5xx on Verification Server"
+    condition_threshold {
+      duration        = "300s"
+      threshold_value = 2
+      comparison      = "COMPARISON_GT"
+      filter          = "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" metric.label.\"response_code_class\"=\"5xx\" resource.label.\"service_name\"!=\"e2e-runner\""
+
+      aggregations {
+        alignment_period     = "60s"
+        cross_series_reducer = "REDUCE_SUM"
+        group_by_fields = [
+          "resource.label.service_name",
+        ]
+        per_series_aligner = "ALIGN_RATE"
+      }
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+[$${resource.label.host}](https://$${resource.label.host}/) is reporting elevated 5xx errors.
+See [docs/5xx.md](https://github.com/sethvargo/exposure-notifications-server-infra/blob/main/docs/5xx.md) for information about debugging.
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
+  ]
+}
+
 resource "google_monitoring_alert_policy" "rate_limited_count" {
   project      = var.monitoring-host-project
   display_name = "Elevated Rate Limited Count"
@@ -85,51 +129,6 @@ EOT
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
     google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
-  ]
-}
-
-resource "google_monitoring_alert_policy" "backend_latency" {
-  project      = var.verification-server-project
-  display_name = "Elevated Latency Greater than 2s"
-  combiner     = "OR"
-  conditions {
-    display_name = "/backend_latencies"
-    condition_threshold {
-      duration        = "300s"
-      threshold_value = "2000"
-      comparison      = "COMPARISON_GT"
-      filter          = "metric.type=\"loadbalancing.googleapis.com/https/backend_latencies\" resource.type=\"https_lb_rule\" resource.label.\"backend_name\"!=\"NO_BACKEND_SELECTED\" resource.label.\"forwarding_rule_name\"=\"verification-server-https\""
-
-      aggregations {
-        alignment_period     = "60s"
-        cross_series_reducer = "REDUCE_PERCENTILE_99"
-        group_by_fields = [
-          "resource.label.backend_target_name",
-        ]
-        per_series_aligner = "ALIGN_DELTA"
-      }
-
-      trigger {
-        count = 1
-      }
-    }
-  }
-
-  documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-Latency has been above 2s for > 5 minutes on $${resource.label.backend_target_name}.
-
-EOT
-    mime_type = "text/markdown"
-  }
-
-  notification_channels = [
-    google_monitoring_notification_channel.email.id
-  ]
-  depends_on = [
-    null_resource.manual-step-to-enable-workspace
   ]
 }
 
