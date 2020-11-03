@@ -730,20 +730,27 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 }
 
 // ListMobileApps gets all the mobile apps for the realm.
-func (r *Realm) ListMobileApps(db *Database) ([]*MobileApp, error) {
-	var apps []*MobileApp
-	if err := db.db.
+func (r *Realm) ListMobileApps(db *Database, p *pagination.PageParams) ([]*MobileApp, *pagination.Paginator, error) {
+	var mobileApps []*MobileApp
+	query := db.db.
 		Unscoped().
-		Model(r).
-		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
-		Related(&apps).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return apps, nil
-		}
-		return nil, err
+		Model(&MobileApp{}).
+		Where("realm_id = ?", r.ID).
+		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return apps, nil
+
+	paginator, err := Paginate(query, &mobileApps, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return mobileApps, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return mobileApps, paginator, nil
 }
 
 // FindMobileApp finds the mobile app by the given id associated with the realm.
@@ -775,26 +782,52 @@ func (r *Realm) CountUsers(db *Database) (int, error) {
 }
 
 // ListUsers returns the list of users on this realm.
-func (r *Realm) ListUsers(db *Database, offset, limit int, emailPrefix string) ([]*User, error) {
-	if limit > MaxPageSize {
-		limit = MaxPageSize
+func (r *Realm) ListUsers(db *Database, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
+	var users []*User
+	query := db.db.
+		Model(&User{}).
+		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
+		Order("LOWER(users.name) ASC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
 
-	realmDB := db.db.Model(r)
-
-	if emailPrefix != "" {
-		realmDB = realmDB.Where("email like ?", fmt.Sprintf("%%%s%%", emailPrefix))
+	paginator, err := Paginate(query, &users, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return users, nil, nil
+		}
+		return nil, nil, err
 	}
+
+	return users, paginator, nil
+}
+
+// SearchUsers returns the list of users which match the given criteria.
+func (r *Realm) SearchUsers(db *Database, q string, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
+	q = `%` + q + `%`
 
 	var users []*User
-	if err := realmDB.
-		Offset(offset).Limit(limit).
-		Order("LOWER(name)").
-		Related(&users, "RealmUsers").
-		Error; err != nil {
-		return nil, err
+	query := db.db.
+		Model(&User{}).
+		Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q).
+		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
+		Order("LOWER(users.name) ASC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return users, nil
+
+	paginator, err := Paginate(query, &users, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return users, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return users, paginator, nil
 }
 
 // FindUser finds the given user in the realm by ID.

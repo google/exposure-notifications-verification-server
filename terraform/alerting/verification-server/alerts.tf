@@ -232,4 +232,3 @@ EOT
     google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
   ]
 }
-

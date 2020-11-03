@@ -16,43 +16,16 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
-
-// pageSize is const for now, could provide options in UX
-const pageSize = 25
-
-type PageLabel struct {
-	Offset int
-	Label  string
-}
-
-type Pages struct {
-	Previous int
-	Current  int
-	Next     int
-	Offsets  []PageLabel
-	Footer   string
-}
 
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		offset := 0
-		var err error
-		if qvar := r.FormValue("offset"); qvar != "" {
-			offset, err = strconv.Atoi(qvar)
-			if err != nil {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
-		}
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -60,101 +33,25 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		count, err := realm.CountUsers(c.db)
+		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		emailPrefix := r.FormValue("search")
-		users, err := realm.ListUsers(c.db, offset, pageSize, emailPrefix)
+		users, paginator, err := realm.ListUsers(c.db, pageParams)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		var pages *Pages
-		if count > pageSize {
-			pages = populatePageStrip(offset, count)
-		}
-
-		c.renderIndex(ctx, w, users, pages, emailPrefix)
+		c.renderIndex(ctx, w, users, paginator)
 	})
 }
 
-func populatePageStrip(offset, count int) *Pages {
-	pages := &Pages{
-		Current:  offset,
-		Offsets:  []PageLabel{},
-		Previous: -1,
-		Next:     -1,
-		Footer:   fmt.Sprintf("%d-%d of %d", offset+1, min(offset+pageSize, count), count),
-	}
-
-	// Calc start and end for paging as +/- 5 pages from current
-	iStart := max(offset-pageSize*5, 0)
-	iEnd := min(iStart+pageSize*11, count-pageSize)
-
-	// Page number series
-	for i := iStart; i < iEnd+pageSize; i += pageSize {
-		pl := PageLabel{
-			Offset: i,
-			Label:  strconv.Itoa((i / pageSize) + 1),
-		}
-		pages.Offsets = append(pages.Offsets, pl)
-	}
-
-	// Fast forward halfway to the start
-	if iStart > pageSize*5 {
-		pages.Offsets[0] = PageLabel{
-			Offset: iStart/2 - (iStart / 2 % pageSize),
-			Label:  "<<",
-		}
-	}
-
-	// Fast forward halfway to the end
-	if iEnd < count-pageSize*5 {
-		halfway := (count - iEnd) / 2
-		pages.Offsets[len(pages.Offsets)-1] = PageLabel{
-			Offset: halfway + iEnd - halfway%pageSize,
-			Label:  ">>",
-		}
-	}
-
-	// Previous button data
-	if offset > 0 {
-		pages.Previous = max(offset-pageSize, 0)
-	}
-	// Next button data
-	if offset < count-pageSize {
-		pages.Next = min(offset+pageSize, count-pageSize)
-	}
-	return pages
-}
-
-func (c *Controller) renderIndex(
-	ctx context.Context,
-	w http.ResponseWriter,
-	users []*database.User,
-	pages *Pages,
-	emailPrefix string) {
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, users []*database.User, paginator *pagination.Paginator) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["search"] = emailPrefix
 	m["users"] = users
-	m["pages"] = pages
+	m["paginator"] = paginator
 	c.h.RenderHTML(w, "users/index", m)
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

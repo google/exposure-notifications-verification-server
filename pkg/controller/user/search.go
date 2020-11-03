@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mobileapps
+package user
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -24,7 +23,12 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+const (
+	// QueryKeySearch is the query key where the search query exists.
+	QueryKeySearch = "q"
+)
+
+func (c *Controller) HandleSearch() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -34,28 +38,32 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		q := r.FormValue(QueryKeySearch)
+		if q == "" {
+			http.Redirect(w, r, "/users", http.StatusSeeOther)
+			return
+		}
+
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		// Perform the lazy load on authorized apps for the realm.
-		apps, paginator, err := realm.ListMobileApps(c.db, pageParams)
+		users, paginator, err := realm.SearchUsers(c.db, q, pageParams)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(ctx, w, apps, paginator)
+		c.renderSearch(ctx, w, q, users, paginator)
 	})
 }
 
-// renderIndex renders the index page.
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp, paginator *pagination.Paginator) {
-	m := templateMap(ctx)
-	m["title"] = fmt.Sprintf("Mobile apps - %s", m["title"])
-	m["apps"] = apps
+func (c *Controller) renderSearch(ctx context.Context, w http.ResponseWriter, query string, users []*database.User, paginator *pagination.Paginator) {
+	m := controller.TemplateMapFromContext(ctx)
+	m["users"] = users
 	m["paginator"] = paginator
-	c.h.RenderHTML(w, "mobileapps/index", m)
+	m["query"] = query
+	c.h.RenderHTML(w, "users/index", m)
 }
