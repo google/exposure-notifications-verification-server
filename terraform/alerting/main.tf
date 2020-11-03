@@ -7,4 +7,6 @@ module "verification-server" {
   apiserver_hosts = var.apiserver_hosts
   adminapi_hosts  = var.adminapi_hosts
   server_hosts    = var.server_hosts
+
+  https-forwarding-rule = var.https-forwarding-rule
 }
