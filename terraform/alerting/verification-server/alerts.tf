@@ -143,3 +143,47 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
     google_monitoring_metric_descriptor.e2e--request_count
   ]
 }
+
+resource "google_monitoring_alert_policy" "five_xx" {
+  project      = var.monitoring-host-project
+  display_name = "Elevated 5xx"
+  combiner     = "OR"
+  conditions {
+    display_name = "Elevated 5xx on Verification Server"
+    condition_monitoring_query_language {
+      duration = "300s"
+      query    = <<-EOT
+      fetch
+      cloud_run_revision :: run.googleapis.com/request_count
+      | filter
+      (resource.service_name != 'e2e-runner')
+      && (metric.response_code_class == '5xx')
+      | align rate(1m)
+      | every 1m
+      | group_by [resource.service_name], [val: sum(value.request_count)]
+      | condition val() > 2 '1/s'
+      EOT
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+
+[$${resource.label.host}](https://$${resource.label.host}/) is reporting elevated 5xx errors.
+
+See [docs/5xx.md](https://github.com/sethvargo/exposure-notifications-server-infra/blob/main/docs/5xx.md) for information about debugging.
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace
+  ]
+}
