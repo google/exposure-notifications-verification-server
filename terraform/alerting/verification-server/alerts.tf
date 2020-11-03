@@ -54,27 +54,6 @@ resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
   ]
 }
 
-resource "null_resource" "E2ETestErrorRatioHigh" {
-  triggers = {
-    # trigger a provision if the content changes.
-    file_content = file("${path.module}/alerts/E2ETestErrorRatioHigh.yaml"),
-
-    notification_channel = google_monitoring_notification_channel.email.id
-  }
-  provisioner "local-exec" {
-    command = "${path.module}/scripts/upsert_alert_policy.sh"
-    environment = {
-      CLOUDSDK_CORE_PROJECT = var.monitoring-host-project
-      POLICY                = self.triggers.file_content
-      DISPLAY_NAME          = "E2ETestErrorRatioHigh"
-      NOTIFICATION_CHANNEL  = self.triggers.notification_channel
-    }
-  }
-  depends_on = [
-    google_monitoring_metric_descriptor.e2e--request_count
-  ]
-}
-
 resource "google_monitoring_alert_policy" "backend_latency" {
   count        = var.https-forwarding-rule == "" ? 0 : 1
   project      = var.verification-server-project
@@ -116,5 +95,51 @@ EOT
   ]
   depends_on = [
     null_resource.manual-step-to-enable-workspace
+  ]
+}
+
+resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
+  project      = var.verification-server-project
+  combiner     = "OR"
+  display_name = "E2ETestErrorRatioHigh"
+  conditions {
+    display_name = "E2E test per-step per-test_type error ratio"
+    condition_monitoring_query_language {
+      duration = "600s"
+      query    = <<-EOT
+      fetch
+      generic_task :: custom.googleapis.com/opencensus/en-verification-server/e2e/request_count
+      | {
+        NOT_OK: filter metric.result == 'NOT_OK' | align
+        ;
+        ALL: ident | align
+      }
+      | group_by [metric.step, metric.test_type], [val: sum(value.request_count)]
+      | ratio
+      | window 1m
+      | condition ratio > 0.1
+      EOT
+      trigger {
+        count = 1
+      }
+    }
+  }
+  documentation {
+    content   = <<-EOT
+    ## $${policy.display_name}
+
+    The e2e test is failing at step $${metric.label.step} with test_type
+    $${metric.label.test_type}.
+
+    This could be caused by many reasons. Please check the e2e-runner service
+    log and see why it failed.
+    EOT
+    mime_type = "text/markdown"
+  }
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    google_monitoring_metric_descriptor.e2e--request_count
   ]
 }
