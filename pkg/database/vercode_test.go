@@ -378,7 +378,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 				t.Fatalf("wrong error, want: %v got: %v", gorm.ErrRecordNotFound, err)
 			}
 		} else {
-			if diff := cmp.Diff(testData[i], got, cmpopts.IgnoreUnexported(VerificationCode{}), cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
+			if diff := cmp.Diff(testData[i], got, approxTime, cmpopts.IgnoreUnexported(VerificationCode{}), cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
 				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}
 		}
