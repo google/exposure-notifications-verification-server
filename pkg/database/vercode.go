@@ -53,9 +53,9 @@ type VerificationCode struct {
 	Errorable
 
 	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
-	Code          string `gorm:"type:varchar(512);unique_index"`
-	LongCode      string `gorm:"type:varchar(512);unique_index"`
-	UUID          string `gorm:"type:uuid;unique_index;default:null"`
+	Code          string `gorm:"type:varchar(512)"`
+	LongCode      string `gorm:"type:varchar(512)"`
+	UUID          string `gorm:"type:uuid;default:null"`
 	Claimed       bool   `gorm:"default:false"`
 	TestType      string `gorm:"type:varchar(20)"`
 	SymptomDate   *time.Time
@@ -226,9 +226,11 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 }
 
 // FindVerificationCodeByUUID find a verification codes by UUID.
-func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, error) {
+func (db *Database) FindVerificationCodeByUUID(realmID uint, uuid string) (*VerificationCode, error) {
 	var vc VerificationCode
-	if err := db.db.Where("uuid = ?", uuid).Find(&vc).Error; err != nil {
+	if err := db.db.
+		Where("uuid = ? and realm_id = ?", uuid, realmID).
+		First(&vc).Error; err != nil {
 		return nil, err
 	}
 	return &vc, nil
@@ -311,6 +313,21 @@ func (db *Database) DeleteVerificationCode(code string) error {
 		Where("code IN (?) OR long_code IN (?)", hmacedCodes, hmacedCodes).
 		Delete(&VerificationCode{}).
 		Error
+}
+
+// RecycleVerificationCodes sets to null code and long_code values
+// so that status can be retained longer, but the codes are recycled into the pool.
+func (db *Database) RecycleVerificationCodes(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+	// Null out the codes where this can be done.
+	rtn := db.db.Model(&VerificationCode{}).
+		Select("code", "long_code").
+		Where("expires_at < ? AND long_expires_at < ? AND code IS NOT NULL", deleteBefore, deleteBefore).
+		Update(map[string]interface{}{"code": nil, "long_code": nil})
+	return rtn.RowsAffected, rtn.Error
 }
 
 // PurgeVerificationCodes will delete verifications that have expired since at least the

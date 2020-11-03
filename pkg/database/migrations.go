@@ -1564,6 +1564,41 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec("ALTER TABLE tokens DROP COLUMN IF EXISTS test_date").Error
 			},
 		},
+		{
+			ID: "00064-RescopeVerificationCodeIndices",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("realm enable verification_code index")
+				sqls := []string{
+					"ALTER TABLE verification_codes ALTER COLUMN long_code DROP NOT NULL",
+					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_code ON verification_codes (realm_id,code) WHERE code != ''",
+					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_long_code ON verification_codes (realm_id,long_code) WHERE long_code != ''",
+					"DROP INDEX IF EXISTS uix_verification_codes_code",
+					"DROP INDEX IF EXISTS uix_verification_codes_long_code",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				logger.Debugw("partial verification code cleanup")
+				sqls := []string{
+					"DELETE FROM verification_codes WHERE code IS NULL or long_code IS NULL",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 
