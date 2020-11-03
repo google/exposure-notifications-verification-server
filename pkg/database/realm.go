@@ -730,20 +730,27 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 }
 
 // ListMobileApps gets all the mobile apps for the realm.
-func (r *Realm) ListMobileApps(db *Database) ([]*MobileApp, error) {
-	var apps []*MobileApp
-	if err := db.db.
+func (r *Realm) ListMobileApps(db *Database, p *pagination.PageParams) ([]*MobileApp, *pagination.Paginator, error) {
+	var mobileApps []*MobileApp
+	query := db.db.
 		Unscoped().
-		Model(r).
-		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
-		Related(&apps).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return apps, nil
-		}
-		return nil, err
+		Model(&MobileApp{}).
+		Where("realm_id = ?", r.ID).
+		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return apps, nil
+
+	paginator, err := Paginate(query, &mobileApps, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return mobileApps, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return mobileApps, paginator, nil
 }
 
 // FindMobileApp finds the mobile app by the given id associated with the realm.

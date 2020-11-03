@@ -100,6 +100,7 @@ func (c *Controller) HandleCreate() http.Handler {
 // renderNew renders the new page.
 func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, app *database.MobileApp) {
 	m := templateMap(ctx)
+	m["title"] = fmt.Sprintf("New mobile app - %s", m["title"])
 	m["app"] = app
 	c.h.RenderHTML(w, "mobileapps/new", m)
 }

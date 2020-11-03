@@ -16,6 +16,7 @@ package mobileapps
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -61,6 +62,7 @@ func (c *Controller) HandleShow() http.Handler {
 // renderShow renders the edit page.
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, app *database.MobileApp) {
 	m := templateMap(ctx)
+	m["title"] = fmt.Sprintf("%s - Mobile apps - %s", app.Name, m["title"])
 	m["app"] = app
 	c.h.RenderHTML(w, "mobileapps/show", m)
 }

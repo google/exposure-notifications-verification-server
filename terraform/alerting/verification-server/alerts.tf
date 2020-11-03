@@ -187,4 +187,3 @@ EOT
     null_resource.manual-step-to-enable-workspace
   ]
 }
-

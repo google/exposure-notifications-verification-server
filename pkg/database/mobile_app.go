@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
 )
 
@@ -133,21 +134,45 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
-// ListActiveApps finds all active mobile apps.
-func (db *Database) ListActiveApps() ([]*MobileApp, error) {
-	// Find the apps.
-	var apps []*MobileApp
-	if err := db.db.
-		Model(&MobileApp{}).
-		Find(&apps).
-		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
-		Error; err != nil {
-		if IsNotFound(err) {
-			return apps, nil
-		}
-		return nil, err
+// ExtendedMobileApp combines a MobileApp with its Realm
+type ExtendedMobileApp struct {
+	MobileApp
+	Realm
+}
+
+// ListActiveAppsWithRealm finds all active mobile apps with their associated realm.
+func (db *Database) ListActiveAppsWithRealm(p *pagination.PageParams) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
+	query := db.db.Table("mobile_apps").
+		Select("mobile_apps.*, realms.*").
+		Joins("left join realms on realms.id = mobile_apps.realm_id")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return apps, nil
+
+	apps := make([]*ExtendedMobileApp, 0)
+
+	paginator, err := PaginateFn(query, p.Page, p.Limit, func(query *gorm.DB, offset uint64) error {
+		rows, err := query.
+			Limit(p.Limit).
+			Offset(offset).
+			Rows()
+		if err != nil || rows == nil {
+			return nil
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			app := &ExtendedMobileApp{}
+			if err := db.db.ScanRows(rows, &app); err != nil {
+				return err
+			}
+			apps = append(apps, app)
+		}
+		return nil
+	})
+
+	return apps, paginator, err
 }
 
 // ListActiveAppsByOS finds mobile apps by their realm and OS.
