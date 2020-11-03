@@ -22,6 +22,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
+type ExtendedMobileApp struct {
+	*database.MobileApp
+	Realm *database.Realm
+}
+
 // HandleMobileAppsShow shows the configured mobile apps.
 func (c *Controller) HandleMobileAppsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,11 +38,30 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 			return
 		}
 
-		c.renderShowMobileApps(ctx, w, apps)
+		realms, err := c.db.GetRealms()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		realmsByID := make(map[uint]*database.Realm, len(realms))
+		for _, r := range realms {
+			realmsByID[r.ID] = r
+		}
+
+		// In-memory join for extended data
+		extApps := make([]*ExtendedMobileApp, len(apps))
+		for i, app := range apps {
+			extApps[i] = &ExtendedMobileApp{
+				MobileApp: app,
+				Realm:     realmsByID[app.RealmID],
+			}
+		}
+
+		c.renderShowMobileApps(ctx, w, extApps)
 	})
 }
 
-func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp) {
+func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter, apps []*ExtendedMobileApp) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["apps"] = apps
 	c.h.RenderHTML(w, "admin/mobileapps/show", m)
