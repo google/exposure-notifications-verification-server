@@ -1,11 +1,6 @@
 {{define "admin/mobileapps/show"}}
 
 {{$apps := .apps}}
-{{$s := .search}}
-{{$searchQuery := ""}}
-{{if $s}}
-  {{$searchQuery = printf "search=%s&" $s}}
-{{end}}
 
 <!doctype html>
 <html lang="en">
