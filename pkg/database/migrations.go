@@ -1587,7 +1587,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Rollback: func(tx *gorm.DB) error {
 				logger.Debugw("partial verification code cleanup")
 				sqls := []string{
-					"DELETE FROM verification_codes WHERE code IS NULL or long_code IS NULL",
+					"DELETE FROM verification_codes WHERE code = '' or long_code = ''",
 				}
 
 				for _, sql := range sqls {
