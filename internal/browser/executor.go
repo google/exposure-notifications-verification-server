@@ -59,7 +59,7 @@ var defaultOptions = [...]chromedp.ExecAllocatorOption{
 	chromedp.Flag("use-mock-keychain", true),
 }
 
-// New creates a new headless browser context. Se NewFromOptions for usage.
+// New creates a new headless browser context. See NewFromOptions for usage.
 func New(tb testing.TB) context.Context {
 	tb.Helper()
 	opts := defaultOptions[:]
