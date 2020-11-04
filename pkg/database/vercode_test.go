@@ -83,6 +83,10 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create realm: %v", err)
 	}
+	otherRealm, err := db.CreateRealm("notThetestRealm")
+	if err != nil {
+		t.Fatalf("failed to create realm: %v", err)
+	}
 
 	vc := &VerificationCode{
 		Code:          "123456",
@@ -113,7 +117,7 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	})
 
 	t.Run("wrong_realm", func(t *testing.T) {
-		_, err := realm.FindVerificationCodeByUUID(db, codeUUID)
+		_, err := otherRealm.FindVerificationCodeByUUID(db, codeUUID)
 		if err == nil || !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("expected error: not found, got: %v", err)
 		}
