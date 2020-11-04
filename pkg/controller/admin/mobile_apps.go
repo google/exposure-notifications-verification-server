@@ -23,6 +23,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
+const (
+	// QueryKeySearch is the query key where the search query exists.
+	QueryKeySearch = "q"
+)
+
 // HandleMobileAppsShow shows the configured mobile apps.
 func (c *Controller) HandleMobileAppsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,20 +39,23 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 			return
 		}
 
-		apps, paginator, err := c.db.ListActiveAppsWithRealm(pageParams)
+		q := r.FormValue(QueryKeySearch)
+
+		apps, paginator, err := c.db.SearchActiveAppsWithRealm(pageParams, q)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderShowMobileApps(ctx, w, apps, paginator)
+		c.renderShowMobileApps(ctx, w, apps, paginator, q)
 	})
 }
 
 func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter,
-	apps []*database.ExtendedMobileApp, paginator *pagination.Paginator) {
+	apps []*database.ExtendedMobileApp, paginator *pagination.Paginator, q string) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["apps"] = apps
 	m["paginator"] = paginator
+	m["query"] = q
 	c.h.RenderHTML(w, "admin/mobileapps/show", m)
 }

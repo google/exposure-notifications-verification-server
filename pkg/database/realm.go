@@ -422,6 +422,17 @@ func (r *Realm) GetLongCodeDurationHours() int {
 	return int(r.LongCodeDuration.Duration.Hours())
 }
 
+// FindVerificationCodeByUUID find a verification codes by UUID.
+func (r *Realm) FindVerificationCodeByUUID(db *Database, uuid string) (*VerificationCode, error) {
+	var vc VerificationCode
+	if err := db.db.
+		Where("uuid = ? AND realm_id = ?", uuid, r.ID).
+		First(&vc).Error; err != nil {
+		return nil, err
+	}
+	return &vc, nil
+}
+
 // BuildSMSText replaces certain strings with the right values.
 func (r *Realm) BuildSMSText(code, longCode string, enxDomain string) string {
 	text := r.SMSTextTemplate
@@ -783,37 +794,20 @@ func (r *Realm) CountUsers(db *Database) (int, error) {
 
 // ListUsers returns the list of users on this realm.
 func (r *Realm) ListUsers(db *Database, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
-	var users []*User
-	query := db.db.
-		Model(&User{}).
-		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
-		Order("LOWER(users.name) ASC")
-
-	if p == nil {
-		p = new(pagination.PageParams)
-	}
-
-	paginator, err := Paginate(query, &users, p.Page, p.Limit)
-	if err != nil {
-		if IsNotFound(err) {
-			return users, nil, nil
-		}
-		return nil, nil, err
-	}
-
-	return users, paginator, nil
+	return r.SearchUsers(db, "", p)
 }
 
 // SearchUsers returns the list of users which match the given criteria.
 func (r *Realm) SearchUsers(db *Database, q string, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
-	q = `%` + q + `%`
-
 	var users []*User
-	query := db.db.
-		Model(&User{}).
-		Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q).
+	query := db.db.Model(&User{}).
 		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
 		Order("LOWER(users.name) ASC")
+
+	if q != "" {
+		q = `%` + q + `%`
+		query = query.Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q)
+	}
 
 	if p == nil {
 		p = new(pagination.PageParams)

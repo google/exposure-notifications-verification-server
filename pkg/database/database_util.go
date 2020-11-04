@@ -79,6 +79,11 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 		tb.Fatalf("failed to start postgres container: %s", err)
 	}
 
+	// Force the database container to stop.
+	if err := container.Expire(30); err != nil {
+		tb.Fatalf("failed to force-stop container: %v", err)
+	}
+
 	// Ensure container is cleaned up.
 	tb.Cleanup(func() {
 		if err := pool.Purge(container); err != nil {
@@ -113,7 +118,7 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 
 	// Wait for the container to start - we'll retry connections in a loop below,
 	// but there's no point in trying immediately.
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	// Load the configuration
 	db, err := config.Load(ctx)
@@ -142,7 +147,9 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 
 	// Close db when done.
 	tb.Cleanup(func() {
-		db.db.Close()
+		if err := db.db.Close(); err != nil {
+			tb.Fatal(err)
+		}
 	})
 
 	return db, config
@@ -155,6 +162,8 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 // All database tests can be skipped by running `go test -short` or by setting
 // the `SKIP_DATABASE_TESTS` environment variable.
 func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
+	tb.Helper()
+
 	return NewTestDatabaseWithCacher(tb, nil)
 }
 

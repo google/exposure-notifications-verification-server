@@ -564,12 +564,11 @@ func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) 
 // withRetries is a helper for creating a fibonacci backoff with capped retries,
 // useful for retrying database queries.
 func withRetries(ctx context.Context, f retry.RetryFunc) error {
-	b, err := retry.NewFibonacci(50 * time.Millisecond)
+	b, err := retry.NewConstant(500 * time.Millisecond)
 	if err != nil {
 		return fmt.Errorf("failed to configure backoff: %w", err)
 	}
-	b = retry.WithMaxRetries(10, b)
-	b = retry.WithCappedDuration(1*time.Second, b)
+	b = retry.WithMaxRetries(30, b)
 
 	return retry.Do(ctx, b, f)
 }

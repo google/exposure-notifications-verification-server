@@ -188,6 +188,50 @@ EOT
   ]
 }
 
+resource "google_monitoring_alert_policy" "probers" {
+  project = var.monitoring-host-project
+
+  display_name = "Host Down"
+  combiner     = "OR"
+  conditions {
+    display_name = "Host is unreachable"
+    condition_monitoring_query_language {
+      duration = "300s"
+      query    = <<-EOT
+      fetch
+      uptime_url :: monitoring.googleapis.com/uptime_check/check_passed
+      | align next_older(1m)
+      | every 1m
+      | group_by [resource.host],
+      [value_check_passed_fraction_true: fraction_true(value.check_passed)]
+      | condition val() < 0.2 '10^2.%'
+      EOT
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+
+[$${resource.label.host}](https://$${resource.label.host}/health) is being reported unreachable.
+
+See [docs/hosts.md](https://github.com/sethvargo/exposure-notifications-server-infra/blob/main/docs/hosts.md) for information about hosts.
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+    google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
+  ]
+}
+
 resource "google_monitoring_alert_policy" "rate_limited_count" {
   project      = var.monitoring-host-project
   display_name = "Elevated Rate Limited Count"
@@ -228,7 +272,7 @@ EOT
     google_monitoring_notification_channel.email.id
   ]
   depends_on = [
-    null_resource.manual-step-to-enable-workspace,
-    google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
+    null_resource.manual-step-to-enable-workspace
   ]
 }
+
