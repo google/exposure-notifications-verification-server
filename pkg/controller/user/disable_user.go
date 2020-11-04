@@ -40,6 +40,17 @@ func (c *Controller) HandleDisableUser() http.Handler {
 			return
 		}
 
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		if !currentUser.Admin {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
 		// Pull the user from the id.
 		user, err := realm.FindUser(c.db, vars["id"])
 		if err != nil {
