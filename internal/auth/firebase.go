@@ -163,6 +163,23 @@ func (f *firebaseAuth) CreateUser(ctx context.Context, name, email, pass string,
 	return true, nil
 }
 
+// DisableUser prevents a user from logging in by disabling their account.
+func (f *firebaseAuth) DisableUser(ctx context.Context, email string) error {
+	// Attempt to get the user by email. If that returns successfully, it means
+	// the user exists.
+	user, err := f.firebaseAuth.GetUserByEmail(ctx, email)
+	if err != nil && !auth.IsUserNotFound(err) {
+		return fmt.Errorf("failed lookup firebase user: %w", err)
+	}
+
+	toUpdate := auth.UserToUpdate{}
+	toUpdate.Disabled(true)
+	if _, err := f.firebaseAuth.UpdateUser(ctx, user.UID, &toUpdate); err != nil {
+		return fmt.Errorf("failed to update firebase user: %w", err)
+	}
+	return nil
+}
+
 // EmailAddress extracts the users email from the session.
 func (f *firebaseAuth) EmailAddress(ctx context.Context, session *sessions.Session) (string, error) {
 	data, err := f.loadCookie(ctx, session)

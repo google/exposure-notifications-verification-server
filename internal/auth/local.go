@@ -127,6 +127,11 @@ func (a *localAuth) CreateUser(ctx context.Context, name, email, pass string, em
 	return true, nil
 }
 
+// DisableUser prevents a user from logging in by disabling their account.
+func (a *localAuth) DisableUser(ctx context.Context, email string) error {
+	return nil
+}
+
 // EmailAddress extracts the users email from the session.
 func (a *localAuth) EmailAddress(ctx context.Context, session *sessions.Session) (string, error) {
 	data, err := a.loadCookie(ctx, session)
@@ -157,7 +162,7 @@ func (a *localAuth) MFAEnabled(ctx context.Context, session *sessions.Session) (
 // ChangePassword changes the users password. The data is not used. Since local
 // auth does not use passwords, this is a noop.
 func (a *localAuth) ChangePassword(ctx context.Context, newPassword string, data interface{}) error {
-	return nil
+	return nil // no-op for local
 }
 
 // SendResetPasswordEmail resets the password for the given user. If the user does not

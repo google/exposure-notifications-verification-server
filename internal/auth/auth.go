@@ -53,6 +53,9 @@ type Provider interface {
 	// creates and uses a random password.
 	CreateUser(ctx context.Context, name, email, pass string, composer InviteUserEmailFunc) (bool, error)
 
+	// DisableUser prevents a user from logging in by disabling their account.
+	DisableUser(ctx context.Context, email string) error
+
 	// SendResetPasswordEmail resets the given user's password. If the user does not exist,
 	// the underlying provider determines whether itls an error or perhaps upserts
 	// the account.
