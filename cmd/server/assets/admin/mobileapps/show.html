@@ -15,7 +15,10 @@
     {{template "flash" .}}
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Mobile apps</div>
+      <div class="card-header">
+        <span class="oi oi-phone mr-2 ml-n1" aria-hidden="true"></span>
+        Mobile apps
+      </div>
 
       <div class="card-body">
         <form method="GET" action="/admin/mobileapps" id="search-form">
@@ -38,7 +41,7 @@
           <table class="table table-bordered table-striped bg-white">
             <thead>
               <tr>
-                <th scope="col">App</th>
+                <th scope="col">Mobile app</th>
                 <th scope="col" width="120">Realm</th>
                 <th scope="col" width="95">Enabled</th>
               </tr>
