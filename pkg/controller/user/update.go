@@ -54,7 +54,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		user, err := realm.FindUser(c.db, vars["id"])
+		user, err := c.findUser(currentUser, realm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
