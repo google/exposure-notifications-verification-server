@@ -48,8 +48,13 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 		return nil, http.StatusBadRequest, api.Errorf("missing realm")
 	}
 
-	code, err := c.db.FindVerificationCodeByUUID(uuid)
+	code, err := realm.FindVerificationCodeByUUID(c.db, uuid)
 	if err != nil {
+		if database.IsNotFound(err) {
+			logger.Debugw("code not found by UUID", "error", err)
+			return nil, http.StatusNotFound,
+				api.Errorf("code not found, it may have expired and been removed").WithCode(api.ErrVerifyCodeNotFound)
+		}
 		logger.Errorw("failed to check otp code status", "error", err)
 		return nil, http.StatusInternalServerError,
 			api.Errorf("failed to check otp code status, please try again").WithCode(api.ErrInternal)
@@ -75,12 +80,6 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 		logger.Errorw("failed to check otp code status", "error", "auth app does not match issuing app")
 		return nil, http.StatusUnauthorized,
 			api.Errorf("failed to check otp code status: auth app does not match issuing app").WithCode(api.ErrVerifyCodeUserUnauth)
-	}
-
-	if code.RealmID != realm.ID {
-		logger.Errorw("failed to check otp code status", "error", "realmID does not match")
-		return nil, http.StatusNotFound,
-			api.Errorf("code does not exist or is expired and removed").WithCode(api.ErrVerifyCodeNotFound)
 	}
 	return code, 0, nil
 }

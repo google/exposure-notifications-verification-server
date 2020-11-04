@@ -422,6 +422,17 @@ func (r *Realm) GetLongCodeDurationHours() int {
 	return int(r.LongCodeDuration.Duration.Hours())
 }
 
+// FindVerificationCodeByUUID find a verification codes by UUID.
+func (r *Realm) FindVerificationCodeByUUID(db *Database, uuid string) (*VerificationCode, error) {
+	var vc VerificationCode
+	if err := db.db.
+		Where("uuid = ? AND realm_id = ?", uuid, r.ID).
+		First(&vc).Error; err != nil {
+		return nil, err
+	}
+	return &vc, nil
+}
+
 // BuildSMSText replaces certain strings with the right values.
 func (r *Realm) BuildSMSText(code, longCode string, enxDomain string) string {
 	text := r.SMSTextTemplate
