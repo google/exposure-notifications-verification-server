@@ -34,25 +34,8 @@ func (c *Controller) HandleDisableUser() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
-
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
-
-		if !currentUser.Admin {
-			controller.Unauthorized(w, r, c.h)
-			return
-		}
-
 		// Pull the user from the id.
-		user, err := realm.FindUser(c.db, vars["id"])
+		user, err := c.db.FindUser(vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)

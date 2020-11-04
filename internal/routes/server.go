@@ -283,7 +283,13 @@ func Server(
 		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
 		userSub.Handle("/{id}", userController.HandleDelete()).Methods("DELETE")
 		userSub.Handle("/{id}/reset-password", userController.HandleResetPassword()).Methods("POST")
-		userSub.Handle("/{id}/disable-user", userController.HandleDisableUser()).Methods("POST")
+
+		userAdminSub := r.PathPrefix("/users").Subrouter()
+		userAdminSub.Use(requireAuth)
+		userAdminSub.Use(loadCurrentRealm)
+		userAdminSub.Use(requireSystemAdmin)
+		userAdminSub.Use(rateLimit)
+		userAdminSub.Handle("/{id}/disable-user", userController.HandleDisableUser()).Methods("POST")
 	}
 
 	// realms
