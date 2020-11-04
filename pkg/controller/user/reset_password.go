@@ -40,8 +40,13 @@ func (c *Controller) HandleResetPassword() http.Handler {
 			return
 		}
 
-		// Pull the user from the id.
-		user, err := realm.FindUser(c.db, vars["id"])
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		user, err := c.findUser(currentUser, realm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
