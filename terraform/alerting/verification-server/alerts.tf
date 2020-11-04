@@ -228,7 +228,6 @@ EOT
   ]
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
-    google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
   ]
 }
 
@@ -273,6 +272,7 @@ EOT
   ]
   depends_on = [
     null_resource.manual-step-to-enable-workspace
+    google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
   ]
 }
 
