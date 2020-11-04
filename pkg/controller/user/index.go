@@ -23,6 +23,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
+const (
+	// QueryKeySearch is the query key where the search query exists.
+	QueryKeySearch = "q"
+)
+
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -33,25 +38,28 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		q := r.FormValue(QueryKeySearch)
+
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		users, paginator, err := realm.ListUsers(c.db, pageParams)
+		users, paginator, err := realm.SearchUsers(c.db, q, pageParams)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(ctx, w, users, paginator)
+		c.renderIndex(ctx, w, q, users, paginator)
 	})
 }
 
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, users []*database.User, paginator *pagination.Paginator) {
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, query string, users []*database.User, paginator *pagination.Paginator) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["users"] = users
 	m["paginator"] = paginator
+	m["query"] = query
 	c.h.RenderHTML(w, "users/index", m)
 }
