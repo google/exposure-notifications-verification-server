@@ -91,30 +91,28 @@ aria-expanded="false" aria-label="Toggle navigation">
       {{if .currentRealm }}
       {{if .currentUser.CanAdminRealm .currentRealm.ID}}
       <h6 class="dropdown-header">Manage realm</h6>
-      <a class="dropdown-item" href="/apikeys">API keys</a>
-      <a class="dropdown-item" href="/mobile-apps">Mobile apps</a>
-      <a class="dropdown-item" href="/realm/events">Event log</a>
-      <a class="dropdown-item" href="/realm/keys">Signing keys</a>
-      <a class="dropdown-item" href="/realm/stats">Statistics</a>
-      <a class="dropdown-item" href="/users">Users</a>
-      <a class="dropdown-item" href="/realm/settings#general">Settings</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/apikeys"}}active{{end}}" href="/apikeys">API keys</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/mobile-apps"}}active{{end}}" href="/mobile-apps">Mobile apps</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/events"}}active{{end}}" href="/realm/events">Event log</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/keys"}}active{{end}}" href="/realm/keys">Signing keys</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/stats"}}active{{end}}" href="/realm/stats">Statistics</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/users"}}active{{end}}" href="/users">Users</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/settings"}}active{{end}}" href="/realm/settings#general">Settings</a>
       <div class="dropdown-divider"></div>
       {{end}}
       {{end}}
 
       {{if .currentUser.SystemAdmin}}
-      {{if not (.currentPath.IsDir "/admin")}}
       <h6 class="dropdown-header">System admin</h6>
-      <a class="dropdown-item" href="/admin/realms">Launch</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/admin"}}active{{end}}" href="/admin/realms">System admin</a>
       <div class="dropdown-divider"></div>
-      {{end}}
       {{end}}
 
       <h6 class="dropdown-header">Actions</h6>
       {{if gt (len .currentUser.Realms) 1}}
-      <a class="dropdown-item" href="/login/select-realm">{{if .currentRealm}}Change realm{{else}}Select realm{{end}}</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/login/select-realm"}}active{{end}}" href="/login/select-realm">{{if .currentRealm}}Change realm{{else}}Select realm{{end}}</a>
       {{end}}
-      <a class="dropdown-item" href="/account">My account</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/account"}}active{{end}}" href="/account">My account</a>
       <a class="dropdown-item" href="/signout">Sign out</a>
     </div>
   </li>
