@@ -15,7 +15,7 @@
 resource "google_monitoring_metric_descriptor" "api--issue--request_count" {
   project      = var.verification-server-project
   description  = "Count of code issue requests"
-  display_name = "OpenCensus/en-verification-server/api/issue/request_count"
+  display_name = "/api/issue/request_count"
   type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/request_count"
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
@@ -29,7 +29,7 @@ resource "google_monitoring_metric_descriptor" "api--issue--request_count" {
 resource "google_monitoring_metric_descriptor" "api--verify--request_count" {
   project      = var.verification-server-project
   description  = "Count of verify requests"
-  display_name = "OpenCensus/en-verification-server/api/verify/request_count"
+  display_name = "/api/verify/request_count"
   type         = "custom.googleapis.com/opencensus/en-verification-server/api/verify/request_count"
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
@@ -44,7 +44,7 @@ resource "google_monitoring_metric_descriptor" "api--verify--request_count" {
 resource "google_monitoring_metric_descriptor" "api--issue--realm_token_latest" {
   project      = var.verification-server-project
   description  = "Latest realm token count"
-  display_name = "OpenCensus/en-verification-server/api/issue/realm_token_latest"
+  display_name = "/api/issue/realm_token_latest"
   type         = "custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest"
   metric_kind  = "GAUGE"
   value_type   = "INT64"
@@ -58,7 +58,7 @@ resource "google_monitoring_metric_descriptor" "api--issue--realm_token_latest" 
 resource "google_monitoring_metric_descriptor" "ratelimit--limitware--request_count" {
   project      = var.verification-server-project
   description  = "requests seen by middleware"
-  display_name = "OpenCensus/en-verification-server/ratelimit/limitware/request_count"
+  display_name = "/ratelimit/limitware/request_count"
   type         = "custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count"
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
@@ -72,7 +72,7 @@ resource "google_monitoring_metric_descriptor" "ratelimit--limitware--request_co
 resource "google_monitoring_metric_descriptor" "e2e--request_count" {
   project      = var.verification-server-project
   description  = "Count of e2e requests"
-  display_name = "OpenCensus/en-verification-server/e2e/request_count"
+  display_name = "/e2e/request_count"
   type         = "custom.googleapis.com/opencensus/en-verification-server/e2e/request_count"
   metric_kind  = "CUMULATIVE"
   value_type   = "INT64"
