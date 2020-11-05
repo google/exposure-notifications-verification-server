@@ -101,7 +101,8 @@ func (r *Renderer) loadTemplates() error {
 	tmpl := htmltemplate.New("").
 		Option("missingkey=zero").
 		Funcs(templateFuncs())
-	txttmpl := texttemplate.New("")
+	txttmpl := texttemplate.New("").
+		Funcs(textFuncs())
 	if err := loadTemplates(tmpl, txttmpl, r.templatesRoot); err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
 	}
@@ -150,6 +151,12 @@ func templateFuncs() htmltemplate.FuncMap {
 		"toLower":        strings.ToLower,
 		"toUpper":        strings.ToUpper,
 		"safeHTML":       safeHTML,
+	}
+}
+
+func textFuncs() texttemplate.FuncMap {
+	return map[string]interface{}{
+		"trimSpace": project.TrimSpace,
 	}
 }
 

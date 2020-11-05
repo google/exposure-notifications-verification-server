@@ -20,7 +20,6 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
@@ -75,12 +74,10 @@ func (c *Controller) HandleSuperUsersCreate() http.Handler {
 
 		var form FormData
 		err := controller.BindForm(w, r, &form)
-		email := project.TrimSpace(form.Email)
-		name := project.TrimSpace(form.Name)
 		if err != nil {
 			user := &database.User{
-				Email: email,
-				Name:  name,
+				Email: form.Email,
+				Name:  form.Name,
 			}
 
 			flash.Error("Failed to process form: %v", err)
@@ -89,7 +86,7 @@ func (c *Controller) HandleSuperUsersCreate() http.Handler {
 		}
 
 		// See if the user already exists and use that record.
-		user, err := c.db.FindUserByEmail(email)
+		user, err := c.db.FindUserByEmail(form.Email)
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
@@ -98,8 +95,8 @@ func (c *Controller) HandleSuperUsersCreate() http.Handler {
 
 			// User does not exist, create a new one.
 			user = &database.User{
-				Name:  name,
-				Email: email,
+				Name:  form.Email,
+				Email: form.Email,
 			}
 		}
 
@@ -110,13 +107,13 @@ func (c *Controller) HandleSuperUsersCreate() http.Handler {
 			return
 		}
 
-		inviteComposer, err := c.inviteComposer(ctx, email)
+		inviteComposer, err := c.inviteComposer(ctx, form.Email)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		if _, err := c.authProvider.CreateUser(ctx, name, email, "", inviteComposer); err != nil {
+		if _, err := c.authProvider.CreateUser(ctx, form.Email, form.Email, "", inviteComposer); err != nil {
 			flash.Alert("Failed to create user: %v", err)
 			c.renderNewUser(ctx, w, user)
 		}

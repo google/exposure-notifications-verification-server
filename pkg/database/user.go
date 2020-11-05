@@ -191,7 +191,7 @@ func (db *Database) FindUser(id interface{}) (*User, error) {
 func (db *Database) FindUserByEmail(email string) (*User, error) {
 	var user User
 	if err := db.db.
-		Where("email = ?", email).
+		Where("email = ?", project.TrimSpace(email)).
 		First(&user).
 		Error; err != nil {
 		return nil, err
@@ -237,6 +237,7 @@ func (db *Database) ListUsers(p *pagination.PageParams, q string) ([]*User, *pag
 		Where("admin IS FALSE").
 		Order("LOWER(name) ASC")
 
+	q = project.TrimSpace(q)
 	if q != "" {
 		q = `%` + q + `%`
 		query = query.Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q)
