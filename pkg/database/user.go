@@ -230,7 +230,7 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 func (db *Database) ListUsers(p *pagination.PageParams, q string) ([]*User, *pagination.Paginator, error) {
 	var users []*User
 	query := db.db.Model(&User{}).
-		Where("admin IS FALSE").
+		Where("system_admin IS FALSE").
 		Order("LOWER(name) ASC")
 
 	q = project.TrimSpace(q)
@@ -260,7 +260,7 @@ func (db *Database) ListSystemAdmins() ([]*User, error) {
 	var users []*User
 	if err := db.db.
 		Model(&User{}).
-		Where("admin IS TRUE").
+		Where("system_admin IS TRUE").
 		Order("LOWER(name) ASC").
 		Find(&users).
 		Error; err != nil {
