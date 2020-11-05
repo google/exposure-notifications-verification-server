@@ -85,7 +85,7 @@ func (c *Controller) HandleUserDelete() http.Handler {
 			return
 		}
 
-		if err := c.db.DeleteUser(user); err != nil {
+		if err := c.db.DeleteUser(user, currentUser); err != nil {
 			flash.Error("Failed to delete user: %v", err)
 			controller.Back(w, r, c.h)
 			return

@@ -229,11 +229,6 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 	return stats, nil
 }
 
-// DeleteUser deletes the user entry.
-func (db *Database) DeleteUser(u *User) error {
-	return db.db.Delete(u).Error
-}
-
 // ListUsers returns a list of all users sorted by name.
 // Warning: This list may be large. Use Realm.ListUsers() to get users scoped to a realm.
 func (db *Database) ListUsers(p *pagination.PageParams, q string) ([]*User, *pagination.Paginator, error) {
@@ -268,7 +263,7 @@ func (db *Database) ListSystemAdmins() ([]*User, error) {
 	var users []*User
 	if err := db.db.
 		Model(&User{}).
-		Where("admin IS TRUE").
+		Where("system_admin IS TRUE").
 		Order("LOWER(name) ASC").
 		Find(&users).
 		Error; err != nil {
@@ -313,6 +308,31 @@ func (u *User) AuditID() string {
 // AuditDisplay is how the user will be displayed in audit entries.
 func (u *User) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", u.Name, u.Email)
+}
+
+// DeleteUser deletes the user entry.
+func (db *Database) DeleteUser(u *User, actor Auditable) error {
+	if u == nil {
+		return fmt.Errorf("provided user is nil")
+	}
+
+	if actor == nil {
+		return fmt.Errorf("auditing actor is nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		audit := BuildAuditEntry(actor, "deleted user", u, 0)
+		if err := tx.Save(audit).Error; err != nil {
+			return fmt.Errorf("failed to save audits: %w", err)
+		}
+
+		// Delete the user
+		if err := tx.Delete(u).Error; err != nil {
+			return fmt.Errorf("failed to save user: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (db *Database) SaveUser(u *User, actor Auditable) error {
