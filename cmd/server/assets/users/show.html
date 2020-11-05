@@ -56,49 +56,6 @@
       </div>
     </div>
 
-    {{if $currentUser.Admin}}
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">System admin</div>
-      <div class="card-body">
-        <div class="alert alert-warning">
-          <span class="oi oi-warning"></span>
-          System admin actions apply across realms.
-        </div>
-
-        <div class="card-header">Member of realms</div>
-        <ul class="list-group list-group-flush">
-          {{range $realm := $user.Realms}}
-          <li class="list-group-item">
-            {{$realm.Name}}
-
-            {{range $admin := $user.AdminRealms}}
-            {{if eq $admin.ID $realm.ID}}
-            <span class="badge badge-primary">Admin</span>
-            {{end}}
-            {{end}}
-
-            <a href="/users/{{.ID}}" class="d-block text-danger float-right" data-method="DELETE"
-              data-confirm="Are you sure you want to remove {{$user.Name}} from {{.Name}}?">
-              <span class="oi oi-account-logout" aria-hidden="true"></span>
-              Remove from realm
-            </a>
-          </li>
-          {{end}}
-        </ul>
-
-
-        <a href="/users/{{$user.ID}}/disable-user" data-method="POST" class="btn btn-danger btn-block"
-        data-confirm="Are you sure you want to disable all access for {{$user.Email}}?">
-        Disable user
-        </a>
-        <small class="form-text text-muted">
-          Disabling the user account will prevent the user from logging in.
-          This may be used to stop an abusive user from accessing the system entirely.
-        </small>
-      </div>
-    </div>
-    {{end}}
-
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
