@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
 )
 
@@ -230,21 +231,25 @@ func (db *Database) DeleteUser(u *User) error {
 
 // ListUsers returns a list of all users sorted by name.
 // Warning: This list may be large. Use Realm.ListUsers() to get users scoped to a realm.
-func (db *Database) ListUsers() ([]*User, error) {
+func (db *Database) ListUsers(p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
 	var users []*User
-	if err := db.db.
-		Model(&User{}).
+	query := db.db.Model(&User{}).
 		Where("admin IS FALSE").
-		Order("LOWER(name) ASC").
-		Find(&users).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return users, nil
-		}
-		return nil, err
+		Order("LOWER(name) ASC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
 
-	return users, nil
+	paginator, err := Paginate(query, &users, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return users, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return users, paginator, nil
 }
 
 // ListSystemAdmins returns a list of users who are system admins sorted by

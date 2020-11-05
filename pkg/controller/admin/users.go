@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/gorilla/mux"
 )
 
@@ -27,7 +28,13 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		users, err := c.db.ListUsers()
+		pageParams, err := pagination.FromRequest(r)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		users, paginator, err := c.db.ListUsers(pageParams)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -35,6 +42,7 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["users"] = users
+		m["paginator"] = paginator
 		c.h.RenderHTML(w, "admin/users/index", m)
 	})
 }
