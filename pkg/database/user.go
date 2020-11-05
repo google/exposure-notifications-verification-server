@@ -229,6 +229,7 @@ func (db *Database) DeleteUser(u *User) error {
 }
 
 // ListUsers returns a list of all users sorted by name.
+// Warning: This list may be large. Use Realm.ListUsers() to get users scoped to a realm.
 func (db *Database) ListUsers() ([]*User, error) {
 	var users []*User
 	if err := db.db.
