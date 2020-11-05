@@ -22,7 +22,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// HandleUsersIndex renders the list of all non-system-admin usders.
+// HandleUsersIndex renders the list of all non-system-admin users.
 func (c *Controller) HandleUsersIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
