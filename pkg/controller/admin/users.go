@@ -180,6 +180,42 @@ func (c *Controller) HandleUsersDelete() http.Handler {
 	})
 }
 
+func (c *Controller) HandleDisableUser() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		// Pull the user from the id.
+		user, err := c.db.FindUser(vars["id"])
+		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		// Disable the user.
+		if err := c.authProvider.DisableUser(ctx, user.Email); err != nil {
+			flash.Error("Failed to disable user: %v", err)
+			controller.Back(w, r, c.h)
+			return
+		}
+
+		flash.Alert("Successfully disabled user to %v", user.Email)
+		controller.Back(w, r, c.h)
+	})
+}
+
 // inviteComposer returns an email composer function that invites a user using
 // the system email config.
 func (c *Controller) inviteComposer(ctx context.Context, email string) (auth.InviteUserEmailFunc, error) {

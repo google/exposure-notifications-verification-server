@@ -283,13 +283,6 @@ func Server(
 		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
 		userSub.Handle("/{id}", userController.HandleDelete()).Methods("DELETE")
 		userSub.Handle("/{id}/reset-password", userController.HandleResetPassword()).Methods("POST")
-
-		userAdminSub := r.PathPrefix("/users").Subrouter()
-		userAdminSub.Use(requireAuth)
-		userAdminSub.Use(loadCurrentRealm)
-		userAdminSub.Use(requireSystemAdmin)
-		userAdminSub.Use(rateLimit)
-		userAdminSub.Handle("/{id}/disable-user", userController.HandleDisableUser()).Methods("POST")
 	}
 
 	// realms
@@ -360,6 +353,7 @@ func Server(
 		adminSub.Handle("/users", adminController.HandleUsersCreate()).Methods("POST")
 		adminSub.Handle("/users/new", adminController.HandleUsersCreate()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUsersDelete()).Methods("DELETE")
+		adminSub.Handle("/users/{id:[0-9]+}/disable-user", adminController.HandleDisableUser()).Methods("POST")
 
 		adminSub.Handle("/mobileapps", adminController.HandleMobileAppsShow()).Methods("GET")
 		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
