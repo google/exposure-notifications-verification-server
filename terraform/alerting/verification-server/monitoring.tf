@@ -33,61 +33,6 @@ resource "google_monitoring_dashboard" "e2e" {
   ]
 }
 
-resource "google_monitoring_alert_policy" "rate_limited_count" {
-  project      = var.monitoring-host-project
-  display_name = "Elevated Rate Limited Count"
-  combiner     = "OR"
-  conditions {
-    display_name = "Rate Limited count by service_name"
-    condition_threshold {
-      duration        = "300s"
-      threshold_value = 1
-      comparison      = "COMPARISON_GT"
-      filter          = <<-EOT
-      metric.type="custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count"
-      resource.type="generic_task"
-      metric.label.result="RATE_LIMITED"
-EOT
-
-      aggregations {
-        alignment_period     = "60s"
-        cross_series_reducer = "REDUCE_SUM"
-        group_by_fields = [
-          "resource.label.service_name",
-        ]
-        per_series_aligner = "ALIGN_RATE"
-      }
-
-      trigger {
-        count = 1
-      }
-    }
-  }
-
-  documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-[$${resource.label.host}](https://$${resource.label.host}) request
-throttled by ratelimit middleware. This could indicate a bad behaving
-client app, or a potential DoS attack.
-
-View the metric here
-
-https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.monitoring-host-project}
-EOT
-    mime_type = "text/markdown"
-  }
-
-  notification_channels = [
-    google_monitoring_notification_channel.email.id
-  ]
-  depends_on = [
-    null_resource.manual-step-to-enable-workspace,
-    google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
-  ]
-}
-
 resource "google_logging_metric" "requests_by_host" {
   name    = "requests_by_host"
   project = var.verification-server-project
