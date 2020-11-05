@@ -191,7 +191,7 @@ func (db *Database) FindUser(id interface{}) (*User, error) {
 func (db *Database) FindUserByEmail(email string) (*User, error) {
 	var user User
 	if err := db.db.
-		Where("email = ?", email).
+		Where("email = ?", project.TrimSpace(email)).
 		First(&user).
 		Error; err != nil {
 		return nil, err
