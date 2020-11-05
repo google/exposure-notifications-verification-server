@@ -103,9 +103,11 @@ aria-expanded="false" aria-label="Toggle navigation">
       {{end}}
 
       {{if .currentUser.SystemAdmin}}
+      {{if not (.currentPath.IsDir "/admin")}}
       <h6 class="dropdown-header">System admin</h6>
       <a class="dropdown-item" href="/admin/realms">Launch</a>
       <div class="dropdown-divider"></div>
+      {{end}}
       {{end}}
 
       <h6 class="dropdown-header">Actions</h6>
