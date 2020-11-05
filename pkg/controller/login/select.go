@@ -47,7 +47,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 		case 0:
 			// If the user is a member of zero realms, it's possible they are an
 			// admin. If so, redirect them to the admin page.
-			if currentUser.Admin {
+			if currentUser.SystemAdmin {
 				http.Redirect(w, r, "/admin", http.StatusSeeOther)
 				return
 			}

@@ -133,9 +133,9 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, authProvider auth.Pro
 	}
 }
 
-// RequireAdmin requires the current user is a global administrator. It must
+// RequireSystemAdmin requires the current user is a global administrator. It must
 // come after RequireAuth so that a user is set on the context.
-func RequireAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
+func RequireSystemAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireAdminHandler")
 
 	return func(next http.Handler) http.Handler {
@@ -148,7 +148,7 @@ func RequireAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
-			if !currentUser.Admin {
+			if !currentUser.SystemAdmin {
 				logger.Debugw("user is not an admin")
 				controller.Unauthorized(w, r, h)
 				return

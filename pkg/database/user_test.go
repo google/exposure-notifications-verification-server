@@ -26,9 +26,9 @@ func TestUserLifecycle(t *testing.T) {
 
 	email := "dr@example.com"
 	user := User{
-		Email: email,
-		Name:  "Dr Example",
-		Admin: false,
+		Email:       email,
+		Name:        "Dr Example",
+		SystemAdmin: false,
 	}
 
 	if err := db.SaveUser(&user, System); err != nil {
@@ -62,13 +62,13 @@ func TestUserLifecycle(t *testing.T) {
 		if got, want := got.Name, user.Name; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
-		if got, want := got.Admin, user.Admin; got != want {
+		if got, want := got.SystemAdmin, user.SystemAdmin; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 	}
 
 	// Update an attribute
-	user.Admin = true
+	user.SystemAdmin = true
 	if err := db.SaveUser(&user, System); err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestUserLifecycle(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if got, want := got.Admin, true; got != want {
+		if got, want := got.SystemAdmin, true; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 
