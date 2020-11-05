@@ -223,6 +223,29 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 	return stats, nil
 }
 
+// DeleteUser deletes the user entry.
+func (db *Database) DeleteUser(u *User) error {
+	return db.db.Delete(u).Error
+}
+
+// ListUsers returns a list of all users sorted by name.
+func (db *Database) ListUsers() ([]*User, error) {
+	var users []*User
+	if err := db.db.
+		Model(&User{}).
+		Where("admin IS FALSE").
+		Order("LOWER(name) ASC").
+		Find(&users).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return users, nil
+		}
+		return nil, err
+	}
+
+	return users, nil
+}
+
 // ListSystemAdmins returns a list of users who are system admins sorted by
 // name.
 func (db *Database) ListSystemAdmins() ([]*User, error) {
