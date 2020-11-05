@@ -1,7 +1,7 @@
-{{define "admin/users/index"}}
+{{define "admin/superusers/index"}}
 
 {{$currentUser := .currentUser}}
-{{$users := .users}}
+{{$admins := .admins}}
 
 <!doctype html>
 <html lang="en">
@@ -16,21 +16,14 @@
     {{template "flash" .}}
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Users</div>
+      <div class="card-header">System admins</div>
       <div class="card-body">
-        <form method="GET" action="/admin/users" id="search-form">
-          <div class="input-group">
-            <span class="input-group-prepend">
-              <div class="input-group-text bg-transparent">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-              </div>
-            </span>
-            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
-              autocomplete="off" class="form-control" />
-          </div>
-        </form>
-      </div>
-      <div class="card-body">
+        <div class="clearfix mb-3">
+          <a class="btn btn-outline-secondary btn-sm float-right" href="/admin/superusers/new">
+            <span class="oi oi-plus" aria-hidden="true"></span>
+            New system admin
+          </a>
+        </div>
 
         <div class="table-responsive">
           <table class="table table-bordered table-striped mb-0">
@@ -42,19 +35,19 @@
               </tr>
             </thead>
             <tbody>
-            {{range $users}}
+            {{range $admins}}
               <tr>
                 <td>{{.Name}}</td>
                 <td>{{.Email}}</td>
                 <td class="text-center">
                   {{- /* cannot delete yourself */ -}}
                   {{if not (eq .ID $currentUser.ID)}}
-                  <a href="/admin/users/{{.ID}}"
+                  <a href="/admin/superusers/{{.ID}}"
                     class="d-block text-danger"
                     data-method="DELETE"
-                    data-confirm="Are you sure you want to delete this user? This will prevent access to all realms system-wide."
+                    data-confirm="Are you sure you want to remove this system admin?"
                     data-toggle="tooltip"
-                    title="Delete this user">
+                    title="Remove this system admin">
                     <span class="oi oi-trash" aria-hidden="true"></span>
                   </a>
                   {{end}}
@@ -66,8 +59,6 @@
         </div>
       </div>
     </div>
-
-  {{template "shared/pagination" .}}
   </main>
 </body>
 </html>
