@@ -39,9 +39,10 @@ type User struct {
 	gorm.Model
 	Errorable
 
-	Email       string   `gorm:"type:varchar(250);unique_index"`
-	Name        string   `gorm:"type:varchar(100)"`
-	Admin       bool     `gorm:"default:false"`
+	Email       string `gorm:"type:varchar(250);unique_index"`
+	Name        string `gorm:"type:varchar(100)"`
+	SystemAdmin bool   `gorm:"column:system_admin; default:false;"`
+
 	Realms      []*Realm `gorm:"many2many:user_realms"`
 	AdminRealms []*Realm `gorm:"many2many:admin_realms"`
 
@@ -347,9 +348,9 @@ func (db *Database) SaveUser(u *User, actor Auditable) error {
 			audit := BuildAuditEntry(actor, "created user", u, 0)
 			audits = append(audits, audit)
 		} else {
-			if existing.Admin != u.Admin {
+			if existing.SystemAdmin != u.SystemAdmin {
 				audit := BuildAuditEntry(actor, "updated user system admin", u, 0)
-				audit.Diff = boolDiff(existing.Admin, u.Admin)
+				audit.Diff = boolDiff(existing.SystemAdmin, u.SystemAdmin)
 				audits = append(audits, audit)
 			}
 

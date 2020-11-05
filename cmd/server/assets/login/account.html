@@ -32,7 +32,7 @@
           {{$user.Email}}
         </div>
 
-        {{if $user.Admin}}
+        {{if $user.SystemAdmin}}
         <h6 class="card-title  mt-3">System admin</h6>
         <div class="card-text text-success">Enabled</div>
         {{end}}
@@ -72,7 +72,7 @@
             {{end}}
 
             {{- /* system admins can remove themselves from realms */ -}}
-            {{if $user.Admin}}
+            {{if $user.SystemAdmin}}
             <a href="/users/{{.ID}}" class="d-block text-danger float-right" data-method="DELETE"
               data-confirm="Are you sure you want to leave {{.Name}}?">
               <span class="oi oi-account-logout" aria-hidden="true"></span>

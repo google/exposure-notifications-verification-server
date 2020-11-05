@@ -247,7 +247,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					logger.Debugw("adding user to default realm", "user", u.ID)
 
 					u.AddRealm(defaultRealm)
-					if u.Admin {
+					if u.SystemAdmin {
 						u.AddRealmAdmin(defaultRealm)
 					}
 
@@ -1067,9 +1067,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 
 				user = User{
-					Name:  "System admin",
-					Email: "super@example.com",
-					Admin: true,
+					Name:        "System admin",
+					Email:       "super@example.com",
+					SystemAdmin: true,
 				}
 
 				if err := tx.Save(&user).Error; err != nil {
@@ -1599,6 +1599,46 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00065-RenameUserAdminToSystemAdmin",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`
+					DO $$
+					BEGIN
+						IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'admin')
+						THEN
+							ALTER TABLE users RENAME COLUMN admin TO system_admin;
+						END IF;
+					END $$;
+					`,
+
+					`CREATE INDEX idx_users_system_admin ON users(system_admin)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE users RENAME COLUMN system_admin TO admin`,
+					`DROP INDEX IF EXISTS idx_users_system_admin`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 
@@ -1627,7 +1667,7 @@ func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool)
 
 	if err != nil {
 		logger.Errorw("failed to migrate", "error", err)
-		return nil
+		return err
 	}
 	logger.Debugw("migrations complete")
 	return nil

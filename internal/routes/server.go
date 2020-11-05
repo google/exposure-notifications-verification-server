@@ -111,7 +111,7 @@ func Server(
 	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
 	loadCurrentRealm := middleware.LoadCurrentRealm(ctx, cacher, db, h)
 	requireRealm := middleware.RequireRealm(ctx, h)
-	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
+	requireSystemAdmin := middleware.RequireSystemAdmin(ctx, h)
 	requireMFA := middleware.RequireMFA(ctx, authProvider, h)
 	processFirewall := middleware.ProcessFirewall(ctx, h, "server")
 	rateLimit := httplimiter.Handle

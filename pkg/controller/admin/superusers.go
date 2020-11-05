@@ -100,7 +100,7 @@ func (c *Controller) HandleSuperUsersCreate() http.Handler {
 			}
 		}
 
-		user.Admin = true
+		user.SystemAdmin = true
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to create user: %v", err)
 			c.renderNewUser(ctx, w, user)
@@ -165,7 +165,7 @@ func (c *Controller) HandleSuperUsersDelete() http.Handler {
 			return
 		}
 
-		user.Admin = false
+		user.SystemAdmin = false
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to remove system admin: %v", err)
 			controller.Back(w, r, c.h)

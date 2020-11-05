@@ -59,10 +59,10 @@ func TestPerUserRealmStats(t *testing.T) {
 	users := []*User{}
 	for userIdx, name := range []string{"Rocky", "Bullwinkle", "Boris", "Natasha"} {
 		user := &User{
-			Realms: []*Realm{realm},
-			Name:   name,
-			Email:  name + "@gmail.com",
-			Admin:  false,
+			Realms:      []*Realm{realm},
+			Name:        name,
+			Email:       name + "@gmail.com",
+			SystemAdmin: false,
 		}
 
 		if err := db.SaveUser(user, System); err != nil {
