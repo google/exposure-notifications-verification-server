@@ -44,7 +44,14 @@
             <tbody>
             {{range $users}}
               <tr>
-                <td>{{.Name}}</td>
+                <td>
+                  {{.Name}}
+                  {{if .Admin}}
+                  <span class="ml-1 badge badge-pill badge-primary">System admin</span>
+                  {{else if .IsRealmAdmin}}
+                  <span class="ml-1 badge badge-pill badge-secondary">Realm admin</span>
+                  {{end}}
+                </td>
                 <td>{{.Email}}</td>
                 <td class="text-center">
                   {{- /* cannot delete yourself */ -}}
