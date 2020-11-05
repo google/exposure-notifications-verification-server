@@ -23,6 +23,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	userType    = "usertype"
+	systemAdmin = "sysadmin"
+)
+
 // HandleUsersIndex renders the list of all non-system-admin users.
 func (c *Controller) HandleUsersIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,8 +39,9 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 			return
 		}
 
+		typeFilter := r.FormValue(userType)
 		q := r.FormValue(QueryKeySearch)
-		users, paginator, err := c.db.ListUsers(pageParams, q)
+		users, paginator, err := c.db.ListUsers(pageParams, q, typeFilter == systemAdmin)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -44,6 +50,7 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		m["users"] = users
 		m["query"] = q
+		m[userType] = typeFilter
 		m["paginator"] = paginator
 		c.h.RenderHTML(w, "admin/users/index", m)
 	})

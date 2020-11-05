@@ -28,9 +28,19 @@
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
               autocomplete="off" class="form-control" />
           </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="usertype" id="all" value="" {{if eq .usertype ""}}checked{{end}}>
+            <label class="form-check-label" for="all">All users</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="usertype" id="sysadmin" value="sysadmin" {{if eq .usertype "sysadmin"}}checked{{end}}>
+            <label class="form-check-label" for="sysadmin">System admins</label>
+          </div>
         </form>
       </div>
       <div class="card-body">
+
+      {{.usertype}}
 
         <div class="table-responsive">
           <table class="table table-bordered table-striped mb-0">
@@ -69,6 +79,22 @@
 
   {{template "shared/pagination" .}}
   </main>
+
+  <script type="text/javascript">
+    $(function() {
+      let $sysAdmin = $('#sysadmin');
+      let $all= $('#all');
+      let $search = $('#search-form');
+
+      $sysAdmin.on('change', function() {
+        $search.submit();
+      });
+
+      $all.on('change', function() {
+        $search.submit();
+      });
+    });
+  </script>
 </body>
 </html>
 {{end}}
