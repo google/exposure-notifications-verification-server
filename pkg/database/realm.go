@@ -804,6 +804,7 @@ func (r *Realm) SearchUsers(db *Database, q string, p *pagination.PageParams) ([
 		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
 		Order("LOWER(users.name) ASC")
 
+	q = project.TrimSpace(q)
 	if q != "" {
 		q = `%` + q + `%`
 		query = query.Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q)

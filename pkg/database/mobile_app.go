@@ -151,6 +151,7 @@ func (db *Database) SearchActiveAppsWithRealm(p *pagination.PageParams, q string
 		Select("mobile_apps.*, realms.*").
 		Joins("left join realms on realms.id = mobile_apps.realm_id")
 
+	q = project.TrimSpace(q)
 	if q != "" {
 		q = `%` + q + `%`
 		query = query.Where("(mobile_apps.name ILIKE ? OR realms.name ILIKE ?)", q, q)
