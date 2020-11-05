@@ -34,7 +34,8 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 			return
 		}
 
-		users, paginator, err := c.db.ListUsers(pageParams)
+		q := r.FormValue(QueryKeySearch)
+		users, paginator, err := c.db.ListUsers(pageParams, q)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -42,6 +43,7 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["users"] = users
+		m["query"] = q
 		m["paginator"] = paginator
 		c.h.RenderHTML(w, "admin/users/index", m)
 	})

@@ -231,11 +231,16 @@ func (db *Database) DeleteUser(u *User) error {
 
 // ListUsers returns a list of all users sorted by name.
 // Warning: This list may be large. Use Realm.ListUsers() to get users scoped to a realm.
-func (db *Database) ListUsers(p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
+func (db *Database) ListUsers(p *pagination.PageParams, q string) ([]*User, *pagination.Paginator, error) {
 	var users []*User
 	query := db.db.Model(&User{}).
 		Where("admin IS FALSE").
 		Order("LOWER(name) ASC")
+
+	if q != "" {
+		q = `%` + q + `%`
+		query = query.Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q)
+	}
 
 	if p == nil {
 		p = new(pagination.PageParams)
