@@ -25,9 +25,13 @@ export GOMAXPROCS=7
 
 
 # Authenticate and pull private Docker repos.
-if [ -n "${CI}" ]; then
+if [ -n "${CI:-}" ]; then
   gcloud --quiet auth configure-docker us-docker.pkg.dev
+fi
+if [ -n "${CI_POSTGRES_IMAGE}:-" ]; then
   docker pull --quiet us-docker.pkg.dev/apollo-verification-us/mirrors/postgres:12-alpine
+fi
+if [ -n "${CI_REDIS_IMAGE}:-" ]; then
   docker pull --quiet us-docker.pkg.dev/apollo-verification-us/mirrors/redis:6-alpine
 fi
 
