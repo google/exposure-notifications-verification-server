@@ -1,4 +1,4 @@
-{{define "admin/superusers/new"}}
+{{define "admin/systemadmin/new"}}
 
 {{$user := .user}}
 
@@ -23,7 +23,7 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">System admin details</div>
       <div class="card-body">
-        <form method="POST" action="/admin/superusers">
+        <form method="POST" action="/admin/users/systemadmin">
           {{ .csrfField }}
 
           <div class="form-label-group">
@@ -49,7 +49,7 @@
           </div>
 
           <button type="submit" class="btn btn-primary btn-block">
-            Create sysadmin
+            Create system admin
           </button>
         </form>
       </div>

@@ -39,6 +39,12 @@
         </form>
       </div>
       <div class="card-body">
+        <div class="clearfix mb-3">
+          <a class="btn btn-outline-secondary btn-sm float-right" href="/admin/users/systemadmin/new">
+            <span class="oi oi-plus" aria-hidden="true"></span>
+            New system admin
+          </a>
+        </div>
         <div class="table-responsive">
           <table class="table table-bordered table-striped mb-0">
             <thead>
@@ -64,6 +70,16 @@
                 <td class="text-center">
                   {{- /* cannot delete yourself */ -}}
                   {{if not (eq .ID $currentUser.ID)}}
+                  {{if .SystemAdmin}}
+                  <a href="/admin/users/systemadmin/{{.ID}}"
+                    class="d-block text-danger"
+                    data-method="DELETE"
+                    data-confirm="Are you sure you want to remove system admin privileges?"
+                    data-toggle="tooltip"
+                    title="Remove system admin privileges">
+                    <span class="oi oi-account-logout" aria-hidden="true"></span>
+                  </a>
+                  {{else}}
                   <a href="/admin/users/{{.ID}}"
                     class="d-block text-danger"
                     data-method="DELETE"
@@ -72,6 +88,7 @@
                     title="Delete this user">
                     <span class="oi oi-trash" aria-hidden="true"></span>
                   </a>
+                  {{end}}
                   {{end}}
                 </td>
               </tr>
