@@ -52,7 +52,7 @@
             {{range $users}}
               <tr>
                 <td>
-                  {{.Name}}
+                  <a href="/admin/users/{{.ID}}">{{.Name}}</a>
                   {{if .SystemAdmin}}
                   <span class="ml-1 badge badge-pill badge-primary">System admin</span>
                   {{end}}

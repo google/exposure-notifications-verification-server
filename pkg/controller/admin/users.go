@@ -56,6 +56,30 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 	})
 }
 
+// HandleUserShow renders details about a user.
+func (c *Controller) HandleUserShow() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		// Pull the user from the id.
+		user, err := c.db.FindUser(vars["id"])
+		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		m := controller.TemplateMapFromContext(ctx)
+		m["user"] = user
+		c.h.RenderHTML(w, "admin/users/show", m)
+	})
+}
+
 // HandleUserDelete deletes a user from the system.
 func (c *Controller) HandleUserDelete() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

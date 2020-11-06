@@ -355,6 +355,7 @@ func Server(
 		adminSub.Handle("/superusers/{id:[0-9]+}", adminController.HandleSuperUsersDelete()).Methods("DELETE")
 
 		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
+		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserShow()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserDelete()).Methods("DELETE")
 
 		adminSub.Handle("/mobileapps", adminController.HandleMobileAppsShow()).Methods("GET")

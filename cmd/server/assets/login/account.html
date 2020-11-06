@@ -23,18 +23,18 @@
       <div class="card-header">Details</div>
       <div class="card-body">
         <h6 class="card-title">Name</h6>
-        <div class="card-text mb-3">
+        <div class="card-text mb-3 mt-n2">
           {{$user.Name}}
         </div>
 
         <h6 class="card-title">Email</h6>
-        <div class="card-text">
+        <div class="card-text mt-n2">
           {{$user.Email}}
         </div>
 
         {{if $user.SystemAdmin}}
         <h6 class="card-title  mt-3">System admin</h6>
-        <div class="card-text text-success">Enabled</div>
+        <div class="card-text text-success mt-n2">Enabled</div>
         {{end}}
       </div>
     </div>

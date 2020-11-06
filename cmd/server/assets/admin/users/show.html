@@ -1,0 +1,69 @@
+{{define "admin/users/show"}}
+{{$user := .user}}
+{{$stats := .stats}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body id="users-show" class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>{{$user.Name}}</h1>
+    <p>
+      Here is information about the user.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <h6 class="card-title">Name</h6>
+        <div class="mb-3 mt-n2">
+          {{$user.Name}}
+        </div>
+
+        <h6 class="card-title">Email</h6>
+        <div class="mb-3 mt-n2">
+          {{$user.Email}}
+        </div>
+
+        <h6 class="card-title">Password</h6>
+        <div class="card-text mb-3 mt-n2">Password was last changed <span class="text-info">{{$user.PasswordAgeString}}</span>
+          ago</div>
+
+        {{if $user.SystemAdmin}}
+        <h6 class="card-title">System admin</h6>
+        <div class="card-text text-success mb-3 mt-n2">Enabled</div>
+        {{end}}
+      </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card">
+        <div class="card-header">Member of realms</div>
+        <ul class="list-group list-group-flush">
+          {{range $realm := $user.Realms}}
+          <li class="list-group-item">
+            {{$realm.Name}}
+
+            {{range $admin := $user.AdminRealms}}
+            {{if eq $admin.ID $realm.ID}}
+            <span class="badge badge-primary">Admin</span>
+            {{end}}
+            {{end}}
+          </li>
+          {{end}}
+        </ul>
+      </div>
+    </div>
+
+    <a class="card-link" href="/admin/users">&larr; All users</a>
+  </main>
+</body>
+</html>
+{{end}}
