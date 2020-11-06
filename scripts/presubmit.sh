@@ -29,10 +29,10 @@ if [ -n "${CI:-}" ]; then
   gcloud --quiet auth configure-docker us-docker.pkg.dev
 fi
 if [ -n "${CI_POSTGRES_IMAGE:-}" ]; then
-  docker pull --quiet us-docker.pkg.dev/apollo-verification-us/mirrors/postgres:12-alpine
+  docker pull --quiet "${CI_POSTGRES_IMAGE}"
 fi
 if [ -n "${CI_REDIS_IMAGE:-}" ]; then
-  docker pull --quiet us-docker.pkg.dev/apollo-verification-us/mirrors/redis:6-alpine
+  docker pull --quiet "${CI_REDIS_IMAGE}"
 fi
 
 
