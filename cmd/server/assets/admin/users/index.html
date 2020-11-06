@@ -48,7 +48,8 @@
                   {{.Name}}
                   {{if .SystemAdmin}}
                   <span class="ml-1 badge badge-pill badge-primary">System admin</span>
-                  {{else if .IsRealmAdmin}}
+                  {{end}}
+                  {{if .IsRealmAdmin}}
                   <span class="ml-1 badge badge-pill badge-secondary">Realm admin</span>
                   {{end}}
                 </td>
