@@ -155,7 +155,7 @@ func (c *Controller) HandleSystemAdminRevoke() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully remove %v as a system admin", user.Email)
+		flash.Alert("Successfully removed %v as a system admin", user.Email)
 		controller.Back(w, r, c.h)
 	})
 }
