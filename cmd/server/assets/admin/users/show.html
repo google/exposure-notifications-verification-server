@@ -22,26 +22,27 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <h6 class="card-title">Name</h6>
-        <div class="mb-3">
+        <h6 class="mb-2">Name</h6>
+        <div class="form-group">
           {{$user.Name}}
         </div>
 
         <hr>
-        <h6 class="card-title">Email</h6>
-        <div class="mb-3">
+        <h6 class="mb-2">Email</h6>
+        <div class="form-group">
           {{$user.Email}}
         </div>
 
         <hr>
-        <h6 class="card-title">Password</h6>
-        <div class="card-text mb-3">Password was last changed <span class="text-info">{{$user.PasswordAgeString}}</span>
-          ago.</div>
+        <h6 class="mb-2">Password</h6>
+        <div class="form-group">
+          Password was last changed <span class="text-info">{{$user.PasswordAgeString}}</span> ago.
+        </div>
 
         {{if $user.SystemAdmin}}
         <hr>
-        <h6 class="card-title">System admin</h6>
-        <div class="card-text text-success mb-3">Enabled</div>
+        <h6 class="mb-2">System admin</h6>
+        <div class="form-group text-success">Enabled</div>
         {{end}}
       </div>
     </div>
