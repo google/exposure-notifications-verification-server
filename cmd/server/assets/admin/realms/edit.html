@@ -16,7 +16,7 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Edit realm</h1>
+    <h1>Edit {{$realm.Name}}</h1>
     <p>
       Use the form below to edit the realm.
     </p>
@@ -90,7 +90,7 @@
             {{if $realm.AbusePreventionEnabled}}
             <div class="card-text text-success mt-n2">Enabled</div>
             {{else}}
-            <div class="card-text">Disabled</div>
+            <div class="card-text mt-n2">Disabled</div>
             {{end}}
           </div>
 
