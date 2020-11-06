@@ -42,6 +42,9 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 
 		m["realmKeys"] = keys
 
+		maximumKeyVersions := c.db.MaxCertificateSigningKeyVersions()
+		m["maximumKeyVersions"] = maximumKeyVersions
+
 		publicKeys := make(map[string]string)
 		// Go through and load / parse all of the public keys for the realm.
 		for _, k := range keys {

@@ -15,10 +15,14 @@
 package database
 
 import (
+	"context"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 func TestSMS(t *testing.T) {
@@ -163,4 +167,55 @@ func TestRealm_FindMobileApp(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestRealm_CreateSigningKeyVersion(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db := NewTestDatabase(t)
+
+	db.config.CertificateSigningKeyRing = filepath.Join(project.Root(), "local", "test", "realm")
+	db.config.MaxCertificateSigningKeyVersions = 2
+
+	realm1 := NewRealmWithDefaults("realm1")
+	if err := db.SaveRealm(realm1, System); err != nil {
+		t.Fatal(err)
+	}
+
+	// First creates ok
+	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	// Second creates ok
+	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	// Third fails over quota
+	_, err := realm1.CreateSigningKeyVersion(ctx, db)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if got, want := err.Error(), "too many available signing keys"; !strings.Contains(got, want) {
+		t.Errorf("expected %q to contain %q", got, want)
+	}
+
+	// Delete one
+	list, err := realm1.ListSigningKeys(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) < 1 {
+		t.Fatal("empty list")
+	}
+	if err := realm1.DestroySigningKeyVersion(ctx, db, list[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Third should succeed now
+	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+		t.Fatal(err)
+	}
 }

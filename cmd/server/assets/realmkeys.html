@@ -68,10 +68,21 @@
                 <ol>
                   <li>Creating a new key.</li>
                   <li>Communicating that key version and public key to your <em>exposure notifications key server</em> operator.</li>
-                  <li>Activiating the new key in this system.</li>
+                  <li>Activating the new key in this system.</li>
                 </ol>
               </span>
-              <button type="submit" class="btn btn-primary btn-block">Create new signing key version</button>
+
+              {{if ge (len .realmKeys) .maximumKeyVersions }}
+                <div class="alert alert-warning">
+                  <span class="oi oi-warning" aria-hidden="true"></span>
+                  There is a limit of {{.maximumKeyVersions}} available key versions.
+                </div>
+                <button class="btn btn-primary btn-block disabled" disabled>
+                  Create new signing key version
+                </button>
+              {{else}}
+                <button type="submit" class="btn btn-primary btn-block">Create new signing key version</button>
+              {{end}}
             </div>
           </div>
         </form>
