@@ -213,10 +213,10 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 			)
 			if err := jsonclient.MakeRequest(ctx, client, config.KeyServer, http.Header{}, &publish, &response); err != nil {
 				result = observability.ResultNotOK()
-				logger.Infow("Error publishing teks", "error", err, "keys", teks)
 				return nil, fmt.Errorf("error publishing teks: %w", err)
 			} else if response.ErrorMessage != "" {
 				result = observability.ResultNotOK()
+				logger.Infow("Error publishing teks", "error", err, "keys", teks)
 				return nil, fmt.Errorf("publish API error: %+v", response)
 			}
 			logger.Infof("Inserted %v exposures", response.InsertedExposures)
