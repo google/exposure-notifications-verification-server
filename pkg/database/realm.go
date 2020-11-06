@@ -796,6 +796,7 @@ func (r *Realm) CountUsers(db *Database) (int, error) {
 func (r *Realm) ListUsers(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
 	var users []*User
 	query := db.db.Model(&User{}).
+		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
 		Scopes(scopes...).
 		Order("LOWER(users.name) ASC")
 
