@@ -25,25 +25,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// HandleSuperUsersIndex renders the list of system admins.
-func (c *Controller) HandleSuperUsersIndex() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		admins, err := c.db.ListSystemAdmins()
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		m := controller.TemplateMapFromContext(ctx)
-		m["admins"] = admins
-		c.h.RenderHTML(w, "admin/superusers/index", m)
-	})
-}
-
-// HandleSuperUsersCreate creates a new system admin.
-func (c *Controller) HandleSuperUsersCreate() http.Handler {
+// HandleSystemAdminCreate creates a new system admin.
+func (c *Controller) HandleSystemAdminCreate() http.Handler {
 	type FormData struct {
 		Email string `form:"email"`
 		Name  string `form:"name"`
@@ -119,18 +102,18 @@ func (c *Controller) HandleSuperUsersCreate() http.Handler {
 		}
 
 		flash.Alert("Successfully created system admin '%v'", user.Name)
-		http.Redirect(w, r, "/admin/superusers", http.StatusSeeOther)
+		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
 	})
 }
 
 func (c *Controller) renderNewUser(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
-	c.h.RenderHTML(w, "admin/superusers/new", m)
+	c.h.RenderHTML(w, "admin/systemadmin/new", m)
 }
 
-// HandleSuperUsersDelete deletes a system admin.
-func (c *Controller) HandleSuperUsersDelete() http.Handler {
+// HandleRevokeAdmin removes admin from a system admin.
+func (c *Controller) HandleSystemAdminRevoke() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -172,7 +155,7 @@ func (c *Controller) HandleSuperUsersDelete() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully removed %v as a system admin", user.Email)
+		flash.Alert("Successfully remove %v as a system admin", user.Email)
 		controller.Back(w, r, c.h)
 	})
 }
