@@ -41,13 +41,15 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.R
 		return nil, fmt.Errorf("failed to create email provider: %w", err)
 	}
 
+	email = bluemonday.UGCPolicy().Sanitize(email)
+
 	// Return a function that does the actual sending.
 	return func(ctx context.Context, inviteLink string) error {
 		var message []byte
 		if realm.EmailInviteTemplate != "" {
 			// Render from the realm template with the plain header.
 			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
-				"ToEmail":   bluemonday.UGCPolicy().Sanitize(email),
+				"ToEmail":   email,
 				"FromEmail": emailer.From(),
 			})
 			if err != nil {
@@ -58,7 +60,7 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.R
 		} else {
 			// Render the message invitation from the default template.
 			message, err = h.RenderEmail("email/invite", map[string]interface{}{
-				"ToEmail":    bluemonday.UGCPolicy().Sanitize(email),
+				"ToEmail":    email,
 				"FromEmail":  emailer.From(),
 				"InviteLink": inviteLink,
 				"RealmName":  realm.Name,
@@ -94,12 +96,14 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 		return nil, fmt.Errorf("failed to create email provider: %w", err)
 	}
 
+	email = bluemonday.UGCPolicy().Sanitize(email)
+
 	return func(ctx context.Context, resetLink string) error {
 		var message []byte
 		if realm.EmailPasswordResetTemplate != "" {
 			// Render from the realm template with the plain header.
 			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
-				"ToEmail":   bluemonday.UGCPolicy().Sanitize(email),
+				"ToEmail":   email,
 				"FromEmail": emailer.From(),
 			})
 			if err != nil {
@@ -110,7 +114,7 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 		} else {
 			// Render the reset email.
 			message, err = h.RenderEmail("email/passwordresetemail", map[string]interface{}{
-				"ToEmail":   bluemonday.UGCPolicy().Sanitize(email),
+				"ToEmail":   email,
 				"FromEmail": emailer.From(),
 				"ResetLink": resetLink,
 				"RealmName": realm.Name,
@@ -146,12 +150,13 @@ func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, 
 		return nil, fmt.Errorf("failed to create email provider: %w", err)
 	}
 
+	email = bluemonday.UGCPolicy().Sanitize(email)
 	return func(ctx context.Context, verifyLink string) error {
 		var message []byte
 		if realm.EmailVerifyTemplate != "" {
 			// Render from the realm template with the plain header.
 			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
-				"ToEmail":   bluemonday.UGCPolicy().Sanitize(email),
+				"ToEmail":   email,
 				"FromEmail": emailer.From(),
 			})
 			if err != nil {
@@ -162,7 +167,7 @@ func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, 
 		} else {
 			// Render the reset email.
 			message, err = h.RenderEmail("email/verifyemail", map[string]interface{}{
-				"ToEmail":    bluemonday.UGCPolicy().Sanitize(email),
+				"ToEmail":    email,
 				"FromEmail":  emailer.From(),
 				"VerifyLink": verifyLink,
 				"RealmName":  realm.Name,

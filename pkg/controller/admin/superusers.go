@@ -197,11 +197,13 @@ func (c *Controller) inviteComposer(ctx context.Context, email string) (auth.Inv
 		return nil, err
 	}
 
+	email = bluemonday.UGCPolicy().Sanitize(email)
+
 	// Return a function that does the actual sending.
 	return func(ctx context.Context, inviteLink string) error {
 		// Render the message invitation.
 		message, err := c.h.RenderEmail("email/invite", map[string]interface{}{
-			"ToEmail":    bluemonday.UGCPolicy().Sanitize(email),
+			"ToEmail":    email,
 			"FromEmail":  emailer.From(),
 			"InviteLink": inviteLink,
 			"RealmName":  "System Admin",
