@@ -24,10 +24,11 @@ echo "🌳 Set up environment variables"
 export GOMAXPROCS=7
 
 
-# Authenticate to private Docker registries
+# Authenticate and pull private Docker repos.
 if [ -n "${CI}" ]; then
   gcloud --quiet auth configure-docker us-docker.pkg.dev
-  docker pull us-docker.pkg.dev/apollo-verification-us/mirrors/postgres:12-alpine
+  docker pull --quiet us-docker.pkg.dev/apollo-verification-us/mirrors/postgres:12-alpine
+  docker pull --quiet us-docker.pkg.dev/apollo-verification-us/mirrors/redis:6-alpine
 fi
 
 
