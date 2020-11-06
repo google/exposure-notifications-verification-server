@@ -16,16 +16,12 @@ package admin
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/gorilla/mux"
-)
-
-const (
-	userType    = "usertype"
-	systemAdmin = "sysadmin"
 )
 
 // HandleUsersIndex renders the list of all non-system-admin users.
@@ -39,9 +35,20 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 			return
 		}
 
-		typeFilter := r.FormValue(userType)
+		var scopes []database.Scope
+		filter := strings.TrimSpace(r.FormValue("filter"))
+		switch filter {
+		case "realmAdmins":
+			scopes = append(scopes, database.OnlyRealmAdmins())
+		case "systemAdmins":
+			scopes = append(scopes, database.OnlySystemAdmins())
+		default:
+		}
+
 		q := r.FormValue(QueryKeySearch)
-		users, paginator, err := c.db.ListUsers(pageParams, q, typeFilter == systemAdmin)
+		scopes = append(scopes, database.WithUserSearch(q))
+
+		users, paginator, err := c.db.ListUsers(pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -50,7 +57,7 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		m["users"] = users
 		m["query"] = q
-		m[userType] = typeFilter
+		m["filter"] = filter
 		m["paginator"] = paginator
 		c.h.RenderHTML(w, "admin/users/index", m)
 	})

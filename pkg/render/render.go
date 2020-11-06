@@ -143,6 +143,13 @@ func safeHTML(s string) htmltemplate.HTML {
 	return htmltemplate.HTML(s)
 }
 
+func selectedIf(v bool) htmltemplate.HTML {
+	if v {
+		return htmltemplate.HTML("selected")
+	}
+	return ""
+}
+
 func templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
 		"joinStrings":    strings.Join,
@@ -151,6 +158,7 @@ func templateFuncs() htmltemplate.FuncMap {
 		"toLower":        strings.ToLower,
 		"toUpper":        strings.ToUpper,
 		"safeHTML":       safeHTML,
+		"selectedIf":     selectedIf,
 	}
 }
 
