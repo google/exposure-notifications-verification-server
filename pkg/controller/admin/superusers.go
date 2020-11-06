@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 // HandleSuperUsersIndex renders the list of system admins.
@@ -200,7 +201,7 @@ func (c *Controller) inviteComposer(ctx context.Context, email string) (auth.Inv
 	return func(ctx context.Context, inviteLink string) error {
 		// Render the message invitation.
 		message, err := c.h.RenderEmail("email/invite", map[string]interface{}{
-			"ToEmail":    email,
+			"ToEmail":    bluemonday.UGCPolicy().Sanitize(email),
 			"FromEmail":  emailer.From(),
 			"InviteLink": inviteLink,
 			"RealmName":  "System Admin",

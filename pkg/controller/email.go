@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 // SendInviteEmailFunc returns a function capable of sending a new user invitation.
@@ -46,7 +47,7 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.R
 		if realm.EmailInviteTemplate != "" {
 			// Render from the realm template with the plain header.
 			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
-				"ToEmail":   email,
+				"ToEmail":   bluemonday.UGCPolicy().Sanitize(email),
 				"FromEmail": emailer.From(),
 			})
 			if err != nil {
@@ -57,7 +58,7 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.R
 		} else {
 			// Render the message invitation from the default template.
 			message, err = h.RenderEmail("email/invite", map[string]interface{}{
-				"ToEmail":    email,
+				"ToEmail":    bluemonday.UGCPolicy().Sanitize(email),
 				"FromEmail":  emailer.From(),
 				"InviteLink": inviteLink,
 				"RealmName":  realm.Name,
@@ -98,7 +99,7 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 		if realm.EmailPasswordResetTemplate != "" {
 			// Render from the realm template with the plain header.
 			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
-				"ToEmail":   email,
+				"ToEmail":   bluemonday.UGCPolicy().Sanitize(email),
 				"FromEmail": emailer.From(),
 			})
 			if err != nil {
@@ -109,7 +110,7 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 		} else {
 			// Render the reset email.
 			message, err = h.RenderEmail("email/passwordresetemail", map[string]interface{}{
-				"ToEmail":   email,
+				"ToEmail":   bluemonday.UGCPolicy().Sanitize(email),
 				"FromEmail": emailer.From(),
 				"ResetLink": resetLink,
 				"RealmName": realm.Name,
@@ -150,7 +151,7 @@ func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, 
 		if realm.EmailVerifyTemplate != "" {
 			// Render from the realm template with the plain header.
 			header, err := h.RenderEmail("email/plainheader", map[string]interface{}{
-				"ToEmail":   email,
+				"ToEmail":   bluemonday.UGCPolicy().Sanitize(email),
 				"FromEmail": emailer.From(),
 			})
 			if err != nil {
@@ -161,7 +162,7 @@ func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, 
 		} else {
 			// Render the reset email.
 			message, err = h.RenderEmail("email/verifyemail", map[string]interface{}{
-				"ToEmail":    email,
+				"ToEmail":    bluemonday.UGCPolicy().Sanitize(email),
 				"FromEmail":  emailer.From(),
 				"VerifyLink": verifyLink,
 				"RealmName":  realm.Name,
