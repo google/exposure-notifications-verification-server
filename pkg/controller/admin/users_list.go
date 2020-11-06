@@ -73,7 +73,7 @@ func (c *Controller) HandleUserShow() http.Handler {
 		user, err := c.db.FindUser(vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
-				controller.Unauthorized(w, r, c.h)
+				controller.NotFound(w, r, c.h)
 				return
 			}
 
