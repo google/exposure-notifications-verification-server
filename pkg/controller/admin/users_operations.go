@@ -109,7 +109,7 @@ func (c *Controller) HandleSystemAdminCreate() http.Handler {
 func (c *Controller) renderNewUser(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = user
-	c.h.RenderHTML(w, "admin/systemadmin/new", m)
+	c.h.RenderHTML(w, "admin/users/new", m)
 }
 
 // HandleSystemAdminRevoke removes admin from a system admin.

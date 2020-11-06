@@ -167,23 +167,38 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 			return
 		}
 
+		var quotaLimit, quotaRemaining uint64
+		if realm.AbusePreventionEnabled {
+			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+
+			quotaLimit, quotaRemaining, err = c.limiter.Get(ctx, key)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderEditRealm(ctx, w, realm, smsConfig)
+			c.renderEditRealm(ctx, w, realm, smsConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderEditRealm(ctx, w, realm, smsConfig)
+			c.renderEditRealm(ctx, w, realm, smsConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
 		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to create realm: %v", err)
-			c.renderEditRealm(ctx, w, realm, smsConfig)
+			c.renderEditRealm(ctx, w, realm, smsConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -192,11 +207,14 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 	})
 }
 
-func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter, realm *database.Realm, smsConfig *database.SMSConfig) {
+func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
+	realm *database.Realm, smsConfig *database.SMSConfig, quotaLimit, quotaRemaining uint64) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["realm"] = realm
 	m["systemSMSConfig"] = smsConfig
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
+	m["quotaLimit"] = quotaLimit
+	m["quotaRemaining"] = quotaRemaining
 	c.h.RenderHTML(w, "admin/realms/edit", m)
 }
 
