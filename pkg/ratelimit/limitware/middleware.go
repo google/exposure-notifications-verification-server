@@ -236,7 +236,7 @@ func remoteIP(r *http.Request) string {
 
 // realmIDFromAPIKey extracts the realmID from the provided API key, handling v1
 // and v2 API key formats.
-func realmIDFromAPIKey(db *database.Database, apiKey string) uint {
+func realmIDFromAPIKey(db *database.Database, apiKey string) uint64 {
 	// v2 API keys encode in the realm to limit the db calls
 	_, realmID, err := db.VerifyAPIKeySignature(apiKey)
 	if err == nil {
@@ -246,7 +246,7 @@ func realmIDFromAPIKey(db *database.Database, apiKey string) uint {
 	// v1 API keys are more expensive
 	app, err := db.FindAuthorizedAppByAPIKey(apiKey)
 	if err == nil {
-		return app.RealmID
+		return uint64(app.RealmID)
 	}
 
 	return 0

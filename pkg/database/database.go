@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/bits"
 	"os"
 	"strconv"
 	"strings"
@@ -313,6 +314,11 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 				raw, err := strconv.ParseUint(t, 10, 64)
 				if err != nil {
 					_ = scope.Err(fmt.Errorf("failed to parse realm_id: %w", err))
+					return
+				}
+
+				if raw >= 1<<bits.UintSize-1 {
+					_ = scope.Err(fmt.Errorf("uint overflows %d bits", bits.UintSize))
 					return
 				}
 				realmID = uint(raw)
