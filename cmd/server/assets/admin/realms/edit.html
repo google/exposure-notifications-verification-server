@@ -22,14 +22,19 @@
     </p>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
-      <div class="card-body">
+      <div class="card-header">
         {{if $currentUser.CanAdminRealm $realm.ID}}
-        <div class="mb-4">
-          <a href="/admin/realms/{{$realm.ID}}/realmadmin" class="card-link">Edit as realm admin</a>
-        </div>
+        <a href="/admin/realms/{{$realm.ID}}/realmadmin">
+          <span class="oi oi-wrench" aria-hidden="true"
+          data-toggle="tooltip" title="Edit as realm admin"></span>
+        </a>
+        {{else}}
+        <a class="disabled">
+          <span class="oi oi-wrench" aria-hidden="true"></span>
+        </a>
         {{end}}
-
+        Details</div>
+      <div class="card-body">
         <form method="POST" action="/admin/realms/{{$realm.ID}}">
           {{ .csrfField }}
           <input type="hidden" name="_method" value="PATCH" />
