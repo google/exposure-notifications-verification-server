@@ -104,7 +104,7 @@ func TestDatabase_GenerateVerifyAPIKeySignature(t *testing.T) {
 
 	db := NewTestDatabase(t)
 
-	apiKey, realmID := "abcd1234", uint(15)
+	apiKey, realmID := "abcd1234", uint64(15)
 
 	key := fmt.Sprintf("%s.%d", apiKey, realmID)
 	sig, err := db.GenerateAPIKeySignature(key)
