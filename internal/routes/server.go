@@ -347,6 +347,7 @@ func Server(
 		adminSub.Handle("/realms/{id:[0-9]+}/edit", adminController.HandleRealmsUpdate()).Methods("GET")
 		adminSub.Handle("/realms/{id:[0-9]+}/join", adminController.HandleRealmsJoin()).Methods("PATCH")
 		adminSub.Handle("/realms/{id:[0-9]+}/leave", adminController.HandleRealmsLeave()).Methods("PATCH")
+		adminSub.Handle("/realms/{id:[0-9]+}/realmadmin", adminController.HandleRealmsSelectAndAdmin()).Methods("GET")
 		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
 
 		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
