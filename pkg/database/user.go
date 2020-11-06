@@ -231,20 +231,11 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 
 // ListUsers returns a list of all users sorted by name.
 // Warning: This list may be large. Use Realm.ListUsers() to get users scoped to a realm.
-func (db *Database) ListUsers(p *pagination.PageParams, q string, systemAdminOnly bool) ([]*User, *pagination.Paginator, error) {
+func (db *Database) ListUsers(p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
 	var users []*User
 	query := db.db.Model(&User{}).
+		Scopes(scopes...).
 		Order("LOWER(name) ASC")
-
-	if systemAdminOnly {
-		query = query.Where("system_admin IS TRUE")
-	}
-
-	q = project.TrimSpace(q)
-	if q != "" {
-		q = `%` + q + `%`
-		query = query.Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q)
-	}
 
 	if p == nil {
 		p = new(pagination.PageParams)

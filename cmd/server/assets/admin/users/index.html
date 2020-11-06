@@ -16,107 +16,94 @@
     {{template "flash" .}}
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Users</div>
+      <div class="card-header">
+        <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
+        Users
+        <a href="/admin/users/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New system admin">
+          <span class="oi oi-plus small" aria-hidden="true"></span>
+        </a>
+      </div>
+
       <div class="card-body">
         <form method="GET" action="/admin/users" id="search-form">
           <div class="input-group">
             <span class="input-group-prepend">
-              <div class="input-group-text bg-transparent">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-              </div>
+              <select name="filter" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
+                <option value="" selected>All users</option>
+                <option value="realmAdmins" {{selectedIf (eq .filter "realmAdmins")}}>Realm admins</option>
+                <option value="systemAdmins" {{selectedIf (eq .filter "systemAdmins")}}>System admins</option>
+              </select>
             </span>
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
               autocomplete="off" class="form-control" />
           </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="usertype" id="all" value="" {{if eq .usertype ""}}checked{{end}}>
-            <label class="form-check-label" for="all">All users</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="usertype" id="sysadmin" value="sysadmin" {{if eq .usertype "sysadmin"}}checked{{end}}>
-            <label class="form-check-label" for="sysadmin">System admins</label>
-          </div>
         </form>
       </div>
-      <div class="card-body">
-        <div class="clearfix mb-3">
-          <a class="btn btn-outline-secondary btn-sm float-right" href="/admin/users/systemadmin/new">
-            <span class="oi oi-plus" aria-hidden="true"></span>
-            New system admin
-          </a>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-bordered table-striped mb-0">
-            <thead>
-              <tr>
-                <th scope="col">Name</th>
-                <th scope="col" width="300">Email</th>
-                <th scope="col" width="40"></th>
-              </tr>
-            </thead>
-            <tbody>
-            {{range $users}}
-              <tr>
-                <td>
-                  <a href="/admin/users/{{.ID}}">{{.Name}}</a>
-                  {{if .SystemAdmin}}
-                  <span class="ml-1 badge badge-pill badge-primary">System admin</span>
-                  {{end}}
-                  {{if .IsRealmAdmin}}
-                  <span class="ml-1 badge badge-pill badge-secondary">Realm admin</span>
-                  {{end}}
-                </td>
-                <td>{{.Email}}</td>
-                <td class="text-center">
-                  {{- /* cannot delete yourself */ -}}
-                  {{if not (eq .ID $currentUser.ID)}}
-                  {{if .SystemAdmin}}
-                  <a href="/admin/users/systemadmin/{{.ID}}"
-                    class="d-block text-danger"
-                    data-method="DELETE"
-                    data-confirm="Are you sure you want to remove system admin privileges?"
-                    data-toggle="tooltip"
-                    title="Remove system admin privileges">
-                    <span class="oi oi-account-logout" aria-hidden="true"></span>
-                  </a>
-                  {{else}}
-                  <a href="/admin/users/{{.ID}}"
-                    class="d-block text-danger"
-                    data-method="DELETE"
-                    data-confirm="Are you sure you want to delete this user? This will prevent access to all realms system-wide."
-                    data-toggle="tooltip"
-                    title="Delete this user">
-                    <span class="oi oi-trash" aria-hidden="true"></span>
-                  </a>
-                  {{end}}
-                  {{end}}
-                </td>
-              </tr>
-            {{end}}
-            </tbody>
-          </table>
-        </div>
-      </div>
+
+      {{if $users}}
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+          <thead>
+            <tr>
+              <th scope="col" width="40"></th>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col" width="40"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {{range $users}}
+            <tr>
+              <td class="text-center">
+                {{if .SystemAdmin}}
+                <span class="oi oi-wrench" aria-hidden="true"
+                  data-toggle="tooltip" title="System admin"></span>
+                {{end}}
+              </td>
+              <td class="text-truncate">
+                <a href="/admin/users/{{.ID}}">{{.Name}}</a>
+                {{if .IsRealmAdmin}}
+                <span class="oi oi-badge ml-2" aria-hidden="true"
+                  data-toggle="tooltip" title="Realm admin"></span>
+                {{end}}
+              </td>
+              <td class="text-truncate">{{.Email}}</td>
+              <td class="text-center">
+                {{- /* cannot delete yourself */ -}}
+                {{if not (eq .ID $currentUser.ID)}}
+                {{if .SystemAdmin}}
+                <a href="/admin/users/{{.ID}}/revoke"
+                  class="d-block text-danger"
+                  data-method="DELETE"
+                  data-confirm="Are you sure you want to remove system admin privileges?"
+                  data-toggle="tooltip"
+                  title="Remove system admin privileges">
+                  <span class="oi oi-account-logout" aria-hidden="true"></span>
+                </a>
+                {{else}}
+                <a href="/admin/users/{{.ID}}"
+                  class="d-block text-danger"
+                  data-method="DELETE"
+                  data-confirm="Are you sure you want to delete this user? This will prevent access to all realms system-wide."
+                  data-toggle="tooltip"
+                  title="Delete this user">
+                  <span class="oi oi-trash" aria-hidden="true"></span>
+                </a>
+                {{end}}
+                {{end}}
+              </td>
+            </tr>
+          {{end}}
+          </tbody>
+        </table>
+      {{else}}
+        <p class="card-body text-center mb-0">
+          <em>There are no users{{if .query}} that match the query{{end}}.</em>
+        </p>
+      {{end}}
     </div>
 
-  {{template "shared/pagination" .}}
+    {{template "shared/pagination" .}}
   </main>
-
-  <script type="text/javascript">
-    $(function() {
-      let $sysAdmin = $('#sysadmin');
-      let $all= $('#all');
-      let $search = $('#search-form');
-
-      $sysAdmin.on('change', function() {
-        $search.submit();
-      });
-
-      $all.on('change', function() {
-        $search.submit();
-      });
-    });
-  </script>
 </body>
 </html>
 {{end}}

@@ -15,48 +15,44 @@
     {{template "flash" .}}
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Realms</div>
-      <div class="card-body">
-        <div class="clearfix mb-3">
-          <a class="btn btn-outline-secondary btn-sm float-right" href="/admin/realms/new">
-            <span class="oi oi-plus" aria-hidden="true"></span>
-            New realm
-          </a>
-        </div>
-
-        {{if $realms}}
-          <div class="table-responsive">
-            <table class="table table-bordered table-striped bg-white">
-              <thead>
-                <tr>
-                  <th scope="col" width="50" class="text-center">ID</th>
-                  <th scope="col">Name</th>
-                  <th scope="col" width="125">Region code</th>
-                  <th scope="col" width="125">Signing key</th>
-                </tr>
-              </thead>
-              <tbody>
-              {{range $realms}}
-                <tr>
-                  <td class="text-center">{{.ID}}</td>
-                  <td>
-                    <a href="/admin/realms/{{.ID}}/edit">{{.Name}}</a>
-                  </td>
-                  <td>{{.RegionCode}}</td>
-                  <td>
-                    {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
-                  </td>
-                </tr>
-              {{end}}
-              </tbody>
-            </table>
-          </div>
-        {{else}}
-          <p class="text-center">
-            <em>There are no realms.</em>
-          </p>
-        {{end}}
+      <div class="card-header">
+        <span class="oi oi-badge mr-2 ml-n1" aria-hidden="true"></span>
+        Realms
+        <a href="/admin/realms/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New realm">
+          <span class="oi oi-plus small" aria-hidden="true"></span>
+        </a>
       </div>
+
+      {{if $realms}}
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only mb-0">
+          <thead>
+            <tr>
+              <th scope="col" width="50" class="text-center">ID</th>
+              <th scope="col">Name</th>
+              <th scope="col" width="100" class="text-center">Region</th>
+              <th scope="col" width="120" class="text-center">Signing key</th>
+            </tr>
+          </thead>
+          <tbody>
+          {{range $realms}}
+            <tr>
+              <td class="text-center">{{.ID}}</td>
+              <td>
+                <a href="/admin/realms/{{.ID}}/edit">{{.Name}}</a>
+              </td>
+              <td class="text-center">{{.RegionCode}}</td>
+              <td class="text-center">
+                {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
+              </td>
+            </tr>
+          {{end}}
+          </tbody>
+        </table>
+      {{else}}
+        <p class="card-body text-center mb-0">
+          <em>There are no users{{if .query}} that match the query{{end}}.</em>
+        </p>
+      {{end}}
     </div>
   </main>
 </body>

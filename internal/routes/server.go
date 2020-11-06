@@ -339,7 +339,7 @@ func Server(
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
-		adminController := admin.New(ctx, cfg, cacher, db, authProvider, h)
+		adminController := admin.New(ctx, cfg, cacher, db, authProvider, limiterStore, h)
 		adminSub.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
@@ -352,9 +352,9 @@ func Server(
 		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserShow()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserDelete()).Methods("DELETE")
-		adminSub.Handle("/users/systemadmin", adminController.HandleSystemAdminCreate()).Methods("POST")
-		adminSub.Handle("/users/systemadmin/new", adminController.HandleSystemAdminCreate()).Methods("GET")
-		adminSub.Handle("/users/systemadmin/{id:[0-9]+}", adminController.HandleSystemAdminRevoke()).Methods("DELETE")
+		adminSub.Handle("/users", adminController.HandleSystemAdminCreate()).Methods("POST")
+		adminSub.Handle("/users/new", adminController.HandleSystemAdminCreate()).Methods("GET")
+		adminSub.Handle("/users/{id:[0-9]+}/revoke", adminController.HandleSystemAdminRevoke()).Methods("DELETE")
 
 		adminSub.Handle("/mobileapps", adminController.HandleMobileAppsShow()).Methods("GET")
 		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
