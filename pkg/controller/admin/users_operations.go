@@ -112,7 +112,7 @@ func (c *Controller) renderNewUser(ctx context.Context, w http.ResponseWriter, u
 	c.h.RenderHTML(w, "admin/systemadmin/new", m)
 }
 
-// HandleRevokeAdmin removes admin from a system admin.
+// HandleSystemAdminRevoke removes admin from a system admin.
 func (c *Controller) HandleSystemAdminRevoke() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
