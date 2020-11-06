@@ -218,7 +218,7 @@ func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
 	c.h.RenderHTML(w, "admin/realms/edit", m)
 }
 
-func (c *Controller) HandleRealmsJoin() http.Handler {
+func (c *Controller) HandleRealmsAdd() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -236,18 +236,24 @@ func (c *Controller) HandleRealmsJoin() http.Handler {
 			return
 		}
 
-		realm, err := c.db.FindRealm(vars["id"])
+		realm, err := c.db.FindRealm(vars["realm_id"])
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		currentUser.Realms = append(currentUser.Realms, realm)
-		currentUser.AdminRealms = append(currentUser.AdminRealms, realm)
+		user, err := c.db.FindUser(vars["user_id"])
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		user.Realms = append(user.Realms, realm)
+		user.AdminRealms = append(user.AdminRealms, realm)
 
 		// Save the user
-		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
-			flash.Error("Failed to join %q: %v", realm.Name, err)
+		if err := c.db.SaveUser(user, currentUser); err != nil {
+			flash.Error("Failed to add %q to %q: %v", user.Name, realm.Name, err)
 			controller.Back(w, r, c.h)
 			return
 		}
@@ -255,12 +261,12 @@ func (c *Controller) HandleRealmsJoin() http.Handler {
 		// Store the current realm on the session.
 		controller.StoreSessionRealm(session, realm)
 
-		flash.Alert("Successfully joined %q", realm.Name)
+		flash.Alert("Successfully added %q to %q", user.Name, realm.Name)
 		controller.Back(w, r, c.h)
 	})
 }
 
-func (c *Controller) HandleRealmsLeave() http.Handler {
+func (c *Controller) HandleRealmsRemove() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -278,17 +284,23 @@ func (c *Controller) HandleRealmsLeave() http.Handler {
 			return
 		}
 
-		realm, err := c.db.FindRealm(vars["id"])
+		realm, err := c.db.FindRealm(vars["realm_id"])
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		currentUser.RemoveRealm(realm)
+		user, err := c.db.FindUser(vars["user_id"])
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		user.RemoveRealm(realm)
 
 		// Save the user
-		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
-			flash.Error("Failed to leave %q: %v", realm.Name, err)
+		if err := c.db.SaveUser(user, currentUser); err != nil {
+			flash.Error("Failed to remove %q from %q: %v", user.Name, realm.Name, err)
 			controller.Back(w, r, c.h)
 			return
 		}
@@ -298,7 +310,7 @@ func (c *Controller) HandleRealmsLeave() http.Handler {
 		if controller.RealmIDFromSession(session) == realm.ID {
 			controller.ClearSessionRealm(session)
 		}
-		flash.Alert("Successfully left %q", realm.Name)
+		flash.Alert("Successfully removed %q from %q", user.Name, realm.Name)
 		controller.Back(w, r, c.h)
 	})
 }

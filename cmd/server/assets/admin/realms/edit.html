@@ -122,7 +122,7 @@
           <p>
             You are currently a member of this realm. Click the button to leave.
           </p>
-          <a href="/admin/realms/{{$realm.ID}}/leave" class="btn btn-block btn-danger"
+          <a href="/admin/realms/{{$realm.ID}}/remove/{{$currentUser.ID}}" class="btn btn-block btn-danger"
             data-method="PATCH"
             data-confirm="Are you sure you want to leave this realm? This event will be logged and audited.">
             Leave realm
@@ -139,7 +139,7 @@
             realm. Only do this after gaining permission from the realm
             administrator.
           </p>
-          <a href="/admin/realms/{{$realm.ID}}/join" class="btn btn-block btn-danger"
+          <a href="/admin/realms/{{$realm.ID}}/add/{{$currentUser.ID}}" class="btn btn-block btn-danger"
             data-method="PATCH"
             data-confirm="Are you sure you want to join this realm? This event will be logged and audited.">
             Join realm
