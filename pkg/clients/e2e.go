@@ -159,7 +159,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 			defer recordLatency(ctx, time.Now(), "hmac")
 			logger.Infof("Calculating HMAC")
 			hmacSecret := make([]byte, 32)
-			if n, err := rand.Read(hmacSecret); n != 32 || err != nil {
+			if _, err := rand.Read(hmacSecret); err != nil {
 				return nil, "", fmt.Errorf("error generating hmac secret")
 			}
 			hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
