@@ -23,7 +23,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
-	"github.com/microcosm-cc/bluemonday"
 )
 
 // HandleSuperUsersIndex renders the list of system admins.
@@ -196,8 +195,6 @@ func (c *Controller) inviteComposer(ctx context.Context, email string) (auth.Inv
 	if err != nil {
 		return nil, err
 	}
-
-	email = bluemonday.UGCPolicy().Sanitize(email)
 
 	// Return a function that does the actual sending.
 	return func(ctx context.Context, inviteLink string) error {

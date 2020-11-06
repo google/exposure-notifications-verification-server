@@ -21,7 +21,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/microcosm-cc/bluemonday"
 )
 
 // SendInviteEmailFunc returns a function capable of sending a new user invitation.
@@ -40,8 +39,6 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.R
 		}
 		return nil, fmt.Errorf("failed to create email provider: %w", err)
 	}
-
-	email = bluemonday.UGCPolicy().Sanitize(email)
 
 	// Return a function that does the actual sending.
 	return func(ctx context.Context, inviteLink string) error {
@@ -96,8 +93,6 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 		return nil, fmt.Errorf("failed to create email provider: %w", err)
 	}
 
-	email = bluemonday.UGCPolicy().Sanitize(email)
-
 	return func(ctx context.Context, resetLink string) error {
 		var message []byte
 		if realm.EmailPasswordResetTemplate != "" {
@@ -150,7 +145,6 @@ func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, 
 		return nil, fmt.Errorf("failed to create email provider: %w", err)
 	}
 
-	email = bluemonday.UGCPolicy().Sanitize(email)
 	return func(ctx context.Context, verifyLink string) error {
 		var message []byte
 		if realm.EmailVerifyTemplate != "" {
