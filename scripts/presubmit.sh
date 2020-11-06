@@ -35,6 +35,8 @@ if [ -n "${CI_REDIS_IMAGE:-}" ]; then
   docker pull --quiet "${CI_REDIS_IMAGE}"
 fi
 
+sleep 600
+
 
 echo "📚 Fetch dependencies"
 OUT="$(go get -t ./... 2>&1)" || {
