@@ -284,3 +284,41 @@ func (c *Controller) HandleRealmsLeave() http.Handler {
 		controller.Back(w, r, c.h)
 	})
 }
+
+func (c *Controller) HandleRealmsSelectAndAdmin() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		realm, err := c.db.FindRealm(vars["id"])
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		if currentUser.CanAdminRealm(realm.ID) {
+			currentRealm := controller.RealmFromContext(ctx)
+			if currentRealm == nil || currentRealm.ID != realm.ID {
+				flash.Alert("Realm %q selected.", realm.Name)
+				controller.StoreSessionRealm(session, realm)
+			}
+			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
+		}
+
+		flash.Error("User is not admin of %q", realm.Name)
+		controller.Back(w, r, c.h)
+	})
+}

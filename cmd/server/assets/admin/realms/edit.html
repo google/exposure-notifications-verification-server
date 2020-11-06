@@ -24,10 +24,16 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <div class="alert alert-warning" class="mb-4">
+        <div class="alert alert-warning mb-4">
           Only a subset of realm fields are editable after creation. Work with
           the realm administrator to update these values.
         </div>
+
+        {{if $currentUser.CanAdminRealm $realm.ID}}
+        <div class="mb-4">
+          <a href="/admin/realms/{{$realm.ID}}/realmadmin" class="card-link">Edit as realm admin</a>
+        </div>
+        {{end}}
 
         <form method="POST" action="/admin/realms/{{$realm.ID}}">
           {{ .csrfField }}
