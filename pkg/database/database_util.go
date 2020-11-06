@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -63,11 +64,14 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 		tb.Fatalf("failed to create Docker pool: %s", err)
 	}
 
+	// Determine the container image to use.
+	repo, tag := postgresRepo(tb)
+
 	// Start the container.
 	dbname, username, password := "en-verification-server", "my-username", "abcd1234"
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "postgres",
-		Tag:        "12-alpine",
+		Repository: repo,
+		Tag:        tag,
 		Env: []string{
 			"LANG=C",
 			"POSTGRES_DB=" + dbname,
@@ -195,4 +199,17 @@ func generateKeys(tb testing.TB, qty, length int) []envconfig.Base64Bytes {
 	}
 
 	return keys
+}
+
+func postgresRepo(tb testing.TB) (string, string) {
+	postgresImageRef := os.Getenv("CI_POSTGRES_IMAGE")
+	if postgresImageRef == "" {
+		postgresImageRef = "postgres:12-alpine"
+	}
+
+	parts := strings.SplitN(postgresImageRef, ":", 2)
+	if len(parts) != 2 {
+		tb.Fatalf("invalid postgres ref %v", postgresImageRef)
+	}
+	return parts[0], parts[1]
 }
