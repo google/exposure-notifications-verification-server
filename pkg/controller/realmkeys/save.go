@@ -24,7 +24,7 @@ func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
 		Issuer         string `form:"certificateIssuer"`
 		Audience       string `form:"certificateAudience"`
-		DuratingString string `form:"certificateDuration"`
+		DurationString string `form:"certificateDuration"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +60,7 @@ func (c *Controller) HandleSave() http.Handler {
 		realm.CertificateIssuer = form.Issuer
 		realm.CertificateAudience = form.Audience
 		// AsString delgates the duration parsing and validation to the model.
-		realm.CertificateDuration.AsString = form.DuratingString
+		realm.CertificateDuration.AsString = form.DurationString
 
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to update realm: %v", err)

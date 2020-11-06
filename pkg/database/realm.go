@@ -1162,6 +1162,24 @@ func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database) (stri
 		return "", fmt.Errorf("missing key name")
 	}
 
+	// Check how many non-deleted signing keys currently exist. There's a limit on
+	// the number of "active" signing keys to help protect realms against
+	// excessive costs.
+	var count int64
+	if err := db.db.
+		Table("signing_keys").
+		Where("realm_id = ?", r.ID).
+		Where("deleted_at IS NULL").
+		Count(&count).
+		Error; err != nil {
+		if !IsNotFound(err) {
+			return "", fmt.Errorf("failed to count existing signing keys: %w", err)
+		}
+	}
+	if max := db.config.MaxCertificateSigningKeyVersions; count >= max {
+		return "", fmt.Errorf("too many available signing keys (maximum: %d)", max)
+	}
+
 	// Create the parent key - this interface does not return an error if the key
 	// already exists, so this is safe to run each time.
 	keyName, err := manager.CreateSigningKey(ctx, parent, name)
