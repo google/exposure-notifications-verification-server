@@ -27,7 +27,7 @@ export GOMAXPROCS=7
 # Authenticate to private Docker registries
 if [ -n "${CI}" ]; then
   TOKEN="$(curl -sf -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token)"
-  echo "${TOKEN}" | docker login -u oauth2accesstoken --password-stdin https://us-docker.pkg.dev
+  echo "${TOKEN}" | docker login -u oauth2accesstoken --password-stdin https://us-docker.pkg.dev/apollo-verification-us/mirrors
 fi
 
 
