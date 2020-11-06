@@ -24,6 +24,18 @@ echo "🌳 Set up environment variables"
 export GOMAXPROCS=7
 
 
+# Authenticate and pull private Docker repos.
+if [ -n "${CI:-}" ]; then
+  gcloud --quiet auth configure-docker us-docker.pkg.dev
+fi
+if [ -n "${CI_POSTGRES_IMAGE:-}" ]; then
+  docker pull --quiet "${CI_POSTGRES_IMAGE}"
+fi
+if [ -n "${CI_REDIS_IMAGE:-}" ]; then
+  docker pull --quiet "${CI_REDIS_IMAGE}"
+fi
+
+
 echo "📚 Fetch dependencies"
 OUT="$(go get -t ./... 2>&1)" || {
   echo "✋ Error fetching dependencies"
