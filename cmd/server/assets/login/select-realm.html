@@ -2,6 +2,7 @@
 
 {{$csrfField := .csrfField}}
 {{$realms := .realms}}
+{{$currentUser := .currentUser}}
 {{$currentRealm := .currentRealm}}
 
 <!doctype html>
@@ -67,6 +68,24 @@
         </div>
       {{end}}
     </div>
+
+    {{if $currentUser.SystemAdmin}}
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header text-bold text-white admin-header">
+        System admin
+      </div>
+      <div class="list-group-item p-0">
+        <a href="/admin" class="w-100 d-flex flex-row justify-content-between align-items-center align-self-center list-group-item-action px-4 py-3">
+          <div>
+            <p class="mb-1">Go to system admin</p>
+          </div>
+          <div>
+            <span class="oi oi-arrow-right" aria-hidden="true"></span>
+          </div>
+        </a>
+      </div>
+    </div>
+    {{end}}
   </main>
 </body>
 </html>
