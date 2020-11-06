@@ -25,13 +25,15 @@
       <div class="card-header">
         {{if $currentUser.CanAdminRealm $realm.ID}}
         <a href="/admin/realms/{{$realm.ID}}/realmadmin">
-          <span class="oi oi-wrench" aria-hidden="true"
+          <span class="oi oi-wrench text-dark" aria-hidden="true"
           data-toggle="tooltip" title="Edit as realm admin"></span>
         </a>
         {{else}}
-        <a class="disabled">
-          <span class="oi oi-wrench" aria-hidden="true"></span>
-        </a>
+        <span data-toggle="tooltip" title="Join realm to configure as realm admin">
+          <a class="disabled">
+            <span class="oi oi-wrench" aria-hidden="true"></span>
+          </a>
+        </span>
         {{end}}
         Details</div>
       <div class="card-body">
