@@ -33,8 +33,9 @@
           {{ .csrfField }}
           <input type="hidden" name="_method" value="PATCH" />
 
+          <h6 class="card-title">Name</h6>
           <div class="form-label-group">
-            <input type="text" class="form-control" value="{{$realm.Name}} " disabled />
+            <input type="text" class="form-control" value="{{$realm.Name}}" disabled />
             <label for="name">Realm name</label>
           </div>
 
@@ -44,6 +45,7 @@
           </div>
 
           {{if .supportsPerRealmSigning}}
+          <h6 class="card-title">Certificate</h6>
           <div class="form-group">
             <select class="form-control custom-select" disabled>
               <option selected>
@@ -68,6 +70,7 @@
           {{end}}
 
           {{if $systemSMSConfig}}
+          <h6 class="card-title">SMS Config</h6>
           <div class="form-group form-check">
             <input type="checkbox" name="can_use_system_sms_config" id="can-use-system-sms-config" class="form-check-input" value="1" {{if $realm.CanUseSystemSMSConfig}} checked{{end}}>
             <label class="form-check-label" for="can-use-system-sms-config">
@@ -82,11 +85,24 @@
           </div>
           {{end}}
 
+          <h6 class="card-title">Abuse prevention</h6>
+          <div class="card-text mb-3">
+            {{if $realm.AbusePreventionEnabled}}
+            <div class="card-text text-success mt-n2">Enabled</div>
+            {{else}}
+            <div class="card-text">Disabled</div>
+            {{end}}
+          </div>
+
+          <h6 class="card-title">Mobile apps</h6>
+          <div class="card-text mb-3">
+            <div class="mt-n2">
+              <a href="/admin/mobileapps?q={{$realm.Name}}">Realm mobile apps</a>
+            </div>
+          </div>
+
           <button type="submit" class="btn btn-primary btn-block">Update realm</button>
         </form>
-      </div>
-      <div class="card-body">
-        <a href="/admin/mobileapps?q={{$realm.Name}}">Mobile apps</a>
       </div>
     </div>
 
