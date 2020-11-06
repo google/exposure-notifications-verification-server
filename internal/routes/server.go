@@ -349,14 +349,12 @@ func Server(
 		adminSub.Handle("/realms/{id:[0-9]+}/leave", adminController.HandleRealmsLeave()).Methods("PATCH")
 		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
 
-		adminSub.Handle("/superusers", adminController.HandleSuperUsersIndex()).Methods("GET")
-		adminSub.Handle("/superusers", adminController.HandleSuperUsersCreate()).Methods("POST")
-		adminSub.Handle("/superusers/new", adminController.HandleSuperUsersCreate()).Methods("GET")
-		adminSub.Handle("/superusers/{id:[0-9]+}", adminController.HandleSuperUsersDelete()).Methods("DELETE")
-
 		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserShow()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserDelete()).Methods("DELETE")
+		adminSub.Handle("/users/systemadmin", adminController.HandleSystemAdminCreate()).Methods("POST")
+		adminSub.Handle("/users/systemadmin/new", adminController.HandleSystemAdminCreate()).Methods("GET")
+		adminSub.Handle("/users/systemadmin/{id:[0-9]+}", adminController.HandleSystemAdminRevoke()).Methods("DELETE")
 
 		adminSub.Handle("/mobileapps", adminController.HandleMobileAppsShow()).Methods("GET")
 		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
