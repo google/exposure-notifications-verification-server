@@ -792,23 +792,13 @@ func (r *Realm) CountUsers(db *Database) (int, error) {
 	return count, nil
 }
 
-// ListUsers returns the list of users on this realm.
-func (r *Realm) ListUsers(db *Database, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
-	return r.SearchUsers(db, "", p)
-}
-
-// SearchUsers returns the list of users which match the given criteria.
-func (r *Realm) SearchUsers(db *Database, q string, p *pagination.PageParams) ([]*User, *pagination.Paginator, error) {
+// ListUsers returns the list of users which match the given criteria.
+func (r *Realm) ListUsers(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
 	var users []*User
 	query := db.db.Model(&User{}).
 		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
+		Scopes(scopes...).
 		Order("LOWER(users.name) ASC")
-
-	q = project.TrimSpace(q)
-	if q != "" {
-		q = `%` + q + `%`
-		query = query.Where("(users.email ILIKE ? OR users.name ILIKE ?)", q, q)
-	}
 
 	if p == nil {
 		p = new(pagination.PageParams)
