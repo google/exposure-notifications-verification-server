@@ -57,5 +57,5 @@ func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWr
 	m["apps"] = apps
 	m["paginator"] = paginator
 	m["query"] = q
-	c.h.RenderHTML(w, "admin/mobileapps/show", m)
+	c.h.RenderHTML(w, "admin/mobileapps/index", m)
 }
