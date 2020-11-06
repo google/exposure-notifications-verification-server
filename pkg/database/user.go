@@ -230,7 +230,6 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 func (db *Database) ListUsers(p *pagination.PageParams, q string, systemAdminOnly bool) ([]*User, *pagination.Paginator, error) {
 	var users []*User
 	query := db.db.Model(&User{}).
-		Where("system_admin IS FALSE").
 		Order("LOWER(name) ASC")
 
 	if systemAdminOnly {
