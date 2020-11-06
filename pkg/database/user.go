@@ -133,6 +133,10 @@ func (u *User) CanViewRealm(realmID uint) bool {
 	return false
 }
 
+func (u *User) IsRealmAdmin() bool {
+	return len(u.AdminRealms) > 0
+}
+
 func (u *User) CanAdminRealm(realmID uint) bool {
 	for _, r := range u.AdminRealms {
 		if r.ID == realmID {
@@ -230,7 +234,6 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 func (db *Database) ListUsers(p *pagination.PageParams, q string) ([]*User, *pagination.Paginator, error) {
 	var users []*User
 	query := db.db.Model(&User{}).
-		Where("system_admin IS FALSE").
 		Order("LOWER(name) ASC")
 
 	q = project.TrimSpace(q)
