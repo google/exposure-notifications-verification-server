@@ -27,19 +27,23 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <strong>Name</strong>
-        <div class="mb-3">
+        <h6 class="card-title">Name</h6>
+        <div class="mb-3 mt-n2">
           {{$user.Name}}
         </div>
 
-        <strong>Email</strong>
-        <div class="mb-3">
+        <h6 class="card-title">Email</h6>
+        <div class="mb-3 mt-n2">
           {{$user.Email}}
         </div>
 
-        <strong>Admin</strong>
-        <div class="mb-3">
-          {{$user.CanAdminRealm $currentRealm.ID}}
+        <h6 class="card-title">Realm admin</h6>
+        <div class="mb-3 mt-n2">
+          {{if $user.CanAdminRealm $currentRealm.ID}}
+          <div class="card-text text-success mb-3 mt-n2">Enabled</div>
+          {{else}}
+          <div class="card-text mb-3 mt-n2">Disabled</div>
+          {{end}}
         </div>
 
         <a href="/users/{{$user.ID}}/reset-password" data-method="POST" class="btn btn-primary btn-block">Send password reset</a>

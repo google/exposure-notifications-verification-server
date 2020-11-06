@@ -60,7 +60,7 @@
                 {{end}}
               </td>
               <td class="text-truncate">
-                {{.Name}}
+                <a href="/admin/users/{{.ID}}">{{.Name}}</a>
                 {{if .IsRealmAdmin}}
                 <span class="oi oi-badge ml-2" aria-hidden="true"
                   data-toggle="tooltip" title="Realm admin"></span>

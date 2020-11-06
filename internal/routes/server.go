@@ -351,6 +351,7 @@ func Server(
 		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
 
 		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
+		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserShow()).Methods("GET")
 		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserDelete()).Methods("DELETE")
 		adminSub.Handle("/users", adminController.HandleSystemAdminCreate()).Methods("POST")
 		adminSub.Handle("/users/new", adminController.HandleSystemAdminCreate()).Methods("GET")
