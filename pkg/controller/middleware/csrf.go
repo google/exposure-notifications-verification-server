@@ -19,11 +19,10 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
@@ -52,7 +51,7 @@ func ConfigureCSRF(ctx context.Context, config *config.ServerConfig, h *render.R
 
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		}))
@@ -63,9 +62,9 @@ func ConfigureCSRF(ctx context.Context, config *config.ServerConfig, h *render.R
 // protect middleware. It will respond w/ a JSON object containing error: on API
 // requests and a signout redirect to other requests.
 func handleCSRFError(ctx context.Context, h *render.Renderer) http.Handler {
-	logger := logging.FromContext(ctx).Named("middleware.handleCSRFError")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := logging.FromContext(ctx).Named("middleware.handleCSRFError")
+
 		reason := csrf.FailureReason(r)
 		logger.Debugw("invalid csrf", "reason", reason)
 

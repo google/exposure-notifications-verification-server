@@ -16,17 +16,15 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 )
@@ -39,9 +37,7 @@ const (
 // RequireAPIKey reads the X-API-Key header and validates it is a real
 // authorized app. It also ensures currentAuthorizedApp is set in the template
 // map.
-func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer, allowedTypes []database.APIKeyType) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireAPIKey")
-
+func RequireAPIKey(cacher cache.Cacher, db *database.Database, h *render.Renderer, allowedTypes []database.APIKeyType) mux.MiddlewareFunc {
 	allowedTypesMap := make(map[database.APIKeyType]struct{}, len(allowedTypes))
 	for _, t := range allowedTypes {
 		allowedTypesMap[t] = struct{}{}
@@ -52,6 +48,8 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireAPIKey")
 
 			apiKey := r.Header.Get(APIKeyHeader)
 			if apiKey == "" {
@@ -111,7 +109,7 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 			// Save the authorized app on the context.
 			ctx = controller.WithAuthorizedApp(ctx, &authApp)
 			ctx = controller.WithRealm(ctx, &realm)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})

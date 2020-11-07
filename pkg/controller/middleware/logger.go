@@ -12,52 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package middleware defines shared middleware for handlers.
 package middleware
 
 import (
 	"net/http"
-	"net/url"
-	"path"
-	"strings"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"go.uber.org/zap"
+
 	"github.com/gorilla/mux"
 )
 
-type Path struct {
-	uri *url.URL
-}
-
-func InjectCurrentPath() mux.MiddlewareFunc {
+// PopulateLogger populates the logger onto the context.
+func PopulateLogger(originalLogger *zap.SugaredLogger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			m := controller.TemplateMapFromContext(ctx)
-			m["currentPath"] = &Path{uri: r.URL}
+			logger := originalLogger
 
-			ctx = controller.WithTemplateMap(ctx, m)
+			// If there's a request ID, set that on the logger.
+			if id := controller.RequestIDFromContext(ctx); id != "" {
+				logger = logger.With("request_id", id)
+			}
+
+			ctx = logging.WithLogger(ctx, logger)
 			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-func (p *Path) String() string {
-	return p.uri.String()
-}
-
-func (p *Path) IsPath(s string) bool {
-	return p.uri.RequestURI() == s
-}
-
-func (p *Path) IsDir(s string) bool {
-	return strings.HasPrefix(p.uri.RequestURI(), s)
-}
-
-func (p *Path) IsFile(s string) bool {
-	_, file := path.Split(p.uri.RequestURI())
-	return file == s
 }

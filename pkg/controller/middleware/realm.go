@@ -23,25 +23,24 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"github.com/gorilla/mux"
 )
 
 // LoadCurrentRealm loads the selected realm from the cache to the context
-func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
-
+func LoadCurrentRealm(cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
 	cacheTTL := 5 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
@@ -81,7 +80,7 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 
 			// Save the realm on the context.
 			ctx = controller.WithRealm(ctx, &realm)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})
@@ -94,12 +93,12 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 // Must come after:
 //   LoadCurrentRealm to populate the current realm.
 //   RequireAuth so that a user is set on the context.
-func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
-
+func RequireRealm(h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
 
 			currentUser := controller.UserFromContext(ctx)
 			if currentUser == nil {
@@ -135,12 +134,12 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 // Must come after:
 //   LoadCurrentRealm to populate the current realm.
 //   RequireAuth so that a user is set on the context.
-func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireRealmAdmin")
-
+func RequireRealmAdmin(h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireRealmAdmin")
 
 			currentUser := controller.UserFromContext(ctx)
 			if currentUser == nil {

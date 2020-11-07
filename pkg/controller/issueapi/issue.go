@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -97,10 +98,10 @@ func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, e
 }
 
 func (c *Controller) HandleIssue() http.Handler {
-	logger := c.logger.Named("issueapi.HandleIssue")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
+
+		logger := logging.FromContext(ctx).Named("issueapi.HandleIssue")
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()

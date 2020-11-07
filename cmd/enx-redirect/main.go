@@ -105,11 +105,19 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
+
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, cfg.DevMode, "html"))
+	r.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
 
 	// Enable debug headers
-	processDebug := middleware.ProcessDebug(ctx)
+	processDebug := middleware.ProcessDebug()
 	r.Use(processDebug)
 
 	// iOS and Android include functionality to associate data between web-apps

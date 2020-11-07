@@ -23,15 +23,13 @@ import (
 	"time"
 
 	"github.com/gonum/matrix/mat64"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"github.com/sethvargo/go-limiter"
-	"go.uber.org/zap"
 )
 
 // Controller is a controller for the modeler service.
@@ -40,28 +38,24 @@ type Controller struct {
 	db      *database.Database
 	h       *render.Renderer
 	limiter limiter.Store
-	logger  *zap.SugaredLogger
 }
 
 // New creates a new modeler controller.
 func New(ctx context.Context, config *config.Modeler, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx).Named("modeler")
-
 	return &Controller{
 		config:  config,
 		db:      db,
 		h:       h,
 		limiter: limiter,
-		logger:  logger,
 	}
 }
 
 // HandleModel accepts an HTTP trigger and re-generates the models.
 func (c *Controller) HandleModel() http.Handler {
-	logger := c.logger.Named("HandleModel")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("modeler.HandleModel")
 
 		if err := c.db.ClaimModelerStatus(); err != nil {
 			logger.Errorw("failed to claim modeler status", "error", err)
@@ -82,7 +76,8 @@ func (c *Controller) HandleModel() http.Handler {
 // rebuildModels iterates over all models with abuse prevention enabled,
 // calculates the new limits, and updates the new limits.
 func (c *Controller) rebuildModels(ctx context.Context) error {
-	logger := c.logger.Named("rebuildModels")
+	logger := logging.FromContext(ctx).Named("modeler.rebuildModels")
+
 	// Get all realm IDs in a single operation so we can iterate realm-by-realm to
 	// avoid a full table lock during stats calculation.
 	ids, err := c.db.AbusePreventionEnabledRealmIDs()
@@ -104,7 +99,7 @@ func (c *Controller) rebuildModels(ctx context.Context) error {
 
 // rebuildModel rebuilds and updates the model for a single model.
 func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
-	logger := c.logger.Named("rebuildModel").With("id", id)
+	logger := logging.FromContext(ctx).Named("modeler.rebuildModel").With("id", id)
 
 	// Lookup the realm.
 	realm, err := c.db.FindRealm(id)

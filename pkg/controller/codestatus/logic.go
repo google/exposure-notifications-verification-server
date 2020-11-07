@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -27,7 +28,9 @@ import (
 
 func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.VerificationCode, int, *api.ErrorReturn) {
 	ctx := r.Context()
-	logger := c.logger.Named("codestatus.CheckCodeStatus")
+
+	logger := logging.FromContext(ctx).Named("codestatus.CheckCodeStatus")
+
 	authApp, user, err := c.getAuthorizationFromContext(r)
 	if err != nil {
 		return nil, http.StatusUnauthorized, api.Error(err)

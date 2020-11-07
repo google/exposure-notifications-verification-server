@@ -42,6 +42,7 @@ import (
 	"github.com/sethvargo/go-limiter"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -70,7 +71,7 @@ func Server(
 
 	// Inject template middleware - this needs to be first because other
 	// middlewares may add data to the template map.
-	populateTemplateVariables := middleware.PopulateTemplateVariables(ctx, cfg)
+	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)
 	r.Use(populateTemplateVariables)
 
 	// Create the renderer
@@ -78,6 +79,14 @@ func Server(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create renderer: %w", err)
 	}
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection.
+	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
+	r.Use(populateLogger)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.UserIDKeyFunc(ctx, "server:ratelimit:", cfg.RateLimit.HMACKey),
@@ -87,10 +96,10 @@ func Server(
 	}
 
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, cfg.DevMode, "html"))
+	r.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
 
 	// Enable debug headers
-	processDebug := middleware.ProcessDebug(ctx)
+	processDebug := middleware.ProcessDebug()
 	r.Use(processDebug)
 
 	// Install the CSRF protection middleware.
@@ -98,7 +107,7 @@ func Server(
 	r.Use(configureCSRF)
 
 	// Sessions
-	requireSession := middleware.RequireSession(ctx, sessions, h)
+	requireSession := middleware.RequireSession(sessions, h)
 	r.Use(requireSession)
 
 	// Include the current URI
@@ -106,14 +115,14 @@ func Server(
 	r.Use(currentPath)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
-	requireVerified := middleware.RequireVerified(ctx, authProvider, db, h, cfg.SessionDuration)
-	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
-	loadCurrentRealm := middleware.LoadCurrentRealm(ctx, cacher, db, h)
-	requireRealm := middleware.RequireRealm(ctx, h)
-	requireSystemAdmin := middleware.RequireSystemAdmin(ctx, h)
-	requireMFA := middleware.RequireMFA(ctx, authProvider, h)
-	processFirewall := middleware.ProcessFirewall(ctx, h, "server")
+	requireAuth := middleware.RequireAuth(cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
+	requireVerified := middleware.RequireVerified(authProvider, db, h, cfg.SessionDuration)
+	requireAdmin := middleware.RequireRealmAdmin(h)
+	loadCurrentRealm := middleware.LoadCurrentRealm(cacher, db, h)
+	requireRealm := middleware.RequireRealm(h)
+	requireSystemAdmin := middleware.RequireSystemAdmin(h)
+	requireMFA := middleware.RequireMFA(authProvider, h)
+	processFirewall := middleware.ProcessFirewall(h, "server")
 	rateLimit := httplimiter.Handle
 
 	{
@@ -370,6 +379,6 @@ func Server(
 	// inserted as middleware because gorilla processes the method before
 	// middleware.
 	mux := http.NewServeMux()
-	mux.Handle("/", middleware.MutateMethod(ctx)(r))
+	mux.Handle("/", middleware.MutateMethod()(r))
 	return mux, nil
 }

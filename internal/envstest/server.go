@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -133,9 +132,7 @@ func NewServer(tb testing.TB) *TestServerResponse {
 	// Create the config and requirements.
 	response := newServerConfig(tb)
 
-	// Configure logging
-	logger := logging.NewLogger(true)
-	ctx := logging.WithLogger(context.Background(), logger)
+	ctx := context.Background()
 
 	// Build the routing.
 	mux, err := routes.Server(ctx, response.Config, response.Database, response.AuthProvider, response.Cacher, response.KeyManager, response.RateLimiter)

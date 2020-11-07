@@ -23,10 +23,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-limiter"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -35,18 +31,14 @@ type Controller struct {
 	db      *database.Database
 	h       *render.Renderer
 	limiter limiter.Store
-	logger  *zap.SugaredLogger
 }
 
 func New(ctx context.Context, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-
 	return &Controller{
 		cacher:  cacher,
 		config:  config,
 		db:      db,
 		h:       h,
 		limiter: limiter,
-		logger:  logger,
 	}
 }

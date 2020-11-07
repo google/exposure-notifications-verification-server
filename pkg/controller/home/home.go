@@ -28,17 +28,12 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"go.uber.org/zap"
 )
 
 type Controller struct {
 	config *config.ServerConfig
 	db     *database.Database
 	h      *render.Renderer
-	logger *zap.SugaredLogger
 
 	pastDaysDuration   time.Duration
 	displayAllowedDays string
@@ -46,8 +41,6 @@ type Controller struct {
 
 // New creates a new controller for the home page.
 func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-
 	pastDaysDuration := -1 * config.AllowedSymptomAge
 	displayAllowedDays := fmt.Sprintf("%.0f", config.AllowedSymptomAge.Hours()/24.0)
 
@@ -55,7 +48,6 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 		config: config,
 		db:     db,
 		h:      h,
-		logger: logger,
 
 		pastDaysDuration:   pastDaysDuration,
 		displayAllowedDays: displayAllowedDays,
