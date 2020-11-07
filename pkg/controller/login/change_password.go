@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
@@ -34,10 +35,10 @@ func (c *Controller) HandleShowChangePassword() http.Handler {
 }
 
 func (c *Controller) HandleSubmitChangePassword() http.Handler {
-	logger := c.logger.Named("login.HandleSubmitNewPassword")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("login.HandleSubmitChangePassword")
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {

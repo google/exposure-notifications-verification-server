@@ -28,11 +28,12 @@ type contextKey string
 
 const (
 	contextKeyAuthorizedApp = contextKey("authorizedApp")
+	contextKeyFirebaseUser  = contextKey("firebaseUser")
 	contextKeyRealm         = contextKey("realm")
+	contextKeyRequestID     = contextKey("requestID")
 	contextKeySession       = contextKey("session")
 	contextKeyTemplate      = contextKey("template")
 	contextKeyUser          = contextKey("user")
-	contextKeyFirebaseUser  = contextKey("firebaseUser")
 )
 
 // WithAuthorizedApp stores the authorized app on the context.
@@ -79,6 +80,30 @@ func RealmFromContext(ctx context.Context) *database.Realm {
 	t, ok := v.(*database.Realm)
 	if !ok {
 		return nil
+	}
+	return t
+}
+
+// WithRequestID stores the request ID on the context.
+func WithRequestID(ctx context.Context, id string) context.Context {
+	m := TemplateMapFromContext(ctx)
+	m["requestID"] = id
+	ctx = WithTemplateMap(ctx, m)
+
+	return context.WithValue(ctx, contextKeyRequestID, id)
+}
+
+// RequestIDFromContext retrieves the request ID from the context. If no value
+// exists, it returns the empty string.
+func RequestIDFromContext(ctx context.Context) string {
+	v := ctx.Value(contextKeyRequestID)
+	if v == nil {
+		return ""
+	}
+
+	t, ok := v.(string)
+	if !ok {
+		return ""
 	}
 	return t
 }

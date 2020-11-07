@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -30,11 +31,11 @@ import (
 
 // HandleShow displays the API key.
 func (c *Controller) HandleShow() http.Handler {
-	logger := c.logger.Named("HandleShow")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
+
+		logger := logging.FromContext(ctx).Named("apikey.HandleShow")
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {

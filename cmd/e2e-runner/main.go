@@ -32,7 +32,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -104,6 +106,12 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	// Create the renderer
+	h, err := render.New(ctx, "", e2eConfig.DevMode)
+	if err != nil {
+		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
 	// Create or reuse the existing realm
 	realm, err := db.FindRealmByName(realmName)
 	if err != nil {
@@ -171,6 +179,15 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
+
 	r.HandleFunc("/default", defaultHandler(ctx, e2eConfig.TestConfig))
 	r.HandleFunc("/revise", reviseHandler(ctx, e2eConfig.TestConfig))
 

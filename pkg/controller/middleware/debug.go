@@ -15,7 +15,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
@@ -30,7 +29,7 @@ const (
 
 // ProcessDebug adds additional debugging information to the response if the
 // request included the "X-Debug" header with any value.
-func ProcessDebug(ctx context.Context) mux.MiddlewareFunc {
+func ProcessDebug() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Header.Get(HeaderDebug) != "" {

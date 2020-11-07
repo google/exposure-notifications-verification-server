@@ -15,7 +15,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -23,15 +22,18 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const formKeyMethod = "_method"
+
 // MutateMethod looks for HTML form values that define the "real" HTTP method
 // and then forward that along to the router. This must be a very early
 // middleware.
-func MutateMethod(ctx context.Context) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.MutateMethod")
-	formKeyMethod := "_method"
-
+func MutateMethod() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.MutateMethod")
+
 			method := strings.ToUpper(r.FormValue(formKeyMethod))
 			if method != "" {
 				logger.Debugw("overriding method", "old", r.Method, "new", method)

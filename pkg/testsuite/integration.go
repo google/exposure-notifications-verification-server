@@ -130,10 +130,10 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 	// Create the router
 	adminRouter := mux.NewRouter()
 	// Install common security headers
-	adminRouter.Use(middleware.SecureHeaders(ctx, s.cfg.AdminAPISrvConfig.DevMode, "json"))
+	adminRouter.Use(middleware.SecureHeaders(s.cfg.AdminAPISrvConfig.DevMode, "json"))
 
 	// Enable debug headers
-	processDebug := middleware.ProcessDebug(ctx)
+	processDebug := middleware.ProcessDebug()
 	adminRouter.Use(processDebug)
 
 	// Create the renderer
@@ -165,7 +165,7 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 		sub := adminRouter.PathPrefix("/api").Subrouter()
 
 		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, s.db, h, []database.APIKeyType{
+		requireAPIKey := middleware.RequireAPIKey(cacher, s.db, h, []database.APIKeyType{
 			database.APIKeyTypeAdmin,
 		})
 		// Install the APIKey Auth Middleware
@@ -226,7 +226,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 
 	apiRouter := mux.NewRouter()
 	// Install common security headers
-	apiRouter.Use(middleware.SecureHeaders(ctx, s.cfg.APISrvConfig.DevMode, "json"))
+	apiRouter.Use(middleware.SecureHeaders(s.cfg.APISrvConfig.DevMode, "json"))
 
 	apiRouter.Handle("/health", controller.HandleHealthz(ctx, &s.cfg.APISrvConfig.Database, h)).Methods("GET")
 
@@ -234,7 +234,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 		sub := apiRouter.PathPrefix("/api").Subrouter()
 
 		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(ctx, cacher, s.db, h, []database.APIKeyType{
+		requireAPIKey := middleware.RequireAPIKey(cacher, s.db, h, []database.APIKeyType{
 			database.APIKeyTypeDevice,
 		})
 		// Install the APIKey Auth Middleware

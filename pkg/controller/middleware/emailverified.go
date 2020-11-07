@@ -16,16 +16,14 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 )
@@ -34,12 +32,12 @@ import (
 //
 // MUST first run RequireAuth to populate user and RequireRealm to populate the
 // realm.
-func RequireVerified(ctx context.Context, authProvider auth.Provider, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireVerified")
-
+func RequireVerified(authProvider auth.Provider, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireVerified")
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {

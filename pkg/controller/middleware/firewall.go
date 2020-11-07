@@ -15,15 +15,13 @@
 package middleware
 
 import (
-	"context"
 	"net"
 	"net/http"
 	"strings"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 )
@@ -32,12 +30,12 @@ import (
 //
 // This must come after the realm has been loaded in the context, probably via a
 // different middleware.
-func ProcessFirewall(ctx context.Context, h *render.Renderer, typ string) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.ProcessFirewall")
-
+func ProcessFirewall(h *render.Renderer, typ string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.ProcessFirewall")
 
 			realm := controller.RealmFromContext(ctx)
 			if realm == nil {

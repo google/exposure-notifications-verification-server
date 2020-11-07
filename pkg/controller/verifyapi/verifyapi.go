@@ -18,11 +18,9 @@ import (
 	"context"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.uber.org/zap"
 )
 
 // Controller is a controller for the verification code verification API.
@@ -30,18 +28,14 @@ type Controller struct {
 	config *config.APIServerConfig
 	db     *database.Database
 	h      *render.Renderer
-	logger *zap.SugaredLogger
 	kms    keys.KeyManager
 }
 
 func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
-	logger := logging.FromContext(ctx)
-
 	return &Controller{
 		config: config,
 		db:     db,
 		h:      h,
-		logger: logger,
 		kms:    kms,
 	}, nil
 }

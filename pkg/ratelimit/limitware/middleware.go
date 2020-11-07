@@ -23,18 +23,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/httplimit"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
-	"go.uber.org/zap"
 )
 
 // Middleware is a handler/mux that can wrap other middlware to implement HTTP
@@ -43,7 +41,6 @@ import (
 type Middleware struct {
 	store   limiter.Store
 	keyFunc httplimit.KeyFunc
-	logger  *zap.SugaredLogger
 
 	allowOnError bool
 }
@@ -71,12 +68,9 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc, op
 		return nil, fmt.Errorf("key function cannot be nil")
 	}
 
-	logger := logging.FromContext(ctx).Named("ratelimit")
-
 	m := &Middleware{
 		store:   s,
 		keyFunc: f,
-		logger:  logger,
 	}
 
 	for _, opt := range opts {
@@ -99,12 +93,14 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
 
+		logger := logging.FromContext(ctx).Named("ratelimit.Handle")
+
 		var result = observability.ResultOK()
 
 		defer func(result *tag.Mutator) {
 			ctx, err := tag.New(ctx, *result)
 			if err != nil {
-				m.logger.Warnw("failed to create context with additional tags", "error", err)
+				logger.Warnw("failed to create context with additional tags", "error", err)
 				// NOTE: do not return here. We should log it as success.
 			}
 			stats.Record(ctx, mRequest.M(1))
@@ -113,7 +109,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		// Call the key function - if this fails, it's an internal server error.
 		key, err := m.keyFunc(r)
 		if err != nil {
-			m.logger.Errorw("could not call key function", "error", err)
+			logger.Errorw("could not call key function", "error", err)
 			result = observability.ResultError("FAILED_TO_CALL_KEY_FUNCTION")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
@@ -122,7 +118,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		// Take from the store.
 		limit, remaining, reset, ok, err := m.store.Take(ctx, key)
 		if err != nil {
-			m.logger.Errorw("failed to take", "error", err)
+			logger.Errorw("failed to take", "error", err)
 
 			if !m.allowOnError {
 				result = observability.ResultError("FAILED_TO_TAKE")
@@ -156,10 +152,13 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 // header. Since APIKeys are assumed to be "public" at some point, they are rate
 // limited by [realm,ip], and API keys have a 1-1 mapping to a realm.
 func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named("ratelimit.APIKeyFunc")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
+		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("ratelimit.APIKeyFunc")
+
 		// Procss the API key
 		v := r.Header.Get("x-api-key")
 		if v != "" {
@@ -181,11 +180,12 @@ func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKe
 // UserIDKeyFunc pulls the user out of the request context and uses that to
 // ratelimit. It falls back to rate limiting by the client ip.
 func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named("ratelimit.UserIDKeyFunc")
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("ratelimit.UserIDKeyFunc")
 
 		// See if a user exists on the context
 		currentUser := controller.UserFromContext(ctx)
@@ -204,9 +204,11 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 
 // IPAddressKeyFunc uses the client IP to rate limit.
 func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
-	logger := logging.FromContext(ctx).Named("ratelimit.IPAddressKeyFunc")
-
 	return func(r *http.Request) (string, error) {
+		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("ratelimit.IPAddressKeyFunc")
+
 		// Get the remote addr
 		ip := remoteIP(r)
 

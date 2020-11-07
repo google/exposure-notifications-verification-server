@@ -24,10 +24,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-limiter"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -37,7 +33,6 @@ type Controller struct {
 	authProvider auth.Provider
 	h            *render.Renderer
 	limiter      limiter.Store
-	logger       *zap.SugaredLogger
 }
 
 func New(
@@ -49,8 +44,6 @@ func New(
 	limiter limiter.Store,
 	h *render.Renderer,
 ) *Controller {
-	logger := logging.FromContext(ctx).Named("admin")
-
 	return &Controller{
 		config:       config,
 		cacher:       cacher,
@@ -58,6 +51,5 @@ func New(
 		authProvider: authProvider,
 		h:            h,
 		limiter:      limiter,
-		logger:       logger,
 	}
 }

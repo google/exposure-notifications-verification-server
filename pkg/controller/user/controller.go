@@ -23,10 +23,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"go.uber.org/zap"
 )
 
 // Controller manages users
@@ -36,7 +32,6 @@ type Controller struct {
 	config       *config.ServerConfig
 	db           *database.Database
 	h            *render.Renderer
-	logger       *zap.SugaredLogger
 }
 
 // New creates a new controller for managing users.
@@ -47,14 +42,11 @@ func New(
 	config *config.ServerConfig,
 	db *database.Database,
 	h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-
 	return &Controller{
 		cacher:       cacher,
 		authProvider: authProvider,
 		config:       config,
 		db:           db,
 		h:            h,
-		logger:       logger,
 	}
 }
