@@ -47,9 +47,9 @@
       </div>
     </div>
 
-    {{if $user.Realms}}
-      <div class="card mb-3 shadow-sm">
-        <div class="card-header">Member of realms</div>
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Member of realms</div>
+      {{if $user.Realms}}
         <ul class="list-group list-group-flush">
           {{range $realm := $user.Realms}}
           <li class="list-group-item d-flex justify-content-between">
@@ -69,8 +69,12 @@
           </li>
           {{end}}
         </ul>
-      </div>
-    {{end}}
+      {{else}}
+        <p class="card-body text-center mb-0">
+          <em>This user is not a member of any realms.</em>
+        </p>
+      {{end}}
+    </div>
 
     <a class="card-link" href="/admin/users">&larr; All users</a>
   </main>
