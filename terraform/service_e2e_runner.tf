@@ -190,7 +190,7 @@ resource "google_cloud_run_service_iam_member" "e2e-runner-invoker" {
 resource "google_cloud_scheduler_job" "e2e-default-workflow" {
   name             = "e2e-default-workflow"
   region           = var.cloudscheduler_location
-  schedule         = "0,10,20,30,40,50 * * * *"
+  schedule         = "0,10,20,30,40,50,55 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
@@ -217,7 +217,7 @@ resource "google_cloud_scheduler_job" "e2e-default-workflow" {
 resource "google_cloud_scheduler_job" "e2e-revise-workflow" {
   name             = "e2e-revise-workflow"
   region           = var.cloudscheduler_location
-  schedule         = "5,15,25,35,45,55 * * * *"
+  schedule         = "0,5,15,25,35,45,55 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
