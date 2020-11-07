@@ -344,8 +344,8 @@ func Server(
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
 		adminSub.Handle("/realms/new", adminController.HandleRealmsCreate()).Methods("GET")
 		adminSub.Handle("/realms/{id:[0-9]+}/edit", adminController.HandleRealmsUpdate()).Methods("GET")
-		adminSub.Handle("/realms/{id:[0-9]+}/join", adminController.HandleRealmsJoin()).Methods("PATCH")
-		adminSub.Handle("/realms/{id:[0-9]+}/leave", adminController.HandleRealmsLeave()).Methods("PATCH")
+		adminSub.Handle("/realms/{realm_id:[0-9]+}/add/{user_id:[0-9+]}", adminController.HandleRealmsAdd()).Methods("PATCH")
+		adminSub.Handle("/realms/{realm_id:[0-9]+}/remove/{user_id:[0-9+]}", adminController.HandleRealmsRemove()).Methods("PATCH")
 		adminSub.Handle("/realms/{id:[0-9]+}/realmadmin", adminController.HandleRealmsSelectAndAdmin()).Methods("GET")
 		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
 

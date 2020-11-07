@@ -48,22 +48,32 @@
     </div>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card">
-        <div class="card-header">Member of realms</div>
+      <div class="card-header">Member of realms</div>
+      {{if $user.Realms}}
         <ul class="list-group list-group-flush">
           {{range $realm := $user.Realms}}
-          <li class="list-group-item">
-            {{$realm.Name}}
+          <li class="list-group-item d-flex justify-content-between">
+            <div>
+              {{$realm.Name}}
+              {{if $user.CanAdminRealm $realm.ID}}
+                <span class="badge badge-primary ml-2">Admin</span>
+              {{end}}
+            </div>
 
-            {{range $admin := $user.AdminRealms}}
-            {{if eq $admin.ID $realm.ID}}
-            <span class="badge badge-primary">Admin</span>
-            {{end}}
-            {{end}}
+            <a href="/admin/realms/{{$realm.ID}}/remove/{{$user.ID}}" class="text-danger"
+              data-toggle="tooltip" title="Remove from realm"
+              data-method="PATCH" data-confirm="Are you sure you want to remove {{$user.Name}} from {{$realm.Name}}?">
+              <span class="sr-only">Remove from realm</span>
+              <span class="oi oi-x" aria-hidden="true"></span>
+            </a>
           </li>
           {{end}}
         </ul>
-      </div>
+      {{else}}
+        <p class="card-body text-center mb-0">
+          <em>This user is not a member of any realms.</em>
+        </p>
+      {{end}}
     </div>
 
     <a class="card-link" href="/admin/users">&larr; All users</a>
