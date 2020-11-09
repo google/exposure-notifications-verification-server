@@ -583,7 +583,11 @@ func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 
 // Audits returns the list audit events which match the given criteria.
 func (r *Realm) Audits(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
-	return db.ListAudits(r, p, scopes...)
+	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
+		return db.Where("realm_id = ?", r.ID)
+	})
+
+	return db.Audits(p, scopes...)
 }
 
 // AbusePreventionEffectiveLimit returns the effective limit, multiplying the limit by the
@@ -770,7 +774,11 @@ func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) 
 
 // Users returns the list of users which match the given criteria.
 func (r *Realm) Users(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
-	return db.ListUsers(r, p, scopes...)
+	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
+		return db.Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID)
+	})
+
+	return db.Users(p, scopes...)
 }
 
 // FindUser finds the given user in the realm by ID.
