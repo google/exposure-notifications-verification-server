@@ -584,7 +584,7 @@ func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 // ListAudits returns the list audit events which match the given criteria.
 func (r *Realm) ListAudits(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
 	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
-		return db.Where("realm_id = ?", r.ID)
+		return db.Where("audit_entries.realm_id = ?", r.ID)
 	})
 
 	return db.ListAudits(p, scopes...)
