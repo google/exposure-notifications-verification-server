@@ -55,6 +55,19 @@ module "en" {
   }
 }
 
+module "en-alerting" {
+  source = "../terraform/alerting"
+
+  monitoring-host-project     = var.project
+  verification-server-project = var.project
+
+  adminapi_hosts  = ["adminapi.notexistdomain.notexist"]
+  apiserver_hosts = ["apiserver.notexistdomain.notexist"]
+  server_hosts    = ["encv-test.notexistdomain.notexist"]
+
+  notification-email = ""
+}
+
 output "en" {
   value = module.en
 }
