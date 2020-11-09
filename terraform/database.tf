@@ -64,6 +64,51 @@ resource "google_sql_database_instance" "db-inst" {
   ]
 }
 
+resource "google_sql_database_instance" "replicas" {
+  for_each = toset(var.database_failover_replica_regions)
+
+  project          = var.project
+  region           = each.key
+  database_version = "POSTGRES_12"
+  name             = "${var.database_name}-${each.key}"
+
+  master_instance_name = google_sql_database_instance.db-inst.name
+
+  // These are REGIONAL replicas, which cannot auto-failover. The default
+  // configuration has auto-failover in zones. This is for super disaster
+  // recovery in which an entire region is down for an extended period of time.
+  replica_configuration {
+    failover_target = false
+  }
+
+  settings {
+    tier              = var.database_tier
+    disk_size         = var.database_disk_size_gb
+    availability_type = "ZONAL"
+    pricing_plan      = "PACKAGE"
+
+    database_flags {
+      name  = "autovacuum"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "max_connections"
+      value = var.database_max_connections
+    }
+
+    ip_configuration {
+      require_ssl     = true
+      private_network = google_service_networking_connection.private_vpc_connection.network
+    }
+  }
+
+  depends_on = [
+    google_project_service.services["sqladmin.googleapis.com"],
+    google_project_service.services["sql-component.googleapis.com"],
+  ]
+}
+
 resource "google_sql_database" "db" {
   project  = var.project
   instance = google_sql_database_instance.db-inst.name
