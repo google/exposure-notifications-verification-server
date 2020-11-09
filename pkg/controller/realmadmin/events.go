@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
 func (c *Controller) HandleEvents() http.Handler {
@@ -32,19 +33,27 @@ func (c *Controller) HandleEvents() http.Handler {
 			return
 		}
 
-		events, err := realm.Audits(c.db)
+		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderEvents(ctx, w, realm, events)
+		events, paginator, err := realm.Audits(c.db, pageParams)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		c.renderEvents(ctx, w, realm, events, paginator)
 	})
 }
 
-func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter, realm *database.Realm, events []*database.AuditEntry) {
+func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
+	realm *database.Realm, events []*database.AuditEntry, paginator *pagination.Paginator) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = realm
 	m["events"] = events
+	m["paginator"] = paginator
 	c.h.RenderHTML(w, "realmadmin/events", m)
 }

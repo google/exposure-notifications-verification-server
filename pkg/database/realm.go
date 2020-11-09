@@ -581,20 +581,27 @@ func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 	return emailConfig.Provider()
 }
 
-func (r *Realm) Audits(db *Database) ([]*AuditEntry, error) {
+func (r *Realm) Audits(db *Database, p *pagination.PageParams) ([]*AuditEntry, *pagination.Paginator, error) {
 	var entries []*AuditEntry
-	if err := db.db.
+
+	query := db.db.
 		Model(&AuditEntry{}).
 		Where("realm_id = ?", r.ID).
-		Order("created_at DESC").
-		Find(&entries).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return entries, nil
-		}
-		return nil, err
+		Order("created_at DESC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return entries, nil
+
+	paginator, err := Paginate(query, &entries, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return entries, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return entries, paginator, nil
 }
 
 // AbusePreventionEffectiveLimit returns the effective limit, multiplying the limit by the
