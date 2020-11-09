@@ -47,8 +47,9 @@ resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
     mime_type = "text/markdown"
   }
   notification_channels = [
-    google_monitoring_notification_channel.email.id
+    google_monitoring_notification_channel.email.id,
   ]
+
   depends_on = [
     google_monitoring_metric_descriptor.api--issue--realm_token_latest,
   ]
@@ -91,10 +92,11 @@ EOT
   }
 
   notification_channels = [
-    google_monitoring_notification_channel.email.id
+    google_monitoring_notification_channel.email.id,
   ]
+
   depends_on = [
-    null_resource.manual-step-to-enable-workspace
+    null_resource.manual-step-to-enable-workspace,
   ]
 }
 
@@ -137,10 +139,11 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
     mime_type = "text/markdown"
   }
   notification_channels = [
-    google_monitoring_notification_channel.email.id
+    google_monitoring_notification_channel.email.id,
   ]
+
   depends_on = [
-    google_monitoring_metric_descriptor.e2e--request_count
+    google_monitoring_metric_descriptor.e2e--request_count,
   ]
 }
 
@@ -181,10 +184,11 @@ EOT
   }
 
   notification_channels = [
-    google_monitoring_notification_channel.email.id
+    google_monitoring_notification_channel.email.id,
   ]
+
   depends_on = [
-    null_resource.manual-step-to-enable-workspace
+    null_resource.manual-step-to-enable-workspace,
   ]
 }
 
@@ -224,8 +228,9 @@ EOT
   }
 
   notification_channels = [
-    google_monitoring_notification_channel.email.id
+    google_monitoring_notification_channel.email.id,
   ]
+
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
   ]
@@ -268,11 +273,11 @@ EOT
   }
 
   notification_channels = [
-    google_monitoring_notification_channel.email.id
+    google_monitoring_notification_channel.email.id,
   ]
+
   depends_on = [
-    null_resource.manual-step-to-enable-workspace
+    null_resource.manual-step-to-enable-workspace,
     google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
   ]
 }
-
