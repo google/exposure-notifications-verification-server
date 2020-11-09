@@ -54,6 +54,7 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter,
 	apps []*database.ExtendedMobileApp, paginator *pagination.Paginator, q string) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Mobile apps - System Admin")
 	m["apps"] = apps
 	m["paginator"] = paginator
 	m["query"] = q

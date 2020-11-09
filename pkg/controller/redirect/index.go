@@ -76,6 +76,7 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		logger.Warnw("not a mobile user agent", "host", r.Host, "userAgent", r.UserAgent())
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Redirecting...")
 		m["requestURI"] = (&url.URL{
 			Scheme: "https",
 			Host:   r.Host,

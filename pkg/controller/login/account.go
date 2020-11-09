@@ -26,6 +26,7 @@ func (c *Controller) HandleAccountSettings() http.Handler {
 		ctx := r.Context()
 
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("My account")
 		m["firebase"] = c.config.Firebase
 		c.h.RenderHTML(w, "account", m)
 	})

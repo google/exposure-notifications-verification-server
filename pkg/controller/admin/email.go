@@ -86,6 +86,7 @@ func (c *Controller) HandleEmailUpdate() http.Handler {
 
 func (c *Controller) renderShowEmail(ctx context.Context, w http.ResponseWriter, emailConfig *database.EmailConfig) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Email - System Admin")
 	m["emailConfig"] = emailConfig
 	c.h.RenderHTML(w, "admin/email/show", m)
 }

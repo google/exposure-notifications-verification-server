@@ -39,6 +39,7 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 		realm := controller.RealmFromContext(ctx)
 
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Multi-factor authentication registration")
 
 		mode := realm.EffectiveMFAMode(currentUser)
 		m["mfaMode"] = &mode

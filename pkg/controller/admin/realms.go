@@ -34,6 +34,7 @@ func (c *Controller) HandleRealmsIndex() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Realms - System Admin")
 		m["realms"] = realms
 		c.h.RenderHTML(w, "admin/realms/index", m)
 	})
@@ -127,6 +128,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 
 func (c *Controller) renderNewRealm(ctx context.Context, w http.ResponseWriter, realm *database.Realm, smsConfig *database.SMSConfig) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("New Realm - System Admin")
 	m["realm"] = realm
 	m["systemSMSConfig"] = smsConfig
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
@@ -210,6 +212,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
 	realm *database.Realm, smsConfig *database.SMSConfig, quotaLimit, quotaRemaining uint64) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Realm: %s - System Admin", realm.Name)
 	m["realm"] = realm
 	m["systemSMSConfig"] = smsConfig
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()

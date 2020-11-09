@@ -16,7 +16,6 @@ package mobileapps
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -54,7 +53,7 @@ func (c *Controller) HandleIndex() http.Handler {
 // renderIndex renders the index page.
 func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp, paginator *pagination.Paginator) {
 	m := templateMap(ctx)
-	m["title"] = fmt.Sprintf("Mobile apps - %s", m["title"])
+	m.Title("Mobile apps")
 	m["apps"] = apps
 	m["paginator"] = paginator
 	c.h.RenderHTML(w, "mobileapps/index", m)

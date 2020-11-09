@@ -30,6 +30,7 @@ func (c *Controller) redirectShow(ctx context.Context, w http.ResponseWriter, r 
 
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Realm keys")
 	m["realm"] = realm
 
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()

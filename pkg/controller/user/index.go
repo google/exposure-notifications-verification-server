@@ -62,6 +62,7 @@ func (c *Controller) renderIndex(
 	ctx context.Context, w http.ResponseWriter,
 	users []*database.User, paginator *pagination.Paginator, query string) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Users")
 	m["users"] = users
 	m["paginator"] = paginator
 	m["query"] = query

@@ -416,6 +416,7 @@ func (c *Controller) renderSettings(
 	}
 
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Realm settings")
 	m["realm"] = realm
 	m["smsConfig"] = smsConfig
 	m["emailConfig"] = emailConfig
