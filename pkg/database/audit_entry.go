@@ -78,9 +78,9 @@ func (db *Database) PurgeAuditEntries(maxAge time.Duration) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
-// ListSystemAudits returns the list audit events which match the given criteria.
+// ListAllAudits returns the list audit events which match the given criteria.
 // Warning: This list may be large. Use Realm.Audits() to get users scoped to a realm.
-func (db *Database) ListSystemAudits(p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
+func (db *Database) ListAllAudits(p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
 	return db.ListAudits(nil, p, scopes...)
 }
 

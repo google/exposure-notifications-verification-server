@@ -229,9 +229,9 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 	return stats, nil
 }
 
-// ListSystemUsers returns a list of all users sorted by name.
+// ListAllUsers returns a list of all users sorted by name.
 // Warning: This list may be large. Use Realm.ListUsers() to get users scoped to a realm.
-func (db *Database) ListSystemUsers(p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
+func (db *Database) ListAllUsers(p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
 	return db.ListUsers(nil, p, scopes...)
 }
 
