@@ -1,0 +1,78 @@
+{{define "admin/events/index"}}
+
+{{$realm := .realm}}
+{{$events := .events}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>System event log</h1>
+    <p>
+      The list below shows the past 30 days of events that have occurred across all realms.
+      Not all events are recorded for auditing to preserve privacy.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Events</div>
+
+      <div class="card-body">
+        <form method="GET" action="/realm/events" id="search-form">
+          <div class="input-group">
+            <span class="input-group-prepend">
+              <input class="input-group-text bg-transparent" type="submit" value="Search"></input>
+            </span>
+            <input class="form-control" type="datetime-local" name="from" value="{{.from}}">
+            <div class="text-secondary pl-2 pr-2">to</div>
+            <input class="form-control" type="datetime-local" name="to" value="{{.to}}">
+          </div>
+        </form>
+      </div>
+
+
+      <div class="list-group list-group-flush">
+        {{range $event := $events}}
+          <div class="list-group-item flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+              <h5 class="mb-1">{{$event.Action}}</h5>
+              <small
+                data-timestamp="{{$event.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}"
+                data-toggle="tooltip" title="{{$event.CreatedAt.Format "2006-02-01 15:04 UTC"}}">
+                {{$event.CreatedAt.Format "2006-02-01 15:04"}}
+              </small>
+            </div>
+            <div>
+              <span class="text-primary text-nowrap">{{$event.ActorDisplay}}</span>
+
+              <span>{{$event.Action}}</span>
+
+              <span class="text-primary text-nowrap">{{$event.TargetDisplay}}</span>
+
+              {{if $event.Diff}}
+              <br>
+                <a href="#" data-toggle="collapse" data-target="#collapseDiff{{$event.ID}}"
+                  aria-expanded="true" aria-controls="collapseDiff{{$event.ID}}"
+                  class="small text-muted">
+                  Toggle diff
+                </a>
+                <pre id="collapseDiff{{$event.ID}}" class="collapse mt-3 mb-1"><code>{{$event.Diff}}</code></pre>
+              {{end}}
+            </div>
+          </div>
+        {{end}}
+      </div>
+    </div>
+
+    {{template "shared/pagination" .}}
+  </main>
+</body>
+</html>
+{{end}}

@@ -16,6 +16,8 @@ package database
 
 import (
 	"time"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
 // AuditEntry represents an event in the system. These records are purged after
@@ -74,4 +76,29 @@ func (db *Database) PurgeAuditEntries(maxAge time.Duration) (int64, error) {
 		Where("created_at < ?", createdBefore).
 		Delete(&AuditEntry{})
 	return result.RowsAffected, result.Error
+}
+
+// ListAudits returns the list audit events which match the given criteria.
+// Warning: This list may be large. Use Realm.Audits() to get users scoped to a realm.
+func (db *Database) ListAudits(p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
+	var entries []*AuditEntry
+
+	query := db.db.
+		Model(&AuditEntry{}).
+		Scopes(scopes...).
+		Order("created_at DESC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
+	}
+
+	paginator, err := Paginate(query, &entries, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return entries, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return entries, paginator, nil
 }

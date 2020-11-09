@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realmadmin
+package admin
 
 import (
 	"context"
@@ -31,15 +31,10 @@ const (
 	QueryToSearch = "to"
 )
 
-func (c *Controller) HandleEvents() http.Handler {
+// HandleEventsShow shows event logs.
+func (c *Controller) HandleEventsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
 
 		var scopes []database.Scope
 		from := r.FormValue(QueryFromSearch)
@@ -52,23 +47,22 @@ func (c *Controller) HandleEvents() http.Handler {
 			return
 		}
 
-		events, paginator, err := realm.Audits(c.db, pageParams, scopes...)
+		events, paginator, err := c.db.ListAudits(pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderEvents(ctx, w, realm, events, paginator, from, to)
+		c.renderEvents(ctx, w, events, paginator, from, to)
 	})
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	realm *database.Realm, events []*database.AuditEntry, paginator *pagination.Paginator, from, to string) {
+	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string) {
 	m := controller.TemplateMapFromContext(ctx)
-	m["user"] = realm
 	m["events"] = events
 	m["paginator"] = paginator
 	m[QueryFromSearch] = from
 	m[QueryToSearch] = to
-	c.h.RenderHTML(w, "realmadmin/events", m)
+	c.h.RenderHTML(w, "admin/events/index", m)
 }
