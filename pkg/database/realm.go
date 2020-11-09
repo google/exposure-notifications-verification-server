@@ -581,13 +581,13 @@ func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 	return emailConfig.Provider()
 }
 
-// Audits returns the list audit events which match the given criteria.
-func (r *Realm) Audits(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
+// ListAudits returns the list audit events which match the given criteria.
+func (r *Realm) ListAudits(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
 	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
 		return db.Where("realm_id = ?", r.ID)
 	})
 
-	return db.Audits(p, scopes...)
+	return db.ListAudits(p, scopes...)
 }
 
 // AbusePreventionEffectiveLimit returns the effective limit, multiplying the limit by the
@@ -772,13 +772,13 @@ func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) 
 	return &app, nil
 }
 
-// Users returns the list of users which match the given criteria.
-func (r *Realm) Users(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
+// ListUsers returns the list of users which match the given criteria.
+func (r *Realm) ListUsers(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
 	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
 		return db.Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID)
 	})
 
-	return db.Users(p, scopes...)
+	return db.ListUsers(p, scopes...)
 }
 
 // FindUser finds the given user in the realm by ID.

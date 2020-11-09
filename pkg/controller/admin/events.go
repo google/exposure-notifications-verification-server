@@ -47,7 +47,7 @@ func (c *Controller) HandleEventsShow() http.Handler {
 			return
 		}
 
-		events, paginator, err := c.db.Audits(pageParams, scopes...)
+		events, paginator, err := c.db.ListAudits(pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

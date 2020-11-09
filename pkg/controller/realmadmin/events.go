@@ -52,7 +52,7 @@ func (c *Controller) HandleEvents() http.Handler {
 			return
 		}
 
-		events, paginator, err := realm.Audits(c.db, pageParams, scopes...)
+		events, paginator, err := realm.ListAudits(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
