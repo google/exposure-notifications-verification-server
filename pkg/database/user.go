@@ -229,13 +229,22 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 	return stats, nil
 }
 
-// ListUsers returns a list of all users sorted by name.
+// ListSystemUsers returns a list of all users sorted by name.
 // Warning: This list may be large. Use Realm.ListUsers() to get users scoped to a realm.
-func (db *Database) ListUsers(p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
+func (db *Database) ListSystemUsers(p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
+	return db.ListUsers(nil, p, scopes...)
+}
+
+// ListUsers returns a list of all users sorted by name.
+func (db *Database) ListUsers(r *Realm, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
 	var users []*User
 	query := db.db.Model(&User{}).
 		Scopes(scopes...).
 		Order("LOWER(name) ASC")
+
+	if r != nil {
+		query = query.Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID)
+	}
 
 	if p == nil {
 		p = new(pagination.PageParams)

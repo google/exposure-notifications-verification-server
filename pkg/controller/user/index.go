@@ -48,7 +48,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		q := r.FormValue(QueryKeySearch)
 		scopes = append(scopes, database.WithUserSearch(q))
 
-		users, paginator, err := realm.ListUsers(c.db, pageParams, scopes...)
+		users, paginator, err := realm.Users(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
