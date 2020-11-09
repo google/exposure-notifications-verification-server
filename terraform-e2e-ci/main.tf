@@ -64,8 +64,6 @@ module "en-alerting" {
   adminapi_hosts  = ["adminapi.notexistdomain.notexist"]
   apiserver_hosts = ["apiserver.notexistdomain.notexist"]
   server_hosts    = ["encv-test.notexistdomain.notexist"]
-
-  notification-email = ""
 }
 
 output "en" {
