@@ -53,6 +53,22 @@ func WithUserSearch(q string) Scope {
 	}
 }
 
+// WithAuditSearch returns a scope that adds querying for Audit events by time.
+func WithAuditSearch(from, to string) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		from = project.TrimSpace(from)
+		if from != "" {
+			db = db.Where("audit_entries.created_at >= ?", from)
+		}
+
+		to = project.TrimSpace(to)
+		if to != "" {
+			db = db.Where("audit_entries.created_at <= ?", to)
+		}
+		return db
+	}
+}
+
 // WithAuthorizedAppSearch returns a scope that adds querying for API keys by
 // name and preview, case-insensitive. It's only applicable to functions that
 // query AuthorizedApp.

@@ -23,6 +23,14 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
+const (
+	// QueryFromSearch is the query key for a starting time.
+	QueryFromSearch = "from"
+
+	// QueryFromSearch is the query key for an ending time.
+	QueryToSearch = "to"
+)
+
 func (c *Controller) HandleEvents() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -33,27 +41,34 @@ func (c *Controller) HandleEvents() http.Handler {
 			return
 		}
 
+		var scopes []database.Scope
+		from := r.FormValue(QueryFromSearch)
+		to := r.FormValue(QueryToSearch)
+		scopes = append(scopes, database.WithAuditSearch(from, to))
+
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		events, paginator, err := realm.Audits(c.db, pageParams)
+		events, paginator, err := realm.Audits(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderEvents(ctx, w, realm, events, paginator)
+		c.renderEvents(ctx, w, realm, events, paginator, from, to)
 	})
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	realm *database.Realm, events []*database.AuditEntry, paginator *pagination.Paginator) {
+	realm *database.Realm, events []*database.AuditEntry, paginator *pagination.Paginator, from, to string) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["user"] = realm
 	m["events"] = events
 	m["paginator"] = paginator
+	m[QueryFromSearch] = from
+	m[QueryToSearch] = to
 	c.h.RenderHTML(w, "realmadmin/events", m)
 }
