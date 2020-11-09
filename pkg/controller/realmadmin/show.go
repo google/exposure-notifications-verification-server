@@ -152,6 +152,7 @@ func formatData(userStats []*database.RealmUserStats) ([]string, [][]interface{}
 func (c *Controller) renderHTML(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats, userStats []*database.RealmUserStats) error {
 	names, format := formatData(userStats)
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Realm stats")
 	m["user"] = realm
 	m["stats"] = stats
 	m["names"] = names

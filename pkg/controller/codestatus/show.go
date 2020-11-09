@@ -170,6 +170,7 @@ type Code struct {
 
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, code Code) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Verification code status")
 	m["code"] = code
 	c.h.RenderHTML(w, "code/show", m)
 }

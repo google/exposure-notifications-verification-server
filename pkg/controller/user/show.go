@@ -101,6 +101,7 @@ func (c *Controller) findUser(currentUser *database.User, realm *database.Realm,
 
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats []*database.UserStats) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("User: %s", user.Name)
 	m["user"] = user
 	m["stats"] = stats
 	c.h.RenderHTML(w, "users/show", m)

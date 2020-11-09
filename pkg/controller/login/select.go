@@ -111,6 +111,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 // renderSelect renders the realm selection page.
 func (c *Controller) renderSelect(ctx context.Context, w http.ResponseWriter, realms []*database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Realm selector")
 	m["realms"] = realms
 	c.h.RenderHTML(w, "login/select-realm", m)
 }
