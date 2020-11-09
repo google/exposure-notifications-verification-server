@@ -66,13 +66,13 @@ func PaginateFn(query *gorm.DB, page, limit uint64, populateFn func(query *gorm.
 		remaining := total - current
 		nextPages = uint64(math.Ceil(float64(remaining) / float64(limit)))
 		if nextPages > 10 {
-			nextPages = 10
+			nextPages = 5
 		}
 	}
 
 	prevPages := page - 1
 	if prevPages > 10 {
-		prevPages = 10
+		prevPages = 5
 	}
 
 	var paginator pagination.Paginator
