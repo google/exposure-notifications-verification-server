@@ -164,7 +164,7 @@ resource "google_monitoring_alert_policy" "five_xx" {
       | align rate(1m)
       | every 1m
       | group_by [resource.service_name], [val: sum(value.request_count)]
-      | condition val() > 2 '1/s'
+      | condition val > 2 '1/s'
       EOT
       trigger {
         count = 1
@@ -206,9 +206,8 @@ resource "google_monitoring_alert_policy" "probers" {
       uptime_url :: monitoring.googleapis.com/uptime_check/check_passed
       | align next_older(1m)
       | every 1m
-      | group_by [resource.host],
-      [value_check_passed_fraction_true: fraction_true(value.check_passed)]
-      | condition val() < 0.2 '10^2.%'
+      | group_by [resource.host], [val: fraction_true(value.check_passed)]
+      | condition val < 0.2 '10^2.%'
       EOT
       trigger {
         count = 1
