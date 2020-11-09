@@ -72,8 +72,8 @@ resource "google_monitoring_alert_policy" "backend_latency" {
       && resource.forwarding_rule_name == '${var.https-forwarding-rule}')
       | align delta(1m)
       | every 1m
-      | group_by [resource.backend_target_name], [percentile: percentile(value.backend_latencies, 99)]
-      | condition val() > 2000 '1'
+      | group_by [resource.backend_target_name], [val: percentile(value.backend_latencies, 99)]
+      | condition val > 2000 '1'
       EOT
       trigger {
         count = 1
@@ -248,7 +248,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
       generic_task :: custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count
       | filter metric.result = "RATE_LIMITED"
       | group_by [resource.service_name], [val: sum(value.request_count)]
-      | condition val() > 1
+      | condition val > 1
       EOT
       trigger {
         count = 1
