@@ -21,6 +21,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+const (
+	// maxPrevPages and maxNextPages control the "window" to show.
+	maxPrevPages = 5
+	maxNextPages = 5
+)
+
 // Paginate is a helper that paginates a gorm query into the given result. In
 // addition to reflecting into the provided result, it returns a pagination
 // struct.
@@ -65,14 +71,14 @@ func PaginateFn(query *gorm.DB, page, limit uint64, populateFn func(query *gorm.
 	if current := offset + limit; current < total {
 		remaining := total - current
 		nextPages = uint64(math.Ceil(float64(remaining) / float64(limit)))
-		if nextPages > 10 {
-			nextPages = 10
+		if nextPages > maxNextPages {
+			nextPages = maxNextPages
 		}
 	}
 
 	prevPages := page - 1
-	if prevPages > 10 {
-		prevPages = 10
+	if prevPages > maxPrevPages {
+		prevPages = maxPrevPages
 	}
 
 	var paginator pagination.Paginator
