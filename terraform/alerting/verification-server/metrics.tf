@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# NOTE: Metric descriptors cannot be "updated", every modification to this file
+# will result in a destroy+recreate of the metric, and loss all previously
+# collected data.
+
 resource "google_monitoring_metric_descriptor" "api--issue--request_count" {
   project      = var.verification-server-project
   description  = "Count of code issue requests"
