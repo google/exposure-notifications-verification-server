@@ -23,8 +23,22 @@
         </a>
       </div>
 
+      <div class="card-body">
+        <form method="GET" action="/apikeys" id="search-form">
+          <div class="input-group">
+            <span class="input-group-prepend">
+              <div class="input-group-text bg-transparent">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+              </div>
+            </span>
+            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
+              autocomplete="off" class="form-control" />
+          </div>
+        </form>
+      </div>
+
       {{if .apps}}
-        <table class="table table-bordered table-striped table-fixed table-inner-border-only mb-0">
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
               <th scope="col" width="40"></th>

@@ -24,6 +24,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
+const (
+	// QueryKeySearch is the query key where the search query exists.
+	QueryKeySearch = "q"
+)
+
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -40,21 +45,27 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		apps, paginator, err := realm.ListAuthorizedApps(c.db, pageParams)
+		var scopes []database.Scope
+		q := r.FormValue(QueryKeySearch)
+		scopes = append(scopes, database.WithAuthorizedAppSearch(q))
+
+		apps, paginator, err := realm.ListAuthorizedApps(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(ctx, w, apps, paginator)
+		c.renderIndex(ctx, w, apps, paginator, q)
 	})
 }
 
 // renderIndex renders the index page.
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.AuthorizedApp, paginator *pagination.Paginator) {
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter,
+	apps []*database.AuthorizedApp, paginator *pagination.Paginator, query string) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["title"] = fmt.Sprintf("API keys - %s", m["title"])
 	m["apps"] = apps
 	m["paginator"] = paginator
+	m["query"] = query
 	c.h.RenderHTML(w, "apikeys/index", m)
 }

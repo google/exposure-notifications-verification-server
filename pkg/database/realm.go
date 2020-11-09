@@ -701,13 +701,13 @@ func (r *Realm) ListSigningKeys(db *Database) ([]*SigningKey, error) {
 	return keys, nil
 }
 
-func (r *Realm) ListAuthorizedApps(db *Database, p *pagination.PageParams) ([]*AuthorizedApp, *pagination.Paginator, error) {
+func (r *Realm) ListAuthorizedApps(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuthorizedApp, *pagination.Paginator, error) {
 	var authApps []*AuthorizedApp
-	query := db.db.
+	query := db.db.Model(&AuthorizedApp{}).
 		Unscoped().
-		Model(&AuthorizedApp{}).
+		Scopes(scopes...).
 		Where("realm_id = ?", r.ID).
-		Order("authorized_apps.deleted_at DESC, LOWER(authorized_apps.name)")
+		Order("LOWER(authorized_apps.name)")
 
 	if p == nil {
 		p = new(pagination.PageParams)

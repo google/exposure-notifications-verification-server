@@ -52,3 +52,17 @@ func WithUserSearch(q string) Scope {
 		return db
 	}
 }
+
+// WithAuthorizedAppSearch returns a scope that adds querying for API keys by
+// name and preview, case-insensitive. It's only applicable to functions that
+// query AuthorizedApp.
+func WithAuthorizedAppSearch(q string) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		q = project.TrimSpace(q)
+		if q != "" {
+			q = `%` + q + `%`
+			return db.Where("authorized_apps.name ILIKE ? OR authorized_apps.api_key_preview ILIKE ?", q, q)
+		}
+		return db
+	}
+}
