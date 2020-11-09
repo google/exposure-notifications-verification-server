@@ -302,7 +302,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			func() {
+			if err := func() error {
 				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
@@ -313,11 +313,16 @@ func (c *Controller) HandleIssue() http.Handler {
 					}
 
 					logger.Errorw("failed to send sms", "error", err)
-					c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
 					blame = observability.BlameServer
 					result = observability.ResultError("FAILED_TO_SEND_SMS")
+					return err
 				}
-			}()
+
+				return nil
+			}(); err != nil {
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms: %s", err))
+				return
+			}
 		}
 
 		c.h.RenderJSON(w, http.StatusOK,
