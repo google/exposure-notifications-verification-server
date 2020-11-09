@@ -23,6 +23,21 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Events</div>
+
+      <div class="card-body">
+        <form method="GET" action="/realm/events" id="search-form">
+          <div class="input-group">
+            <span class="input-group-prepend">
+              <input class="input-group-text bg-transparent" type="submit" value="Search"></input>
+            </span>
+            <input class="form-control" type="datetime-local" name="from" value="{{.from}}">
+            <div class="text-secondary pl-2 pr-2">to</div>
+            <input class="form-control" type="datetime-local" name="to" value="{{.to}}">
+          </div>
+        </form>
+      </div>
+
+
       <div class="list-group list-group-flush">
         {{range $event := $events}}
           <div class="list-group-item flex-column align-items-start">
@@ -55,8 +70,6 @@
         {{end}}
       </div>
     </div>
-
-    {{template "shared/pagination" .}}
   </main>
 </body>
 </html>

@@ -581,12 +581,14 @@ func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 	return emailConfig.Provider()
 }
 
-func (r *Realm) Audits(db *Database, p *pagination.PageParams) ([]*AuditEntry, *pagination.Paginator, error) {
+// Audits returns the list audit events which match the given criteria.
+func (r *Realm) Audits(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
 	var entries []*AuditEntry
 
 	query := db.db.
 		Model(&AuditEntry{}).
 		Where("realm_id = ?", r.ID).
+		Scopes(scopes...).
 		Order("created_at DESC")
 
 	if p == nil {
