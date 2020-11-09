@@ -581,29 +581,13 @@ func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 	return emailConfig.Provider()
 }
 
-// Audits returns the list audit events which match the given criteria.
-func (r *Realm) Audits(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
-	var entries []*AuditEntry
+// ListAudits returns the list audit events which match the given criteria.
+func (r *Realm) ListAudits(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
+	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
+		return db.Where("audit_entries.realm_id = ?", r.ID)
+	})
 
-	query := db.db.
-		Model(&AuditEntry{}).
-		Where("realm_id = ?", r.ID).
-		Scopes(scopes...).
-		Order("created_at DESC")
-
-	if p == nil {
-		p = new(pagination.PageParams)
-	}
-
-	paginator, err := Paginate(query, &entries, p.Page, p.Limit)
-	if err != nil {
-		if IsNotFound(err) {
-			return entries, nil, nil
-		}
-		return nil, nil, err
-	}
-
-	return entries, paginator, nil
+	return db.ListAudits(p, scopes...)
 }
 
 // AbusePreventionEffectiveLimit returns the effective limit, multiplying the limit by the
@@ -788,40 +772,13 @@ func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) 
 	return &app, nil
 }
 
-// CountUsers returns the count users on this realm.
-func (r *Realm) CountUsers(db *Database) (int, error) {
-	var count int
-	if err := db.db.
-		Model(&User{}).
-		Joins("INNER JOIN user_realms ON user_realms.user_id = users.id and realm_id = ?", r.ID).
-		Count(&count).
-		Error; err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
 // ListUsers returns the list of users which match the given criteria.
 func (r *Realm) ListUsers(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
-	var users []*User
-	query := db.db.Model(&User{}).
-		Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID).
-		Scopes(scopes...).
-		Order("LOWER(users.name) ASC")
+	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
+		return db.Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID)
+	})
 
-	if p == nil {
-		p = new(pagination.PageParams)
-	}
-
-	paginator, err := Paginate(query, &users, p.Page, p.Limit)
-	if err != nil {
-		if IsNotFound(err) {
-			return users, nil, nil
-		}
-		return nil, nil, err
-	}
-
-	return users, paginator, nil
+	return db.ListUsers(p, scopes...)
 }
 
 // FindUser finds the given user in the realm by ID.
