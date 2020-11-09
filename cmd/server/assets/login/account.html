@@ -73,7 +73,7 @@
 
             {{- /* system admins can remove themselves from realms */ -}}
             {{if $user.SystemAdmin}}
-            <a href="/users/{{.ID}}" class="d-block text-danger float-right" data-method="DELETE"
+            <a href="/realm/users/{{.ID}}" class="d-block text-danger float-right" data-method="DELETE"
               data-confirm="Are you sure you want to leave {{.Name}}?">
               <span class="oi oi-account-logout" aria-hidden="true"></span>
               Leave realm

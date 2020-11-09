@@ -270,7 +270,7 @@ func Server(
 
 	// users
 	{
-		userSub := r.PathPrefix("/users").Subrouter()
+		userSub := r.PathPrefix("/realm/users").Subrouter()
 		userSub.Use(requireAuth)
 		userSub.Use(loadCurrentRealm)
 		userSub.Use(requireRealm)

@@ -67,7 +67,7 @@
         </table>
       </div>
     </div>
-    <a class=" card-link" href="/users">&larr; All users</a>
+    <a class=" card-link" href="/realm/users">&larr; All users</a>
   </main>
 
   <script type="text/javascript">
@@ -177,7 +177,7 @@
     function uploadBatch(data) {
       return $.ajax({
         type: 'POST',
-        url: '/users/import',
+        url: '/realm/users/import',
         data: JSON.stringify({ "users": data }),
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/json',

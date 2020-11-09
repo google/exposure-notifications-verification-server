@@ -101,7 +101,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		flash.Alert("Successfully updated user '%v'", form.Name)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 	})
 }
 

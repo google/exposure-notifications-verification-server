@@ -96,7 +96,7 @@ aria-expanded="false" aria-label="Toggle navigation">
       <a class="dropdown-item {{if .currentPath.IsDir "/realm/events"}}active{{end}}" href="/realm/events">Event log</a>
       <a class="dropdown-item {{if .currentPath.IsDir "/realm/keys"}}active{{end}}" href="/realm/keys">Signing keys</a>
       <a class="dropdown-item {{if .currentPath.IsDir "/realm/stats"}}active{{end}}" href="/realm/stats">Statistics</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/users"}}active{{end}}" href="/users">Users</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/users"}}active{{end}}" href="/realm/users">Users</a>
       <a class="dropdown-item {{if .currentPath.IsDir "/realm/settings"}}active{{end}}" href="/realm/settings#general">Settings</a>
       <div class="dropdown-divider"></div>
       {{end}}

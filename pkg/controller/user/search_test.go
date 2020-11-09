@@ -85,7 +85,7 @@ func TestHandleSearch(t *testing.T) {
 		browser.SetCookie(cookie),
 
 		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/users`),
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/users`),
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#users-index`, chromedp.ByQuery),

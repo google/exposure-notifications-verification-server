@@ -18,7 +18,7 @@
 
     <h1>{{$user.Name}}</h1>
     <p class="float-right">
-      <a href="/users/{{$user.ID}}/edit">Edit</a>
+      <a href="/realm/users/{{$user.ID}}/edit">Edit</a>
     </p>
     <p>
       Here is information about the user.
@@ -46,7 +46,7 @@
           {{end}}
         </div>
 
-        <a href="/users/{{$user.ID}}/reset-password" data-method="POST" class="btn btn-primary btn-block">Send password reset</a>
+        <a href="/realm/users/{{$user.ID}}/reset-password" data-method="POST" class="btn btn-primary btn-block">Send password reset</a>
       </div>
     </div>
 
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <a class="card-link" href="/users">&larr; All users</a>
+    <a class="card-link" href="/realm/users">&larr; All users</a>
   </main>
 
   {{if $stats}}
