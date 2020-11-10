@@ -82,3 +82,16 @@ func WithAuthorizedAppSearch(q string) Scope {
 		return db
 	}
 }
+
+// WithRealmSearch returns a scope that adds querying for realms by name. It's
+// only applicable to functions that query Realm.
+func WithRealmSearch(q string) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		q = project.TrimSpace(q)
+		if q != "" {
+			q = `%` + q + `%`
+			return db.Where("realms.name ILIKE ?", q)
+		}
+		return db
+	}
+}

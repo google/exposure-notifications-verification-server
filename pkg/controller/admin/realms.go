@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/gorilla/mux"
 )
 
@@ -27,7 +28,15 @@ func (c *Controller) HandleRealmsIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realms, err := c.db.GetRealms()
+		pageParams, err := pagination.FromRequest(r)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		q := r.FormValue(QueryKeySearch)
+
+		realms, paginator, err := c.db.ListRealms(pageParams, database.WithRealmSearch(q))
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -36,6 +45,8 @@ func (c *Controller) HandleRealmsIndex() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		m.Title("Realms - System Admin")
 		m["realms"] = realms
+		m["query"] = q
+		m["paginator"] = paginator
 		c.h.RenderHTML(w, "admin/realms/index", m)
 	})
 }
