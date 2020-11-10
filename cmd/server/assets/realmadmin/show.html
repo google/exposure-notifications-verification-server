@@ -118,7 +118,7 @@
         colors: ['#007bff', '#ff7b00'],
         legend: {position: 'bottom'},
         tooltip: {trigger: 'focus'},
-        title: "Codes Claimed",
+        title: "Codes Issued and Claimed (includes API-issued)",
       };
 
       var chart = new google.visualization.LineChart(document.getElementById('realm_chart'));
@@ -212,7 +212,7 @@
       var options = {
         legend: "none",
         tooltip: {trigger: 'focus'},
-        title: "Codes Per User",
+        title: "Codes Per User (excludes API-issued)",
       };
 
       userChart = new google.visualization.LineChart(document.getElementById('per_user_chart'));
