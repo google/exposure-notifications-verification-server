@@ -28,6 +28,7 @@ func (c *Controller) HandleShowChangePassword() http.Handler {
 		ctx := r.Context()
 
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Change password")
 		m["firebase"] = c.config.Firebase
 		m["requirements"] = &c.config.PasswordRequirements
 		c.h.RenderHTML(w, "login/change-password", m)

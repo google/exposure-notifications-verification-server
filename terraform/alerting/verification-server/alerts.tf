@@ -240,14 +240,14 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
   display_name = "Elevated Rate Limited Count"
   combiner     = "OR"
   conditions {
-    display_name = "Rate Limited count by service_name"
+    display_name = "Rate Limited count by job"
     condition_monitoring_query_language {
       duration = "300s"
       query    = <<-EOT
       fetch
       generic_task :: custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count
       | filter metric.result = "RATE_LIMITED"
-      | group_by [resource.service_name], [val: sum(value.request_count)]
+      | group_by [resource.job], [val: sum(value.request_count)]
       | condition val > 1 '1'
       EOT
       trigger {

@@ -79,6 +79,7 @@ func (c *Controller) HandleCachesClear() http.Handler {
 
 func (c *Controller) renderCachesIndex(ctx context.Context, w http.ResponseWriter) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Caches - System Admin")
 	m["caches"] = caches
 	c.h.RenderHTML(w, "admin/caches/index", m)
 }

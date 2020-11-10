@@ -27,7 +27,7 @@ const (
 	// QueryFromSearch is the query key for a starting time.
 	QueryFromSearch = "from"
 
-	// QueryFromSearch is the query key for an ending time.
+	// QueryToSearch is the query key for an ending time.
 	QueryToSearch = "to"
 )
 
@@ -52,7 +52,7 @@ func (c *Controller) HandleEvents() http.Handler {
 			return
 		}
 
-		events, paginator, err := realm.Audits(c.db, pageParams, scopes...)
+		events, paginator, err := realm.ListAudits(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -65,6 +65,7 @@ func (c *Controller) HandleEvents() http.Handler {
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
 	realm *database.Realm, events []*database.AuditEntry, paginator *pagination.Paginator, from, to string) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Events")
 	m["user"] = realm
 	m["events"] = events
 	m["paginator"] = paginator

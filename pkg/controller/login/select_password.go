@@ -54,6 +54,7 @@ func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 
 func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.ResponseWriter, email, code string, codeInvalid bool) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Change password")
 	m["email"] = email
 	m["code"] = code
 	m["codeInvalid"] = codeInvalid

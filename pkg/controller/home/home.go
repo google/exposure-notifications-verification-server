@@ -77,6 +77,7 @@ func (c *Controller) HandleHome() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Issue code")
 
 		// Set test date params
 		now := time.Now().UTC()

@@ -270,7 +270,7 @@ func Server(
 
 	// users
 	{
-		userSub := r.PathPrefix("/users").Subrouter()
+		userSub := r.PathPrefix("/realm/users").Subrouter()
 		userSub.Use(requireAuth)
 		userSub.Use(loadCurrentRealm)
 		userSub.Use(requireRealm)
@@ -368,6 +368,7 @@ func Server(
 		adminSub.Handle("/mobileapps", adminController.HandleMobileAppsShow()).Methods("GET")
 		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
 		adminSub.Handle("/email", adminController.HandleEmailUpdate()).Methods("GET", "POST")
+		adminSub.Handle("/events", adminController.HandleEventsShow()).Methods("GET")
 
 		adminSub.Handle("/caches", adminController.HandleCachesIndex()).Methods("GET")
 		adminSub.Handle("/caches/clear/{id}", adminController.HandleCachesClear()).Methods("POST")

@@ -55,6 +55,7 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Users - System Admin")
 		m["users"] = users
 		m["query"] = q
 		m["filter"] = filter
@@ -82,6 +83,7 @@ func (c *Controller) HandleUserShow() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("User: %s - System Admin", user.Name)
 		m["user"] = user
 		c.h.RenderHTML(w, "admin/users/show", m)
 	})

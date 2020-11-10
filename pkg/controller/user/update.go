@@ -101,18 +101,20 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		flash.Alert("Successfully updated user '%v'", form.Name)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 	})
 }
 
 func (c *Controller) renderUpdate(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("New user")
 	m["user"] = user
 	c.h.RenderHTML(w, "users/new", m)
 }
 
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Edit user: %s", user.Name)
 	m["user"] = user
 	c.h.RenderHTML(w, "users/edit", m)
 }

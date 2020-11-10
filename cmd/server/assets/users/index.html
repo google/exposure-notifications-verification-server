@@ -22,16 +22,16 @@
       <div class="card-header">
         <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
         Users
-        <a href="/users/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New user">
+        <a href="/realm/users/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New user">
           <span class="oi oi-plus small" aria-hidden="true"></span>
         </a>
-        <a href="/users/import" class="float-right mr-3 text-secondary" data-toggle="tooltip" title="Bulk import users">
+        <a href="/realm/users/import" class="float-right mr-3 text-secondary" data-toggle="tooltip" title="Bulk import users">
           <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
         </a>
       </div>
 
       <div class="card-body">
-        <form method="GET" action="/users" id="search-form">
+        <form method="GET" action="/realm/users" id="search-form">
           <div class="input-group">
             <span class="input-group-prepend">
               <div class="input-group-text bg-transparent">
@@ -57,7 +57,7 @@
             {{range $users}}
             <tr id="user-{{.ID}}">
               <td>
-                <a href="/users/{{.ID}}">{{.Name}}</a>
+                <a href="/realm/users/{{.ID}}">{{.Name}}</a>
                 {{if .CanAdminRealm $currentRealm.ID}}
                   <span class="ml-1 badge badge-pill badge-primary">Admin</span>
                 {{end}}
@@ -68,7 +68,7 @@
               <td class="text-center">
                 {{if not (eq .ID $currentUser.ID)}}
                 {{- /* cannot delete yourself */ -}}
-                <a href="/users/{{.ID}}" class="d-block text-danger" data-method="DELETE"
+                <a href="/realm/users/{{.ID}}" class="d-block text-danger" data-method="DELETE"
                   data-confirm="Are you sure you want to remove '{{.Name}}'?" data-toggle="tooltip"
                   title="Remove this user">
                   <span class="oi oi-trash" aria-hidden="true"></span>

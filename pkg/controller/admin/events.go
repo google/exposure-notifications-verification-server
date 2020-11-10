@@ -24,14 +24,22 @@ import (
 )
 
 const (
-	// QueryKeySearch is the query key where the search query exists.
-	QueryKeySearch = "q"
+	// QueryFromSearch is the query key for a starting time.
+	QueryFromSearch = "from"
+
+	// QueryToSearch is the query key for an ending time.
+	QueryToSearch = "to"
 )
 
-// HandleMobileAppsShow shows the configured mobile apps.
-func (c *Controller) HandleMobileAppsShow() http.Handler {
+// HandleEventsShow shows event logs.
+func (c *Controller) HandleEventsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		var scopes []database.Scope
+		from := r.FormValue(QueryFromSearch)
+		to := r.FormValue(QueryToSearch)
+		scopes = append(scopes, database.WithAuditSearch(from, to))
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
@@ -39,24 +47,22 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 			return
 		}
 
-		q := r.FormValue(QueryKeySearch)
-
-		apps, paginator, err := c.db.SearchActiveAppsWithRealm(pageParams, q)
+		events, paginator, err := c.db.ListAudits(pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderShowMobileApps(ctx, w, apps, paginator, q)
+		c.renderEvents(ctx, w, events, paginator, from, to)
 	})
 }
 
-func (c *Controller) renderShowMobileApps(ctx context.Context, w http.ResponseWriter,
-	apps []*database.ExtendedMobileApp, paginator *pagination.Paginator, q string) {
+func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
+	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string) {
 	m := controller.TemplateMapFromContext(ctx)
-	m.Title("Mobile apps - System Admin")
-	m["apps"] = apps
+	m["events"] = events
 	m["paginator"] = paginator
-	m["query"] = q
-	c.h.RenderHTML(w, "admin/mobileapps/index", m)
+	m[QueryFromSearch] = from
+	m[QueryToSearch] = to
+	c.h.RenderHTML(w, "admin/events/index", m)
 }

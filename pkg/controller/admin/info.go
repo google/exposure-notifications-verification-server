@@ -25,6 +25,7 @@ func (c *Controller) HandleInfoShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Info - System Admin")
 		c.h.RenderHTML(w, "admin/info", m)
 	})
 }

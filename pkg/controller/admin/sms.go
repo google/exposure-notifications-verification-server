@@ -82,6 +82,7 @@ func (c *Controller) HandleSMSUpdate() http.Handler {
 
 func (c *Controller) renderShowSMS(ctx context.Context, w http.ResponseWriter, smsConfig *database.SMSConfig) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("SMS - System Admin")
 	m["smsConfig"] = smsConfig
 	c.h.RenderHTML(w, "admin/sms/show", m)
 }
