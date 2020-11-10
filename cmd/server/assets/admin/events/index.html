@@ -23,7 +23,13 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Events
-      {{if .realm}}<span class="badge badge-secondary">{{.realm.Name}}</span>{{end}}
+      {{if .realm}}
+      <span class="badge badge-secondary">{{.realm.Name}}
+        <a class="" href="/admin/events?from={{.from}}&to={{.to}}">
+          <span class="oi oi-circle-x ml-1 text-light" aria-hidden="true"></span>
+        </a>
+      </span>
+      {{end}}
       </div>
 
       <div class="card-body">
