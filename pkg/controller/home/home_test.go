@@ -66,7 +66,7 @@ func TestHandleHome_IssueCode(t *testing.T) {
 	}
 
 	// Create a browser runner.
-	browserCtx := browser.New(t)
+	browserCtx := browser.NewHeadful(t)
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
@@ -83,8 +83,9 @@ func TestHandleHome_IssueCode(t *testing.T) {
 		// Wait for render.
 		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
 
-		// Add a test date of yesterday.
+		// Add a date fields
 		chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
+		chromedp.SetValue(`input#symptom-date`, yesterday, chromedp.ByQuery),
 
 		// Click the issue button.
 		chromedp.Click(`#submit`, chromedp.ByQuery),
