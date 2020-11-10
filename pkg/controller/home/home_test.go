@@ -70,6 +70,8 @@ func TestHandleHome_IssueCode(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
+	yesterday := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+
 	var code string
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
@@ -80,6 +82,9 @@ func TestHandleHome_IssueCode(t *testing.T) {
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
+
+		// Add a test date of yesterday.
+		chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
 
 		// Click the issue button.
 		chromedp.Click(`#submit`, chromedp.ByQuery),
