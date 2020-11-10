@@ -28,18 +28,15 @@
         <form method="GET" action="/admin/events" id="search-form">
           <div class="input-group">
             <span class="input-group-prepend">
-              <div class="input-group-text bg-transparent">
+              <button type="submit" class="input-group-text bg-transparent">
                 <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-              </div>
+              </button>
             </span>
             <input type="datetime-local" name="from" value="{{.from}}" class="form-control">
             <span class="input-group-append">
               <span class="input-group-text bg-transparent border-left-0 border-right-0">thru</span>
             </span>
             <input type="datetime-local" name="to" value="{{.to}}" class="form-control">
-            <span class="input-group-append">
-              <input type="submit" value="Search" class="input-group-text bg-transparent">
-            </span>
           </div>
         </form>
       </div>
