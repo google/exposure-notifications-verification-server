@@ -40,7 +40,7 @@ func LoadCurrentRealm(cacher cache.Cacher, db *database.Database, h *render.Rend
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
+			logger := logging.FromContext(ctx).Named("middleware.LoadCurrentRealm")
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
