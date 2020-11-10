@@ -34,8 +34,14 @@
                 <option value="systemAdmins" {{selectedIf (eq .filter "systemAdmins")}}>System admins</option>
               </select>
             </span>
-            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
+            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-primary">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+                <span class="sr-only">Search</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

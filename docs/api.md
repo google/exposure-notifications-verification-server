@@ -308,7 +308,10 @@ curl https://example.encv.org/api/endpoint \
 
 The client should still send a real request with a real request body (the body
 will not be processed). The server will respond with a fake response that your
-client **MUST NOT** process. Client's should sporadically issue chaff requests.
+client **MUST NOT** process or parse. The response will not be a valid JSON 
+object.
+
+Client's should sporadically issue chaff requests to mirror real-world usage.
 
 # Response codes overview
 

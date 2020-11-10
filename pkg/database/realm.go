@@ -732,11 +732,12 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 }
 
 // ListMobileApps gets all the mobile apps for the realm.
-func (r *Realm) ListMobileApps(db *Database, p *pagination.PageParams) ([]*MobileApp, *pagination.Paginator, error) {
+func (r *Realm) ListMobileApps(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*MobileApp, *pagination.Paginator, error) {
 	var mobileApps []*MobileApp
 	query := db.db.
 		Unscoped().
 		Model(&MobileApp{}).
+		Scopes(scopes...).
 		Where("realm_id = ?", r.ID).
 		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)")
 

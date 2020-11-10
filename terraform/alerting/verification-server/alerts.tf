@@ -247,8 +247,10 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
       fetch
       generic_task :: custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count
       | filter metric.result = "RATE_LIMITED"
+      | align
+      | window 1m
       | group_by [resource.job], [val: sum(value.request_count)]
-      | condition val > 1 '1'
+      | condition val > 1
       EOT
       trigger {
         count = 1

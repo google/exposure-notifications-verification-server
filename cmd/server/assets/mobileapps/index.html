@@ -23,8 +23,23 @@
         </a>
       </div>
 
+      <div class="card-body">
+        <form method="GET" action="/mobile-apps" id="search-form">
+          <div class="input-group">
+            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
+              autocomplete="off" class="form-control" />
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-primary">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+                <span class="sr-only">Search</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
       {{if $apps}}
-        <table class="table table-bordered table-striped table-fixed table-inner-border-only mb-0">
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
               <th scope="col" width="40"></th>
@@ -72,7 +87,7 @@
         </table>
       {{else}}
         <p class="card-body text-center mb-0">
-          <em>There are no mobile apps.</em>
+          <em>There are no mobile apps{{if .query}} that match the query{{end}}.</em>
         </p>
       {{end}}
     </div>
