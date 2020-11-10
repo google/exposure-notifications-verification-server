@@ -348,32 +348,7 @@ func Server(
 		adminSub.Use(rateLimit)
 
 		adminController := admin.New(ctx, cfg, cacher, db, authProvider, limiterStore, h)
-		adminSub.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
-		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
-		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
-		adminSub.Handle("/realms/new", adminController.HandleRealmsCreate()).Methods("GET")
-		adminSub.Handle("/realms/{id:[0-9]+}/edit", adminController.HandleRealmsUpdate()).Methods("GET")
-		adminSub.Handle("/realms/{realm_id:[0-9]+}/add/{user_id:[0-9]+}", adminController.HandleRealmsAdd()).Methods("PATCH")
-		adminSub.Handle("/realms/{realm_id:[0-9]+}/remove/{user_id:[0-9]+}", adminController.HandleRealmsRemove()).Methods("PATCH")
-		adminSub.Handle("/realms/{id:[0-9]+}/realmadmin", adminController.HandleRealmsSelectAndAdmin()).Methods("GET")
-		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
-
-		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
-		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserShow()).Methods("GET")
-		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserDelete()).Methods("DELETE")
-		adminSub.Handle("/users", adminController.HandleSystemAdminCreate()).Methods("POST")
-		adminSub.Handle("/users/new", adminController.HandleSystemAdminCreate()).Methods("GET")
-		adminSub.Handle("/users/{id:[0-9]+}/revoke", adminController.HandleSystemAdminRevoke()).Methods("DELETE")
-
-		adminSub.Handle("/mobileapps", adminController.HandleMobileAppsShow()).Methods("GET")
-		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
-		adminSub.Handle("/email", adminController.HandleEmailUpdate()).Methods("GET", "POST")
-		adminSub.Handle("/events", adminController.HandleEventsShow()).Methods("GET")
-
-		adminSub.Handle("/caches", adminController.HandleCachesIndex()).Methods("GET")
-		adminSub.Handle("/caches/clear/{id}", adminController.HandleCachesClear()).Methods("POST")
-
-		adminSub.Handle("/info", adminController.HandleInfoShow()).Methods("GET")
+		systemAdminRoutes(adminSub, adminController)
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be
@@ -382,4 +357,37 @@ func Server(
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod()(r))
 	return mux, nil
+}
+
+// systemAdminRoutes are the system routes, rooted at /admin.
+func systemAdminRoutes(r *mux.Router, c *admin.Controller) {
+	// Redirect / to /admin/realms
+	r.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
+	r.Handle("/", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
+
+	r.Handle("/realms", c.HandleRealmsIndex()).Methods("GET")
+	r.Handle("/realms", c.HandleRealmsCreate()).Methods("POST")
+	r.Handle("/realms/new", c.HandleRealmsCreate()).Methods("GET")
+	r.Handle("/realms/{id:[0-9]+}/edit", c.HandleRealmsUpdate()).Methods("GET")
+	r.Handle("/realms/{realm_id:[0-9]+}/add/{user_id:[0-9]+}", c.HandleRealmsAdd()).Methods("PATCH")
+	r.Handle("/realms/{realm_id:[0-9]+}/remove/{user_id:[0-9]+}", c.HandleRealmsRemove()).Methods("PATCH")
+	r.Handle("/realms/{id:[0-9]+}/realmadmin", c.HandleRealmsSelectAndAdmin()).Methods("GET")
+	r.Handle("/realms/{id:[0-9]+}", c.HandleRealmsUpdate()).Methods("PATCH")
+
+	r.Handle("/users", c.HandleUsersIndex()).Methods("GET")
+	r.Handle("/users/{id:[0-9]+}", c.HandleUserShow()).Methods("GET")
+	r.Handle("/users/{id:[0-9]+}", c.HandleUserDelete()).Methods("DELETE")
+	r.Handle("/users", c.HandleSystemAdminCreate()).Methods("POST")
+	r.Handle("/users/new", c.HandleSystemAdminCreate()).Methods("GET")
+	r.Handle("/users/{id:[0-9]+}/revoke", c.HandleSystemAdminRevoke()).Methods("DELETE")
+
+	r.Handle("/mobileapps", c.HandleMobileAppsShow()).Methods("GET")
+	r.Handle("/sms", c.HandleSMSUpdate()).Methods("GET", "POST")
+	r.Handle("/email", c.HandleEmailUpdate()).Methods("GET", "POST")
+	r.Handle("/events", c.HandleEventsShow()).Methods("GET")
+
+	r.Handle("/caches", c.HandleCachesIndex()).Methods("GET")
+	r.Handle("/caches/clear/{id}", c.HandleCachesClear()).Methods("POST")
+
+	r.Handle("/info", c.HandleInfoShow()).Methods("GET")
 }
