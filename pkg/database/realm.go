@@ -275,6 +275,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		SMSTextTemplate:     "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours",
 		AllowedTestTypes:    14,
 		CertificateDuration: FromDuration(15 * time.Minute),
+		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
 	}
 }
 
