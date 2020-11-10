@@ -848,15 +848,27 @@ func (db *Database) FindRealm(id interface{}) (*Realm, error) {
 	return &realm, nil
 }
 
-func (db *Database) GetRealms() ([]*Realm, error) {
+// ListRealms lists all available realms in the system.
+func (db *Database) ListRealms(p *pagination.PageParams, scopes ...Scope) ([]*Realm, *pagination.Paginator, error) {
 	var realms []*Realm
-	if err := db.db.
-		Order("name ASC").
-		Find(&realms).
-		Error; err != nil {
-		return nil, err
+	query := db.db.
+		Model(&Realm{}).
+		Scopes(scopes...).
+		Order("name ASC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return realms, nil
+
+	paginator, err := Paginate(query, &realms, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return realms, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return realms, paginator, nil
 }
 
 func (r *Realm) AuditID() string {
