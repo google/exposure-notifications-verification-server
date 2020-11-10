@@ -28,6 +28,11 @@
         <form method="GET" action="/admin/users" id="search-form">
           <div class="input-group">
             <span class="input-group-prepend">
+              <button type="submit" class="input-group-text bg-transparent" data-toggle="tooltip" title="Search">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+              </button>
+            </span>
+            <span class="input-group-prepend">
               <select name="filter" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
                 <option value="" selected>All users</option>
                 <option value="realmAdmins" {{selectedIf (eq .filter "realmAdmins")}}>Realm admins</option>
