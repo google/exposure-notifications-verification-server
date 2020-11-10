@@ -24,9 +24,9 @@
         <form method="GET" action="/admin/mobileapps" id="search-form">
           <div class="input-group">
             <span class="input-group-prepend">
-              <div class="input-group-text bg-transparent">
+              <button type="submit" class="input-group-text bg-transparent" data-toggle="tooltip" title="Search">
                 <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-              </div>
+              </button>
             </span>
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
               autocomplete="off" class="form-control" />
