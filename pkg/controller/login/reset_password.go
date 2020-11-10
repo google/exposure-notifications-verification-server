@@ -32,6 +32,7 @@ func (c *Controller) HandleShowResetPassword() http.Handler {
 
 func (c *Controller) renderResetPassword(ctx context.Context, w http.ResponseWriter, email string) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Reset password")
 	m["email"] = email
 	c.h.RenderHTML(w, "login/reset-password", m)
 }

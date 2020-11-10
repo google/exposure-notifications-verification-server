@@ -40,17 +40,8 @@ variable "extra-hosts" {
   description = "Extra hosts to probe and monitor."
 }
 
-terraform {
-  required_version = ">= 0.13"
-
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 3.36"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "~> 3.36"
-    }
-  }
+variable "https-forwarding-rule" {
+  type        = string
+  default     = ""
+  description = "GCP Cloud Load Balancer forwarding rule name."
 }

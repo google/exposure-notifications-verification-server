@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -29,11 +30,11 @@ import (
 
 // HandleShow displays the API key.
 func (c *Controller) HandleShow() http.Handler {
-	logger := c.logger.Named("HandleShow")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
+
+		logger := logging.FromContext(ctx).Named("apikey.HandleShow")
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -91,6 +92,7 @@ func (c *Controller) HandleShow() http.Handler {
 // renderShow renders the edit page.
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp, stats []*database.AuthorizedAppStats) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("API key: %s", authApp.Name)
 	m["authApp"] = authApp
 	m["stats"] = stats
 	c.h.RenderHTML(w, "apikeys/show", m)

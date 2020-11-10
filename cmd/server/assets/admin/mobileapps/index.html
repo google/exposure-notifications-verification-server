@@ -1,0 +1,81 @@
+{{define "admin/mobileapps/index"}}
+
+{{$apps := .apps}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">
+        <span class="oi oi-phone mr-2 ml-n1" aria-hidden="true"></span>
+        Mobile apps
+      </div>
+
+      <div class="card-body">
+        <form method="GET" action="/admin/mobileapps" id="search-form">
+          <div class="input-group">
+            <span class="input-group-prepend">
+              <button type="submit" class="input-group-text bg-transparent" data-toggle="tooltip" title="Search">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+              </button>
+            </span>
+            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search"
+              autocomplete="off" class="form-control" />
+          </div>
+        </form>
+      </div>
+
+      {{if .apps}}
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+          <thead>
+            <tr>
+              <th scope="col" width="40"></th>
+              <th scope="col">Mobile app</th>
+              <th scope="col" width="120">Realm</th>
+            </tr>
+          </thead>
+          <tbody>
+          {{range .apps}}
+            <tr>
+              <td class="text-center">
+                {{if .MobileApp.DeletedAt}}
+                  <span class="oi oi-circle-x text-danger"
+                    data-toggle="tooltip" title="Mobile app is disabled - it will be deleted in a few days"></span>
+                {{else}}
+                  <span class="oi oi-circle-check text-success"
+                    data-toggle="tooltip" title="Mobile app is enabled"></span>
+                {{end}}
+              </td>
+
+              <td>
+                <a href="/mobile-apps/{{.MobileApp.ID}}" class="text-truncate">{{.MobileApp.Name}}</a>
+              </td>
+
+              <td>
+                <a href="/admin/realms/{{.Realm.ID}}/edit">{{.Realm.Name}}</a>
+              </td>
+            </tr>
+          {{end}}
+          </tbody>
+        </table>
+      {{else}}
+        <p class="text-center">
+          <em>There are no mobile apps.</em>
+        </p>
+      {{end}}
+    </div>
+
+    {{template "shared/pagination" .}}
+  </main>
+</body>
+</html>
+{{end}}

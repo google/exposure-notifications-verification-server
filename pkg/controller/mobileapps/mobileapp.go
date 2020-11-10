@@ -19,13 +19,11 @@ package mobileapps
 import (
 	"context"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -33,18 +31,14 @@ type Controller struct {
 	cacher cache.Cacher
 	db     *database.Database
 	h      *render.Renderer
-	logger *zap.SugaredLogger
 }
 
 func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx).Named("mobileapps")
-
 	return &Controller{
 		config: config,
 		cacher: cacher,
 		db:     db,
 		h:      h,
-		logger: logger,
 	}
 }
 

@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -97,22 +98,14 @@ func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, e
 }
 
 func (c *Controller) HandleIssue() http.Handler {
-	logger := c.logger.Named("issueapi.HandleIssue")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
 
+		logger := logging.FromContext(ctx).Named("issueapi.HandleIssue")
+
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
-
-		defer func(blame, result *tag.Mutator) {
-			ctx, err := tag.New(ctx, *blame, *result)
-			if err != nil {
-				c.logger.Warnw("failed to create context with additional tags", "error", err)
-				// NOTE: do not return here. We should log it as success.
-			}
-			stats.Record(ctx, mRequest.M(1))
-		}(&blame, &result)
+		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
@@ -309,22 +302,27 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
-			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
-				// Delete the token
-				if err := c.db.DeleteVerificationCode(code); err != nil {
-					logger.Errorw("failed to delete verification code", "error", err)
-					// fallthrough to the error
+			if err := func() error {
+				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
+				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
+					// Delete the token
+					if err := c.db.DeleteVerificationCode(code); err != nil {
+						logger.Errorw("failed to delete verification code", "error", err)
+						// fallthrough to the error
+					}
+
+					logger.Errorw("failed to send sms", "error", err)
+					blame = observability.BlameServer
+					result = observability.ResultError("FAILED_TO_SEND_SMS")
+					return err
 				}
 
-				logger.Errorw("failed to send sms", "error", err)
-				stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mSMSRequest.M(1))
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_SEND_SMS")
+				return nil
+			}(); err != nil {
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms: %s", err))
 				return
 			}
-			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mSMSRequest.M(1))
 		}
 
 		c.h.RenderJSON(w, http.StatusOK,
@@ -353,13 +351,6 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 }
 
 func (c *Controller) recordCapacity(ctx context.Context, limit, remaining uint64) {
-	stats.Record(ctx, mRealmTokenRemaining.M(int64(remaining)))
-
-	issued := uint64(limit) - remaining
-
-	capacity := float64(issued) / float64(limit)
-	stats.Record(ctx, mRealmTokenCapacity.M(capacity))
-
 	stats.Record(ctx, mRealmTokenUsed.M(1))
 	stats.RecordWithTags(ctx, []tag.Mutator{tokenAvailableTag()}, mRealmToken.M(int64(remaining)))
 	stats.RecordWithTags(ctx, []tag.Mutator{tokenLimitTag()}, mRealmToken.M(int64(limit)))

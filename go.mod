@@ -26,6 +26,7 @@ require (
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
 	github.com/google/exposure-notifications-server v0.15.1-0.20201029203442-ccf3479357e2
 	github.com/google/go-cmp v0.5.2
+	github.com/google/uuid v1.1.2
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0

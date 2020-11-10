@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -32,20 +33,28 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		// Perform the lazy load on authorized apps for the realm.
-		apps, err := realm.ListMobileApps(c.db)
+		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(ctx, w, apps)
+		// Perform the lazy load on authorized apps for the realm.
+		apps, paginator, err := realm.ListMobileApps(c.db, pageParams)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		c.renderIndex(ctx, w, apps, paginator)
 	})
 }
 
 // renderIndex renders the index page.
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp) {
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, apps []*database.MobileApp, paginator *pagination.Paginator) {
 	m := templateMap(ctx)
+	m.Title("Mobile apps")
 	m["apps"] = apps
+	m["paginator"] = paginator
 	c.h.RenderHTML(w, "mobileapps/index", m)
 }

@@ -55,6 +55,11 @@ type Config struct {
 	// created on.
 	CertificateSigningKeyRing string `env:"CERTIFICATE_SIGNING_KEYRING"`
 
+	// MaxCertificateSigningKeyVersions is the maximum number of certificate
+	// signing key versions per realm. This is enforced at the database layer, not
+	// the upstream KMS.
+	MaxCertificateSigningKeyVersions int64 `env:"MAX_CERTIFICATE_SIGNING_KEY_VERSIONS, default=5"`
+
 	// EncryptionKey is the reference to an encryption/decryption key to use when
 	// for application-layer encryption before values are persisted to the
 	// database.

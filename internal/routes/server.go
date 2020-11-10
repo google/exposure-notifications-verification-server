@@ -42,6 +42,7 @@ import (
 	"github.com/sethvargo/go-limiter"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -70,7 +71,7 @@ func Server(
 
 	// Inject template middleware - this needs to be first because other
 	// middlewares may add data to the template map.
-	populateTemplateVariables := middleware.PopulateTemplateVariables(ctx, cfg)
+	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)
 	r.Use(populateTemplateVariables)
 
 	// Create the renderer
@@ -78,6 +79,14 @@ func Server(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create renderer: %w", err)
 	}
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection.
+	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
+	r.Use(populateLogger)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.UserIDKeyFunc(ctx, "server:ratelimit:", cfg.RateLimit.HMACKey),
@@ -87,10 +96,10 @@ func Server(
 	}
 
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, cfg.DevMode, "html"))
+	r.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
 
 	// Enable debug headers
-	processDebug := middleware.ProcessDebug(ctx)
+	processDebug := middleware.ProcessDebug()
 	r.Use(processDebug)
 
 	// Install the CSRF protection middleware.
@@ -98,7 +107,7 @@ func Server(
 	r.Use(configureCSRF)
 
 	// Sessions
-	requireSession := middleware.RequireSession(ctx, sessions, h)
+	requireSession := middleware.RequireSession(sessions, h)
 	r.Use(requireSession)
 
 	// Include the current URI
@@ -106,14 +115,14 @@ func Server(
 	r.Use(currentPath)
 
 	// Create common middleware
-	requireAuth := middleware.RequireAuth(ctx, cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
-	requireVerified := middleware.RequireVerified(ctx, authProvider, db, h, cfg.SessionDuration)
-	requireAdmin := middleware.RequireRealmAdmin(ctx, h)
-	loadCurrentRealm := middleware.LoadCurrentRealm(ctx, cacher, db, h)
-	requireRealm := middleware.RequireRealm(ctx, h)
-	requireSystemAdmin := middleware.RequireAdmin(ctx, h)
-	requireMFA := middleware.RequireMFA(ctx, authProvider, h)
-	processFirewall := middleware.ProcessFirewall(ctx, h, "server")
+	requireAuth := middleware.RequireAuth(cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
+	requireVerified := middleware.RequireVerified(authProvider, db, h, cfg.SessionDuration)
+	requireAdmin := middleware.RequireRealmAdmin(h)
+	loadCurrentRealm := middleware.LoadCurrentRealm(cacher, db, h)
+	requireRealm := middleware.RequireRealm(h)
+	requireSystemAdmin := middleware.RequireSystemAdmin(h)
+	requireMFA := middleware.RequireMFA(authProvider, h)
+	processFirewall := middleware.ProcessFirewall(h, "server")
 	rateLimit := httplimiter.Handle
 
 	{
@@ -261,7 +270,7 @@ func Server(
 
 	// users
 	{
-		userSub := r.PathPrefix("/users").Subrouter()
+		userSub := r.PathPrefix("/realm/users").Subrouter()
 		userSub.Use(requireAuth)
 		userSub.Use(loadCurrentRealm)
 		userSub.Use(requireRealm)
@@ -273,8 +282,6 @@ func Server(
 
 		userController := user.New(ctx, authProvider, cacher, cfg, db, h)
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
-		userSub.Handle("", userController.HandleIndex()).
-			Queries("offset", "{[0-9]*}", "email", "").Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
 		userSub.Handle("/import", userController.HandleImport()).Methods("GET")
@@ -340,23 +347,28 @@ func Server(
 		adminSub.Use(requireSystemAdmin)
 		adminSub.Use(rateLimit)
 
-		adminController := admin.New(ctx, cfg, cacher, db, authProvider, h)
+		adminController := admin.New(ctx, cfg, cacher, db, authProvider, limiterStore, h)
 		adminSub.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
 		adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
 		adminSub.Handle("/realms/new", adminController.HandleRealmsCreate()).Methods("GET")
 		adminSub.Handle("/realms/{id:[0-9]+}/edit", adminController.HandleRealmsUpdate()).Methods("GET")
-		adminSub.Handle("/realms/{id:[0-9]+}/join", adminController.HandleRealmsJoin()).Methods("PATCH")
-		adminSub.Handle("/realms/{id:[0-9]+}/leave", adminController.HandleRealmsLeave()).Methods("PATCH")
+		adminSub.Handle("/realms/{realm_id:[0-9]+}/add/{user_id:[0-9+]}", adminController.HandleRealmsAdd()).Methods("PATCH")
+		adminSub.Handle("/realms/{realm_id:[0-9]+}/remove/{user_id:[0-9+]}", adminController.HandleRealmsRemove()).Methods("PATCH")
+		adminSub.Handle("/realms/{id:[0-9]+}/realmadmin", adminController.HandleRealmsSelectAndAdmin()).Methods("GET")
 		adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
 
+		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
+		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserShow()).Methods("GET")
+		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUserDelete()).Methods("DELETE")
+		adminSub.Handle("/users", adminController.HandleSystemAdminCreate()).Methods("POST")
+		adminSub.Handle("/users/new", adminController.HandleSystemAdminCreate()).Methods("GET")
+		adminSub.Handle("/users/{id:[0-9]+}/revoke", adminController.HandleSystemAdminRevoke()).Methods("DELETE")
+
+		adminSub.Handle("/mobileapps", adminController.HandleMobileAppsShow()).Methods("GET")
 		adminSub.Handle("/sms", adminController.HandleSMSUpdate()).Methods("GET", "POST")
 		adminSub.Handle("/email", adminController.HandleEmailUpdate()).Methods("GET", "POST")
-
-		adminSub.Handle("/users", adminController.HandleUsersIndex()).Methods("GET")
-		adminSub.Handle("/users", adminController.HandleUsersCreate()).Methods("POST")
-		adminSub.Handle("/users/new", adminController.HandleUsersCreate()).Methods("GET")
-		adminSub.Handle("/users/{id:[0-9]+}", adminController.HandleUsersDelete()).Methods("DELETE")
+		adminSub.Handle("/events", adminController.HandleEventsShow()).Methods("GET")
 
 		adminSub.Handle("/caches", adminController.HandleCachesIndex()).Methods("GET")
 		adminSub.Handle("/caches/clear/{id}", adminController.HandleCachesClear()).Methods("POST")
@@ -368,6 +380,6 @@ func Server(
 	// inserted as middleware because gorilla processes the method before
 	// middleware.
 	mux := http.NewServeMux()
-	mux.Handle("/", middleware.MutateMethod(ctx)(r))
+	mux.Handle("/", middleware.MutateMethod()(r))
 	return mux, nil
 }

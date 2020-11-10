@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -25,9 +26,10 @@ import (
 )
 
 func (c *Controller) HandleImportBatch() http.Handler {
-	logger := c.logger.Named("user.HandleImportBatch")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("user.HandleImportBatch")
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {

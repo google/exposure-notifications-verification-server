@@ -38,11 +38,15 @@ func InjectCurrentPath() mux.MiddlewareFunc {
 			m["currentPath"] = &Path{uri: r.URL}
 
 			ctx = controller.WithTemplateMap(ctx, m)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func (p *Path) String() string {
+	return p.uri.String()
 }
 
 func (p *Path) IsPath(s string) bool {

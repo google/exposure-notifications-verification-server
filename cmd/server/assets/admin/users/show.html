@@ -1,0 +1,83 @@
+{{define "admin/users/show"}}
+{{$user := .user}}
+{{$stats := .stats}}
+
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body id="users-show" class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>{{$user.Name}}</h1>
+    <p>
+      Here is information about the user.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <h6 class="mb-2">Name</h6>
+        <div class="form-group">
+          {{$user.Name}}
+        </div>
+
+        <hr>
+        <h6 class="mb-2">Email</h6>
+        <div class="form-group">
+          {{$user.Email}}
+        </div>
+
+        <hr>
+        <h6 class="mb-2">Password</h6>
+        <div class="form-group">
+          Password was last changed <span class="text-info">{{$user.PasswordAgeString}}</span> ago.
+        </div>
+
+        {{if $user.SystemAdmin}}
+        <hr>
+        <h6 class="mb-2">System admin</h6>
+        <div class="form-group text-success">Enabled</div>
+        {{end}}
+      </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Member of realms</div>
+      {{if $user.Realms}}
+        <ul class="list-group list-group-flush">
+          {{range $realm := $user.Realms}}
+          <li class="list-group-item d-flex justify-content-between">
+            <div>
+              {{$realm.Name}}
+              {{if $user.CanAdminRealm $realm.ID}}
+                <span class="badge badge-primary ml-2">Admin</span>
+              {{end}}
+            </div>
+
+            <a href="/admin/realms/{{$realm.ID}}/remove/{{$user.ID}}" class="text-danger"
+              data-toggle="tooltip" title="Remove from realm"
+              data-method="PATCH" data-confirm="Are you sure you want to remove {{$user.Name}} from {{$realm.Name}}?">
+              <span class="sr-only">Remove from realm</span>
+              <span class="oi oi-x" aria-hidden="true"></span>
+            </a>
+          </li>
+          {{end}}
+        </ul>
+      {{else}}
+        <p class="card-body text-center mb-0">
+          <em>This user is not a member of any realms.</em>
+        </p>
+      {{end}}
+    </div>
+
+    <a class="card-link" href="/admin/users">&larr; All users</a>
+  </main>
+</body>
+</html>
+{{end}}

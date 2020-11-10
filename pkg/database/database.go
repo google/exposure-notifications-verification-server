@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/bits"
 	"os"
 	"strconv"
 	"strings"
@@ -49,8 +50,6 @@ var (
 	// callbackLock prevents multiple callbacks from being registered
 	// simultaneously because that's a data race in gorm.
 	callbackLock sync.Mutex
-
-	ExtraCutset = fmt.Sprintf("%v", '\uFEFF')
 )
 
 // Database is a handle to the database layer for the Exposure Notifications
@@ -75,10 +74,6 @@ type Database struct {
 	statsCloser func()
 }
 
-func trim(s string) string {
-	return strings.Trim(strings.TrimSpace(s), ExtraCutset)
-}
-
 // Overrides the postgresql driver with
 func init() {
 	const driverName = "ocsql"
@@ -95,6 +90,11 @@ func init() {
 // application managed signing keys.
 func (db *Database) SupportsPerRealmSigning() bool {
 	return db.signingKeyManager != nil
+}
+
+// MaxCertificateSigningKeyVersions returns the configured maximum.
+func (db *Database) MaxCertificateSigningKeyVersions() int64 {
+	return db.config.MaxCertificateSigningKeyVersions
 }
 
 func (db *Database) KeyManager() keys.KeyManager {
@@ -314,6 +314,11 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 				raw, err := strconv.ParseUint(t, 10, 64)
 				if err != nil {
 					_ = scope.Err(fmt.Errorf("failed to parse realm_id: %w", err))
+					return
+				}
+
+				if raw >= 1<<bits.UintSize-1 {
+					_ = scope.Err(fmt.Errorf("uint overflows %d bits", bits.UintSize))
 					return
 				}
 				realmID = uint(raw)
@@ -570,12 +575,11 @@ func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) 
 // withRetries is a helper for creating a fibonacci backoff with capped retries,
 // useful for retrying database queries.
 func withRetries(ctx context.Context, f retry.RetryFunc) error {
-	b, err := retry.NewFibonacci(50 * time.Millisecond)
+	b, err := retry.NewConstant(500 * time.Millisecond)
 	if err != nil {
 		return fmt.Errorf("failed to configure backoff: %w", err)
 	}
-	b = retry.WithMaxRetries(10, b)
-	b = retry.WithCappedDuration(1*time.Second, b)
+	b = retry.WithMaxRetries(30, b)
 
 	return retry.Do(ctx, b, f)
 }

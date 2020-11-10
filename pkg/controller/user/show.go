@@ -48,8 +48,14 @@ func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword 
 		return
 	}
 
+	currentUser := controller.UserFromContext(ctx)
+	if currentUser == nil {
+		controller.MissingUser(w, r, c.h)
+		return
+	}
+
 	// Pull the user from the id.
-	user, err := realm.FindUser(c.db, vars["id"])
+	user, err := c.findUser(currentUser, realm, vars["id"])
 	if err != nil {
 		if database.IsNotFound(err) {
 			controller.Unauthorized(w, r, c.h)
@@ -86,8 +92,16 @@ func (c *Controller) getStats(ctx context.Context, user *database.User, realm *d
 	return stats, nil
 }
 
+func (c *Controller) findUser(currentUser *database.User, realm *database.Realm, id interface{}) (*database.User, error) {
+	if currentUser.SystemAdmin {
+		return c.db.FindUser(id)
+	}
+	return realm.FindUser(c.db, id)
+}
+
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, stats []*database.UserStats) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("User: %s", user.Name)
 	m["user"] = user
 	m["stats"] = stats
 	c.h.RenderHTML(w, "users/show", m)

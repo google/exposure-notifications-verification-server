@@ -19,20 +19,17 @@ import (
 	"context"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.uber.org/zap"
 )
 
 type Controller struct {
 	config         *config.ServerConfig
 	db             *database.Database
 	h              *render.Renderer
-	logger         *zap.SugaredLogger
 	publicKeyCache *keyutils.PublicKeyCache
 
 	// systemCertificateKeyManager is the key manager used for system
@@ -41,8 +38,6 @@ type Controller struct {
 }
 
 func New(ctx context.Context, config *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
-	logger := logging.FromContext(ctx)
-
 	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		return nil, err
@@ -52,7 +47,6 @@ func New(ctx context.Context, config *config.ServerConfig, db *database.Database
 		config:         config,
 		db:             db,
 		h:              h,
-		logger:         logger,
 		publicKeyCache: publicKeyCache,
 
 		systemCertificateKeyManager: systemCertificationKeyManager,

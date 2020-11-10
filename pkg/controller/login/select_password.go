@@ -19,10 +19,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 	"unicode"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/flash"
 )
@@ -53,6 +54,7 @@ func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 
 func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.ResponseWriter, email, code string, codeInvalid bool) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Change password")
 	m["email"] = email
 	m["code"] = code
 	m["codeInvalid"] = codeInvalid
@@ -61,8 +63,6 @@ func (c *Controller) renderShowSelectPassword(ctx context.Context, w http.Respon
 }
 
 func (c *Controller) HandleSubmitNewPassword() http.Handler {
-	logger := c.logger.Named("login.HandleSubmitNewPassword")
-
 	type FormData struct {
 		Password string `form:"password"`
 		Email    string `form:"email"`
@@ -70,6 +70,9 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("login.HandleSubmitNewPassword")
+
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
@@ -85,7 +88,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 			c.renderShowSelectPassword(ctx, w, "", code, false)
 			return
 		}
-		email := strings.TrimSpace(form.Email)
+		email := project.TrimSpace(form.Email)
 
 		if err := c.validateComplexity(form.Password); err != nil {
 			flash.Error("Select password failed: %v", err)

@@ -16,6 +16,7 @@ package clients
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -25,7 +26,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
-	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
@@ -43,15 +43,6 @@ const (
 
 func timeToInterval(t time.Time) int32 {
 	return int32(t.UTC().Truncate(oneDay).Unix() / int64(intervalLength.Seconds()))
-}
-
-func recordLatency(step string) func(context.Context, *tag.Mutator) {
-	start := time.Now()
-	return func(ctx context.Context, result *tag.Mutator) {
-		latency := float64(time.Since(start)) / float64(time.Millisecond)
-		step := tag.Upsert(stepTagKey, step)
-		stats.RecordWithTags(ctx, []tag.Mutator{*result, step}, mLatencyMs.M(latency))
-	}
 }
 
 // RunEndToEnd - code that exercises the verification and key server, simulating a
@@ -82,6 +73,13 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		nextInterval -= maxInterval
 	}
 
+	result := observability.ResultOK()
+	// Parameterize observability.RecordLatency()
+	recordLatency := func(ctx context.Context, start time.Time, step string) {
+		stepMutator := tag.Upsert(stepTagKey, step)
+		observability.RecordLatency(ctx, start, mLatencyMs, &stepMutator, &result)
+	}
+
 	for i := 0; i < iterations; i++ {
 		logger.Infof("Issuing verification code, iteration %d", i)
 
@@ -90,8 +88,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 			return fmt.Errorf("unable to create new context with additional tags: %w", err)
 		}
 		code, err := func() (*api.IssueCodeResponse, error) {
-			result := observability.ResultOK()
-			defer recordLatency("/api/issue")(ctx, &result)
+			defer recordLatency(ctx, time.Now(), "/api/issue")
 			// Issue the verification code.
 			codeRequest, code, err := IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, 0, timeout)
 			if err != nil {
@@ -113,8 +110,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		}
 
 		token, err := func() (*api.VerifyCodeResponse, error) {
-			result := observability.ResultOK()
-			defer recordLatency("/api/verify")(ctx, &result)
+			defer recordLatency(ctx, time.Now(), "/api/verify")
 			// Get the verification token
 			logger.Infof("Verifying code and getting token")
 			tokenRequest, token, err := GetToken(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, code.VerificationCode, timeout)
@@ -136,8 +132,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		}
 
 		if err := func() error {
-			result := observability.ResultOK()
-			defer recordLatency("/api/verify")(ctx, &result)
+			defer recordLatency(ctx, time.Now(), "/api/verify")
 			logger.Infof("Check code status")
 			statusReq, codeStatus, err := CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
 			if err != nil {
@@ -161,10 +156,12 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		}
 
 		hmacSecret, hmacB64, err := func() ([]byte, string, error) {
-			result := observability.ResultOK()
-			defer recordLatency("hmac")(ctx, &result)
+			defer recordLatency(ctx, time.Now(), "hmac")
 			logger.Infof("Calculating HMAC")
 			hmacSecret := make([]byte, 32)
+			if _, err := rand.Read(hmacSecret); err != nil {
+				return nil, "", fmt.Errorf("error generating hmac secret")
+			}
 			hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
 			if err != nil {
 				result = observability.ResultNotOK()
@@ -177,8 +174,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		}
 
 		certificate, err := func() (*api.VerificationCertificateResponse, error) {
-			result := observability.ResultOK()
-			defer recordLatency("/api/certificate")(ctx, &result)
+			defer recordLatency(ctx, time.Now(), "/api/certificate")
 			logger.Infof("Getting verification certificate")
 			// Get the verification certificate
 			certRequest, certificate, err := GetCertificate(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, token.VerificationToken, hmacB64, timeout)
@@ -209,8 +205,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		}
 
 		response, err := func() (*verifyapi.PublishResponse, error) {
-			result := observability.ResultOK()
-			defer recordLatency("upload_to_key_server")(ctx, &result)
+			defer recordLatency(ctx, time.Now(), "upload_to_key_server")
 			// Make the publish request.
 			logger.Infof("Publish TEKs to the key server")
 			var response verifyapi.PublishResponse
@@ -225,6 +220,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 				return nil, fmt.Errorf("error publishing teks: %w", err)
 			} else if response.ErrorMessage != "" {
 				result = observability.ResultNotOK()
+				logger.Infow("Error publishing teks", "error", err, "keys", teks)
 				return nil, fmt.Errorf("publish API error: %+v", response)
 			}
 			logger.Infof("Inserted %v exposures", response.InsertedExposures)

@@ -4,10 +4,10 @@
 {{$user := .user}}
 
 {{if $user.ID}}
-<form method="POST" action="/users/{{$user.ID}}">
+<form method="POST" action="/realm/users/{{$user.ID}}">
   <input type="hidden" name="_method" value="PATCH">
   {{else}}
-  <form method="POST" action="/users">
+  <form method="POST" action="/realm/users">
     {{end}}
 
     {{ .csrfField }}
@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <button type="submit" id="submit-user" class="btn btn-primary btn-block" {{if .created}}disabled{{end}}>
+    <button type="submit" id="submit" class="btn btn-primary btn-block" {{if .created}}disabled{{end}}>
       {{if $user.ID}}
       Update user
       {{else}}

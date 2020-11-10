@@ -47,7 +47,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 		case 0:
 			// If the user is a member of zero realms, it's possible they are an
 			// admin. If so, redirect them to the admin page.
-			if currentUser.Admin {
+			if currentUser.SystemAdmin {
 				http.Redirect(w, r, "/admin", http.StatusSeeOther)
 				return
 			}
@@ -111,6 +111,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 // renderSelect renders the realm selection page.
 func (c *Controller) renderSelect(ctx context.Context, w http.ResponseWriter, realms []*database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Realm selector")
 	m["realms"] = realms
 	c.h.RenderHTML(w, "login/select-realm", m)
 }

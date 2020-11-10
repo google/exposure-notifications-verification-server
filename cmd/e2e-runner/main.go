@@ -32,7 +32,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -104,6 +106,12 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	// Create the renderer
+	h, err := render.New(ctx, "", e2eConfig.DevMode)
+	if err != nil {
+		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
 	// Create or reuse the existing realm
 	realm, err := db.FindRealmByName(realmName)
 	if err != nil {
@@ -171,8 +179,17 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
-	r.HandleFunc("/default", defaultHandler(ctx, &e2eConfig.TestConfig))
-	r.HandleFunc("/revise", reviseHandler(ctx, &e2eConfig.TestConfig))
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
+
+	r.HandleFunc("/default", defaultHandler(ctx, e2eConfig.TestConfig))
+	r.HandleFunc("/revise", reviseHandler(ctx, e2eConfig.TestConfig))
 
 	srv, err := server.New(e2eConfig.Port)
 	if err != nil {
@@ -182,10 +199,14 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func defaultHandler(ctx context.Context, c *config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
+// Config is passed by value so that each http hadndler has a separate copy (since they are changing one of the)
+// config elements. Previous versions of those code had a race condition where the "DoRevise" status
+// could be changed while a handler was executing.
+func defaultHandler(ctx context.Context, config config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
 	logger := logging.FromContext(ctx)
+	c := &config
+	c.DoRevise = false
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.DoRevise = false
 		if err := clients.RunEndToEnd(ctx, c); err != nil {
 			logger.Errorw("could not run default end to end", "error", err)
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
@@ -196,10 +217,11 @@ func defaultHandler(ctx context.Context, c *config.E2ETestConfig) func(http.Resp
 	}
 }
 
-func reviseHandler(ctx context.Context, c *config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
+func reviseHandler(ctx context.Context, config config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
 	logger := logging.FromContext(ctx)
+	c := &config
+	c.DoRevise = true
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.DoRevise = true
 		if err := clients.RunEndToEnd(ctx, c); err != nil {
 			logger.Errorw("could not run revise end to end", "error", err)
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)

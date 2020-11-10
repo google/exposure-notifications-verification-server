@@ -34,7 +34,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -43,7 +42,6 @@ type Controller struct {
 	cacher           cache.Cacher
 	db               *database.Database
 	h                *render.Renderer
-	logger           *zap.SugaredLogger
 }
 
 func (c *Controller) getRegion(r *http.Request) string {
@@ -61,6 +59,9 @@ func (c *Controller) HandleIos() http.Handler {
 	notFound := api.Errorf("not found")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("associated.HandleIos")
+
 		region := c.getRegion(r)
 		if region == "" {
 			c.h.RenderJSON(w, http.StatusNotFound, notFound)
@@ -73,7 +74,7 @@ func (c *Controller) HandleIos() http.Handler {
 		}
 		var iosData *IOSData
 		if err := c.cacher.Fetch(ctx, cacheKey, &iosData, c.config.AppCacheTTL, func() (interface{}, error) {
-			c.logger.Debug("fetching new ios data")
+			logger.Debug("fetching new ios data")
 			return c.getIosData(region)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -93,6 +94,9 @@ func (c *Controller) HandleAndroid() http.Handler {
 	notFound := api.Errorf("not found")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("associated.HandleAndroid")
+
 		region := c.getRegion(r)
 		if region == "" {
 			c.h.RenderJSON(w, http.StatusNotFound, notFound)
@@ -105,7 +109,7 @@ func (c *Controller) HandleAndroid() http.Handler {
 		}
 		var androidData []AndroidData
 		if err := c.cacher.Fetch(ctx, cacheKey, &androidData, c.config.AppCacheTTL, func() (interface{}, error) {
-			c.logger.Debug("fetching new android data")
+			logger.Debug("fetching new android data")
 			return c.getAndroidData(region)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -122,8 +126,6 @@ func (c *Controller) HandleAndroid() http.Handler {
 }
 
 func New(ctx context.Context, config *config.RedirectConfig, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
-	logger := logging.FromContext(ctx).Named("associated")
-
 	cfgMap, err := config.HostnameToRegion()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -134,7 +136,6 @@ func New(ctx context.Context, config *config.RedirectConfig, db *database.Databa
 		db:               db,
 		cacher:           cacher,
 		h:                h,
-		logger:           logger,
 		hostnameToRegion: cfgMap,
 	}, nil
 }

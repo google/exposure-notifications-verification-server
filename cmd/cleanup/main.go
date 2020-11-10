@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-signalcontext"
 
@@ -93,6 +94,14 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
 
 	cleanupController, err := cleanup.New(ctx, cfg, db, h)
 	if err != nil {

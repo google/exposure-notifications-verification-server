@@ -17,7 +17,6 @@ package user
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -54,7 +53,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		user, err := realm.FindUser(c.db, vars["id"])
+		user, err := c.findUser(currentUser, realm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -75,7 +74,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 		err = controller.BindForm(w, r, &form)
 
 		// Build the user struct
-		user.Name = strings.TrimSpace(form.Name)
+		user.Name = form.Name
 		if err != nil {
 			if terr, ok := err.(schema.MultiError); ok {
 				for k, err := range terr {
@@ -102,18 +101,20 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		flash.Alert("Successfully updated user '%v'", form.Name)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 	})
 }
 
 func (c *Controller) renderUpdate(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("New user")
 	m["user"] = user
 	c.h.RenderHTML(w, "users/new", m)
 }
 
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Edit user: %s", user.Name)
 	m["user"] = user
 	c.h.RenderHTML(w, "users/edit", m)
 }

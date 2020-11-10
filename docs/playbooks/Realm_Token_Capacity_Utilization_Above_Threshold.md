@@ -11,9 +11,9 @@ To triage, check the following:
 generic_task :: custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_capacity_latest | align rate() | every 1m | group_by [metric.realm], [max(value.realm_token_capacity_latest)]
 ```
 
-Note that metrics only show the realm ID (an integer) because realm names are PII.
-
-TODO(marilia): Add way to turn Realm ID into Realm Name.
+Note that metrics only show the realm ID (an integer) because realm names are PII. 
+If you are a system admin, you can get the realm name by going to /admin/realms page of the server.
+You will also access this page when clicking on your user name -> System Admin -> Launch on the verification server web interface. 
 
 To mitigate:
 

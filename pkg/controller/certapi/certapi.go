@@ -32,22 +32,18 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/dgrijalva/jwt-go"
-	"go.uber.org/zap"
 )
 
 type Controller struct {
 	config      *config.APIServerConfig
 	db          *database.Database
 	h           *render.Renderer
-	logger      *zap.SugaredLogger
 	pubKeyCache *keyutils.PublicKeyCache // Cache of public keys for verification token verification.
 	signerCache *cache.Cache             // Cache signers on a per-realm basis.
 	kms         keys.KeyManager
 }
 
 func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, cacher vcache.Cacher, kms keys.KeyManager, h *render.Renderer) (*Controller, error) {
-	logger := logging.FromContext(ctx)
-
 	pubKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create public key cache, likely invalid duration: %w", err)
@@ -63,7 +59,6 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 		config:      config,
 		db:          db,
 		h:           h,
-		logger:      logger,
 		pubKeyCache: pubKeyCache,
 		signerCache: signerCache,
 		kms:         kms,
@@ -74,6 +69,8 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 // A map of valid 'kid' values is supported.
 // If the token is valid the token id (`tid') and subject (`sub`) claims are returned.
 func (c *Controller) validateToken(ctx context.Context, verToken string, publicKeys map[string]crypto.PublicKey) (string, *database.Subject, error) {
+	logger := logging.FromContext(ctx).Named("certapi.validateToken")
+
 	// Parse and validate the verification token.
 	token, err := jwt.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
@@ -88,20 +85,20 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		return publicKey, nil
 	})
 	if err != nil {
-		c.logger.Errorf("invalid verification token: %v", err)
+		logger.Errorf("invalid verification token: %v", err)
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	tokenClaims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
-		c.logger.Errorf("invalid claims in verification token")
+		logger.Errorf("invalid claims in verification token")
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	if err := tokenClaims.Valid(); err != nil {
-		c.logger.Errorf("JWT is invalid: %v", err)
+		logger.Errorf("JWT is invalid: %v", err)
 		return "", nil, fmt.Errorf("verification token expired")
 	}
 	if !tokenClaims.VerifyIssuer(c.config.TokenSigning.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenSigning.TokenIssuer, true) {
-		c.logger.Errorf("jwt contains invalid iss/aud: iss %v aud: %v", tokenClaims.Issuer, tokenClaims.Audience)
+		logger.Errorf("jwt contains invalid iss/aud: iss %v aud: %v", tokenClaims.Issuer, tokenClaims.Audience)
 		return "", nil, fmt.Errorf("verification token not valid")
 	}
 	subject, err := database.ParseSubject(tokenClaims.Subject)

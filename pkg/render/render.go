@@ -27,6 +27,7 @@ import (
 	texttemplate "text/template"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 
 	"go.uber.org/zap"
 )
@@ -100,7 +101,8 @@ func (r *Renderer) loadTemplates() error {
 	tmpl := htmltemplate.New("").
 		Option("missingkey=zero").
 		Funcs(templateFuncs())
-	txttmpl := texttemplate.New("")
+	txttmpl := texttemplate.New("").
+		Funcs(textFuncs())
 	if err := loadTemplates(tmpl, txttmpl, r.templatesRoot); err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
 	}
@@ -141,14 +143,28 @@ func safeHTML(s string) htmltemplate.HTML {
 	return htmltemplate.HTML(s)
 }
 
+func selectedIf(v bool) htmltemplate.HTML {
+	if v {
+		return htmltemplate.HTML("selected")
+	}
+	return ""
+}
+
 func templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
 		"joinStrings":    strings.Join,
-		"trimSpace":      strings.TrimSpace,
+		"trimSpace":      project.TrimSpace,
 		"stringContains": strings.Contains,
 		"toLower":        strings.ToLower,
 		"toUpper":        strings.ToUpper,
 		"safeHTML":       safeHTML,
+		"selectedIf":     selectedIf,
+	}
+}
+
+func textFuncs() texttemplate.FuncMap {
+	return map[string]interface{}{
+		"trimSpace": project.TrimSpace,
 	}
 }
 

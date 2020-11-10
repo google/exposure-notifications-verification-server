@@ -68,6 +68,13 @@ variable "database_backup_schedule" {
   description = "Cron schedule in which to do a full backup of the database to Cloud Storage."
 }
 
+variable "database_failover_replica_regions" {
+  type    = list(string)
+  default = []
+
+  description = "List of regions in which to create failover replicas. The default configuration is resistant to zonal outages. This will increase costs."
+}
+
 variable "storage_location" {
   type    = string
   default = "US"
@@ -209,11 +216,11 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 3.38"
+      version = "~> 3.46"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 3.38"
+      version = "~> 3.46"
     }
     local = {
       source  = "hashicorp/local"

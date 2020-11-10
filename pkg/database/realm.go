@@ -25,8 +25,10 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -273,6 +275,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		SMSTextTemplate:     "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours",
 		AllowedTestTypes:    14,
 		CertificateDuration: FromDuration(15 * time.Minute),
+		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
 	}
 }
 
@@ -295,18 +298,18 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 
 // BeforeSave runs validations. If there are errors, the save fails.
 func (r *Realm) BeforeSave(tx *gorm.DB) error {
-	r.Name = strings.TrimSpace(r.Name)
+	r.Name = project.TrimSpace(r.Name)
 	if r.Name == "" {
 		r.AddError("name", "cannot be blank")
 	}
 
-	r.RegionCode = strings.ToUpper(strings.TrimSpace(r.RegionCode))
+	r.RegionCode = strings.ToUpper(project.TrimSpace(r.RegionCode))
 	if len(r.RegionCode) > 10 {
 		r.AddError("regionCode", "cannot be more than 10 characters")
 	}
 	r.RegionCodePtr = stringPtr(r.RegionCode)
 
-	r.WelcomeMessage = strings.TrimSpace(r.WelcomeMessage)
+	r.WelcomeMessage = project.TrimSpace(r.WelcomeMessage)
 	r.WelcomeMessagePtr = stringPtr(r.WelcomeMessage)
 
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
@@ -385,8 +388,8 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
-	r.CertificateIssuer = trim(r.CertificateIssuer)
-	r.CertificateAudience = trim(r.CertificateAudience)
+	r.CertificateIssuer = project.TrimSpaceAndNonPrintable(r.CertificateIssuer)
+	r.CertificateAudience = project.TrimSpaceAndNonPrintable(r.CertificateAudience)
 	if r.UseRealmCertificateKey {
 		if r.CertificateIssuer == "" {
 			r.AddError("certificateIssuer", "cannot be blank")
@@ -418,6 +421,17 @@ func (r *Realm) GetCodeDurationMinutes() int {
 // hours value.
 func (r *Realm) GetLongCodeDurationHours() int {
 	return int(r.LongCodeDuration.Duration.Hours())
+}
+
+// FindVerificationCodeByUUID find a verification codes by UUID.
+func (r *Realm) FindVerificationCodeByUUID(db *Database, uuid string) (*VerificationCode, error) {
+	var vc VerificationCode
+	if err := db.db.
+		Where("uuid = ? AND realm_id = ?", uuid, r.ID).
+		First(&vc).Error; err != nil {
+		return nil, err
+	}
+	return &vc, nil
 }
 
 // BuildSMSText replaces certain strings with the right values.
@@ -568,20 +582,13 @@ func (r *Realm) EmailProvider(db *Database) (email.Provider, error) {
 	return emailConfig.Provider()
 }
 
-func (r *Realm) Audits(db *Database) ([]*AuditEntry, error) {
-	var entries []*AuditEntry
-	if err := db.db.
-		Model(&AuditEntry{}).
-		Where("realm_id = ?", r.ID).
-		Order("created_at DESC").
-		Find(&entries).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return entries, nil
-		}
-		return nil, err
-	}
-	return entries, nil
+// ListAudits returns the list audit events which match the given criteria.
+func (r *Realm) ListAudits(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuditEntry, *pagination.Paginator, error) {
+	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
+		return db.Where("audit_entries.realm_id = ?", r.ID)
+	})
+
+	return db.ListAudits(p, scopes...)
 }
 
 // AbusePreventionEffectiveLimit returns the effective limit, multiplying the limit by the
@@ -688,21 +695,27 @@ func (r *Realm) ListSigningKeys(db *Database) ([]*SigningKey, error) {
 	return keys, nil
 }
 
-// ListAuthorizedApps gets all the authorized apps for the realm.
-func (r *Realm) ListAuthorizedApps(db *Database) ([]*AuthorizedApp, error) {
+func (r *Realm) ListAuthorizedApps(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuthorizedApp, *pagination.Paginator, error) {
 	var authApps []*AuthorizedApp
-	if err := db.db.
+	query := db.db.Model(&AuthorizedApp{}).
 		Unscoped().
-		Model(r).
-		Order("authorized_apps.deleted_at DESC, LOWER(authorized_apps.name)").
-		Related(&authApps).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
+		Scopes(scopes...).
+		Where("realm_id = ?", r.ID).
+		Order("LOWER(authorized_apps.name)")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return authApps, nil
+
+	paginator, err := Paginate(query, &authApps, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return authApps, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return authApps, paginator, nil
 }
 
 // FindAuthorizedApp finds the authorized app by the given id associated to the
@@ -722,20 +735,27 @@ func (r *Realm) FindAuthorizedApp(db *Database, id interface{}) (*AuthorizedApp,
 }
 
 // ListMobileApps gets all the mobile apps for the realm.
-func (r *Realm) ListMobileApps(db *Database) ([]*MobileApp, error) {
-	var apps []*MobileApp
-	if err := db.db.
+func (r *Realm) ListMobileApps(db *Database, p *pagination.PageParams) ([]*MobileApp, *pagination.Paginator, error) {
+	var mobileApps []*MobileApp
+	query := db.db.
 		Unscoped().
-		Model(r).
-		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)").
-		Related(&apps).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return apps, nil
-		}
-		return nil, err
+		Model(&MobileApp{}).
+		Where("realm_id = ?", r.ID).
+		Order("mobile_apps.deleted_at DESC, LOWER(mobile_apps.name)")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return apps, nil
+
+	paginator, err := Paginate(query, &mobileApps, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return mobileApps, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return mobileApps, paginator, nil
 }
 
 // FindMobileApp finds the mobile app by the given id associated with the realm.
@@ -753,40 +773,13 @@ func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) 
 	return &app, nil
 }
 
-// CountUsers returns the count users on this realm.
-func (r *Realm) CountUsers(db *Database) (int, error) {
-	var count int
-	if err := db.db.
-		Model(&User{}).
-		Joins("INNER JOIN user_realms ON user_realms.user_id = users.id and realm_id = ?", r.ID).
-		Count(&count).
-		Error; err != nil {
-		return 0, err
-	}
-	return count, nil
-}
+// ListUsers returns the list of users which match the given criteria.
+func (r *Realm) ListUsers(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
+	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
+		return db.Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID)
+	})
 
-// ListUsers returns the list of users on this realm.
-func (r *Realm) ListUsers(db *Database, offset, limit int, emailPrefix string) ([]*User, error) {
-	if limit > MaxPageSize {
-		limit = MaxPageSize
-	}
-
-	realmDB := db.db.Model(r)
-
-	if emailPrefix != "" {
-		realmDB = realmDB.Where("email like ?", fmt.Sprintf("%%%s%%", emailPrefix))
-	}
-
-	var users []*User
-	if err := realmDB.
-		Offset(offset).Limit(limit).
-		Order("LOWER(name)").
-		Related(&users, "RealmUsers").
-		Error; err != nil {
-		return nil, err
-	}
-	return users, nil
+	return db.ListUsers(p, scopes...)
 }
 
 // FindUser finds the given user in the realm by ID.
@@ -805,7 +798,7 @@ func (r *Realm) FindUser(db *Database, id interface{}) (*User, error) {
 // ValidTestType returns true if the given test type string is valid for this
 // realm, false otherwise.
 func (r *Realm) ValidTestType(typ string) bool {
-	switch strings.TrimSpace(strings.ToLower(typ)) {
+	switch project.TrimSpace(strings.ToLower(typ)) {
 	case "confirmed":
 		return r.AllowedTestTypes&TestTypeConfirmed != 0
 	case "likely":
@@ -855,15 +848,27 @@ func (db *Database) FindRealm(id interface{}) (*Realm, error) {
 	return &realm, nil
 }
 
-func (db *Database) GetRealms() ([]*Realm, error) {
+// ListRealms lists all available realms in the system.
+func (db *Database) ListRealms(p *pagination.PageParams, scopes ...Scope) ([]*Realm, *pagination.Paginator, error) {
 	var realms []*Realm
-	if err := db.db.
-		Order("name ASC").
-		Find(&realms).
-		Error; err != nil {
-		return nil, err
+	query := db.db.
+		Model(&Realm{}).
+		Scopes(scopes...).
+		Order("name ASC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
 	}
-	return realms, nil
+
+	paginator, err := Paginate(query, &realms, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return realms, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return realms, paginator, nil
 }
 
 func (r *Realm) AuditID() string {
@@ -1126,6 +1131,24 @@ func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database) (stri
 		return "", fmt.Errorf("missing key name")
 	}
 
+	// Check how many non-deleted signing keys currently exist. There's a limit on
+	// the number of "active" signing keys to help protect realms against
+	// excessive costs.
+	var count int64
+	if err := db.db.
+		Table("signing_keys").
+		Where("realm_id = ?", r.ID).
+		Where("deleted_at IS NULL").
+		Count(&count).
+		Error; err != nil {
+		if !IsNotFound(err) {
+			return "", fmt.Errorf("failed to count existing signing keys: %w", err)
+		}
+	}
+	if max := db.config.MaxCertificateSigningKeyVersions; count >= max {
+		return "", fmt.Errorf("too many available signing keys (maximum: %d)", max)
+	}
+
 	// Create the parent key - this interface does not return an error if the key
 	// already exists, so this is safe to run each time.
 	keyName, err := manager.CreateSigningKey(ctx, parent, name)
@@ -1255,7 +1278,7 @@ func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error
 
 // RenderWelcomeMessage message renders the realm's welcome message.
 func (r *Realm) RenderWelcomeMessage() string {
-	msg := strings.TrimSpace(r.WelcomeMessage)
+	msg := project.TrimSpace(r.WelcomeMessage)
 	if msg == "" {
 		return ""
 	}
@@ -1280,7 +1303,7 @@ func ToCIDRList(s string) ([]string, error) {
 	var cidrs []string
 	for _, line := range strings.Split(s, "\n") {
 		for _, v := range strings.Split(line, ",") {
-			v = strings.TrimSpace(v)
+			v = project.TrimSpace(v)
 
 			// Ignore blanks
 			if v == "" {

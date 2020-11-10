@@ -22,6 +22,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/chromedp/chromedp"
@@ -49,16 +50,27 @@ func TestHandleHome_IssueCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a cookie that logs this user in.
-	cookie, err := harness.LoggedInCookie(admin.Email)
+	// Log in the user.
+	session, err := harness.LoggedInSession(nil, admin.Email)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
+	}
+
+	// Set the current realm.
+	controller.StoreSessionRealm(session, realm)
+
+	// Mint a cookie for the session.
+	cookie, err := harness.SessionCookie(session)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Create a browser runner.
 	browserCtx := browser.New(t)
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
+
+	yesterday := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
 
 	var code string
 	if err := chromedp.Run(taskCtx,
@@ -70,6 +82,10 @@ func TestHandleHome_IssueCode(t *testing.T) {
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
+
+		// Add a date fields
+		chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
+		chromedp.SetValue(`input#symptom-date`, yesterday, chromedp.ByQuery),
 
 		// Click the issue button.
 		chromedp.Click(`#submit`, chromedp.ByQuery),

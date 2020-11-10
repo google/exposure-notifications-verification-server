@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -27,6 +28,8 @@ import (
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("redirect.HandleIndex")
 
 		// Strip of the port if that was passed along in the host header.
 		baseHost := strings.ToLower(r.Host)
@@ -59,7 +62,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			Key:       hostRegion,
 		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &appStoreData, c.config.AppCacheTTL, func() (interface{}, error) {
-			c.logger.Debug("fetching new app store data")
+			logger.Debug("fetching new app store data")
 			return c.getAppStoreData(realm.ID)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -71,8 +74,9 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		c.logger.Warnw("not a mobile user agent", "host", r.Host, "userAgent", r.UserAgent())
+		logger.Warnw("not a mobile user agent", "host", r.Host, "userAgent", r.UserAgent())
 		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Redirecting...")
 		m["requestURI"] = (&url.URL{
 			Scheme: "https",
 			Host:   r.Host,

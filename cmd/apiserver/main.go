@@ -133,10 +133,10 @@ func realMain(ctx context.Context) error {
 	rateLimit := httplimiter.Handle
 
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, cfg.DevMode, "json"))
+	r.Use(middleware.SecureHeaders(cfg.DevMode, "json"))
 
 	// Enable debug headers
-	processDebug := middleware.ProcessDebug(ctx)
+	processDebug := middleware.ProcessDebug()
 	r.Use(processDebug)
 
 	// Create the renderer
@@ -145,15 +145,23 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
+
 	// Install the rate limiting first. In this case, we want to limit by key
 	// first to reduce the chance of a database lookup.
 	r.Use(rateLimit)
 
 	// Other common middlewares
-	requireAPIKey := middleware.RequireAPIKey(ctx, cacher, db, h, []database.APIKeyType{
+	requireAPIKey := middleware.RequireAPIKey(cacher, db, h, []database.APIKeyType{
 		database.APIKeyTypeDevice,
 	})
-	processFirewall := middleware.ProcessFirewall(ctx, h, "apiserver")
+	processFirewall := middleware.ProcessFirewall(h, "apiserver")
 
 	r.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
 

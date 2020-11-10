@@ -15,14 +15,12 @@
 package middleware
 
 import (
-	"context"
-
 	"github.com/gorilla/mux"
 	"github.com/unrolled/secure"
 )
 
 // SecureHeaders sets a bunch of default secure headers that our servers should have.
-func SecureHeaders(ctx context.Context, devMode bool, serverType string) mux.MiddlewareFunc {
+func SecureHeaders(devMode bool, serverType string) mux.MiddlewareFunc {
 	options := secure.Options{
 		BrowserXssFilter:     serverType == "html",
 		ContentTypeNosniff:   true,

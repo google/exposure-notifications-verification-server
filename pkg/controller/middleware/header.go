@@ -18,21 +18,22 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 )
 
 // RequireHeader requires that the request have a certain header present. The
 // header just needs to exist - it does not need to have a specific value.
-func RequireHeader(ctx context.Context, h *render.Renderer, header string) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireHeader")
-
+func RequireHeader(h *render.Renderer, header string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireHeader")
+
 			if v := r.Header.Get(header); v == "" {
 				logger.Debugw("missing required header", "header", header)
 				controller.Unauthorized(w, r, h)

@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -26,25 +25,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// HandleUsersIndex renders the list of system admins.
-func (c *Controller) HandleUsersIndex() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		admins, err := c.db.ListSystemAdmins()
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		m := controller.TemplateMapFromContext(ctx)
-		m["admins"] = admins
-		c.h.RenderHTML(w, "admin/users/index", m)
-	})
-}
-
-// HandleUsersCreate creates a new system admin.
-func (c *Controller) HandleUsersCreate() http.Handler {
+// HandleSystemAdminCreate creates a new system admin.
+func (c *Controller) HandleSystemAdminCreate() http.Handler {
 	type FormData struct {
 		Email string `form:"email"`
 		Name  string `form:"name"`
@@ -75,12 +57,10 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 
 		var form FormData
 		err := controller.BindForm(w, r, &form)
-		email := strings.TrimSpace(form.Email)
-		name := strings.TrimSpace(form.Name)
 		if err != nil {
 			user := &database.User{
-				Email: email,
-				Name:  name,
+				Email: form.Email,
+				Name:  form.Name,
 			}
 
 			flash.Error("Failed to process form: %v", err)
@@ -89,7 +69,7 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 		}
 
 		// See if the user already exists and use that record.
-		user, err := c.db.FindUserByEmail(email)
+		user, err := c.db.FindUserByEmail(form.Email)
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
@@ -98,25 +78,25 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 
 			// User does not exist, create a new one.
 			user = &database.User{
-				Name:  name,
-				Email: email,
+				Name:  form.Email,
+				Email: form.Email,
 			}
 		}
 
-		user.Admin = true
+		user.SystemAdmin = true
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to create user: %v", err)
 			c.renderNewUser(ctx, w, user)
 			return
 		}
 
-		inviteComposer, err := c.inviteComposer(ctx, email)
+		inviteComposer, err := c.inviteComposer(ctx, form.Email)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		if _, err := c.authProvider.CreateUser(ctx, name, email, "", inviteComposer); err != nil {
+		if _, err := c.authProvider.CreateUser(ctx, form.Email, form.Email, "", inviteComposer); err != nil {
 			flash.Alert("Failed to create user: %v", err)
 			c.renderNewUser(ctx, w, user)
 		}
@@ -128,12 +108,13 @@ func (c *Controller) HandleUsersCreate() http.Handler {
 
 func (c *Controller) renderNewUser(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("New User - System Admin")
 	m["user"] = user
 	c.h.RenderHTML(w, "admin/users/new", m)
 }
 
-// HandleUsersDelete deletes a system admin.
-func (c *Controller) HandleUsersDelete() http.Handler {
+// HandleSystemAdminRevoke removes admin from a system admin.
+func (c *Controller) HandleSystemAdminRevoke() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -168,7 +149,7 @@ func (c *Controller) HandleUsersDelete() http.Handler {
 			return
 		}
 
-		user.Admin = false
+		user.SystemAdmin = false
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to remove system admin: %v", err)
 			controller.Back(w, r, c.h)

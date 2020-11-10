@@ -30,6 +30,7 @@ func (c *Controller) redirectShow(ctx context.Context, w http.ResponseWriter, r 
 
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Realm keys")
 	m["realm"] = realm
 
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
@@ -41,6 +42,9 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		}
 
 		m["realmKeys"] = keys
+
+		maximumKeyVersions := c.db.MaxCertificateSigningKeyVersions()
+		m["maximumKeyVersions"] = maximumKeyVersions
 
 		publicKeys := make(map[string]string)
 		// Go through and load / parse all of the public keys for the realm.

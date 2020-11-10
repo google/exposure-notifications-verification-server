@@ -22,10 +22,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -33,29 +29,22 @@ type Controller struct {
 	apiconfig    *config.AdminAPIServerConfig
 	db           *database.Database
 	h            *render.Renderer
-	logger       *zap.SugaredLogger
 }
 
 // NewServer creates a new controller for serving admin server requests.
 func NewServer(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-
 	return &Controller{
 		serverconfig: config,
 		db:           db,
 		h:            h,
-		logger:       logger,
 	}
 }
 
 // NewAPI creates a new controller serving API requests.
 func NewAPI(ctx context.Context, config *config.AdminAPIServerConfig, db *database.Database, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx)
-
 	return &Controller{
 		apiconfig: config,
 		db:        db,
 		h:         h,
-		logger:    logger,
 	}
 }

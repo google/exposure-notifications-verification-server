@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
 )
 
@@ -74,7 +76,7 @@ type MobileApp struct {
 }
 
 func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
-	a.Name = strings.TrimSpace(a.Name)
+	a.Name = project.TrimSpace(a.Name)
 	if a.Name == "" {
 		a.AddError("name", "is required")
 	}
@@ -83,12 +85,12 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("realm_id", "is required")
 	}
 
-	a.AppID = strings.TrimSpace(a.AppID)
+	a.AppID = project.TrimSpace(a.AppID)
 	if a.AppID == "" {
 		a.AddError("app_id", "is required")
 	}
 
-	a.URL = strings.TrimSpace(a.URL)
+	a.URL = project.TrimSpace(a.URL)
 	a.URLPtr = stringPtr(a.URL)
 
 	// Ensure OS is valid
@@ -97,7 +99,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	}
 
 	// SHA is required for Android
-	a.SHA = strings.TrimSpace(a.SHA)
+	a.SHA = project.TrimSpace(a.SHA)
 	if a.OS == OSTypeAndroid {
 		if a.SHA == "" {
 			a.AddError("sha", "is required for Android apps")
@@ -108,7 +110,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	var shas []string
 	for _, line := range strings.Split(a.SHA, "\n") {
 		for _, entry := range strings.Split(line, ",") {
-			entry = strings.ToUpper(strings.TrimSpace(entry))
+			entry = strings.ToUpper(project.TrimSpace(entry))
 			if entry == "" {
 				continue
 			}
@@ -130,6 +132,58 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// ExtendedMobileApp combines a MobileApp with its Realm
+type ExtendedMobileApp struct {
+	MobileApp
+	Realm
+}
+
+// ListActiveAppsWithRealm finds all active mobile apps with their associated realm.
+func (db *Database) ListActiveAppsWithRealm(p *pagination.PageParams) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
+	return db.SearchActiveAppsWithRealm(p, "")
+}
+
+// SearchActiveAppsWithRealm finds all active mobile apps with their associated realm.
+func (db *Database) SearchActiveAppsWithRealm(p *pagination.PageParams, q string) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
+	query := db.db.Table("mobile_apps").
+		Select("mobile_apps.*, realms.*").
+		Joins("left join realms on realms.id = mobile_apps.realm_id")
+
+	q = project.TrimSpace(q)
+	if q != "" {
+		q = `%` + q + `%`
+		query = query.Where("(mobile_apps.name ILIKE ? OR realms.name ILIKE ?)", q, q)
+	}
+
+	if p == nil {
+		p = new(pagination.PageParams)
+	}
+
+	apps := make([]*ExtendedMobileApp, 0)
+
+	paginator, err := PaginateFn(query, p.Page, p.Limit, func(query *gorm.DB, offset uint64) error {
+		rows, err := query.
+			Limit(p.Limit).
+			Offset(offset).
+			Rows()
+		if err != nil || rows == nil {
+			return nil
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			app := &ExtendedMobileApp{}
+			if err := db.db.ScanRows(rows, &app); err != nil {
+				return err
+			}
+			apps = append(apps, app)
+		}
+		return nil
+	})
+
+	return apps, paginator, err
 }
 
 // ListActiveAppsByOS finds mobile apps by their realm and OS.

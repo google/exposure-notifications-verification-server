@@ -32,27 +32,21 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/dgrijalva/jwt-go"
-	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 )
 
 func (c *Controller) HandleVerify() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
 
+		logger := logging.FromContext(ctx).Named("verifyapi.HandleVerify")
+
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
 
-		defer func(blame, result *tag.Mutator) {
-			ctx, err := tag.New(ctx, *blame, *result)
-			if err != nil {
-				c.logger.Warnw("failed to create context with additional tags", "error", err)
-				// NOTE: do not return here. We should log it as success.
-			}
-			stats.Record(ctx, mRequest.M(1))
-		}(&blame, &result)
+		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
@@ -66,7 +60,7 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.logger.Errorw("bad request", "error", err)
+			logger.Errorw("bad request", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			blame = observability.BlameClient
 			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
@@ -76,7 +70,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		// Get the signer based on Key configuration.
 		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.ActiveKey())
 		if err != nil {
-			c.logger.Errorw("failed to get signer", "error", err)
+			logger.Errorw("failed to get signer", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			blame = observability.BlameServer
 			result = observability.ResultError("FAILED_TO_GET_SIGNER")
@@ -86,7 +80,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		// Process and validate the requested acceptable test types.
 		acceptTypes, err := request.GetAcceptedTestTypes()
 		if err != nil {
-			c.logger.Errorf("invalid accept test types", "error", err)
+			logger.Errorf("invalid accept test types", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			blame = observability.BlameClient
 			result = observability.ResultError("INVALID_ACCEPT_TEST_TYPES")
@@ -112,7 +106,7 @@ func (c *Controller) HandleVerify() http.Handler {
 				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 				result = observability.ResultError("VERIFICATION_CODE_UNSUPPORTED_TEST_TYPE")
 			default:
-				c.logger.Errorw("failed to issue verification token", "error", err)
+				logger.Errorw("failed to issue verification token", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 				result = observability.ResultError("UNKNOWN_ERROR")
 			}
@@ -133,7 +127,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigning.ActiveKeyID()
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
-			c.logger.Errorw("failed to sign token", "error", err)
+			logger.Errorw("failed to sign token", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
 			blame = observability.BlameServer
 			result = observability.ResultError("FAILED_TO_SIGN_TOKEN")

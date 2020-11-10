@@ -9,7 +9,7 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="users-new" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -26,7 +26,7 @@
         {{template "users/_form" .}}
       </div>
     </div>
-    <a class="card-link" href="/users" id="all-users">&larr; All users</a>
+    <a class="card-link" href="/realm/users" id="all-users">&larr; All users</a>
   </main>
 </body>
 

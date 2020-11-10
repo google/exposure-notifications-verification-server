@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/modeler"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -103,6 +104,14 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
 
 	// Rate limiting
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)

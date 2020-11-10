@@ -19,15 +19,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-
-	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -35,13 +32,12 @@ type Controller struct {
 	cacher           cache.Cacher
 	db               *database.Database
 	h                *render.Renderer
-	logger           *zap.SugaredLogger
 	hostnameToRegion map[string]string
 }
 
 // New creates a new redirect controller.
 func New(ctx context.Context, db *database.Database, config *config.RedirectConfig, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
-	logger := logging.FromContext(ctx).Named("login")
+	logger := logging.FromContext(ctx).Named("redirect.New")
 
 	cfgMap, err := config.HostnameToRegion()
 	if err != nil {
@@ -54,7 +50,6 @@ func New(ctx context.Context, db *database.Database, config *config.RedirectConf
 		db:               db,
 		cacher:           cacher,
 		h:                h,
-		logger:           logger,
 		hostnameToRegion: cfgMap,
 	}, nil
 }

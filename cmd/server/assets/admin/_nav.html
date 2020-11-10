@@ -27,7 +27,11 @@
   </li>
 
   <li class="nav-item">
-    <a class="nav-link{{if .currentPath.IsDir "/admin/users"}} active{{end}}" href="/admin/users">System admins</a>
+    <a class="nav-link{{if .currentPath.IsDir "/admin/users"}} active{{end}}" href="/admin/users">Users</a>
+  </li>
+
+  <li class="nav-item">
+    <a class="nav-link{{if .currentPath.IsDir "/admin/mobileapps"}} active{{end}}" href="/admin/mobileapps">Mobile apps</a>
   </li>
 
   <li class="nav-item">
@@ -36,6 +40,10 @@
 
   <li class="nav-item">
     <a class="nav-link{{if .currentPath.IsDir "/admin/email"}} active{{end}}" href="/admin/email">Email</a>
+  </li>
+
+  <li class="nav-item">
+    <a class="nav-link{{if .currentPath.IsDir "/admin/events"}} active{{end}}" href="/admin/events">Events</a>
   </li>
 
   <li class="nav-item">

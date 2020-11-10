@@ -16,17 +16,15 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 )
@@ -34,14 +32,14 @@ import (
 // RequireAuth requires a user to be logged in. It also ensures that currentUser
 // is set in the template map. It fetches a user from the session and stores the
 // full record in the request context.
-func RequireAuth(ctx context.Context, cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h *render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
-
+func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h *render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
 	cacheTTL := 15 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
@@ -126,21 +124,21 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, authProvider auth.Pro
 
 			// Save the user on the context.
 			ctx = controller.WithUser(ctx, &user)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// RequireAdmin requires the current user is a global administrator. It must
+// RequireSystemAdmin requires the current user is a global administrator. It must
 // come after RequireAuth so that a user is set on the context.
-func RequireAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireAdminHandler")
-
+func RequireSystemAdmin(h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireAdminHandler")
 
 			currentUser := controller.UserFromContext(ctx)
 			if currentUser == nil {
@@ -148,7 +146,7 @@ func RequireAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
-			if !currentUser.Admin {
+			if !currentUser.SystemAdmin {
 				logger.Debugw("user is not an admin")
 				controller.Unauthorized(w, r, h)
 				return

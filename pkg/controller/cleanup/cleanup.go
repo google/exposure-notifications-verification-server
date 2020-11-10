@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
@@ -28,10 +29,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"go.uber.org/zap"
 )
 
 // Controller is a controller for the cleanup service.
@@ -39,18 +36,14 @@ type Controller struct {
 	config *config.CleanupConfig
 	db     *database.Database
 	h      *render.Renderer
-	logger *zap.SugaredLogger
 }
 
 // New creates a new cleanup controller.
 func New(ctx context.Context, config *config.CleanupConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
-	logger := logging.FromContext(ctx).Named("cleanup")
-
 	return &Controller{
 		config: config,
 		db:     db,
 		h:      h,
-		logger: logger,
 	}, nil
 }
 
@@ -82,10 +75,12 @@ func (c *Controller) HandleCleanup() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
 
+		logger := logging.FromContext(ctx).Named("cleanup.HandleCleanup")
+
 		var result, item tag.Mutator
 
 		if err := c.shouldCleanup(ctx); err != nil {
-			c.logger.Errorw("failed to run shouldCleanup", "error", err)
+			logger.Errorw("failed to run shouldCleanup", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
 				OK:     false,
 				Errors: []error{err},
@@ -98,64 +93,89 @@ func (c *Controller) HandleCleanup() http.Handler {
 		var merr *multierror.Error
 
 		// API keys
-		item = tag.Upsert(itemTagKey, "API_KEYS")
-		if count, err := c.db.PurgeAuthorizedApps(c.config.AuthorizedAppMaxAge); err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("failed to purge authorized apps: %w", err))
-			result = observability.ResultError("FAILED")
-		} else {
-			c.logger.Infow("purged authorized apps", "count", count)
-			result = observability.ResultOK()
-		}
-		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "API_KEYS")
+			if count, err := c.db.PurgeAuthorizedApps(c.config.AuthorizedAppMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge authorized apps: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged authorized apps", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
 
-		// Verification codes
-		item = tag.Upsert(itemTagKey, "VERIFICATION_CODE")
-		if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
-			result = observability.ResultError("FAILED")
-		} else {
-			c.logger.Infow("purged verification codes", "count", count)
-			result = observability.ResultOK()
-		}
-		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
+		// Verification codes - purge codes from database entirerly.
+		// Their code/long_code hmac values will have been set to "".
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "VERIFICATION_CODE")
+			if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged verification codes", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
+
+		// Verification codes - recycle codes. Zero out the code/long_code values
+		// so status can be reported, but codes couldn't be recalculated or checked.
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "VERIFICATION_CODE_RECYCLE")
+			if count, err := c.db.RecycleVerificationCodes(c.config.VerificationCodeStatusMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("recycled verification codes", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
 
 		// Verification tokens
-		item = tag.Upsert(itemTagKey, "VERIFICATION_TOKEN")
-		if count, err := c.db.PurgeTokens(c.config.VerificationTokenMaxAge); err != nil {
-			result = observability.ResultError("FAILED")
-			merr = multierror.Append(merr, fmt.Errorf("failed to purge tokens: %w", err))
-		} else {
-			c.logger.Infow("purged verification tokens", "count", count)
-			result = observability.ResultOK()
-		}
-		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "VERIFICATION_TOKEN")
+			if count, err := c.db.PurgeTokens(c.config.VerificationTokenMaxAge); err != nil {
+				result = observability.ResultError("FAILED")
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge tokens: %w", err))
+			} else {
+				logger.Infow("purged verification tokens", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
 
 		// Mobile apps
-		item = tag.Upsert(itemTagKey, "MOBILE_APP")
-		if count, err := c.db.PurgeMobileApps(c.config.MobileAppMaxAge); err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("failed to purge mobile apps: %w", err))
-			result = observability.ResultError("FAILED")
-		} else {
-			c.logger.Infow("purged mobile apps", "count", count)
-			result = observability.ResultOK()
-		}
-		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "MOBILE_APP")
+			if count, err := c.db.PurgeMobileApps(c.config.MobileAppMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge mobile apps: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged mobile apps", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
 
 		// Audit entries
-		item = tag.Upsert(itemTagKey, "AUDIT_ENTRY")
-		if count, err := c.db.PurgeAuditEntries(c.config.AuditEntryMaxAge); err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("failed to purge audit entries: %w", err))
-			result = observability.ResultError("FAILED")
-		} else {
-			c.logger.Infow("purged audit entries", "count", count)
-			result = observability.ResultOK()
-		}
-		stats.RecordWithTags(ctx, []tag.Mutator{result, item}, mRequests.M(1))
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "AUDIT_ENTRY")
+			if count, err := c.db.PurgeAuditEntries(c.config.AuditEntryMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge audit entries: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged audit entries", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
 
 		// If there are any errors, return them
 		if merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {
-				c.logger.Errorw("failed to cleanup", "errors", errs)
+				logger.Errorw("failed to cleanup", "errors", errs)
 				c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
 					OK:     false,
 					Errors: errs,

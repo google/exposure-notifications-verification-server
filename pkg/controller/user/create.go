@@ -17,7 +17,6 @@ package user
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -64,11 +63,10 @@ func (c *Controller) HandleCreate() http.Handler {
 			c.renderNew(ctx, w)
 			return
 		}
-		email := strings.TrimSpace(form.Email)
 
 		// See if the user already exists by email - they may be a member of another
 		// realm.
-		user, err := c.db.FindUserByEmail(email)
+		user, err := c.db.FindUserByEmail(form.Email)
 		if err != nil {
 			if !database.IsNotFound(err) {
 				controller.InternalError(w, r, c.h, err)
@@ -76,7 +74,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			}
 
 			user = new(database.User)
-			user.Email = email
+			user.Email = form.Email
 			user.Name = form.Name
 		}
 

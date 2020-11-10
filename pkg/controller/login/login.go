@@ -43,6 +43,7 @@ func (c *Controller) HandleLogin() http.Handler {
 
 func (c *Controller) renderLogin(ctx context.Context, w http.ResponseWriter) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Login")
 	m["firebase"] = c.config.Firebase
 	c.h.RenderHTML(w, "login", m)
 }

@@ -110,6 +110,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 // renderEdit renders the edit page.
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, app *database.MobileApp) {
 	m := templateMap(ctx)
+	m.Title("Edit mobile app: %s", app.Name)
 	m["app"] = app
 	c.h.RenderHTML(w, "mobileapps/edit", m)
 }
