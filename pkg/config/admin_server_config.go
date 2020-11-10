@@ -47,8 +47,8 @@ type AdminAPIServerConfig struct {
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
-	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=336h"` // 336h is 14 days.
-	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=false"`
+	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=660h"` // 660h is 28 days.
+	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
 	// For EN Express, the link will be
 	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]

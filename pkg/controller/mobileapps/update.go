@@ -28,6 +28,7 @@ import (
 func (c *Controller) HandleUpdate() http.Handler {
 	type FormData struct {
 		Name  string          `form:"name"`
+		URL   string          `form:"url"`
 		OS    database.OSType `form:"os"`
 		AppID string          `form:"app_id"`
 		SHA   string          `form:"sha"`
@@ -89,6 +90,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		// Build the authorized app struct
 		app.Name = form.Name
+		app.URL = form.URL
 		app.OS = form.OS
 		app.AppID = form.AppID
 		app.SHA = form.SHA
@@ -108,6 +110,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 // renderEdit renders the edit page.
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, app *database.MobileApp) {
 	m := templateMap(ctx)
+	m.Title("Edit mobile app: %s", app.Name)
 	m["app"] = app
 	c.h.RenderHTML(w, "mobileapps/edit", m)
 }

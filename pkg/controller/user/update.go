@@ -26,7 +26,6 @@ import (
 
 func (c *Controller) HandleUpdate() http.Handler {
 	type FormData struct {
-		Email string `form:"email"`
 		Name  string `form:"name"`
 		Admin bool   `form:"admin"`
 	}
@@ -54,7 +53,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		user, err := realm.FindUser(c.db, vars["id"])
+		user, err := c.findUser(currentUser, realm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -72,10 +71,11 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			user.Email = form.Email
-			user.Name = form.Name
+		err = controller.BindForm(w, r, &form)
 
+		// Build the user struct
+		user.Name = form.Name
+		if err != nil {
 			if terr, ok := err.(schema.MultiError); ok {
 				for k, err := range terr {
 					user.AddError(k, err.Error())
@@ -86,10 +86,6 @@ func (c *Controller) HandleUpdate() http.Handler {
 			c.renderEdit(ctx, w, user)
 			return
 		}
-
-		// Build the user struct
-		user.Email = form.Email
-		user.Name = form.Name
 
 		// Manage realm admin permissions.
 		if form.Admin {
@@ -105,18 +101,20 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		flash.Alert("Successfully updated user '%v'", form.Name)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 	})
 }
 
 func (c *Controller) renderUpdate(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("New user")
 	m["user"] = user
 	c.h.RenderHTML(w, "users/new", m)
 }
 
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user *database.User) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Edit user: %s", user.Name)
 	m["user"] = user
 	c.h.RenderHTML(w, "users/edit", m)
 }

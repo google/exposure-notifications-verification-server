@@ -84,6 +84,7 @@ type Request struct {
 	LongExpiresAt  time.Time
 	TestType       string
 	SymptomDate    *time.Time
+	TestDate       *time.Time
 	MaxSymptomAge  time.Duration
 	IssuingUser    *database.User
 	IssuingApp     *database.AuthorizedApp
@@ -127,6 +128,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, s
 			LongCode:      longCode,
 			TestType:      strings.ToLower(o.TestType),
 			SymptomDate:   o.SymptomDate,
+			TestDate:      o.TestDate,
 			ExpiresAt:     o.ShortExpiresAt,
 			LongExpiresAt: o.LongExpiresAt,
 			IssuingUserID: issuingUserID,

@@ -22,10 +22,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
@@ -34,8 +35,27 @@ import (
 	"go.opencensus.io/tag"
 )
 
-// Cache the UTC time.Location, to speed runtime.
-var utc *time.Location
+type dateParseSettings struct {
+	Name          string
+	ParseError    string
+	ValidateError string
+}
+
+var (
+	// Cache the UTC time.Location, to speed runtime.
+	utc *time.Location
+
+	onsetSettings = dateParseSettings{
+		Name:          "symptom onset",
+		ParseError:    "FAILED_TO_PROCESS_SYMPTOM_ONSET_DATE",
+		ValidateError: "SYMPTOM_ONSET_DATE_NOT_IN_VALID_RANGE",
+	}
+	testSettings = dateParseSettings{
+		Name:          "test",
+		ParseError:    "FAILED_TO_PROCESS_TEST_DATE",
+		ValidateError: "TEST_DATE_NOT_IN_VALID_RANGE",
+	}
+)
 
 func init() {
 	var err error
@@ -78,30 +98,28 @@ func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, e
 }
 
 func (c *Controller) HandleIssue() http.Handler {
-	logger := c.logger.Named("issueapi.HandleIssue")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx := observability.WithBuildInfo(r.Context())
 
-		// Record the issue attempt.
-		stats.Record(ctx, c.metrics.IssueAttempts.M(1))
+		logger := logging.FromContext(ctx).Named("issueapi.HandleIssue")
+
+		var blame = observability.BlameNone
+		var result = observability.ResultOK()
+		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			blame = observability.BlameClient
+			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			return
-		}
-
-		// Use the symptom onset date if given, otherwise fallback to test date.
-		if request.SymptomDate == "" {
-			request.SymptomDate = request.TestDate
 		}
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
-			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
+			blame = observability.BlameClient
+			result = observability.ResultError("MISSING_AUTHORIZED_APP")
 			return
 		}
 
@@ -109,8 +127,9 @@ func (c *Controller) HandleIssue() http.Handler {
 		if authApp != nil {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
-				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
+				blame = observability.BlameClient
+				result = observability.ResultError("UNAUTHORIZED")
 				return
 			}
 		} else {
@@ -118,30 +137,29 @@ func (c *Controller) HandleIssue() http.Handler {
 			realm = controller.RealmFromContext(ctx)
 		}
 		if realm == nil {
-			stats.Record(ctx, c.metrics.IssueAttempts.M(1), c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
+			blame = observability.BlameServer
+			result = observability.ResultError("MISSING_REALM")
 			return
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
-		ctx, err = tag.New(ctx, tag.Upsert(observability.RealmTagKey, fmt.Sprintf("%d", realm.ID)))
-		if err != nil {
-			logger.Errorw("unable to record metrics for realm", "realmID", realm.ID, "error", err)
-		}
+		ctx = observability.WithRealmID(ctx, realm.ID)
 
 		// If this realm requires a date but no date was specified, return an error.
-		if request.SymptomDate == "" && realm.RequireDate {
-			stats.Record(ctx, c.metrics.IssueAttempts.M(1), c.metrics.CodeIssueErrors.M(1))
+		if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate))
+			blame = observability.BlameClient
+			result = observability.ResultError("MISSING_REQUIRED_FIELDS")
 			return
 		}
 
-		// Validate that the request with the provided test type is valid for this
-		// realm.
+		// Validate that the request with the provided test type is valid for this realm.
 		if !realm.ValidTestType(request.TestType) {
-			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("unsupported test type: %v", request.TestType))
+			blame = observability.BlameClient
+			result = observability.ResultError("UNSUPPORTED_TEST_TYPE")
 			return
 		}
 
@@ -151,14 +169,16 @@ func (c *Controller) HandleIssue() http.Handler {
 			smsProvider, err = realm.SMSProvider(c.db)
 			if err != nil {
 				logger.Errorw("failed to get sms provider", "error", err)
-				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
+				blame = observability.BlameServer
+				result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
 				return
 			}
 			if smsProvider == nil {
 				err := fmt.Errorf("phone provided, but no sms provider is configured")
-				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+				blame = observability.BlameServer
+				result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
 				return
 			}
 		}
@@ -166,60 +186,84 @@ func (c *Controller) HandleIssue() http.Handler {
 		// Verify the test type
 		request.TestType = strings.ToLower(request.TestType)
 		if _, ok := c.validTestType[request.TestType]; !ok {
-			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid test type"))
+			blame = observability.BlameClient
+			result = observability.ResultError("INVALID_TEST_TYPE")
 			return
 		}
 
-		var symptomDate *time.Time
-		if request.SymptomDate != "" {
-			if parsed, err := time.Parse("2006-01-02", request.SymptomDate); err != nil {
-				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process symptom onset date: %v", err))
-				return
-			} else {
-				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
-				maxDate := time.Now().UTC().Truncate(24 * time.Hour)
-				minDate := maxDate.Add(-1 * c.config.GetAllowedSymptomAge()).Truncate(24 * time.Hour)
-
-				symptomDate, err = validateDate(parsed, minDate, maxDate, int(request.TZOffset))
-				if err != nil {
-					err := fmt.Errorf("symptom onset date must be on/after %v and on/before %v %v",
-						minDate.Format("2006-01-02"),
-						maxDate.Format("2006-01-02"),
-						parsed.Format("2006-01-02"),
-					)
-					stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
-					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+		// Set up parallel arrays to leverage the observability reporting and connect the parse / valdiation errors
+		// to the correct date.
+		parsedDates := make([]*time.Time, 2)
+		input := []string{request.SymptomDate, request.TestDate}
+		dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
+		for i, d := range input {
+			if d != "" {
+				if parsed, err := time.Parse("2006-01-02", d); err != nil {
+					c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err))
+					blame = observability.BlameClient
+					result = observability.ResultError(dateSettings[i].ParseError)
 					return
+				} else {
+					// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+					maxDate := timeutils.UTCMidnight(time.Now())
+					minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+
+					validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
+					if err != nil {
+						err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
+							dateSettings[i].Name,
+							minDate.Format("2006-01-02"),
+							maxDate.Format("2006-01-02"),
+							parsed.Format("2006-01-02"),
+						)
+						c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+						blame = observability.BlameClient
+						result = observability.ResultError(dateSettings[i].ValidateError)
+						return
+					}
+					parsedDates[i] = validatedDate
 				}
 			}
 		}
 
-		// If we got this far, we're about to issue a code.
-		dig, err := digest.HMACUint(realm.ID, c.config.GetRateLimitConfig().HMACKey)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-		key := fmt.Sprintf("realm:quota:%s", dig)
-		limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
-		if err != nil {
-			logger.Errorw("failed to take from limiter", "error", err)
-			stats.Record(ctx, c.metrics.QuotaErrors.M(1))
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
-			return
-		}
-		if !ok {
-			logger.Warnw("realm has exceeded daily quota",
-				"realm", realm.ID,
-				"limit", limit,
-				"reset", reset)
-			stats.Record(ctx, c.metrics.QuotaExceeded.M(1))
-
-			if c.config.GetEnforceRealmQuotas() {
-				c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
+		// If we got this far, we're about to issue a code - take from the limiter
+		// to ensure this is permitted.
+		if realm.AbusePreventionEnabled {
+			key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				blame = observability.BlameServer
+				result = observability.ResultError("FAILED_TO_GENERATE_HMAC")
 				return
+			}
+			limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
+			if err != nil {
+				logger.Errorw("failed to take from limiter", "error", err)
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
+				blame = observability.BlameServer
+				result = observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER")
+				return
+			}
+
+			// Override limit if there has been a burst for this realm.
+			if remaining > limit {
+				remaining = limit
+			}
+
+			c.recordCapacity(ctx, limit, remaining)
+			if !ok {
+				logger.Warnw("realm has exceeded daily quota",
+					"realm", realm.ID,
+					"limit", limit,
+					"reset", reset)
+
+				if c.config.GetEnforceRealmQuotas() {
+					c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
+					blame = observability.BlameClient
+					result = observability.ResultError("QUOTA_EXCEEDED")
+					return
+				}
 			}
 		}
 
@@ -240,7 +284,8 @@ func (c *Controller) HandleIssue() http.Handler {
 			LongLength:     realm.LongCodeLength,
 			LongExpiresAt:  longExpiryTime,
 			TestType:       request.TestType,
-			SymptomDate:    symptomDate,
+			SymptomDate:    parsedDates[0],
+			TestDate:       parsedDates[1],
 			MaxSymptomAge:  c.config.GetAllowedSymptomAge(),
 			IssuingUser:    user,
 			IssuingApp:     authApp,
@@ -250,31 +295,36 @@ func (c *Controller) HandleIssue() http.Handler {
 		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
-			stats.Record(ctx, c.metrics.CodeIssueErrors.M(1))
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
+			blame = observability.BlameServer
+			result = observability.ResultError("FAILED_TO_ISSUE_CODE")
 			return
 		}
 
-		c.recordCapacity(ctx, realm, remaining)
-
 		if request.Phone != "" && smsProvider != nil {
-			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
-			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
-				// Delete the token
-				if err := c.db.DeleteVerificationCode(code); err != nil {
-					logger.Errorw("failed to delete verification code", "error", err)
-					// fallthrough to the error
+			if err := func() error {
+				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
+				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
+					// Delete the token
+					if err := c.db.DeleteVerificationCode(code); err != nil {
+						logger.Errorw("failed to delete verification code", "error", err)
+						// fallthrough to the error
+					}
+
+					logger.Errorw("failed to send sms", "error", err)
+					blame = observability.BlameServer
+					result = observability.ResultError("FAILED_TO_SEND_SMS")
+					return err
 				}
 
-				logger.Errorw("failed to send sms", "error", err)
-				stats.Record(ctx, c.metrics.CodeIssueErrors.M(1), c.metrics.SMSSendErrors.M(1))
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms"))
+				return nil
+			}(); err != nil {
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms: %s", err))
 				return
 			}
-			stats.Record(ctx, c.metrics.SMSSent.M(1))
 		}
 
-		stats.Record(ctx, c.metrics.CodesIssued.M(1))
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.IssueCodeResponse{
 				UUID:                   uuid,
@@ -291,25 +341,17 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 	ctx := r.Context()
 
 	authorizedApp := controller.AuthorizedAppFromContext(ctx)
-	user := controller.UserFromContext(ctx)
+	currentUser := controller.UserFromContext(ctx)
 
-	if authorizedApp == nil && user == nil {
+	if authorizedApp == nil && currentUser == nil {
 		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
 	}
 
-	return authorizedApp, user, nil
+	return authorizedApp, currentUser, nil
 }
 
-func (c *Controller) recordCapacity(ctx context.Context, realm *database.Realm, remaining uint64) {
-	if !realm.AbusePreventionEnabled {
-		return
-	}
-	stats.Record(ctx, c.metrics.RealmTokenRemaining.M(int64(remaining)))
-
-	limit := realm.AbusePreventionEffectiveLimit()
-	issued := uint64(limit) - remaining
-	stats.Record(ctx, c.metrics.RealmTokenIssued.M(int64(issued)))
-
-	capacity := float64(issued) / float64(limit)
-	stats.Record(ctx, c.metrics.RealmTokenCapacity.M(capacity))
+func (c *Controller) recordCapacity(ctx context.Context, limit, remaining uint64) {
+	stats.Record(ctx, mRealmTokenUsed.M(1))
+	stats.RecordWithTags(ctx, []tag.Mutator{tokenAvailableTag()}, mRealmToken.M(int64(remaining)))
+	stats.RecordWithTags(ctx, []tag.Mutator{tokenLimitTag()}, mRealmToken.M(int64(limit)))
 }

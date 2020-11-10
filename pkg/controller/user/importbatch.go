@@ -15,8 +15,10 @@
 package user
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -24,9 +26,10 @@ import (
 )
 
 func (c *Controller) HandleImportBatch() http.Handler {
-	logger := c.logger.Named("user.HandleImportBatch")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("user.HandleImportBatch")
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -67,22 +70,31 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			}
 			user.Realms = append(user.Realms, realm)
 
-			if created, err := user.CreateFirebaseUser(ctx, c.client); err != nil {
-				logger.Errorw("Error creating firebase user", "error", err)
-				batchErr = multierror.Append(batchErr, err)
-				continue
-			} else if created {
-				newUsers = append(newUsers, &batchUser)
-				if err := c.firebaseInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
-					batchErr = multierror.Append(batchErr, err)
-					continue
-				}
-			}
-
+			// Save the user in the database.
 			if err := c.db.SaveUser(user, currentUser); err != nil {
 				logger.Errorw("Error saving user", "error", err)
 				batchErr = multierror.Append(batchErr, err)
 				continue
+			}
+
+			// Create the invitation email composer.
+			inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+
+			// Create the user in the auth provider. This could be a noop depending on
+			// the auth provider.
+			created, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", inviteComposer)
+			if err != nil {
+				logger.Errorw("failed to import user", "user", user.Email, "error", err)
+				batchErr = multierror.Append(batchErr, err)
+				continue
+			}
+
+			if created {
+				newUsers = append(newUsers, &batchUser)
 			}
 		}
 
@@ -92,7 +104,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		if err := batchErr.ErrorOrNil(); err != nil {
 			response.Error = err.Error()
-			response.ErrorCode = string(http.StatusInternalServerError)
+			response.ErrorCode = fmt.Sprintf("%d", http.StatusInternalServerError)
 
 			if len(newUsers) == 0 { // We return partial success if any succeeded.
 				c.h.RenderJSON(w, http.StatusInternalServerError, response)

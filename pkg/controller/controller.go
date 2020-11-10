@@ -21,10 +21,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
 var (
@@ -61,6 +60,21 @@ func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, e
 		h.JSON500(w, err)
 	default:
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+}
+
+// NotFound returns an error indicating the URL was not found.
+func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	accept := strings.Split(r.Header.Get("Accept"), ",")
+	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+
+	switch {
+	case prefixInList(accept, ContentTypeHTML):
+		h.RenderHTMLStatus(w, http.StatusNotFound, "400", nil)
+	case prefixInList(accept, ContentTypeJSON):
+		h.RenderJSON(w, http.StatusNotFound, http.StatusText(http.StatusNotFound))
+	default:
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 	}
 }
 

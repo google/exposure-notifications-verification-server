@@ -61,6 +61,20 @@ variable "database_backup_location" {
   description = "Location in which to backup the database."
 }
 
+variable "database_backup_schedule" {
+  type    = string
+  default = "0 */6 * * *"
+
+  description = "Cron schedule in which to do a full backup of the database to Cloud Storage."
+}
+
+variable "database_failover_replica_regions" {
+  type    = list(string)
+  default = []
+
+  description = "List of regions in which to create failover replicas. The default configuration is resistant to zonal outages. This will increase costs."
+}
+
 variable "storage_location" {
   type    = string
   default = "US"
@@ -139,43 +153,25 @@ variable "redis_cache_size" {
   description = "Size of the Redis instance in GB."
 }
 
-variable "adminapi_custom_domains" {
-  type    = set(string)
+variable "server_hosts" {
+  type    = list(string)
   default = []
 
-  description = "Custom domains to map for adminapi. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
+  description = "List of domains upon which the web ui is served."
 }
 
-variable "apiserver_custom_domains" {
-  type    = set(string)
+variable "apiserver_hosts" {
+  type    = list(string)
   default = []
 
-  description = "Custom domains to map for apiserver. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
+  description = "List of domains upon which the apiserver is served."
 }
 
-variable "server_custom_domains" {
-  type    = set(string)
+variable "adminapi_hosts" {
+  type    = list(string)
   default = []
 
-  description = "Custom domains to map for server. These domains must already be verified by Google, and you must have a DNS CNAME record pointing to ghs.googlehosted.com in advance."
-}
-
-variable "server-host" {
-  type        = string
-  default     = ""
-  description = "Domain web ui is hosted on."
-}
-
-variable "apiserver-host" {
-  type        = string
-  default     = ""
-  description = "Domain apiserver is hosted on."
-}
-
-variable "adminapi-host" {
-  type        = string
-  default     = ""
-  description = "Domain adminapi is hosted on."
+  description = "List of domains upon which the adminapi is served."
 }
 
 variable "enx_redirect_domain" {
@@ -193,25 +189,46 @@ variable "enx_redirect_domain_map" {
   description = "Redirect domains and environments."
 }
 
+variable "db_apikey_db_hmac_count" {
+  type    = number
+  default = 1
+
+  description = "Number of HMAC keys to create for HMACing API keys in the database. Increase by 1 to force a rotation."
+}
+
+variable "db_apikey_sig_hmac_count" {
+  type    = number
+  default = 1
+
+  description = "Number of HMAC keys to create for HMACing API key signatures. Increase by 1 to force a rotation."
+}
+
+variable "db_verification_code_hmac_count" {
+  type    = number
+  default = 1
+
+  description = "Number of HMAC keys to create for HMACing verification codes in the database. Increase by 1 to force a rotation."
+}
+
 terraform {
   required_version = ">= 0.13.1"
 
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 3.38"
+      version = "~> 3.46"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 3.38"
+      version = "~> 3.46"
     }
     local = {
       source  = "hashicorp/local"
-      version = "~> 1.4"
+      version = "~> 2.0"
     }
     null = {
       source  = "hashicorp/null"
-      version = "~> 2.1"
+      version = "~> 3.0"
     }
     random = {
       source  = "hashicorp/random"

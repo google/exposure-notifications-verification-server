@@ -61,6 +61,7 @@ func (c *Controller) HandleShow() http.Handler {
 // renderShow renders the edit page.
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, app *database.MobileApp) {
 	m := templateMap(ctx)
+	m.Title("Mobile app: %s", app.Name)
 	m["app"] = app
 	c.h.RenderHTML(w, "mobileapps/show", m)
 }

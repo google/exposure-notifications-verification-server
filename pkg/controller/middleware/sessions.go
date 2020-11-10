@@ -15,15 +15,13 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
@@ -38,16 +36,18 @@ const (
 // request's context for future retrieval. It also ensures the flash data is
 // populated in the template map. Any handler that wants to utilize sessions
 // should use this middleware.
-func RequireSession(ctx context.Context, store sessions.Store, h *render.Renderer) func(http.Handler) http.Handler {
-	logger := logging.FromContext(ctx).Named("middleware.RequireSession")
-
+func RequireSession(store sessions.Store, h *render.Renderer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
+			logger := logging.FromContext(ctx).Named("middleware.RequireSession")
+
 			// Get or create a session from the store.
 			session, err := store.Get(r, sessionName)
 			if err != nil {
+				logger.Errorw("failed to get session", "error", err)
+
 				// We couldn't get a session (invalid cookie, can't talk to redis,
 				// whatever). According to the spec, this can return an error but can never
 				// return an empty session. We intentionally discard the error to ensure we
@@ -62,7 +62,7 @@ func RequireSession(ctx context.Context, store sessions.Store, h *render.Rendere
 
 			// Save the session on the context.
 			ctx = controller.WithSession(ctx, session)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			// Ensure the session is saved at least once. This is passed to the
 			// before-first-byte writer AND called after the middleware executes to

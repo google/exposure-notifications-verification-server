@@ -9,11 +9,18 @@
   {{template "errorable" $app.ErrorsFor "name"}}
 </div>
 
+<div class="form-label-group">
+  <input type="text" name="url" id="url" class="form-control{{if $app.ErrorsFor "url"}} is-invalid{{end}}" value="{{$app.URL}}"
+    placeholder="AppStore URL" autofocus>
+  <label for="url">AppStore URL</label>
+  {{template "errorable" $app.ErrorsFor "url"}}
+</div>
+
 <div class="form-group">
   <select name="os" id="os" class="form-control custom-select{{if $app.ErrorsFor "os"}} is-invalid{{end}}">
     <option selected disabled>Choose platform...</option>
-    <option value="{{.iOS}}" {{if (eq $app.OS .iOS)}}selected{{end}}>iOS</option>
-    <option value="{{.android}}" {{if (eq $app.OS .android)}}selected{{end}}>Android</option>
+    <option value="{{.iOS}}" {{if (eq $app.OS .iOS)}}selected{{end}}>iOS Custom App</option>
+    <option value="{{.android}}" {{if (eq $app.OS .android)}}selected{{end}}>Android EN Express or Custom App</option>
   </select>
   {{template "errorable" $app.ErrorsFor "os"}}
 </div>
@@ -22,6 +29,10 @@
   <input type="text" name="app_id" id="app-id" class="form-control text-monospace{{if $app.ErrorsFor "app_id"}} is-invalid{{end}}" value="{{$app.AppID}}">
   <label for="app-id" id="app-id-label"></label>
   {{template "errorable" $app.ErrorsFor "app_id"}}
+  <small class="form-text text-muted d-none" id="ioshelp">
+    The iOS Mobile App configuration must be blank if you are an iOS Exposure Notifications Express (ENX) customer. This should only
+    be filled in for custom applications.
+  </small>
 </div>
 
 <div id="sha-group" class="form-label-group d-none">
@@ -47,6 +58,7 @@
     let $appIDLabel = $('#app-id-label');
     let $sha = $('#sha');
     let $shaGroup = $('#sha-group');
+    let $iosHelp = $('#ioshelp');
 
     function processChange() {
       $appIDGroup.addClass('d-none');
@@ -57,11 +69,13 @@
         $appIDLabel.html('Application ID');
         $shaGroup.addClass('d-none');
         $appIDGroup.removeClass('d-none');
+        $iosHelp.removeClass('d-none');
       } else if (val === '{{.android}}') {
         $appID.attr('placeholder', 'Package name');
         $appIDLabel.html('Package name');
         $shaGroup.removeClass('d-none');
         $appIDGroup.removeClass('d-none');
+        $iosHelp.addClass('d-none');
       }
     }
 

@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -38,7 +39,7 @@ func TestSubject(t *testing.T) {
 		Error string
 	}{
 		{
-			Name: "normal parse",
+			Name: "legacy_version",
 			Sub:  "confirmed.2020-07-07",
 			Want: &Subject{
 				TestType:    "confirmed",
@@ -46,12 +47,49 @@ func TestSubject(t *testing.T) {
 			},
 		},
 		{
-			Name: "no date",
+			Name: "legacy_version_no_date",
 			Sub:  "confirmed.",
 			Want: &Subject{
 				TestType:    "confirmed",
 				SymptomDate: nil,
 			},
+		},
+		{
+			Name: "current_version_no_test_date",
+			Sub:  "confirmed.2020-07-07.",
+			Want: &Subject{
+				TestType:    "confirmed",
+				SymptomDate: &testDay,
+			},
+		},
+		{
+			Name: "current_version_no_symptom_date",
+			Sub:  "confirmed..2020-07-07",
+			Want: &Subject{
+				TestType: "confirmed",
+				TestDate: &testDay,
+			},
+		},
+		{
+			Name: "all_fields",
+			Sub:  "confirmed.2020-07-07.2020-07-07",
+			Want: &Subject{
+				TestType:    "confirmed",
+				SymptomDate: &testDay,
+				TestDate:    &testDay,
+			},
+		},
+		{
+			Name:  "invalid_segments",
+			Sub:   "confirmed",
+			Want:  nil,
+			Error: "subject must contain 2 or 3 parts, got: 1",
+		},
+		{
+			Name:  "too_many_segments",
+			Sub:   "confirmed.date.date.whomp",
+			Want:  nil,
+			Error: "subject must contain 2 or 3 parts, got: 4",
 		},
 	}
 
@@ -77,10 +115,9 @@ func TestSubject(t *testing.T) {
 
 func TestIssueToken(t *testing.T) {
 	t.Parallel()
-	db := NewTestDatabase(t)
 
 	codeAge := time.Hour
-	symptomDate := time.Now().UTC().Truncate(24 * time.Hour)
+	symptomDate := timeutils.UTCMidnight(time.Now())
 	wrongSymptomDate := symptomDate.Add(-48 * time.Hour)
 
 	acceptConfirmed := api.AcceptTypes{
@@ -196,7 +233,7 @@ func TestIssueToken(t *testing.T) {
 			Accept:     acceptConfirmed,
 			ClaimError: ErrTokenMetadataMismatch.Error(),
 			TokenAge:   time.Hour,
-			Subject:    &Subject{"negative", nil},
+			Subject:    &Subject{"negative", nil, nil},
 		},
 		{
 			Name: "wrong_test_date",
@@ -214,7 +251,7 @@ func TestIssueToken(t *testing.T) {
 			Accept:     acceptConfirmed,
 			ClaimError: ErrTokenMetadataMismatch.Error(),
 			TokenAge:   time.Hour,
-			Subject:    &Subject{"confirmed", &wrongSymptomDate},
+			Subject:    &Subject{"confirmed", &wrongSymptomDate, nil},
 		},
 		{
 			Name: "unsupported_test_type",
@@ -239,6 +276,7 @@ func TestIssueToken(t *testing.T) {
 
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
+			db := NewTestDatabase(t)
 
 			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
 			if err := db.SaveRealm(realm, System); err != nil {

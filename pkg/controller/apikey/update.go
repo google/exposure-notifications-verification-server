@@ -102,6 +102,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 // renderEdit renders the edit page.
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Edit API key: %s", authApp.Name)
 	m["authApp"] = authApp
 	c.h.RenderHTML(w, "apikeys/edit", m)
 }

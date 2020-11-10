@@ -74,6 +74,7 @@ Exchange a verification code for a long term verification token.
 {
   "testtype": "<test type string>",
   "symptomDate": "YYYY-MM-DD",
+  "testDate": "YYYY-MM-DD",
   "token": "<JWT verification token>",
   "error": "",
   "errorCode": "",
@@ -81,6 +82,9 @@ Exchange a verification code for a long term verification token.
 }
 ```
 
+* `symptomDate` and `testDate` will be present of that information was
+  provided when the verification code was generated. These fields are
+  omitted in the response body if corresponding date was not set.
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
   base64-encoded bytes into this field. The client should not process the
@@ -304,7 +308,10 @@ curl https://example.encv.org/api/endpoint \
 
 The client should still send a real request with a real request body (the body
 will not be processed). The server will respond with a fake response that your
-client **MUST NOT** process. Client's should sporadically issue chaff requests.
+client **MUST NOT** process or parse. The response will not be a valid JSON 
+object.
+
+Client's should sporadically issue chaff requests to mirror real-world usage.
 
 # Response codes overview
 

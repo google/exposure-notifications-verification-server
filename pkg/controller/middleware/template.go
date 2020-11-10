@@ -15,9 +15,7 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -29,7 +27,7 @@ import (
 // PopulateTemplateVariables populates the template variables with common
 // information and bootstraps the map for more values to be set by other
 // middlewares.
-func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig) mux.MiddlewareFunc {
+func PopulateTemplateVariables(config *config.ServerConfig) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -40,12 +38,9 @@ func PopulateTemplateVariables(ctx context.Context, config *config.ServerConfig)
 			m["buildID"] = buildinfo.BuildID
 			m["buildTag"] = buildinfo.BuildTag
 
-			// Current page variables.
-			m["currentPath"] = "/" + strings.Trim(r.URL.Path, "/")
-
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})

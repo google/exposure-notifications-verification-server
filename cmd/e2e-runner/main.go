@@ -18,8 +18,8 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
-	"math/big"
 	"net/http"
 	"os"
 	"strconv"
@@ -32,7 +32,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -65,12 +67,13 @@ func main() {
 	logger.Info("successful shutdown")
 }
 
+// Generate random string of 32 characters in length
 func randomString() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(10000))
-	if err != nil {
-		return "", err
+	b := make([]byte, 512)
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("failed to generate random: %v", err)
 	}
-	return fmt.Sprintf("%04x", n), nil
+	return fmt.Sprintf("%x", sha256.Sum256(b[:])), nil
 }
 
 func realMain(ctx context.Context) error {
@@ -84,7 +87,7 @@ func realMain(ctx context.Context) error {
 
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
-	oe, err := observability.NewFromEnv(ctx, e2eConfig.Observability)
+	oe, err := observability.NewFromEnv(e2eConfig.Observability)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
@@ -102,6 +105,12 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
+
+	// Create the renderer
+	h, err := render.New(ctx, "", e2eConfig.DevMode)
+	if err != nil {
+		return fmt.Errorf("failed to create renderer: %w", err)
+	}
 
 	// Create or reuse the existing realm
 	realm, err := db.FindRealmByName(realmName)
@@ -155,6 +164,7 @@ func realMain(ctx context.Context) error {
 		app, err := db.FindAuthorizedAppByAPIKey(deviceKey)
 		if err != nil {
 			logger.Errorf("device API key cleanup failed: %w", err)
+			return
 		}
 		now := time.Now().UTC()
 		app.DeletedAt = &now
@@ -169,8 +179,17 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
-	r.HandleFunc("/default", defaultHandler(ctx, &e2eConfig.TestConfig))
-	r.HandleFunc("/revise", reviseHandler(ctx, &e2eConfig.TestConfig))
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
+
+	r.HandleFunc("/default", defaultHandler(ctx, e2eConfig.TestConfig))
+	r.HandleFunc("/revise", reviseHandler(ctx, e2eConfig.TestConfig))
 
 	srv, err := server.New(e2eConfig.Port)
 	if err != nil {
@@ -180,24 +199,35 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func defaultHandler(ctx context.Context, c *config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
+// Config is passed by value so that each http hadndler has a separate copy (since they are changing one of the)
+// config elements. Previous versions of those code had a race condition where the "DoRevise" status
+// could be changed while a handler was executing.
+func defaultHandler(ctx context.Context, config config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
+	logger := logging.FromContext(ctx)
+	c := &config
+	c.DoRevise = false
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.DoRevise = false
 		if err := clients.RunEndToEnd(ctx, c); err != nil {
+			logger.Errorw("could not run default end to end", "error", err)
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
-		} else {
-			fmt.Fprint(w, "ok")
+			return
 		}
+
+		fmt.Fprint(w, "ok")
 	}
 }
 
-func reviseHandler(ctx context.Context, c *config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
+func reviseHandler(ctx context.Context, config config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
+	logger := logging.FromContext(ctx)
+	c := &config
+	c.DoRevise = true
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.DoRevise = true
 		if err := clients.RunEndToEnd(ctx, c); err != nil {
+			logger.Errorw("could not run revise end to end", "error", err)
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
-		} else {
-			fmt.Fprint(w, "ok")
+			return
 		}
+
+		fmt.Fprint(w, "ok")
 	}
 }

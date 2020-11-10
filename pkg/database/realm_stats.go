@@ -15,6 +15,7 @@
 package database
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -24,6 +25,19 @@ type RealmStats struct {
 	RealmID      uint      `gorm:"realm_id; not null"`
 	CodesIssued  uint      `gorm:"codes_issued; default: 0"`
 	CodesClaimed uint      `gorm:"codes_claimed; default: 0"`
+}
+
+// RealmStatsCSVHeader is a header for CSV files for RealmStats.
+var RealmStatsCSVHeader = []string{"Date", "Realm ID", "Codes Issued", "Codes Claimed"}
+
+// CSV returns the CSV encoded values for a RealmStats.
+func (r *RealmStats) CSV() []string {
+	return []string{
+		r.Date.Format("2006-01-02"),
+		fmt.Sprintf("%d", r.RealmID),
+		fmt.Sprintf("%d", r.CodesIssued),
+		fmt.Sprintf("%d", r.CodesClaimed),
+	}
 }
 
 // TableName sets the RealmStats table name

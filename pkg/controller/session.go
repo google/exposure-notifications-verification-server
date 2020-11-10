@@ -28,44 +28,12 @@ type sessionKey string
 
 const (
 	emailVerificationPrompted         = sessionKey("emailVerificationPrompted")
-	factorCount                       = sessionKey("factorCount")
 	mfaPrompted                       = sessionKey("mfaPrompted")
-	sessionKeyFirebaseCookie          = sessionKey("firebaseCookie")
 	sessionKeyLastActivity            = sessionKey("lastActivity")
 	sessionKeyRealmID                 = sessionKey("realmID")
 	sessionKeyWelcomeMessageDisplayed = sessionKey("welcomeMessageDisplayed")
 	passwordExpireWarned              = sessionKey("passwordExpireWarned")
 )
-
-// StoreSessionFirebaseCookie stores the firebase cookie in the session. If the
-// provided session or cookie is nil/empty, it does nothing.
-func StoreSessionFirebaseCookie(session *sessions.Session, firebaseCookie string) {
-	if session == nil || firebaseCookie == "" {
-		return
-	}
-	session.Values[sessionKeyFirebaseCookie] = firebaseCookie
-}
-
-// ClearSessionFirebaseCookie clears the firebase cookie from the session.
-func ClearSessionFirebaseCookie(session *sessions.Session) {
-	sessionClear(session, sessionKeyFirebaseCookie)
-}
-
-// FirebaseCookieFromSession extracts the firebase cookie from the session.
-func FirebaseCookieFromSession(session *sessions.Session) string {
-	v := sessionGet(session, sessionKeyFirebaseCookie)
-	if v == nil {
-		return ""
-	}
-
-	t, ok := v.(string)
-	if !ok {
-		delete(session.Values, sessionKeyFirebaseCookie)
-		return ""
-	}
-
-	return t
-}
 
 // StoreSessionRealm stores the realm's ID in the session.
 func StoreSessionRealm(session *sessions.Session, realm *database.Realm) {
@@ -95,35 +63,6 @@ func RealmIDFromSession(session *sessions.Session) uint {
 	}
 
 	return t
-}
-
-// StoreSessionFactorCount stores count of MFA factors to session.
-func StoreSessionFactorCount(session *sessions.Session, count uint) {
-	if session == nil {
-		return
-	}
-	session.Values[factorCount] = count
-}
-
-// ClearSessionFactorCount clears the MFA factor count from the session.
-func ClearSessionFactorCount(session *sessions.Session) {
-	sessionClear(session, factorCount)
-}
-
-// FactorCountFromSession extracts the number of MFA factors from the session.
-func FactorCountFromSession(session *sessions.Session) uint {
-	v := sessionGet(session, factorCount)
-	if v == nil {
-		return 0
-	}
-
-	f, ok := v.(uint)
-	if !ok {
-		delete(session.Values, factorCount)
-		return 0
-	}
-
-	return f
 }
 
 // StoreSessionMFAPrompted stores if the user was prompted for MFA.
@@ -169,7 +108,7 @@ func ClearLastActivity(session *sessions.Session) {
 	sessionClear(session, sessionKeyLastActivity)
 }
 
-// LastActivityFromSession extractsthe last time the user did something.
+// LastActivityFromSession extracts the last time the user did something.
 func LastActivityFromSession(session *sessions.Session) time.Time {
 	v := sessionGet(session, sessionKeyLastActivity)
 	if v == nil {

@@ -1,7 +1,11 @@
 variable "monitoring-host-project" {
   type        = string
   default     = ""
-  description = "The host project for multi-project workspace. See also: http://cloud/monitoring/workspaces/create#first-multi-project-workspace If empty, will use var.verificatin-server-project by default"
+  description = <<-EOT
+  The host project for multi-project workspace. See also:
+  http://cloud/monitoring/workspaces/create#first-multi-project-workspace If
+  empty, will use var.verificatin-server-project by default"
+  EOT
 }
 
 variable "verification-server-project" {
@@ -15,22 +19,19 @@ variable "notification-email" {
   description = "Email address for alerts to go to."
 }
 
-variable "server-host" {
-  type        = string
-  default     = ""
-  description = "Domain web ui is hosted on."
+variable "server_hosts" {
+  type        = list(string)
+  description = "List of domains upon which the web ui is served."
 }
 
-variable "apiserver-host" {
-  type        = string
-  default     = ""
-  description = "Domain apiserver is hosted on."
+variable "apiserver_hosts" {
+  type        = list(string)
+  description = "List of domains upon which the apiserver is served."
 }
 
-variable "adminapi-host" {
-  type        = string
-  default     = ""
-  description = "Domain adminapi is hosted on."
+variable "adminapi_hosts" {
+  type        = list(string)
+  description = "List of domains upon which the adminapi is served."
 }
 
 variable "extra-hosts" {
@@ -39,17 +40,8 @@ variable "extra-hosts" {
   description = "Extra hosts to probe and monitor."
 }
 
-terraform {
-  required_version = ">= 0.13"
-
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 3.36"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "~> 3.36"
-    }
-  }
+variable "https-forwarding-rule" {
+  type        = string
+  default     = ""
+  description = "GCP Cloud Load Balancer forwarding rule name."
 }

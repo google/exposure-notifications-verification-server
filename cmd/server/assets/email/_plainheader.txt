@@ -1,0 +1,7 @@
+{{- define "email/plainheader" -}}
+Subject: Your Exposure Notifications Verification Server Account
+To: {{trimSpace .ToEmail}}
+From: {{.FromEmail}}
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+{{end}}

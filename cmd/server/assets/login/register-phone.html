@@ -7,11 +7,10 @@
 
 <head>
   {{template "head" .}}
-  {{template "floatingform" .}}
   {{template "firebase" .}}
 </head>
 
-<body class="tab-content">
+<body id="login-register-phone" class="tab-content">
   {{template "navbar" .}}
   <main role="main" class="container">
     {{template "flash" .}}
@@ -24,7 +23,7 @@
           <div class="card shadow-sm" id="register-div">
             <div class="card-header">Multi-factor authentication</div>
             <div class="card-body">
-              {{if eq .currentRealm.MFAMode.String "required"}}
+              {{if eq .mfaMode.String "required"}}
               <div class="alert alert-warning">
                 <span class="oi oi-warning"></span>
                 This realm <strong>requires</strong> multi-factor authorization.
@@ -33,7 +32,7 @@
 
               <p>
                 <strong>{{$currentRealm.Name}}</strong>
-                {{if eq .currentRealm.MFAMode.String "required"}}requires{{else}}recommends{{end}}
+                {{if eq .mfaMode.String "required"}}requires{{else}}recommends{{end}}
                 enhanced security via SMS-based 2-factor authentication. Please
                 provide your information below to enroll.
               </p>
@@ -59,7 +58,7 @@
               </form>
 
 
-              <a id="skip" href="/home" class="float-right mt-3 text-muted {{if eq .currentRealm.MFAMode.String "required"}}d-none{{end}}">
+              <a id="skip" href="/home" class="float-right mt-3 card-link {{if eq .mfaMode.String "required"}}d-none{{end}}">
                 Skip for now
               </a>
             </div>
@@ -74,7 +73,6 @@
     <div id="recaptcha-container" class="center-block"></div>
   </main>
 
-  {{template "scripts" .}}
   <script type="text/javascript">
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
       'recaptcha-container',
@@ -236,7 +234,7 @@
         // Disable the submit button so we only attempt once.
         $submitPin.prop('disabled', true);
 
-        var cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
+        var cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
         var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
 
         // Complete enrollment.

@@ -16,10 +16,12 @@ package apikey
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -28,11 +30,11 @@ import (
 
 // HandleShow displays the API key.
 func (c *Controller) HandleShow() http.Handler {
-	logger := c.logger.Named("HandleShow")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
+
+		logger := logging.FromContext(ctx).Named("apikey.HandleShow")
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -70,7 +72,10 @@ func (c *Controller) HandleShow() http.Handler {
 
 		// Get and cache the stats for this user.
 		var stats []*database.AuthorizedAppStats
-		cacheKey := fmt.Sprintf("stats:app:%d:%d", realm.ID, authApp.ID)
+		cacheKey := &cache.Key{
+			Namespace: "stats:app",
+			Key:       strconv.FormatUint(uint64(authApp.ID), 10),
+		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &stats, 5*time.Minute, func() (interface{}, error) {
 			now := time.Now().UTC()
 			past := now.Add(-14 * 24 * time.Hour)
@@ -87,6 +92,7 @@ func (c *Controller) HandleShow() http.Handler {
 // renderShow renders the edit page.
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp, stats []*database.AuthorizedAppStats) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("API key: %s", authApp.Name)
 	m["authApp"] = authApp
 	m["stats"] = stats
 	c.h.RenderHTML(w, "apikeys/show", m)

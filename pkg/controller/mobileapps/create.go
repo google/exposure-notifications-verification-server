@@ -26,6 +26,7 @@ import (
 func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
 		Name  string          `form:"name"`
+		URL   string          `form:"url"`
 		OS    database.OSType `form:"os"`
 		AppID string          `form:"app_id"`
 		SHA   string          `form:"sha"`
@@ -64,6 +65,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		if err := controller.BindForm(w, r, &form); err != nil {
 			app := &database.MobileApp{
 				Name:  form.Name,
+				URL:   form.URL,
 				OS:    form.OS,
 				AppID: form.AppID,
 				SHA:   form.SHA,
@@ -78,6 +80,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		app := &database.MobileApp{
 			Name:    form.Name,
 			RealmID: realm.ID,
+			URL:     form.URL,
 			OS:      form.OS,
 			AppID:   form.AppID,
 			SHA:     form.SHA,
@@ -97,6 +100,7 @@ func (c *Controller) HandleCreate() http.Handler {
 // renderNew renders the new page.
 func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, app *database.MobileApp) {
 	m := templateMap(ctx)
+	m.Title("New mobile app")
 	m["app"] = app
 	c.h.RenderHTML(w, "mobileapps/new", m)
 }

@@ -9,7 +9,7 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="mobileapps-show" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -29,6 +29,9 @@
         <dl class="mb-n1">
           <dt>App name</dt>
           <dd>{{$app.Name}}</dd>
+
+          <dt>AppStore link</dt>
+          <dd><a href="{{$app.URL}}" target="_blank">{{$app.URL}}</a></dd>
 
           <dt>OS</dt>
           <dd>
@@ -57,9 +60,6 @@
 
     <a href="/mobile-apps">&larr; Back to all mobile apps</a>
   </main>
-
-  {{template "scripts" .}}
-
 </body>
 
 </html>

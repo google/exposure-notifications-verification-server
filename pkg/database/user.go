@@ -15,15 +15,15 @@
 package database
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
-	"firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
-	"github.com/sethvargo/go-password/password"
 )
 
 const minDuration = -1 << 63
@@ -39,9 +39,10 @@ type User struct {
 	gorm.Model
 	Errorable
 
-	Email       string   `gorm:"type:varchar(250);unique_index"`
-	Name        string   `gorm:"type:varchar(100)"`
-	Admin       bool     `gorm:"default:false"`
+	Email       string `gorm:"type:varchar(250);unique_index"`
+	Name        string `gorm:"type:varchar(100)"`
+	SystemAdmin bool   `gorm:"column:system_admin; default:false;"`
+
 	Realms      []*Realm `gorm:"many2many:user_realms"`
 	AdminRealms []*Realm `gorm:"many2many:admin_realms"`
 
@@ -94,7 +95,7 @@ func (u *User) PasswordAgeString() string {
 // BeforeSave runs validations. If there are errors, the save fails.
 func (u *User) BeforeSave(tx *gorm.DB) error {
 	// Validation
-	u.Email = strings.TrimSpace(u.Email)
+	u.Email = project.TrimSpace(u.Email)
 	if u.Email == "" {
 		u.AddError("email", "cannot be blank")
 	}
@@ -102,13 +103,13 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 		u.AddError("email", "appears to be invalid")
 	}
 
-	u.Name = strings.TrimSpace(u.Name)
+	u.Name = project.TrimSpace(u.Name)
 	if u.Name == "" {
 		u.AddError("name", "cannot be blank")
 	}
 
 	if len(u.Errors()) > 0 {
-		return fmt.Errorf("validation failed")
+		return fmt.Errorf("validation failed: %s", strings.Join(u.ErrorMessages(), ", "))
 	}
 
 	return nil
@@ -130,6 +131,10 @@ func (u *User) CanViewRealm(realmID uint) bool {
 		}
 	}
 	return false
+}
+
+func (u *User) IsRealmAdmin() bool {
+	return len(u.AdminRealms) > 0
 }
 
 func (u *User) CanAdminRealm(realmID uint) bool {
@@ -191,7 +196,7 @@ func (db *Database) FindUser(id interface{}) (*User, error) {
 func (db *Database) FindUserByEmail(email string) (*User, error) {
 	var user User
 	if err := db.db.
-		Where("email = ?", email).
+		Where("email = ?", project.TrimSpace(email)).
 		First(&user).
 		Error; err != nil {
 		return nil, err
@@ -204,8 +209,8 @@ func (db *Database) FindUserByEmail(email string) (*User, error) {
 func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*UserStats, error) {
 	var stats []*UserStats
 
-	start = start.Truncate(24 * time.Hour)
-	stop = stop.Truncate(24 * time.Hour)
+	start = timeutils.Midnight(start)
+	stop = timeutils.Midnight(stop)
 
 	if err := db.db.
 		Model(&UserStats{}).
@@ -224,13 +229,36 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 	return stats, nil
 }
 
+// ListUsers returns a list of all users sorted by name.
+// Warning: This list may be large. Use Realm.ListUsers() to get users scoped to a realm.
+func (db *Database) ListUsers(p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
+	var users []*User
+	query := db.db.Model(&User{}).
+		Scopes(scopes...).
+		Order("LOWER(name) ASC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
+	}
+
+	paginator, err := Paginate(query, &users, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return users, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return users, paginator, nil
+}
+
 // ListSystemAdmins returns a list of users who are system admins sorted by
 // name.
 func (db *Database) ListSystemAdmins() ([]*User, error) {
 	var users []*User
 	if err := db.db.
 		Model(&User{}).
-		Where("admin IS TRUE").
+		Where("system_admin IS TRUE").
 		Order("LOWER(name) ASC").
 		Find(&users).
 		Error; err != nil {
@@ -250,35 +278,6 @@ func (db *Database) TouchUserRevokeCheck(u *User) error {
 		Model(u).
 		UpdateColumn("last_revoke_check", time.Now().UTC()).
 		Error
-}
-
-// CreateFirebaseUser creates the associated Firebase user for this database
-// user. It does nothing if the firebase user already exists. If the firebase
-// user does not exist, it generates a random password. The returned boolean
-// indicates if the user was created.
-func (u *User) CreateFirebaseUser(ctx context.Context, firebaseAuth *auth.Client) (bool, error) {
-	if _, err := firebaseAuth.GetUserByEmail(ctx, u.Email); err != nil {
-		if auth.IsInvalidEmail(err) {
-			return false, fmt.Errorf("invalid email: %q", u.Email)
-		}
-		if !auth.IsUserNotFound(err) {
-			return false, fmt.Errorf("failed lookup firebase user: %w", err)
-		}
-
-		pwd, err := password.Generate(24, 8, 8, false, true)
-		if err != nil {
-			return false, fmt.Errorf("failed to generate password: %w", err)
-		}
-
-		firebaseUser := &auth.UserToCreate{}
-		firebaseUser.Email(u.Email).Password(pwd).DisplayName(u.Name)
-		if _, err := firebaseAuth.CreateUser(ctx, firebaseUser); err != nil {
-			return false, fmt.Errorf("failed to create firebase user: %w", err)
-		}
-		return true, nil
-	}
-
-	return false, nil
 }
 
 // PasswordChanged updates the last password change timestamp of the user.
@@ -304,6 +303,31 @@ func (u *User) AuditID() string {
 // AuditDisplay is how the user will be displayed in audit entries.
 func (u *User) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", u.Name, u.Email)
+}
+
+// DeleteUser deletes the user entry.
+func (db *Database) DeleteUser(u *User, actor Auditable) error {
+	if u == nil {
+		return fmt.Errorf("provided user is nil")
+	}
+
+	if actor == nil {
+		return fmt.Errorf("auditing actor is nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		audit := BuildAuditEntry(actor, "deleted user", u, 0)
+		if err := tx.Save(audit).Error; err != nil {
+			return fmt.Errorf("failed to save audits: %w", err)
+		}
+
+		// Delete the user
+		if err := tx.Delete(u).Error; err != nil {
+			return fmt.Errorf("failed to save user: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (db *Database) SaveUser(u *User, actor Auditable) error {
@@ -342,9 +366,9 @@ func (db *Database) SaveUser(u *User, actor Auditable) error {
 			audit := BuildAuditEntry(actor, "created user", u, 0)
 			audits = append(audits, audit)
 		} else {
-			if existing.Admin != u.Admin {
+			if existing.SystemAdmin != u.SystemAdmin {
 				audit := BuildAuditEntry(actor, "updated user system admin", u, 0)
-				audit.Diff = boolDiff(existing.Admin, u.Admin)
+				audit.Diff = boolDiff(existing.SystemAdmin, u.SystemAdmin)
 				audits = append(audits, audit)
 			}
 

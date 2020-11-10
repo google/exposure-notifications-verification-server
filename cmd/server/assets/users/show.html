@@ -8,10 +8,9 @@
 <html lang="en">
 <head>
   {{template "head" .}}
-  {{template "firebase" .}}
 </head>
 
-<body class="tab-content">
+<body id="users-show" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -19,7 +18,7 @@
 
     <h1>{{$user.Name}}</h1>
     <p class="float-right">
-      <a href="/users/{{$user.ID}}/edit">Edit</a>
+      <a href="/realm/users/{{$user.ID}}/edit">Edit</a>
     </p>
     <p>
       Here is information about the user.
@@ -28,24 +27,26 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <strong>Name</strong>
-        <div class="mb-3">
+        <h6 class="card-title">Name</h6>
+        <div class="mb-3 mt-n2">
           {{$user.Name}}
         </div>
 
-        <strong>Email</strong>
-        <div class="mb-3">
+        <h6 class="card-title">Email</h6>
+        <div class="mb-3 mt-n2">
           {{$user.Email}}
         </div>
 
-        <strong>Admin</strong>
-        <div class="mb-3">
-          {{$user.CanAdminRealm $currentRealm.ID}}
+        <h6 class="card-title">Realm admin</h6>
+        <div class="mb-3 mt-n2">
+          {{if $user.CanAdminRealm $currentRealm.ID}}
+          <div class="card-text text-success mb-3 mt-n2">Enabled</div>
+          {{else}}
+          <div class="card-text mb-3 mt-n2">Disabled</div>
+          {{end}}
         </div>
 
-        <button id="password-reset" class="btn btn-primary btn-block disabled">
-          Send password reset
-        </button>
+        <a href="/realm/users/{{$user.ID}}/reset-password" data-method="POST" class="btn btn-primary btn-block">Send password reset</a>
       </div>
     </div>
 
@@ -81,14 +82,12 @@
       </div>
     </div>
 
-    <a class="card-link" href="/users">&larr; All users</a>
+    <a class="card-link" href="/realm/users">&larr; All users</a>
   </main>
 
-  {{template "scripts" .}}
-
   {{if $stats}}
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
-  <script>
+  <script src="https://www.gstatic.com/charts/loader.js" type="text/javascript"></script>
+  <script type="text/javascript">
     google.charts.load('current', {packages: ['line']});
     google.charts.setOnLoadCallback(drawChart)
 
@@ -111,33 +110,6 @@
     }
   </script>
   {{end}}
-
-  <script type="text/javascript">
-  $(function() {
-    $resetPassword = $('#password-reset');
-    $resetPassword.removeClass('disabled');
-
-    $resetPassword.on('click', function(event) {
-      event.preventDefault();
-      sendReset(function() {
-        flash.alert(`Password reset email sent.`);
-      });
-    });
-
-    function sendReset(successFn) {
-      $resetPassword.addClass('disabled');
-      let email = {{$user.Email}};
-      return firebase.auth().sendPasswordResetEmail(email)
-      .then(function() {
-          setTimeout($resetPassword.addClass('disabled'), 10000);
-          successFn();
-      }).catch(function(error) {
-        $resetPassword.removeClass('disabled');
-        flash.error(error.message);
-      });
-    }
-  });
-  </script>
 </body>
 </html>
 {{end}}

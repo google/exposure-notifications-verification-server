@@ -21,6 +21,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"math/bits"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,7 +39,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/sethvargo/go-retry"
 	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 	"go.uber.org/zap"
 
 	// ensure the postgres dialiect is compiled in.
@@ -65,9 +68,6 @@ type Database struct {
 	// logger is the internal logger.
 	logger *zap.SugaredLogger
 
-	// metrics is the metrics handler.
-	metrics *Metrics
-
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
 
@@ -92,6 +92,11 @@ func (db *Database) SupportsPerRealmSigning() bool {
 	return db.signingKeyManager != nil
 }
 
+// MaxCertificateSigningKeyVersions returns the configured maximum.
+func (db *Database) MaxCertificateSigningKeyVersions() int64 {
+	return db.config.MaxCertificateSigningKeyVersions
+}
+
 func (db *Database) KeyManager() keys.KeyManager {
 	return db.keyManager
 }
@@ -100,11 +105,6 @@ func (db *Database) KeyManager() keys.KeyManager {
 // key managers. It does NOT connect to the database.
 func (c *Config) Load(ctx context.Context) (*Database, error) {
 	logger := logging.FromContext(ctx).Named("database")
-
-	metrics, err := registerMetrics()
-	if err != nil {
-		return nil, fmt.Errorf("failed to register metrics: %w", err)
-	}
 
 	// Create the secret manager.
 	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
@@ -131,7 +131,6 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		signingKeyManager: signingKeyManager,
 		logger:            logger,
 		secretManager:     secretManager,
-		metrics:           metrics,
 	}, nil
 }
 
@@ -197,6 +196,13 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	callbackLock.Lock()
 	defer callbackLock.Unlock()
 
+	// Disable the gorm logger here unless were in debug mode. The logs for
+	// callbacks are really verbose and unnecessary.
+	if !c.Debug {
+		rawDB.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+		defer rawDB.SetLogger(gorm.Logger{LogWriter: log.New(os.Stdout, "\r\n", 0)})
+	}
+
 	// SMS configs
 	rawDB.Callback().Create().Before("gorm:create").Register("sms_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 	rawDB.Callback().Create().After("gorm:create").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
@@ -206,30 +212,39 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	rawDB.Callback().Query().After("gorm:after_query").Register("sms_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "sms_configs", "TwilioAuthToken"))
 
+	// Email configs
+	rawDB.Callback().Create().Before("gorm:create").Register("email_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+	rawDB.Callback().Create().After("gorm:create").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+
+	rawDB.Callback().Update().Before("gorm:update").Register("email_configs:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+	rawDB.Callback().Update().After("gorm:update").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+
+	rawDB.Callback().Query().After("gorm:after_query").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
+
 	// Verification codes
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
 
 	// Metrics
-	rawDB.Callback().Create().After("gorm:create").Register("audit_entires:metrics", callbackIncrementMetric(ctx, db.metrics.AuditEntryCreated, "audit_entries"))
+	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, mAuditEntryCreated, "audit_entries"))
 
 	// Cache clearing
 	if cacher != nil {
 		// Apps
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id:%d", "authorized_apps", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:authorized_apps:by_id", callbackPurgeCache(ctx, cacher, "authorized_apps:by_id", "authorized_apps", "id"))
 
 		// Realms
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id:%d", "realms", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
 
 		// Users
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id:%d", "users", "id"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
 
 		// Users (by email)
-		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
-		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email:%s", "users", "email"))
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_email", callbackPurgeCache(ctx, cacher, "users:by_email", "users", "email"))
 	}
 
 	db.db = rawDB
@@ -257,7 +272,7 @@ func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
 }
 
-// callbackIncremementMetric incremements the provided metric
+// callbackIncrementMetric increments the provided metric
 func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {
@@ -271,22 +286,57 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 		// Add realm so that metrics are groupable on a per-realm basis.
 		field, ok := scope.FieldByName("realm_id")
 		if ok && field.Field.CanInterface() && field.Field.Interface() != nil {
-			realmID := field.Field.Interface()
+			realmIDRaw := field.Field.Interface()
 
-			var err error
-			ctx, err = tag.New(ctx, tag.Upsert(observability.RealmTagKey, fmt.Sprintf("%d", realmID)))
-			if err != nil {
-				_ = scope.Err(fmt.Errorf("failed to add realm tag to metrics: %w", err))
+			var realmID uint
+			switch t := realmIDRaw.(type) {
+			case uint:
+				realmID = t
+			case uint8:
+				realmID = uint(t)
+			case uint16:
+				realmID = uint(t)
+			case uint32:
+				realmID = uint(t)
+			case uint64:
+				realmID = uint(t)
+			case int:
+				realmID = uint(t)
+			case int8:
+				realmID = uint(t)
+			case int16:
+				realmID = uint(t)
+			case int32:
+				realmID = uint(t)
+			case int64:
+				realmID = uint(t)
+			case string:
+				raw, err := strconv.ParseUint(t, 10, 64)
+				if err != nil {
+					_ = scope.Err(fmt.Errorf("failed to parse realm_id: %w", err))
+					return
+				}
+
+				if raw >= 1<<bits.UintSize-1 {
+					_ = scope.Err(fmt.Errorf("uint overflows %d bits", bits.UintSize))
+					return
+				}
+				realmID = uint(raw)
+			default:
+				_ = scope.Err(fmt.Errorf("realm_id is of unknown type %v", t))
 				return
 			}
+
+			ctx = observability.WithRealmID(ctx, realmID)
 		}
 
+		ctx = observability.WithBuildInfo(ctx)
 		stats.Record(ctx, m.M(1))
 	}
 }
 
 // callbackPurgeCache purges the cache key for the given record.
-func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, keyFormat, table, column string) func(scope *gorm.Scope) {
+func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, table, column string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {
 			return
@@ -312,7 +362,10 @@ func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, keyFormat, tab
 			return
 		}
 
-		key := fmt.Sprintf(keyFormat, val)
+		key := &cache.Key{
+			Namespace: namespace,
+			Key:       fmt.Sprintf("%v", val),
+		}
 		if err := cacher.Delete(ctx, key); err != nil {
 			scope.Log(fmt.Sprintf("failed to delete cache key: %v", err))
 			return
@@ -522,12 +575,11 @@ func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) 
 // withRetries is a helper for creating a fibonacci backoff with capped retries,
 // useful for retrying database queries.
 func withRetries(ctx context.Context, f retry.RetryFunc) error {
-	b, err := retry.NewFibonacci(50 * time.Millisecond)
+	b, err := retry.NewConstant(500 * time.Millisecond)
 	if err != nil {
 		return fmt.Errorf("failed to configure backoff: %w", err)
 	}
-	b = retry.WithMaxRetries(10, b)
-	b = retry.WithCappedDuration(1*time.Second, b)
+	b = retry.WithMaxRetries(30, b)
 
 	return retry.Do(ctx, b, f)
 }

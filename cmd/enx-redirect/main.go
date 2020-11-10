@@ -69,7 +69,7 @@ func realMain(ctx context.Context) error {
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
 	oeConfig := cfg.ObservabilityExporterConfig()
-	oe, err := observability.NewFromEnv(ctx, oeConfig)
+	oe, err := observability.NewFromEnv(oeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
@@ -80,10 +80,7 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey),
-		cache.PrefixKeyFunc("cache:"),
-	))
+	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
@@ -108,11 +105,19 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
+
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(ctx, cfg.DevMode, "html"))
+	r.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
 
 	// Enable debug headers
-	processDebug := middleware.ProcessDebug(ctx)
+	processDebug := middleware.ProcessDebug()
 	r.Use(processDebug)
 
 	// iOS and Android include functionality to associate data between web-apps
@@ -131,7 +136,7 @@ func realMain(ctx context.Context) error {
 		wk := r.PathPrefix("/.well-known").Subrouter()
 
 		// Enable the iOS and Android redirect handler.
-		assocHandler, err := associated.New(ctx, db, cacher, h)
+		assocHandler, err := associated.New(ctx, cfg, db, cacher, h)
 		if err != nil {
 			return fmt.Errorf("failed to create associated links handler %w", err)
 		}
@@ -141,7 +146,7 @@ func realMain(ctx context.Context) error {
 
 	r.Handle("/health", controller.HandleHealthz(ctx, nil, h)).Methods("GET")
 
-	redirectController, err := redirect.New(ctx, cfg, h)
+	redirectController, err := redirect.New(ctx, db, cfg, cacher, h)
 	if err != nil {
 		return err
 	}

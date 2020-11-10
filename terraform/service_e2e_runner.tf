@@ -143,8 +143,18 @@ resource "google_cloud_run_service" "e2e-runner" {
 
   depends_on = [
     google_project_service.services["run.googleapis.com"],
+
     google_secret_manager_secret_iam_member.e2e-runner-db,
+    google_project_iam_member.e2e-runner-observability,
+    google_kms_crypto_key_iam_member.e2e-runner-database-encrypter,
+    google_secret_manager_secret_iam_member.e2e-runner-db-apikey-db-hmac,
+    google_secret_manager_secret_iam_member.e2e-runner-db-apikey-sig-hmac,
+    google_secret_manager_secret_iam_member.e2e-runner-db-verification-code-hmac,
+    google_secret_manager_secret_iam_member.e2e-runner-cache-hmac-key,
+    google_secret_manager_secret_iam_member.e2e-runner-ratelimit-hmac-key,
+
     null_resource.build,
+    null_resource.migrate,
   ]
 
   lifecycle {
@@ -180,7 +190,7 @@ resource "google_cloud_run_service_iam_member" "e2e-runner-invoker" {
 resource "google_cloud_scheduler_job" "e2e-default-workflow" {
   name             = "e2e-default-workflow"
   region           = var.cloudscheduler_location
-  schedule         = "*/10 * * * *"
+  schedule         = "0,10,20,30,40,50,55 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
@@ -207,7 +217,7 @@ resource "google_cloud_scheduler_job" "e2e-default-workflow" {
 resource "google_cloud_scheduler_job" "e2e-revise-workflow" {
   name             = "e2e-revise-workflow"
   region           = var.cloudscheduler_location
-  schedule         = "*/10 * * * *"
+  schedule         = "0,5,15,25,35,45,55 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 

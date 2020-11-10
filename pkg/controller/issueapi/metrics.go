@@ -15,153 +15,84 @@
 package issueapi
 
 import (
-	"fmt"
-
+	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
+	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
 )
 
+const metricPrefix = observability.MetricRoot + "/api/issue"
+
 var (
-	MetricPrefix = observability.MetricRoot + "/api/issue"
+	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
+
+	mSMSLatencyMs = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
+
+	mRealmToken = stats.Int64(metricPrefix+"/realm_token", "# of realm tokens from limiter", stats.UnitDimensionless)
+
+	mRealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
 )
 
-type Metrics struct {
-	IssueAttempts       *stats.Int64Measure
-	QuotaErrors         *stats.Int64Measure
-	QuotaExceeded       *stats.Int64Measure
-	CodesIssued         *stats.Int64Measure
-	CodeIssueErrors     *stats.Int64Measure
-	SMSSent             *stats.Int64Measure
-	SMSSendErrors       *stats.Int64Measure
-	RealmTokenIssued    *stats.Int64Measure
-	RealmTokenRemaining *stats.Int64Measure
-	RealmTokenCapacity  *stats.Float64Measure
+var (
+	// tokenStateTagKey indicate the state of the tokens. It's either "USED" or
+	// "AVAILABLE".
+	tokenStateTagKey = tag.MustNewKey("state")
+)
+
+func tokenAvailableTag() tag.Mutator {
+	return tag.Upsert(tokenStateTagKey, "AVAILABLE")
 }
 
-func registerMetrics() (*Metrics, error) {
-	mIssueAttempts := stats.Int64(MetricPrefix+"/attempts", "The number of attempts to issue codes", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/attempt_count",
-		Measure:     mIssueAttempts,
-		Description: "The count of the number of attempts to issue codes",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Aggregation: view.Count(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
+func tokenLimitTag() tag.Mutator {
+	return tag.Upsert(tokenStateTagKey, "LIMIT")
+}
 
-	mQuotaErrors := stats.Int64(MetricPrefix+"/quota_errors", "The number of errors when taking from the limiter", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/quota_errors_count",
-		Measure:     mQuotaErrors,
-		Description: "The count of the number of errors to the limiter",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Aggregation: view.Count(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	mQuotaExceeded := stats.Int64(MetricPrefix+"/quota_exceeded", "The number of times quota has been exceeded", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/quota_exceeded_count",
-		Measure:     mQuotaExceeded,
-		Description: "The count of the number of times quota has been exceeded",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Aggregation: view.Count(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	mCodesIssued := stats.Int64(MetricPrefix+"/codes_issued", "The number of verification codes issued", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/codes_issued_count",
-		Measure:     mCodesIssued,
-		Description: "The count of verification codes issued",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Aggregation: view.Count(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	mCodeIssueErrors := stats.Int64(MetricPrefix+"/code_issue_error", "The number of failed code issues", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/code_issue_error_count",
-		Measure:     mCodeIssueErrors,
-		Description: "The count of the number of times a code fails to issue",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Aggregation: view.Count(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	mSMSSent := stats.Int64(MetricPrefix+"/sms_sent", "The number of SMS messages sent", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/sms_sent_count",
-		Measure:     mSMSSent,
-		Description: "The count of verification codes sent over SMS",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Aggregation: view.Count(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	mSMSSendErrors := stats.Int64(MetricPrefix+"/sms_send_error", "The number of failed SMS sends", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/sms_send_error_count",
-		Measure:     mSMSSendErrors,
-		Description: "The count of the number of a code issue failed due to SMS send failure",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Aggregation: view.Count(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	mRealmTokenRemaining := stats.Int64(MetricPrefix+"/realm_token_remaining", "Remaining number of verification codes", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/realm_token_remaining_latest",
-		Description: "Latest realm remaining tokens",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Measure:     mRealmTokenRemaining,
-		Aggregation: view.LastValue(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	mRealmTokenIssued := stats.Int64(MetricPrefix+"/realm_token_issued", "Total issued verification codes", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/realm_token_issued_latest",
-		Description: "Latest realm issued tokens",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Measure:     mRealmTokenIssued,
-		Aggregation: view.LastValue(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	mRealmTokenCapacity := stats.Float64(MetricPrefix+"/realm_token_capacity", "Capacity utilization for issuing verification codes", stats.UnitDimensionless)
-	if err := view.Register(&view.View{
-		Name:        MetricPrefix + "/realm_token_capacity_latest",
-		Description: "Latest realm token capacity utilization",
-		TagKeys:     []tag.Key{observability.RealmTagKey},
-		Measure:     mRealmTokenCapacity,
-		Aggregation: view.LastValue(),
-	}); err != nil {
-		return nil, fmt.Errorf("stat view registration failure: %w", err)
-	}
-
-	return &Metrics{
-		IssueAttempts:       mIssueAttempts,
-		QuotaErrors:         mQuotaErrors,
-		QuotaExceeded:       mQuotaExceeded,
-		CodesIssued:         mCodesIssued,
-		CodeIssueErrors:     mCodesIssued,
-		SMSSent:             mSMSSent,
-		SMSSendErrors:       mSMSSendErrors,
-		RealmTokenIssued:    mRealmTokenIssued,
-		RealmTokenRemaining: mRealmTokenRemaining,
-		RealmTokenCapacity:  mRealmTokenCapacity,
-	}, nil
+func init() {
+	enobservability.CollectViews([]*view.View{
+		{
+			Name:        metricPrefix + "/request_count",
+			Measure:     mLatencyMs,
+			Description: "Count of code issue requests",
+			TagKeys:     observability.APITagKeys(),
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/request_latency",
+			Measure:     mLatencyMs,
+			Description: "The latency distribution of code issue requests",
+			TagKeys:     observability.APITagKeys(),
+			Aggregation: ochttp.DefaultLatencyDistribution,
+		},
+		{
+			Name:        metricPrefix + "/sms_request_count",
+			Measure:     mSMSLatencyMs,
+			Description: "The # of SMS requests",
+			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/sms_request_latency",
+			Measure:     mSMSLatencyMs,
+			Description: "The # of SMS requests",
+			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
+			Aggregation: ochttp.DefaultLatencyDistribution,
+		},
+		{
+			Name:        metricPrefix + "/realm_token_latest",
+			Description: "Latest realm token count",
+			TagKeys:     append(observability.CommonTagKeys(), tokenStateTagKey),
+			Measure:     mRealmToken,
+			Aggregation: view.LastValue(),
+		},
+		{
+			Name:        metricPrefix + "/realm_token_used_count",
+			Description: "The count of # of realm token used.",
+			TagKeys:     observability.CommonTagKeys(),
+			Measure:     mRealmTokenUsed,
+			Aggregation: view.Count(),
+		},
+	}...)
 }

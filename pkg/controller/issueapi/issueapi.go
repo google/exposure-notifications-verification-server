@@ -25,10 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"github.com/sethvargo/go-limiter"
-	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -36,31 +33,21 @@ type Controller struct {
 	db      *database.Database
 	h       *render.Renderer
 	limiter limiter.Store
-	logger  *zap.SugaredLogger
 
 	validTestType map[string]struct{}
-
-	metrics *Metrics
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) (*Controller, error) {
-	metrics, err := registerMetrics()
-	if err != nil {
-		return nil, err
-	}
-
+func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
 	return &Controller{
 		config:  config,
 		db:      db,
 		h:       h,
 		limiter: limiter,
-		logger:  logging.FromContext(ctx),
 		validTestType: map[string]struct{}{
 			api.TestTypeConfirmed: {},
 			api.TestTypeLikely:    {},
 			api.TestTypeNegative:  {},
 		},
-		metrics: metrics,
-	}, nil
+	}
 }

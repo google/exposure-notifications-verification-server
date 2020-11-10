@@ -18,6 +18,7 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,9 +44,12 @@ func TestRedis(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Determine the container image to use.
+	repo, tag := redisRepo(t)
+
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "redis",
-		Tag:        "6-alpine",
+		Repository: repo,
+		Tag:        tag,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +94,7 @@ func TestRedis(t *testing.T) {
 	b = retry.WithCappedDuration(2*time.Second, b)
 
 	if err := retry.Do(ctx, b, func(_ context.Context) error {
-		if err := cacher.Delete(ctx, "foo"); err != nil {
+		if err := cacher.Delete(ctx, &Key{}); err != nil {
 			return retry.RetryableError(err)
 		}
 		return nil
@@ -100,4 +104,17 @@ func TestRedis(t *testing.T) {
 
 	// Run tests
 	exerciseCacher(t, cacher)
+}
+
+func redisRepo(tb testing.TB) (string, string) {
+	redisImageRef := os.Getenv("CI_REDIS_IMAGE")
+	if redisImageRef == "" {
+		redisImageRef = "redis:6-alpine"
+	}
+
+	parts := strings.SplitN(redisImageRef, ":", 2)
+	if len(parts) != 2 {
+		tb.Fatalf("invalid redis ref %v", redisImageRef)
+	}
+	return parts[0], parts[1]
 }

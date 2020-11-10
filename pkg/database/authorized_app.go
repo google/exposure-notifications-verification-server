@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/jinzhu/gorm"
 )
 
@@ -83,7 +85,7 @@ type AuthorizedApp struct {
 
 // BeforeSave runs validations. If there are errors, the save fails.
 func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
-	a.Name = strings.TrimSpace(a.Name)
+	a.Name = project.TrimSpace(a.Name)
 
 	if a.Name == "" {
 		a.AddError("name", "cannot be blank")
@@ -205,8 +207,8 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) ([]*AuthorizedAppStats, error) {
 	var stats []*AuthorizedAppStats
 
-	start = start.Truncate(24 * time.Hour)
-	stop = stop.Truncate(24 * time.Hour)
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
 
 	if err := db.db.
 		Model(&AuthorizedAppStats{}).
@@ -367,7 +369,7 @@ func (db *Database) generateAPIKeySignatures(apiKey string) ([][]byte, error) {
 // VerifyAPIKeySignature verifies the signature matches the expected value for
 // the key. It does this by computing the expected signature and then doing a
 // constant-time comparison against the provided signature.
-func (db *Database) VerifyAPIKeySignature(key string) (string, uint, error) {
+func (db *Database) VerifyAPIKeySignature(key string) (string, uint64, error) {
 	parts := strings.SplitN(key, ".", 3)
 	if len(parts) != 3 {
 		return "", 0, fmt.Errorf("invalid API key format: wrong number of parts")
@@ -407,7 +409,7 @@ func (db *Database) VerifyAPIKeySignature(key string) (string, uint, error) {
 		return "", 0, fmt.Errorf("invalid API key format")
 	}
 
-	return apiKey, uint(realmID), nil
+	return apiKey, realmID, nil
 }
 
 func (a *AuthorizedApp) AuditID() string {
@@ -416,4 +418,19 @@ func (a *AuthorizedApp) AuditID() string {
 
 func (a *AuthorizedApp) AuditDisplay() string {
 	return a.Name
+}
+
+// PurgeAuthorizedApps will delete authorized apps that have been deleted for
+// more than the specified time.
+func (db *Database) PurgeAuthorizedApps(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+
+	result := db.db.
+		Unscoped().
+		Where("deleted_at IS NOT NULL AND deleted_at < ?", deleteBefore).
+		Delete(&AuthorizedApp{})
+	return result.RowsAffected, result.Error
 }

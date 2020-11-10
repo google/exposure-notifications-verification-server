@@ -144,7 +144,7 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("enabled admin", "admin", admin)
 
-	super := &database.User{Email: "super@example.com", Name: "Super User", Admin: true}
+	super := &database.User{Email: "super@example.com", Name: "Super User", SystemAdmin: true}
 	if _, err := db.FindUserByEmail(super.Email); database.IsNotFound(err) {
 		if err := db.SaveUser(super, database.System); err != nil {
 			return fmt.Errorf("failed to create super: %w: %v", err, super.ErrorMessages())
@@ -172,12 +172,14 @@ func realMain(ctx context.Context) error {
 		{
 			Name:    "Example iOS app",
 			RealmID: realm1.ID,
+			URL:     "http://google.com/",
 			OS:      database.OSTypeIOS,
 			AppID:   "ios.example.app",
 		},
 		{
 			Name:    "Example Android app",
 			RealmID: realm1.ID,
+			URL:     "http://google.com",
 			OS:      database.OSTypeAndroid,
 			AppID:   "android.example.app",
 			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",

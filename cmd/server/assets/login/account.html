@@ -17,24 +17,24 @@
     {{template "flash" .}}
 
     <h1>My Account</h1>
-    <p>Information and settings for your account</p>
+    <p>Information and settings for your account.</p>
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
         <h6 class="card-title">Name</h6>
-        <div class="card-text mb-3">
+        <div class="card-text mb-3 mt-n2">
           {{$user.Name}}
         </div>
 
         <h6 class="card-title">Email</h6>
-        <div class="card-text">
+        <div class="card-text mt-n2">
           {{$user.Email}}
         </div>
 
-        {{if $user.Admin}}
+        {{if $user.SystemAdmin}}
         <h6 class="card-title  mt-3">System admin</h6>
-        <div class="card-text text-success">Enabled</div>
+        <div class="card-text text-success mt-n2">Enabled</div>
         {{end}}
       </div>
     </div>
@@ -51,7 +51,7 @@
         </li>
         <li class="list-group-item">
           <div class="card-text">Password was last changed <span class="text-info">{{$user.PasswordAgeString}}</span>
-            ago</div>
+            ago.</div>
           <a href="/login/change-password" class="card-link">Change password</a>
         </li>
       </ul>
@@ -72,8 +72,8 @@
             {{end}}
 
             {{- /* system admins can remove themselves from realms */ -}}
-            {{if $user.Admin}}
-            <a href="/users/{{.ID}}" class="d-block text-danger float-right" data-method="DELETE"
+            {{if $user.SystemAdmin}}
+            <a href="/realm/users/{{.ID}}" class="d-block text-danger float-right" data-method="DELETE"
               data-confirm="Are you sure you want to leave {{.Name}}?">
               <span class="oi oi-account-logout" aria-hidden="true"></span>
               Leave realm
@@ -86,7 +86,6 @@
     </div>
   </main>
 
-  {{template "scripts" .}}
   <script type="text/javascript">
     $(function() {
       let $emailVer = $('#email-verified');

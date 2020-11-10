@@ -23,42 +23,66 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Events</div>
-      <div class="list-group list-group-flush">
-        {{range $event := $events}}
-          <div class="list-group-item flex-column align-items-start">
-            <div class="d-flex w-100 justify-content-between">
-              <h5 class="mb-1">{{$event.Action}}</h5>
-              <small
-                data-timestamp="{{$event.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}"
-                data-toggle="tooltip" title="{{$event.CreatedAt.Format "2006-02-01 15:04 UTC"}}">
-                {{$event.CreatedAt.Format "2006-02-01 15:04"}}
-              </small>
-            </div>
-            <div>
-              <span class="text-primary text-nowrap">{{$event.ActorDisplay}}</span>
 
-              <span>{{$event.Action}}</span>
-
-              <span class="text-primary text-nowrap">{{$event.TargetDisplay}}</span>
-
-              {{if $event.Diff}}
-              <br>
-                <a href="#" data-toggle="collapse" data-target="#collapseDiff{{$event.ID}}"
-                  aria-expanded="true" aria-controls="collapseDiff{{$event.ID}}"
-                  class="small text-muted">
-                  Toggle diff
-                </a>
-                <pre id="collapseDiff{{$event.ID}}" class="collapse mt-3 mb-1"><code>{{$event.Diff}}</code></pre>
-              {{end}}
+      <div class="card-body">
+        <form method="GET" action="/realm/events" id="search-form">
+          <div class="input-group">
+            <input type="datetime-local" name="from" value="{{.from}}" class="form-control">
+            <span class="input-group-append">
+              <span class="input-group-text bg-transparent border-left-0 border-right-0">thru</span>
+            </span>
+            <input type="datetime-local" name="to" value="{{.to}}" class="form-control">
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-primary">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+                <span class="sr-only">Search</span>
+              </button>
             </div>
           </div>
-        {{end}}
+        </form>
       </div>
+
+      {{if $events}}
+        <div class="list-group list-group-flush">
+          {{range $event := $events}}
+            <div class="list-group-item flex-column align-items-start">
+              <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{$event.Action}}</h5>
+                <small
+                  data-timestamp="{{$event.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}"
+                  data-toggle="tooltip" title="{{$event.CreatedAt.Format "2006-02-01 15:04 UTC"}}">
+                  {{$event.CreatedAt.Format "2006-02-01 15:04"}}
+                </small>
+              </div>
+              <div>
+                <span class="text-primary text-nowrap">{{$event.ActorDisplay}}</span>
+
+                <span>{{$event.Action}}</span>
+
+                <span class="text-primary text-nowrap">{{$event.TargetDisplay}}</span>
+
+                {{if $event.Diff}}
+                <br>
+                  <a href="#" data-toggle="collapse" data-target="#collapseDiff{{$event.ID}}"
+                    aria-expanded="true" aria-controls="collapseDiff{{$event.ID}}"
+                    class="small text-muted">
+                    Toggle diff
+                  </a>
+                  <pre id="collapseDiff{{$event.ID}}" class="collapse mt-3 mb-1"><code>{{$event.Diff}}</code></pre>
+                {{end}}
+              </div>
+            </div>
+          {{end}}
+        </div>
+      {{else}}
+        <p class="card-body text-center mb-0">
+          <em>There are no events{{if .query}} that match the query{{end}}.</em>
+        </p>
+      {{end}}
     </div>
+
+    {{template "shared/pagination" .}}
   </main>
-
-  {{template "scripts" .}}
-
 </body>
 </html>
 {{end}}

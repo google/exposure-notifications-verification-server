@@ -32,15 +32,23 @@ data "google_project" "project" {
   project_id = var.project
 }
 
+# Cloud Resource Manager needs to be enabled first, before other services.
+resource "google_project_service" "resourcemanager" {
+  project            = var.project
+  service            = "cloudresourcemanager.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_project_service" "services" {
   project = var.project
   for_each = toset([
+    "binaryauthorization.googleapis.com",
     "cloudbuild.googleapis.com",
     "cloudidentity.googleapis.com",
     "cloudkms.googleapis.com",
-    "cloudresourcemanager.googleapis.com",
     "cloudscheduler.googleapis.com",
     "compute.googleapis.com",
+    "containeranalysis.googleapis.com",
     "containerregistry.googleapis.com",
     "firebase.googleapis.com",
     "iam.googleapis.com",
@@ -58,6 +66,10 @@ resource "google_project_service" "services" {
   ])
   service            = each.value
   disable_on_destroy = false
+
+  depends_on = [
+    google_project_service.resourcemanager,
+  ]
 }
 
 resource "google_compute_global_address" "private_ip_address" {
@@ -92,6 +104,7 @@ resource "google_vpc_access_connector" "connector" {
   max_throughput = var.vpc_access_connector_max_throughput
 
   depends_on = [
+    google_service_networking_connection.private_vpc_connection,
     google_project_service.services["compute.googleapis.com"],
     google_project_service.services["vpcaccess.googleapis.com"],
   ]

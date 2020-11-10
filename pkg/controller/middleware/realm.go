@@ -19,28 +19,28 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"github.com/gorilla/mux"
 )
 
 // LoadCurrentRealm loads the selected realm from the cache to the context
-func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
-
+func LoadCurrentRealm(cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
 	cacheTTL := 5 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.LoadCurrentRealm")
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
@@ -60,7 +60,10 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 			// Load the realm by using the cache to alleviate pressure on the database
 			// layer.
 			var realm database.Realm
-			cacheKey := fmt.Sprintf("realms:by_id:%d", realmID)
+			cacheKey := &cache.Key{
+				Namespace: "realms:by_id",
+				Key:       strconv.FormatUint(uint64(realmID), 10),
+			}
 			if err := cacher.Fetch(ctx, cacheKey, &realm, cacheTTL, func() (interface{}, error) {
 				return db.FindRealm(realmID)
 			}); err != nil {
@@ -77,7 +80,7 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 
 			// Save the realm on the context.
 			ctx = controller.WithRealm(ctx, &realm)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})
@@ -90,15 +93,15 @@ func LoadCurrentRealm(ctx context.Context, cacher cache.Cacher, db *database.Dat
 // Must come after:
 //   LoadCurrentRealm to populate the current realm.
 //   RequireAuth so that a user is set on the context.
-func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
-
+func RequireRealm(h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			user := controller.UserFromContext(ctx)
-			if user == nil {
+			logger := logging.FromContext(ctx).Named("middleware.RequireRealm")
+
+			currentUser := controller.UserFromContext(ctx)
+			if currentUser == nil {
 				controller.MissingUser(w, r, h)
 				return
 			}
@@ -109,7 +112,7 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
-			if !user.CanViewRealm(realm.ID) {
+			if !currentUser.CanViewRealm(realm.ID) {
 				logger.Debugw("user cannot view realm")
 				// Technically this is unauthorized, but we don't want to leak the
 				// existence of a realm by returning a different error.
@@ -117,7 +120,7 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 				return
 			}
 
-			if passwordRedirectRequired(ctx, user, realm) {
+			if passwordRedirectRequired(ctx, currentUser, realm) {
 				controller.RedirectToChangePassword(w, r, h)
 			}
 
@@ -131,15 +134,15 @@ func RequireRealm(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
 // Must come after:
 //   LoadCurrentRealm to populate the current realm.
 //   RequireAuth so that a user is set on the context.
-func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireRealmAdmin")
-
+func RequireRealmAdmin(h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			user := controller.UserFromContext(ctx)
-			if user == nil {
+			logger := logging.FromContext(ctx).Named("middleware.RequireRealmAdmin")
+
+			currentUser := controller.UserFromContext(ctx)
+			if currentUser == nil {
 				controller.MissingUser(w, r, h)
 				return
 			}
@@ -150,7 +153,7 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 				return
 			}
 
-			if !user.CanAdminRealm(realm.ID) {
+			if !currentUser.CanAdminRealm(realm.ID) {
 				logger.Debugw("user cannot manage realm")
 				// Technically this is unauthorized, but we don't want to leak the
 				// existence of a realm by returning a different error.
@@ -158,7 +161,7 @@ func RequireRealmAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFu
 				return
 			}
 
-			if passwordRedirectRequired(ctx, user, realm) {
+			if passwordRedirectRequired(ctx, currentUser, realm) {
 				controller.RedirectToChangePassword(w, r, h)
 			}
 
@@ -202,9 +205,8 @@ func checkRealmPasswordAge(user *database.User, realm *database.Realm) error {
 		return errPasswordChangeRequired
 	}
 
-	if nextPasswordChange.Add(
-		time.Hour * 24 * time.Duration(realm.PasswordRotationWarningDays)).
-		After(now) {
+	if time.Until(nextPasswordChange) <
+		time.Hour*24*time.Duration(realm.PasswordRotationWarningDays) {
 		untilChange := nextPasswordChange.Sub(now).Hours()
 		if daysUntilChange := int(untilChange / 24); daysUntilChange > 1 {
 			return fmt.Errorf("password change required in %d days", daysUntilChange)

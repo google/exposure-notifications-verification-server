@@ -16,33 +16,30 @@
 package middleware
 
 import (
-	"context"
-	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
 )
 
 // RequireAuth requires a user to be logged in. It also ensures that currentUser
 // is set in the template map. It fetches a user from the session and stores the
 // full record in the request context.
-func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client, db *database.Database, h *render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
-
-	cacheTTL := 5 * time.Minute
+func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h *render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
+	cacheTTL := 15 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireAuth")
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
@@ -50,7 +47,6 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 				controller.MissingSession(w, r, h)
 				return
 			}
-
 			flash := controller.Flash(session)
 
 			// Check session idle timeout.
@@ -66,40 +62,28 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 				}
 			}
 
-			firebaseCookie := controller.FirebaseCookieFromSession(session)
-			if firebaseCookie == "" {
-				logger.Debugw("firebase cookie not in session")
+			// Get the email from the auth provider.
+			email, err := authProvider.EmailAddress(ctx, session)
+			if err != nil {
+				authProvider.ClearSession(ctx, session)
+
+				logger.Debugw("failed to get email from session", "error", err)
 				flash.Error("An error occurred trying to verify your credentials.")
 				controller.Unauthorized(w, r, h)
 				return
 			}
 
-			email, err := EmailFromFirebaseCookie(ctx, fbClient, firebaseCookie)
-			if err != nil {
-				controller.ClearSessionFirebaseCookie(session)
-
-				logger.Debugw("failed to extract email from firebase cookie", "error", err)
-				flash.Error("Your credentials are invalid. Clear your cookies and try again.")
-				controller.Unauthorized(w, r, h)
-				return
-			}
-			firebaseUser, err := fbClient.GetUserByEmail(ctx, email)
-			if err != nil {
-				logger.Debugw("firebase user does not exist")
-				controller.ClearSessionFirebaseCookie(session)
-				controller.Unauthorized(w, r, h)
-				return
-			}
-			ctx = controller.WithFirebaseUser(ctx, firebaseUser)
-
 			// Load the user by using the cache to alleviate pressure on the database
 			// layer.
 			var user database.User
-			cacheKey := fmt.Sprintf("users:by_email:%s", email)
+			cacheKey := &cache.Key{
+				Namespace: "users:by_email",
+				Key:       email,
+			}
 			if err := cacher.Fetch(ctx, cacheKey, &user, cacheTTL, func() (interface{}, error) {
 				return db.FindUserByEmail(email)
 			}); err != nil {
-				controller.ClearSessionFirebaseCookie(session)
+				authProvider.ClearSession(ctx, session)
 
 				if database.IsNotFound(err) {
 					logger.Debugw("user does not exist")
@@ -114,9 +98,11 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 
 			// Check if the session is still valid.
 			if time.Now().After(user.LastRevokeCheck.Add(expiryCheckTTL)) {
-				if _, err := fbClient.VerifySessionCookieAndCheckRevoked(ctx, firebaseCookie); err != nil {
-					logger.Debugw("failed to verify firebase cookie revocation", "error", err)
-					controller.ClearSessionFirebaseCookie(session)
+				// Check if the session has been revoked.
+				if err := authProvider.CheckRevoked(ctx, session); err != nil {
+					authProvider.ClearSession(ctx, session)
+
+					logger.Debugw("session revoked", "error", err)
 					controller.Unauthorized(w, r, h)
 					return
 				}
@@ -129,7 +115,7 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 				}
 
 				// Update the user in the cache so it has the new revoke check time.
-				if err := cacher.Write(ctx, cacheKey, &user, 30*time.Second); err != nil {
+				if err := cacher.Write(ctx, cacheKey, &user, cacheTTL); err != nil {
 					logger.Errorw("failed to cached user revocation check time", "error", err)
 					controller.InternalError(w, r, h, err)
 					return
@@ -138,48 +124,29 @@ func RequireAuth(ctx context.Context, cacher cache.Cacher, fbClient *auth.Client
 
 			// Save the user on the context.
 			ctx = controller.WithUser(ctx, &user)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// EmailFromFirebaseCookie extracts the user's email address from the provided
-// firebase cookie, if it exists.
-func EmailFromFirebaseCookie(ctx context.Context, fbClient *auth.Client, cookie string) (string, error) {
-	token, err := fbClient.VerifySessionCookie(ctx, cookie)
-	if err != nil {
-		return "", fmt.Errorf("failed to verify firebase cookie: %w", err)
-	}
-
-	if token.Claims == nil || token.Claims["email"] == nil {
-		return "", fmt.Errorf("missing token claims for email")
-	}
-
-	email, ok := token.Claims["email"].(string)
-	if !ok {
-		return "", fmt.Errorf("token claims for email are not a string")
-	}
-	return email, nil
-}
-
-// RequireAdmin requires the current user is a global administrator. It must
+// RequireSystemAdmin requires the current user is a global administrator. It must
 // come after RequireAuth so that a user is set on the context.
-func RequireAdmin(ctx context.Context, h *render.Renderer) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireAdminHandler")
-
+func RequireSystemAdmin(h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			user := controller.UserFromContext(ctx)
-			if user == nil {
+			logger := logging.FromContext(ctx).Named("middleware.RequireAdminHandler")
+
+			currentUser := controller.UserFromContext(ctx)
+			if currentUser == nil {
 				controller.MissingUser(w, r, h)
 				return
 			}
 
-			if !user.Admin {
+			if !currentUser.SystemAdmin {
 				logger.Debugw("user is not an admin")
 				controller.Unauthorized(w, r, h)
 				return

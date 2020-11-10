@@ -4,11 +4,10 @@
 
 <head>
   {{template "head" .}}
-  {{template "floatingform" .}}
   {{template "firebase" .}}
 </head>
 
-<body class="tab-content">
+<body id="login" class="tab-content">
   {{if .currentUser}}
   {{template "navbar" .}}
   {{end}}
@@ -40,7 +39,7 @@
                 </div>
 
                 <button type="submit" id="submit" class="btn btn-primary btn-block">Login</button>
-                <a class="card-link btn-block" href="login/reset-password">Forgot password</a>
+                <a class="card-link btn-block" href="/login/reset-password">Forgot password</a>
               </form>
             </div>
           </div>
@@ -61,7 +60,6 @@
     <div id="recaptcha-container" class="center-block"></div>
   </main>
 
-  {{template "scripts" .}}
   {{template "loginscripts" .}}
 
   <script type="text/javascript">
@@ -104,7 +102,7 @@
         $submit.prop('disabled', true);
 
         {{if .currentUser}}
-        let credentials = firebase.auth.EmailAuthProvider.credential($email.val(),$password.val());
+        let credentials = firebase.auth.EmailAuthProvider.credential($email.val().trim(),$password.val());
         firebase.auth().currentUser.reauthenticateWithCredential(credentials)
         {{else}}
         firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
@@ -138,7 +136,12 @@
                 flash.clear();
                 flash.error('Unsupported 2nd factor authentication type.');
               }
+            } else if (error.code == 'auth/too-many-requests'){
+              flash.clear();
+              flash.error(err.message);
+              $submit.prop('disabled', false);
             } else {
+              console.error(error);
               flash.clear();
               flash.error("Sign-in failed. Please try again.");
               $submit.prop('disabled', false);
@@ -153,7 +156,7 @@
         $submitPin.prop('disabled', true);
 
         // Ask user for the SMS verification code.
-        let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val());
+        let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
         let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
         // Complete sign-in.
         resolver.resolveSignIn(multiFactorAssertion)

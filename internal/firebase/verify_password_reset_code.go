@@ -29,15 +29,18 @@ type verifyPasswordResetCodeRequest struct {
 	NewPassword string `json:"newPassword,omitempty"`
 }
 
-// VerifyPasswordResetCode sends a password reset email to the user. If the new
-// password is given, it applies the password reset change with the new password
-// using the code.
+// VerifyPasswordResetCode is called with the one-time-code given from a reset email to the user.
+// It can be used to check that the code is valid without making changes to the user.
 //
 // See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
 func (c *Client) VerifyPasswordResetCode(ctx context.Context, code string) (string, error) {
 	return c.ChangePasswordWithCode(ctx, code, "")
 }
 
+// ChangePasswordWithCode is called with the one-time-code given from a reset email to the user.
+// When called with newPassword, it updates the user's password.
+//
+// See: https://firebase.google.com/docs/reference/rest/auth#section-send-password-reset-email
 func (c *Client) ChangePasswordWithCode(ctx context.Context, code, newPassword string) (string, error) {
 	r := &verifyPasswordResetCodeRequest{Code: code}
 	if newPassword != "" {

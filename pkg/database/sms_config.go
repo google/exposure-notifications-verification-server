@@ -40,7 +40,7 @@ type SMSConfig struct {
 
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
-	TwilioAuthToken                string `gorm:"type:varchar(250)"`
+	TwilioAuthToken                string `gorm:"type:varchar(250)" json:"-"` // ignored by zap's JSON formatter
 	TwilioAuthTokenPlaintextCache  string `gorm:"-"`
 	TwilioAuthTokenCiphertextCache string `gorm:"-"`
 
@@ -107,9 +107,4 @@ func (db *Database) SaveSMSConfig(s *SMSConfig) error {
 		return db.db.Create(s).Error
 	}
 	return db.db.Save(s).Error
-}
-
-// DeleteSMSConfig removes an SMS configuration record.
-func (db *Database) DeleteSMSConfig(s *SMSConfig) error {
-	return db.db.Unscoped().Delete(s).Error
 }

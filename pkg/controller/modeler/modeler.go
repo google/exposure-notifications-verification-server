@@ -23,16 +23,13 @@ import (
 	"time"
 
 	"github.com/gonum/matrix/mat64"
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
 	"github.com/sethvargo/go-limiter"
-	"go.uber.org/zap"
 )
 
 // Controller is a controller for the modeler service.
@@ -41,28 +38,24 @@ type Controller struct {
 	db      *database.Database
 	h       *render.Renderer
 	limiter limiter.Store
-	logger  *zap.SugaredLogger
 }
 
 // New creates a new modeler controller.
 func New(ctx context.Context, config *config.Modeler, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
-	logger := logging.FromContext(ctx).Named("modeler")
-
 	return &Controller{
 		config:  config,
 		db:      db,
 		h:       h,
 		limiter: limiter,
-		logger:  logger,
 	}
 }
 
 // HandleModel accepts an HTTP trigger and re-generates the models.
 func (c *Controller) HandleModel() http.Handler {
-	logger := c.logger.Named("HandleModel")
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("modeler.HandleModel")
 
 		if err := c.db.ClaimModelerStatus(); err != nil {
 			logger.Errorw("failed to claim modeler status", "error", err)
@@ -83,7 +76,8 @@ func (c *Controller) HandleModel() http.Handler {
 // rebuildModels iterates over all models with abuse prevention enabled,
 // calculates the new limits, and updates the new limits.
 func (c *Controller) rebuildModels(ctx context.Context) error {
-	logger := c.logger.Named("rebuildModels")
+	logger := logging.FromContext(ctx).Named("modeler.rebuildModels")
+
 	// Get all realm IDs in a single operation so we can iterate realm-by-realm to
 	// avoid a full table lock during stats calculation.
 	ids, err := c.db.AbusePreventionEnabledRealmIDs()
@@ -105,7 +99,7 @@ func (c *Controller) rebuildModels(ctx context.Context) error {
 
 // rebuildModel rebuilds and updates the model for a single model.
 func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
-	logger := c.logger.Named("rebuildModel").With("id", id)
+	logger := logging.FromContext(ctx).Named("modeler.rebuildModel").With("id", id)
 
 	// Lookup the realm.
 	realm, err := c.db.FindRealm(id)
@@ -192,7 +186,7 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 		next = c.config.MaxValue
 	}
 
-	logger.Debugw("next value", "next", next)
+	logger.Debugw("next value", "value", next)
 
 	// Save the new value back, bypassing any validation.
 	realm.AbusePreventionLimit = next
@@ -200,13 +194,17 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 		return fmt.Errorf("failed to save model: %w", err)
 	}
 
+	// Calculate effective limit.
+	effective := realm.AbusePreventionEffectiveLimit()
+
+	logger.Debugw("next effective limit", "value", effective)
+
 	// Update the limiter to use the new value.
-	dig, err := digest.HMACUint64(id, c.config.RateLimit.HMACKey)
+	key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
 	if err != nil {
 		return fmt.Errorf("failed to digest realm id: %w", err)
 	}
-	key := fmt.Sprintf("realm:quota:%s", dig)
-	if err := c.limiter.Set(ctx, key, uint64(next), 24*time.Hour); err != nil {
+	if err := c.limiter.Set(ctx, key, uint64(effective), 24*time.Hour); err != nil {
 		return fmt.Errorf("failed to update limit: %w", err)
 	}
 

@@ -40,11 +40,13 @@ type CleanupConfig struct {
 	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
 
 	// Cleanup config
-	CleanupPeriod           time.Duration `env:"CLEANUP_PERIOD,default=15m"`
-	VerificationCodeMaxAge  time.Duration `env:"VERIFICATION_CODE_MAX_AGE,default=24h"`
-	VerificationTokenMaxAge time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE,default=24h"`
-	MobileAppMaxAge         time.Duration `env:"MOBILE_APP_MAX_AGE,default=168h"`
-	AuditEntryMaxAge        time.Duration `env:"AUDIT_ENTRY_MAX_AGE,default=720h"`
+	AuditEntryMaxAge             time.Duration `env:"AUDIT_ENTRY_MAX_AGE, default=720h"`
+	AuthorizedAppMaxAge          time.Duration `env:"AUTHORIZED_APP_MAX_AGE, default=336h"`
+	CleanupPeriod                time.Duration `env:"CLEANUP_PERIOD, default=15m"`
+	MobileAppMaxAge              time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
+	VerificationCodeMaxAge       time.Duration `env:"VERIFICATION_CODE_MAX_AGE, default=48h"`
+	VerificationCodeStatusMaxAge time.Duration `env:"VERIFICATION_CODE_STATUS_MAX_AGE, default=336h"`
+	VerificationTokenMaxAge      time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE, default=24h"`
 }
 
 // NewCleanupConfig returns the environment config for the cleanup server.
@@ -65,6 +67,7 @@ func (c *CleanupConfig) Validate() error {
 		{c.VerificationCodeMaxAge, "VERIFICATION_TOKEN_DURATION"},
 		{c.CleanupPeriod, "CLEANUP_PERIOD"},
 		{c.VerificationCodeMaxAge, "VERIFICATION_CODE_MAX_AGE"},
+		{c.VerificationCodeStatusMaxAge, "VERIFICATION_CODE_STATUS_MAX_AGE"},
 		{c.VerificationTokenMaxAge, "VERIFICATION_TOKEN_MAX_AGE"},
 		{c.AuditEntryMaxAge, "AUDIT_ENTRY_MAX_AGE"},
 	}

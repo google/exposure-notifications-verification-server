@@ -1,0 +1,44 @@
+displayName: End-to-End Dashboard
+gridLayout:
+  columns: "1"
+  widgets:
+    - title: e2e-runner requests
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                generic_task ::
+                custom.googleapis.com/opencensus/en-verification-server/e2e/request_count
+                | align rate(1m)
+                | every 1m
+                | [metric.step, metric.test_type, metric.result]
+    - title: e2e-runner failed requests
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                generic_task ::
+                custom.googleapis.com/opencensus/en-verification-server/e2e/request_count
+                | filter metric.result == "NOT_OK"
+                | align rate(1m)
+                | every 1m
+                | [metric.step, metric.test_type, metric.result]
+    - title: e2e-runner request latency
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                generic_task ::
+                custom.googleapis.com/opencensus/en-verification-server/e2e/request_latency
+                | align delta(1m)
+                | every 1m
+                | [metric.step], [val: percentile(value.request_latency, 99)]

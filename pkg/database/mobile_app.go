@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
 )
 
@@ -57,6 +59,10 @@ type MobileApp struct {
 	// RealmID is the id of the mobile app.
 	RealmID uint `gorm:"column:realm_id;"`
 
+	// URL is the link to the app in it's appstore.
+	URL    string  `gorm:"-"`
+	URLPtr *string `gorm:"column:url; type:text"`
+
 	// OS is the type of the application we're using (eg, iOS, Android).
 	OS OSType `gorm:"column:os; type:int;"`
 
@@ -70,7 +76,7 @@ type MobileApp struct {
 }
 
 func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
-	a.Name = strings.TrimSpace(a.Name)
+	a.Name = project.TrimSpace(a.Name)
 	if a.Name == "" {
 		a.AddError("name", "is required")
 	}
@@ -79,10 +85,13 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("realm_id", "is required")
 	}
 
-	a.AppID = strings.TrimSpace(a.AppID)
+	a.AppID = project.TrimSpace(a.AppID)
 	if a.AppID == "" {
 		a.AddError("app_id", "is required")
 	}
+
+	a.URL = project.TrimSpace(a.URL)
+	a.URLPtr = stringPtr(a.URL)
 
 	// Ensure OS is valid
 	if a.OS < OSTypeIOS || a.OS > OSTypeAndroid {
@@ -90,7 +99,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	}
 
 	// SHA is required for Android
-	a.SHA = strings.TrimSpace(a.SHA)
+	a.SHA = project.TrimSpace(a.SHA)
 	if a.OS == OSTypeAndroid {
 		if a.SHA == "" {
 			a.AddError("sha", "is required for Android apps")
@@ -101,7 +110,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	var shas []string
 	for _, line := range strings.Split(a.SHA, "\n") {
 		for _, entry := range strings.Split(line, ",") {
-			entry = strings.ToUpper(strings.TrimSpace(entry))
+			entry = strings.ToUpper(project.TrimSpace(entry))
 			if entry == "" {
 				continue
 			}
@@ -125,13 +134,65 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
-// ListActiveAppsByOS finds all mobile apps by their OS.
-func (db *Database) ListActiveAppsByOS(os OSType) ([]*MobileApp, error) {
+// ExtendedMobileApp combines a MobileApp with its Realm
+type ExtendedMobileApp struct {
+	MobileApp
+	Realm
+}
+
+// ListActiveAppsWithRealm finds all active mobile apps with their associated realm.
+func (db *Database) ListActiveAppsWithRealm(p *pagination.PageParams) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
+	return db.SearchActiveAppsWithRealm(p, "")
+}
+
+// SearchActiveAppsWithRealm finds all active mobile apps with their associated realm.
+func (db *Database) SearchActiveAppsWithRealm(p *pagination.PageParams, q string) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
+	query := db.db.Table("mobile_apps").
+		Select("mobile_apps.*, realms.*").
+		Joins("left join realms on realms.id = mobile_apps.realm_id")
+
+	q = project.TrimSpace(q)
+	if q != "" {
+		q = `%` + q + `%`
+		query = query.Where("(mobile_apps.name ILIKE ? OR realms.name ILIKE ?)", q, q)
+	}
+
+	if p == nil {
+		p = new(pagination.PageParams)
+	}
+
+	apps := make([]*ExtendedMobileApp, 0)
+
+	paginator, err := PaginateFn(query, p.Page, p.Limit, func(query *gorm.DB, offset uint64) error {
+		rows, err := query.
+			Limit(p.Limit).
+			Offset(offset).
+			Rows()
+		if err != nil || rows == nil {
+			return nil
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			app := &ExtendedMobileApp{}
+			if err := db.db.ScanRows(rows, &app); err != nil {
+				return err
+			}
+			apps = append(apps, app)
+		}
+		return nil
+	})
+
+	return apps, paginator, err
+}
+
+// ListActiveAppsByOS finds mobile apps by their realm and OS.
+func (db *Database) ListActiveAppsByOS(realmID uint, os OSType) ([]*MobileApp, error) {
 	// Find the apps.
 	var apps []*MobileApp
 	if err := db.db.
 		Model(&MobileApp{}).
-		Where("os = ?", os).
+		Where("realm_id = ? AND os = ?", realmID, os).
 		Find(&apps).
 		Error; err != nil {
 		if IsNotFound(err) {
@@ -223,6 +284,11 @@ func (a *MobileApp) AuditID() string {
 
 func (a *MobileApp) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", a.Name, a.OS.Display())
+}
+
+func (a *MobileApp) AfterFind(tx *gorm.DB) error {
+	a.URL = stringValue(a.URLPtr)
+	return nil
 }
 
 // PurgeMobileApps will delete mobile apps that have been deleted for more than

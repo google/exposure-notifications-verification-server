@@ -10,34 +10,34 @@
     </div>
 
     <div class="form-group row">
-      <label for="name" class="col-sm-3">Issuer (iss):</label>
+      <label for="systemiss" class="col-sm-3">Issuer (iss):</label>
       <div class="input-group col-sm-9">
         <input type="text" id="systemiss" class="form-control text-monospace" value="{{.systemCertIssuer}}" readonly/>
         {{template "clippy" "systemiss"}}
       </div>
     </div>
     <div class="form-group row">
-      <label for="name" class="col-sm-3">Audience (aud):</label>
+      <label for="systemaud" class="col-sm-3">Audience (aud):</label>
       <div class="input-group col-sm-9">
         <input type="text" id="systemaud" class="form-control text-monospace" value="{{.systemCertAudience}}" readonly/>
         {{template "clippy" "systemaud"}}
       </div>
     </div>
     <div class="form-group row">
-      <label for="name" class="col-sm-3">Certificate duration:</label>
+      <label for="certDuration" class="col-sm-3">Certificate duration:</label>
       <div class="input-group col-sm-9">
         <input type="text" id="certDuration" class="form-control text-monospace" value="{{.systemCertDuration}}" readonly/>
       </div>
     </div>
     <div class="form-group row">
-      <label for="name" class="col-sm-3">Key ID (kid):</label>
+      <label for="systemCertKeyID" class="col-sm-3">Key ID (kid):</label>
       <div class="input-group col-sm-9">
         <input type="text" id="systemCertKeyID" class="form-control text-monospace" value="{{.systemCertKeyID}}" readonly/>
         {{template "clippy" "systemCertKeyID"}}
       </div>
     </div>
     <div class="form-group row">
-      <label for="name" class="col-sm-3">Public key:</label>
+      <label for="systemPublicKey" class="col-sm-3">Public key:</label>
       <div class="input-group col-sm-9">
         <textarea class="form-control text-monospace{{if .systemCertPublicKeyError}} is-invalid{{end}}" rows="4" id="systemPublicKey" readonly>{{.systemCertPublicKey | trimSpace}}</textarea>
         {{template "clippy" "systemPublicKey"}}
@@ -68,10 +68,21 @@
                 <ol>
                   <li>Creating a new key.</li>
                   <li>Communicating that key version and public key to your <em>exposure notifications key server</em> operator.</li>
-                  <li>Activiating the new key in this system.</li>
+                  <li>Activating the new key in this system.</li>
                 </ol>
               </span>
-              <button type="submit" class="btn btn-primary btn-block">Create new signing key version</button>
+
+              {{if ge (len .realmKeys) .maximumKeyVersions }}
+                <div class="alert alert-warning">
+                  <span class="oi oi-warning" aria-hidden="true"></span>
+                  There is a limit of {{.maximumKeyVersions}} available key versions.
+                </div>
+                <button class="btn btn-primary btn-block disabled" disabled>
+                  Create new signing key version
+                </button>
+              {{else}}
+                <button type="submit" class="btn btn-primary btn-block">Create new signing key version</button>
+              {{end}}
             </div>
           </div>
         </form>
@@ -207,7 +218,7 @@
 
 
             <div class="form-group row">
-              <label for="name" class="col-sm-3">Issuer (iss):</label>
+              <label for="certificateIssuer" class="col-sm-3">Issuer (iss):</label>
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">
                 <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control text-monospace" value="{{$realm.CertificateIssuer}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
                 {{if $realm.UseRealmCertificateKey}}
@@ -225,7 +236,7 @@
               </div>
             </div>
             <div class="form-group row">
-              <label for="name" class="col-sm-3">Audience (aud):</label>
+              <label for="certificateAudience" class="col-sm-3">Audience (aud):</label>
               <div class="{{if $realm.UseRealmCertificateKey}}input-group{{end}} col-sm-9">
                 <input type="text" id="certificateAudience" name="certificateAudience" class="form-control text-monospace" value="{{$realm.CertificateAudience}}" {{if $realm.UseRealmCertificateKey}}readonly{{end}}/>
                 {{if $realm.UseRealmCertificateKey}}
@@ -244,7 +255,7 @@
               </div>
             </div>
             <div class="form-group row">
-              <label for="name" class="col-sm-3">Certificate duration:</label>
+              <label for="certificateDuration" class="col-sm-3">Certificate duration:</label>
               <div class="col-sm-9">
                 <input type="text" id="certificateDuration" name="certificateDuration" class="form-control text-monospace" value="{{$realm.CertificateDuration.Duration}}" />
                 {{if $realm.ErrorsFor "certificateDuration"}}
@@ -260,14 +271,14 @@
 
             {{if $realm.UseRealmCertificateKey}}
             <div class="form-group row">
-              <label for="name" class="col-sm-3">Key ID (kid):</label>
+              <label for="certKeyID" class="col-sm-3">Key ID (kid):</label>
               <div class="input-group col-sm-9">
                 <input type="text" id="certKeyID" class="form-control" value="{{.activeRealmKey}}" readonly/>
                 {{template "clippy" "certKeyID"}}
               </div>
             </div>
             <div class="form-group row">
-              <label for="name" class="col-sm-3">Public key:</label>
+              <label for="activePublicKey" class="col-sm-3">Public key:</label>
               <div class="input-group col-sm-9">
                 <textarea class="form-control" rows="4" id="activePublicKey" readonly>{{if .activePublicKey}}{{.activePublicKey | trimSpace}}{{else}}Temporarily unable to show public key{{end}}</textarea>
                 {{template "clippy" "activePublicKey"}}
@@ -294,8 +305,6 @@
 
     {{template "realmpublickeys" .}}
   </main>
-
-  {{template "scripts" .}}
 </body>
 </html>
 {{end}}

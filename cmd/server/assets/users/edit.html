@@ -7,10 +7,9 @@
 <html lang="en">
 <head>
   {{template "head" .}}
-  {{template "floatingform" .}}
 </head>
 
-<body class="tab-content">
+<body id="users-edit" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -28,8 +27,6 @@
       </div>
     </div>
   </main>
-
-  {{template "scripts" .}}
 </body>
 </html>
 {{end}}

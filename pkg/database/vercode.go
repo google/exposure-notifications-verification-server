@@ -20,9 +20,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/jinzhu/gorm"
 )
 
@@ -30,6 +31,14 @@ const (
 	oneDay = 24 * time.Hour
 	// MinCodeLength defines the minimum number of digits in a code.
 	MinCodeLength = 6
+)
+
+type CodeType int
+
+const (
+	InvalidCode CodeType = iota
+	ShortCode
+	LongCode
 )
 
 var (
@@ -52,12 +61,13 @@ type VerificationCode struct {
 	Errorable
 
 	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
-	Code          string `gorm:"type:varchar(512);unique_index"`
-	LongCode      string `gorm:"type:varchar(512);unique_index"`
-	UUID          string `gorm:"type:uuid;unique_index;default:null"`
+	Code          string `gorm:"type:varchar(512)"`
+	LongCode      string `gorm:"type:varchar(512)"`
+	UUID          string `gorm:"type:uuid;default:null"`
 	Claimed       bool   `gorm:"default:false"`
 	TestType      string `gorm:"type:varchar(20)"`
 	SymptomDate   *time.Time
+	TestDate      *time.Time
 	ExpiresAt     time.Time
 	LongExpiresAt time.Time
 	IssuingUserID uint
@@ -73,7 +83,7 @@ func (VerificationCode) TableName() string {
 // to update statistics about usage. If the executions fail, an error is logged
 // but the transaction continues. This is called automatically by gorm.
 func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
-	date := v.CreatedAt.Truncate(24 * time.Hour)
+	date := timeutils.Midnight(v.CreatedAt)
 
 	// If the issuer was a user, update the user stats for the day.
 	if v.IssuingUserID != 0 {
@@ -132,15 +142,15 @@ func (v *VerificationCode) FormatSymptomDate() string {
 
 // IsCodeExpired checks to see if the actual code provided is the short or long
 // code, and determines if it is expired based on that.
-func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error) {
+func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, CodeType, error) {
 	if v == nil {
-		return false, fmt.Errorf("provided code is nil")
+		return false, InvalidCode, fmt.Errorf("provided code is nil")
 	}
 
 	// It's possible that this could be called with the already HMACd version.
 	possibles, err := db.generateVerificationCodeHMACs(code)
 	if err != nil {
-		return false, fmt.Errorf("failed to create hmac: %w", err)
+		return false, InvalidCode, fmt.Errorf("failed to create hmac: %w", err)
 	}
 	possibles = append(possibles, code)
 
@@ -156,11 +166,11 @@ func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, error
 	now := time.Now().UTC()
 	switch {
 	case inList(v.Code, possibles):
-		return !v.ExpiresAt.After(now), nil
+		return !v.ExpiresAt.After(now), ShortCode, nil
 	case inList(v.LongCode, possibles):
-		return !v.LongExpiresAt.After(now), nil
+		return !v.LongExpiresAt.After(now), LongCode, nil
 	default:
-		return true, fmt.Errorf("not found")
+		return true, InvalidCode, fmt.Errorf("not found")
 	}
 }
 
@@ -177,20 +187,25 @@ func (v *VerificationCode) HasLongExpiration() bool {
 // Validate validates a verification code before save.
 func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	now := time.Now()
-	v.Code = strings.TrimSpace(v.Code)
+	v.Code = project.TrimSpace(v.Code)
 	if len(v.Code) < MinCodeLength {
 		return ErrCodeTooShort
 	}
-	v.LongCode = strings.TrimSpace(v.LongCode)
+	v.LongCode = project.TrimSpace(v.LongCode)
 	if len(v.LongCode) < MinCodeLength {
 		return ErrCodeTooShort
 	}
 	if _, ok := ValidTestTypes[v.TestType]; !ok {
 		return ErrInvalidTestType
 	}
+	minSymptomDate := timeutils.UTCMidnight(now.Add(-1 * maxAge))
 	if v.SymptomDate != nil {
-		minSymptomDate := now.Add(-1 * maxAge).Truncate(oneDay)
 		if minSymptomDate.After(*v.SymptomDate) {
+			return ErrTestTooOld
+		}
+	}
+	if v.TestDate != nil {
+		if minSymptomDate.After(*v.TestDate) {
 			return ErrTestTooOld
 		}
 	}
@@ -218,13 +233,31 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 	return &vc, nil
 }
 
-// FindVerificationCodeByUUID find a verification codes by UUID.
-func (db *Database) FindVerificationCodeByUUID(uuid string) (*VerificationCode, error) {
-	var vc VerificationCode
-	if err := db.db.Where("uuid = ?", uuid).Find(&vc).Error; err != nil {
+// ListRecentCodes shows the last 5 recently issued codes for a given issuing user.
+// The code and longCode are removed, this is only intended to show metadata.
+func (db *Database) ListRecentCodes(realm *Realm, user *User) ([]*VerificationCode, error) {
+	var codes []*VerificationCode
+	if err := db.db.
+		Model(&VerificationCode{}).
+		Where("realm_id = ? AND issuing_user_id = ?", realm.ID, user.ID).
+		Order("created_at DESC").
+		Limit(5).
+		Find(&codes).
+		Error; err != nil {
 		return nil, err
 	}
-	return &vc, nil
+
+	// We're only showing meta details, not the encrypted codes.
+	for _, t := range codes {
+		if t.Code != "" {
+			t.Code = "short"
+		}
+		if t.LongCode != "" {
+			t.LongCode = "long"
+		}
+	}
+
+	return codes, nil
 }
 
 // ExpireCode saves a verification code as expired.
@@ -277,6 +310,21 @@ func (db *Database) DeleteVerificationCode(code string) error {
 		Where("code IN (?) OR long_code IN (?)", hmacedCodes, hmacedCodes).
 		Delete(&VerificationCode{}).
 		Error
+}
+
+// RecycleVerificationCodes sets to null code and long_code values
+// so that status can be retained longer, but the codes are recycled into the pool.
+func (db *Database) RecycleVerificationCodes(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+	// Null out the codes where this can be done.
+	rtn := db.db.Model(&VerificationCode{}).
+		Select("code", "long_code").
+		Where("expires_at < ? AND long_expires_at < ? AND (code != ? OR long_code != ?)", deleteBefore, deleteBefore, "", "").
+		Update(map[string]interface{}{"code": "", "long_code": ""})
+	return rtn.RowsAffected, rtn.Error
 }
 
 // PurgeVerificationCodes will delete verifications that have expired since at least the

@@ -31,6 +31,7 @@ func (c *Controller) HandleImport() http.Handler {
 
 func (c *Controller) renderImport(ctx context.Context, w http.ResponseWriter) {
 	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Import users")
 	m["firebase"] = c.config.Firebase
 	c.h.RenderHTML(w, "users/import", m)
 }

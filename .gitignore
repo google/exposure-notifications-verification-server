@@ -19,7 +19,7 @@
 *.terraform/
 *.tfvars
 terraform/state.tf
-terraform-e2e/state.tf
+terraform-e2e-ci/state.tf
 */crash.log
 
 # Local things
@@ -27,3 +27,6 @@ bin/
 local/
 .env
 .env.*
+
+# Editor temporary files
+*.swp

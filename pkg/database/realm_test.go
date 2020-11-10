@@ -15,7 +15,14 @@
 package database
 
 import (
+	"context"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 func TestSMS(t *testing.T) {
@@ -34,5 +41,181 @@ func TestSMS(t *testing.T) {
 	want = "State of Wonder, COVID-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
 	if got != want {
 		t.Errorf("SMS text wrong, want: %q got %q", want, got)
+	}
+}
+
+func TestPerUserRealmStats(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+
+	numDays := 7
+	endDate := timeutils.Midnight(time.Now())
+	startDate := timeutils.Midnight(endDate.Add(time.Duration(numDays) * -24 * time.Hour))
+
+	// Create a new realm
+	realm := NewRealmWithDefaults("test")
+	if err := db.SaveRealm(realm, System); err != nil {
+		t.Fatalf("error saving realm: %v", err)
+	}
+
+	// Create the users.
+	users := []*User{}
+	for userIdx, name := range []string{"Rocky", "Bullwinkle", "Boris", "Natasha"} {
+		user := &User{
+			Realms:      []*Realm{realm},
+			Name:        name,
+			Email:       name + "@gmail.com",
+			SystemAdmin: false,
+		}
+
+		if err := db.SaveUser(user, System); err != nil {
+			t.Fatalf("[%v] error creating user: %v", name, err)
+		}
+		users = append(users, user)
+
+		// Add some stats per user.
+		for i := 0; i < numDays; i++ {
+			stat := &UserStats{
+				RealmID:     realm.ID,
+				UserID:      user.ID,
+				Date:        startDate.Add(time.Duration(i) * 24 * time.Hour),
+				CodesIssued: uint(10 + i + userIdx),
+			}
+			if err := db.SaveUserStats(stat); err != nil {
+				t.Fatalf("error saving user stats %v", err)
+			}
+		}
+	}
+
+	if len(users) == 0 { // sanity check
+		t.Error("len(users) = 0, expected ≠ 0")
+	}
+
+	stats, err := realm.CodesPerUser(db, startDate, endDate)
+	if err != nil {
+		t.Fatalf("error getting stats: %v", err)
+	}
+
+	if len(stats) != numDays*len(users) {
+		t.Errorf("len(stats) = %d, expected %d", len(stats), numDays*len(users))
+	}
+
+	for i := 0; i < len(stats)-1; i++ {
+		if stats[i].Date != stats[i+1].Date {
+			if !stats[i].Date.After(stats[i+1].Date) {
+				t.Errorf("[%d] dates should be in descending order: %v.After(%v)", i, stats[i].Date, stats[i+1].Date)
+			}
+		}
+	}
+}
+
+func TestRealm_FindMobileApp(t *testing.T) {
+	t.Parallel()
+
+	t.Run("access_across_realms", func(t *testing.T) {
+		db := NewTestDatabase(t)
+
+		realm1 := NewRealmWithDefaults("realm1")
+		if err := db.SaveRealm(realm1, System); err != nil {
+			t.Fatal(err)
+		}
+
+		realm2 := NewRealmWithDefaults("realm2")
+		if err := db.SaveRealm(realm2, System); err != nil {
+			t.Fatal(err)
+		}
+
+		app1 := &MobileApp{
+			Name:    "app1",
+			RealmID: realm1.ID,
+			URL:     "https://example1.com",
+			OS:      OSTypeIOS,
+			AppID:   "app1",
+		}
+		if err := db.SaveMobileApp(app1, System); err != nil {
+			t.Fatal(err)
+		}
+
+		app2 := &MobileApp{
+			Name:    "app2",
+			RealmID: realm1.ID,
+			URL:     "https://example2.com",
+			OS:      OSTypeIOS,
+			AppID:   "app2",
+		}
+		if err := db.SaveMobileApp(app2, System); err != nil {
+			t.Fatal(err)
+		}
+
+		// realm1 should be able to lookup app1
+		{
+			found, err := realm1.FindMobileApp(db, app1.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := found.ID, app1.ID; got != want {
+				t.Errorf("expected %v to be %v", got, want)
+			}
+		}
+
+		// realm2 should NOT be able to lookup app1
+		{
+			if _, err := realm2.FindMobileApp(db, app1.ID); err == nil {
+				t.Fatal("expected error")
+			}
+		}
+	})
+}
+
+func TestRealm_CreateSigningKeyVersion(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db := NewTestDatabase(t)
+
+	db.config.CertificateSigningKeyRing = filepath.Join(project.Root(), "local", "test", "realm")
+	db.config.MaxCertificateSigningKeyVersions = 2
+
+	realm1 := NewRealmWithDefaults("realm1")
+	if err := db.SaveRealm(realm1, System); err != nil {
+		t.Fatal(err)
+	}
+
+	// First creates ok
+	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	// Second creates ok
+	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	// Third fails over quota
+	_, err := realm1.CreateSigningKeyVersion(ctx, db)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if got, want := err.Error(), "too many available signing keys"; !strings.Contains(got, want) {
+		t.Errorf("expected %q to contain %q", got, want)
+	}
+
+	// Delete one
+	list, err := realm1.ListSigningKeys(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) < 1 {
+		t.Fatal("empty list")
+	}
+	if err := realm1.DestroySigningKeyVersion(ctx, db, list[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Third should succeed now
+	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+		t.Fatal(err)
 	}
 }

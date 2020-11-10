@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -32,8 +31,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 	"github.com/rakutentech/jwk-go/jwk"
-
-	"go.uber.org/zap"
 )
 
 // Error codes
@@ -45,7 +42,6 @@ type Controller struct {
 	db       *database.Database
 	keyCache *keyutils.PublicKeyCache
 	cacher   cache.Cacher
-	logger   *zap.SugaredLogger
 }
 
 // HandleIndex returns an http.Handler that handles jwks GET requests.
@@ -54,7 +50,10 @@ func (c *Controller) HandleIndex() http.Handler {
 		ctx := r.Context()
 
 		// key is the key in the cacher where the values for this JWK are cached.
-		key := r.URL.String()
+		key := &cache.Key{
+			Namespace: "jwks",
+			Key:       r.URL.String(),
+		}
 
 		// See if there's a cached value. Note we cannot use Fetch here because our
 		// fetch function also depends on the cacher to lookup pubic keys and
@@ -145,13 +144,11 @@ func New(ctx context.Context, db *database.Database, cacher cache.Cacher, h *ren
 	if err != nil {
 		return nil, err
 	}
-	logger := logging.FromContext(ctx)
 
 	return &Controller{
 		h:        h,
 		db:       db,
 		keyCache: kc,
 		cacher:   cacher,
-		logger:   logger,
 	}, nil
 }

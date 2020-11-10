@@ -161,7 +161,21 @@ resource "google_cloud_run_service" "enx-redirect" {
 
   depends_on = [
     google_project_service.services["run.googleapis.com"],
+
+    google_secret_manager_secret_iam_member.enx-redirect-db,
+    google_secret_manager_secret_iam_member.enx-redirect-csrf,
+    google_secret_manager_secret_iam_member.enx-redirect-cookie-hmac-key,
+    google_kms_key_ring_iam_member.enx-redirect-verification-key-admin,
+    google_kms_key_ring_iam_member.enx-redirect-verification-key-signer-verifier,
+    google_kms_crypto_key_iam_member.enx-redirect-database-encrypter,
+    google_secret_manager_secret_iam_member.enx-redirect-db-apikey-db-hmac,
+    google_secret_manager_secret_iam_member.enx-redirect-db-apikey-sig-hmac,
+    google_secret_manager_secret_iam_member.enx-redirect-db-verification-code-hmac,
+    google_secret_manager_secret_iam_member.enx-redirect-cache-hmac-key,
+    google_project_iam_member.enx-redirect-observability,
+
     null_resource.build,
+    null_resource.migrate,
   ]
 
   lifecycle {

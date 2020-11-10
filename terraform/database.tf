@@ -58,9 +58,49 @@ resource "google_sql_database_instance" "db-inst" {
     }
   }
 
-  lifecycle {
-    # This prevents accidental deletion of the database.
-    prevent_destroy = true
+  depends_on = [
+    google_project_service.services["sqladmin.googleapis.com"],
+    google_project_service.services["sql-component.googleapis.com"],
+  ]
+}
+
+resource "google_sql_database_instance" "replicas" {
+  for_each = toset(var.database_failover_replica_regions)
+
+  project          = var.project
+  region           = each.key
+  database_version = "POSTGRES_12"
+  name             = "${var.database_name}-${each.key}"
+
+  master_instance_name = google_sql_database_instance.db-inst.name
+
+  // These are REGIONAL replicas, which cannot auto-failover. The default
+  // configuration has auto-failover in zones. This is for super disaster
+  // recovery in which an entire region is down for an extended period of time.
+  replica_configuration {
+    failover_target = false
+  }
+
+  settings {
+    tier              = var.database_tier
+    disk_size         = var.database_disk_size_gb
+    availability_type = "ZONAL"
+    pricing_plan      = "PACKAGE"
+
+    database_flags {
+      name  = "autovacuum"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "max_connections"
+      value = var.database_max_connections
+    }
+
+    ip_configuration {
+      require_ssl     = true
+      private_network = google_service_networking_connection.private_vpc_connection.network
+    }
   }
 
   depends_on = [
@@ -125,6 +165,7 @@ resource "google_secret_manager_secret_version" "db-secret-version" {
 
 # Create secret for the database HMAC for API keys
 resource "random_id" "db-apikey-db-hmac" {
+  count       = var.db_apikey_db_hmac_count
   byte_length = 128
 }
 
@@ -142,11 +183,12 @@ resource "google_secret_manager_secret" "db-apikey-db-hmac" {
 
 resource "google_secret_manager_secret_version" "db-apikey-db-hmac" {
   secret      = google_secret_manager_secret.db-apikey-db-hmac.id
-  secret_data = random_id.db-apikey-db-hmac.b64_std
+  secret_data = join(",", reverse(random_id.db-apikey-db-hmac.*.b64_std))
 }
 
 # Create secret for signature HMAC for api keys
 resource "random_id" "db-apikey-sig-hmac" {
+  count       = var.db_apikey_sig_hmac_count
   byte_length = 128
 }
 
@@ -164,11 +206,12 @@ resource "google_secret_manager_secret" "db-apikey-sig-hmac" {
 
 resource "google_secret_manager_secret_version" "db-apikey-sig-hmac" {
   secret      = google_secret_manager_secret.db-apikey-sig-hmac.id
-  secret_data = random_id.db-apikey-sig-hmac.b64_std
+  secret_data = join(",", reverse(random_id.db-apikey-sig-hmac.*.b64_std))
 }
 
 # Create secret for the database HMAC for verification codes
 resource "random_id" "db-verification-code-hmac" {
+  count       = var.db_verification_code_hmac_count
   byte_length = 128
 }
 
@@ -186,7 +229,7 @@ resource "google_secret_manager_secret" "db-verification-code-hmac" {
 
 resource "google_secret_manager_secret_version" "db-verification-code-hmac" {
   secret      = google_secret_manager_secret.db-verification-code-hmac.id
-  secret_data = random_id.db-verification-code-hmac.b64_std
+  secret_data = join(",", reverse(random_id.db-verification-code-hmac.*.b64_std))
 }
 
 
@@ -287,6 +330,95 @@ resource "null_resource" "migrate" {
   ]
 }
 
+# Create a storage bucket where database backups will be housed.
+resource "google_storage_bucket" "backups" {
+  project  = var.project
+  name     = "${var.project}-backups"
+  location = var.storage_location
+
+  force_destroy               = true
+  uniform_bucket_level_access = true
+
+  versioning {
+    enabled = true
+  }
+
+  lifecycle_rule {
+    action {
+      type = "Delete"
+    }
+
+    condition {
+      num_newer_versions = "120" // Default backup is 4x/day * 30 days
+    }
+  }
+
+  depends_on = [
+    google_project_service.services["storage.googleaips.com"],
+  ]
+}
+
+# Give Cloud SQL the ability to create and manage backups.
+resource "google_storage_bucket_iam_member" "instance-objectAdmin" {
+  bucket = google_storage_bucket.backups.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_sql_database_instance.db-inst.service_account_email_address}"
+}
+
+# Create a service account that can initiate backups.
+resource "google_service_account" "database-backuper" {
+  project      = data.google_project.project.project_id
+  account_id   = "en-database-backuper"
+  display_name = "Verification database backuper"
+}
+
+# Give the service account the ability to initiate backups - unfortunately this
+# has to be granted at the project level and isn't scoped to a single database
+# instance.
+resource "google_project_iam_member" "database-backuper-cloudsql-viewer" {
+  project = var.project
+  role    = "roles/cloudsql.viewer"
+  member  = "serviceAccount:${google_service_account.database-backuper.email}"
+}
+
+# Create a Cloud Scheduler job that generates a backup every interval.
+resource "google_cloud_scheduler_job" "backup-database-worker" {
+  name             = "backup-database-worker"
+  region           = var.cloudscheduler_location
+  schedule         = var.database_backup_schedule
+  time_zone        = "America/Los_Angeles"
+  attempt_deadline = "1800s"
+
+  retry_config {
+    retry_count = 1
+  }
+
+  http_target {
+    http_method = "POST"
+    uri         = "${google_sql_database_instance.db-inst.self_link}/export"
+
+    body = base64encode(jsonencode({
+      exportContext = {
+        fileType  = "SQL"
+        uri       = "gs://${google_storage_bucket.backups.name}/database/${google_sql_database.db.name}",
+        databases = [google_sql_database.db.name]
+        offload   = true,
+      }
+    }))
+
+    oauth_token {
+      service_account_email = google_service_account.database-backuper.email
+    }
+  }
+
+  depends_on = [
+    google_app_engine_application.app,
+    google_project_iam_member.database-backuper-cloudsql-viewer,
+    google_project_service.services["cloudscheduler.googleapis.com"],
+  ]
+}
+
+
 output "db_conn" {
   value = google_sql_database_instance.db-inst.connection_name
 }
@@ -341,4 +473,8 @@ output "db_apikey_signature_key_secret" {
 
 output "db_verification_code_key_secret" {
   value = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
+}
+
+output "db_backup_command" {
+  value = "gcloud scheduler jobs run backup-database-worker --project ${var.project}"
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/modeler"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -68,7 +69,7 @@ func realMain(ctx context.Context) error {
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
 	oeConfig := cfg.ObservabilityExporterConfig()
-	oe, err := observability.NewFromEnv(ctx, oeConfig)
+	oe, err := observability.NewFromEnv(oeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
@@ -79,10 +80,7 @@ func realMain(ctx context.Context) error {
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
-	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.MultiKeyFunc(
-		cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey),
-		cache.PrefixKeyFunc("cache:"),
-	))
+	cacher, err := cache.CacherFor(ctx, &cfg.Cache, cache.HMACKeyFunc(sha1.New, cfg.Cache.HMACKey))
 	if err != nil {
 		return fmt.Errorf("failed to create cacher: %w", err)
 	}
@@ -106,6 +104,14 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	r.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logger)
+	r.Use(populateLogger)
 
 	// Rate limiting
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)

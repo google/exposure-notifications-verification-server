@@ -17,15 +17,20 @@ package database
 import (
 	"context"
 	"crypto/rand"
+	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jinzhu/gorm"
 	"github.com/ory/dockertest"
 	"github.com/sethvargo/go-envconfig"
 )
@@ -34,13 +39,12 @@ var (
 	approxTime = cmp.Options{cmpopts.EquateApproxTime(time.Second)}
 )
 
-// NewTestDatabaseWithConfig creates a new database suitable for use in testing.
-// This should not be used outside of testing, but it is exposed in the main
-// package so it can be shared with other packages.
+// NewTestDatabaseWithCacher creates a database configured with a cacher for use
+// in testing.
 //
 // All database tests can be skipped by running `go test -short` or by setting
 // the `SKIP_DATABASE_TESTS` environment variable.
-func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
+func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *Config) {
 	tb.Helper()
 
 	if testing.Short() {
@@ -60,12 +64,14 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 		tb.Fatalf("failed to create Docker pool: %s", err)
 	}
 
+	// Determine the container image to use.
+	repo, tag := postgresRepo(tb)
+
 	// Start the container.
 	dbname, username, password := "en-verification-server", "my-username", "abcd1234"
-	tb.Log("Starting database")
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "postgres",
-		Tag:        "12-alpine",
+		Repository: repo,
+		Tag:        tag,
 		Env: []string{
 			"LANG=C",
 			"POSTGRES_DB=" + dbname,
@@ -75,6 +81,11 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	})
 	if err != nil {
 		tb.Fatalf("failed to start postgres container: %s", err)
+	}
+
+	// Force the database container to stop.
+	if err := container.Expire(30); err != nil {
+		tb.Fatalf("failed to force-stop container: %v", err)
 	}
 
 	// Ensure container is cleaned up.
@@ -111,7 +122,7 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 
 	// Wait for the container to start - we'll retry connections in a loop below,
 	// but there's no point in trying immediately.
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	// Load the configuration
 	db, err := config.Load(ctx)
@@ -122,23 +133,48 @@ func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
 	db.keyManager = keys.TestKeyManager(tb)
 	db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
 
-	if err := db.Open(ctx); err != nil {
+	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		tb.Fatal(err)
 	}
-	db.db.LogMode(false)
+
+	// Disable logging temporarily for migrations. The callback registration is
+	// really quite chatty.
+	db.db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+	db.db = db.db.LogMode(false)
 
 	if err := db.RunMigrations(ctx); err != nil {
 		tb.Fatalf("failed to migrate database: %v", err)
 	}
 
+	// Re-enable logging.
+	db.db.SetLogger(gorm.Logger{LogWriter: log.New(os.Stdout, "", 0)})
+
 	// Close db when done.
 	tb.Cleanup(func() {
-		db.db.Close()
+		if err := db.db.Close(); err != nil {
+			tb.Fatal(err)
+		}
 	})
 
 	return db, config
 }
 
+// NewTestDatabaseWithConfig creates a new database suitable for use in testing.
+// This should not be used outside of testing, but it is exposed in the main
+// package so it can be shared with other packages.
+//
+// All database tests can be skipped by running `go test -short` or by setting
+// the `SKIP_DATABASE_TESTS` environment variable.
+func NewTestDatabaseWithConfig(tb testing.TB) (*Database, *Config) {
+	tb.Helper()
+
+	return NewTestDatabaseWithCacher(tb, nil)
+}
+
+// NewTestDatabase creates a new test database with the defautl configuration.
+//
+// All database tests can be skipped by running `go test -short` or by setting
+// the `SKIP_DATABASE_TESTS` environment variable.
 func NewTestDatabase(tb testing.TB) *Database {
 	tb.Helper()
 
@@ -163,4 +199,17 @@ func generateKeys(tb testing.TB, qty, length int) []envconfig.Base64Bytes {
 	}
 
 	return keys
+}
+
+func postgresRepo(tb testing.TB) (string, string) {
+	postgresImageRef := os.Getenv("CI_POSTGRES_IMAGE")
+	if postgresImageRef == "" {
+		postgresImageRef = "postgres:12-alpine"
+	}
+
+	parts := strings.SplitN(postgresImageRef, ":", 2)
+	if len(parts) != 2 {
+		tb.Fatalf("invalid postgres ref %v", postgresImageRef)
+	}
+	return parts[0], parts[1]
 }

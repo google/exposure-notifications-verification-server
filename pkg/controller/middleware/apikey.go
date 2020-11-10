@@ -16,17 +16,15 @@
 package middleware
 
 import (
-	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/gorilla/mux"
 )
@@ -39,9 +37,7 @@ const (
 // RequireAPIKey reads the X-API-Key header and validates it is a real
 // authorized app. It also ensures currentAuthorizedApp is set in the template
 // map.
-func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Database, h *render.Renderer, allowedTypes []database.APIKeyType) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireAPIKey")
-
+func RequireAPIKey(cacher cache.Cacher, db *database.Database, h *render.Renderer, allowedTypes []database.APIKeyType) mux.MiddlewareFunc {
 	allowedTypesMap := make(map[database.APIKeyType]struct{}, len(allowedTypes))
 	for _, t := range allowedTypes {
 		allowedTypesMap[t] = struct{}{}
@@ -53,6 +49,8 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
+			logger := logging.FromContext(ctx).Named("middleware.RequireAPIKey")
+
 			apiKey := r.Header.Get(APIKeyHeader)
 			if apiKey == "" {
 				logger.Debugw("missing API key in request")
@@ -63,7 +61,10 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 			// Load the authorized app by using the cache to alleviate pressure on the
 			// database layer.
 			var authApp database.AuthorizedApp
-			authAppCacheKey := fmt.Sprintf("authorized_apps:by_api_key:%s", apiKey)
+			authAppCacheKey := &cache.Key{
+				Namespace: "authorized_apps:by_api_key",
+				Key:       apiKey,
+			}
 			if err := cacher.Fetch(ctx, authAppCacheKey, &authApp, cacheTTL, func() (interface{}, error) {
 				return db.FindAuthorizedAppByAPIKey(apiKey)
 			}); err != nil {
@@ -87,7 +88,10 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 
 			// Lookup the realm.
 			var realm database.Realm
-			realmCacheKey := fmt.Sprintf("realms:by_id:%d", authApp.RealmID)
+			realmCacheKey := &cache.Key{
+				Namespace: "realms:by_id",
+				Key:       strconv.FormatUint(uint64(authApp.RealmID), 10),
+			}
 			if err := cacher.Fetch(ctx, realmCacheKey, &realm, cacheTTL, func() (interface{}, error) {
 				return authApp.Realm(db)
 			}); err != nil {
@@ -105,7 +109,7 @@ func RequireAPIKey(ctx context.Context, cacher cache.Cacher, db *database.Databa
 			// Save the authorized app on the context.
 			ctx = controller.WithAuthorizedApp(ctx, &authApp)
 			ctx = controller.WithRealm(ctx, &realm)
-			*r = *r.WithContext(ctx)
+			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
 		})

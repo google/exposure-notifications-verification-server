@@ -29,7 +29,7 @@ var _ driver.Valuer = (*DurationSeconds)(nil)
 type DurationSeconds struct {
 	Duration time.Duration
 
-	// AsString allows this value to be updatd and parsed using the Update() method.
+	// AsString allows this value to be updated and parsed using the Update() method.
 	AsString string
 }
 
@@ -38,6 +38,10 @@ func FromDuration(d time.Duration) DurationSeconds {
 		Duration: d,
 		AsString: d.String(),
 	}
+}
+
+func (d *DurationSeconds) Days() int64 {
+	return int64(d.Duration.Hours() / 24.0)
 }
 
 // Update attempts to parse the AsString value and set is as the duration

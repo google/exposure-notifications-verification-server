@@ -78,19 +78,6 @@ func (c *Controller) HandleCreate() http.Handler {
 			user.Name = form.Name
 		}
 
-		// Create firebase user first, if this fails we don't want a db.User entry
-		if created, err := user.CreateFirebaseUser(ctx, c.client); err != nil {
-			flash.Alert("Failed to create user: %v", err)
-			c.renderNew(ctx, w)
-			return
-		} else if created {
-			if err := c.firebaseInternal.SendPasswordResetEmail(ctx, user.Email); err != nil {
-				flash.Error("Failed sending new user invitation: %v", err)
-				c.renderNew(ctx, w)
-				return
-			}
-		}
-
 		// Build the user struct
 		user.Realms = append(user.Realms, realm)
 		if form.Admin {
@@ -99,6 +86,18 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to create user: %v", err)
+			c.renderNew(ctx, w)
+			return
+		}
+
+		inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		if _, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", inviteComposer); err != nil {
+			flash.Alert("Failed to create user: %v", err)
 			c.renderNew(ctx, w)
 			return
 		}

@@ -1,6 +1,8 @@
 {{define "realmadmin/_form_abuse_prevention"}}
 
 {{$realm := .realm}}
+{{$quotaRemaining := .quotaRemaining}}
+{{$quotaLimit := .quotaLimit}}
 
 <form method="POST" action="/realm/settings#abuse-prevention" class="floating-form">
   {{ .csrfField }}
@@ -27,6 +29,19 @@
   </div>
 
   <div id="abuse-prevention-configuration" class="collapse{{if $realm.AbusePreventionEnabled}} show{{end}}">
+    <div class="alert alert-primary" role="alert">
+      Your current remaining daily quota is:
+      <small class="text-monospace">{{$quotaRemaining}}/{{$quotaLimit}}</small>.
+      This value is calculated and reset each day at <strong>11:59:59 UTC</strong>.
+    </div>
+
+    {{if gt $quotaRemaining $quotaLimit}}
+      <div class="alert alert-warning" role="alert">
+        Your remaining quota exceeds the maximum quota, meaning a realm
+        administrator added a temporary burst.
+      </div>
+    {{end}}
+
     <div class="form-label-group">
       <input type="text" name="abuse_prevention_limit" id="abuse-prevention-limit" class="form-control" placeholder="Computed limit" value="{{$realm.AbusePreventionLimit}}" readonly />
       <label for="abuse-prevention-limit">Computed limit</label>

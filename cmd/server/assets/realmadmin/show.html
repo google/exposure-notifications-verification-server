@@ -2,6 +2,8 @@
 
 {{$realm := .realm}}
 {{$stats := .stats}}
+{{$names := .names}}
+{{$userStats := .userStats}}
 
 <!doctype html>
 <html lang="en">
@@ -24,9 +26,35 @@
       <div class="card-header">Statistics</div>
       <div class="card-body table-responsive">
         {{if $stats}}
-        <div id="chart" class="mb-3" style="height: 300px;">
+        <div id="realm_chart" class="mb-3" style="height: 300px;" align="center">
           <span>Loading chart...</span>
         </div>
+        {{end}}
+
+        {{if $userStats}}
+        <div id="per_user_chart" class="mb-3" style="height: 300px;" align="center">
+          <span>Loading chart...</span>
+        </div>
+        {{end}}
+      </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Export</div>
+      <div class="card-body">
+        <p class="card-text"> Realm stats
+          (<a href="/realm/stats.csv">CSV</a>/<a href="/realm/stats.json">JSON</a>)
+        </p>
+        <p class="card-text">Realm per-user stats
+          (<a href="/realm/stats.csv?user">CSV</a>/<a href="/realm/stats.json?user">JSON</a>)
+        </p>
+      </div>
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+    <div class="card-header">Data</div>
+      <div class="card-body">
+        {{if $stats}}
         <table class="table table-bordered table-striped">
           <thead>
             <tr>
@@ -36,8 +64,8 @@
             </tr>
           </thead>
           <tbody>
-            {{range $stat := $stats}}
-            <tr>
+            {{range $i, $stat := $stats}}
+            <tr onclick="dateClicked({{$i}}, '{{$stat.Date.Format "2006-01-02"}}')", style="cursor: pointer;">
               <td>{{$stat.Date.Format "2006-01-02"}}</td>
               <td>{{$stat.CodesIssued}}</td>
               <td>{{$stat.CodesClaimed}}</td>
@@ -45,6 +73,9 @@
             {{end}}
           </tbody>
         </table>
+        {{end}}
+
+        {{if or $stats $userStats}}
         <div class="font-italic">
           This data is refreshed every 5 minutes.
         </div>
@@ -53,36 +84,142 @@
         {{end}}
       </div>
     </div>
-
   </main>
 
-  {{template "scripts" .}}
-
-  {{if $stats}}
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
-    google.charts.load('current', {packages: ['line']});
+    google.charts.load('current', {packages: ['corechart']});
     google.charts.setOnLoadCallback(drawChart)
 
     function drawChart() {
-      var data = google.visualization.arrayToDataTable([
-        ['Date', 'Issued', "Claimed"],
+      drawRealmChart();
+      drawUsersChart();
+    }
+
+    // numDays is the length of the realm chart.
+    var numDays = 0;
+
+    // drawRealmChart draws the realm line chart.
+    function drawRealmChart() {
+    {{if $stats}}
+      // Reverse the array, so the dates are in ascending order.
+      var arr = [
         {{range $stat := $stats}}
-        ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}, {{$stat.CodesClaimed}}],
+          ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}, {{$stat.CodesClaimed}}],
         {{end}}
-      ]);
+      ];
+      numDays = arr.length;
+      arr = arr.reverse();
+      arr.unshift(['Date', 'Issued', "Claimed"]);
+
+      var data = google.visualization.arrayToDataTable(arr);
 
       var options = {
         colors: ['#007bff', '#ff7b00'],
         legend: {position: 'bottom'},
         tooltip: {trigger: 'focus'},
+        title: "Codes Claimed",
       };
 
-      var chart = new google.charts.Line(document.getElementById('chart'));
-      chart.draw(data, google.charts.Line.convertOptions(options));
+      var chart = new google.visualization.LineChart(document.getElementById('realm_chart'));
+      chart.draw(data, options);
+    {{end}}
+    }
+
+    // fixDate converts the first element in an array to a Date.
+    // This is just to properly munge types for Google Charts, and the
+    // per-user-per-realm chart.
+    function fixDate(arr) {
+      arr[0] = new Date(arr[0])
+      return arr
+    }
+
+    // lastRow holds the last row the user has clicked.
+    var lastRow = -1;
+
+    // dateClicked selects the rows in the charts.
+    function dateClicked(i, d) {
+      // We reverse all data when charting, so we need to fix the index.
+      i = numDays - i;
+
+      // If the user has selected the row again, clear all selections and exit.
+      if (i == lastRow) {
+        lastRow = -1;
+        drawRealmChart(); // put the line chart back up.
+        highlightRow(-1);
+        return;
+      }
+      lastRow = i;
+
+      // Select the new row.
+      highlightRow(i);
+
+      // Create a pie chart of all users for the selected day.
+      $.getJSON(window.location.pathname+"/"+d, function(resp) {
+        // If we got no data, do nothing.
+        if (jQuery.isEmptyObject(resp)) {
+          return;
+        }
+
+        // Build the pie chart.
+        var arr = [['Name', 'Codes Issued']];
+        for (var i = 0; i < resp.length; i++) {
+          arr.push([resp[i].name+' ('+resp[i].codes_issued+')', resp[i].codes_issued]);
+        }
+        var data = google.visualization.arrayToDataTable(arr);
+        var options = {
+          title: 'Codes Issued On: '+d,
+          pieSliceText: 'label',
+        };
+        var chart = new google.visualization.PieChart(document.getElementById('realm_chart'));
+        chart.draw(data, options);
+      });
+    }
+
+    // holds the per-user-per-realm chart & data created by Google Charts.
+    var userChart, userChartData;
+
+    // highlightRow highlights a given row in the per-user-per-realm chart.
+    // Passing -1 as the row turns off all selections.
+    function highlightRow(index) {
+      if (index == -1) {
+        userChart.setSelection(null);
+        return;
+      }
+      var s = [];
+      for (var i = 0; i < userChartData.getNumberOfColumns(); i++) {
+        s = s.concat({row:index, column:i})
+      }
+      userChart.setSelection(s);
+    }
+
+    function drawUsersChart() {
+    {{if $userStats}}
+      userChartData = new google.visualization.DataTable();
+      arr = [
+      {{range $stat := $userStats}}
+        fixDate({{$stat}}),
+      {{end}}
+      ];
+      arr = arr.reverse();
+
+      userChartData.addColumn('date', 'Day');
+      {{range $name := $names}}
+        userChartData.addColumn('number', '{{$name}}');
+      {{end}}
+      userChartData.addRows(arr);
+
+      var options = {
+        legend: "none",
+        tooltip: {trigger: 'focus'},
+        title: "Codes Per User",
+      };
+
+      userChart = new google.visualization.LineChart(document.getElementById('per_user_chart'));
+      userChart.draw(userChartData, options);
+    {{end}}
     }
   </script>
-  {{end}}
 </body>
 </html>
 {{end}}

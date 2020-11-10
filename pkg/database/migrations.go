@@ -247,7 +247,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					logger.Debugw("adding user to default realm", "user", u.ID)
 
 					u.AddRealm(defaultRealm)
-					if u.Admin {
+					if u.SystemAdmin {
 						u.AddRealmAdmin(defaultRealm)
 					}
 
@@ -1067,9 +1067,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 
 				user = User{
-					Name:  "System admin",
-					Email: "super@example.com",
-					Admin: true,
+					Name:        "System admin",
+					Email:       "super@example.com",
+					SystemAdmin: true,
 				}
 
 				if err := tx.Save(&user).Error; err != nil {
@@ -1417,6 +1417,228 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00057-AddMFARequiredGracePeriod",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email verification required to realm")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_required_grace_period BIGINT DEFAULT 0").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS mfa_required_grace_period").Error
+			},
+		},
+		{
+			ID: "00058-AddAppStoreLink",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE mobile_apps ADD COLUMN IF NOT EXISTS url TEXT").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS url").Error
+			},
+		},
+		{
+			ID: "00059-AddVerCodeIndexes",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`CREATE INDEX IF NOT EXISTS idx_vercode_recent ON verification_codes(realm_id, issuing_user_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`DROP INDEX IF EXISTS idx_vercode_recent`,
+					`DROP INDEX IF EXISTS idx_vercode_uuid`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
+		{
+			ID: "00060-AddEmailConfig",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding email_configs table")
+				return tx.AutoMigrate(&EmailConfig{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable("email_configs").Error
+			},
+		},
+		{
+			ID: "00061-CreateSystemEmailConfig",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					// Add a new is_system boolean column and a constraint to ensure that
+					// only one row can have a value of true.
+					`CREATE UNIQUE INDEX IF NOT EXISTS uix_email_configs_is_system_true ON email_configs (is_system) WHERE (is_system IS TRUE)`,
+
+					// Require realm_id be set on all rows except system configs, and
+					// ensure that realm_id is unique.
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS nn_email_configs_realm_id`,
+					`DROP INDEX IF EXISTS nn_email_configs_realm_id`,
+					`ALTER TABLE email_configs ADD CONSTRAINT nn_email_configs_realm_id CHECK (is_system IS TRUE OR realm_id IS NOT NULL)`,
+
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS uix_email_configs_realm_id`,
+					`DROP INDEX IF EXISTS uix_email_configs_realm_id`,
+					`ALTER TABLE email_configs ADD CONSTRAINT uix_email_configs_realm_id UNIQUE (realm_id)`,
+
+					// Realm option set by system admins to share the system Email config
+					// with the realm.
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS can_use_system_email_config BOOL`,
+					`UPDATE realms SET can_use_system_email_config = FALSE WHERE can_use_system_email_config IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN can_use_system_email_config SET DEFAULT FALSE`,
+					`ALTER TABLE realms ALTER COLUMN can_use_system_email_config SET NOT NULL`,
+
+					// If true, the realm is set to use the system Email config.
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS use_system_email_config BOOL`,
+					`UPDATE realms SET use_system_email_config = FALSE WHERE use_system_email_config IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN use_system_email_config SET DEFAULT FALSE`,
+					`ALTER TABLE realms ALTER COLUMN use_system_email_config SET NOT NULL`,
+
+					// Add templates
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_invite_template text`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_password_reset_template text`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verify_template text`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE email_configs DROP COLUMN IF EXISTS is_system`,
+					`DROP INDEX IF EXISTS uix_email_configs_is_system_true`,
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS nn_email_configs_realm_id`,
+					`ALTER TABLE email_configs DROP CONSTRAINT IF EXISTS uix_email_configs_realm_id`,
+
+					`ALTER TABLE realms DROP COLUMN IF EXISTS can_use_system_email_config`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS use_system_email_config`,
+
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_invite_template`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_password_reset_template`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS email_verify_template`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00062-AddTestDate",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding verification code test date")
+				return tx.AutoMigrate(&VerificationCode{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE verification_codes DROP COLUMN IF EXISTS test_date").Error
+			},
+		},
+		{
+			ID: "00063-AddTokenTestDate",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding token test date")
+				return tx.AutoMigrate(&Token{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE tokens DROP COLUMN IF EXISTS test_date").Error
+			},
+		},
+		{
+			ID: "00064-RescopeVerificationCodeIndices",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("realm enable verification_code index")
+				sqls := []string{
+					"ALTER TABLE verification_codes ALTER COLUMN long_code DROP NOT NULL",
+					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_code ON verification_codes (realm_id,code) WHERE code != ''",
+					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_long_code ON verification_codes (realm_id,long_code) WHERE long_code != ''",
+					"DROP INDEX IF EXISTS uix_verification_codes_code",
+					"DROP INDEX IF EXISTS uix_verification_codes_long_code",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				logger.Debugw("partial verification code cleanup")
+				sqls := []string{
+					"DELETE FROM verification_codes WHERE code = '' or long_code = ''",
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			ID: "00065-RenameUserAdminToSystemAdmin",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`
+					DO $$
+					BEGIN
+						IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'admin')
+						THEN
+							ALTER TABLE users RENAME COLUMN admin TO system_admin;
+						END IF;
+					END $$;
+					`,
+
+					`CREATE INDEX idx_users_system_admin ON users(system_admin)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE users RENAME COLUMN system_admin TO admin`,
+					`DROP INDEX IF EXISTS idx_users_system_admin`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	})
 }
 
@@ -1445,7 +1667,7 @@ func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool)
 
 	if err != nil {
 		logger.Errorw("failed to migrate", "error", err)
-		return nil
+		return err
 	}
 	logger.Debugw("migrations complete")
 	return nil

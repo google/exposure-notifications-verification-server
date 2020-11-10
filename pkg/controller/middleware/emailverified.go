@@ -16,29 +16,28 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 )
 
 // RequireVerified requires a user to have verified their login email.
-// MUST first run RequireAuth to populate user.
-func RequireVerified(ctx context.Context, client *auth.Client, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireVerified")
-
+//
+// MUST first run RequireAuth to populate user and RequireRealm to populate the
+// realm.
+func RequireVerified(authProvider auth.Provider, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+
+			logger := logging.FromContext(ctx).Named("middleware.RequireVerified")
 
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
@@ -46,41 +45,39 @@ func RequireVerified(ctx context.Context, client *auth.Client, db *database.Data
 				controller.MissingSession(w, r, h)
 				return
 			}
-
 			flash := controller.Flash(session)
 
-			user := controller.UserFromContext(ctx)
-			if user == nil {
-				logger.Debugw("no user found when checking email verification")
+			currentUser := controller.UserFromContext(ctx)
+			if currentUser == nil {
+				authProvider.ClearSession(ctx, session)
+
 				flash.Error("Log in first to verify email.")
-				controller.ClearSessionFirebaseCookie(session)
 				controller.MissingUser(w, r, h)
 				return
 			}
 
-			firebaseUser := controller.FirebaseUserFromContext(ctx)
 			realm := controller.RealmFromContext(ctx)
-			if needsEmailVerification(session, realm, firebaseUser) {
-				logger.Debugw("user email not verified")
-				http.Redirect(w, r, "/login/manage-account?mode=verifyEmail", http.StatusSeeOther)
+			if realm == nil {
+				controller.MissingRealm(w, r, h)
 				return
+			}
+
+			// Only try to verify email if the realm requires it.
+			if realm.EmailVerifiedMode == database.MFARequired ||
+				(realm.EmailVerifiedMode == database.MFAOptionalPrompt && !controller.EmailVerificationPromptedFromSession(session)) {
+				verified, err := authProvider.EmailVerified(ctx, session)
+				if err != nil {
+					controller.InternalError(w, r, h, err)
+					return
+				}
+
+				if !verified {
+					http.Redirect(w, r, "/login/manage-account?mode=verifyEmail", http.StatusSeeOther)
+					return
+				}
 			}
 
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-func needsEmailVerification(session *sessions.Session, realm *database.Realm, firebaseUser *auth.UserRecord) bool {
-	if realm == nil || realm.EmailVerifiedMode == database.MFARequired {
-		return !firebaseUser.EmailVerified
-	}
-
-	if realm.EmailVerifiedMode == database.MFAOptionalPrompt &&
-		!controller.EmailVerificationPromptedFromSession(session) &&
-		!firebaseUser.EmailVerified {
-		return true
-	}
-
-	return false
 }

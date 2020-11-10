@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/jinzhu/gorm"
 )
@@ -49,6 +50,7 @@ type Token struct {
 	TokenID     string `gorm:"type:varchar(200); unique_index"`
 	TestType    string `gorm:"type:varchar(20)"`
 	SymptomDate *time.Time
+	TestDate    *time.Time
 	Used        bool `gorm:"default:false"`
 	ExpiresAt   time.Time
 }
@@ -57,14 +59,21 @@ type Token struct {
 type Subject struct {
 	TestType    string
 	SymptomDate *time.Time
+	TestDate    *time.Time
 }
 
 func (s *Subject) String() string {
-	datePortion := ""
+	parts := make([]string, 3)
+
+	parts[0] = s.TestType
 	if s.SymptomDate != nil {
-		datePortion = s.SymptomDate.Format("2006-01-02")
+		parts[1] = s.SymptomDate.Format("2006-01-02")
 	}
-	return s.TestType + "." + datePortion
+	if s.TestDate != nil {
+		parts[2] = s.TestDate.Format("2006-01-02")
+	}
+
+	return strings.Join(parts, ".")
 }
 
 func (s *Subject) SymptomInterval() uint32 {
@@ -76,8 +85,8 @@ func (s *Subject) SymptomInterval() uint32 {
 
 func ParseSubject(sub string) (*Subject, error) {
 	parts := strings.Split(sub, ".")
-	if length := len(parts); length < 1 || length > 2 {
-		return nil, fmt.Errorf("subject must contain 2 parts, got: %v", length)
+	if length := len(parts); length < 2 || length > 3 {
+		return nil, fmt.Errorf("subject must contain 2 or 3 parts, got: %v", length)
 	}
 	var symptomDate *time.Time
 	if parts[1] != "" {
@@ -87,13 +96,24 @@ func ParseSubject(sub string) (*Subject, error) {
 		}
 		symptomDate = &parsedDate
 	}
+
+	var testDate *time.Time
+	if len(parts) == 3 && parts[2] != "" {
+		parsedDate, err := time.Parse("2006-01-02", parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("subject contains invalid test date: %w", err)
+		}
+		testDate = &parsedDate
+	}
+
 	return &Subject{
 		TestType:    parts[0],
 		SymptomDate: symptomDate,
+		TestDate:    testDate,
 	}, nil
 }
 
-// FormatSymptomDate returns YYYY-MM-DD formatted test date, or "" if nil.
+// FormatSymptomDate returns YYYY-MM-DD formatted symptom date, or "" if nil.
 func (t *Token) FormatSymptomDate() string {
 	if t.SymptomDate == nil {
 		return ""
@@ -101,10 +121,19 @@ func (t *Token) FormatSymptomDate() string {
 	return t.SymptomDate.Format("2006-01-02")
 }
 
+// FormatTestDate returns YYYY-MM-DD formatted test date, or "" if nil.
+func (t *Token) FormatTestDate() string {
+	if t.TestDate == nil {
+		return ""
+	}
+	return t.TestDate.Format("2006-01-02")
+}
+
 func (t *Token) Subject() *Subject {
 	return &Subject{
 		TestType:    t.TestType,
 		SymptomDate: t.SymptomDate,
+		TestDate:    t.TestDate,
 	}
 }
 
@@ -123,20 +152,30 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 		}
 
 		if !tok.ExpiresAt.After(time.Now().UTC()) {
+			db.logger.Debugw("tried to claim expired token", "ID", tok.ID)
 			return ErrTokenExpired
 		}
 
 		if tok.Used {
+			db.logger.Debugw("tried to claim used token", "ID", tok.ID)
 			return ErrTokenUsed
 		}
 
 		// The subject is made up of testtype.symptomDate
 		if tok.TestType != subject.TestType {
+			db.logger.Debugw("database testType changed after token issued", "ID", tok.ID)
 			return ErrTokenMetadataMismatch
 		}
 		if (tok.SymptomDate == nil && subject.SymptomDate != nil) ||
 			(tok.SymptomDate != nil && subject.SymptomDate == nil) ||
 			(tok.SymptomDate != nil && !tok.SymptomDate.Equal(*subject.SymptomDate)) {
+			db.logger.Debugw("database symptomDate changed after token issued", "ID", tok.ID)
+			return ErrTokenMetadataMismatch
+		}
+		if (tok.TestDate == nil && subject.TestDate != nil) ||
+			(tok.TestDate != nil && subject.TestDate == nil) ||
+			(tok.TestDate != nil && !tok.TestDate.Equal(*subject.TestDate)) {
+			db.logger.Debugw("database testDate changed after token issued", "ID", tok.ID)
 			return ErrTokenMetadataMismatch
 		}
 
@@ -145,7 +184,7 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 	})
 }
 
-// VerifyCodeAndIssueToken takes a previously issed verification code and exchanges
+// VerifyCodeAndIssueToken takes a previously issued verification code and exchanges
 // it for a long term token. The verification code must not have expired and must
 // not have been previously used. Both acctions are done in a single database
 // transaction.
@@ -176,19 +215,22 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 		}
 
 		// Validation
-		expired, err := db.IsCodeExpired(&vc, verCode)
+		expired, codeType, err := db.IsCodeExpired(&vc, verCode)
 		if err != nil {
-			db.logger.Errorw("failed to check code expiration", "error", err)
+			db.logger.Errorw("failed to check code expiration", "ID", vc.ID, "error", err)
 			return ErrVerificationCodeExpired
 		}
 		if expired {
+			db.logger.Debugw("checked expired code", "ID", vc.ID, "codeType", codeType)
 			return ErrVerificationCodeExpired
 		}
 		if vc.Claimed {
+			db.logger.Debugw("checked expired code already used", "ID", vc.ID, "codeType", codeType)
 			return ErrVerificationCodeUsed
 		}
 
 		if _, ok := acceptTypes[vc.TestType]; !ok {
+			db.logger.Debugw("checked not of accepted testType", "ID", vc.ID)
 			return ErrUnsupportedTestType
 		}
 
@@ -199,7 +241,7 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 		}
 
 		// Update statistics
-		now := time.Now().Truncate(24 * time.Hour)
+		now := timeutils.Midnight(vc.CreatedAt)
 		sql := `
 			INSERT INTO realm_stats(date, realm_id, codes_claimed)
 				VALUES ($1, $2, 1)
@@ -221,6 +263,7 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			TokenID:     tokenID,
 			TestType:    vc.TestType,
 			SymptomDate: vc.SymptomDate,
+			TestDate:    vc.TestDate,
 			Used:        false,
 			ExpiresAt:   time.Now().UTC().Add(expireAfter),
 			RealmID:     realmID,

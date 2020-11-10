@@ -46,7 +46,7 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		user, err := realm.FindUser(c.db, vars["id"])
+		user, err := c.findUser(currentUser, realm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -61,7 +61,7 @@ func (c *Controller) HandleDelete() http.Handler {
 		// themselves from the system admin panel.
 		if user.ID == currentUser.ID {
 			flash.Error("Failed to remove user from realm: cannot remove self")
-			http.Redirect(w, r, "/users", http.StatusSeeOther)
+			http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 			return
 		}
 
@@ -69,7 +69,7 @@ func (c *Controller) HandleDelete() http.Handler {
 
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to remove user from realm: %v", err)
-			http.Redirect(w, r, "/users", http.StatusSeeOther)
+			http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 			return
 		}
 
@@ -83,6 +83,6 @@ func (c *Controller) HandleDelete() http.Handler {
 		}
 
 		flash.Alert("Successfully removed user %v from realm", user.Email)
-		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 	})
 }
