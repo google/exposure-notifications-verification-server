@@ -25,8 +25,9 @@
       <div class="card-header">Events</div>
 
       <div class="card-body">
+        {{if .realm}}<h4><span class="badge badge-secondary">{{.realm.Name}}</span></h4>{{end}}
         <form method="GET" action="/admin/events" id="search-form">
-          {{if .realmid}}<input type="hidden" name="realmid" value="{{.realmid}}">{{end}}
+          {{if .realm}}<input type="hidden" name="realmid" value="{{.realm.ID}}">{{end}}
           <div class="input-group">
             <span class="input-group-prepend">
               <div class="input-group-text bg-transparent">

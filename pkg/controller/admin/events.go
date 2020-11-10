@@ -59,17 +59,25 @@ func (c *Controller) HandleEventsShow() http.Handler {
 			return
 		}
 
-		c.renderEvents(ctx, w, events, paginator, from, to, realmID)
+		var realm *database.Realm
+		if realmID != "" {
+			if realm, err = c.db.FindRealm(realmID); err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+		}
+
+		c.renderEvents(ctx, w, events, paginator, from, to, realm)
 	})
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	events []*database.AuditEntry, paginator *pagination.Paginator, from, to, realmID string) {
+	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["events"] = events
 	m["paginator"] = paginator
 	m[QueryFromSearch] = from
 	m[QueryToSearch] = to
-	m[QueryRealmIDSearch] = realmID
+	m["realm"] = realm
 	c.h.RenderHTML(w, "admin/events/index", m)
 }
