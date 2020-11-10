@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/jinzhu/gorm"
 )
 
 const (
@@ -60,7 +61,12 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		}
 
 		var realm *database.Realm
-		if realmID != "" {
+		if realmID == "0" {
+			realm = &database.Realm{
+				Model: gorm.Model{ID: 0},
+				Name:  "System",
+			}
+		} else if realmID != "" {
 			if realm, err = c.db.FindRealm(realmID); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
