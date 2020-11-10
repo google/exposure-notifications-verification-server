@@ -17,9 +17,6 @@ resource "google_monitoring_dashboard" "verification-server" {
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/verification-server.yaml")))
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
-    google_monitoring_metric_descriptor.api--issue--request_count,
-    google_monitoring_metric_descriptor.api--issue--realm_token_latest,
-    google_monitoring_metric_descriptor.ratelimit--limitware--request_count
   ]
 }
 
@@ -28,8 +25,6 @@ resource "google_monitoring_dashboard" "e2e" {
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/e2e.yaml")))
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
-    google_monitoring_metric_descriptor.api--issue--request_count,
-    google_monitoring_metric_descriptor.api--verify--request_count,
   ]
 }
 
