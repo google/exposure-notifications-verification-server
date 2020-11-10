@@ -29,6 +29,9 @@ const (
 
 	// QueryToSearch is the query key for an ending time.
 	QueryToSearch = "to"
+
+	// QueryRealmIDSearch is the query key to filter by realmID.
+	QueryRealmIDSearch = "realmid"
 )
 
 // HandleEventsShow shows event logs.
@@ -39,7 +42,10 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		var scopes []database.Scope
 		from := r.FormValue(QueryFromSearch)
 		to := r.FormValue(QueryToSearch)
-		scopes = append(scopes, database.WithAuditSearch(from, to))
+		scopes = append(scopes, database.WithAuditTime(from, to))
+
+		realmID := r.FormValue(QueryRealmIDSearch)
+		scopes = append(scopes, database.WithAuditRealmID(realmID))
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
@@ -53,16 +59,17 @@ func (c *Controller) HandleEventsShow() http.Handler {
 			return
 		}
 
-		c.renderEvents(ctx, w, events, paginator, from, to)
+		c.renderEvents(ctx, w, events, paginator, from, to, realmID)
 	})
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string) {
+	events []*database.AuditEntry, paginator *pagination.Paginator, from, to, realmID string) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["events"] = events
 	m["paginator"] = paginator
 	m[QueryFromSearch] = from
 	m[QueryToSearch] = to
+	m[QueryRealmIDSearch] = realmID
 	c.h.RenderHTML(w, "admin/events/index", m)
 }

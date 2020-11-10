@@ -26,6 +26,7 @@
 
       <div class="card-body">
         <form method="GET" action="/admin/events" id="search-form">
+          {{if .realmid}}<input type="hidden" name="realmid" value="{{.realmid}}">{{end}}
           <div class="input-group">
             <span class="input-group-prepend">
               <div class="input-group-text bg-transparent">

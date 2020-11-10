@@ -106,9 +106,9 @@
           {{end}}
 
           <hr>
-          <h6 class="mb-2">Mobile apps</h6>
-          <a href="/admin/mobileapps?q={{$realm.Name}}">View mobile apps &rarr;</a>
-
+          <h6 class="mb-2">View</h6>
+          <a class="cared-link pr-2" href="/admin/events?realmid={{$realm.ID}}">Events &rarr;</a>
+          <a class="cared-link" href="/admin/mobileapps?q={{$realm.Name}}">Mobile apps &rarr;</a>
           <hr>
           <button type="submit" class="btn btn-primary btn-block">Update realm</button>
         </form>
