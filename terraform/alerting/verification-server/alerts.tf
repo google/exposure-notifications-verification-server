@@ -51,7 +51,7 @@ resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
   ]
 
   depends_on = [
-    google_monitoring_metric_descriptor.api--issue--realm_token_latest,
+    null_resource.manual-step-to-enable-workspace,
   ]
 }
 
@@ -143,7 +143,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
   ]
 
   depends_on = [
-    google_monitoring_metric_descriptor.e2e--request_count,
+    null_resource.manual-step-to-enable-workspace,
   ]
 }
 
@@ -277,6 +277,5 @@ EOT
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
-    google_monitoring_metric_descriptor.ratelimit--limitware--request_count,
   ]
 }
