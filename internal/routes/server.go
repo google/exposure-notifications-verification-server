@@ -18,7 +18,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"path/filepath"
+	"testing"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -382,4 +385,39 @@ func Server(
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod()(r))
 	return mux, nil
+}
+
+func AdminRoutes(TODO) *mux.Router {
+	r := mux.NewRouter()
+	r.Use(someMiddleware) // will need to figure out this plumbing
+
+	adminSub := r.PathPrefix("/admin").Subrouter()
+	r.Use(someMiddleware) // will need to figure out this plumbing
+
+	adminController := admin.New(ctx, cfg, cacher, db, authProvider, limiterStore, h) // or maybe take this as a param
+	adminSub.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
+	adminSub.Handle("/realms", adminController.HandleRealmsIndex()).Methods("GET")
+	adminSub.Handle("/realms", adminController.HandleRealmsCreate()).Methods("POST")
+	adminSub.Handle("/realms/new", adminController.HandleRealmsCreate()).Methods("GET")
+	adminSub.Handle("/realms/{id:[0-9]+}/edit", adminController.HandleRealmsUpdate()).Methods("GET")
+	adminSub.Handle("/realms/{realm_id:[0-9]+}/add/{user_id:[0-9]+}", adminController.HandleRealmsAdd()).Methods("PATCH")
+	adminSub.Handle("/realms/{realm_id:[0-9]+}/remove/{user_id:[0-9]+}", adminController.HandleRealmsRemove()).Methods("PATCH")
+	adminSub.Handle("/realms/{id:[0-9]+}/realmadmin", adminController.HandleRealmsSelectAndAdmin()).Methods("GET")
+	adminSub.Handle("/realms/{id:[0-9]+}", adminController.HandleRealmsUpdate()).Methods("PATCH")
+	return adminSub
+}
+
+func TestRoutes(t *testing.T) {
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	req := httptest.NewRequest("PATCH", "/realms/14/add/40")
+	w := httptest.NewRecorder()
+
+	adminRoutes := AdminRoutes(TODO)
+	adminRoutes(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatal("bad")
+	}
 }
