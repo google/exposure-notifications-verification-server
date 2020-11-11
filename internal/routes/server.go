@@ -216,10 +216,8 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		codeStatusController := codestatus.NewServer(ctx, cfg, db, h)
-		sub.Handle("/status", codeStatusController.HandleIndex()).Methods("GET")
-		sub.Handle("/show/{uuid}", codeStatusController.HandleShow()).Methods("GET")
-		sub.Handle("/{uuid}/expire", codeStatusController.HandleExpirePage()).Methods("PATCH")
+		codestatusController := codestatus.NewServer(ctx, cfg, db, h)
+		codestatusRoutes(sub, codestatusController)
 	}
 
 	// mobileapp
@@ -235,14 +233,7 @@ func Server(
 		sub.Use(rateLimit)
 
 		mobileappsController := mobileapps.New(ctx, cfg, cacher, db, h)
-		sub.Handle("", mobileappsController.HandleIndex()).Methods("GET")
-		sub.Handle("", mobileappsController.HandleCreate()).Methods("POST")
-		sub.Handle("/new", mobileappsController.HandleCreate()).Methods("GET")
-		sub.Handle("/{id:[0-9]+}/edit", mobileappsController.HandleUpdate()).Methods("GET")
-		sub.Handle("/{id:[0-9]+}", mobileappsController.HandleShow()).Methods("GET")
-		sub.Handle("/{id:[0-9]+}", mobileappsController.HandleUpdate()).Methods("PATCH")
-		sub.Handle("/{id:[0-9]+}/disable", mobileappsController.HandleDisable()).Methods("PATCH")
-		sub.Handle("/{id:[0-9]+}/enable", mobileappsController.HandleEnable()).Methods("PATCH")
+		mobileappsRoutes(sub, mobileappsController)
 	}
 
 	// apikeys
@@ -258,98 +249,69 @@ func Server(
 		sub.Use(rateLimit)
 
 		apikeyController := apikey.New(ctx, cfg, cacher, db, h)
-		sub.Handle("", apikeyController.HandleIndex()).Methods("GET")
-		sub.Handle("", apikeyController.HandleCreate()).Methods("POST")
-		sub.Handle("/new", apikeyController.HandleCreate()).Methods("GET")
-		sub.Handle("/{id}/edit", apikeyController.HandleUpdate()).Methods("GET")
-		sub.Handle("/{id}", apikeyController.HandleShow()).Methods("GET")
-		sub.Handle("/{id}", apikeyController.HandleUpdate()).Methods("PATCH")
-		sub.Handle("/{id}/disable", apikeyController.HandleDisable()).Methods("PATCH")
-		sub.Handle("/{id}/enable", apikeyController.HandleEnable()).Methods("PATCH")
+		apikeyRoutes(sub, apikeyController)
 	}
 
 	// users
 	{
-		userSub := r.PathPrefix("/realm/users").Subrouter()
-		userSub.Use(requireAuth)
-		userSub.Use(loadCurrentRealm)
-		userSub.Use(requireRealm)
-		userSub.Use(processFirewall)
-		userSub.Use(requireAdmin)
-		userSub.Use(requireVerified)
-		userSub.Use(requireMFA)
-		userSub.Use(rateLimit)
+		sub := r.PathPrefix("/realm/users").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(loadCurrentRealm)
+		sub.Use(requireRealm)
+		sub.Use(processFirewall)
+		sub.Use(requireAdmin)
+		sub.Use(requireVerified)
+		sub.Use(requireMFA)
+		sub.Use(rateLimit)
 
 		userController := user.New(ctx, authProvider, cacher, cfg, db, h)
-		userSub.Handle("", userController.HandleIndex()).Methods("GET")
-		userSub.Handle("", userController.HandleCreate()).Methods("POST")
-		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
-		userSub.Handle("/export.csv", userController.HandleExport()).Methods("GET")
-		userSub.Handle("/import", userController.HandleImport()).Methods("GET")
-		userSub.Handle("/import", userController.HandleImportBatch()).Methods("POST")
-		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")
-		userSub.Handle("/{id}", userController.HandleShow()).Methods("GET")
-		userSub.Handle("/{id}", userController.HandleUpdate()).Methods("PATCH")
-		userSub.Handle("/{id}", userController.HandleDelete()).Methods("DELETE")
-		userSub.Handle("/{id}/reset-password", userController.HandleResetPassword()).Methods("POST")
+		userRoutes(sub, userController)
 	}
 
 	// realms
 	{
-		realmSub := r.PathPrefix("/realm").Subrouter()
-		realmSub.Use(requireAuth)
-		realmSub.Use(loadCurrentRealm)
-		realmSub.Use(requireRealm)
-		realmSub.Use(processFirewall)
-		realmSub.Use(requireAdmin)
-		realmSub.Use(requireVerified)
-		realmSub.Use(requireMFA)
-		realmSub.Use(rateLimit)
+		sub := r.PathPrefix("/realm").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(loadCurrentRealm)
+		sub.Use(requireRealm)
+		sub.Use(processFirewall)
+		sub.Use(requireAdmin)
+		sub.Use(requireVerified)
+		sub.Use(requireMFA)
+		sub.Use(rateLimit)
 
 		realmadminController := realmadmin.New(ctx, cacher, cfg, db, limiterStore, h)
-		realmSub.Handle("/settings", realmadminController.HandleSettings()).Methods("GET", "POST")
-		realmSub.Handle("/settings/enable-express", realmadminController.HandleEnableExpress()).Methods("POST")
-		realmSub.Handle("/settings/disable-express", realmadminController.HandleDisableExpress()).Methods("POST")
-		realmSub.Handle("/stats", realmadminController.HandleShow(realmadmin.HTML)).Methods("GET")
-		realmSub.Handle("/stats.json", realmadminController.HandleShow(realmadmin.JSON)).Methods("GET")
-		realmSub.Handle("/stats.csv", realmadminController.HandleShow(realmadmin.CSV)).Methods("GET")
-		realmSub.Handle("/stats/{date}", realmadminController.HandleStats()).Methods("GET")
-		realmSub.Handle("/events", realmadminController.HandleEvents()).Methods("GET")
+		realmadminRoutes(sub, realmadminController)
 
-		realmKeysController, err := realmkeys.New(ctx, cfg, db, certificateSigner, cacher, h)
+		realmkeysController, err := realmkeys.New(ctx, cfg, db, certificateSigner, cacher, h)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create realmkeys controller: %w", err)
 		}
-		realmSub.Handle("/keys", realmKeysController.HandleIndex()).Methods("GET")
-		realmSub.Handle("/keys/{id}", realmKeysController.HandleDestroy()).Methods("DELETE")
-		realmSub.Handle("/keys/create", realmKeysController.HandleCreateKey()).Methods("POST")
-		realmSub.Handle("/keys/upgrade", realmKeysController.HandleUpgrade()).Methods("POST")
-		realmSub.Handle("/keys/save", realmKeysController.HandleSave()).Methods("POST")
-		realmSub.Handle("/keys/activate", realmKeysController.HandleActivate()).Methods("POST")
+		realmkeysRoutes(sub, realmkeysController)
 	}
 
-	// jwks
+	// JWKs
 	{
-		jwksSub := r.PathPrefix("/jwks").Subrouter()
-		jwksSub.Use(rateLimit)
+		sub := r.PathPrefix("/jwks").Subrouter()
+		sub.Use(rateLimit)
 
 		jwksController, err := jwks.New(ctx, db, cacher, h)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create jwks controller: %w", err)
 		}
-		jwksSub.Handle("/{realm}", jwksController.HandleIndex()).Methods("GET")
+		jwksRoutes(sub, jwksController)
 	}
 
-	// System admin.
+	// System admin
 	{
-		adminSub := r.PathPrefix("/admin").Subrouter()
-		adminSub.Use(requireAuth)
-		adminSub.Use(loadCurrentRealm)
-		adminSub.Use(requireSystemAdmin)
-		adminSub.Use(rateLimit)
+		sub := r.PathPrefix("/admin").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(loadCurrentRealm)
+		sub.Use(requireSystemAdmin)
+		sub.Use(rateLimit)
 
 		adminController := admin.New(ctx, cfg, cacher, db, authProvider, limiterStore, h)
-		systemAdminRoutes(adminSub, adminController)
+		systemAdminRoutes(sub, adminController)
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be
@@ -358,6 +320,78 @@ func Server(
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod()(r))
 	return mux, nil
+}
+
+// codestatusRoutes are the routes for checking code statuses.
+func codestatusRoutes(r *mux.Router, c *codestatus.Controller) {
+	r.Handle("/status", c.HandleIndex()).Methods("GET")
+	r.Handle("/show/{uuid}", c.HandleShow()).Methods("GET")
+	r.Handle("/{uuid}/expire", c.HandleExpirePage()).Methods("PATCH")
+}
+
+// mobileappsRoutes are the Mobile App routes.
+func mobileappsRoutes(r *mux.Router, c *mobileapps.Controller) {
+	r.Handle("", c.HandleIndex()).Methods("GET")
+	r.Handle("", c.HandleCreate()).Methods("POST")
+	r.Handle("/new", c.HandleCreate()).Methods("GET")
+	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods("GET")
+	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
+	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
+	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods("PATCH")
+	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods("PATCH")
+}
+
+// apikeyRoutes are the API key routes.
+func apikeyRoutes(r *mux.Router, c *apikey.Controller) {
+	r.Handle("", c.HandleIndex()).Methods("GET")
+	r.Handle("", c.HandleCreate()).Methods("POST")
+	r.Handle("/new", c.HandleCreate()).Methods("GET")
+	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods("GET")
+	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
+	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
+	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods("PATCH")
+	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods("PATCH")
+}
+
+// userRoutes are the user routes.
+func userRoutes(r *mux.Router, c *user.Controller) {
+	r.Handle("", c.HandleIndex()).Methods("GET")
+	r.Handle("", c.HandleCreate()).Methods("POST")
+	r.Handle("/new", c.HandleCreate()).Methods("GET")
+	r.Handle("/import", c.HandleImport()).Methods("GET")
+	r.Handle("/import", c.HandleImportBatch()).Methods("POST")
+	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods("GET")
+	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
+	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
+	r.Handle("/{id:[0-9]+}", c.HandleDelete()).Methods("DELETE")
+	r.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods("POST")
+}
+
+// realmkeysRoutes are the realm key routes.
+func realmkeysRoutes(r *mux.Router, c *realmkeys.Controller) {
+	r.Handle("/keys", c.HandleIndex()).Methods("GET")
+	r.Handle("/keys/{id:[0-9]+}", c.HandleDestroy()).Methods("DELETE")
+	r.Handle("/keys/create", c.HandleCreateKey()).Methods("POST")
+	r.Handle("/keys/upgrade", c.HandleUpgrade()).Methods("POST")
+	r.Handle("/keys/save", c.HandleSave()).Methods("POST")
+	r.Handle("/keys/activate", c.HandleActivate()).Methods("POST")
+}
+
+// realmadminRoutes are the realm admin routes.
+func realmadminRoutes(r *mux.Router, c *realmadmin.Controller) {
+	r.Handle("/settings", c.HandleSettings()).Methods("GET", "POST")
+	r.Handle("/settings/enable-express", c.HandleEnableExpress()).Methods("POST")
+	r.Handle("/settings/disable-express", c.HandleDisableExpress()).Methods("POST")
+	r.Handle("/stats", c.HandleShow(realmadmin.HTML)).Methods("GET")
+	r.Handle("/stats.json", c.HandleShow(realmadmin.JSON)).Methods("GET")
+	r.Handle("/stats.csv", c.HandleShow(realmadmin.CSV)).Methods("GET")
+	r.Handle("/stats/{date}", c.HandleStats()).Methods("GET")
+	r.Handle("/events", c.HandleEvents()).Methods("GET")
+}
+
+// jwksRoutes are the JWK routes, rooted at /jwks.
+func jwksRoutes(r *mux.Router, c *jwks.Controller) {
+	r.Handle("/{realm_id:[0-9]+}", c.HandleIndex()).Methods("GET")
 }
 
 // systemAdminRoutes are the system routes, rooted at /admin.
