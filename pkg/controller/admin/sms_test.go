@@ -66,7 +66,7 @@ func TestShowAdminSMS(t *testing.T) {
 	}
 	// Create a browser runner.
 	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+	taskCtx, done := context.WithTimeout(browserCtx, 60*time.Second)
 	defer done()
 
 	if err := chromedp.Run(taskCtx,
