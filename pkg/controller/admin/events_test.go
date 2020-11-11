@@ -28,8 +28,6 @@ import (
 )
 
 func TestShowAdminEvents(t *testing.T) {
-	t.Parallel()
-
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
