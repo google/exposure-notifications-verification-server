@@ -77,3 +77,5 @@ require (
 	gopkg.in/gormigrate.v1 v1.6.0
 	honnef.co/go/tools v0.0.1-2020.1.6
 )
+
+replace github.com/google/exposure-notifications-server => github.com/yegle/exposure-notifications-server v0.9.3-0.20201111171355-e6da6f557b19
