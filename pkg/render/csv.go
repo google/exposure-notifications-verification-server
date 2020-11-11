@@ -23,7 +23,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 )
 
-// RenderCSV renders the given email HTML template by name. It attempts to
+// RenderCSV renders the given CSV template by name. It attempts to
 // gracefully handle any rendering errors to avoid partial responses sent to the
 // response by writing to a buffer first, then flushing the buffer to the
 // response.
