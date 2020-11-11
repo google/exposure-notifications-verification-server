@@ -26,8 +26,8 @@ import (
 
 func (c *Controller) HandleExport() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := logging.FromContext(ctx)
 		ctx := r.Context()
+		logger := logging.FromContext(ctx)
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
