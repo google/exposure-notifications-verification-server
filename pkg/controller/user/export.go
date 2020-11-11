@@ -15,6 +15,8 @@
 package user
 
 import (
+	"encoding/csv"
+	"log"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -42,11 +44,18 @@ func (c *Controller) HandleExport() http.Handler {
 			return
 		}
 
-		m := controller.TemplateMapFromContext(ctx)
-		m["users"] = users
-		if err := c.h.RenderCSV(w, "users/export", m); err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
+		w.Header().Add("Content-Disposition", "")
+		w.Header().Add("Content-Type", "text/CSV")
+
+		csvWriter := csv.NewWriter(w)
+
+		for _, user := range users {
+			if err := csvWriter.Write([]string{user.Email, user.Name}); err != nil {
+				log.Fatalln("error writing record to csv:", err)
+				break
+			}
 		}
+
+		csvWriter.Flush()
 	})
 }
