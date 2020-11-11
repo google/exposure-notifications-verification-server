@@ -284,6 +284,7 @@ func Server(
 		userSub.Handle("", userController.HandleIndex()).Methods("GET")
 		userSub.Handle("", userController.HandleCreate()).Methods("POST")
 		userSub.Handle("/new", userController.HandleCreate()).Methods("GET")
+		userSub.Handle("/export.csv", userController.HandleExport()).Methods("GET")
 		userSub.Handle("/import", userController.HandleImport()).Methods("GET")
 		userSub.Handle("/import", userController.HandleImportBatch()).Methods("POST")
 		userSub.Handle("/{id}/edit", userController.HandleUpdate()).Methods("GET")

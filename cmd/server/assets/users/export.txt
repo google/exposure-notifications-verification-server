@@ -1,0 +1,4 @@
+{{- define "users/export" -}}
+{{range .users}}{{.Email}}, {{.Name}}
+{{end -}}
+{{- end -}}
