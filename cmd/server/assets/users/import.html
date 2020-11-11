@@ -144,6 +144,7 @@
         };
 
         let start = async function(e) {
+          let checked = $sendInvites.is(":checked")
           let rows = e.target.result.split("\n");
           let batch = [];
           totalUsersCreated = 0;
@@ -168,7 +169,7 @@
             }
 
             if (batch.length >= batchSize || i == rows.length - 1) {
-              await uploadBatch(batch).catch(err => { });
+              await uploadBatch(batch, checked).catch(err => { });
               if (cancelUpload) {
                 flash.warning("Successfully created " + totalUsersCreated + " new users."
                   + (rows.length - i) + " remaining.");
@@ -193,14 +194,13 @@
       }
     });
 
-    function uploadBatch(data) {
-      let checked = $sendInvites.is(":checked")
+    function uploadBatch(data, sendInvites) {
       return $.ajax({
         type: 'POST',
         url: '/realm/users/import',
         data: JSON.stringify({
           "users": data,
-          "sendInvites": checked,
+          "sendInvites": sendInvites,
        }),
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/json',
