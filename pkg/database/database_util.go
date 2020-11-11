@@ -84,7 +84,7 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 	}
 
 	// Force the database container to stop.
-	if err := container.Expire(120); err != nil {
+	if err := container.Expire(30); err != nil {
 		tb.Fatalf("failed to force-stop container: %v", err)
 	}
 
