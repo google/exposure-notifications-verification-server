@@ -48,14 +48,12 @@ func (c *Controller) HandleExport() http.Handler {
 		w.Header().Add("Content-Type", "text/CSV")
 
 		csvWriter := csv.NewWriter(w)
-
 		for _, user := range users {
 			if err := csvWriter.Write([]string{user.Email, user.Name}); err != nil {
 				log.Fatalln("error writing record to csv:", err)
 				break
 			}
 		}
-
 		csvWriter.Flush()
 	})
 }
