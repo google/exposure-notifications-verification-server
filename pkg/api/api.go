@@ -144,7 +144,8 @@ type CSRFResponse struct {
 // This is called by the Web frontend.
 // API is served at /users/import/userbatch
 type UserBatchRequest struct {
-	Users []BatchUser `json:"users"`
+	Users       []BatchUser `json:"users"`
+	SendInvites bool        `json:"sendInvites"`
 }
 
 // BatchUser represents a single user's email/name.

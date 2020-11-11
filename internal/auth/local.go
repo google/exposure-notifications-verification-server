@@ -106,7 +106,11 @@ func (a *localAuth) ClearSession(ctx context.Context, session *sessions.Session)
 // CreateUser creates a user in the upstream auth system with the given name and
 // email. It returns true if the user was created or false if the user already
 // exists.
-func (a *localAuth) CreateUser(ctx context.Context, name, email, pass string, emailer InviteUserEmailFunc) (bool, error) {
+func (a *localAuth) CreateUser(ctx context.Context, name, email, pass string, sendInvite bool, emailer InviteUserEmailFunc) (bool, error) {
+	if !sendInvite {
+		return true, nil
+	}
+
 	if emailer == nil {
 		return false, fmt.Errorf("emailer is required for local auth")
 	}
