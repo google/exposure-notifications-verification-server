@@ -358,6 +358,7 @@ func userRoutes(r *mux.Router, c *user.Controller) {
 	r.Handle("", c.HandleIndex()).Methods("GET")
 	r.Handle("", c.HandleCreate()).Methods("POST")
 	r.Handle("/new", c.HandleCreate()).Methods("GET")
+	r.Handle("/export.csv", c.HandleExport()).Methods("GET")
 	r.Handle("/import", c.HandleImport()).Methods("GET")
 	r.Handle("/import", c.HandleImportBatch()).Methods("POST")
 	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods("GET")

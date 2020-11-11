@@ -39,8 +39,8 @@
           <code>
           email@example.com, Anne
           another@example.com, Bob
-        </code>
-      </pre>
+          </code>
+        </pre>
         <form id="form">
           <div class="custom-file">
             <input type="file" class="custom-file-input" id="csv" accept=".csv" required>
@@ -56,7 +56,7 @@
           <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
             aria-valuemax="100"></div>
         </div>
-        <table class="table table-bordered d-none" id="csv-table">
+        <table class="table table-bordered" id="csv-table">
           <thead>
             <tr>
               <th>Email</th>
@@ -67,6 +67,17 @@
         </table>
       </div>
     </div>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Import</div>
+      <div class="card-body">
+        <p>
+          Use the following link to export a list of users.
+        </p>
+        <a class="card=link" href="/realm/users/export.csv" target="_blank">export.csv</a>
+      </div>
+    </div>
+
     <a class=" card-link" href="/realm/users">&larr; All users</a>
   </main>
 
@@ -84,6 +95,8 @@
 
       let totalUsersCreated = 0;
       let upload = readFile();
+
+      $table.hide();
 
       if (typeof (FileReader) == "undefined") {
         flash.error("Your browser does not support the required HTML5 file reader.");
