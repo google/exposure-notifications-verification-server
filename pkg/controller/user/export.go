@@ -16,9 +16,9 @@ package user
 
 import (
 	"encoding/csv"
-	"log"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
@@ -26,6 +26,7 @@ import (
 
 func (c *Controller) HandleExport() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := logging.FromContext(ctx)
 		ctx := r.Context()
 
 		realm := controller.RealmFromContext(ctx)
@@ -50,7 +51,7 @@ func (c *Controller) HandleExport() http.Handler {
 		csvWriter := csv.NewWriter(w)
 		for _, user := range users {
 			if err := csvWriter.Write([]string{user.Email, user.Name}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
+				logger.Errorw("error writing record to csv:", "error", err)
 				break
 			}
 		}
