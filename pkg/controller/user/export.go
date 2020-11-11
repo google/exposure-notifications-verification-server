@@ -44,14 +44,9 @@ func (c *Controller) HandleExport() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["users"] = users
-		b, err := c.h.RenderEmail("users/export", m)
-		if err != nil {
+		if err := c.h.RenderCSV(w, "users/export", m); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
-
-		w.Header().Add("Content-Disposition", "")
-		w.Header().Add("Content-Type", "text/CSV")
-		w.Write(b)
 	})
 }
