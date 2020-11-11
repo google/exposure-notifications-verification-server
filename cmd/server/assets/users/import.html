@@ -48,6 +48,11 @@
           </div>
           <button class="btn btn-primary" type="submit" id="import" disabled>Import users</button>
           <button class="btn btn-danger" id="cancel" disabled>Cancel</button>
+
+          <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" name="sendInvites" id="sendInvites" checked>
+            <label class="form-check-label" for="sendInvites">Send invitations</label>
+          </div>
         </form>
       </div>
 
@@ -92,6 +97,7 @@
       let $tableBody = $('#csv-table-body');
       let $progressDiv = $('#progress-div');
       let $progress = $('#progress');
+      let $sendInvites = $('#sendInvites');
 
       let totalUsersCreated = 0;
       let upload = readFile();
@@ -138,6 +144,7 @@
         };
 
         let start = async function(e) {
+          let checked = $sendInvites.is(":checked")
           let rows = e.target.result.split("\n");
           let batch = [];
           totalUsersCreated = 0;
@@ -162,7 +169,7 @@
             }
 
             if (batch.length >= batchSize || i == rows.length - 1) {
-              await uploadBatch(batch).catch(err => { });
+              await uploadBatch(batch, checked).catch(err => { });
               if (cancelUpload) {
                 flash.warning("Successfully created " + totalUsersCreated + " new users."
                   + (rows.length - i) + " remaining.");
@@ -187,11 +194,14 @@
       }
     });
 
-    function uploadBatch(data) {
+    function uploadBatch(data, sendInvites) {
       return $.ajax({
         type: 'POST',
         url: '/realm/users/import',
-        data: JSON.stringify({ "users": data }),
+        data: JSON.stringify({
+          "users": data,
+          "sendInvites": sendInvites,
+       }),
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/json',
         success: function(result) {

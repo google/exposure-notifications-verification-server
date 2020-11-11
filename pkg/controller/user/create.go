@@ -96,7 +96,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		if _, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", inviteComposer); err != nil {
+		if _, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", true, inviteComposer); err != nil {
 			flash.Alert("Failed to create user: %v", err)
 			c.renderNew(ctx, w)
 			return

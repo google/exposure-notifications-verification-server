@@ -96,7 +96,7 @@ func (c *Controller) HandleSystemAdminCreate() http.Handler {
 			return
 		}
 
-		if _, err := c.authProvider.CreateUser(ctx, form.Email, form.Email, "", inviteComposer); err != nil {
+		if _, err := c.authProvider.CreateUser(ctx, form.Email, form.Email, "", true, inviteComposer); err != nil {
 			flash.Alert("Failed to create user: %v", err)
 			c.renderNewUser(ctx, w, user)
 		}

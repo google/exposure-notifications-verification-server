@@ -116,7 +116,7 @@ func (f *firebaseAuth) ClearSession(ctx context.Context, session *sessions.Sessi
 // CreateUser creates a user in the upstream auth system with the given name and
 // email. It returns true if the user was created or false if the user already
 // exists.
-func (f *firebaseAuth) CreateUser(ctx context.Context, name, email, pass string, emailer InviteUserEmailFunc) (bool, error) {
+func (f *firebaseAuth) CreateUser(ctx context.Context, name, email, pass string, sendInvite bool, emailer InviteUserEmailFunc) (bool, error) {
 	// Attempt to get the user by email. If that returns successfully, it means
 	// the user exists.
 	user, err := f.firebaseAuth.GetUserByEmail(ctx, email)
@@ -145,18 +145,20 @@ func (f *firebaseAuth) CreateUser(ctx context.Context, name, email, pass string,
 
 	// Send the welcome email. Use the defined mailer if given, otherwise fallback
 	// to firebase default.
-	if emailer != nil {
-		inviteLink, err := f.passwordResetLink(ctx, email)
-		if err != nil {
-			return true, err
-		}
+	if sendInvite {
+		if emailer != nil {
+			inviteLink, err := f.passwordResetLink(ctx, email)
+			if err != nil {
+				return true, err
+			}
 
-		if err := emailer(ctx, inviteLink); err != nil {
-			return true, fmt.Errorf("failed to send new user invitation email: %w", err)
-		}
-	} else {
-		if err := f.firebaseInternal.SendNewUserInvitation(ctx, email); err != nil {
-			return true, fmt.Errorf("failed to send new user invitation firebase email: %w", err)
+			if err := emailer(ctx, inviteLink); err != nil {
+				return true, fmt.Errorf("failed to send new user invitation email: %w", err)
+			}
+		} else {
+			if err := f.firebaseInternal.SendNewUserInvitation(ctx, email); err != nil {
+				return true, fmt.Errorf("failed to send new user invitation firebase email: %w", err)
+			}
 		}
 	}
 

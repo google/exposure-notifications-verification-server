@@ -86,7 +86,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 			// Create the user in the auth provider. This could be a noop depending on
 			// the auth provider.
-			created, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", inviteComposer)
+			created, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", request.SendInvites, inviteComposer)
 			if err != nil {
 				logger.Errorw("failed to import user", "user", user.Email, "error", err)
 				batchErr = multierror.Append(batchErr, err)
