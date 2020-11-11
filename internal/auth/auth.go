@@ -54,7 +54,7 @@ type Provider interface {
 	CreateUser(ctx context.Context, name, email, pass string, sendInvite bool, composer InviteUserEmailFunc) (bool, error)
 
 	// SendResetPasswordEmail resets the given user's password. If the user does not exist,
-	// the underlying provider determines whether its an error or perhaps upserts
+	// the underlying provider determines whether it's an error or perhaps upserts
 	// the account.
 	SendResetPasswordEmail(ctx context.Context, email string, composer ResetPasswordEmailFunc) error
 
