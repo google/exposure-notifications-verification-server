@@ -88,17 +88,28 @@ func TestAdminUsers(t *testing.T) {
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-users-index`, chromedp.ByQuery),
 
+		// Fill out the form by email.
+		chromedp.SetValue(`input#search`, "testuser", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Wait for the search result.
+		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
+
+		// Fill out the form by name.
+		chromedp.SetValue(`input#search`, "est Use", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Wait for the search result.
+		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
+
 		// Fill out the form.
 		chromedp.SetValue(`input#search`, "testuser", chromedp.ByQuery),
 		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
-		// Wait for render.
-		chromedp.WaitVisible(`body#admin-users-index`, chromedp.ByQuery),
-
-		// Look for the user.
+		// Wait for the search result.
 		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
 
-		// Fill out the form.
+		// Fill out the form with a non-existing user
 		chromedp.SetValue(`input#search`, "notexists", chromedp.ByQuery),
 		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
