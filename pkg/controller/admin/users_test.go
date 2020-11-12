@@ -95,8 +95,9 @@ func TestAdminUsers(t *testing.T) {
 		// Wait for the search result.
 		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
 
-		// Fill out the form by name.
+		// Fill out the form by partial name with system-admin filter.
 		chromedp.SetValue(`input#search`, "est Use", chromedp.ByQuery),
+		chromedp.SetValue(`select#systemAdmins`, "est Use", chromedp.ByQuery),
 		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
 		// Wait for the search result.
