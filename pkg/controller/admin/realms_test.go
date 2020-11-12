@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -68,6 +69,11 @@ func TestShowAdminRealms(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
+	wantName := "Test Realm"
+	wantRegionCode := "us-tst"
+	certIssuer := "test issuer"
+	certAudience := "test audience"
+
 	// This accepts "are you sure" alert that pops up for "leave realm"
 	chromedp.ListenTarget(taskCtx, func(ev interface{}) {
 		if _, ok := ev.(*page.EventJavascriptDialogOpening); ok {
@@ -94,10 +100,10 @@ func TestShowAdminRealms(t *testing.T) {
 		/* ----- Test New Realm -----  */
 		chromedp.Click(`a#new`, chromedp.ByQuery),
 		// Fill out the form.
-		chromedp.SetValue(`input#name`, "Test Realm", chromedp.ByQuery),
-		chromedp.SetValue(`input#regionCode`, "us-tst", chromedp.ByQuery),
-		chromedp.SetValue(`input#certificateIssuer`, "test issuer", chromedp.ByQuery),
-		chromedp.SetValue(`input#certificateAudience`, "test audience", chromedp.ByQuery),
+		chromedp.SetValue(`input#name`, wantName, chromedp.ByQuery),
+		chromedp.SetValue(`input#regionCode`, wantRegionCode, chromedp.ByQuery),
+		chromedp.SetValue(`input#certificateIssuer`, certIssuer, chromedp.ByQuery),
+		chromedp.SetValue(`input#certificateAudience`, certAudience, chromedp.ByQuery),
 		chromedp.Submit(`form#new-form`, chromedp.ByQuery),
 
 		/* ----- Test Search -----  */
@@ -129,5 +135,25 @@ func TestShowAdminRealms(t *testing.T) {
 		chromedp.WaitVisible(`a#join`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
+	}
+
+	// Get the newly created realm
+	newRealm, err := harness.Database.FindRealm(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if newRealm.Name != wantName {
+		t.Errorf("got: %s, want: %s", newRealm.Name, wantName)
+	}
+	wantRegionCode = strings.ToUpper(wantRegionCode) // DB uppercases on save
+	if newRealm.RegionCode != wantRegionCode {
+		t.Errorf("got: %s, want: %s", newRealm.RegionCode, wantRegionCode)
+	}
+	if newRealm.CertificateIssuer != certIssuer {
+		t.Errorf("got: %s, want: %s", newRealm.CertificateIssuer, certIssuer)
+	}
+	if newRealm.CertificateAudience != certAudience {
+		t.Errorf("got: %s, want: %s", newRealm.CertificateAudience, certAudience)
 	}
 }
