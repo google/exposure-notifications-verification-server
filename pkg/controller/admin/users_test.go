@@ -27,7 +27,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestShowAdminUsers(t *testing.T) {
+func TestAdminUsers(t *testing.T) {
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -63,7 +63,7 @@ func TestShowAdminUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Create a browser runner.
-	browserCtx := browser.New(t)
+	browserCtx := browser.New(t) // DO NOT SUBMIT
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
@@ -76,6 +76,34 @@ func TestShowAdminUsers(t *testing.T) {
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-users-index`, chromedp.ByQuery),
+
+		/* ----- Test New System Admin -----  */
+		chromedp.Click(`a#new`, chromedp.ByQuery),
+		// Fill out the form.
+		chromedp.SetValue(`input#name`, "Test User", chromedp.ByQuery),
+		chromedp.SetValue(`input#email`, "testuser@example.com", chromedp.ByQuery),
+		chromedp.Submit(`form#new-form`, chromedp.ByQuery),
+
+		/* ----- Test Search -----  */
+		// Wait for render.
+		chromedp.WaitVisible(`body#admin-users-index`, chromedp.ByQuery),
+
+		// Fill out the form.
+		chromedp.SetValue(`input#search`, "testuser", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Wait for render.
+		chromedp.WaitVisible(`body#admin-users-index`, chromedp.ByQuery),
+
+		// Look for the user.
+		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
+
+		// Fill out the form.
+		chromedp.SetValue(`input#search`, "notexists", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Assert no users shown
+		chromedp.WaitNotPresent(`table#results-table tr`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}
