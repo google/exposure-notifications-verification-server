@@ -15,7 +15,6 @@
 package issueapi
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -25,12 +24,21 @@ func (c *Controller) HandleBulkIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		c.renderBulkIssue(ctx, w)
-	})
-}
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
+			return
+		}
 
-func (c *Controller) renderBulkIssue(ctx context.Context, w http.ResponseWriter) {
-	m := controller.TemplateMapFromContext(ctx)
-	m.Title("Bulk issue codes")
-	c.h.RenderHTML(w, "code/issue/bulk", m)
+		hasSMSConfig, err := realm.HasSMSConfig(c.db)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		m["hasSMSConfig"] = hasSMSConfig
+		m := controller.TemplateMapFromContext(ctx)
+		m.Title("Bulk issue codes")
+		c.h.RenderHTML(w, "code/issue/bulk", m)
+	})
 }

@@ -1,5 +1,7 @@
 {{define "code/issue/bulk"}}
 
+{{$hasSMSConfig := .hasSMSConfig}}
+
 <!doctype html>
 <html lang="en">
 
@@ -17,6 +19,13 @@
       <div class="card-header">Bulk issue</div>
       <div class="card-body">
         {{template "beta-notice" .}}
+
+        {{if not $hasSMSConfig}}
+        <div class="alert alert-danger">
+          <span class="oi oi-danger"></span>
+          No SMS provider is configured for this realm. Bulk issuing codes won't send any codes to users.
+        </div>
+        {{end}}
 
         <p>
           Use this form to bulk issue codes.
