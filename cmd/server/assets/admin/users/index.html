@@ -19,7 +19,7 @@
       <div class="card-header">
         <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
         Users
-        <a href="/admin/users/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New system admin">
+        <a href="/admin/users/new" class="float-right mr-n1 text-secondary" id="new" data-toggle="tooltip" title="New system admin">
           <span class="oi oi-plus small" aria-hidden="true"></span>
         </a>
       </div>
@@ -28,7 +28,7 @@
         <form method="GET" action="/admin/users" id="search-form">
           <div class="input-group">
             <span class="input-group-prepend">
-              <select name="filter" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
+              <select name="filter" id="filter" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
                 <option value="" selected>All users</option>
                 <option value="realmAdmins" {{selectedIf (eq .filter "realmAdmins")}}>Realm admins</option>
                 <option value="systemAdmins" {{selectedIf (eq .filter "systemAdmins")}}>System admins</option>
@@ -47,7 +47,7 @@
       </div>
 
       {{if $users}}
-        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0" id="results-table">
           <thead>
             <tr>
               <th scope="col" width="40"></th>
