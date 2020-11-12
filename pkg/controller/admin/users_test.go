@@ -63,7 +63,7 @@ func TestAdminUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Create a browser runner.
-	browserCtx := browser.New(t) // DO NOT SUBMIT
+	browserCtx := browser.New(t)
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
