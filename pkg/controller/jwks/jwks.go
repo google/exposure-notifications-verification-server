@@ -71,7 +71,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		// read.
 		encoded, err := func() ([]*jwk.JWK, error) {
 			// Grab the URL path components  we need.
-			realmID := mux.Vars(r)["realm"]
+			realmID := mux.Vars(r)["realm_id"]
 
 			// Find the realm, and the key abstractions from the DB.
 			realm, err := c.getRealm(realmID)

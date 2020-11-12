@@ -93,7 +93,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		flash.Alert("Successfully created mobile app '%v'", form.Name)
-		http.Redirect(w, r, fmt.Sprintf("/mobile-apps/%d", app.ID), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/realm/mobile-apps/%d", app.ID), http.StatusSeeOther)
 	})
 }
 

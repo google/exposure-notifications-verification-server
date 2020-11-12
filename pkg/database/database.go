@@ -33,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
@@ -76,14 +77,12 @@ type Database struct {
 
 // Overrides the postgresql driver with
 func init() {
-	const driverName = "ocsql"
 	for _, v := range sql.Drivers() {
-		if v == driverName {
+		if v == enobservability.OCSQLDriverName {
 			return
 		}
 	}
-	ocsql.RegisterAllViews()
-	sql.Register(driverName, ocsql.Wrap(&postgres.Driver{}))
+	sql.Register(enobservability.OCSQLDriverName, ocsql.Wrap(&postgres.Driver{}))
 }
 
 // SupportsPerRealmSigning returns true if the configuration supports

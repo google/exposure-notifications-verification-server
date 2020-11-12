@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey_test
+package admin_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -28,7 +27,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHandleCreate(t *testing.T) {
+func TestShowAdminEmail(t *testing.T) {
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -37,10 +36,11 @@ func TestHandleCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a user
+	// Create a system admin
 	admin := &database.User{
 		Email:       "admin@example.com",
 		Name:        "Admin",
+		SystemAdmin: true,
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
 	}
@@ -67,46 +67,16 @@ func TestHandleCreate(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
-	var apiKey string
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
+		// Visit /admin
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/email`),
 
 		// Wait for render.
-		chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
-
-		// Fill out the form.
-		chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
-		chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
-
-		// Click the submit button.
-		chromedp.Click(`#submit`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
-
-		// Get the API key.
-		chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
+		chromedp.WaitVisible(`body#admin-email-show`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
-	}
-
-	// Ensure API key is valid.
-	record, err := harness.Database.FindAuthorizedAppByAPIKey(apiKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Verify name.
-	if got, want := record.Name, "Example API key"; got != want {
-		t.Errorf("expected %v to be %v", got, want)
-	}
-
-	// Verify API key type.
-	if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
-		t.Errorf("expected %v to be %v", got, want)
 	}
 }

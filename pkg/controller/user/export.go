@@ -12,28 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey
+package user
 
 import (
+	"encoding/csv"
 	"net/http"
-	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/gorilla/mux"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
-func (c *Controller) HandleDisable() http.Handler {
+func (c *Controller) HandleExport() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		vars := mux.Vars(r)
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-		flash := controller.Flash(session)
+		logger := logging.FromContext(ctx)
 
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
@@ -41,31 +35,26 @@ func (c *Controller) HandleDisable() http.Handler {
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
+		pageParams := &pagination.PageParams{
+			Page:  0,
+			Limit: 10000,
 		}
-
-		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
+		users, _, err := realm.ListUsers(c.db, pageParams, []database.Scope{}...)
 		if err != nil {
-			if database.IsNotFound(err) {
-				controller.Unauthorized(w, r, c.h)
-				return
-			}
-
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		now := time.Now().UTC()
-		authApp.DeletedAt = &now
-		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
-			flash.Error("Failed to disable API Key: %v", err)
-			http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
-		}
+		w.Header().Add("Content-Disposition", "")
+		w.Header().Add("Content-Type", "text/CSV")
 
-		flash.Alert("Successfully disabled API key '%v'", authApp.Name)
-		http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
+		csvWriter := csv.NewWriter(w)
+		for _, user := range users {
+			if err := csvWriter.Write([]string{user.Email, user.Name}); err != nil {
+				logger.Errorw("error writing record to csv:", "error", err)
+				break
+			}
+		}
+		csvWriter.Flush()
 	})
 }

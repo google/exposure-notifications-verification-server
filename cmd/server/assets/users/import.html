@@ -1,16 +1,10 @@
 {{define "users/import"}}
 
-{{$csrfField := .csrfField}}
-{{$currentUser := .currentUser}}
-{{$currentRealm := .currentRealm}}
-{{$users := .users}}
-
 <!doctype html>
 <html lang="en">
 
 <head>
   {{template "head" .}}
-  {{template "firebase" .}}
 </head>
 
 <body id="users-import" class="tab-content">
@@ -39,8 +33,8 @@
           <code>
           email@example.com, Anne
           another@example.com, Bob
-        </code>
-      </pre>
+          </code>
+        </pre>
         <form id="form">
           <div class="custom-file">
             <input type="file" class="custom-file-input" id="csv" accept=".csv" required>
@@ -48,6 +42,11 @@
           </div>
           <button class="btn btn-primary" type="submit" id="import" disabled>Import users</button>
           <button class="btn btn-danger" id="cancel" disabled>Cancel</button>
+
+          <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" name="sendInvites" id="sendInvites" checked>
+            <label class="form-check-label" for="sendInvites">Send invitations</label>
+          </div>
         </form>
       </div>
 
@@ -56,7 +55,7 @@
           <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
             aria-valuemax="100"></div>
         </div>
-        <table class="table table-bordered d-none" id="csv-table">
+        <table class="table table-bordered" id="csv-table">
           <thead>
             <tr>
               <th>Email</th>
@@ -67,6 +66,17 @@
         </table>
       </div>
     </div>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Import</div>
+      <div class="card-body">
+        <p>
+          Use the following link to export a list of users.
+        </p>
+        <a class="card=link" href="/realm/users/export.csv" target="_blank">export.csv</a>
+      </div>
+    </div>
+
     <a class=" card-link" href="/realm/users">&larr; All users</a>
   </main>
 
@@ -81,9 +91,12 @@
       let $tableBody = $('#csv-table-body');
       let $progressDiv = $('#progress-div');
       let $progress = $('#progress');
+      let $sendInvites = $('#sendInvites');
 
       let totalUsersCreated = 0;
       let upload = readFile();
+
+      $table.hide();
 
       if (typeof (FileReader) == "undefined") {
         flash.error("Your browser does not support the required HTML5 file reader.");
@@ -125,6 +138,7 @@
         };
 
         let start = async function(e) {
+          let checked = $sendInvites.is(":checked")
           let rows = e.target.result.split("\n");
           let batch = [];
           totalUsersCreated = 0;
@@ -149,7 +163,7 @@
             }
 
             if (batch.length >= batchSize || i == rows.length - 1) {
-              await uploadBatch(batch).catch(err => { });
+              await uploadBatch(batch, checked).catch(err => { });
               if (cancelUpload) {
                 flash.warning("Successfully created " + totalUsersCreated + " new users."
                   + (rows.length - i) + " remaining.");
@@ -174,11 +188,14 @@
       }
     });
 
-    function uploadBatch(data) {
+    function uploadBatch(data, sendInvites) {
       return $.ajax({
         type: 'POST',
         url: '/realm/users/import',
-        data: JSON.stringify({ "users": data }),
+        data: JSON.stringify({
+          "users": data,
+          "sendInvites": sendInvites,
+       }),
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         contentType: 'application/json',
         success: function(result) {

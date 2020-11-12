@@ -60,10 +60,10 @@ func (c *Controller) HandleEnable() http.Handler {
 		authApp.DeletedAt = nil
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			flash.Error("Failed to enable API Key: %v", err)
-			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+			http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
 		}
 
 		flash.Alert("Successfully enabled API key '%v'", authApp.Name)
-		http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
 	})
 }

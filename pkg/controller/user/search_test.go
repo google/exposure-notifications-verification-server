@@ -29,8 +29,6 @@ import (
 )
 
 func TestHandleSearch(t *testing.T) {
-	t.Parallel()
-
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -84,7 +82,7 @@ func TestHandleSearch(t *testing.T) {
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
+		// Visit /realm/users.
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/users`),
 
 		// Wait for render.

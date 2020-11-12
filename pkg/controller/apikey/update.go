@@ -104,5 +104,5 @@ func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, auth
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Edit API key: %s", authApp.Name)
 	m["authApp"] = authApp
-	c.h.RenderHTML(w, "apikeys/edit", m)
+	c.h.RenderHTML(w, "/realm/apikeys/edit", m)
 }

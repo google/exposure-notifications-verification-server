@@ -50,3 +50,21 @@ EOT
     "host" = "REGEXP_EXTRACT(httpRequest.requestUrl, \"^https?://([a-z0-9\\\\-._~%]+|\\\\[[a-z0-9\\\\-._~%!$&'()*+,;=:]+\\\\])/.*$\")"
   }
 }
+
+resource "google_logging_metric" "stackdriver_export_error_count" {
+  project     = var.verification-server-project
+  name        = "stackdriver_export_error_count"
+  description = "Error occurred trying to export metrics to stackdriver"
+
+  filter = <<-EOT
+  resource.type="cloud_run_revision"
+  jsonPayload.logger="stackdriver"
+  jsonPayload.message="failed to export metric"
+  EOT
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    unit        = "1"
+    value_type  = "INT64"
+  }
+}

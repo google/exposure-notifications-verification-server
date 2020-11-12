@@ -17,7 +17,7 @@
 
     <h1>{{$app.Name}}</h1>
     <p class="float-right">
-      <a href="/mobile-apps/{{$app.ID}}/edit">Edit</a>
+      <a href="/realm/mobile-apps/{{$app.ID}}/edit">Edit</a>
     </p>
     <p>
       Here is information about the mobile app.
@@ -31,7 +31,7 @@
           <dd>{{$app.Name}}</dd>
 
           <dt>AppStore link</dt>
-          <dd><a href="{{$app.URL}}" target="_blank">{{$app.URL}}</a></dd>
+          <dd><a href="{{$app.URL}}" rel="noreferrer" target="_blank">{{$app.URL}}</a></dd>
 
           <dt>OS</dt>
           <dd>
@@ -58,7 +58,7 @@
       </div>
     </div>
 
-    <a href="/mobile-apps">&larr; Back to all mobile apps</a>
+    <a href="/realm/mobile-apps">&larr; Back to all mobile apps</a>
   </main>
 </body>
 
