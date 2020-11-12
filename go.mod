@@ -27,7 +27,7 @@ require (
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.16.0
+	github.com/google/exposure-notifications-server v0.16.1-0.20201111200932-19462a0c6eeb
 	github.com/google/go-cmp v0.5.2
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/csrf v1.7.0
@@ -77,5 +77,3 @@ require (
 	gopkg.in/gormigrate.v1 v1.6.0
 	honnef.co/go/tools v0.0.1-2020.1.6
 )
-
-replace github.com/google/exposure-notifications-server => github.com/yegle/exposure-notifications-server v0.9.3-0.20201111171355-e6da6f557b19
