@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mobileapps_test
+package admin_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -28,7 +27,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHandleCreate(t *testing.T) {
+func TestShowAdminRealms(t *testing.T) {
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -37,10 +36,11 @@ func TestHandleCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a user
+	// Create a system admin
 	admin := &database.User{
 		Email:       "admin@example.com",
 		Name:        "Admin",
+		SystemAdmin: true,
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
 	}
@@ -71,23 +71,11 @@ func TestHandleCreate(t *testing.T) {
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/mobile-apps/new`),
+		// Visit /admin
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/realms`),
 
 		// Wait for render.
-		chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),
-
-		// Fill out the form.
-		chromedp.SetValue(`input#name`, "Example mobile app", chromedp.ByQuery),
-		chromedp.SetValue(`input#url`, "https://example.com", chromedp.ByQuery),
-		chromedp.SetValue(`select#os`, strconv.Itoa(int(database.OSTypeIOS)), chromedp.ByQuery),
-		chromedp.SetValue(`input#app-id`, "com.example.app", chromedp.ByQuery),
-
-		// Click the submit button.
-		chromedp.Click(`#submit`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`body#mobileapps-show`, chromedp.ByQuery),
+		chromedp.WaitVisible(`body#admin-realms-index`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}

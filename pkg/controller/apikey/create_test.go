@@ -29,8 +29,6 @@ import (
 )
 
 func TestHandleCreate(t *testing.T) {
-	t.Parallel()
-
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
