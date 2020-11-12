@@ -36,8 +36,8 @@ func (c *Controller) HandleBulkIssue() http.Handler {
 			return
 		}
 
-		m["hasSMSConfig"] = hasSMSConfig
 		m := controller.TemplateMapFromContext(ctx)
+		m["hasSMSConfig"] = hasSMSConfig
 		m.Title("Bulk issue codes")
 		c.h.RenderHTML(w, "code/issue/bulk", m)
 	})
