@@ -62,11 +62,11 @@ func (c *Controller) HandleDisable() http.Handler {
 		app.DeletedAt = &now
 		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
 			flash.Error("Failed to disable mobile app: %v", err)
-			http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
+			http.Redirect(w, r, "/realm/mobile-apps", http.StatusSeeOther)
 			return
 		}
 
 		flash.Alert("Successfully disabled mobile app '%v'", app.Name)
-		http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/mobile-apps", http.StatusSeeOther)
 	})
 }

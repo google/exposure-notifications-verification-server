@@ -72,7 +72,7 @@ func TestShowAdminMobileApps(t *testing.T) {
 		browser.SetCookie(cookie),
 
 		// Visit /admin
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/mobileapps`),
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/mobile-apps`),
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-mobileapps-index`, chromedp.ByQuery),

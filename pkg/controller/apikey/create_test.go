@@ -73,7 +73,7 @@ func TestHandleCreate(t *testing.T) {
 		browser.SetCookie(cookie),
 
 		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/apikeys/new`),
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),

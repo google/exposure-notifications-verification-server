@@ -89,7 +89,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		session.Values["apiKey"] = apiKey
 
 		flash.Alert("Successfully created API Key for %v", form.Name)
-		http.Redirect(w, r, fmt.Sprintf("/apikeys/%d", authApp.ID), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/realm/apikeys/%d", authApp.ID), http.StatusSeeOther)
 	})
 }
 
