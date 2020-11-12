@@ -22,7 +22,7 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <form method="POST" action="/mobile-apps/{{$app.ID}}" class="floating-form">
+        <form method="POST" action="/realm/mobile-apps/{{$app.ID}}" class="floating-form">
           <input type="hidden" name="_method" value="PATCH">
           {{ .csrfField }}
 
@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <a href="/mobile-apps">&larr; Back to all mobile apps</a>
+    <a href="/realm/mobile-apps">&larr; Back to all mobile apps</a>
   </main>
 </body>
 </html>

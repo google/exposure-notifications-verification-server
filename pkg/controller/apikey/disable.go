@@ -62,10 +62,10 @@ func (c *Controller) HandleDisable() http.Handler {
 		authApp.DeletedAt = &now
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			flash.Error("Failed to disable API Key: %v", err)
-			http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+			http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
 		}
 
 		flash.Alert("Successfully disabled API key '%v'", authApp.Name)
-		http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
 	})
 }

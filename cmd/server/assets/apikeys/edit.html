@@ -22,7 +22,7 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
-        <form method="POST" action="/apikeys/{{$authApp.ID}}">
+        <form method="POST" action="/realm/apikeys/{{$authApp.ID}}">
           <input type="hidden" name="_method" value="PATCH">
           {{ .csrfField }}
 
@@ -57,7 +57,7 @@
 
     <div>
       <p>
-        <a href="/apikeys">&larr; Back to all API keys</a>
+        <a href="/realm/apikeys">&larr; Back to all API keys</a>
       </p>
     </div>
   </main>

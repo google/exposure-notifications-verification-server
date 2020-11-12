@@ -18,13 +18,13 @@
       <div class="card-header">
         <span class="oi oi-key mr-2 ml-n1" aria-hidden="true"></span>
         API keys
-        <a href="/apikeys/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New API key">
+        <a href="/realm/apikeys/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New API key">
           <span class="oi oi-plus small" aria-hidden="true"></span>
         </a>
       </div>
 
       <div class="card-body">
-        <form method="GET" action="/apikeys" id="search-form">
+        <form method="GET" action="/realm/apikeys" id="search-form">
           <div class="input-group">
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
@@ -62,7 +62,7 @@
                 {{end}}
               </td>
               <td class="text-truncate">
-                <a href="/apikeys/{{.ID}}">{{.Name}}</a>
+                <a href="/realm/apikeys/{{.ID}}">{{.Name}}</a>
               </td>
               <td class="text-center text-monospace">
                 {{.APIKeyPreview}}
@@ -73,7 +73,7 @@
               </td>
               <td class="text-center">
                 {{if .DeletedAt}}
-                <a href="/apikeys/{{.ID}}/enable" class="d-block text-danger"
+                <a href="/realm/apikeys/{{.ID}}/enable" class="d-block text-danger"
                   data-method="patch"
                   data-confirm="Are you sure you want to restore '{{.Name}}'?"
                   data-toggle="tooltip"
@@ -81,7 +81,7 @@
                   <span class="oi oi-loop-circular" aria-hidden="true"></span>
                 </a>
                 {{else}}
-                <a href="/apikeys/{{.ID}}/disable" class="d-block text-danger"
+                <a href="/realm/apikeys/{{.ID}}/disable" class="d-block text-danger"
                   data-method="patch"
                   data-confirm="Are you sure you want to disable '{{.Name}}'?"
                   data-toggle="tooltip"

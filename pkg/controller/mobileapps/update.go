@@ -103,7 +103,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		flash.Alert("Successfully updated mobile app!")
-		http.Redirect(w, r, "/mobile-apps", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/mobile-apps", http.StatusSeeOther)
 	})
 }
 

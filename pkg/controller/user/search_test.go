@@ -82,7 +82,7 @@ func TestHandleSearch(t *testing.T) {
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
+		// Visit /realm/users.
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/users`),
 
 		// Wait for render.
