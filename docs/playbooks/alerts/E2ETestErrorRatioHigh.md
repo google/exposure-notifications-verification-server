@@ -2,7 +2,7 @@
 
 The e2e test is failing.
 
-Use the folowing MQL query to figure out the step at which the e2e test
+Use the following MQL query to figure out the step at which the e2e test
 fail, then check the e2e-runner service log as well as the source code
 (pkg/clients/e2e.go):
 
