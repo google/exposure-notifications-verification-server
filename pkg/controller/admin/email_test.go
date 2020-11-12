@@ -67,6 +67,11 @@ func TestShowAdminEmail(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
+	wantSMTPAccount := "test=smtp-account"
+	wantSMTPPassword := "test-password"
+	wantSMTPHost := "smtp.test.example.com"
+	wantSMTPPort := "587"
+
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
@@ -78,10 +83,10 @@ func TestShowAdminEmail(t *testing.T) {
 		chromedp.WaitVisible(`body#admin-email-show`, chromedp.ByQuery),
 
 		// Set fields and submit
-		chromedp.SetValue(`input#smtp-account`, `test-smtp-account`, chromedp.ByQuery),
-		chromedp.SetValue(`input#smtp-password`, `test-password`, chromedp.ByQuery),
-		chromedp.SetValue(`input#smtp-host`, `smtp.test.example.com`, chromedp.ByQuery),
-		chromedp.SetValue(`input#smtp-port`, `587`, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-account`, wantSMTPAccount, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-password`, wantSMTPPassword, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-host`, wantSMTPHost, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-port`, wantSMTPPort, chromedp.ByQuery),
 		chromedp.Submit(`form#email-form`, chromedp.ByQuery),
 
 		// Wait for render.
@@ -95,16 +100,16 @@ func TestShowAdminEmail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if systemEmailConfig.SMTPAccount != "test-smtp-account" {
-		t.Errorf("got: %s, want: test-smtp-account", systemEmailConfig.SMTPAccount)
+	if systemEmailConfig.SMTPAccount != wantSMTPAccount {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPAccount, wantSMTPAccount)
 	}
-	if systemEmailConfig.SMTPPassword != "test-password" {
-		t.Errorf("got: %s, want: test-smtp-account", systemEmailConfig.SMTPPassword)
+	if systemEmailConfig.SMTPPassword != wantSMTPPassword {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPPassword, wantSMTPPassword)
 	}
-	if systemEmailConfig.SMTPHost != "smtp.test.example.com" {
-		t.Errorf("got: %s, want: smtp.test.example.com", systemEmailConfig.SMTPHost)
+	if systemEmailConfig.SMTPHost != wantSMTPHost {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPHost, wantSMTPHost)
 	}
-	if systemEmailConfig.SMTPPort != "587" {
-		t.Errorf("got: %s, want: test-smtp-account", systemEmailConfig.SMTPPort)
+	if systemEmailConfig.SMTPPort != wantSMTPPort {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPPort, wantSMTPPort)
 	}
 }
