@@ -40,6 +40,9 @@ function incremental() {
 
   ${ROOT}/scripts/ci-terraform.sh init
 
+  # Running "${ROOT}/scripts/deploy" would fail when a service doesn't not exist,
+  # e.g. a new cloud run service introduced, due to `--no-traffic` not allowed for
+  # newly created service. So let terraform create the service first.
   pushd "${ROOT}/terraform-e2e-ci" >/dev/null 2>&1
   terraform taint module.en.null_resource.build
   terraform taint module.en.null_resource.migrate
@@ -59,6 +62,10 @@ function incremental() {
   export_terraform_output adminapi_urls[0] E2E_ADMINAPI_URL
   export E2E_DB_PASSWORD="secret://${E2E_DB_PASSWORD}"
   export E2E_DB_SSLMODE=disable
+
+  ${ROOT}/scripts/build
+  ${ROOT}/scripts/deploy
+  ${ROOT}/scripts/promote
 
   run_e2e_test
 }
