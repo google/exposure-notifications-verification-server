@@ -50,12 +50,17 @@
             <label for="retry-code">Retry code</label>
           </div>
           <small class="form-text text-muted pb-4">
-            Select a memorable string or store the one provided before navigating away from this page.
-            <br><br>
             The retry code is a password for this bulk upload status.
             If you attempt this upload again with the same retry code, the server will be
             able to retry re-issue codes for phones which have not been successfully notified.
             You may use the same retry code for all of your uploads, but guard it like a password.
+          </small>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="remember-code" checked>
+            <label class="form-check-label text-secondary" for="remember-code">Remember code</label>
+          </div>
+          <small class="form-text text-muted pb-4">
+            Your browser will remember this retry code.
           </small>
 
           <div class="custom-file">
@@ -97,8 +102,13 @@
       let $progressDiv = $('#progress-div');
       let $progress = $('#progress');
       let $retryCode = $('#retry-code')
+      let $rememberCode = $('#remember-code')
 
-      $retryCode.val(Math.random().toString(36).substr(2, 8));
+      let randomString = getCookie("retryCode");
+      if (randomString == "") {
+        randomString = Math.random().toString(36).substr(2, 8) + Math.random().toString(36).substr(2, 8);
+      }
+      $retryCode.val(randomString);
 
       let totalCreated = 0;
       let upload = readFile();
@@ -130,6 +140,10 @@
         $table.show(100);
         $progressDiv.removeClass('d-none');
 
+        if ($rememberCode.is(':checked')) {
+          setCookie("retryCode",$retryCode.val(),14)
+        }
+
         var reader = new FileReader();
         reader.onload = upload.start;
         reader.readAsText($csv[0].files[0]);
@@ -138,6 +152,7 @@
       const batchSize = 1;
 
       function readFile() {
+        let retryCode = $retryCode.val();
         // State for managing cleanup and canceling
         let cancelUpload = false;
         let cancel = () => {
@@ -147,7 +162,6 @@
         let start = async function(e) {
           let rows = e.target.result.split("\n");
           let batch = [];
-          let retryCode = retryCode.val()
           totalUsersCreated = 0;
           $tableBody.empty();
           let i = 0;
@@ -162,7 +176,7 @@
               let cols = rows[i].split(",");
               request["phone"] = cols[0].trim();
               request["symptomDate"] = (cols.length > 1) ? cols[1].trim() : "";
-              let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode).substr(0,36))
+              let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36)
               request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
 
               let row = "<tr><td>" + request["phone"] + "</td><td>" + request["symptomDate"] + "</td></tr>";
@@ -215,6 +229,28 @@
           flash.error(e, "danger");
         },
       });
+    }
+
+    function setCookie(cname, cvalue, exdays) {
+      var d = new Date();
+      d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+      var expires = "expires="+d.toUTCString();
+      document.cookie = cname + "=" + cvalue + ";" + expires;
+    }
+
+    function getCookie(cname) {
+      var name = cname + "=";
+      var ca = document.cookie.split(';');
+      for(var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+          c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+        }
+      }
+      return "";
     }
   </script>
 </body>
