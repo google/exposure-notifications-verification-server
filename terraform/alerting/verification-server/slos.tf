@@ -28,18 +28,18 @@ resource "google_monitoring_slo" "availability-slo" {
   # the SLI
   request_based_sli {
     good_total_ratio {
-      good_service_filter = join(" AND ", [
-        "metric.type=\"loadbalancing.googleapis.com/https/request_count\"",
-        "resource.type=\"https_lb_rule\"",
-        "resource.label.\"backend_name\"=\"apiserver\"",
-        "metric.label.\"response_code_class\"=\"200\""
-      ])
-      bad_service_filter = join(" AND ", [
-        "metric.type=\"loadbalancing.googleapis.com/https/request_count\"",
-        "resource.type=\"https_lb_rule\"",
-        "resource.label.\"backend_name\"=\"apiserver\"",
-        "metric.label.\"response_code_class\"=\"500\""
-      ])
+      good_service_filter =<<-EOT
+        metric.type="loadbalancing.googleapis.com/https/request_count"
+        resource.type="https_lb_rule"
+        resource.label.backend_name="apiserver"
+        metric.label.response_code_class=200
+      EOT
+      bad_service_filter = <<-EOT
+        metric.type="loadbalancing.googleapis.com/https/request_count"
+        resource.type="https_lb_rule"
+        resource.label.backend_name="apiserver"
+        metric.label.response_code_class=500
+      EOT
     }
   }
 
