@@ -171,7 +171,8 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   "testType": "<valid test type>",
   "tzOffset": 0,
   "phone": "+CC Phone number",
-  "padding": "<bytes>"
+  "padding": "<bytes>",
+  "uuid": "string UUID",
 }
 ```
 
@@ -189,6 +190,8 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   body to a network observer. The client should generate and insert a random
   number of base64-encoded bytes into this field. The server does not process
   the padding.
+* `uuid` is optional as request input. The server will generate a uuid on response if omitted.
+  * This is a handle which allows the issuer to track status of the issued verification code.
 
 **IssueCodeResponse**
 
@@ -308,7 +311,7 @@ curl https://example.encv.org/api/endpoint \
 
 The client should still send a real request with a real request body (the body
 will not be processed). The server will respond with a fake response that your
-client **MUST NOT** process or parse. The response will not be a valid JSON 
+client **MUST NOT** process or parse. The response will not be a valid JSON
 object.
 
 Client's should sporadically issue chaff requests to mirror real-world usage.
