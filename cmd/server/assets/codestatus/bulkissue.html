@@ -26,7 +26,7 @@
 
         {{if not $hasSMSConfig}}
         <div class="alert alert-danger">
-          <span class="oi oi-danger"></span>
+          <span class="oi oi-warning"></span>
           No SMS provider is configured for this realm. Bulk issuing codes won't send any codes to users.
         </div>
         {{end}}
@@ -67,7 +67,7 @@
           </small>
 
           <div class="custom-file">
-            <input type="file" class="custom-file-input" id="csv" accept=".csv" required>
+            <input type="file" class="custom-file-input" id="csv" accept=".csv" disabled required>
             <label class="custom-file-label" for="csv" id="file-label">Select a CSV file</label>
           </div>
           <button class="btn btn-primary" type="submit" id="import" disabled>Issue codes</button>
@@ -121,11 +121,13 @@
 
       $table.hide();
 
+      {{if $hasSMSConfig}}
       if (typeof (FileReader) == "undefined") {
         flash.error("Your browser does not support the required HTML5 file reader.");
       } else {
         $csv.prop('disabled', false);
       }
+      {{end}}
 
       $csv.change(function(file) {
         let fileName = file.target.files[0].name;
