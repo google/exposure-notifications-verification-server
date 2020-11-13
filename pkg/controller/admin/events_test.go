@@ -28,7 +28,7 @@ import (
 )
 
 // This goes to the value of a <input type="datetime-local">
-const RFC3339_PARTIAL_LOCAL = "2006-01-02T15:04:05"
+const RFC3339PartialLocal = "2006-01-02T15:04:05"
 
 func TestShowAdminEvents(t *testing.T) {
 	harness := envstest.NewServer(t)
@@ -96,16 +96,16 @@ func TestShowAdminEvents(t *testing.T) {
 		chromedp.WaitVisible(`body#admin-events-index`, chromedp.ByQuery),
 
 		// Search from and hour before to and hour after our event
-		chromedp.SetValue(`#from`, eventTime.Add(-time.Hour).Format(RFC3339_PARTIAL_LOCAL), chromedp.ByQuery),
-		chromedp.SetValue(`#to`, eventTime.Add(time.Hour).Format(RFC3339_PARTIAL_LOCAL), chromedp.ByQuery),
+		chromedp.SetValue(`#from`, eventTime.Add(-time.Hour).Format(RFC3339PartialLocal), chromedp.ByQuery),
+		chromedp.SetValue(`#to`, eventTime.Add(time.Hour).Format(RFC3339PartialLocal), chromedp.ByQuery),
 		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
 		// Wait for the search result.
 		chromedp.WaitVisible(`#results #event`, chromedp.ByQuery),
 
 		// Search an hour before the event.
-		chromedp.SetValue(`#from`, eventTime.Add(-2*time.Hour).Format(RFC3339_PARTIAL_LOCAL), chromedp.ByQuery),
-		chromedp.SetValue(`#to`, eventTime.Add(-time.Hour).Format(RFC3339_PARTIAL_LOCAL), chromedp.ByQuery),
+		chromedp.SetValue(`#from`, eventTime.Add(-2*time.Hour).Format(RFC3339PartialLocal), chromedp.ByQuery),
+		chromedp.SetValue(`#to`, eventTime.Add(-time.Hour).Format(RFC3339PartialLocal), chromedp.ByQuery),
 		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
 		// Assert no event found
