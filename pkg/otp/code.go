@@ -138,8 +138,11 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, s
 			UUID:          o.UUID,
 		}
 		// If a verification code already exists, it will fail to save, and we retry.
-		if err := o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {
+		if err = o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {
 			logger.Warnf("duplicate OTP found: %v", err)
+			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
+				break // not retryable
+			}
 			continue
 		} else {
 			break // successful save, nil error, break out.
