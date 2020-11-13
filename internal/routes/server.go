@@ -200,13 +200,8 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		codestatusController := codestatus.NewServer(ctx, cfg, db, h)
-		codestatusRoutes(sub, codestatusController)
-
 		homeController := home.New(ctx, cfg, db, h)
 		sub.Handle("", homeController.HandleHome()).Methods("GET")
-		sub.Handle("/issue", homeController.HandleHome()).Methods("GET")
-
 
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
