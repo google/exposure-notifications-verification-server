@@ -190,7 +190,7 @@ func Server(
 
 	// TODO: this is a legacy path which is now duplicated on /code
 	// This will be removed in a future release.
-	{		{
+	{
 		sub := r.PathPrefix("/home").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
