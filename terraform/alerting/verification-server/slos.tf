@@ -23,6 +23,7 @@ resource "google_monitoring_slo" "availability-slo" {
   service = google_monitoring_custom_service.verification-server.service_id
   slo_id = "availability-slo"
   display_name = "99.9% of requests are successful over rolling 28 days"
+  project = var.monitoring-host-project
 
   # the SLI
   request_based_sli {
@@ -38,6 +39,7 @@ resource "google_monitoring_slo" "availability-slo" {
         "resource.type=\"https_lb_rule\"",
         "resource.label.\"backend_name\"=\"apiserver\"",
         "metric.label.\"response_code_class\"=\"500\""
+      ])
     }
   }
 
