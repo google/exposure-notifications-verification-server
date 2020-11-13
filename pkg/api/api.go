@@ -175,6 +175,10 @@ type IssueCodeRequest struct {
 	// (using the default of 0) are all valid. 0 is considered to be UTC.
 	TZOffset float32 `json:"tzOffset"`
 	Phone    string  `json:"phone"`
+
+	// Optional: UUID is a handle which allows the issuer to track status
+	// of the issued verification code. If omitted the server will generate the UUID.
+	UUID string `json:"uuid"`
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.

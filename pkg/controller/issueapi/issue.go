@@ -290,6 +290,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			IssuingUser:    user,
 			IssuingApp:     authApp,
 			RealmID:        realm.ID,
+			UUID:           request.UUID,
 		}
 
 		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
