@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# resource "google_monitoring_dashboard" "verification-server" {
-#   project        = var.monitoring-host-project
-#   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/verification-server.yaml")))
-#   depends_on = [
-#     null_resource.manual-step-to-enable-workspace,
-#   ]
-# }
+resource "google_monitoring_dashboard" "verification-server" {
+  project        = var.monitoring-host-project
+  dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/verification-server.yaml")))
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
 
-# resource "google_monitoring_dashboard" "e2e" {
-#   project        = var.monitoring-host-project
-#   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/e2e.yaml")))
-#   depends_on = [
-#     null_resource.manual-step-to-enable-workspace,
-#   ]
-# }
+resource "google_monitoring_dashboard" "e2e" {
+  project        = var.monitoring-host-project
+  dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/e2e.yaml")))
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
 
 resource "google_logging_metric" "requests_by_host" {
   name    = "requests_by_host"
