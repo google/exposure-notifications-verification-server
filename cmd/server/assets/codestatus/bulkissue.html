@@ -228,7 +228,7 @@
     function uploadBatch(data) {
       return $.ajax({
         type: 'POST',
-        url: '/home/issue',
+        url: '/code/issue',
         // TODO: at the moment we only support one-at-a-time
         data: JSON.stringify(data[0]),
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
