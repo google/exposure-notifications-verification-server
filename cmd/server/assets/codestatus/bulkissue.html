@@ -59,7 +59,7 @@
             You may use the same retry code for all of your uploads, but guard it like a password.
           </small>
           <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="remember-code" checked>
+            <input type="checkbox" class="form-check-input" id="remember-code">
             <label class="form-check-label text-secondary" for="remember-code">Remember code</label>
           </div>
           <small class="form-text text-muted pb-4">
@@ -111,6 +111,8 @@
       let randomString = getCookie("retryCode");
       if (randomString == "") {
         randomString = genCode();
+      } else {
+        $rememberCode.prop("checked", true);
       }
       $retryCode.val(randomString);
 
