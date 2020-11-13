@@ -62,6 +62,8 @@ const (
 	ErrTokenExpired = "token_expired"
 	// ErrHMACInvalid indicates that the HMAC that is being signed is invalid (wrong length)
 	ErrHMACInvalid = "hmac_invalid"
+	// ErrUUIDAlreadyExists indicates that the UUID has already been used for an issued code.
+	ErrUUIDAlreadyExists = "uuid_already_exists"
 )
 
 // ErrorReturn defines the common error type.

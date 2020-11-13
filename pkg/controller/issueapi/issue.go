@@ -301,7 +301,8 @@ func (c *Controller) HandleIssue() http.Handler {
 
 			// GormV1 doesn't have a good way to match db errors
 			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
-				c.h.RenderJSON(w, http.StatusConflict, api.Errorf("code for %s already exists", request.UUID))
+				c.h.RenderJSON(w, http.StatusConflict,
+					api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists))
 				return
 			}
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
