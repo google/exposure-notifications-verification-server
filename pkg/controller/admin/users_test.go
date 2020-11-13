@@ -71,7 +71,7 @@ func TestAdminUsers(t *testing.T) {
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /admin
+		// Visit /admin/users
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/users`),
 
 		// Wait for render.
@@ -98,13 +98,6 @@ func TestAdminUsers(t *testing.T) {
 		// Fill out the form by partial name with system-admin filter.
 		chromedp.SetValue(`input#search`, "est Use", chromedp.ByQuery),
 		chromedp.SetValue(`select#filter`, "systemAdmins", chromedp.ByQuery),
-		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
-
-		// Wait for the search result.
-		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
-
-		// Fill out the form.
-		chromedp.SetValue(`input#search`, "testuser", chromedp.ByQuery),
 		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
 		// Wait for the search result.
