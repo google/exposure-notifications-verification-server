@@ -7,6 +7,10 @@
 
 <head>
   {{template "head" .}}
+  <script
+  src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"
+  integrity="sha512-nOQuvD9nKirvxDdvQ9OMqe2dgapbPB7vYAMrzJihw5m+aNcf0dX53m6YxM4LgA9u8e9eg9QX+/+mPu8kCNpV2A=="
+  crossorigin="anonymous"></script>
 </head>
 
 <body id="users-import" class="tab-content">
@@ -41,6 +45,19 @@
           This form will read the CSV contents and call the issue API one-by-one.
         </p>
         <form id="form">
+          <div class="form-label-group">
+            <input type="text" class="form-control" id="retry-code" placeholder="Retry code" required>
+            <label for="retry-code">Retry code</label>
+          </div>
+          <small class="form-text text-muted pb-4">
+            Select a memorable string or store the one provided before navigating away from this page.
+            <br><br>
+            The retry code is a password for this bulk upload status.
+            If you attempt this upload again with the same retry code, the server will be
+            able to retry re-issue codes for phones which have not been successfully notified.
+            You may use the same retry code for all of your uploads, but guard it like a password.
+          </small>
+
           <div class="custom-file">
             <input type="file" class="custom-file-input" id="csv" accept=".csv" required>
             <label class="custom-file-label" for="csv" id="fileLabel">Select a CSV file</label>
@@ -79,6 +96,9 @@
       let $tableBody = $('#csv-table-body');
       let $progressDiv = $('#progress-div');
       let $progress = $('#progress');
+      let $retryCode = $('#retry-code')
+
+      $retryCode.val(Math.random().toString(36).substr(2, 8));
 
       let totalCreated = 0;
       let upload = readFile();
@@ -127,6 +147,7 @@
         let start = async function(e) {
           let rows = e.target.result.split("\n");
           let batch = [];
+          let retryCode = retryCode.val()
           totalUsersCreated = 0;
           $tableBody.empty();
           let i = 0;
@@ -141,6 +162,8 @@
               let cols = rows[i].split(",");
               request["phone"] = cols[0].trim();
               request["symptomDate"] = (cols.length > 1) ? cols[1].trim() : "";
+              let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode).substr(0,36))
+              request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
 
               let row = "<tr><td>" + request["phone"] + "</td><td>" + request["symptomDate"] + "</td></tr>";
               $tableBody.append(row);
