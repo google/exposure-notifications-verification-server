@@ -27,11 +27,11 @@
       <div class="card-body">
         <form method="GET" action="/admin/events" id="search-form">
           <div class="input-group">
-            <input type="datetime-local" name="from" value="{{.from}}" class="form-control">
+            <input type="datetime-local" id="from" name="from" value="{{.from}}" class="form-control">
             <span class="input-group-append">
               <span class="input-group-text bg-transparent border-left-0 border-right-0">thru</span>
             </span>
-            <input type="datetime-local" name="to" value="{{.to}}" class="form-control">
+            <input type="datetime-local" id="to" name="to" value="{{.to}}" class="form-control">
             <div class="input-group-append">
               <button type="submit" class="btn btn-primary">
                 <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
@@ -43,9 +43,9 @@
       </div>
 
       {{if $events}}
-        <div class="list-group list-group-flush">
+        <div class="list-group list-group-flush" id="results">
           {{range $event := $events}}
-            <div class="list-group-item flex-column align-items-start">
+            <div class="list-group-item flex-column align-items-start" id="event">
               <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">{{$event.Action}}</h5>
                 <small
