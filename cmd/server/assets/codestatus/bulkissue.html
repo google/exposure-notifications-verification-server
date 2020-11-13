@@ -45,9 +45,12 @@
           This form will read the CSV contents and call the issue API one-by-one.
         </p>
         <form id="form">
-          <div class="form-label-group">
+          <div class="form-label-group input-group">
             <input type="text" class="form-control" id="retry-code" placeholder="Retry code" required>
             <label for="retry-code">Retry code</label>
+            <div class="input-group-append">
+              <button class="btn btn-secondary" id="new-code" type="button">New code</button>
+            </div>
           </div>
           <small class="form-text text-muted pb-4">
             The retry code is a password for this bulk upload status.
@@ -65,7 +68,7 @@
 
           <div class="custom-file">
             <input type="file" class="custom-file-input" id="csv" accept=".csv" required>
-            <label class="custom-file-label" for="csv" id="fileLabel">Select a CSV file</label>
+            <label class="custom-file-label" for="csv" id="file-label">Select a CSV file</label>
           </div>
           <button class="btn btn-primary" type="submit" id="import" disabled>Issue codes</button>
           <button class="btn btn-danger" id="cancel" disabled>Cancel</button>
@@ -94,19 +97,20 @@
     $(function() {
       let $form = $('#form');
       let $csv = $('#csv');
-      let $fileLabel = $('#fileLabel');
+      let $fileLabel = $('#file-label');
       let $import = $('#import');
       let $cancel = $('#cancel');
       let $table = $('#csv-table');
       let $tableBody = $('#csv-table-body');
       let $progressDiv = $('#progress-div');
       let $progress = $('#progress');
-      let $retryCode = $('#retry-code')
-      let $rememberCode = $('#remember-code')
+      let $retryCode = $('#retry-code');
+      let $rememberCode = $('#remember-code');
+      let $newCode = $('#new-code');
 
       let randomString = getCookie("retryCode");
       if (randomString == "") {
-        randomString = Math.random().toString(36).substr(2, 8) + Math.random().toString(36).substr(2, 8);
+        randomString = genCode();
       }
       $retryCode.val(randomString);
 
@@ -130,7 +134,11 @@
       $cancel.on('click', function(event) {
         upload.cancel();
         flash.error("Canceled batch upload.");
-      })
+      });
+
+      $newCode.on('click', function(event) {
+        $retryCode.val(genCode());
+      });
 
       $form.on('submit', function(event) {
         event.preventDefault();
@@ -229,6 +237,11 @@
           flash.error(e, "danger");
         },
       });
+    }
+
+    // generates a random 16 digit alphanumeric code
+    function genCode() {
+      return Math.random().toString(36).substr(2, 8) + Math.random().toString(36).substr(2, 8);
     }
 
     function setCookie(cname, cvalue, exdays) {
