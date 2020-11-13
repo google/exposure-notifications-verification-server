@@ -176,7 +176,9 @@ type IssueCodeRequest struct {
 	// Offset in minutes of the user's timezone. Positive, negative, 0, or omitted
 	// (using the default of 0) are all valid. 0 is considered to be UTC.
 	TZOffset float32 `json:"tzOffset"`
-	Phone    string  `json:"phone"`
+
+	// Phone is the E.164 formatted phone number.
+	Phone string `json:"phone"`
 
 	// Optional: UUID is a handle which allows the issuer to track status
 	// of the issued verification code. If omitted the server will generate the UUID.

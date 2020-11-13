@@ -30,20 +30,70 @@ var _ Provider = (*Twilio)(nil)
 // Twilio sends messages via the Twilio API.
 type Twilio struct {
 	client *http.Client
-	from   string
+
+	// accountSid and authToken are the auth information.
+	accountSid, authToken string
+
+	// from is the from number.
+	from string
 }
 
 // NewTwilio creates a new Twilio SMS sender with the given auth.
 func NewTwilio(ctx context.Context, accountSid, authToken, from string) (Provider, error) {
 	client := &http.Client{
-		Timeout:   5 * time.Second,
-		Transport: &twilioAuthRoundTripper{accountSid, authToken},
+		Timeout: 5 * time.Second,
 	}
 
 	return &Twilio{
-		client: client,
-		from:   from,
+		client:     client,
+		accountSid: accountSid,
+		authToken:  authToken,
+		from:       from,
 	}, nil
+}
+
+type lookupResponse struct {
+	Carrier *carrierResponse `json:"carrier"`
+}
+
+type carrierResponse struct {
+	ErrorCode string `json:"error_code"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+}
+
+// ValidateSMSNumber validates that the given phone number is capable of
+// receiving SMS text messages. It returns an error if it's not.
+func (p *Twilio) ValidateSMSNumber(ctx context.Context, number string) error {
+	u := fmt.Sprintf("https://lookups.twilio.com/v1/PhoneNumbers/%s?Type=carrier", number)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+	req.SetBasicAuth(p.accountSid, p.authToken)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to validate SMS number: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("phone number is invalid")
+	}
+
+	var r lookupResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return fmt.Errorf("failed to process response: %w", err)
+	}
+
+	if r.Carrier == nil || r.Carrier.Type != "mobile" {
+		return fmt.Errorf("phone number is incapable of receiving SMS messages")
+	}
+
+	return nil
 }
 
 // SendSMS sends a message using the Twilio API.
@@ -54,14 +104,18 @@ func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 	params.Set("Body", message)
 	body := strings.NewReader(params.Encode())
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "/Messages.json", body)
+	u := fmt.Sprintf("https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json", p.accountSid)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, body)
 	if err != nil {
 		return fmt.Errorf("failed to build request: %w", err)
 	}
+	req.SetBasicAuth(p.accountSid, p.authToken)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to make request: %w", err)
+		return fmt.Errorf("failed to send SMS: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -79,27 +133,6 @@ func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 	}
 
 	return nil
-}
-
-// twilioAuthRoundTripper is an http.RoundTripper that updates the
-// authentication and headers to match Twilio's API.
-type twilioAuthRoundTripper struct {
-	accountSid, authToken string
-}
-
-// RoundTrip implements http.RoundTripper.
-func (rt *twilioAuthRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	r.URL = &url.URL{
-		Scheme: "https",
-		Host:   "api.twilio.com",
-		Path:   "/2010-04-01/Accounts/" + rt.accountSid + "/" + strings.Trim(r.URL.Path, "/"),
-	}
-
-	r.SetBasicAuth(rt.accountSid, rt.authToken)
-	r.Header.Set("Accept", "application/json")
-	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	return http.DefaultTransport.RoundTrip(r)
 }
 
 // TwilioError represents an error returned from the Twilio API.

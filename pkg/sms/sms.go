@@ -46,6 +46,9 @@ type Provider interface {
 	// SendSMS sends an SMS text message from the given number to the given number
 	// with the provided message.
 	SendSMS(ctx context.Context, to, message string) error
+
+	// ValidateSMSNumber validates the SMS phone number.
+	ValidateSMSNumber(ctx context.Context, number string) error
 }
 
 func ProviderFor(ctx context.Context, c *Config) (Provider, error) {

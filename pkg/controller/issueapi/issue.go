@@ -310,18 +310,33 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
+			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+
 			if err := func() error {
 				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
-				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+
+				if c.config.GetValidateSMSNumbers() {
+					if err := smsProvider.ValidateSMSNumber(ctx, request.Phone); err != nil {
+						if err := c.db.DeleteVerificationCode(code); err != nil {
+							logger.Errorw("failed to delete verification code", "error", err)
+							// fallthrough to the error
+						}
+
+						logger.Errorw("failed to validate sms number", "error", err)
+						blame = observability.BlameClient
+						result = observability.ResultError("FAILED_TO_VERIFY_SMS_NUMBER")
+						return err
+					}
+				}
+
 				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
-					// Delete the token
 					if err := c.db.DeleteVerificationCode(code); err != nil {
 						logger.Errorw("failed to delete verification code", "error", err)
 						// fallthrough to the error
 					}
 
 					logger.Errorw("failed to send sms", "error", err)
-					blame = observability.BlameServer
+					blame = observability.BlameExternal
 					result = observability.ResultError("FAILED_TO_SEND_SMS")
 					return err
 				}

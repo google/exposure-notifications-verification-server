@@ -32,3 +32,8 @@ func NewNoop(_ context.Context) (Provider, error) {
 func (p *Noop) SendSMS(_ context.Context, _, _ string) error {
 	return nil
 }
+
+// ValidateSMSNumber does nothing.
+func (p *Noop) ValidateSMSNumber(_ context.Context, _ string) error {
+	return nil
+}
