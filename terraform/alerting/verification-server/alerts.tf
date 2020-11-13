@@ -268,7 +268,6 @@ client app, or a potential DoS attack.
 
 View the metric here
 
-https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.monitoring-host-project}
 EOT
     mime_type = "text/markdown"
   }
