@@ -276,6 +276,14 @@ func (c *Controller) HandleIssue() http.Handler {
 			longExpiryTime = expiryTime
 		}
 
+		if request.UUID != "" {
+			_, err := realm.FindVerificationCodeByUUID(c.db, request.UUID)
+			if !database.IsNotFound(err) {
+				c.h.RenderJSON(w, http.StatusConflict, api.Errorf("code for %s already exists", request.UUID))
+				return
+			}
+		}
+
 		// Generate verification code
 		codeRequest := otp.Request{
 			DB:             c.db,

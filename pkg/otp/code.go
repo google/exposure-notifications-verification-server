@@ -99,6 +99,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, s
 	var verificationCode database.VerificationCode
 	var err error
 	var code, longCode string
+
 	for i := uint(0); i < retryCount; i++ {
 		code, err = GenerateCode(o.ShortLength)
 		if err != nil {

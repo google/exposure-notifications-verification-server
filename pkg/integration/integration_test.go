@@ -102,17 +102,21 @@ func TestIntegration(t *testing.T) {
 			}
 			hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
 
-			requestUUID := "d6ec95a3-dd42-4eef-b1ec-0f7a777c43cf"
 			issueRequest := api.IssueCodeRequest{
 				TestType:    testType,
 				SymptomDate: symptomDate,
 				TZOffset:    float32(tzMinOffset),
-				UUID:        requestUUID,
 			}
 
 			issueResp, err := adminClient.IssueCode(issueRequest)
-			if issueResp == nil || err != nil || issueResp.UUID != requestUUID {
+			if issueResp == nil || err != nil || issueResp.UUID == "" {
 				t.Fatalf("adminClient.IssueCode(%+v) = expected nil, got resp %+v, err %v", issueRequest, issueResp, err)
+			}
+
+			// Try to issue the same code again (same UUID)
+			issueRequest.UUID = issueResp.UUID
+			if _, err = adminClient.IssueCode(issueRequest); err == nil {
+				t.Fatalf("Expected conflict, got %s", err)
 			}
 
 			verifyRequest := api.VerifyCodeRequest{
