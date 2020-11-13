@@ -135,7 +135,7 @@
 
       $cancel.on('click', function(event) {
         upload.cancel();
-        flash.error("Canceled batch upload.");
+        flash.error('Canceled batch upload.');
       });
 
       $newCode.on('click', function(event) {
@@ -151,7 +151,9 @@
         $progressDiv.removeClass('d-none');
 
         if ($rememberCode.is(':checked')) {
-          setCookie("retryCode",$retryCode.val(),14)
+          setCookie('retryCode',$retryCode.val(),14);
+        } else {
+          setCookie('retryCode','',-1);
         }
 
         var reader = new FileReader();
@@ -170,7 +172,7 @@
         };
 
         let start = async function(e) {
-          let rows = e.target.result.split("\n");
+          let rows = e.target.result.split('\n');
           let batch = [];
           totalUsersCreated = 0;
           $tableBody.empty();
@@ -183,7 +185,7 @@
               }
 
               let request = {};
-              let cols = rows[i].split(",");
+              let cols = rows[i].split(',');
               request["phone"] = cols[0].trim();
               request["symptomDate"] = (cols.length > 1) ? cols[1].trim() : "";
               let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36)
