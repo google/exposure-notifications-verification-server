@@ -188,24 +188,7 @@ func Server(
 		}
 	}
 
-	{
-		sub := r.PathPrefix("/home").Subrouter()
-		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
-		sub.Use(processFirewall)
-		sub.Use(requireVerified)
-		sub.Use(requireMFA)
-		sub.Use(rateLimit)
-
-		homeController := home.New(ctx, cfg, db, h)
-		sub.Handle("", homeController.HandleHome()).Methods("GET")
-
-		// API for creating new verification codes. Called via AJAX.
-		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
-		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
-	}
-
+	// code
 	{
 		sub := r.PathPrefix("/code").Subrouter()
 		sub.Use(requireAuth)
@@ -218,6 +201,14 @@ func Server(
 
 		codestatusController := codestatus.NewServer(ctx, cfg, db, h)
 		codestatusRoutes(sub, codestatusController)
+
+		homeController := home.New(ctx, cfg, db, h)
+		sub.Handle("", homeController.HandleHome()).Methods("GET")
+		sub.Handle("/issue", homeController.HandleHome()).Methods("GET")
+
+		// API for creating new verification codes. Called via AJAX.
+		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
+		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 	}
 
 	// mobileapp
