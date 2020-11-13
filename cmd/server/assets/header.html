@@ -55,10 +55,10 @@
         {{if .currentRealm}}
         <ul class="nav mr-auto flex-column flex-md-row">
           <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsFile "home"}}active{{end}}" href="/home">Issue code</a>
+            <a class="nav-link {{if .currentPath.IsDir "/code/issue"}}active{{end}}" href="/code/issue">Issue code</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsDir "/code/"}}active{{end}}" href="/code/status">Check code status</a>
+            <a class="nav-link {{if .currentPath.IsDir "/code/status"}}active{{end}}" href="/code/status">Check code status</a>
           </li>
         </ul>
         {{end}}

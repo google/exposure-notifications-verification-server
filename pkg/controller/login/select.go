@@ -58,7 +58,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 			// The user is already logged in and the current realm matches the
 			// expected realm - just redirect.
 			if controller.RealmIDFromSession(session) == realm.ID {
-				http.Redirect(w, r, "/home", http.StatusSeeOther)
+				http.Redirect(w, r, "/code/issue", http.StatusSeeOther)
 				return
 			}
 
@@ -70,7 +70,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 			flash.Clear()
 
 			controller.StoreSessionRealm(session, realm)
-			http.Redirect(w, r, "/home", http.StatusSeeOther)
+			http.Redirect(w, r, "/code/issue", http.StatusSeeOther)
 			return
 		default:
 			// Continue below
@@ -104,7 +104,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 		}
 
 		controller.StoreSessionRealm(session, realm)
-		http.Redirect(w, r, "/home", http.StatusSeeOther)
+		http.Redirect(w, r, "/code/issue", http.StatusSeeOther)
 	})
 }
 
