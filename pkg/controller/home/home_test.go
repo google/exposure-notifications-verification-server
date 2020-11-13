@@ -77,8 +77,8 @@ func TestHandleHome_IssueCode(t *testing.T) {
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /home.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/home`),
+		// Visit /code/issue.
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/code/issue`),
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
