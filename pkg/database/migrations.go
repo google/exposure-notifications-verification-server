@@ -27,6 +27,7 @@ import (
 )
 
 const initState = "00000-Init"
+const VercodeUUIDUniqueIndex = "idx_vercode_uuid_unique"
 
 func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 	logger := logging.FromContext(ctx)
@@ -1441,7 +1442,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`CREATE INDEX IF NOT EXISTS idx_vercode_recent ON verification_codes(realm_id, issuing_user_id)`,
-					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
 				}
 
 				for _, sql := range sqls {
@@ -1454,7 +1454,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Rollback: func(tx *gorm.DB) error {
 				sqls := []string{
 					`DROP INDEX IF EXISTS idx_vercode_recent`,
-					`DROP INDEX IF EXISTS idx_vercode_uuid`,
 				}
 
 				for _, sql := range sqls {
@@ -1636,6 +1635,35 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					}
 				}
 
+				return nil
+			},
+		},
+		{
+			ID: "00066-AddVerCodeUUIDUniqueIndexe",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`DROP INDEX IF EXISTS idx_vercode_uuid`,
+					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes(uuid)", VercodeUUIDUniqueIndex),
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					fmt.Sprintf("DROP INDEX IF EXISTS %s", VercodeUUIDUniqueIndex),
+					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
 				return nil
 			},
 		},

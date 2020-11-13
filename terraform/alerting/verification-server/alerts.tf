@@ -281,3 +281,49 @@ EOT
     null_resource.manual-step-to-enable-workspace,
   ]
 }
+
+resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
+  project      = var.monitoring-host-project
+  display_name = "StackdriverExportFailed"
+  combiner     = "OR"
+  conditions {
+    display_name = "Stackdriver metric export error rate"
+    condition_monitoring_query_language {
+      duration = "300s"
+      query    = <<-EOT
+      fetch
+      cloud_run_revision::logging.googleapis.com/user/stackdriver_export_error_count
+      | align rate(1m)
+      | group_by [resource.service_name], [val: sum(value.stackdriver_export_error_count)]
+      | condition val > 0.1 '1/s'
+      EOT
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+
+OpenCensus failed to export metrics to Stackdriver.
+
+This means all other alerts we have configured won't work as the alert depend
+on the export metrics.
+
+NOTE: metric export may spontanously fail. If the failure rate is low it's
+likely the threshold is too sensitive.
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id,
+  ]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+    google_logging_metric.stackdriver_export_error_count
+  ]
+}

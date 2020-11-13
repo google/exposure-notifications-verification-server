@@ -1,16 +1,10 @@
 {{define "users/import"}}
 
-{{$csrfField := .csrfField}}
-{{$currentUser := .currentUser}}
-{{$currentRealm := .currentRealm}}
-{{$users := .users}}
-
 <!doctype html>
 <html lang="en">
 
 <head>
   {{template "head" .}}
-  {{template "firebase" .}}
 </head>
 
 <body id="users-import" class="tab-content">

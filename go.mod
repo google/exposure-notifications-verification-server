@@ -27,7 +27,7 @@ require (
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.16.0
+	github.com/google/exposure-notifications-server v0.16.1-0.20201111200932-19462a0c6eeb
 	github.com/google/go-cmp v0.5.2
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/csrf v1.7.0
@@ -45,7 +45,7 @@ require (
 	github.com/lib/pq v1.8.0
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/microcosm-cc/bluemonday v1.0.4
-	github.com/mikehelmick/go-chaff v0.3.0
+	github.com/mikehelmick/go-chaff v0.4.1
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect

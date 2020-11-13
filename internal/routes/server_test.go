@@ -326,7 +326,7 @@ func TestRoutes_systemAdminRoutes(t *testing.T) {
 			vars: map[string]string{"id": "12345"},
 		},
 		{
-			req: httptest.NewRequest("GET", "/mobileapps", nil),
+			req: httptest.NewRequest("GET", "/mobile-apps", nil),
 		},
 		{
 			req: httptest.NewRequest("GET", "/sms", nil),

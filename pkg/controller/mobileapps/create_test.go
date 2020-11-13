@@ -29,8 +29,6 @@ import (
 )
 
 func TestHandleCreate(t *testing.T) {
-	t.Parallel()
-
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -73,8 +71,8 @@ func TestHandleCreate(t *testing.T) {
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/mobile-apps/new`),
+		// Visit /realm/mobile-apps/new.
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps/new`),
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),

@@ -223,7 +223,7 @@ func Server(
 
 	// mobileapp
 	{
-		sub := r.PathPrefix("/mobile-apps").Subrouter()
+		sub := r.PathPrefix("/realm/mobile-apps").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
@@ -239,7 +239,7 @@ func Server(
 
 	// apikeys
 	{
-		sub := r.PathPrefix("/apikeys").Subrouter()
+		sub := r.PathPrefix("/realm/apikeys").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
@@ -418,7 +418,7 @@ func systemAdminRoutes(r *mux.Router, c *admin.Controller) {
 	r.Handle("/users/new", c.HandleSystemAdminCreate()).Methods("GET")
 	r.Handle("/users/{id:[0-9]+}/revoke", c.HandleSystemAdminRevoke()).Methods("DELETE")
 
-	r.Handle("/mobileapps", c.HandleMobileAppsShow()).Methods("GET")
+	r.Handle("/mobile-apps", c.HandleMobileAppsShow()).Methods("GET")
 	r.Handle("/sms", c.HandleSMSUpdate()).Methods("GET", "POST")
 	r.Handle("/email", c.HandleEmailUpdate()).Methods("GET", "POST")
 	r.Handle("/events", c.HandleEventsShow()).Methods("GET")

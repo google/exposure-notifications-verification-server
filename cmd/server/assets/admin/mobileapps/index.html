@@ -8,7 +8,7 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="admin-mobileapps-index" class="tab-content">
   {{template "admin/navbar" .}}
 
   <main role="main" class="container">
@@ -21,7 +21,7 @@
       </div>
 
       <div class="card-body">
-        <form method="GET" action="/admin/mobileapps" id="search-form">
+        <form method="GET" action="/admin/mobile-apps" id="search-form">
           <div class="input-group">
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
@@ -36,7 +36,7 @@
       </div>
 
       {{if .apps}}
-        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+        <table id="results-table" class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
               <th scope="col" width="40"></th>
@@ -58,7 +58,7 @@
               </td>
 
               <td>
-                <a href="/mobile-apps/{{.MobileApp.ID}}" class="text-truncate">{{.MobileApp.Name}}</a>
+                <a href="/realm/mobile-apps/{{.MobileApp.ID}}" class="text-truncate">{{.MobileApp.Name}}</a>
               </td>
 
               <td>

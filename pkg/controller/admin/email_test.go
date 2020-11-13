@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey_test
+package admin_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -28,7 +27,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHandleCreate(t *testing.T) {
+func TestShowAdminEmail(t *testing.T) {
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -37,10 +36,11 @@ func TestHandleCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a user
+	// Create a system admin
 	admin := &database.User{
 		Email:       "admin@example.com",
 		Name:        "Admin",
+		SystemAdmin: true,
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
 	}
@@ -67,46 +67,49 @@ func TestHandleCreate(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
-	var apiKey string
+	wantSMTPAccount := "test=smtp-account"
+	wantSMTPPassword := "test-password"
+	wantSMTPHost := "smtp.test.example.com"
+	wantSMTPPort := "587"
+
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
+		// Visit /admin
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/email`),
 
 		// Wait for render.
-		chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
+		chromedp.WaitVisible(`body#admin-email-show`, chromedp.ByQuery),
 
-		// Fill out the form.
-		chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
-		chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
+		// Set fields and submit
+		chromedp.SetValue(`input#smtp-account`, wantSMTPAccount, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-password`, wantSMTPPassword, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-host`, wantSMTPHost, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-port`, wantSMTPPort, chromedp.ByQuery),
+		chromedp.Submit(`form#email-form`, chromedp.ByQuery),
 
-		// Click the submit button.
-		chromedp.Click(`#submit`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
-
-		// Get the API key.
-		chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
+		// Wait for render.
+		chromedp.WaitVisible(`body#admin-email-show`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}
 
-	// Ensure API key is valid.
-	record, err := harness.Database.FindAuthorizedAppByAPIKey(apiKey)
+	systemEmailConfig, err := harness.Database.SystemEmailConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Verify name.
-	if got, want := record.Name, "Example API key"; got != want {
-		t.Errorf("expected %v to be %v", got, want)
+	if systemEmailConfig.SMTPAccount != wantSMTPAccount {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPAccount, wantSMTPAccount)
 	}
-
-	// Verify API key type.
-	if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
-		t.Errorf("expected %v to be %v", got, want)
+	if systemEmailConfig.SMTPPassword != wantSMTPPassword {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPPassword, wantSMTPPassword)
+	}
+	if systemEmailConfig.SMTPHost != wantSMTPHost {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPHost, wantSMTPHost)
+	}
+	if systemEmailConfig.SMTPPort != wantSMTPPort {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPPort, wantSMTPPort)
 	}
 }

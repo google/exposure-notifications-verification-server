@@ -107,7 +107,7 @@
 
           <hr>
           <h6 class="mb-2">Mobile apps</h6>
-          <a href="/admin/mobileapps?q={{$realm.Name}}">View mobile apps &rarr;</a>
+          <a href="/admin/mobile-apps?q={{$realm.Name}}">View mobile apps &rarr;</a>
 
           <hr>
           <button type="submit" class="btn btn-primary btn-block">Update realm</button>
@@ -123,6 +123,7 @@
             You are currently a member of this realm. Click the button to leave.
           </p>
           <a href="/admin/realms/{{$realm.ID}}/remove/{{$currentUser.ID}}" class="btn btn-block btn-danger"
+            id="leave"
             data-method="PATCH"
             data-confirm="Are you sure you want to leave this realm? This event will be logged and audited.">
             Leave realm
@@ -140,6 +141,7 @@
             administrator.
           </p>
           <a href="/admin/realms/{{$realm.ID}}/add/{{$currentUser.ID}}" class="btn btn-block btn-danger"
+            id="join"
             data-method="PATCH"
             data-confirm="Are you sure you want to join this realm? This event will be logged and audited.">
             Join realm

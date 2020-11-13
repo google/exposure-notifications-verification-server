@@ -20,10 +20,10 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -170,23 +170,32 @@ func realMain(ctx context.Context) error {
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
 
+		chaffDet := chaff.HeaderDetector("X-Chaff")
+
 		// POST /api/verify
-		verifyChaff := chaff.New()
+		verifyChaff, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyReponse), chaff.DefaultCapacity)
+		if err != nil {
+			return fmt.Errorf("error creating chaffer: %v", err)
+		}
+
 		defer verifyChaff.Close()
 		verifyapiController, err := verifyapi.New(ctx, cfg, db, h, tokenSigner)
 		if err != nil {
 			return fmt.Errorf("failed to create verify api controller: %w", err)
 		}
-		sub.Handle("/verify", handleChaff(verifyChaff, verifyapiController.HandleVerify())).Methods("POST")
+		sub.Handle("/verify", verifyChaff.HandleTrack(chaffDet, verifyapiController.HandleVerify())).Methods("POST")
 
 		// POST /api/certificate
-		certChaff := chaff.New()
+		certChaff, err := chaff.NewTracker(chaff.NewJSONResponder(encodeCertificateResponse), chaff.DefaultCapacity)
+		if err != nil {
+			return fmt.Errorf("error creating chaffer: %v", err)
+		}
 		defer certChaff.Close()
 		certapiController, err := certapi.New(ctx, cfg, db, cacher, certificateSigner, h)
 		if err != nil {
 			return fmt.Errorf("failed to create certapi controller: %w", err)
 		}
-		sub.Handle("/certificate", handleChaff(certChaff, certapiController.HandleCertificate())).Methods("POST")
+		sub.Handle("/certificate", certChaff.HandleTrack(chaffDet, certapiController.HandleCertificate())).Methods("POST")
 	}
 
 	srv, err := server.New(cfg.Port)
@@ -197,6 +206,16 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-func handleChaff(tracker *chaff.Tracker, next http.Handler) http.Handler {
-	return tracker.HandleTrack(chaff.HeaderDetector("X-Chaff"), next)
+// makePadFromChaff makes a Padding structure from chaff data.
+// Note, the random chaff data will be longer than necessary, so we shorten it.
+func makePadFromChaff(s string) api.Padding {
+	return api.Padding(s)
+}
+
+func encodeVerifyReponse(s string) interface{} {
+	return api.VerifyCodeResponse{Padding: makePadFromChaff(s)}
+}
+
+func encodeCertificateResponse(s string) interface{} {
+	return api.VerificationCertificateResponse{Padding: makePadFromChaff(s)}
 }

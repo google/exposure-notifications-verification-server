@@ -8,7 +8,7 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="admin-realms-index" class="tab-content">
   {{template "admin/navbar" .}}
 
   <main role="main" class="container">
@@ -18,7 +18,7 @@
       <div class="card-header">
         <span class="oi oi-badge mr-2 ml-n1" aria-hidden="true"></span>
         Realms
-        <a href="/admin/realms/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New realm">
+        <a href="/admin/realms/new" class="float-right mr-n1 text-secondary" id="new" data-toggle="tooltip" title="New realm">
           <span class="oi oi-plus small" aria-hidden="true"></span>
         </a>
       </div>
@@ -39,7 +39,7 @@
       </div>
 
       {{if $realms}}
-        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0" id="results-table">
           <thead>
             <tr>
               <th scope="col" width="50" class="text-center">ID</th>

@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey_test
+package admin_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -28,7 +27,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHandleCreate(t *testing.T) {
+func TestShowAdminSMS(t *testing.T) {
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -37,10 +36,11 @@ func TestHandleCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a user
+	// Create a system admin
 	admin := &database.User{
 		Email:       "admin@example.com",
 		Name:        "Admin",
+		SystemAdmin: true,
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
 	}
@@ -67,46 +67,44 @@ func TestHandleCreate(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
-	var apiKey string
+	wantAccountSid := "abc123"
+	wantAuthToken := "def456"
+	wantFromNumber := "+11234567890"
+
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
+		// Visit /admin
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/sms`),
 
 		// Wait for render.
-		chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
+		chromedp.WaitVisible(`body#admin-sms-show`, chromedp.ByQuery),
 
-		// Fill out the form.
-		chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
-		chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
+		// Set fields and submit
+		chromedp.SetValue(`input#twilio-account-sid`, wantAccountSid, chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-auth-token`, wantAuthToken, chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number`, wantFromNumber, chromedp.ByQuery),
+		chromedp.Submit(`form#sms-form`, chromedp.ByQuery),
 
-		// Click the submit button.
-		chromedp.Click(`#submit`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
-
-		// Get the API key.
-		chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
+		// Wait for render.
+		chromedp.WaitVisible(`body#admin-sms-show`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}
 
-	// Ensure API key is valid.
-	record, err := harness.Database.FindAuthorizedAppByAPIKey(apiKey)
+	systemSMSConfig, err := harness.Database.SystemSMSConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Verify name.
-	if got, want := record.Name, "Example API key"; got != want {
-		t.Errorf("expected %v to be %v", got, want)
+	if systemSMSConfig.TwilioAccountSid != wantAccountSid {
+		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAccountSid, wantAccountSid)
 	}
-
-	// Verify API key type.
-	if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
-		t.Errorf("expected %v to be %v", got, want)
+	if systemSMSConfig.TwilioAuthToken != wantAuthToken {
+		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAuthToken, wantAuthToken)
+	}
+	if systemSMSConfig.TwilioFromNumber != wantFromNumber {
+		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioFromNumber, wantFromNumber)
 	}
 }

@@ -18,13 +18,13 @@
       <div class="card-header">
         <span class="oi oi-phone mr-2 ml-n1" aria-hidden="true"></span>
         Mobile apps
-        <a href="/mobile-apps/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New mobile app">
+        <a href="/realm/mobile-apps/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New mobile app">
           <span class="oi oi-plus small" aria-hidden="true"></span>
         </a>
       </div>
 
       <div class="card-body">
-        <form method="GET" action="/mobile-apps" id="search-form">
+        <form method="GET" action="/realm/mobile-apps" id="search-form">
           <div class="input-group">
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
@@ -60,11 +60,11 @@
                 {{end}}
               </td>
               <td class="text-truncate">
-                <a href="/mobile-apps/{{.ID}}">{{.Name}}</a>
+                <a href="/realm/mobile-apps/{{.ID}}">{{.Name}}</a>
               </td>
               <td class="text-center">
                 {{if .DeletedAt}}
-                <a href="/mobile-apps/{{.ID}}/enable" class="d-block text-danger"
+                <a href="/realm/mobile-apps/{{.ID}}/enable" class="d-block text-danger"
                   data-method="patch"
                   data-confirm="Are you sure you want to restore '{{.Name}}'?"
                   data-toggle="tooltip"
@@ -72,7 +72,7 @@
                   <span class="oi oi-loop-circular" aria-hidden="true"></span>
                 </a>
                 {{else}}
-                <a href="/mobile-apps/{{.ID}}/disable" class="d-block text-danger"
+                <a href="/realm/mobile-apps/{{.ID}}/disable" class="d-block text-danger"
                   data-method="patch"
                   data-confirm="Are you sure you want to disable '{{.Name}}'?"
                   data-toggle="tooltip"

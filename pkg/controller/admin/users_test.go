@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey_test
+package admin_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -28,7 +27,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHandleCreate(t *testing.T) {
+func TestAdminUsers(t *testing.T) {
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -37,10 +36,11 @@ func TestHandleCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a user
+	// Create a system admin
 	admin := &database.User{
 		Email:       "admin@example.com",
 		Name:        "Admin",
+		SystemAdmin: true,
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
 	}
@@ -67,46 +67,49 @@ func TestHandleCreate(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
-	var apiKey string
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
+		// Visit /admin/users
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/users`),
 
 		// Wait for render.
-		chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
+		chromedp.WaitVisible(`body#admin-users-index`, chromedp.ByQuery),
 
+		/* ----- Test New System Admin -----  */
+		chromedp.Click(`a#new`, chromedp.ByQuery),
 		// Fill out the form.
-		chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
-		chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
+		chromedp.SetValue(`input#name`, "Test User", chromedp.ByQuery),
+		chromedp.SetValue(`input#email`, "testuser@example.com", chromedp.ByQuery),
+		chromedp.Submit(`form#new-form`, chromedp.ByQuery),
 
-		// Click the submit button.
-		chromedp.Click(`#submit`, chromedp.ByQuery),
+		/* ----- Test Search -----  */
+		// Wait for render.
+		chromedp.WaitVisible(`body#admin-users-index`, chromedp.ByQuery),
 
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
+		// Fill out the form by email.
+		chromedp.SetValue(`input#search`, "testuser", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
-		// Get the API key.
-		chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
+		// Wait for the search result.
+		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
+
+		// Fill out the form by partial name with system-admin filter.
+		chromedp.SetValue(`input#search`, "est Use", chromedp.ByQuery),
+		chromedp.SetValue(`select#filter`, "systemAdmins", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Wait for the search result.
+		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
+
+		// Fill out the form with a non-existing user
+		chromedp.SetValue(`input#search`, "notexists", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Assert no users shown
+		chromedp.WaitNotPresent(`table#results-table tr`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
-	}
-
-	// Ensure API key is valid.
-	record, err := harness.Database.FindAuthorizedAppByAPIKey(apiKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Verify name.
-	if got, want := record.Name, "Example API key"; got != want {
-		t.Errorf("expected %v to be %v", got, want)
-	}
-
-	// Verify API key type.
-	if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
-		t.Errorf("expected %v to be %v", got, want)
 	}
 }

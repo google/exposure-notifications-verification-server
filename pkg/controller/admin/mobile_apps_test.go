@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey_test
+package admin_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -28,7 +27,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHandleCreate(t *testing.T) {
+func TestShowAdminMobileApps(t *testing.T) {
 	harness := envstest.NewServer(t)
 
 	// Get the default realm
@@ -37,14 +36,27 @@ func TestHandleCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a user
+	// Create a system admin
 	admin := &database.User{
 		Email:       "admin@example.com",
 		Name:        "Admin",
+		SystemAdmin: true,
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
 	}
 	if err := harness.Database.SaveUser(admin, database.System); err != nil {
+		t.Fatal(err)
+	}
+
+	app := &database.MobileApp{
+		Name:    "test mobile app",
+		RealmID: realm.ID,
+		URL:     "https://example2.com",
+		OS:      database.OSTypeAndroid,
+		SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
+		AppID:   "app2",
+	}
+	if err := harness.Database.SaveMobileApp(app, database.System); err != nil {
 		t.Fatal(err)
 	}
 
@@ -67,46 +79,30 @@ func TestHandleCreate(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
-	var apiKey string
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /apikeys/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
+		// Visit /admin
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/mobile-apps`),
 
 		// Wait for render.
-		chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
+		chromedp.WaitVisible(`body#admin-mobileapps-index`, chromedp.ByQuery),
 
-		// Fill out the form.
-		chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
-		chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
+		// Fill out the form by email.
+		chromedp.SetValue(`input#search`, "test mobile app", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
-		// Click the submit button.
-		chromedp.Click(`#submit`, chromedp.ByQuery),
+		// Wait for the search result.
+		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
 
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
+		// Fill out the form with a non-existing user
+		chromedp.SetValue(`input#search`, "notexists", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
-		// Get the API key.
-		chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
+		// Assert no users shown
+		chromedp.WaitNotPresent(`table#results-table tr`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
-	}
-
-	// Ensure API key is valid.
-	record, err := harness.Database.FindAuthorizedAppByAPIKey(apiKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Verify name.
-	if got, want := record.Name, "Example API key"; got != want {
-		t.Errorf("expected %v to be %v", got, want)
-	}
-
-	// Verify API key type.
-	if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
-		t.Errorf("expected %v to be %v", got, want)
 	}
 }
