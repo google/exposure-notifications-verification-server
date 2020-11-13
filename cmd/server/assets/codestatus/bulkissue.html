@@ -53,7 +53,7 @@
             </div>
           </div>
           <small class="form-text text-muted pb-4">
-            The retry code is a password for this bulk upload status.
+            The retry code is a password for this bulk upload status in case it fails during processing.
             If you attempt this upload again with the same retry code, the server will be
             able to retry re-issue codes for phones which have not been successfully notified.
             You may use the same retry code for all of your uploads, but guard it like a password.
@@ -228,7 +228,7 @@
     function uploadBatch(data) {
       return $.ajax({
         type: 'POST',
-        url: '/api/issue',
+        url: '/home/issue',
         // TODO: at the moment we only support one-at-a-time
         data: JSON.stringify(data[0]),
         headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
