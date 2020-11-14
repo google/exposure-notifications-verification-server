@@ -199,31 +199,31 @@ func (c *Controller) HandleIssue() http.Handler {
 		dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
 		for i, d := range input {
 			if d != "" {
-				if parsed, err := time.Parse("2006-01-02", d); err != nil {
+				parsed, err := time.Parse("2006-01-02", d)
+				if err != nil {
 					c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err))
 					blame = observability.BlameClient
 					result = observability.ResultError(dateSettings[i].ParseError)
 					return
-				} else {
-					// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
-					maxDate := timeutils.UTCMidnight(time.Now())
-					minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
-
-					validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
-					if err != nil {
-						err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
-							dateSettings[i].Name,
-							minDate.Format("2006-01-02"),
-							maxDate.Format("2006-01-02"),
-							parsed.Format("2006-01-02"),
-						)
-						c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
-						blame = observability.BlameClient
-						result = observability.ResultError(dateSettings[i].ValidateError)
-						return
-					}
-					parsedDates[i] = validatedDate
 				}
+				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+				maxDate := timeutils.UTCMidnight(time.Now())
+				minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+
+				validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
+				if err != nil {
+					err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
+						dateSettings[i].Name,
+						minDate.Format("2006-01-02"),
+						maxDate.Format("2006-01-02"),
+						parsed.Format("2006-01-02"),
+					)
+					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+					blame = observability.BlameClient
+					result = observability.ResultError(dateSettings[i].ValidateError)
+					return
+				}
+				parsedDates[i] = validatedDate
 			}
 		}
 
