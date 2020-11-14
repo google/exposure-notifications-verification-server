@@ -24,6 +24,10 @@ resource "google_monitoring_slo" "availability-slo" {
   slo_id = "availability-slo"
   display_name = "99.9% of requests are successful over rolling 28 days"
   project = var.monitoring-host-project
+  # create if GCLB is used
+  depends_on = [
+    var.https-forwarding-rule
+  ]
 
   # the SLI
   request_based_sli {
