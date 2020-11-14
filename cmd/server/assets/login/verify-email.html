@@ -46,7 +46,7 @@
 
               {{if .currentRealm}}
               {{if ne .currentRealm.EmailVerifiedMode.String "required"}}
-              <a id="skip" class="card-link float-right mt-3" href="/home">Skip for now</a>
+              <a id="skip" class="card-link float-right mt-3" href="/code/issue">Skip for now</a>
               {{end}}
               {{end}}
             </div>
@@ -73,7 +73,7 @@
       if (user.emailVerified) {
         flash.clear();
         flash.alert("Your email address is already verified.");
-        window.location.assign("/home");
+        window.location.assign("/code/issue");
         return;
       }
 

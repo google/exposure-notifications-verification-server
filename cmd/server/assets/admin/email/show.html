@@ -24,7 +24,7 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">System email config</div>
       <div class="card-body">
-        <form method="POST" action="/admin/email">
+        <form method="POST" action="/admin/email" id="email-form">
           {{ .csrfField }}
 
           <div id="smtp-form">

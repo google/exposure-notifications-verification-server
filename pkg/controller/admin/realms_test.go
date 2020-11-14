@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
+	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
 
@@ -67,16 +69,91 @@ func TestShowAdminRealms(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
+	wantName := "Test Realm"
+	wantRegionCode := "us-tst"
+	certIssuer := "test issuer"
+	certAudience := "test audience"
+
+	// This accepts "are you sure" alert that pops up for "leave realm"
+	chromedp.ListenTarget(taskCtx, func(ev interface{}) {
+		if _, ok := ev.(*page.EventJavascriptDialogOpening); ok {
+			go func() {
+				if err := chromedp.Run(taskCtx,
+					page.HandleJavaScriptDialog(true),
+				); err != nil {
+					panic(err)
+				}
+			}()
+		}
+	})
+
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /admin
+		// Visit /admin/realms
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/realms`),
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-realms-index`, chromedp.ByQuery),
+
+		/* ----- Test New Realm -----  */
+		chromedp.Click(`a#new`, chromedp.ByQuery),
+		// Fill out the form.
+		chromedp.SetValue(`input#name`, wantName, chromedp.ByQuery),
+		chromedp.SetValue(`input#regionCode`, wantRegionCode, chromedp.ByQuery),
+		chromedp.SetValue(`input#certificateIssuer`, certIssuer, chromedp.ByQuery),
+		chromedp.SetValue(`input#certificateAudience`, certAudience, chromedp.ByQuery),
+		chromedp.Submit(`form#new-form`, chromedp.ByQuery),
+
+		/* ----- Test Search -----  */
+		// Wait for render.
+		chromedp.WaitVisible(`body#admin-realms-index`, chromedp.ByQuery),
+
+		// Fill out the form with a non-existing realm
+		chromedp.SetValue(`input#search`, "notexists", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Assert no realms shown
+		chromedp.WaitNotPresent(`table#results-table tr`, chromedp.ByQuery),
+
+		// Fill out the form by realm name.
+		chromedp.SetValue(`input#search`, " test realm ", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Wait for the search result.
+		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
+
+		/* ----- Test Edit Realm -----  */
+		// Visit the realm from the search
+		chromedp.Click(`table#results-table tr td a`, chromedp.ByQuery),
+
+		// Leave the realm
+		chromedp.Click(`a#leave`, chromedp.ByQuery),
+
+		// Wait for render.
+		chromedp.WaitVisible(`a#join`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
+	}
+
+	// Get the newly created realm
+	newRealm, err := harness.Database.FindRealm(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if newRealm.Name != wantName {
+		t.Errorf("got: %s, want: %s", newRealm.Name, wantName)
+	}
+	wantRegionCode = strings.ToUpper(wantRegionCode) // DB uppercases on save
+	if newRealm.RegionCode != wantRegionCode {
+		t.Errorf("got: %s, want: %s", newRealm.RegionCode, wantRegionCode)
+	}
+	if newRealm.CertificateIssuer != certIssuer {
+		t.Errorf("got: %s, want: %s", newRealm.CertificateIssuer, certIssuer)
+	}
+	if newRealm.CertificateAudience != certAudience {
+		t.Errorf("got: %s, want: %s", newRealm.CertificateAudience, certAudience)
 	}
 }

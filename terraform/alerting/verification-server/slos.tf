@@ -27,6 +27,7 @@ resource "google_monitoring_slo" "availability-slo" {
   # create if GCLB is used
   count = var.https-forwarding-rule == "" ? 0 : 1
 
+
   # the SLI
   request_based_sli {
     good_total_ratio {

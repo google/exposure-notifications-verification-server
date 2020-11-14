@@ -78,7 +78,7 @@ func (c *Controller) HandleSystemAdminCreate() http.Handler {
 
 			// User does not exist, create a new one.
 			user = &database.User{
-				Name:  form.Email,
+				Name:  form.Name,
 				Email: form.Email,
 			}
 		}

@@ -112,7 +112,7 @@ func (a *localAuth) CreateUser(ctx context.Context, name, email, pass string, se
 	}
 
 	if emailer == nil {
-		return false, fmt.Errorf("emailer is required for local auth")
+		return true, nil
 	}
 
 	// For local auth, this is a noop since the controllers create the user in the
