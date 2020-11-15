@@ -89,6 +89,19 @@
     </small>
   </div>
 
+  <div class="custom-control custom-checkbox mb-3">
+    <input type="checkbox" name="validate_sms_numbers" id="validate-sms-numbers" class="custom-control-input{{if $realm.ErrorsFor "validateSMSNumbers"}} is-invalid{{end}}"
+      value="1" {{if $realm.ValidateSMSNumbers}}checked{{end}} />
+    <label class="custom-control-label" for="validate-sms-numbers">Validate phone numbers</label>
+    {{template "errorable" $realm.ErrorsFor "validateSMSNumbers"}}
+    <small class="form-text text-muted">
+      If enabled, the system will attempt to verify that provided phone numbers
+      are capable of receiving SMS text messages before sending. This can
+      greatly reduce errors (especially during bulk code issuance), but
+      <strong>may incur additional costs</strong>.
+    </small>
+  </div>
+
   <div class="mt-4">
     <input type="submit" class="btn btn-primary btn-block" value="Update SMS settings" />
   </div>

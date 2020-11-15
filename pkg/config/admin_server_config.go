@@ -50,10 +50,6 @@ type AdminAPIServerConfig struct {
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=660h"` // 660h is 28 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
-	// ValidateSMSNumbers instructs the server to validate phone numbers are
-	// capable of receiving SMS messages before attempting delivery.
-	ValidateSMSNumbers bool `env:"VALIDATE_SMS_NUMBERS, default=true"`
-
 	// For EN Express, the link will be
 	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
 	// This repository contains a redirect service that can be used for this purpose.
@@ -112,8 +108,4 @@ func (c *AdminAPIServerConfig) GetRateLimitConfig() *ratelimit.Config {
 
 func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
-}
-
-func (c *AdminAPIServerConfig) GetValidateSMSNumbers() bool {
-	return c.ValidateSMSNumbers
 }

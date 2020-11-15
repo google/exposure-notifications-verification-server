@@ -66,6 +66,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		TwilioAccountSid   string `form:"twilio_account_sid"`
 		TwilioAuthToken    string `form:"twilio_auth_token"`
 		TwilioFromNumber   string `form:"twilio_from_number"`
+		ValidateSMSNumbers bool   `form:"validate_sms_numbers"`
 
 		Email                bool   `form:"email"`
 		UseSystemEmailConfig bool   `form:"use_system_email_config"`
@@ -166,6 +167,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		if form.SMS {
 			realm.UseSystemSMSConfig = form.UseSystemSMSConfig
 			realm.SMSCountry = form.SMSCountry
+			realm.ValidateSMSNumbers = form.ValidateSMSNumbers
 		}
 
 		// Email

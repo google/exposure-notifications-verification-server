@@ -315,7 +315,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			if err := func() error {
 				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 
-				if c.config.GetValidateSMSNumbers() {
+				if realm.ValidateSMSNumbers {
 					if err := smsProvider.ValidateSMSNumber(ctx, request.Phone); err != nil {
 						if err := c.db.DeleteVerificationCode(code); err != nil {
 							logger.Errorw("failed to delete verification code", "error", err)

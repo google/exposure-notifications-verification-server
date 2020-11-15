@@ -151,6 +151,11 @@ type Realm struct {
 	// configuration, making it impossible to opt out of text message sending.
 	UseSystemSMSConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
 
+	// ValidateSMSNumbers validates that phone numbers are capable of receiving
+	// SMS messages before attempting to send. Depending on the SMS provider, this
+	// may incur an additional cost.
+	ValidateSMSNumbers bool `gorm:"column:validate_sms_numbers; type:bool; not null; default:true;"`
+
 	// EmailInviteTemplate is the template for inviting new users.
 	EmailInviteTemplate string `gorm:"type:text;"`
 

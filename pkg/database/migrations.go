@@ -1667,6 +1667,21 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00067-AddValidateSMSNumbersToRealm",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS validate_sms_numbers BOOL`,
+					`ALTER TABLE realms ALTER COLUMN validate_sms_numbers SET DEFAULT true`,
+					`ALTER TABLE realms ALTER COLUMN validate_sms_numbers SET NOT NULL`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS validate_sms_numbers`,
+				)
+			},
+		},
 	})
 }
 
@@ -1713,5 +1728,14 @@ func (db *Database) RunMigrations(ctx context.Context) error {
 		return err
 	}
 	logger.Debugw("migrations complete")
+	return nil
+}
+
+func multiExec(tx *gorm.DB, sqls ...string) error {
+	for _, sql := range sqls {
+		if err := tx.Exec(sql).Error; err != nil {
+			return fmt.Errorf("failed to run `%v`: %w", sql, err)
+		}
+	}
 	return nil
 }
