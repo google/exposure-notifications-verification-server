@@ -330,7 +330,7 @@ EOT
 
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
-  project      = var.monitoring-host-project
+  project      =  var.verification-server-project
   display_name = "Fast error budget burn"
   combiner     = "OR"
   enabled      = "true"
@@ -339,7 +339,9 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   conditions {
     display_name = "2% burn in 1 hour"
     condition_threshold {
-      filter = "select_slo_burn_rate(\"projects/${var.monitoring-host-project}/services/verification-server/serviceLevelObjectives/availability-slo\", \"3600s\")"
+      filter = <<-EOT
+      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "3600s")
+      EOT
       duration = "0s"
       comparison = "COMPARISON_GT"
       # burn rate = budget consumed * period / alerting window = .02 * (7 * 24 * 60)/60 = 3.36
