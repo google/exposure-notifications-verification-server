@@ -327,3 +327,42 @@ EOT
     google_logging_metric.stackdriver_export_error_count
   ]
 }
+
+# fast error budget burn alert
+resource "google_monitoring_alert_policy" "fast_burn" {
+  project      = var.monitoring-host-project
+  display_name = "Fast error budget burn"
+  combiner     = "OR"
+  enabled      = "true"
+  conditions {
+    display_name = "2% burn in 1 hour"
+    condition_threshold {
+      filter = "select_slo_burn_rate(\"projects/${var.monitoring-host-project}/services/verification-server/serviceLevelObjectives/availability-slo\", \"3600s\")"
+      duration = "0s"
+      comparison = "COMPARISON_GT"
+      threshold_value = 3.36
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+
+The Verification Server is reporting a degradation in availability.
+
+See [docs/5xx.md](https://github.com/sethvargo/exposure-notifications-server-infra/blob/main/docs/5xx.md) for information about debugging.
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id,
+  ]
+
+  depends_on = [
+    google_monitoring_slo.availability-slo
+  ]
+}
