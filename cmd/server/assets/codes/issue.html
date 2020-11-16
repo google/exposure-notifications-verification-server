@@ -1,4 +1,4 @@
-{{define "home"}}
+{{define "codes/issue"}}
 
 {{$currentRealm := .currentRealm}}
 {{$hasSMSConfig := .hasSMSConfig}}
@@ -23,7 +23,7 @@
   </style>
 </head>
 
-<body id="home" class="tab-content">
+<body id="codes-issue" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -342,7 +342,7 @@
 
     function getCode(data) {
       $.ajax({
-        url: '/home/issue',
+        url: '/codes/issue',
         type: 'POST',
         dataType: 'json',
         cache: false,

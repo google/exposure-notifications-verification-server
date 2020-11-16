@@ -26,8 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
@@ -188,8 +187,22 @@ func Server(
 		}
 	}
 
+	// Redirect old /home path to /codes/issue. This route is no longer in use,
+	// but the redirect is preserved in case people have their browser open to the
+	// old page.
+	//
+	// TODO: remove in 0.18+.
 	{
 		sub := r.PathPrefix("/home").Subrouter()
+
+		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("GET")
+		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("GET")
+		sub.Handle("/issue", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("POST")
+	}
+
+	// codes
+	{
+		sub := r.PathPrefix("/codes").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
@@ -198,26 +211,15 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		homeController := home.New(ctx, cfg, db, h)
-		sub.Handle("", homeController.HandleHome()).Methods("GET")
+		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
+		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
-	}
 
-	{
-		sub := r.PathPrefix("/code").Subrouter()
-		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
-		sub.Use(processFirewall)
-		sub.Use(requireVerified)
-		sub.Use(requireMFA)
-		sub.Use(rateLimit)
-
-		codestatusController := codestatus.NewServer(ctx, cfg, db, h)
-		codestatusRoutes(sub, codestatusController)
+		codesController := codes.NewServer(ctx, cfg, db, h)
+		codesRoutes(sub, codesController)
 	}
 
 	// mobileapp
@@ -322,10 +324,11 @@ func Server(
 	return mux, nil
 }
 
-// codestatusRoutes are the routes for checking code statuses.
-func codestatusRoutes(r *mux.Router, c *codestatus.Controller) {
+// codesRoutes are the routes for checking codes.
+func codesRoutes(r *mux.Router, c *codes.Controller) {
+	r.Handle("/issue", c.HandleIssue()).Methods("GET")
 	r.Handle("/status", c.HandleIndex()).Methods("GET")
-	r.Handle("/show/{uuid}", c.HandleShow()).Methods("GET")
+	r.Handle("/{uuid}", c.HandleShow()).Methods("GET")
 	r.Handle("/{uuid}/expire", c.HandleExpirePage()).Methods("PATCH")
 }
 

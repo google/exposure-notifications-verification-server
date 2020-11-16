@@ -67,6 +67,10 @@ func TestShowAdminSMS(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
+	wantAccountSid := "abc123"
+	wantAuthToken := "def456"
+	wantFromNumber := "+11234567890"
+
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
@@ -76,7 +80,31 @@ func TestShowAdminSMS(t *testing.T) {
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-sms-show`, chromedp.ByQuery),
+
+		// Set fields and submit
+		chromedp.SetValue(`input#twilio-account-sid`, wantAccountSid, chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-auth-token`, wantAuthToken, chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number`, wantFromNumber, chromedp.ByQuery),
+		chromedp.Submit(`form#sms-form`, chromedp.ByQuery),
+
+		// Wait for render.
+		chromedp.WaitVisible(`body#admin-sms-show`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
+	}
+
+	systemSMSConfig, err := harness.Database.SystemSMSConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if systemSMSConfig.TwilioAccountSid != wantAccountSid {
+		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAccountSid, wantAccountSid)
+	}
+	if systemSMSConfig.TwilioAuthToken != wantAuthToken {
+		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAuthToken, wantAuthToken)
+	}
+	if systemSMSConfig.TwilioFromNumber != wantFromNumber {
+		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioFromNumber, wantFromNumber)
 	}
 }

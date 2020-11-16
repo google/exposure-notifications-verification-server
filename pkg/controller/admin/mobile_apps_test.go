@@ -48,6 +48,18 @@ func TestShowAdminMobileApps(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	app := &database.MobileApp{
+		Name:    "test mobile app",
+		RealmID: realm.ID,
+		URL:     "https://example2.com",
+		OS:      database.OSTypeAndroid,
+		SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
+		AppID:   "app2",
+	}
+	if err := harness.Database.SaveMobileApp(app, database.System); err != nil {
+		t.Fatal(err)
+	}
+
 	// Log in the user.
 	session, err := harness.LoggedInSession(nil, admin.Email)
 	if err != nil {
@@ -76,6 +88,20 @@ func TestShowAdminMobileApps(t *testing.T) {
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-mobileapps-index`, chromedp.ByQuery),
+
+		// Fill out the form by email.
+		chromedp.SetValue(`input#search`, "test mobile app", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Wait for the search result.
+		chromedp.WaitVisible(`table#results-table tr`, chromedp.ByQuery),
+
+		// Fill out the form with a non-existing user
+		chromedp.SetValue(`input#search`, "notexists", chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Assert no users shown
+		chromedp.WaitNotPresent(`table#results-table tr`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}

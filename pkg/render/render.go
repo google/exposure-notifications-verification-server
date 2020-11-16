@@ -41,6 +41,7 @@ var allowedResponseCodes = map[int]struct{}{
 	401: {},
 	404: {},
 	405: {},
+	409: {},
 	412: {},
 	413: {},
 	429: {},

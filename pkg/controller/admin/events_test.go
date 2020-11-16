@@ -27,6 +27,9 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+// This goes to the value of a <input type="datetime-local">
+const RFC3339PartialLocal = "2006-01-02T15:04:05"
+
 func TestShowAdminEvents(t *testing.T) {
 	harness := envstest.NewServer(t)
 
@@ -47,6 +50,21 @@ func TestShowAdminEvents(t *testing.T) {
 	if err := harness.Database.SaveUser(admin, database.System); err != nil {
 		t.Fatal(err)
 	}
+
+	eventTime, err := time.Parse(time.RFC3339, "2020-03-11T12:00:00Z")
+	if err != nil {
+		t.Fatal(err)
+	}
+	audit := &database.AuditEntry{
+		RealmID:       0, // system entry
+		Action:        "test action",
+		TargetID:      "testTargetID",
+		TargetDisplay: "test target",
+		ActorID:       "testActorID",
+		ActorDisplay:  "test actor",
+		CreatedAt:     eventTime,
+	}
+	harness.Database.RawDB().Save(audit)
 
 	// Log in the user.
 	session, err := harness.LoggedInSession(nil, admin.Email)
@@ -76,6 +94,22 @@ func TestShowAdminEvents(t *testing.T) {
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-events-index`, chromedp.ByQuery),
+
+		// Search from and hour before to and hour after our event
+		chromedp.SetValue(`#from`, eventTime.Add(-time.Hour).Format(RFC3339PartialLocal), chromedp.ByQuery),
+		chromedp.SetValue(`#to`, eventTime.Add(time.Hour).Format(RFC3339PartialLocal), chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Wait for the search result.
+		chromedp.WaitVisible(`#results #event`, chromedp.ByQuery),
+
+		// Search an hour before the event.
+		chromedp.SetValue(`#from`, eventTime.Add(-2*time.Hour).Format(RFC3339PartialLocal), chromedp.ByQuery),
+		chromedp.SetValue(`#to`, eventTime.Add(-time.Hour).Format(RFC3339PartialLocal), chromedp.ByQuery),
+		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
+
+		// Assert no event found
+		chromedp.WaitNotPresent(`#results #event`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}
