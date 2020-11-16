@@ -16,6 +16,7 @@ package main
 
 import (
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -86,27 +87,37 @@ func allAlertNames(t *testing.T) []string {
 	return ret
 }
 
+func setDiff(xs, ys []string) []string {
+	s1 := make(map[string]bool)
+	s2 := make(map[string]bool)
+	for _, s := range xs {
+		s1[s] = true
+	}
+	for _, s := range ys {
+		s2[s] = true
+	}
+	for k := range s1 {
+		if s2[k] {
+			delete(s1, k)
+		}
+	}
+	var ret []string
+	for k := range s1 {
+		ret = append(ret, k)
+	}
+	sort.Strings(ret)
+	return ret
+}
+
 // Test to ensure every playbook has a corresponding alert, and every alert has
 // a corresponding laybook.
 func TestPlaybooks(t *testing.T) {
-	playbookNames := make(map[string]bool)
-	for _, n := range allPlaybookNames(t) {
-		playbookNames[n] = true
+	playbooks := allPlaybookNames(t)
+	alerts := allAlertNames(t)
+	for _, x := range setDiff(playbooks, alerts) {
+		t.Errorf("Missing alert for playbook %q.", x)
 	}
-	alertNames := make(map[string]bool)
-	for _, n := range allAlertNames(t) {
-		alertNames[n] = true
-	}
-	for k := range playbookNames {
-		if alertNames[k] {
-			delete(alertNames, k)
-			delete(playbookNames, k)
-		}
-	}
-	for k := range playbookNames {
-		t.Errorf("Missing alert for playbook %q.", k)
-	}
-	for k := range alertNames {
-		t.Errorf("Missing playbook for alert %q.", k)
+	for _, x := range setDiff(alerts, playbooks) {
+		t.Errorf("Missing playbook for alert %q.", x)
 	}
 }
