@@ -234,12 +234,13 @@
       }
     });
 
-    function buildRequest(row) {
-      if (rows.trim() != "") {
+    function buildRequest(thisRow) {
+      thisRow = thisRow.trim();
+      if (thisRow == "") {
         return "";
       }
       let request = {};
-      let cols = rows[i].split(',');
+      let cols = thisRow.split(',');
       if (cols.length < 2) {
         return "";
       }
