@@ -12,6 +12,7 @@ This alert fires when 2% of the error budget, as determined by the availability 
 * Look at services dashboard
    * Load https://console.cloud.google.com/monitoring/services
    * Look at the Verification Server service and determine its health
+   * Look at the e2e-runner service request logs. This is a service executing code issue and key upload logic and may contain more information on what's going on
    * Look for servers with elevated 5xx
    * Look at request logs, you can navigate by hand or use the following query
 
