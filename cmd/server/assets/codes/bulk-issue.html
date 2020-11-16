@@ -120,6 +120,7 @@
       let $newCode = $('#new-code');
       let $startAt = $('#start-at');
 
+      let tzOffset = new Date().getTimezoneOffset();
       let randomString = getCookie("retryCode");
       if (randomString == "") {
         randomString = genCode();
@@ -128,7 +129,7 @@
       }
       $retryCode.val(randomString);
 
-      let totalCreated = 0;
+      let total = 0;
       let upload = readFile();
 
       $table.hide();
@@ -188,31 +189,40 @@
         let start = async function(e) {
           let rows = e.target.result.split('\n');
           let batch = [];
-          totalUsersCreated = 0;
+          total = 0;
           $tableBody.empty();
           for (let i = parseInt($startAt.val()); i < rows.length && !cancelUpload; i++) {
-            if (rows[i].trim() != "") {
-              if (batch.length >= batchSize) {
-                $tableBody.empty();
-                batch = [];
-              }
-
-              let request = {};
-              let cols = rows[i].split(',');
-              // Escape csv row contents
-              request["phone"] = $("<div>").text(cols[0].trim()).html();
-              request["symptomDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
-              // Generate a UUID by hashing phone
-              let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36)
-              request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
-
-              let row = "<tr><td>" + request["phone"] + "</td><td>" + request["symptomDate"] + "</td></tr>";
-              $tableBody.append(row);
-
-              batch.push(request);
+            // Clear batch that was just uploaded.
+            if (batch.length >= batchSize) {
+              $tableBody.empty();
+              batch = [];
             }
 
-            if (batch.length >= batchSize || i == rows.length - 1) {
+            // Add to batch if the next row is valid.
+            if (rows[i].trim() != "") {
+              let request = {};
+              let cols = rows[i].split(',');
+              if (cols.length == 2) {
+                // Escape csv row contents
+                request["phone"] = $("<div>").text(cols[0].trim()).html();
+                request["symptomDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+                if (request["phone"] != "") {
+                  // Generate a UUID by hashing phone
+                  let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36)
+                  request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
+
+                  let row = "<tr><td>" + request["phone"] + "</td><td>" + request["symptomDate"] + "</td></tr>";
+                  $tableBody.append(row);
+
+                  request["testType"] = "confirmed";
+                  request["tzOffset"] = tzOffset;
+                  batch.push(request);
+                }
+              }
+            }
+
+            // If we've hit the batch limit or end of file, upload it.
+            if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
               await uploadBatch(batch).catch(err => { });
               $startAt.val(i);
               if (cancelUpload) {
@@ -228,7 +238,7 @@
           }
 
           if (!cancelUpload) {
-            flash.alert("Successfully issued" + total + " codes.");
+            flash.alert("Successfully issued " + total + " codes.");
           }
           $table.fadeOut(400);
           $import.prop('disabled', false);
@@ -241,20 +251,26 @@
 
     function uploadBatch(data) {
       return $.ajax({
-        type: 'POST',
         url: '/codes/issue',
+        type: 'POST',
+        dataType: 'json',
+        cache: false,
+        contentType: 'application/json',
+        headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
         // TODO: at the moment we only support one-at-a-time
         data: JSON.stringify(data[0]),
-        headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
-        contentType: 'application/json',
         success: function(result) {
           total += result.newUsers.length;
           if (result.error) {
-            flash.error(result.error, "danger");
+            flash.error(result.error);
           }
         },
-        error: function(xhr, status, e) {
-          flash.error(e, "danger");
+        error: function(xhr, resp, text) {
+          var message = resp;
+          if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+            message = message + ": " + xhr.responseJSON.error;
+          }
+          flash.error(message);
         },
       });
     }

@@ -201,7 +201,7 @@ type IssueCodeResponse struct {
 	// After this time the code will no longer be accepted and is eligible for deletion.
 	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
 
-	// LongExpiresAt and LongExpiresAtTimestamp repesents the time when the long
+	// LongExpiresAt and LongExpiresAtTimestamp represents the time when the long
 	// code expires, in UTC seconds since epoch.
 	LongExpiresAt          string `json:"longExpiresAt,omitempty"`
 	LongExpiresAtTimestamp int64  `json:"longExpiresAtTimestamp,omitempty"`
