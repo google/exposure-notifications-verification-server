@@ -334,6 +334,8 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   display_name = "Fast error budget burn"
   combiner     = "OR"
   enabled      = "true"
+  # create only if using GCLB, which means there's an SLO created
+  count = var.https-forwarding-rule == "" ? 0 : 1
   conditions {
     display_name = "2% burn in 1 hour"
     condition_threshold {
@@ -353,7 +355,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 
 The Verification Server is reporting a degradation in availability.
 
-See [docs/5xx.md](https://github.com/sethvargo/exposure-notifications-server-infra/blob/main/docs/5xx.md) for information about debugging.
+See [the playbook](https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/Fast_Error_Budget_Burn.md) for information about debugging.
 EOT
     mime_type = "text/markdown"
   }
