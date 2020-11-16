@@ -99,6 +99,6 @@ func (c *Controller) HandleHome() http.Handler {
 		}
 
 		// Render
-		c.h.RenderHTML(w, "home", m)
+		c.h.RenderHTML(w, "codes/issue", m)
 	})
 }
