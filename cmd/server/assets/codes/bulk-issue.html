@@ -43,7 +43,7 @@
         </pre>
 
         <p>
-          This form will read the CSV contents and call the issue API one-by-one.
+          This form will data and issue a code for each provided entry.
         </p>
         <form id="form">
           <div class="form-label-group input-group">
@@ -117,7 +117,7 @@
       let $retryCode = $('#retry-code');
       let $rememberCode = $('#remember-code');
       let $newCode = $('#new-code');
-      let $startAt = $('#new-code');
+      let $startAt = $('#start-at');
 
       let randomString = getCookie("retryCode");
       if (randomString == "") {
@@ -133,7 +133,7 @@
       $table.hide();
 
       {{if $hasSMSConfig}}
-      if (typeof (FileReader) == "undefined") {
+      if (typeof (FileReader) === "undefined") {
         flash.error("Your browser does not support the required HTML5 file reader.");
       } else {
         $csv.prop('disabled', false);
@@ -147,11 +147,13 @@
       });
 
       $cancel.on('click', function(event) {
+        event.PreventDefault()
         upload.cancel();
         flash.error('Canceled batch upload.');
       });
 
       $newCode.on('click', function(event) {
+        event.PreventDefault();
         $retryCode.val(genCode());
       });
 
