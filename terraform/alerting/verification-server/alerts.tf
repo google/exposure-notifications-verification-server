@@ -342,6 +342,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
       filter = "select_slo_burn_rate(\"projects/${var.monitoring-host-project}/services/verification-server/serviceLevelObjectives/availability-slo\", \"3600s\")"
       duration = "0s"
       comparison = "COMPARISON_GT"
+      # burn rate = budget consumed * period / alerting window = .02 * (7 * 24 * 60)/60 = 3.36
       threshold_value = 3.36
       trigger {
         count = 1
