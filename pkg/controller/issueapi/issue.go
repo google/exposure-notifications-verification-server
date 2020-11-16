@@ -310,7 +310,10 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			if err := func() error {
+			// +1XXX55501XX is reserved for fictitious use. Just log for dev mode.
+			if c.config.DevMode() && request.Phone[:2] == "+1" && request.Phone[5:5] == "55501" {
+				logger.Infow("dev mode example number detected", "phone", request.Phone)
+			} else if err := func() error {
 				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {

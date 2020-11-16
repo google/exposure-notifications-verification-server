@@ -109,3 +109,7 @@ func (c *AdminAPIServerConfig) GetRateLimitConfig() *ratelimit.Config {
 func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }
+
+func (c *AdminAPIServerConfig) DevMode() bool {
+	return c.DevMode
+}

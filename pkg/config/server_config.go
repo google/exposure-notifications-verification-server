@@ -153,6 +153,10 @@ func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }
 
+func (c *AdminAPIServerConfig) DevMode() bool {
+	return c.DevMode
+}
+
 // FirebaseConfig represents configuration specific to firebase auth.
 type FirebaseConfig struct {
 	APIKey          string `env:"FIREBASE_API_KEY,required"`
