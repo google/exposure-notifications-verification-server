@@ -1,0 +1,89 @@
+{{define "code/show"}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <h1>Verification code status</h1>
+    <p>
+      Status of a verification code previously shared with your patient.
+    </p>
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">
+        Code status
+      </div>
+      <div class="list-group list-group-flush">
+        <div class="list-group-item">
+          <h5 class="mb-1">UUID</h5>
+          <p class="mb-1 text-monospace">{{.code.UUID}}</p>
+        </div>
+        <div class="list-group-item">
+          <h5 class="mb-1">{{.code.IssuerType}}</h5>
+          <p class="mb-1">{{.code.Issuer}}</p>
+        </div>
+        <div class="list-group-item">
+          <h5 class="mb-1">Test type</h5>
+          <p class="mb-1">{{.code.TestType}}</p>
+        </div>
+        <div class="list-group-item">
+          <h5 class="mb-1">Status</h5>
+          <p class="mb-1">{{.code.Status}}</p>
+        </div>
+        {{if not .code.Claimed}}
+        <div class="list-group-item">
+          <h5 class="mb-1">Short code expiry</h5>
+          <span id="code-expires-at" class="sm text-danger">&nbsp;</span>
+        </div>
+        {{if .code.HasLongExpires}}
+        <div class="list-group-item">
+          <h5 class="mb-1">SMS link expiry</h5>
+          <span id="long-code-expires-at" class="sm text-danger">&nbsp;</span>
+        </div>
+        {{end}}
+        {{end}}
+        {{if .code.Expires}}
+        <div class="list-group-item">
+          <a href="/code/{{.code.UUID}}/expire" class="btn btn-danger d-block" data-method="PATCH" data-confirm="Are you sure you want to expire this code?">
+            Invalidate code now
+          </a>
+        </div>
+        {{end}}
+      </div>
+    </div>
+
+    <a href="/code/status" class="card-link">&larr; Enter another code</a>
+  </main>
+
+  {{template "codescripts" .}}
+
+  {{if not .code.Claimed}}
+  <script type="text/javascript">
+    let $buttonInvalidate = $('button#invalidate');
+    let expires = {{ .code.Expires }};
+    let longExpires = {{ .code.LongExpires }};
+
+    $(function() {
+      let $codeExpiresAt = $('#code-expires-at');
+      countdown($codeExpiresAt, expires);
+
+      {{if .code.HasLongExpires}}
+      let $longCodeExpiresAt = $('#long-code-expires-at');
+      countdown($longCodeExpiresAt, longExpires);
+      {{end}}
+    });
+  </script>
+  {{end}}
+</body>
+
+</html>
+{{end}}
