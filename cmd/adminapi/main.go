@@ -27,7 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -159,9 +159,9 @@ func realMain(ctx context.Context) error {
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 
-		codeStatusController := codestatus.NewAPI(ctx, cfg, db, h)
-		sub.Handle("/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
-		sub.Handle("/expirecode", codeStatusController.HandleExpireAPI()).Methods("POST")
+		codesController := codes.NewAPI(ctx, cfg, db, h)
+		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")
+		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods("POST")
 	}
 
 	srv, err := server.New(cfg.Port)

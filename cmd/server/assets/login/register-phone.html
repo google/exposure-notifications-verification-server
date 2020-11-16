@@ -58,7 +58,7 @@
               </form>
 
 
-              <a id="skip" href="/code/issue" class="float-right mt-3 card-link {{if eq .mfaMode.String "required"}}d-none{{end}}">
+              <a id="skip" href="/codes/issue" class="float-right mt-3 card-link {{if eq .mfaMode.String "required"}}d-none{{end}}">
                 Skip for now
               </a>
             </div>
@@ -303,7 +303,7 @@
             contentType: 'application/x-www-form-urlencoded',
             success: function(returnData) {
               {{if .isPrompt}}
-              window.location.assign('/code/issue');
+              window.location.assign('/codes/issue');
               {{else}}
               flash.clear();
               flash.alert('SMS authentication enrolled successfully.');

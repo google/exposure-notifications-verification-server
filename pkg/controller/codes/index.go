@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package codestatus defines a web controller for the code status page of the verification
-// server. This view allows users to view the status of previously-issued OTP codes.
-package codestatus
+package codes
 
 import (
 	"context"
@@ -62,6 +60,6 @@ func (c *Controller) renderStatus(
 	m.Title("Verification code statuses")
 	m["code"] = code
 	m["recentCodes"] = recentCodes
-	c.h.RenderHTML(w, "code/status", m)
+	c.h.RenderHTML(w, "codes/status", m)
 	return nil
 }

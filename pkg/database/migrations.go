@@ -230,6 +230,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				logger.Debugw("creating default realm")
 				// Create the default realm with all of the default settings.
 				defaultRealm := NewRealmWithDefaults("Default")
+				defaultRealm.RequireDate = false
 				if err := tx.FirstOrCreate(defaultRealm).Error; err != nil {
 					return err
 				}

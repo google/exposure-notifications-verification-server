@@ -12,49 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package home defines a web controller for the home page of the verification
-// server. This view allows users to issue OTP codes and tie them to a diagnosis
-// and test date.
-package home
+package codes
 
 import (
-	"context"
 	"fmt"
 	"html/template"
 	"net/http"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-type Controller struct {
-	config *config.ServerConfig
-	db     *database.Database
-	h      *render.Renderer
-
-	pastDaysDuration   time.Duration
-	displayAllowedDays string
-}
-
-// New creates a new controller for the home page.
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
-	pastDaysDuration := -1 * config.AllowedSymptomAge
-	displayAllowedDays := fmt.Sprintf("%.0f", config.AllowedSymptomAge.Hours()/24.0)
-
-	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-
-		pastDaysDuration:   pastDaysDuration,
-		displayAllowedDays: displayAllowedDays,
-	}
-}
-
-func (c *Controller) HandleHome() http.Handler {
+func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -81,9 +50,11 @@ func (c *Controller) HandleHome() http.Handler {
 
 		// Set test date params
 		now := time.Now().UTC()
+		pastDaysDuration := -1 * c.serverconfig.AllowedSymptomAge
+		displayAllowedDays := fmt.Sprintf("%.0f", c.serverconfig.AllowedSymptomAge.Hours()/24.0)
 		m["maxDate"] = now.Format("2006-01-02")
-		m["minDate"] = now.Add(c.pastDaysDuration).Format("2006-01-02")
-		m["maxSymptomDays"] = c.displayAllowedDays
+		m["minDate"] = now.Add(pastDaysDuration).Format("2006-01-02")
+		m["maxSymptomDays"] = displayAllowedDays
 		m["duration"] = realm.CodeDuration.Duration.String()
 		m["hasSMSConfig"] = hasSMSConfig
 
@@ -99,6 +70,6 @@ func (c *Controller) HandleHome() http.Handler {
 		}
 
 		// Render
-		c.h.RenderHTML(w, "home", m)
+		c.h.RenderHTML(w, "codes/issue", m)
 	})
 }
