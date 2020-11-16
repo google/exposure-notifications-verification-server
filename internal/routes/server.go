@@ -26,7 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
@@ -188,7 +188,7 @@ func Server(
 		}
 	}
 
-	// TODO: this is a legacy path which is now duplicated on /code
+	// TODO: this is a legacy path which is now duplicated on /codes
 	// This will be removed in a future release.
 	{
 		sub := r.PathPrefix("/home").Subrouter()
@@ -208,9 +208,9 @@ func Server(
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 	}
 
-	// code
+	// codes
 	{
-		sub := r.PathPrefix("/code").Subrouter()
+		sub := r.PathPrefix("/codes").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentRealm)
 		sub.Use(requireRealm)
@@ -219,17 +219,19 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		codestatusController := codestatus.NewServer(ctx, cfg, db, h)
-		codestatusRoutes(sub, codestatusController)
+		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
+		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
 
 		homeController := home.New(ctx, cfg, db, h)
-		sub.Handle("", homeController.HandleHome()).Methods("GET")
 		sub.Handle("/issue", homeController.HandleHome()).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 		sub.Handle("/bulk-issue", issueapiController.HandleBulkIssue()).Methods("GET")
+
+		codesController := codes.NewServer(ctx, cfg, db, h)
+		codesRoutes(sub, codesController)
 	}
 
 	// mobileapp
@@ -334,10 +336,10 @@ func Server(
 	return mux, nil
 }
 
-// codestatusRoutes are the routes for checking code statuses.
-func codestatusRoutes(r *mux.Router, c *codestatus.Controller) {
+// codesRoutes are the routes for checking codes.
+func codesRoutes(r *mux.Router, c *codes.Controller) {
 	r.Handle("/status", c.HandleIndex()).Methods("GET")
-	r.Handle("/show/{uuid}", c.HandleShow()).Methods("GET")
+	r.Handle("/{uuid}", c.HandleShow()).Methods("GET")
 	r.Handle("/{uuid}/expire", c.HandleExpirePage()).Methods("PATCH")
 }
 

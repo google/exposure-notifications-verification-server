@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package codestatus defines a web controller for the code status page of the verification
-// server. This view allows users to view the status of previously-issued OTP codes.
-package codestatus
+// Package codes defines a web controller for the code status page of the
+// verification server. This view allows users to view the status of
+// previously-issued OTP codes.
+package codes
 
 import (
 	"context"
