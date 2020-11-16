@@ -38,7 +38,7 @@ func TestRoutes_codestatusRoutes(t *testing.T) {
 			req: httptest.NewRequest("GET", "/status", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/show/aaa-aaa-aaa-aaa", nil),
+			req: httptest.NewRequest("GET", "/aaa-aaa-aaa-aaa", nil),
 		},
 		{
 			req: httptest.NewRequest("PATCH", "/aaa-aaa-aaa-aaa/expire", nil),

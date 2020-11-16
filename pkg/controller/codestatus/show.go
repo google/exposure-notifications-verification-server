@@ -18,6 +18,7 @@ package codestatus
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -69,6 +70,14 @@ func (c *Controller) HandleShow() http.Handler {
 			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
 				controller.InternalError(w, r, c.h, err)
 			}
+			return
+		}
+
+		// The code was valid, but it's not in the correct UUID format. This ensures
+		// two different links don't point to the same resource.
+		if code.UUID != vars["uuid"] {
+			u := fmt.Sprintf("/codes/%s", code.UUID)
+			http.Redirect(w, r, u, http.StatusSeeOther)
 			return
 		}
 
