@@ -61,6 +61,6 @@ func (c *Controller) HandleSubmitChangePassword() http.Handler {
 		}
 
 		flash.Alert("Successfully changed password.")
-		http.Redirect(w, r, "/code/issue", http.StatusSeeOther)
+		http.Redirect(w, r, "/codes/issue", http.StatusSeeOther)
 	})
 }

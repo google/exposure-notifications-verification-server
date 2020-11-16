@@ -26,7 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/codestatus"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
@@ -174,9 +174,9 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 		issueapiController := issueapi.New(ctx, &s.cfg.AdminAPISrvConfig, s.db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 
-		codeStatusController := codestatus.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.db, h)
-		sub.Handle("/checkcodestatus", codeStatusController.HandleCheckCodeStatus()).Methods("POST")
-		sub.Handle("/expirecode", codeStatusController.HandleExpireAPI()).Methods("POST")
+		codesController := codes.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.db, h)
+		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")
+		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods("POST")
 	}
 
 	srv, err := server.New(s.cfg.AdminAPISrvConfig.Port)

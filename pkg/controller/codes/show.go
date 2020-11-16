@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package codestatus defines a web controller for the code status page of the verification
-// server. This view allows users to view the status of previously-issued OTP codes.
-package codestatus
+package codes
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -69,6 +68,14 @@ func (c *Controller) HandleShow() http.Handler {
 			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
 				controller.InternalError(w, r, c.h, err)
 			}
+			return
+		}
+
+		// The code was valid, but it's not in the correct UUID format. This ensures
+		// two different links don't point to the same resource.
+		if code.UUID != vars["uuid"] {
+			u := fmt.Sprintf("/codes/%s", code.UUID)
+			http.Redirect(w, r, u, http.StatusSeeOther)
 			return
 		}
 
