@@ -179,5 +179,5 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, code
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Verification code status")
 	m["code"] = code
-	c.h.RenderHTML(w, "code/show", m)
+	c.h.RenderHTML(w, "codes/show", m)
 }
