@@ -27,7 +27,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/home"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/jwks"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
@@ -188,24 +187,17 @@ func Server(
 		}
 	}
 
-	// TODO: this is a legacy path which is now duplicated on /codes
-	// This will be removed in a future release.
+	// Redirect old /home path to /codes/issue. This route is no longer in use,
+	// but the redirect is preserved in case people have their browser open to the
+	// old page.
+	//
+	// TODO: remove in 0.18+.
 	{
 		sub := r.PathPrefix("/home").Subrouter()
-		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
-		sub.Use(processFirewall)
-		sub.Use(requireVerified)
-		sub.Use(requireMFA)
-		sub.Use(rateLimit)
 
-		homeController := home.New(ctx, cfg, db, h)
-		sub.Handle("", homeController.HandleHome()).Methods("GET")
-
-		// API for creating new verification codes. Called via AJAX.
-		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
-		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
+		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("GET")
+		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("GET")
+		sub.Handle("/issue", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("POST")
 	}
 
 	// codes
@@ -221,9 +213,6 @@ func Server(
 
 		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
 		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
-
-		homeController := home.New(ctx, cfg, db, h)
-		sub.Handle("/issue", homeController.HandleHome()).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
@@ -337,6 +326,7 @@ func Server(
 
 // codesRoutes are the routes for checking codes.
 func codesRoutes(r *mux.Router, c *codes.Controller) {
+	r.Handle("/issue", c.HandleIssue()).Methods("GET")
 	r.Handle("/status", c.HandleIndex()).Methods("GET")
 	r.Handle("/{uuid}", c.HandleShow()).Methods("GET")
 	r.Handle("/{uuid}/expire", c.HandleExpirePage()).Methods("PATCH")
