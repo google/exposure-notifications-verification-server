@@ -23,51 +23,46 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Code status</div>
       <div class="card-body">
-        <form class="floating-form">
+        <form class="floating-form" action="/codes/status" id="form-check-status">
           <div class="form-group">
-            <div class="form-label-group ">
+            <div class="form-label-group">
               <input type="text" id="uuid" name="uuid"
                 class='form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}'
                 value="{{$code.UUID}}" placeholder="UUID" autocomplete="off" required autofocus>
               <label for="uuid">UUID</label>
-              {{if $code.ErrorsFor "uuid"}}
-              <div class="invalid-feedback">
-                {{joinStrings ($code.ErrorsFor "uuid") ", "}}
-              </div>
-              {{end}}
+              {{template "errorable" $code.ErrorsFor "uuid"}}
               <small class="form-text text-muted">
                 Identifier given from the Issue Code form.
               </small>
             </div>
-          </form>
+          </div>
 
-          <button class="btn btn-primary btn-block" id="check">Check status</button>
-        </div>
+          <input type="submit" value="Check status" class="btn btn-primary btn-block">
+        </form>
       </div>
     </div>
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Your recently issued codes</div>
-      <div class="card-body">
-        <div class="list-group">
-          {{range $code := .recentCodes}}
-          <a href="/code/show/{{$code.UUID}}" class="list-group-item list-group-item-action">
-            {{$code.UUID}}<br />
+      <div class="list-group list-group-flush">
+        {{range $code := .recentCodes}}
+          <a href="/codes/{{$code.UUID}}" class="list-group-item list-group-item-action">
+            <span class="text-monospace">{{$code.UUID}}</span>
+            <br />
             <small
               data-timestamp="{{$code.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}"
               data-toggle="tooltip" title="{{$code.CreatedAt.Format "2006-02-01 15:04 UTC"}}">
               {{$code.CreatedAt.Format "2006-02-01 15:04"}}
             </small>
           </a>
-          {{end}}
-        </div>
+        {{end}}
       </div>
     </div>
   </main>
 
   <script type="text/javascript">
     $(function() {
-      let $check= $('#check');
+      let $form = $('#form-check-status');
       let $uuid = $('#uuid');
 
       let allowedChars = new RegExp("[0-9a-fA-F]");
@@ -89,9 +84,9 @@
         $uuid.val(r);
       });
 
-      $check.click(function(e) {
+      $form.submit(function(e) {
         e.preventDefault();
-        window.location.assign("/code/show/"+$uuid.val());
+        window.location.assign("/codes/"+$uuid.val());
       });
     });
   </script>
