@@ -285,8 +285,8 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
 
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
-  project      =  var.verification-server-project
-  display_name = "Fast error budget burn"
+  project      = var.verification-server-project
+  display_name = "FastErrorBudgetBurn"
   combiner     = "OR"
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
@@ -294,10 +294,10 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   conditions {
     display_name = "2% burn in 1 hour"
     condition_threshold {
-      filter = <<-EOT
+      filter     = <<-EOT
       select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "3600s")
       EOT
-      duration = "0s"
+      duration   = "0s"
       comparison = "COMPARISON_GT"
       # burn rate = budget consumed * period / alerting window = .02 * (7 * 24 * 60)/60 = 3.36
       threshold_value = 3.36
