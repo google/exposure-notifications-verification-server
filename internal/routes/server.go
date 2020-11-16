@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
+	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -72,6 +73,16 @@ func Server(
 	// middlewares may add data to the template map.
 	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)
 	r.Use(populateTemplateVariables)
+
+	// Load localization
+	locales, err := i18n.Load(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup i18n: %w", err)
+	}
+
+	// Process localization parameters.
+	processLocale := middleware.ProcessLocale(locales)
+	r.Use(processLocale)
 
 	// Create the renderer
 	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)
