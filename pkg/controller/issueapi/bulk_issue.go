@@ -20,6 +20,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
+// HandleBulkIssue shows the page for bulk-issuing codes.
 func (c *Controller) HandleBulkIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
