@@ -44,6 +44,7 @@
 
         <p>
           This form will data and issue a code for each provided entry.
+          Phone numbers are expected to be in <a href="https://www.twilio.com/docs/glossary/what-e164">E.164</a>a> format.
         </p>
         <form id="form">
           <div class="form-label-group input-group">
@@ -134,7 +135,7 @@
 
       {{if $hasSMSConfig}}
       if (typeof (FileReader) === "undefined") {
-        flash.error("Your browser does not support the required HTML5 file reader.");
+        flash.error('Please update to a browser which supports the HTML5 file reader API.');
       } else {
         $csv.prop('disabled', false);
       }
@@ -261,28 +262,6 @@
     // generates a random 16 digit alphanumeric code
     function genCode() {
       return Math.random().toString(36).substr(2, 8) + Math.random().toString(36).substr(2, 8);
-    }
-
-    function setCookie(cname, cvalue, exdays) {
-      var d = new Date();
-      d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-      var expires = "expires="+d.toUTCString();
-      document.cookie = cname + "=" + cvalue + ";" + expires;
-    }
-
-    function getCookie(cname) {
-      var name = cname + "=";
-      var ca = document.cookie.split(';');
-      for(var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') {
-          c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-          return c.substring(name.length, c.length);
-        }
-      }
-      return "";
     }
   </script>
 </body>
