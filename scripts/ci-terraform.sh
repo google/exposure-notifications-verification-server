@@ -136,13 +136,19 @@ function destroy() {
   local db_inst_name
   # Fetching databases from previous terraform deployment output is not always reliable,
   # especially when previous terraform deployment failed. So grepping from terraform state instead.
-  db_inst_name="$(terraform state show module.en.google_sql_database_instance.db-inst | grep -Eo 'en-verification-[a-zA-Z0-9]+' | uniq)"
+  db_inst_name="$(terraform state show module.en.google_sql_database_instance.db-inst | grep -Eo 'en-verification-[a-zA-Z0-9]+' | uniq)" || best_effort
   if [[ -n "${db_inst_name}" ]]; then
     gcloud sql instances delete ${db_inst_name} -q --project=${PROJECT_ID}
   fi
   # Clean up states after manual DB delete
   terraform state rm module.en.google_sql_user.user || best_effort
   terraform state rm module.en.google_sql_ssl_cert.db-cert || best_effort
+
+  # Serverless VPC connector can be very easily get to a bad state from previous terraform destroy,
+  # Manually destroy it again.
+  local vpc_connector_name="serverless-vpc-connector"
+  gcloud compute networks vpc-access connectors delete ${vpc_connector_name} -q --region us-central1 --project=$PROJECT_ID || best_effort
+
   terraform destroy -auto-approve
   popd > /dev/null
 }
