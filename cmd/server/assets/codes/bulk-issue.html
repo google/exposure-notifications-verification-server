@@ -201,8 +201,10 @@
 
               let request = {};
               let cols = rows[i].split(',');
-              request["phone"] = cols[0].trim();
-              request["symptomDate"] = (cols.length > 1) ? cols[1].trim() : "";
+              // Escape csv row contents
+              request["phone"] = $("<div>").text(cols[0].trim()).html();
+              request["symptomDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+              // Generate a UUID by hashing phone
               let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36)
               request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
 
