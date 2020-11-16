@@ -102,6 +102,12 @@ func (c *Controller) HandleIssue() http.Handler {
 		ctx := observability.WithBuildInfo(r.Context())
 
 		logger := logging.FromContext(ctx).Named("issueapi.HandleIssue")
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
@@ -313,7 +319,10 @@ func (c *Controller) HandleIssue() http.Handler {
 			if err := func() error {
 				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
-				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
+
+				flash.Alert("DEBUG sent:" + message + "; to " + request.Phone)
+
+				/*if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 					// Delete the token
 					if err := c.db.DeleteVerificationCode(code); err != nil {
 						logger.Errorw("failed to delete verification code", "error", err)
@@ -324,7 +333,7 @@ func (c *Controller) HandleIssue() http.Handler {
 					blame = observability.BlameServer
 					result = observability.ResultError("FAILED_TO_SEND_SMS")
 					return err
-				}
+				}*/
 
 				return nil
 			}(); err != nil {

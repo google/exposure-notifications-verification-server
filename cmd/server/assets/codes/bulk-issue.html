@@ -44,7 +44,7 @@
 
         <p>
           This form will data and issue a code for each provided entry.
-          Phone numbers are expected to be in <a href="https://www.twilio.com/docs/glossary/what-e164">E.164</a>a> format.
+          Phone numbers are expected to be in <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a> format.
         </p>
         <form id="form">
           <div class="form-label-group input-group">
@@ -133,13 +133,11 @@
 
       $table.hide();
 
-      {{if $hasSMSConfig}}
       if (typeof (FileReader) === "undefined") {
         flash.error('Please update to a browser which supports the HTML5 file reader API.');
       } else {
         $csv.prop('disabled', false);
       }
-      {{end}}
 
       $csv.change(function(file) {
         let fileName = file.target.files[0].name;
@@ -148,13 +146,13 @@
       });
 
       $cancel.on('click', function(event) {
-        event.PreventDefault()
+        event.preventDefault();
         upload.cancel();
         flash.error('Canceled batch upload.');
       });
 
       $newCode.on('click', function(event) {
-        event.PreventDefault();
+        event.preventDefault();
         $retryCode.val(genCode());
       });
 
