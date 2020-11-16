@@ -353,9 +353,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     content   = <<-EOT
 ## $${policy.display_name}
 
-The Verification Server is reporting a degradation in availability.
-
-See [the playbook](https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/Fast_Error_Budget_Burn.md) for information about debugging.
+See [the playbook](https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/Fast_Error_Budget_Burn.md) for information about triaging and mitigating this alert.
 EOT
     mime_type = "text/markdown"
   }
