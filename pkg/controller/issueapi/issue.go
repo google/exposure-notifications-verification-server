@@ -310,8 +310,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		if request.Phone != "" && smsProvider != nil {
-			// +1XXX55501XX is reserved for fictitious use. Just log for dev mode.
-			if c.config.DevMode() && request.Phone[:2] == "+1" && request.Phone[5:5] == "55501" {
+			if c.config.DevMode() && isFictitious(request.Phone) {
 				logger.Infow("dev mode example number detected", "phone", request.Phone)
 			} else if err := func() error {
 				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
@@ -346,6 +345,11 @@ func (c *Controller) HandleIssue() http.Handler {
 				LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
 			})
 	})
+}
+
+// isFictitious returns true if the number is part of +1XXX55501XX, reserved for fictitious use.
+func isFictitious(p string) bool {
+	return len(p) == 12 && p[:2] == "+1" && p[5:5] == "55501"
 }
 
 func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User, error) {
