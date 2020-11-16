@@ -60,6 +60,6 @@ func (c *Controller) renderStatus(
 	m.Title("Verification code statuses")
 	m["code"] = code
 	m["recentCodes"] = recentCodes
-	c.h.RenderHTML(w, "code/status", m)
+	c.h.RenderHTML(w, "codes/status", m)
 	return nil
 }
