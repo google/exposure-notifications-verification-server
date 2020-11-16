@@ -327,3 +327,45 @@ EOT
     google_logging_metric.stackdriver_export_error_count
   ]
 }
+
+# fast error budget burn alert
+resource "google_monitoring_alert_policy" "fast_burn" {
+  project      =  var.verification-server-project
+  display_name = "Fast error budget burn"
+  combiner     = "OR"
+  enabled      = "true"
+  # create only if using GCLB, which means there's an SLO created
+  count = var.https-forwarding-rule == "" ? 0 : 1
+  conditions {
+    display_name = "2% burn in 1 hour"
+    condition_threshold {
+      filter = <<-EOT
+      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "3600s")
+      EOT
+      duration = "0s"
+      comparison = "COMPARISON_GT"
+      # burn rate = budget consumed * period / alerting window = .02 * (7 * 24 * 60)/60 = 3.36
+      threshold_value = 3.36
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = <<-EOT
+## $${policy.display_name}
+
+See [the playbook](https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/Fast_Error_Budget_Burn.md) for information about triaging and mitigating this alert.
+EOT
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id,
+  ]
+
+  depends_on = [
+    google_monitoring_slo.availability-slo
+  ]
+}
