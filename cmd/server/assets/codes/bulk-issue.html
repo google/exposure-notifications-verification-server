@@ -19,71 +19,84 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
+    {{template "beta-notice" .}}
+
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Bulk issue</div>
       <div class="card-body">
-        {{template "beta-notice" .}}
-
         {{if not $hasSMSConfig}}
-        <div class="alert alert-danger">
-          <span class="oi oi-warning"></span>
-          No SMS provider is configured for this realm.
-          Please contact a realm administrator to enable this feature.
-        </div>
+          <div class="alert alert-danger">
+            <span class="oi oi-warning"></span>
+            No SMS provider is configured for this realm.
+            Please contact a realm administrator to enable this feature.
+          </div>
         {{end}}
 
-        <p>
-          Use this form to bulk issue codes.
-        </p>
-
-        <pre>Example file contents: <code>+12065555555,2020-11-10</code></pre>
-
-        <p>
-          This form will data and issue a code for each provided entry.
-          Phone numbers are expected to be in <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a> format.
-        </p>
         <form id="form">
-          <div class="custom-file mb-4">
-            <input type="file" class="custom-file-input" id="csv" accept=".csv" disabled required>
-            <label class="custom-file-label" for="csv" id="file-label">Select a CSV file</label>
-          </div>
-
-          <div class="form-label-group input-group">
-            <input type="text" class="form-control text-monospace" id="retry-code" placeholder="Retry code" required>
-            <label for="retry-code">Retry code</label>
-            <div class="input-group-append">
-              <button class="btn btn-outline-secondary" id="new-code" type="button">New code</button>
+          <div class="form-group">
+            <div class="custom-file">
+              <input type="file" class="custom-file-input" id="csv" accept=".csv" disabled required>
+              <label class="custom-file-label" for="csv" id="file-label">Select a CSV file...</label>
             </div>
+            <small class="form-text text-muted">
+              The CSV file must be of the format <code>phone,date</code>. Each
+              entry must appear on its own line, and phone numbers must be in
+              <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a>
+              format.
+            </small>
           </div>
-          <small class="form-text text-muted pb-2">
-            The retry code is a password for this bulk upload status in case it fails during processing.
-            If you attempt this upload again with the same retry code, the server will be
-            able to retry re-issue codes for phones which have not been successfully notified.
-            You may use the same retry code for all of your uploads, but guard it like a password.
-          </small>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="remember-code">
-            <label class="form-check-label text-secondary" for="remember-code">Remember code</label>
-          </div>
-          <small class="form-text text-muted pb-4">
-            Your browser will remember this retry code.
-          </small>
 
-          <div class="form-label-group input-group">
-            <input type="text" class="form-control text-monospace" id="start-at" placeholder="Start at line" value="0">
+          <hr>
+
+          <div class="form-label-group">
+            <input type="number" class="form-control text-monospace" id="start-at"
+              placeholder="Start at line" value="0" min="0">
             <label for="start-at">Start at line</label>
+            <small class="form-text text-muted">
+              Parsing the CSV will start at this line. Begin at 0 for a new file.
+              This can be used to resume a canceled or partial upload.
+            </small>
           </div>
-          <small class="form-text text-muted pb-4">
-            Parsing the CSV will start at this line. Begin at 0 for a new file.
-            This can be used to resume a canceled or partial upload.
-          </small>
-          <button class="btn btn-primary" type="submit" id="import" disabled>Issue codes</button>
-          <button class="btn btn-danger d-none" id="cancel" disabled>Cancel</button>
+
+          <div class="form-label-group">
+            <div class="input-group">
+              <input type="text" class="form-control text-monospace" id="retry-code"
+                placeholder="Retry code" required>
+              <label for="retry-code">Retry code</label>
+              <div class="input-group-append">
+                <a id="new-code" class="input-group-text" data-toggle-password="twilio-auth-token" data-toggle="tooltip" title="Generate new code">
+                  <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                  <span class="sr-only">Generate new code</span>
+                </a>
+              </div>
+            </div>
+            <small class="form-text text-muted">
+              The retry code is a password for this bulk upload status in case
+              it fails during processing. If you attempt this upload again with
+              the same retry code, the server will be able to retry re-issue
+              codes for phones which have not been successfully notified. You
+              may use the same retry code for all of your uploads, but guard it
+              like a password.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input" id="remember-code">
+              <label class="custom-control-label" for="remember-code">Remember code</label>
+            </div>
+            <small class="form-text text-muted">
+              Store the retry code in a cookie in your browser.
+            </small>
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit" id="import" disabled>Issue codes</button>
+          <button class="btn btn-danger btn-block d-none" id="cancel" disabled>Cancel</button>
         </form>
       </div>
 
       <div class="card-body">
-        <div class="progress d-none" id="progress-div" style="display:none;">
+        <div class="progress d-none" id="progress-div">
           <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
             aria-valuemax="100"></div>
         </div>
