@@ -313,6 +313,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			if err := func() error {
 				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+
 				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 					// Delete the token
 					if err := c.db.DeleteVerificationCode(code); err != nil {

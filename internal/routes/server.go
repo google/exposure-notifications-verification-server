@@ -217,6 +217,7 @@ func Server(
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
+		sub.Handle("/bulk-issue", issueapiController.HandleBulkIssue()).Methods("GET")
 
 		codesController := codes.NewServer(ctx, cfg, db, h)
 		codesRoutes(sub, codesController)
