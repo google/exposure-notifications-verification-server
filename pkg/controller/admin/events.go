@@ -47,8 +47,8 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		to := r.FormValue(QueryToSearch)
 		scopes = append(scopes, database.WithAuditTime(from, to))
 
-		realmID := r.FormValue(QueryRealmIDSearch)
-		if id, err := strconv.ParseUint(project.TrimSpace(realmID), 10, 64); err != nil {
+		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
+		if id, err := strconv.ParseUint(realmID, 10, 64); err != nil {
 			scopes = append(scopes, database.WithAuditRealmID(uint(id)))
 		}
 
@@ -65,12 +65,15 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		}
 
 		var realm *database.Realm
-		if realmID == "0" || realmID == "" {
+		switch realmID {
+		case "":
+			// All events
+		case "0":
 			realm = &database.Realm{
 				Model: gorm.Model{ID: 0},
 				Name:  "System",
 			}
-		} else if realmID != "" {
+		default:
 			if realm, err = c.db.FindRealm(realmID); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
