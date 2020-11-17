@@ -281,3 +281,41 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     google_monitoring_slo.availability-slo
   ]
 }
+
+# slow error budget burn alert
+resource "google_monitoring_alert_policy" "slow_burn" {
+  project      = var.verification-server-project
+  display_name = "SlowErrorBudgetBurn"
+  combiner     = "OR"
+  enabled      = "true"
+  # create only if using GCLB, which means there's an SLO created
+  count = var.https-forwarding-rule == "" ? 0 : 1
+  conditions {
+    display_name = "5% burn in 6 hour"
+    condition_threshold {
+      filter     = <<-EOT
+      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "21600s")
+      EOT
+      duration   = "0s"
+      comparison = "COMPARISON_GT"
+      # burn rate = budget consumed * period / alerting window = .05 * (7 * 24 * 60)/360 = 1.4
+      threshold_value = 1.4
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = "${local.playbook_prefix}/SlowErrorBudgetBurn.md"
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id,
+  ]
+
+  depends_on = [
+    google_monitoring_slo.availability-slo
+  ]
+}
