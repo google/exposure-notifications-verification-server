@@ -17,7 +17,9 @@ package admin
 import (
 	"context"
 	"net/http"
+	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
@@ -46,7 +48,9 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		scopes = append(scopes, database.WithAuditTime(from, to))
 
 		realmID := r.FormValue(QueryRealmIDSearch)
-		scopes = append(scopes, database.WithAuditRealmID(realmID))
+		if id, err := strconv.ParseUint(project.TrimSpace(realmID), 10, 64); err != nil {
+			scopes = append(scopes, database.WithAuditRealmID(uint(id)))
+		}
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
