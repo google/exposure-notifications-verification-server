@@ -308,11 +308,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   }
 
   documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-See [the playbook](https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/Fast_Error_Budget_Burn.md) for information about triaging and mitigating this alert.
-EOT
+    content   = "${locals.playbook_prefix}/FastErrorBudgetBurn.md"
     mime_type = "text/markdown"
   }
 
