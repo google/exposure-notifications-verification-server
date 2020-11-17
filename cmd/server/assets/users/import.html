@@ -123,7 +123,7 @@
         $table.show(100);
         $progressDiv.removeClass('d-none');
 
-        var reader = new FileReader();
+        let reader = new FileReader();
         reader.onload = upload.start;
         reader.readAsText($csv[0].files[0]);
       });
