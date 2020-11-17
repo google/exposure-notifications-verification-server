@@ -27,7 +27,7 @@ import (
 )
 
 const initState = "00000-Init"
-const VercodeUUIDUniqueIndex = "uix_verification_codes_uuid"
+const VercodeUUIDUniqueIndex = "idx_vercode_uuid_unique"
 
 func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 	logger := logging.FromContext(ctx)
