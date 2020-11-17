@@ -61,7 +61,7 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		}
 
 		var realm *database.Realm
-		if realmID == "0" {
+		if realmID == "0" || realmID == "" {
 			realm = &database.Realm{
 				Model: gorm.Model{ID: 0},
 				Name:  "System",
