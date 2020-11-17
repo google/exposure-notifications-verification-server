@@ -43,7 +43,7 @@ resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
     }
   }
   documentation {
-    content   = "${locals.playbook_prefix}/RealmTokenRemainingCapacityLow.md"
+    content   = "${local.playbook_prefix}/RealmTokenRemainingCapacityLow.md"
     mime_type = "text/markdown"
   }
   notification_channels = [
@@ -82,7 +82,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
   }
 
   documentation {
-    content   = "${locals.playbook_prefix}/ElevatedLatencyGreaterThan2s.md"
+    content   = "${local.playbook_prefix}/ElevatedLatencyGreaterThan2s.md"
     mime_type = "text/markdown"
   }
 
@@ -122,7 +122,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
     }
   }
   documentation {
-    content   = "${locals.playbook_prefix}/E2ETestErrorRatioHigh.md"
+    content   = "${local.playbook_prefix}/E2ETestErrorRatioHigh.md"
     mime_type = "text/markdown"
   }
   notification_channels = [
@@ -160,7 +160,7 @@ resource "google_monitoring_alert_policy" "five_xx" {
   }
 
   documentation {
-    content   = "${locals.playbook_prefix}/Elevated500s.md"
+    content   = "${local.playbook_prefix}/Elevated500s.md"
     mime_type = "text/markdown"
   }
 
@@ -197,7 +197,7 @@ resource "google_monitoring_alert_policy" "probers" {
   }
 
   documentation {
-    content   = "${locals.playbook_prefix}/HostDown.md"
+    content   = "${local.playbook_prefix}/HostDown.md"
     mime_type = "text/markdown"
   }
 
@@ -234,7 +234,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
   }
 
   documentation {
-    content   = "${locals.playbook_prefix}/ElevatedRateLimitedCount.md"
+    content   = "${local.playbook_prefix}/ElevatedRateLimitedCount.md"
     mime_type = "text/markdown"
   }
 
@@ -269,7 +269,7 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
   }
 
   documentation {
-    content   = "${locals.playbook_prefix}/StackdriverExportFailed.md"
+    content   = "${local.playbook_prefix}/StackdriverExportFailed.md"
     mime_type = "text/markdown"
   }
 
@@ -308,7 +308,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   }
 
   documentation {
-    content   = "${locals.playbook_prefix}/FastErrorBudgetBurn.md"
+    content   = "${local.playbook_prefix}/FastErrorBudgetBurn.md"
     mime_type = "text/markdown"
   }
 
