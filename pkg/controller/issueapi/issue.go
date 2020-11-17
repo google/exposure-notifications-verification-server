@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -227,7 +228,8 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		// If there is a client-provided UUID, check if a code has already been issued.
 		// this prevents us from consuming quota on conflict.
-		if request.UUID != "" {
+		rUUID := project.TrimSpaceAndNonPrintable(request.UUID)
+		if rUUID != "" {
 			if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
 				if !database.IsNotFound(err) {
 					controller.InternalError(w, r, c.h, err)
@@ -299,7 +301,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			IssuingUser:    user,
 			IssuingApp:     authApp,
 			RealmID:        realm.ID,
-			UUID:           request.UUID,
+			UUID:           rUUID,
 		}
 
 		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())

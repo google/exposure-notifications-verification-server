@@ -115,6 +115,13 @@
 
   <script type="text/javascript">
     let total = 0;
+    // Common error codes which should cancel the whole upload.
+    let stopUploadingCodes = [
+      '429', // too many requests
+      '403', // forbidden
+      '404', // not-found
+      '503', // unavailable
+    ];
 
     $(function() {
       let $form = $('#form');
@@ -221,14 +228,21 @@
                 $tableBody.append(row);
               }
 
-              await uploadBatch(batch).catch(err => { });
-              $startAt.val(i + 1);
-              if (cancelUpload && total > 0) {
-                flash.warning("Successfully issued " + total + " codes."
-                  + (rows.length - i) + " remaining.");
+              await uploadBatch(batch).catch(err => {
+                if (err && stopUploadingCodes.includes(err.status)) {
+                  flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
+                  cancelUpload = true;
+                }
+              });
+
+              if (cancelUpload) {
+                if (total > 0) {
+                  flash.warning("Successfully issued " + total + " codes."
+                    + (rows.length - i) + " remaining.");
+                }
                 break;
               }
-
+              $startAt.val(i + 1);
               let percent = Math.floor((i + 1) * 100 / rows.length) + "%";
               $progress.width(percent);
               $progress.html(percent);
