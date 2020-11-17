@@ -75,7 +75,7 @@ func Server(
 	r.Use(populateTemplateVariables)
 
 	// Load localization
-	locales, err := i18n.Load(ctx)
+	locales, err := i18n.Load(cfg.LocalesPath, i18n.WithReloading(cfg.DevMode))
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup i18n: %w", err)
 	}

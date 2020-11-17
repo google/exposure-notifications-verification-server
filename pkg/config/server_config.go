@@ -79,7 +79,8 @@ type ServerConfig struct {
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=660h"` // 660h is 28 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
-	AssetsPath string `env:"ASSETS_PATH,default=./cmd/server/assets"`
+	AssetsPath  string `env:"ASSETS_PATH, default=./cmd/server/assets"`
+	LocalesPath string `env:"LOCALES_PATH, default=./internal/i18n/locales"`
 
 	// For EN Express, the link will be
 	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
