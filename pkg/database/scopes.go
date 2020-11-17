@@ -53,8 +53,8 @@ func WithUserSearch(q string) Scope {
 	}
 }
 
-// WithAuditSearch returns a scope that adds querying for Audit events by time.
-func WithAuditSearch(from, to string) Scope {
+// WithAuditTime returns a scope that adds querying for Audit events by time.
+func WithAuditTime(from, to string) Scope {
 	return func(db *gorm.DB) *gorm.DB {
 		from = project.TrimSpace(from)
 		if from != "" {
@@ -66,6 +66,13 @@ func WithAuditSearch(from, to string) Scope {
 			db = db.Where("audit_entries.created_at <= ?", to)
 		}
 		return db
+	}
+}
+
+// WithAuditRealmID returns a scope that adds querying for Audit events by realm.
+func WithAuditRealmID(r uint) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("audit_entries.realm_id = ?", r)
 	}
 }
 

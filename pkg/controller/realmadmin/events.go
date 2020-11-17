@@ -44,7 +44,7 @@ func (c *Controller) HandleEvents() http.Handler {
 		var scopes []database.Scope
 		from := r.FormValue(QueryFromSearch)
 		to := r.FormValue(QueryToSearch)
-		scopes = append(scopes, database.WithAuditSearch(from, to))
+		scopes = append(scopes, database.WithAuditTime(from, to))
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {

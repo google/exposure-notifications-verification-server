@@ -50,7 +50,7 @@
   function getUrlVars() {
     let vars = [], hash;
     let queryParams = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-    for (var i = 0; i < queryParams.length; i++) {
+    for (let i = 0; i < queryParams.length; i++) {
       v = queryParams[i].split('=');
       vars.push(v[0]);
       vars[v[0]] = v[1];

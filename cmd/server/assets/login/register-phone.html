@@ -205,11 +205,11 @@
         let user = firebase.auth().currentUser
         user.multiFactor.getSession().then(function(multiFactorSession) {
           // Specify the phone number and pass the MFA session.
-          var phoneInfoOptions = {
+          let phoneInfoOptions = {
             phoneNumber: iti.getNumber(),
             session: multiFactorSession
           };
-          var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+          let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
           // Send SMS verification code.
           return phoneAuthProvider.verifyPhoneNumber(
             phoneInfoOptions, window.recaptchaVerifier);
@@ -234,8 +234,8 @@
         // Disable the submit button so we only attempt once.
         $submitPin.prop('disabled', true);
 
-        var cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
-        var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+        let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
+        let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
 
         // Complete enrollment.
         let user = firebase.auth().currentUser
