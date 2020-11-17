@@ -1640,7 +1640,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 		},
 		{
-			ID: "00066-AddVerCodeUUIDUniqueIndex",
+			ID: "00066-AddVerCodeUUIDUniqueIndexe",
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`DROP INDEX IF EXISTS idx_vercode_uuid`,
