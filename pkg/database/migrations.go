@@ -27,7 +27,7 @@ import (
 )
 
 const initState = "00000-Init"
-const VercodeUUIDUniqueIndex = "idx_vercode_uuid_unique"
+const VercodeUUIDUniqueIndex = "uix_verification_codes_uuid"
 
 func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 	logger := logging.FromContext(ctx)
@@ -1640,7 +1640,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 		},
 		{
-			ID: "00066-AddVerCodeUUIDUniqueIndexe",
+			ID: "00066-AddVerCodeUUIDUniqueIndex",
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`DROP INDEX IF EXISTS idx_vercode_uuid`,

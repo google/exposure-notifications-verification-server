@@ -201,7 +201,7 @@
             }
 
             // Add to batch if the next row is valid.
-            let request = buildRequest(rows[i]);
+            let request = buildRequest(rows[i], retryCode);
             if (request != "") {
               batch.push(request);
             }
@@ -232,37 +232,37 @@
 
         return { start, cancel };
       }
+
+      function buildRequest(thisRow, retryCode) {
+        thisRow = thisRow.trim();
+        if (thisRow == "") {
+          return "";
+        }
+        let request = {};
+        let cols = thisRow.split(',');
+        if (cols.length < 2) {
+          return "";
+        }
+
+        // Escape csv row contents
+        request["phone"] = $("<div>").text(cols[0].trim()).html();
+        request["symptomDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+        if (request["phone"] == "") {
+          return "";
+        }
+
+        // Generate a UUID by hashing phone
+        let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36);
+        request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
+
+        let row = "<tr><td>" + request["phone"] + "</td><td>" + request["symptomDate"] + "</td></tr>";
+        $tableBody.append(row);
+
+        request["testType"] = "confirmed";
+        request["tzOffset"] = tzOffset;
+        return request
+      }
     });
-
-    function buildRequest(thisRow) {
-      thisRow = thisRow.trim();
-      if (thisRow == "") {
-        return "";
-      }
-      let request = {};
-      let cols = thisRow.split(',');
-      if (cols.length < 2) {
-        return "";
-      }
-
-      // Escape csv row contents
-      request["phone"] = $("<div>").text(cols[0].trim()).html();
-      request["symptomDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
-      if (request["phone"] == "") {
-        return "";
-      }
-
-      // Generate a UUID by hashing phone
-      let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36);
-      request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
-
-      let row = "<tr><td>" + request["phone"] + "</td><td>" + request["symptomDate"] + "</td></tr>";
-      $tableBody.append(row);
-
-      request["testType"] = "confirmed";
-      request["tzOffset"] = tzOffset;
-      return request
-    }
 
     function uploadBatch(data) {
       return $.ajax({
