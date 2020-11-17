@@ -1,10 +1,9 @@
 variable "monitoring-host-project" {
   type        = string
-  default     = ""
   description = <<-EOT
   The host project for multi-project workspace. See also:
   http://cloud/monitoring/workspaces/create#first-multi-project-workspace If
-  empty, will use var.verificatin-server-project by default"
+  empty, will use var.verificatin-server-project by default
   EOT
 }
 
@@ -44,4 +43,19 @@ variable "https-forwarding-rule" {
   type        = string
   default     = ""
   description = "GCP Cloud Load Balancer forwarding rule name."
+}
+
+terraform {
+  required_version = ">= 0.13"
+
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 3.46"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 3.46"
+    }
+  }
 }

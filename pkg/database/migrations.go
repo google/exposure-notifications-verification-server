@@ -1668,6 +1668,16 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00067-AddRealmAllowBulkUpload",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding allow_bulk_upload to realms")
+				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload bool DEFAULT false").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS allow_bulk_upload").Error
+			},
+		},
 	})
 }
 
