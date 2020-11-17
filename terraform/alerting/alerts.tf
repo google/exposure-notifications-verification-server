@@ -13,7 +13,7 @@
 # limitations under the License.
 
 locals {
-  playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks"
+  playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts"
 }
 
 resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
