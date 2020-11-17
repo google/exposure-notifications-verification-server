@@ -41,7 +41,6 @@ variable "extra-hosts" {
 
 variable "https-forwarding-rule" {
   type        = string
-  default     = ""
   description = "GCP Cloud Load Balancer forwarding rule name."
 }
 
