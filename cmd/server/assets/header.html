@@ -55,10 +55,15 @@
         {{if .currentRealm}}
         <ul class="nav mr-auto flex-column flex-md-row">
           <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsFile "home"}}active{{end}}" href="/home">Issue code</a>
+            <a class="nav-link {{if .currentPath.IsDir "/codes/issue"}}active{{end}}" href="/codes/issue">Issue code</a>
           </li>
+          {{if .currentRealm}}{{if .currentRealm.AllowBulkUpload}}
           <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsDir "/code/"}}active{{end}}" href="/code/status">Check code status</a>
+            <a class="nav-link {{if .currentPath.IsDir "/codes/bulk-issue"}}active{{end}}" href="/codes/bulk-issue">Bulk issue codes</a>
+          </li>
+          {{end}}{{end}}
+          <li class="nav-item">
+            <a class="nav-link {{if .currentPath.IsDir "/codes/status"}}active{{end}}" href="/codes/status">Check code status</a>
           </li>
         </ul>
         {{end}}

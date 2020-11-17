@@ -1,11 +1,11 @@
-$(function () {
+$(function() {
   // Add data-toogle="tooltop" to toggle tooltips!
   $('[data-toggle="tooltip"]').tooltip();
 
   // Add data-submit-form properties to a link to have it act as a submit
   // button. You can also add a data-confirm attribute with a confirmation
   // prompt.
-  $("a[data-submit-form]").click(function (e) {
+  $("a[data-submit-form]").click(function(e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
@@ -22,7 +22,7 @@ $(function () {
   // Add data-method to a link and make the resulting href submit as that
   // method. You can also add a data-confirm attribute with a confirmation
   // prompt.
-  $("a[data-method]").click(function (e) {
+  $("a[data-method]").click(function(e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
@@ -57,7 +57,7 @@ $(function () {
 
   // Add data-toggle-password to an element with the value pointing to the id
   // of an input[type="password"]. It will toggle/untoggle the value.
-  $("a[data-toggle-password]").click(function (e) {
+  $("a[data-toggle-password]").click(function(e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
@@ -76,7 +76,7 @@ $(function () {
     }
   });
 
-  $("a[data-fill-target]").click(function (e) {
+  $("a[data-fill-target]").click(function(e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
@@ -87,7 +87,7 @@ $(function () {
     $target.val(value);
   });
 
-  $("a[data-copy]").click(function (e) {
+  $("a[data-copy]").click(function(e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
@@ -102,7 +102,7 @@ $(function () {
     document.getSelection().removeAllRanges();
   });
 
-  $("[data-timestamp]").each(function (i, e) {
+  $("[data-timestamp]").each(function(i, e) {
     let $this = $(e);
     let date = new Date($this.data("timestamp"));
 
@@ -136,34 +136,34 @@ $(function () {
   $(".toast").toast("show");
 
   // Flash is the flash handler
-  let flash = (function () {
+  let flash = (function() {
     let $alerts = $("#alerts-container");
 
     let f = {};
 
     // clear clears any existing flashes.
-    f.clear = function () {
+    f.clear = function() {
       $alerts.empty();
     };
 
     // error creates a flash error message.
-    f.error = function (message) {
+    f.error = function(message) {
       f.flash("error", message);
     };
 
     // warning creates a flash warning message.
-    f.warning = function (message) {
+    f.warning = function(message) {
       f.flash("warning", message);
     };
 
     // alert creates a flash notice message.
-    f.alert = function (message) {
+    f.alert = function(message) {
       f.flash("alert", message);
     };
 
     // flash is a lower-level function for generating a flash message. Usually
     // you want to call flash.alert() or flash.error() instead.
-    f.flash = function (level, message) {
+    f.flash = function(level, message) {
       let headerClass;
       let headerIconClass;
       let headerText;
@@ -252,3 +252,26 @@ $(function () {
 
   window.flash = flash;
 });
+
+
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  var expires = "expires=" + d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires;
+}
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var ca = document.cookie.split(';');
+  for (var i = 0; i < ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}

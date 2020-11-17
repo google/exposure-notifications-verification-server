@@ -12,34 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package codestatus
+package issueapi
 
 import (
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-func (c *Controller) HandleCheckCodeStatus() http.Handler {
+// HandleBulkIssue shows the page for bulk-issuing codes.
+func (c *Controller) HandleBulkIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var request api.CheckCodeStatusRequest
-		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+		ctx := r.Context()
+
+		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingRealm(w, r, c.h)
 			return
 		}
 
-		code, errCode, err := c.CheckCodeStatus(r, request.UUID)
+		if !realm.AllowBulkUpload {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		hasSMSConfig, err := realm.HasSMSConfig(c.db)
 		if err != nil {
-			c.h.RenderJSON(w, errCode, err)
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.h.RenderJSON(w, http.StatusOK,
-			&api.CheckCodeStatusResponse{
-				Claimed:                code.Claimed,
-				ExpiresAtTimestamp:     code.ExpiresAt.UTC().Unix(),
-				LongExpiresAtTimestamp: code.LongExpiresAt.UTC().Unix(),
-			})
+		m := controller.TemplateMapFromContext(ctx)
+		m["hasSMSConfig"] = hasSMSConfig
+		m.Title("Bulk issue codes")
+		c.h.RenderHTML(w, "codes/issue-bulk", m)
 	})
 }

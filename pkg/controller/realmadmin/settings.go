@@ -53,6 +53,7 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		Codes                 bool              `form:"codes"`
 		AllowedTestTypes      database.TestType `form:"allowed_test_types"`
+		AllowBulkUpload       bool              `form:"allow_bulk"`
 		RequireDate           bool              `form:"require_date"`
 		CodeLength            uint              `form:"code_length"`
 		CodeDurationMinutes   int64             `form:"code_duration"`
@@ -151,6 +152,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		if form.Codes {
 			realm.AllowedTestTypes = form.AllowedTestTypes
 			realm.RequireDate = form.RequireDate
+			realm.AllowBulkUpload = form.AllowBulkUpload
 			realm.SMSTextTemplate = form.SMSTextTemplate
 
 			// These fields can only be set if ENX is disabled

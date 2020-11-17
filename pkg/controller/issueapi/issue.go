@@ -192,38 +192,38 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		// Set up parallel arrays to leverage the observability reporting and connect the parse / valdiation errors
+		// Set up parallel arrays to leverage the observability reporting and connect the parse / validation errors
 		// to the correct date.
 		parsedDates := make([]*time.Time, 2)
 		input := []string{request.SymptomDate, request.TestDate}
 		dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
 		for i, d := range input {
 			if d != "" {
-				if parsed, err := time.Parse("2006-01-02", d); err != nil {
+				parsed, err := time.Parse("2006-01-02", d)
+				if err != nil {
 					c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err))
 					blame = observability.BlameClient
 					result = observability.ResultError(dateSettings[i].ParseError)
 					return
-				} else {
-					// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
-					maxDate := timeutils.UTCMidnight(time.Now())
-					minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
-
-					validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
-					if err != nil {
-						err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
-							dateSettings[i].Name,
-							minDate.Format("2006-01-02"),
-							maxDate.Format("2006-01-02"),
-							parsed.Format("2006-01-02"),
-						)
-						c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
-						blame = observability.BlameClient
-						result = observability.ResultError(dateSettings[i].ValidateError)
-						return
-					}
-					parsedDates[i] = validatedDate
 				}
+				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+				maxDate := timeutils.UTCMidnight(time.Now())
+				minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+
+				validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
+				if err != nil {
+					err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
+						dateSettings[i].Name,
+						minDate.Format("2006-01-02"),
+						maxDate.Format("2006-01-02"),
+						parsed.Format("2006-01-02"),
+					)
+					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+					blame = observability.BlameClient
+					result = observability.ResultError(dateSettings[i].ValidateError)
+					return
+				}
+				parsedDates[i] = validatedDate
 			}
 		}
 
@@ -290,14 +290,22 @@ func (c *Controller) HandleIssue() http.Handler {
 			IssuingUser:    user,
 			IssuingApp:     authApp,
 			RealmID:        realm.ID,
+			UUID:           request.UUID,
 		}
 
 		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 		if err != nil {
 			logger.Errorw("failed to issue code", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			blame = observability.BlameServer
 			result = observability.ResultError("FAILED_TO_ISSUE_CODE")
+
+			// GormV1 doesn't have a good way to match db errors
+			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
+				c.h.RenderJSON(w, http.StatusConflict,
+					api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists))
+				return
+			}
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
 			return
 		}
 
@@ -305,6 +313,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			if err := func() error {
 				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+
 				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 					// Delete the token
 					if err := c.db.DeleteVerificationCode(code); err != nil {

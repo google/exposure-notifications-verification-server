@@ -67,6 +67,11 @@ func TestShowAdminEmail(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
+	wantSMTPAccount := "test=smtp-account"
+	wantSMTPPassword := "test-password"
+	wantSMTPHost := "smtp.test.example.com"
+	wantSMTPPort := "587"
+
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
@@ -76,7 +81,35 @@ func TestShowAdminEmail(t *testing.T) {
 
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-email-show`, chromedp.ByQuery),
+
+		// Set fields and submit
+		chromedp.SetValue(`input#smtp-account`, wantSMTPAccount, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-password`, wantSMTPPassword, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-host`, wantSMTPHost, chromedp.ByQuery),
+		chromedp.SetValue(`input#smtp-port`, wantSMTPPort, chromedp.ByQuery),
+		chromedp.Submit(`form#email-form`, chromedp.ByQuery),
+
+		// Wait for render.
+		chromedp.WaitVisible(`body#admin-email-show`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
+	}
+
+	systemEmailConfig, err := harness.Database.SystemEmailConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if systemEmailConfig.SMTPAccount != wantSMTPAccount {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPAccount, wantSMTPAccount)
+	}
+	if systemEmailConfig.SMTPPassword != wantSMTPPassword {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPPassword, wantSMTPPassword)
+	}
+	if systemEmailConfig.SMTPHost != wantSMTPHost {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPHost, wantSMTPHost)
+	}
+	if systemEmailConfig.SMTPPort != wantSMTPPort {
+		t.Errorf("got: %s, want: %s", systemEmailConfig.SMTPPort, wantSMTPPort)
 	}
 }

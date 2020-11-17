@@ -62,6 +62,8 @@ const (
 	ErrTokenExpired = "token_expired"
 	// ErrHMACInvalid indicates that the HMAC that is being signed is invalid (wrong length)
 	ErrHMACInvalid = "hmac_invalid"
+	// ErrUUIDAlreadyExists indicates that the UUID has already been used for an issued code.
+	ErrUUIDAlreadyExists = "uuid_already_exists"
 )
 
 // ErrorReturn defines the common error type.
@@ -175,6 +177,10 @@ type IssueCodeRequest struct {
 	// (using the default of 0) are all valid. 0 is considered to be UTC.
 	TZOffset float32 `json:"tzOffset"`
 	Phone    string  `json:"phone"`
+
+	// Optional: UUID is a handle which allows the issuer to track status
+	// of the issued verification code. If omitted the server will generate the UUID.
+	UUID string `json:"uuid"`
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
@@ -195,7 +201,7 @@ type IssueCodeResponse struct {
 	// After this time the code will no longer be accepted and is eligible for deletion.
 	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
 
-	// LongExpiresAt and LongExpiresAtTimestamp repesents the time when the long
+	// LongExpiresAt and LongExpiresAtTimestamp represents the time when the long
 	// code expires, in UTC seconds since epoch.
 	LongExpiresAt          string `json:"longExpiresAt,omitempty"`
 	LongExpiresAtTimestamp int64  `json:"longExpiresAtTimestamp,omitempty"`

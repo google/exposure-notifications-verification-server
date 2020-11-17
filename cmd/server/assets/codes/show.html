@@ -1,4 +1,4 @@
-{{define "code/show"}}
+{{define "codes/show"}}
 
 <!doctype html>
 <html lang="en">
@@ -25,7 +25,7 @@
       <div class="list-group list-group-flush">
         <div class="list-group-item">
           <h5 class="mb-1">UUID</h5>
-          <p class="mb-1 text-monospace">{{.code.UUID}}</p>
+          <p class="mb-1 text-monospace user-select-all">{{.code.UUID}}</p>
         </div>
         <div class="list-group-item">
           <h5 class="mb-1">{{.code.IssuerType}}</h5>
@@ -53,7 +53,7 @@
         {{end}}
         {{if .code.Expires}}
         <div class="list-group-item">
-          <a href="/code/{{.code.UUID}}/expire" class="btn btn-danger d-block" data-method="PATCH" data-confirm="Are you sure you want to expire this code?">
+          <a href="/codes/{{.code.UUID}}/expire" class="btn btn-danger d-block" data-method="PATCH" data-confirm="Are you sure you want to expire this code?">
             Invalidate code now
           </a>
         </div>
@@ -61,7 +61,7 @@
       </div>
     </div>
 
-    <a href="/code/status" class="card-link">&larr; Enter another code</a>
+    <a href="/codes/status" class="card-link">&larr; Enter another code</a>
   </main>
 
   {{template "codescripts" .}}

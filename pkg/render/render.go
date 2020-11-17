@@ -28,6 +28,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/leonelquinteros/gotext"
 
 	"go.uber.org/zap"
 )
@@ -41,6 +42,7 @@ var allowedResponseCodes = map[int]struct{}{
 	401: {},
 	404: {},
 	405: {},
+	409: {},
 	412: {},
 	413: {},
 	429: {},
@@ -150,6 +152,21 @@ func selectedIf(v bool) htmltemplate.HTML {
 	return ""
 }
 
+// translate accepts a message printer (populated by middleware) and prints the
+// translated text for the given key. If the printer is nil, an error is
+// returned.
+func translate(l *gotext.Locale, key string, vars ...interface{}) (string, error) {
+	if l == nil {
+		return "", fmt.Errorf("missing locale")
+	}
+
+	v := l.Get(key, vars...)
+	if v == "" || v == key {
+		return "", fmt.Errorf("unknown i18n key %q", key)
+	}
+	return v, nil
+}
+
 func templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
 		"joinStrings":    strings.Join,
@@ -159,6 +176,7 @@ func templateFuncs() htmltemplate.FuncMap {
 		"toUpper":        strings.ToUpper,
 		"safeHTML":       safeHTML,
 		"selectedIf":     selectedIf,
+		"t":              translate,
 	}
 }
 
