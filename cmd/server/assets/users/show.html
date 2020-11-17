@@ -93,7 +93,6 @@
 
     function drawChart() {
       let arr = [
-        ['Date', 'Codes issued'],
         {{range $stat := $stats}}
         ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}],
         {{end}}
