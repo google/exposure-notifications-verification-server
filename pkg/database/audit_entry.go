@@ -63,6 +63,11 @@ type AuditEntry struct {
 	CreatedAt time.Time
 }
 
+// SaveAuditEntry saves the audit entry.
+func (db *Database) SaveAuditEntry(a *AuditEntry) error {
+	return db.db.Save(a).Error
+}
+
 // PurgeAuditEntries will delete audit entries which were created longer than
 // maxAge ago.
 func (db *Database) PurgeAuditEntries(maxAge time.Duration) (int64, error) {
