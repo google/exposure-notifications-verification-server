@@ -66,11 +66,6 @@ func (c *Controller) HandleEventsShow() http.Handler {
 				Model: gorm.Model{ID: 0},
 				Name:  "System",
 			}
-		} else if realmID != "" {
-			if realm, err = c.db.FindRealm(realmID); err != nil {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
 		}
 
 		c.renderEvents(ctx, w, events, paginator, from, to, realm)
