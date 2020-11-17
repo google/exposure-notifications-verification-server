@@ -42,28 +42,19 @@ func (c *Controller) HandleEventsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var scopes []database.Scope
-		from := r.FormValue(QueryFromSearch)
-		to := r.FormValue(QueryToSearch)
-		scopes = append(scopes, database.WithAuditTime(from, to))
-
-		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
-		if id, err := strconv.ParseUint(realmID, 10, 64); err != nil {
-			scopes = append(scopes, database.WithAuditRealmID(uint(id)))
-		}
-
+		// Parse query params
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
+		from := r.FormValue(QueryFromSearch)
+		to := r.FormValue(QueryToSearch)
+		scopes := []database.Scope{}
+		scopes = append(scopes, database.WithAuditTime(from, to))
+		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
 
-		events, paginator, err := c.db.ListAudits(pageParams, scopes...)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
+		// Add realm filter if applicable
 		var realm *database.Realm
 		switch realmID {
 		case "":
@@ -74,10 +65,21 @@ func (c *Controller) HandleEventsShow() http.Handler {
 				Name:  "System",
 			}
 		default:
+			if id, err := strconv.ParseUint(realmID, 10, 64); err != nil {
+				scopes = append(scopes, database.WithAuditRealmID(uint(id)))
+			}
+
 			if realm, err = c.db.FindRealm(realmID); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
+		}
+
+		// List the events
+		events, paginator, err := c.db.ListAudits(pageParams, scopes...)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		c.renderEvents(ctx, w, events, paginator, from, to, realm)
