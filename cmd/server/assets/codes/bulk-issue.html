@@ -114,7 +114,7 @@
   </main>
 
   <script type="text/javascript">
-    var total = 0;
+    let total = 0;
 
     $(function() {
       let $form = $('#form');
@@ -181,7 +181,7 @@
           setCookie('retryCode','',-1);
         }
 
-        var reader = new FileReader();
+        let reader = new FileReader();
         reader.onload = upload.start;
         reader.readAsText($csv[0].files[0]);
       });
@@ -216,7 +216,7 @@
             // If we've hit the batch limit or end of file, upload it.
             if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
               $tableBody.empty();
-              for(r = 0; r < batch.length; r++) {
+              for(let r = 0; r < batch.length; r++) {
                 let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["symptomDate"] + "</td></tr>";
                 $tableBody.append(row);
               }
@@ -294,7 +294,7 @@
           }
         },
         error: function(xhr, resp, text) {
-          var message = resp;
+          let message = resp;
           if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
             message = message + ": " + xhr.responseJSON.error;
           }

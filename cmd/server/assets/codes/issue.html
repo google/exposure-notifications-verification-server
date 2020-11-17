@@ -408,7 +408,7 @@
           // Show reset button
           $buttonReset.removeClass('d-none');
 
-          var message = resp;
+          let message = resp;
           if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
             message = message + ": " + xhr.responseJSON.error;
           }
