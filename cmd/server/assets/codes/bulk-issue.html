@@ -181,7 +181,6 @@
       const batchSize = 1;
 
       function readFile() {
-        let retryCode = $retryCode.val();
         // State for managing cleanup and canceling
         let cancelUpload = false;
         let cancel = () => {
@@ -189,6 +188,7 @@
         };
 
         let start = async function(e) {
+          let retryCode = $retryCode.val();
           let rows = e.target.result.split('\n');
           let batch = [];
           total = 0;
