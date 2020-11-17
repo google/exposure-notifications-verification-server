@@ -24,6 +24,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 USER nobody
 COPY ./bin/server /server
 COPY ./cmd/server/assets /assets
+COPY ./internal/i18n/locales /locales
 COPY --from=builder /var/run /var/run
 COPY --from=builder /var/run/secrets /var/run/secrets
 

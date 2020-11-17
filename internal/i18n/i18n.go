@@ -16,15 +16,12 @@
 package i18n
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
+	"sync"
 
 	"github.com/leonelquinteros/gotext"
 	"golang.org/x/text/language"
-
-	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 const (
@@ -39,11 +36,28 @@ const (
 type LocaleMap struct {
 	data    map[string]*gotext.Locale
 	matcher language.Matcher
+
+	path       string
+	reload     bool
+	reloadLock sync.Mutex
 }
 
 // Lookup finds the best locale for the given ids. If none exists, the default
 // locale is used.
+//
+// If reloading is enabled, the locales are reloaded before lookup. If reloading
+// fails, it panics. For this reason, you should not enable reloading in
+// production.
 func (l *LocaleMap) Lookup(ids ...string) *gotext.Locale {
+	if l.reload {
+		l.reloadLock.Lock()
+		defer l.reloadLock.Unlock()
+
+		if err := l.load(); err != nil {
+			panic(err)
+		}
+	}
+
 	for _, id := range ids {
 		// Convert the id to the "canonical" form.
 		canonical, err := l.Canonicalize(id)
@@ -73,17 +87,12 @@ func (l *LocaleMap) Canonicalize(id string) (string, error) {
 	return "", fmt.Errorf("unknown language %q", id)
 }
 
-// Load parses and loads the localization files from disk. It builds the locale
-// matcher based on the currently available data (organized by folder).
-//
-// Due to the heavy I/O, callers should cache the resulting value and only call
-// Load when data needs to be refreshed.
-func Load(ctx context.Context) (*LocaleMap, error) {
-	localesDir := filepath.Join(project.Root(), "internal", "i18n", "locales")
-
-	entries, err := ioutil.ReadDir(localesDir)
+// load loads the locales into the LocaleMap. Callers must take out a mutex
+// before calling.
+func (l *LocaleMap) load() error {
+	entries, err := ioutil.ReadDir(l.path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load locales: %w", err)
+		return fmt.Errorf("failed to load locales: %w", err)
 	}
 
 	data := make(map[string]*gotext.Locale, len(entries))
@@ -92,13 +101,46 @@ func Load(ctx context.Context) (*LocaleMap, error) {
 		name := entry.Name()
 		names = append(names, language.Make(name))
 
-		locale := gotext.NewLocale(localesDir, name)
+		locale := gotext.NewLocale(l.path, name)
 		locale.AddDomain(defaultDomain)
 		data[name] = locale
 	}
 
-	return &LocaleMap{
-		data:    data,
-		matcher: language.NewMatcher(names),
-	}, nil
+	l.data = data
+	l.matcher = language.NewMatcher(names)
+	return nil
+}
+
+// Option is an option to creating a locale map.
+type Option func(*LocaleMap) *LocaleMap
+
+// WithReloading enables hot reloading for the map.
+func WithReloading(v bool) Option {
+	return func(l *LocaleMap) *LocaleMap {
+		l.reload = v
+		return l
+	}
+}
+
+// Load parses and loads the localization files from disk. It builds the locale
+// matcher based on the currently available data (organized by folder).
+//
+// Due to the heavy I/O, callers should cache the resulting value and only call
+// Load when data needs to be refreshed.
+func Load(pth string, opts ...Option) (*LocaleMap, error) {
+	l := &LocaleMap{
+		path: pth,
+	}
+
+	for _, opt := range opts {
+		l = opt(l)
+	}
+
+	l.reloadLock.Lock()
+	defer l.reloadLock.Unlock()
+
+	if err := l.load(); err != nil {
+		return nil, err
+	}
+	return l, nil
 }

@@ -82,10 +82,10 @@ func TestIssue(t *testing.T) {
 		}
 		code, longCode, uuid, err := otp.Issue(ctx, 10)
 		if err != nil {
-			t.Errorf("error generating code: %v", err)
+			t.Fatalf("error generating code: %v", err)
 		}
 		if uuid == "" {
-			t.Errorf("expected uuid from db, was empty")
+			t.Fatal("expected uuid from db, was empty")
 		}
 		codes = append(codes, code)
 		longCodes = append(longCodes, longCode)
