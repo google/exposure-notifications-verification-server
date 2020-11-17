@@ -333,7 +333,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "5% burn in 6 hour"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "18000s")
+      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "21600s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
