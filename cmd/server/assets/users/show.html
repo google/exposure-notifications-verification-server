@@ -92,20 +92,24 @@
     google.charts.setOnLoadCallback(drawChart)
 
     function drawChart() {
-      var data = google.visualization.arrayToDataTable([
+      let arr = [
         ['Date', 'Codes issued'],
         {{range $stat := $stats}}
         ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}],
         {{end}}
-      ]);
+      ];
+      arr = arr.reverse();
+      arr.unshift(['Date', 'Codes issued']);
+      // Reverse the array, so the dates are in ascending order.
+      let data = google.visualization.arrayToDataTable(arr);
 
-      var options = {
+      let options = {
         colors: ['#007bff'],
         legend: {position: 'none'},
         tooltip: {trigger: 'focus'},
       };
 
-      var chart = new google.charts.Line(document.getElementById('chart'));
+      let chart = new google.charts.Line(document.getElementById('chart'));
       chart.draw(data, google.charts.Line.convertOptions(options));
     }
   </script>
