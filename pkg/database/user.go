@@ -217,7 +217,7 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*User
 		Where("user_id = ?", u.ID).
 		Where("realm_id = ?", realmID).
 		Where("date >= ? AND date <= ?", start, stop).
-		Order("date DESC").
+		Order("date ASC").
 		Find(&stats).
 		Error; err != nil {
 		if IsNotFound(err) {

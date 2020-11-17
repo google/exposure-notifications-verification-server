@@ -106,20 +106,20 @@
     google.charts.setOnLoadCallback(drawChart)
 
     function drawChart() {
-      var data = google.visualization.arrayToDataTable([
+      let data = google.visualization.arrayToDataTable([
         ['Date', 'Codes issued'],
         {{range $stat := $stats}}
         ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}],
         {{end}}
       ]);
 
-      var options = {
+      let options = {
         colors: ['#007bff'],
         legend: {position: 'none'},
         tooltip: {trigger: 'focus'},
       };
 
-      var chart = new google.charts.Line(document.getElementById('chart'));
+      let chart = new google.charts.Line(document.getElementById('chart'));
       chart.draw(data, google.charts.Line.convertOptions(options));
     }
   </script>

@@ -102,26 +102,23 @@
     // drawRealmChart draws the realm line chart.
     function drawRealmChart() {
     {{if $stats}}
-      // Reverse the array, so the dates are in ascending order.
-      var arr = [
+      let arr = [
+        ['Date', 'Issued', "Claimed"],
         {{range $stat := $stats}}
           ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}, {{$stat.CodesClaimed}}],
         {{end}}
       ];
       numDays = arr.length;
-      arr = arr.reverse();
-      arr.unshift(['Date', 'Issued', "Claimed"]);
+      let data = google.visualization.arrayToDataTable(arr);
 
-      var data = google.visualization.arrayToDataTable(arr);
-
-      var options = {
+      let options = {
         colors: ['#007bff', '#ff7b00'],
         legend: {position: 'bottom'},
         tooltip: {trigger: 'focus'},
         title: "Codes Issued and Claimed (includes API-issued)",
       };
 
-      var chart = new google.visualization.LineChart(document.getElementById('realm_chart'));
+      let chart = new google.visualization.LineChart(document.getElementById('realm_chart'));
       chart.draw(data, options);
     {{end}}
     }
@@ -162,16 +159,16 @@
         }
 
         // Build the pie chart.
-        var arr = [['Name', 'Codes Issued']];
-        for (var i = 0; i < resp.length; i++) {
+        let arr = [['Name', 'Codes Issued']];
+        for (let i = 0; i < resp.length; i++) {
           arr.push([resp[i].name+' ('+resp[i].codes_issued+')', resp[i].codes_issued]);
         }
-        var data = google.visualization.arrayToDataTable(arr);
-        var options = {
+        let data = google.visualization.arrayToDataTable(arr);
+        let options = {
           title: 'Codes Issued On: '+d,
           pieSliceText: 'label',
         };
-        var chart = new google.visualization.PieChart(document.getElementById('realm_chart'));
+        let chart = new google.visualization.PieChart(document.getElementById('realm_chart'));
         chart.draw(data, options);
       });
     }
@@ -186,8 +183,8 @@
         userChart.setSelection(null);
         return;
       }
-      var s = [];
-      for (var i = 0; i < userChartData.getNumberOfColumns(); i++) {
+      let s = [];
+      for (let i = 0; i < userChartData.getNumberOfColumns(); i++) {
         s = s.concat({row:index, column:i})
       }
       userChart.setSelection(s);
@@ -209,7 +206,7 @@
       {{end}}
       userChartData.addRows(arr);
 
-      var options = {
+      let options = {
         legend: "none",
         tooltip: {trigger: 'focus'},
         title: "Codes Per User (excludes API-issued)",

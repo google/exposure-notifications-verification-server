@@ -214,7 +214,7 @@ func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) ([]*Authorize
 		Model(&AuthorizedAppStats{}).
 		Where("authorized_app_id = ?", a.ID).
 		Where("date >= ? AND date <= ?", start, stop).
-		Order("date DESC").
+		Order("date ASC").
 		Find(&stats).
 		Error; err != nil {
 		if IsNotFound(err) {

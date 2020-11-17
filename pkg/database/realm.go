@@ -1268,7 +1268,7 @@ func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error
 		Model(&RealmStats{}).
 		Where("realm_id = ?", r.ID).
 		Where("(date >= ? AND date <= ?)", start, stop).
-		Order("date DESC").
+		Order("date ASC").
 		Find(&stats).
 		Error; err != nil {
 		if IsNotFound(err) {
@@ -1374,7 +1374,7 @@ func (r *Realm) CodesPerUser(db *Database, start, stop time.Time) ([]*RealmUserS
 		Where("realm_id = ?", r.ID).
 		Where("date >= ? AND date <= ?", start, stop).
 		Joins("INNNER JOIN users ON users.id = user_id").
-		Order("date DESC").
+		Order("date ASC").
 		Scan(&stats).
 		Error; err != nil {
 		if IsNotFound(err) {
