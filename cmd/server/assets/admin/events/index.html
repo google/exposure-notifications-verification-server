@@ -36,7 +36,7 @@
         <form method="GET" action="/admin/events" id="search-form">
           <div class="input-group">
             <span class="input-group-prepend">
-              <select name="realmid" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
+              <select name="realm_id" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
                 <option value="" {{selectedIf (not .realm)}}>All events</option>
                 <option value="0" {{if .realm}}{{selectedIf (eq .realm.ID 0)}}{{end}}>System events</option>
                 {{if .realm}}{{if ne .realm.ID 0}}

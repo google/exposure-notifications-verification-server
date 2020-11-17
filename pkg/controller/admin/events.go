@@ -34,7 +34,7 @@ const (
 	QueryToSearch = "to"
 
 	// QueryRealmIDSearch is the query key to filter by realmID.
-	QueryRealmIDSearch = "realmid"
+	QueryRealmIDSearch = "realm_id"
 )
 
 // HandleEventsShow shows event logs.
