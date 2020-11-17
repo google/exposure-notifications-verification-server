@@ -36,12 +36,14 @@
     {{end}}
 
     <h1>Create verification code</h1>
+    {{if $currentRealm.AllowBulkUpload}}
     <p>
       <a href="/codes/bulk-issue" class="mr-3 text-secondary" data-toggle="tooltip" title="Bulk issue codes">
         <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
         Bulk issue codes
       </a>
     </p>
+    {{end}}
     <p>
       Complete the following form to issue a single-use token to verify a
       patient. Do not submit this form until you are prepared to relay

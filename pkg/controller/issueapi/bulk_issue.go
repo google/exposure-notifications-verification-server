@@ -31,6 +31,11 @@ func (c *Controller) HandleBulkIssue() http.Handler {
 			return
 		}
 
+		if !realm.AllowBulkUpload {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
 		hasSMSConfig, err := realm.HasSMSConfig(c.db)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
