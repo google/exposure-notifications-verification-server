@@ -16,6 +16,7 @@ package realmadmin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -341,6 +342,13 @@ func (c *Controller) HandleSettings() http.Handler {
 				return
 			}
 			if err := c.limiter.Burst(ctx, key, burst); err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+
+			msg := fmt.Sprintf("added %d quota capacity", burst)
+			audit := database.BuildAuditEntry(currentUser, msg, realm, realm.ID)
+			if err := c.db.SaveAuditEntry(audit); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
