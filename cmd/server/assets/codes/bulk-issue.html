@@ -1,0 +1,314 @@
+{{define "codes/issue-bulk"}}
+
+{{$hasSMSConfig := .hasSMSConfig}}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  {{template "head" .}}
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"
+    integrity="sha512-nOQuvD9nKirvxDdvQ9OMqe2dgapbPB7vYAMrzJihw5m+aNcf0dX53m6YxM4LgA9u8e9eg9QX+/+mPu8kCNpV2A=="
+    crossorigin="anonymous"></script>
+</head>
+
+<body id="users-import" class="tab-content">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    {{template "beta-notice" .}}
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Bulk issue</div>
+      <div class="card-body">
+        {{if not $hasSMSConfig}}
+          <div class="alert alert-danger">
+            <span class="oi oi-warning"></span>
+            No SMS provider is configured for this realm.
+            Please contact a realm administrator to enable this feature.
+          </div>
+        {{end}}
+
+        <form id="form">
+          <div class="form-group">
+            <div class="custom-file">
+              <input type="file" class="custom-file-input" id="csv" accept=".csv" disabled required>
+              <label class="custom-file-label" for="csv" id="file-label">Select a CSV file...</label>
+            </div>
+            <small class="form-text text-muted">
+              The CSV file must be of the format <code>phone,date</code>. Each
+              entry must appear on its own line, and phone numbers must be in
+              <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a>
+              format.
+            </small>
+          </div>
+
+          <hr>
+
+          <div class="form-label-group">
+            <input type="number" class="form-control text-monospace" id="start-at"
+              placeholder="Start at line" value="0" min="0">
+            <label for="start-at">Start at line</label>
+            <small class="form-text text-muted">
+              Parsing the CSV will start at this line. Begin at 0 for a new file.
+              This can be used to resume a canceled or partial upload.
+            </small>
+          </div>
+
+          <div class="form-label-group">
+            <div class="input-group">
+              <input type="text" class="form-control text-monospace" id="retry-code"
+                placeholder="Retry code" required>
+              <label for="retry-code">Retry code</label>
+              <div class="input-group-append">
+                <a id="new-code" class="input-group-text" data-toggle-password="twilio-auth-token" data-toggle="tooltip" title="Generate new code">
+                  <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                  <span class="sr-only">Generate new code</span>
+                </a>
+              </div>
+            </div>
+            <small class="form-text text-muted">
+              The retry code is a password for this bulk upload status in case
+              it fails during processing. If you attempt this upload again with
+              the same retry code, the server will be able to retry re-issue
+              codes for phones which have not been successfully notified. You
+              may use the same retry code for all of your uploads, but guard it
+              like a password.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input" id="remember-code">
+              <label class="custom-control-label" for="remember-code">Remember code</label>
+            </div>
+            <small class="form-text text-muted">
+              Store the retry code in a cookie in your browser.
+            </small>
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit" id="import" disabled>Issue codes</button>
+          <button class="btn btn-danger btn-block d-none" id="cancel" disabled>Cancel</button>
+        </form>
+      </div>
+
+      <div class="card-body">
+        <div class="progress d-none" id="progress-div">
+          <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+            aria-valuemax="100"></div>
+        </div>
+        <table class="table table-bordered d-none" id="csv-table">
+          <thead>
+            <tr>
+              <th>Phone number</th>
+              <th>Test date</th>
+            </tr>
+          </thead>
+          <tbody id="csv-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script type="text/javascript">
+    var total = 0;
+
+    $(function() {
+      let $form = $('#form');
+      let $csv = $('#csv');
+      let $fileLabel = $('#file-label');
+      let $import = $('#import');
+      let $cancel = $('#cancel');
+      let $table = $('#csv-table');
+      let $tableBody = $('#csv-table-body');
+      let $progressDiv = $('#progress-div');
+      let $progress = $('#progress');
+      let $retryCode = $('#retry-code');
+      let $rememberCode = $('#remember-code');
+      let $newCode = $('#new-code');
+      let $startAt = $('#start-at');
+
+      let tzOffset = new Date().getTimezoneOffset();
+      let randomString = getCookie("retryCode");
+      if (randomString == "") {
+        randomString = genCode();
+      } else {
+        $rememberCode.prop("checked", true);
+      }
+      $retryCode.val(randomString);
+      let upload = readFile();
+
+      {{if $hasSMSConfig}}
+      if (typeof (FileReader) === "undefined") {
+        flash.error('Please update to a browser which supports the HTML5 file reader API.');
+      } else {
+        $csv.prop('disabled', false);
+      }
+      {{end}}
+
+      $csv.change(function(file) {
+        let fileName = file.target.files[0].name;
+        $fileLabel.html(fileName);
+        $startAt.val(0);
+        $import.prop('disabled', false);
+      });
+
+      $cancel.on('click', function(event) {
+        event.preventDefault();
+        upload.cancel();
+        flash.error('Canceled batch upload.');
+      });
+
+      $newCode.on('click', function(event) {
+        event.preventDefault();
+        $retryCode.val(genCode());
+      });
+
+      $form.on('submit', function(event) {
+        event.preventDefault();
+        $import.prop('disabled', true);
+        $cancel.removeClass('d-none');
+
+        $table.removeClass('d-none');
+        $progressDiv.removeClass('d-none');
+
+        if ($rememberCode.is(':checked')) {
+          setCookie('retryCode',$retryCode.val(),14);
+        } else {
+          setCookie('retryCode','',-1);
+        }
+
+        var reader = new FileReader();
+        reader.onload = upload.start;
+        reader.readAsText($csv[0].files[0]);
+      });
+
+      const batchSize = 1;
+
+      function readFile() {
+        // State for managing cleanup and canceling
+        let cancelUpload = false;
+        let cancel = () => {
+          cancelUpload = true;
+        };
+
+        let start = async function(e) {
+          let retryCode = $retryCode.val();
+          let rows = e.target.result.split('\n');
+          let batch = [];
+          total = 0;
+          $tableBody.empty();
+          for (let i = parseInt($startAt.val()); i < rows.length && !cancelUpload; i++) {
+            // Clear batch that was just uploaded.
+            if (batch.length >= batchSize) {
+              batch = [];
+            }
+
+            // Add to batch if the next row is valid.
+            let request = buildRequest(rows[i], retryCode);
+            if (request != "") {
+              batch.push(request);
+            }
+
+            // If we've hit the batch limit or end of file, upload it.
+            if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
+              $tableBody.empty();
+              for(r = 0; r < batch.length; r++) {
+                let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["symptomDate"] + "</td></tr>";
+                $tableBody.append(row);
+              }
+
+              await uploadBatch(batch).catch(err => { });
+              $startAt.val(i + 1);
+              if (cancelUpload && total > 0) {
+                flash.warning("Successfully issued " + total + " codes."
+                  + (rows.length - i) + " remaining.");
+                break;
+              }
+
+              let percent = Math.floor((i + 1) * 100 / rows.length) + "%";
+              $progress.width(percent);
+              $progress.html(percent);
+            }
+          }
+
+          if (!cancelUpload) {
+            $progress.width('100%');
+            $progress.html('100%');
+            if (total > 0) {
+              flash.alert("Successfully issued " + total + " codes.");
+            }
+          }
+          $import.prop('disabled', false);
+          $cancel.addClass('d-none');
+        };
+
+        return { start, cancel };
+      }
+
+      function buildRequest(thisRow, retryCode) {
+        thisRow = thisRow.trim();
+        if (thisRow == "") {
+          return "";
+        }
+        let request = {};
+        let cols = thisRow.split(',');
+        if (cols.length < 2) {
+          return "";
+        }
+
+        // Escape csv row contents
+        request["phone"] = $("<div>").text(cols[0].trim()).html();
+        request["symptomDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+        if (request["phone"] == "") {
+          return "";
+        }
+
+        // Generate a UUID by hashing phone
+        let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36);
+        request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
+
+        request["testType"] = "confirmed";
+        request["tzOffset"] = tzOffset;
+        return request
+      }
+    });
+
+    function uploadBatch(data) {
+      return $.ajax({
+        url: '/codes/issue',
+        type: 'POST',
+        dataType: 'json',
+        cache: false,
+        contentType: 'application/json',
+        headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
+        // TODO: at the moment we only support one-at-a-time
+        data: JSON.stringify(data[0]),
+        success: function(result) {
+          total++;
+          if (result.error) {
+            flash.error(result.error);
+          }
+        },
+        error: function(xhr, resp, text) {
+          var message = resp;
+          if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+            message = message + ": " + xhr.responseJSON.error;
+          }
+          flash.error(message);
+        },
+      });
+    }
+
+    // generates a random 16 digit alphanumeric code
+    function genCode() {
+      return Math.random().toString(36).substr(2, 8) + Math.random().toString(36).substr(2, 8);
+    }
+  </script>
+</body>
+
+</html>
+{{end}}

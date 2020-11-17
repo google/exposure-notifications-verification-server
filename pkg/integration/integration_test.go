@@ -109,8 +109,14 @@ func TestIntegration(t *testing.T) {
 			}
 
 			issueResp, err := adminClient.IssueCode(issueRequest)
-			if issueResp == nil || err != nil {
+			if issueResp == nil || err != nil || issueResp.UUID == "" {
 				t.Fatalf("adminClient.IssueCode(%+v) = expected nil, got resp %+v, err %v", issueRequest, issueResp, err)
+			}
+
+			// Try to issue the same code again (same UUID)
+			issueRequest.UUID = issueResp.UUID
+			if _, err = adminClient.IssueCode(issueRequest); err == nil {
+				t.Fatalf("Expected conflict, got %s", err)
 			}
 
 			verifyRequest := api.VerifyCodeRequest{

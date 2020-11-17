@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-func TestDateValidationn(t *testing.T) {
+func TestDateValidation(t *testing.T) {
 	utc, err := time.LoadLocation("UTC")
 	if err != nil {
 		t.Fatalf("error loading utc")

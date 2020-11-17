@@ -126,6 +126,9 @@ type Realm struct {
 	WelcomeMessage    string  `gorm:"-"`
 	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
 
+	// AllowBulkUpload allows users to issue codes from a batch file of test results.
+	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false"`
+
 	// Code configuration
 	CodeLength       uint            `gorm:"type:smallint; not null; default: 8"`
 	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900"` // default 15m (in seconds)

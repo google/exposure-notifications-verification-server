@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package home_test
+package codes_test
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func TestHandleHome_IssueCode(t *testing.T) {
+func TestHandleIssue_IssueCode(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t)
@@ -77,11 +77,11 @@ func TestHandleHome_IssueCode(t *testing.T) {
 		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
 
-		// Visit /home.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/home`),
+		// Visit /codes/issue.
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/issue`),
 
 		// Wait for render.
-		chromedp.WaitVisible(`body#home`, chromedp.ByQuery),
+		chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
 
 		// Add a date fields
 		chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
