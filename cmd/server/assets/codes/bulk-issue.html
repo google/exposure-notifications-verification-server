@@ -145,6 +145,7 @@
       $csv.change(function(file) {
         let fileName = file.target.files[0].name;
         $fileLabel.html(fileName);
+        $startAt.val(0);
         $import.prop('disabled', false);
       });
 
