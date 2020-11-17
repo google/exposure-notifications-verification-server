@@ -17,10 +17,13 @@ package admin
 import (
 	"context"
 	"net/http"
+	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/jinzhu/gorm"
 )
 
 const (
@@ -29,6 +32,9 @@ const (
 
 	// QueryToSearch is the query key for an ending time.
 	QueryToSearch = "to"
+
+	// QueryRealmIDSearch is the query key to filter by realmID.
+	QueryRealmIDSearch = "realm_id"
 )
 
 // HandleEventsShow shows event logs.
@@ -36,33 +42,58 @@ func (c *Controller) HandleEventsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var scopes []database.Scope
-		from := r.FormValue(QueryFromSearch)
-		to := r.FormValue(QueryToSearch)
-		scopes = append(scopes, database.WithAuditSearch(from, to))
-
+		// Parse query params
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
+		from := r.FormValue(QueryFromSearch)
+		to := r.FormValue(QueryToSearch)
+		scopes := []database.Scope{}
+		scopes = append(scopes, database.WithAuditTime(from, to))
+		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
 
+		// Add realm filter if applicable
+		var realm *database.Realm
+		switch realmID {
+		case "":
+			// All events
+		case "0":
+			scopes = append(scopes, database.WithAuditRealmID(0))
+			realm = &database.Realm{
+				Model: gorm.Model{ID: 0},
+				Name:  "System",
+			}
+		default:
+			if id, err := strconv.ParseUint(realmID, 10, 64); err != nil {
+				scopes = append(scopes, database.WithAuditRealmID(uint(id)))
+			}
+
+			if realm, err = c.db.FindRealm(realmID); err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+		}
+
+		// List the events
 		events, paginator, err := c.db.ListAudits(pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderEvents(ctx, w, events, paginator, from, to)
+		c.renderEvents(ctx, w, events, paginator, from, to, realm)
 	})
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string) {
+	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["events"] = events
 	m["paginator"] = paginator
 	m[QueryFromSearch] = from
 	m[QueryToSearch] = to
+	m["realm"] = realm
 	c.h.RenderHTML(w, "admin/events/index", m)
 }

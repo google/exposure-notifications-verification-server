@@ -22,11 +22,30 @@
     </p>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Events</div>
+      <div class="card-header">Events
+      {{if .realm}}
+      <span class="badge badge-secondary">{{.realm.Name}}
+        <a class="" href="/admin/events?from={{.from}}&to={{.to}}">
+          <span class="oi oi-circle-x ml-1 text-light" aria-hidden="true"></span>
+        </a>
+      </span>
+      {{end}}
+      </div>
 
       <div class="card-body">
         <form method="GET" action="/admin/events" id="search-form">
           <div class="input-group">
+            <span class="input-group-prepend">
+              <select name="realm_id" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
+                <option value="" {{selectedIf (not .realm)}}>All events</option>
+                <option value="0" {{if .realm}}{{selectedIf (eq .realm.ID 0)}}{{end}}>System events</option>
+                {{if .realm}}{{if ne .realm.ID 0}}
+                <option value="{{.realm.ID}}" {{if .realm}}{{selectedIf (ne .realm.ID 0)}}{{end}}>
+                  {{.realm.Name}} events
+                </option>
+                {{end}}{{end}}
+              </select>
+            </span>
             <input type="datetime-local" id="from" name="from" value="{{.from}}" class="form-control">
             <span class="input-group-append">
               <span class="input-group-text bg-transparent border-left-0 border-right-0">thru</span>
