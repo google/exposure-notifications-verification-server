@@ -100,7 +100,7 @@
           <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
             aria-valuemax="100"></div>
         </div>
-        <table class="table table-bordered" id="csv-table">
+        <table class="table table-bordered d-none" id="csv-table">
           <thead>
             <tr>
               <th>Phone number</th>
@@ -114,6 +114,8 @@
   </main>
 
   <script type="text/javascript">
+    var total = 0;
+
     $(function() {
       let $form = $('#form');
       let $csv = $('#csv');
@@ -137,11 +139,7 @@
         $rememberCode.prop("checked", true);
       }
       $retryCode.val(randomString);
-
-      let total = 0;
       let upload = readFile();
-
-      $table.hide();
 
       {{if $hasSMSConfig}}
       if (typeof (FileReader) === "undefined") {
@@ -174,7 +172,7 @@
         $import.prop('disabled', true);
         $cancel.removeClass('d-none');
 
-        $table.show(100);
+        $table.removeClass('d-none');
         $progressDiv.removeClass('d-none');
 
         if ($rememberCode.is(':checked')) {
@@ -206,7 +204,6 @@
           for (let i = parseInt($startAt.val()); i < rows.length && !cancelUpload; i++) {
             // Clear batch that was just uploaded.
             if (batch.length >= batchSize) {
-              $tableBody.empty();
               batch = [];
             }
 
@@ -218,9 +215,15 @@
 
             // If we've hit the batch limit or end of file, upload it.
             if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
+              $tableBody.empty();
+              for(r = 0; r < batch.length; r++) {
+                let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["symptomDate"] + "</td></tr>";
+                $tableBody.append(row);
+              }
+
               await uploadBatch(batch).catch(err => { });
               $startAt.val(i + 1);
-              if (cancelUpload) {
+              if (cancelUpload && total > 0) {
                 flash.warning("Successfully issued " + total + " codes."
                   + (rows.length - i) + " remaining.");
                 break;
@@ -233,9 +236,12 @@
           }
 
           if (!cancelUpload) {
-            flash.alert("Successfully issued " + total + " codes.");
+            $progress.width('100%');
+            $progress.html('100%');
+            if (total > 0) {
+              flash.alert("Successfully issued " + total + " codes.");
+            }
           }
-          $table.fadeOut(400);
           $import.prop('disabled', false);
           $cancel.addClass('d-none');
         };
@@ -265,9 +271,6 @@
         let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36);
         request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
 
-        let row = "<tr><td>" + request["phone"] + "</td><td>" + request["symptomDate"] + "</td></tr>";
-        $tableBody.append(row);
-
         request["testType"] = "confirmed";
         request["tzOffset"] = tzOffset;
         return request
@@ -285,7 +288,7 @@
         // TODO: at the moment we only support one-at-a-time
         data: JSON.stringify(data[0]),
         success: function(result) {
-          total += result.newUsers.length;
+          total++;
           if (result.error) {
             flash.error(result.error);
           }
