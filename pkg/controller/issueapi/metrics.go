@@ -21,7 +21,6 @@ import (
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/tag"
 )
 
 const metricPrefix = observability.MetricRoot + "/api/issue"
@@ -33,20 +32,6 @@ var (
 
 	mRealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
 )
-
-var (
-	// tokenStateTagKey indicate the state of the tokens. It's either "USED" or
-	// "AVAILABLE".
-	tokenStateTagKey = tag.MustNewKey("state")
-)
-
-func tokenAvailableTag() tag.Mutator {
-	return tag.Upsert(tokenStateTagKey, "AVAILABLE")
-}
-
-func tokenLimitTag() tag.Mutator {
-	return tag.Upsert(tokenStateTagKey, "LIMIT")
-}
 
 func init() {
 	enobservability.CollectViews([]*view.View{
