@@ -6,11 +6,45 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "create-verification-code"
+msgid "header.create-verification-code"
 msgstr "Crear código de verificación"
 
-msgid "diagnosis"
+msgid "header.diagnosis"
 msgstr "Diagnóstico"
 
-msgid "dates"
+msgid "header.dates"
 msgstr "Fechas"
+
+#
+# navigation menus
+# ----------------
+
+msgid "nav.issue-code"
+msgstr "Crear código"
+
+msgid "nav.bulk-issue-codes"
+msgstr "Crear códigos en lote"
+
+msgid "nav.check-code-status"
+msgstr "Verificar estado código"
+
+msgid "nav.api-keys"
+msgstr "Claves API"
+
+msgid "nav.mobile-apps"
+msgstr "Aplicaciones móviles"
+
+msgid "nav.event-log"
+msgstr "Registro de eventos"
+
+msgid "nav.signing-keys"
+msgstr "Firma de claves"
+
+msgid "nav.statistics"
+msgstr "Estadísticas"
+
+msgid "nav.users"
+msgstr "Personas"
+
+msgid "nav.settings"
+msgstr "Configuraciones"
