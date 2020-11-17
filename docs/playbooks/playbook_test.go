@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	alertTF       = "../../terraform/alerting/verification-server/alerts.tf"
+	alertTF       = "../../terraform/alerting/alerts.tf"
 	playbooksGlob = "./alerts/*.md"
 )
 
