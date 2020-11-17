@@ -15,7 +15,6 @@
 package issueapi
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -32,7 +31,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
 	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 )
 
 type dateParseSettings struct {
@@ -252,7 +250,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				result = observability.ResultError("FAILED_TO_GENERATE_HMAC")
 				return
 			}
-			limit, remaining, reset, ok, err := c.limiter.Take(ctx, key)
+			limit, _, reset, ok, err := c.limiter.Take(ctx, key)
 			if err != nil {
 				logger.Errorw("failed to take from limiter", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
@@ -261,12 +259,8 @@ func (c *Controller) HandleIssue() http.Handler {
 				return
 			}
 
-			// Override limit if there has been a burst for this realm.
-			if remaining > limit {
-				remaining = limit
-			}
+			stats.Record(ctx, mRealmTokenUsed.M(1))
 
-			c.recordCapacity(ctx, limit, remaining)
 			if !ok {
 				logger.Warnw("realm has exceeded daily quota",
 					"realm", realm.ID,
@@ -274,7 +268,7 @@ func (c *Controller) HandleIssue() http.Handler {
 					"reset", reset)
 
 				if c.config.GetEnforceRealmQuotas() {
-					c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota"))
+					c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota, please contact the realm admin."))
 					blame = observability.BlameClient
 					result = observability.ResultError("QUOTA_EXCEEDED")
 					return
@@ -372,10 +366,4 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 	}
 
 	return authorizedApp, currentUser, nil
-}
-
-func (c *Controller) recordCapacity(ctx context.Context, limit, remaining uint64) {
-	stats.Record(ctx, mRealmTokenUsed.M(1))
-	stats.RecordWithTags(ctx, []tag.Mutator{tokenAvailableTag()}, mRealmToken.M(int64(remaining)))
-	stats.RecordWithTags(ctx, []tag.Mutator{tokenLimitTag()}, mRealmToken.M(int64(limit)))
 }
