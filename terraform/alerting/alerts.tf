@@ -16,45 +16,6 @@ locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts"
 }
 
-resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
-  project      = var.verification-server-project
-  combiner     = "OR"
-  display_name = "RealmTokenRemainingCapacityLow"
-  conditions {
-    display_name = "Per-realm issue API token remaining capacity"
-    condition_monitoring_query_language {
-      duration = "600s"
-      query    = <<-EOT
-      fetch
-      generic_task :: custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest
-      | {
-        AVAILABLE: filter metric.state == 'AVAILABLE' | align
-        ;
-        LIMIT: filter metric.state == 'LIMIT' | align
-      }
-      | group_by [metric.realm], [val: sum(value.realm_token_latest)]
-      | ratio
-      | window 1m
-      | condition ratio < 0.1
-      EOT
-      trigger {
-        count = 1
-      }
-    }
-  }
-  documentation {
-    content   = "${local.playbook_prefix}/RealmTokenRemainingCapacityLow.md"
-    mime_type = "text/markdown"
-  }
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
-
-  depends_on = [
-    null_resource.manual-step-to-enable-workspace,
-  ]
-}
-
 resource "google_monitoring_alert_policy" "backend_latency" {
   count        = var.https-forwarding-rule == "" ? 0 : 1
   project      = var.verification-server-project

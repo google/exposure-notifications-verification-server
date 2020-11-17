@@ -31,8 +31,6 @@ var (
 
 	mSMSLatencyMs = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
 
-	mRealmToken = stats.Int64(metricPrefix+"/realm_token", "# of realm tokens from limiter", stats.UnitDimensionless)
-
 	mRealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
 )
 
@@ -79,13 +77,6 @@ func init() {
 			Description: "The # of SMS requests",
 			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
 			Aggregation: ochttp.DefaultLatencyDistribution,
-		},
-		{
-			Name:        metricPrefix + "/realm_token_latest",
-			Description: "Latest realm token count",
-			TagKeys:     append(observability.CommonTagKeys(), tokenStateTagKey),
-			Measure:     mRealmToken,
-			Aggregation: view.LastValue(),
 		},
 		{
 			Name:        metricPrefix + "/realm_token_used_count",
