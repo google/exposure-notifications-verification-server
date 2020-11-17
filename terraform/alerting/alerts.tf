@@ -13,7 +13,7 @@
 # limitations under the License.
 
 locals {
-  playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks"
+  playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts"
 }
 
 resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
@@ -73,7 +73,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
       | align delta(1m)
       | every 1m
       | group_by [resource.backend_target_name], [val: percentile(value.backend_latencies, 99)]
-      | condition val > 2000 '1'
+      | condition val > 2000 'ms'
       EOT
       trigger {
         count = 1
