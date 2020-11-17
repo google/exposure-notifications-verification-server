@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks"
+}
+
 resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
   project      = var.verification-server-project
   combiner     = "OR"
@@ -39,11 +43,7 @@ resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
     }
   }
   documentation {
-    content   = <<-EOT
-    ## $${policy.display_name}
-
-    Realm $${metric.label.realm} daily verification code issuing remaining capacity below 10%.
-    EOT
+    content   = "${local.playbook_prefix}/RealmTokenRemainingCapacityLow.md"
     mime_type = "text/markdown"
   }
   notification_channels = [
@@ -58,7 +58,7 @@ resource "google_monitoring_alert_policy" "RealmTokenRemainingCapacityLow" {
 resource "google_monitoring_alert_policy" "backend_latency" {
   count        = var.https-forwarding-rule == "" ? 0 : 1
   project      = var.verification-server-project
-  display_name = "Elevated Latency Greater than 2s"
+  display_name = "ElevatedLatencyGreaterThan2s"
   combiner     = "OR"
   conditions {
     display_name = "/backend_latencies"
@@ -82,12 +82,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
   }
 
   documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-Latency has been above 2s for > 5 minutes on $${resource.label.backend_target_name}.
-
-EOT
+    content   = "${local.playbook_prefix}/ElevatedLatencyGreaterThan2s.md"
     mime_type = "text/markdown"
   }
 
@@ -127,15 +122,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
     }
   }
   documentation {
-    content   = <<-EOT
-    ## $${policy.display_name}
-
-    The e2e test is failing at step $${metric.label.step} with test_type
-    $${metric.label.test_type}.
-
-    This could be caused by many reasons. Please check the e2e-runner service
-    log and see why it failed.
-    EOT
+    content   = "${local.playbook_prefix}/E2ETestErrorRatioHigh.md"
     mime_type = "text/markdown"
   }
   notification_channels = [
@@ -149,7 +136,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
 
 resource "google_monitoring_alert_policy" "five_xx" {
   project      = var.monitoring-host-project
-  display_name = "Elevated 5xx"
+  display_name = "Elevated500s"
   combiner     = "OR"
   conditions {
     display_name = "Elevated 5xx on Verification Server"
@@ -173,13 +160,7 @@ resource "google_monitoring_alert_policy" "five_xx" {
   }
 
   documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-[$${resource.label.host}](https://$${resource.label.host}/) is reporting elevated 5xx errors.
-
-See [docs/5xx.md](https://github.com/sethvargo/exposure-notifications-server-infra/blob/main/docs/5xx.md) for information about debugging.
-EOT
+    content   = "${local.playbook_prefix}/Elevated500s.md"
     mime_type = "text/markdown"
   }
 
@@ -195,7 +176,7 @@ EOT
 resource "google_monitoring_alert_policy" "probers" {
   project = var.monitoring-host-project
 
-  display_name = "Host Down"
+  display_name = "HostDown"
   combiner     = "OR"
   conditions {
     display_name = "Host is unreachable"
@@ -216,13 +197,7 @@ resource "google_monitoring_alert_policy" "probers" {
   }
 
   documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-[$${resource.label.host}](https://$${resource.label.host}/health) is being reported unreachable.
-
-See [docs/hosts.md](https://github.com/sethvargo/exposure-notifications-server-infra/blob/main/docs/hosts.md) for information about hosts.
-EOT
+    content   = "${local.playbook_prefix}/HostDown.md"
     mime_type = "text/markdown"
   }
 
@@ -237,7 +212,7 @@ EOT
 
 resource "google_monitoring_alert_policy" "rate_limited_count" {
   project      = var.monitoring-host-project
-  display_name = "Elevated Rate Limited Count"
+  display_name = "ElevatedRateLimitedCount"
   combiner     = "OR"
   conditions {
     display_name = "Rate Limited count by job"
@@ -259,17 +234,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
   }
 
   documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-[$${resource.label.host}](https://$${resource.label.host}) request
-throttled by ratelimit middleware. This could indicate a bad behaving
-client app, or a potential DoS attack.
-
-View the metric here
-
-https://console.cloud.google.com/monitoring/dashboards/custom/${basename(google_monitoring_dashboard.verification-server.id)}?project=${var.monitoring-host-project}
-EOT
+    content   = "${local.playbook_prefix}/ElevatedRateLimitedCount.md"
     mime_type = "text/markdown"
   }
 
@@ -304,17 +269,7 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
   }
 
   documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-OpenCensus failed to export metrics to Stackdriver.
-
-This means all other alerts we have configured won't work as the alert depend
-on the export metrics.
-
-NOTE: metric export may spontanously fail. If the failure rate is low it's
-likely the threshold is too sensitive.
-EOT
+    content   = "${local.playbook_prefix}/StackdriverExportFailed.md"
     mime_type = "text/markdown"
   }
 
@@ -330,8 +285,8 @@ EOT
 
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
-  project      =  var.verification-server-project
-  display_name = "Fast error budget burn"
+  project      = var.verification-server-project
+  display_name = "FastErrorBudgetBurn"
   combiner     = "OR"
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
@@ -339,10 +294,10 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   conditions {
     display_name = "2% burn in 1 hour"
     condition_threshold {
-      filter = <<-EOT
+      filter     = <<-EOT
       select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "3600s")
       EOT
-      duration = "0s"
+      duration   = "0s"
       comparison = "COMPARISON_GT"
       # burn rate = budget consumed * period / alerting window = .02 * (7 * 24 * 60)/60 = 3.36
       threshold_value = 3.36
@@ -353,11 +308,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   }
 
   documentation {
-    content   = <<-EOT
-## $${policy.display_name}
-
-See [the playbook](https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/Fast_Error_Budget_Burn.md) for information about triaging and mitigating this alert.
-EOT
+    content   = "${local.playbook_prefix}/FastErrorBudgetBurn.md"
     mime_type = "text/markdown"
   }
 
