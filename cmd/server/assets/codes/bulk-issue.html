@@ -36,19 +36,20 @@
           Use this form to bulk issue codes.
         </p>
 
-        <pre>Example file contents:
-          <code>
-            +12065555555,2020-11-10
-          </code>
-        </pre>
+        <pre>Example file contents: <code>+12065555555,2020-11-10</code></pre>
 
         <p>
           This form will data and issue a code for each provided entry.
           Phone numbers are expected to be in <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a> format.
         </p>
         <form id="form">
+          <div class="custom-file mb-4">
+            <input type="file" class="custom-file-input" id="csv" accept=".csv" disabled required>
+            <label class="custom-file-label" for="csv" id="file-label">Select a CSV file</label>
+          </div>
+
           <div class="form-label-group input-group">
-            <input type="text" class="form-control" id="retry-code" placeholder="Retry code" required>
+            <input type="text" class="form-control text-monospace" id="retry-code" placeholder="Retry code" required>
             <label for="retry-code">Retry code</label>
             <div class="input-group-append">
               <button class="btn btn-outline-secondary" id="new-code" type="button">New code</button>
@@ -69,20 +70,15 @@
           </small>
 
           <div class="form-label-group input-group">
-            <input type="text" class="form-control" id="start-at" placeholder="Start at line" value="0">
+            <input type="text" class="form-control text-monospace" id="start-at" placeholder="Start at line" value="0">
             <label for="start-at">Start at line</label>
           </div>
           <small class="form-text text-muted pb-4">
             Parsing the CSV will start at this line. Begin at 0 for a new file.
             This can be used to resume a canceled or partial upload.
           </small>
-
-          <div class="custom-file">
-            <input type="file" class="custom-file-input" id="csv" accept=".csv" disabled required>
-            <label class="custom-file-label" for="csv" id="file-label">Select a CSV file</label>
-          </div>
           <button class="btn btn-primary" type="submit" id="import" disabled>Issue codes</button>
-          <button class="btn btn-danger" id="cancel" disabled>Cancel</button>
+          <button class="btn btn-danger d-none" id="cancel" disabled>Cancel</button>
         </form>
       </div>
 
@@ -163,7 +159,7 @@
       $form.on('submit', function(event) {
         event.preventDefault();
         $import.prop('disabled', true);
-        $cancel.prop('disabled', false);
+        $cancel.removeClass('d-none');
 
         $table.show(100);
         $progressDiv.removeClass('d-none');
@@ -228,7 +224,7 @@
           }
           $table.fadeOut(400);
           $import.prop('disabled', false);
-          $cancel.prop('disabled', true);
+          $cancel.addClass('d-none');
         };
 
         return { start, cancel };
