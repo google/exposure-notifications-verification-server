@@ -227,6 +227,21 @@ func (c *Controller) HandleIssue() http.Handler {
 			}
 		}
 
+		// If there is a client-provided UUID, check if a code has already been issued.
+		// this prevents us from consuming quota on conflict.
+		if request.UUID != "" {
+			if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
+				if !database.IsNotFound(err) {
+					controller.InternalError(w, r, c.h, err)
+					return
+				}
+			} else if code != nil {
+				c.h.RenderJSON(w, http.StatusConflict,
+					api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists))
+				return
+			}
+		}
+
 		// If we got this far, we're about to issue a code - take from the limiter
 		// to ensure this is permitted.
 		if realm.AbusePreventionEnabled {
