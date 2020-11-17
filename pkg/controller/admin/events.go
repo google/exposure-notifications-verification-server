@@ -64,6 +64,7 @@ func (c *Controller) HandleEventsShow() http.Handler {
 				Model: gorm.Model{ID: 0},
 				Name:  "System",
 			}
+			scopes = append(scopes, database.WithAuditRealmID(0))
 		default:
 			if id, err := strconv.ParseUint(realmID, 10, 64); err != nil {
 				scopes = append(scopes, database.WithAuditRealmID(uint(id)))
