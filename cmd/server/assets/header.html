@@ -55,15 +55,15 @@
         {{if .currentRealm}}
         <ul class="nav mr-auto flex-column flex-md-row">
           <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsDir "/codes/issue"}}active{{end}}" href="/codes/issue">Issue code</a>
+            <a class="nav-link {{if .currentPath.IsDir "/codes/issue"}}active{{end}}" href="/codes/issue">{{t $.locale "nav.issue-code"}}</a>
           </li>
           {{if .currentRealm}}{{if .currentRealm.AllowBulkUpload}}
           <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsDir "/codes/bulk-issue"}}active{{end}}" href="/codes/bulk-issue">Bulk issue codes</a>
+            <a class="nav-link {{if .currentPath.IsDir "/codes/bulk-issue"}}active{{end}}" href="/codes/bulk-issue">{{t $.locale "nav.bulk-issue-codes"}}</a>
           </li>
           {{end}}{{end}}
           <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsDir "/codes/status"}}active{{end}}" href="/codes/status">Check code status</a>
+            <a class="nav-link {{if .currentPath.IsDir "/codes/status"}}active{{end}}" href="/codes/status">{{t $.locale "nav.check-code-status"}}</a>
           </li>
         </ul>
         {{end}}
@@ -96,13 +96,13 @@ aria-expanded="false" aria-label="Toggle navigation">
       {{if .currentRealm }}
       {{if .currentUser.CanAdminRealm .currentRealm.ID}}
       <h6 class="dropdown-header">Manage realm</h6>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/apikeys"}}active{{end}}" href="/realm/apikeys">API keys</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/mobile-apps"}}active{{end}}" href="/realm/mobile-apps">Mobile apps</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/events"}}active{{end}}" href="/realm/events">Event log</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/keys"}}active{{end}}" href="/realm/keys">Signing keys</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/stats"}}active{{end}}" href="/realm/stats">Statistics</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/users"}}active{{end}}" href="/realm/users">Users</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/settings"}}active{{end}}" href="/realm/settings#general">Settings</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/apikeys"}}active{{end}}" href="/realm/apikeys">{{t $.locale "nav.api-keys"}}</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/mobile-apps"}}active{{end}}" href="/realm/mobile-apps">{{t $.locale "nav.mobile-apps"}}</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/events"}}active{{end}}" href="/realm/events">{{t $.locale "nav.event-log"}}</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/keys"}}active{{end}}" href="/realm/keys">{{t $.locale "nav.signing-keys"}}</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/stats"}}active{{end}}" href="/realm/stats">{{t $.locale "nav.statistics"}}</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/users"}}active{{end}}" href="/realm/users">{{t $.locale "nav.users"}}</a>
+      <a class="dropdown-item {{if .currentPath.IsDir "/realm/settings"}}active{{end}}" href="/realm/settings#general">{{t $.locale "nav.settings"}}</a>
       <div class="dropdown-divider"></div>
       {{end}}
       {{end}}
