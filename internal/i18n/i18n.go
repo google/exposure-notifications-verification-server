@@ -18,6 +18,7 @@ package i18n
 import (
 	"fmt"
 	"io/ioutil"
+	"sync"
 
 	"github.com/leonelquinteros/gotext"
 	"golang.org/x/text/language"
@@ -36,8 +37,9 @@ type LocaleMap struct {
 	data    map[string]*gotext.Locale
 	matcher language.Matcher
 
-	path   string
-	reload bool
+	path       string
+	reload     bool
+	reloadLock sync.Mutex
 }
 
 // Lookup finds the best locale for the given ids. If none exists, the default
@@ -48,6 +50,9 @@ type LocaleMap struct {
 // production.
 func (l *LocaleMap) Lookup(ids ...string) *gotext.Locale {
 	if l.reload {
+		l.reloadLock.Lock()
+		defer l.reloadLock.Unlock()
+
 		if err := l.load(); err != nil {
 			panic(err)
 		}
@@ -82,7 +87,8 @@ func (l *LocaleMap) Canonicalize(id string) (string, error) {
 	return "", fmt.Errorf("unknown language %q", id)
 }
 
-// load loads the locales into the LocaleMap.
+// load loads the locales into the LocaleMap. Callers must take out a mutex
+// before calling.
 func (l *LocaleMap) load() error {
 	entries, err := ioutil.ReadDir(l.path)
 	if err != nil {
@@ -129,6 +135,9 @@ func Load(pth string, opts ...Option) (*LocaleMap, error) {
 	for _, opt := range opts {
 		l = opt(l)
 	}
+
+	l.reloadLock.Lock()
+	defer l.reloadLock.Unlock()
 
 	if err := l.load(); err != nil {
 		return nil, err

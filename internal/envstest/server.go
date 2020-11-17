@@ -243,7 +243,8 @@ func newServerConfig(tb testing.TB) *serverConfigResponse {
 
 	// Create the config.
 	cfg := &config.ServerConfig{
-		AssetsPath: ServerAssetsPath(tb),
+		AssetsPath:  ServerAssetsPath(),
+		LocalesPath: LocalesPath(),
 		Cache: cache.Config{
 			Type:    cache.TypeInMemory,
 			HMACKey: RandomBytes(tb, 64),
@@ -297,7 +298,11 @@ func newServerConfig(tb testing.TB) *serverConfigResponse {
 }
 
 // ServerAssetsPath returns the path to the UI server assets.
-func ServerAssetsPath(tb testing.TB) string {
-	tb.Helper()
+func ServerAssetsPath() string {
 	return filepath.Join(project.Root(), "cmd", "server", "assets")
+}
+
+// LocalesPath returns the path to the i18n locales.
+func LocalesPath() string {
+	return filepath.Join(project.Root(), "internal", "i18n", "locales")
 }
