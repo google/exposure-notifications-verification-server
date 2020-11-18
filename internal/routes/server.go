@@ -185,15 +185,6 @@ func Server(
 				Queries("mode", "verifyEmail").Methods("GET")
 			sub.Handle("/login/manage-account", loginController.HandleSubmitVerifyEmail()).
 				Queries("mode", "verifyEmail").Methods("POST")
-
-			// SMS auth registration is realm-specific, so it needs to load the current realm.
-			sub = r.PathPrefix("").Subrouter()
-			sub.Use(requireAuth)
-			sub.Use(rateLimit)
-			sub.Use(loadCurrentRealm)
-			sub.Use(requireRealm)
-			sub.Use(processFirewall)
-			sub.Use(requireVerified)
 			sub.Handle("/login/register-phone", loginController.HandleRegisterPhone()).Methods("GET")
 		}
 	}
