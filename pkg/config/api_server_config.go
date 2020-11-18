@@ -39,6 +39,9 @@ type APIServerConfig struct {
 	// production environments.
 	DevMode bool `env:"DEV_MODE"`
 
+	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
+	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
+
 	Port string `env:"PORT,default=8080"`
 
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
