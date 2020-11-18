@@ -35,6 +35,13 @@ variable "database_tier" {
   description = "Size of the Cloud SQL tier. Set to db-custom-1-3840 or a smaller instance for local dev."
 }
 
+variable "database_version" {
+  type    = string
+  default = "POSTGRES_12"
+
+  description = "Version of the database to use. Must be at least 12 or higher."
+}
+
 variable "database_disk_size_gb" {
   type    = number
   default = 256

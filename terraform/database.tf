@@ -22,7 +22,7 @@ resource "random_string" "db-name" {
 resource "google_sql_database_instance" "db-inst" {
   project          = var.project
   region           = var.region
-  database_version = "POSTGRES_12"
+  database_version = var.database_version
   name             = var.database_name
 
   settings {
