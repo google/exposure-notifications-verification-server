@@ -1,7 +1,5 @@
 {{define "login/register-phone"}}
 
-{{$currentRealm := .currentRealm}}
-
 <!doctype html>
 <html lang="en">
 
@@ -31,7 +29,7 @@
               {{end}}
 
               <p>
-                <strong>{{$currentRealm.Name}}</strong>
+                <strong>{{if .currentRealm}}{{.currentRealm.Name}}{{else}}System{{end}}</strong>
                 {{if eq .mfaMode.String "required"}}requires{{else}}recommends{{end}}
                 enhanced security via SMS-based 2-factor authentication. Please
                 provide your information below to enroll.
@@ -108,9 +106,9 @@
       let phone = document.querySelector('#phone');
       let iti = window.intlTelInput(phone, {
         nationalMode: true,
-        {{- if $currentRealm.SMSCountry }}
-        initialCountry: '{{$currentRealm.SMSCountry}}',
-        {{- end }}
+        {{-if .currentRealm}}{{-if $currentRealm.SMSCountry}}
+        initialCountry: '{{.currentRealm.SMSCountry}}',
+        {{-end}}{{end-}}
         utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.0/js/utils.js',
       });
 
