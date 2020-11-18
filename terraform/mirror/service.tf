@@ -86,12 +86,12 @@ resource "google_cloud_scheduler_job" "docker-mirror-worker" {
     body = base64encode(jsonencode({
       mirrors = [
         {
-          src = "postgres:12"
-          dst = "${google_artifact_registry_repository.mirrors.location}-docker.pkg.dev/${var.project}/mirrors/postgres:12"
+          src = "postgres:13"
+          dst = "${google_artifact_registry_repository.mirrors.location}-docker.pkg.dev/${var.project}/mirrors/postgres:13"
         },
         {
-          src = "postgres:12-alpine"
-          dst = "${google_artifact_registry_repository.mirrors.location}-docker.pkg.dev/${var.project}/mirrors/postgres:12-alpine"
+          src = "postgres:13-alpine"
+          dst = "${google_artifact_registry_repository.mirrors.location}-docker.pkg.dev/${var.project}/mirrors/postgres:13-alpine"
         },
         {
           src = "redis:6"

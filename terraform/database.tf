@@ -12,18 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "random_string" "db-name" {
-  length  = 5
-  special = false
-  number  = false
-  upper   = false
-}
-
 resource "google_sql_database_instance" "db-inst" {
   project          = var.project
   region           = var.region
   database_version = var.database_version
-  name             = var.database_name
 
   settings {
     tier              = var.database_tier
@@ -69,8 +61,7 @@ resource "google_sql_database_instance" "replicas" {
 
   project          = var.project
   region           = each.key
-  database_version = "POSTGRES_12"
-  name             = "${var.database_name}-${each.key}"
+  database_version = var.database_version
 
   master_instance_name = google_sql_database_instance.db-inst.name
 
