@@ -115,6 +115,8 @@
 
   <script type="text/javascript">
     let total = 0;
+    let throttle = {{.throttleMs}}; // milliseconds per request.
+
     // Common error codes which should cancel the whole upload.
     let stopUploadingCodes = [
       '429', // too many requests
@@ -208,6 +210,8 @@
           let batch = [];
           total = 0;
           $tableBody.empty();
+          let lastUpload = new Date(0);
+
           for (let i = parseInt($startAt.val()); i < rows.length && !cancelUpload; i++) {
             // Clear batch that was just uploaded.
             if (batch.length >= batchSize) {
@@ -227,6 +231,13 @@
                 let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["symptomDate"] + "</td></tr>";
                 $tableBody.append(row);
               }
+
+              // Throttling
+              let elapsed = new Date() - lastUpload
+              if (elapsed < throttle) {
+                await new Promise(r => setTimeout(r, throttle-elapsed));
+              }
+              lastUpload = new Date();
 
               await uploadBatch(batch).catch(err => {
                 if (err && stopUploadingCodes.includes(err.status)) {

@@ -154,6 +154,10 @@ func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }
 
+func (c *ServerConfig) BulkUploadThrottleMs() uint64 {
+	return uint64(c.RateLimit.Interval/time.Millisecond) / c.RateLimit.Tokens
+}
+
 // FirebaseConfig represents configuration specific to firebase auth.
 type FirebaseConfig struct {
 	APIKey          string `env:"FIREBASE_API_KEY,required"`
