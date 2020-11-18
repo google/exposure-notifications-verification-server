@@ -98,6 +98,12 @@ func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, e
 
 func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c.config.IsMaintenanceMode() {
+			c.h.RenderJSON(w, http.StatusTooManyRequests,
+				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+			return
+		}
+
 		ctx := observability.WithBuildInfo(r.Context())
 
 		logger := logging.FromContext(ctx).Named("issueapi.HandleIssue")

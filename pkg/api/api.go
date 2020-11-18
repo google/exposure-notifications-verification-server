@@ -64,6 +64,8 @@ const (
 	ErrHMACInvalid = "hmac_invalid"
 	// ErrUUIDAlreadyExists indicates that the UUID has already been used for an issued code.
 	ErrUUIDAlreadyExists = "uuid_already_exists"
+	// ErrMaintenanceMode indicates that the server is read-only for maintenance.
+	ErrMaintenanceMode = "maintenance_mode"
 )
 
 // ErrorReturn defines the common error type.
