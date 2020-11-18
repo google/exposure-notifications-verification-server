@@ -1674,7 +1674,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				logger.Debugw("db migrations: adding allow_bulk_upload to realms")
 
 				sqls := []string{
-					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload bool DEFAULT false`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload BOOL`,
+					`UPDATE realms SET allow_bulk_upload = FALSE WHERE allow_bulk_upload IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN allow_bulk_upload SET DEFAULT FALSE`,
 					`ALTER TABLE realms ALTER COLUMN allow_bulk_upload SET NOT NULL`,
 				}
 
