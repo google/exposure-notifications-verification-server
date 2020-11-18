@@ -56,23 +56,11 @@
         </div>
       </div>
     </div>
-
-    <div id="recaptcha-container" class="center-block"></div>
   </main>
 
   {{template "loginscripts" .}}
 
   <script type="text/javascript">
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-      'recaptcha-container',
-      { 'size': 'invisible' }
-    );
-
-    recaptchaVerifier.render()
-      .then(function(widgetId) {
-        window.recaptchaWidgetId = widgetId;
-      });
-
     $(function() {
       let $loginDiv = $('#login-div');
       let $form = $('#login-form');
@@ -95,59 +83,17 @@
       let verId = "";
       let selectedFactorIndex = 0;
 
-      $form.on('submit', function(event) {
-        event.preventDefault();
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        'submit', {
+          'size': 'invisible',
+          'callback': (response) => onSignInSubmit(),
+        },
+      );
 
-        // Disable the submit button so we only attempt once.
-        $submit.prop('disabled', true);
-
-        {{if .currentUser}}
-        let credentials = firebase.auth.EmailAuthProvider.credential($email.val().trim(),$password.val());
-        firebase.auth().currentUser.reauthenticateWithCredential(credentials)
-        {{else}}
-        firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
-        {{end}}
-          .then(function(userCredential) {
-            loginSuccess();
-          }).catch(function(error) {
-            if (error.code == 'auth/multi-factor-auth-required') {
-              resolver = error.resolver;
-              populatePinText(resolver.hints);
-              populateFactors(resolver.hints);
-              if (resolver.hints[selectedFactorIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
-                let phoneInfoOptions = {
-                  multiFactorHint: resolver.hints[selectedFactorIndex],
-                  session: resolver.session
-                };
-                let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-                return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
-                  .then(function(verificationId) {
-                    verId = verificationId;
-                    setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
-                    $submitPin.prop('disabled', false);
-                    $loginDiv.hide();
-                    $pinDiv.removeClass('d-none');
-                  }).catch(function(error) {
-                    flash.clear();
-                    flash.error(error);
-                    $submit.prop('disabled', false);
-                  });
-              } else {
-                flash.clear();
-                flash.error('Unsupported 2nd factor authentication type.');
-              }
-            } else if (error.code == 'auth/too-many-requests'){
-              flash.clear();
-              flash.error(err.message);
-              $submit.prop('disabled', false);
-            } else {
-              console.error(error);
-              flash.clear();
-              flash.error("Sign-in failed. Please try again.");
-              $submit.prop('disabled', false);
-            }
-          });
-      });
+      window.recaptchaVerifier.render()
+        .then(function(widgetId) {
+          window.recaptchaWidgetId = widgetId;
+        });
 
       $pinForm.on('submit', function(event) {
         event.preventDefault();
@@ -165,11 +111,13 @@
           }).catch(function(err) {
             flash.clear();
             flash.error(err.message);
+            grecaptcha.reset(window.recaptchaWidgetId);
             $submitPin.prop('disabled', false);
           });
       });
 
       $pinClose.on('click', function(event) {
+        grecaptcha.reset(window.recaptchaWidgetId);
         event.preventDefault();
         $submit.prop('disabled', false);
         $factors.empty();
@@ -188,6 +136,62 @@
         $registeredDiv.removeClass('d-none');
       });
 
+    function onSignInSubmit() {
+      // Disable the submit button so we only attempt once.
+      $submit.prop('disabled', true);
+
+      {{if .currentUser}}
+      let credentials = firebase.auth.EmailAuthProvider.credential($email.val().trim(),$password.val());
+      firebase.auth().currentUser.reauthenticateWithCredential(credentials)
+      {{else}}
+      firebase.auth().signInWithEmailAndPassword($email.val(), $password.val())
+      {{end}}
+        .then(function(userCredential) {
+          loginSuccess();
+        }).catch(function(error) {
+          if (error.code == 'auth/multi-factor-auth-required') {
+            resolver = error.resolver;
+            populatePinText(resolver.hints);
+            populateFactors(resolver.hints);
+            if (resolver.hints[selectedFactorIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
+              let phoneInfoOptions = {
+                multiFactorHint: resolver.hints[selectedFactorIndex],
+                session: resolver.session
+              };
+              let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+              let appVerifier = window.recaptchaVerifier;
+              return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, appVerifier)
+                .then(function(verificationId) {
+                  verId = verificationId;
+                  setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+                  $submitPin.prop('disabled', false);
+                  $loginDiv.hide();
+                  $pinDiv.removeClass('d-none');
+                }).catch(function(error) {
+                  grecaptcha.reset(window.recaptchaWidgetId);
+                  flash.clear();
+                  flash.error(error);
+                  $submit.prop('disabled', false);
+                });
+            } else {
+              flash.clear();
+              flash.error('Unsupported 2nd factor authentication type.');
+            }
+          } else if (error.code == 'auth/too-many-requests'){
+            grecaptcha.reset(window.recaptchaWidgetId);
+            flash.clear();
+            flash.error(error.message);
+            $submit.prop('disabled', false);
+          } else {
+            grecaptcha.reset(window.recaptchaWidgetId);
+            console.error(error);
+            flash.clear();
+            flash.error("Sign-in failed. Please try again.");
+            $submit.prop('disabled', false);
+          }
+        });
+      }
+
       function resendPin() {
         $resendPin.addClass('disabled');
         setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
@@ -198,10 +202,12 @@
         };
         populatePinText(resolver.hints)
         let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-        phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+        let appVerifier = window.recaptchaVerifier;
+        phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, appVerifier)
           .then(function(verificationId) {
             verId = verificationId;
           }).catch(function(error) {
+            grecaptcha.reset(window.recaptchaWidgetId);
             flash.clear();
             flash.error(error.message);
             $submit.prop('disabled', false);
