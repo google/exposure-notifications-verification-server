@@ -40,6 +40,9 @@ type AdminAPIServerConfig struct {
 	// production environments.
 	DevMode bool `env:"DEV_MODE"`
 
+	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
+	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
+
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
 
@@ -108,4 +111,8 @@ func (c *AdminAPIServerConfig) GetRateLimitConfig() *ratelimit.Config {
 
 func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
+}
+
+func (c *AdminAPIServerConfig) IsMaintenanceMode() bool {
+	return c.MaintenanceMode
 }

@@ -173,7 +173,7 @@ func realMain(ctx context.Context) error {
 		chaffDet := chaff.HeaderDetector("X-Chaff")
 
 		// POST /api/verify
-		verifyChaff, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyReponse), chaff.DefaultCapacity)
+		verifyChaff, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyResponse), chaff.DefaultCapacity)
 		if err != nil {
 			return fmt.Errorf("error creating chaffer: %v", err)
 		}
@@ -212,7 +212,7 @@ func makePadFromChaff(s string) api.Padding {
 	return api.Padding(s)
 }
 
-func encodeVerifyReponse(s string) interface{} {
+func encodeVerifyResponse(s string) interface{} {
 	return api.VerifyCodeResponse{Padding: makePadFromChaff(s)}
 }
 

@@ -100,6 +100,8 @@ Possible error code responses. New error codes may be added in future releases.
 | `code_not_found`        | 400         | No    | The server has no record of that code. |
 | `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecgonized test type |
 | `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided. |
+| `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code |
+| `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later. |
 | `unsupported_test_type` | 412         | No    | The code may be valid, but represents a test type the client cannot process. User may need to upgrade software. |
 |                         | 500         | Yes   | Internal processing error, may be successful on retry. |
 
@@ -152,7 +154,7 @@ Possible error code responses. New error codes may be added in future releases.
 | `token_invalid`         | 400         | No    | The provided token is invalid, or already used to generate a certificate |
 | `token_expired`         | 400         | No    | Code invalid or used, user may need to obtain a new code. |
 | `hmac_invalid`          | 400         | No    | The `ekeyhmac` field, when base64 decoded is not the right size (32 bytes) |
-| `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code |
+| `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later. |
 |                         | 500         | Yes   | Internal processing error, may be successful on retry. |
 
 # Admin APIs

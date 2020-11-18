@@ -94,6 +94,9 @@ type ServerConfig struct {
 	// This includes CSRF protection base cookie. You want this false in production (the default).
 	DevMode bool `env:"DEV_MODE"`
 
+	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
+	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
+
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
 }
@@ -152,6 +155,10 @@ func (c *ServerConfig) GetRateLimitConfig() *ratelimit.Config {
 
 func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
+}
+
+func (c *ServerConfig) IsMaintenanceMode() bool {
+	return c.MaintenanceMode
 }
 
 // FirebaseConfig represents configuration specific to firebase auth.
