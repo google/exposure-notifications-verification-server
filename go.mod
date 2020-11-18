@@ -16,6 +16,7 @@ require (
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.3 // indirect
 	github.com/Microsoft/go-winio v0.4.15 // indirect
 	github.com/aws/aws-sdk-go v1.35.24 // indirect
+	github.com/blushft/go-diagrams v0.0.0-20201006005127-c78c821223d9 // indirect
 	github.com/chromedp/cdproto v0.0.0-20201009231348-1c6a710e77de
 	github.com/chromedp/chromedp v0.5.3
 	github.com/client9/misspell v0.3.4

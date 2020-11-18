@@ -140,11 +140,58 @@ func TestPurgeUsers(t *testing.T) {
 	{
 		got, err := db.FindUser(user.ID)
 		if err != nil && !IsNotFound(err) {
-			t.Fatalf("Expected user to be deleted. got: %v", err)
+			t.Fatalf("expected user to be deleted. got: %v", err)
 		}
 		if got != nil {
-			t.Fatalf("Expected user to be deleted. got: %v", got)
+			t.Fatalf("expected user to be deleted. got: %v", got)
 		}
+	}
+}
+
+func TestRemoveRealmUpdatesTime(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+	realm := NewRealmWithDefaults("test")
+
+	email := "purge@example.com"
+	user := User{
+		Email: email,
+		Name:  "Dr Delete",
+	}
+	user.AddRealm(realm)
+
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatalf("error creating user: %v", err)
+	}
+	got, err := db.FindUser(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := got.ID, user.ID; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
+	}
+
+	time.Sleep(time.Second) // in case this executes in under a nanosecond.
+
+	originalTime := got.Model.UpdatedAt
+	user.RemoveRealm(realm)
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err = db.FindUser(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := got.ID, user.ID; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
+	}
+	// Assert that the user time was updated.
+	if originalTime == got.Model.UpdatedAt {
+		t.Errorf("expected user time to be updated. Got %#v", originalTime.Format(time.RFC3339))
 	}
 }
 
