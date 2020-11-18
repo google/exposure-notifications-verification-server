@@ -44,7 +44,7 @@ type CleanupConfig struct {
 	AuthorizedAppMaxAge          time.Duration `env:"AUTHORIZED_APP_MAX_AGE, default=336h"`
 	CleanupPeriod                time.Duration `env:"CLEANUP_PERIOD, default=15m"`
 	MobileAppMaxAge              time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
-	UserPurgeMaxAge              time.Duration `env:"USER_PURGE_MAX_AGE, default=30d"`
+	UserPurgeMaxAge              time.Duration `env:"USER_PURGE_MAX_AGE, default=720h"`
 	VerificationCodeMaxAge       time.Duration `env:"VERIFICATION_CODE_MAX_AGE, default=48h"`
 	VerificationCodeStatusMaxAge time.Duration `env:"VERIFICATION_CODE_STATUS_MAX_AGE, default=336h"`
 	VerificationTokenMaxAge      time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE, default=24h"`
