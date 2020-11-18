@@ -106,9 +106,9 @@
       let phone = document.querySelector('#phone');
       let iti = window.intlTelInput(phone, {
         nationalMode: true,
-        {{-if .currentRealm}}{{-if $currentRealm.SMSCountry}}
+        {{- if .currentRealm}}{{if .currentRealm.SMSCountry}}
         initialCountry: '{{.currentRealm.SMSCountry}}',
-        {{-end}}{{end-}}
+        {{end}}{{end}}
         utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.0/js/utils.js',
       });
 
