@@ -105,7 +105,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
-		// Verification codes - purge codes from database entirerly.
+		// Verification codes - purge codes from database entirely.
 		// Their code/long_code hmac values will have been set to "".
 		func() {
 			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
@@ -168,6 +168,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 				result = observability.ResultError("FAILED")
 			} else {
 				logger.Infow("purged audit entries", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
+
+		// Users
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "USER")
+			if count, err := c.db.PurgeUsers(c.config.UserPurgeMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge users: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged user entries", "count", count)
 				result = observability.ResultOK()
 			}
 		}()

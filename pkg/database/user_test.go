@@ -97,6 +97,68 @@ func TestUserLifecycle(t *testing.T) {
 	}
 }
 
+func TestPurgeUsers(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+
+	email := "purge@example.com"
+	user := User{
+		Email:       email,
+		Name:        "Dr Delete",
+		SystemAdmin: true,
+	}
+
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatalf("error creating user: %v", err)
+	}
+	expectExists(t, db, user.ID)
+
+	db.PurgeUsers(time.Duration(0)) // is admin
+	expectExists(t, db, user.ID)
+
+	// Update an attribute
+	user.SystemAdmin = false
+	realm := NewRealmWithDefaults("test")
+	user.AddRealm(realm)
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatal(err)
+	}
+	db.PurgeUsers(time.Duration(0)) // has a realm
+
+	user.RemoveRealm(realm)
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatal(err)
+	}
+
+	db.PurgeUsers(time.Hour) // not old enough
+	expectExists(t, db, user.ID)
+
+	db.PurgeUsers(time.Duration(0))
+
+	// Find user by ID - Expect deleted
+	{
+		got, err := db.FindUser(user.ID)
+		if err != nil && !IsNotFound(err) {
+			t.Fatalf("Expected user to be deleted. got: %v", err)
+		}
+		if got != nil {
+			t.Fatalf("Expected user to be deleted. got: %v", got)
+		}
+	}
+}
+
+func expectExists(t *testing.T, db *Database, id uint) {
+	got, err := db.FindUser(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := got.ID, id; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
+	}
+}
+
 func TestUserNotFound(t *testing.T) {
 	t.Parallel()
 
