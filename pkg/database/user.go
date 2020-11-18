@@ -340,8 +340,8 @@ func (db *Database) PurgeUsers(maxAge time.Duration) (int64, error) {
 	// Delete users who were created/updated before the expiry time.
 	rtn := db.db.Unscoped().
 		Debug().
-		Where("NOT EXISTS(SELECT 1 FROM user_realms WHERE user_realms.user_id = users.id)"). // delete where no realm association exists.
 		Where("users.system_admin = false AND users.created_at <= ? AND users.updated_at <= ?", deleteBefore, deleteBefore).
+		Where("NOT EXISTS(SELECT 1 FROM user_realms WHERE user_realms.user_id = users.id)"). // delete where no realm association exists.
 		Delete(&User{})
 	return rtn.RowsAffected, rtn.Error
 }
