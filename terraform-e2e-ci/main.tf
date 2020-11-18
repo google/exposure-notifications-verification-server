@@ -27,7 +27,6 @@ module "en" {
   source = "../terraform"
 
   project           = var.project
-  database_name     = "en-verification-${random_string.suffix.result}"
   redis_name        = "verification-cache-${random_string.suffix.result}"
   kms_key_ring_name = "verification-${random_string.suffix.result}"
 
@@ -37,7 +36,7 @@ module "en" {
     server = {
       FIREBASE_PRIVACY_POLICY_URL   = "https://policies.google.com/privacy"
       FIREBASE_TERMS_OF_SERVICE_URL = "https://policies.google.com/terms"
-      LOG_DEBUG = "true"
+      LOG_DEBUG                     = "true"
     }
 
     apiserver = {
@@ -50,8 +49,8 @@ module "en" {
 
     e2e-runner = {
       HEALTH_AUTHORITY_CODE = "e2e-test-only"
-      KEY_SERVER = "TODO"
-      LOG_DEBUG = "true"
+      KEY_SERVER            = "TODO"
+      LOG_DEBUG             = "true"
     }
   }
 }

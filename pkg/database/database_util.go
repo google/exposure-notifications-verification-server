@@ -204,7 +204,7 @@ func generateKeys(tb testing.TB, qty, length int) []envconfig.Base64Bytes {
 func postgresRepo(tb testing.TB) (string, string) {
 	postgresImageRef := os.Getenv("CI_POSTGRES_IMAGE")
 	if postgresImageRef == "" {
-		postgresImageRef = "postgres:12-alpine"
+		postgresImageRef = "postgres:13-alpine"
 	}
 
 	parts := strings.SplitN(postgresImageRef, ":", 2)
