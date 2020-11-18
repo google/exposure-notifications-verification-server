@@ -42,32 +42,3 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.job]
-    - title: Realm Token Utilization by realm
-      xyChart:
-        chartOptions:
-          mode: COLOR
-        dataSets:
-          - plotType: LINE
-            timeSeriesQuery:
-              timeSeriesQueryLanguage: >
-                generic_task ::
-                custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest
-                | {
-                    filter metric.state == "AVAILABLE";
-                    filter metric.state == "LIMIT"
-                }
-                | [metric.realm]
-                | ratio
-                | value if(val() > 1.0, 1.0, val())
-    - title: Available Realm Token by realm
-      xyChart:
-        chartOptions:
-          mode: COLOR
-        dataSets:
-          - plotType: LINE
-            timeSeriesQuery:
-              timeSeriesQueryLanguage: >
-                generic_task ::
-                custom.googleapis.com/opencensus/en-verification-server/api/issue/realm_token_latest
-                | filter metric.state == "AVAILABLE"
-                | [metric.realm]
