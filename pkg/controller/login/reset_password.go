@@ -63,7 +63,9 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		user, err := c.db.FindUserByEmail(form.Email)
 		if err != nil {
 			if database.IsNotFound(err) {
-				flash.Error("No such user exists.")
+				// Fake success - we don't want to reveal if this is a user
+				// of our system from an unauthorized context.
+				flash.Error("Password reset email sent.")
 				c.renderResetPassword(ctx, w, form.Email)
 				return
 			}
