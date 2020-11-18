@@ -126,6 +126,13 @@ type Realm struct {
 	WelcomeMessage    string  `gorm:"-"`
 	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
 
+	// SystemAdminMessage is a banner that can be set on one or all realms to give critical
+	// warnings or updates about the status of the system.
+	SystemAdminMessage    string  `gorm:"-"`
+	SystemAdminMessagePtr *string `gorm:"column:system_admin_message; type:text;"`
+	// MaintenanceMode blocks issuance of codes while the system is undergoing maintenance.
+	MaintenanceMode bool `gorm:"column:maintenance_mode; type:bool; not null; default:false;"`
+
 	// AllowBulkUpload allows users to issue codes from a batch file of test results.
 	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false"`
 
@@ -294,6 +301,7 @@ func (r *Realm) SigningKeyID() string {
 func (r *Realm) AfterFind(tx *gorm.DB) error {
 	r.RegionCode = stringValue(r.RegionCodePtr)
 	r.WelcomeMessage = stringValue(r.WelcomeMessagePtr)
+	r.SystemAdminMessage = stringValue(r.SystemAdminMessagePtr)
 	r.SMSCountry = stringValue(r.SMSCountryPtr)
 
 	return nil
@@ -314,6 +322,8 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 
 	r.WelcomeMessage = project.TrimSpace(r.WelcomeMessage)
 	r.WelcomeMessagePtr = stringPtr(r.WelcomeMessage)
+	r.SystemAdminMessage = project.TrimSpace(r.SystemAdminMessage)
+	r.SystemAdminMessagePtr = stringPtr(r.SystemAdminMessage)
 
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")

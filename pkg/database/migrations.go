@@ -1674,7 +1674,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				logger.Debugw("db migrations: adding allow_bulk_upload to realms")
 
 				sqls := []string{
-					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload bool DEFAULT false`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload BOOL`,
+					`UPDATE realms SET allow_bulk_upload = FALSE WHERE allow_bulk_upload IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN allow_bulk_upload SET DEFAULT FALSE`,
 					`ALTER TABLE realms ALTER COLUMN allow_bulk_upload SET NOT NULL`,
 				}
 
@@ -1687,6 +1689,40 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS allow_bulk_upload").Error
+			},
+		},
+		{
+			ID: "00069-AddSystemAdminMessageToRealm",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("adding system admin message and maintenance mode")
+				sqls := []string{
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS system_admin_message text`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS maintenance_mode BOOL DEFAULT FALSE`,
+					`UPDATE realms SET maintenance_mode = FALSE WHERE maintenance_mode IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN maintenance_mode SET DEFAULT FALSE`,
+					`ALTER TABLE realms ALTER COLUMN maintenance_mode SET NOT NULL`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				logger.Debugw("dropping system admin message and maintenance mode")
+				sqls := []string{
+					`ALTER TABLE realms DROP COLUMN IF EXISTS system_admin_message`,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS maintenance_mode`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
 			},
 		},
 	})
