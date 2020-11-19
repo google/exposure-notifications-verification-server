@@ -282,27 +282,34 @@ const stopUploadingCodes = [
   '503', // unavailable
 ];
 
+const stopUploadingEnum = [
+  'maintenance_mode',
+];
+
 async function uploadWithRetries(batch, uploadFn) {
   let cancel = false;
   for (let retries = 3; retries > 0; retries--) {
     await uploadFn(batch).then(
       () => { retries = 0; }).catch(
         async function(err) {
-          if (err && stopUploadingCodes.includes(err.status)) {
-            flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
-            cancel = true;
-            retries = 0;
-          } else {
-            // Throttling
-            let after = err.getResponseHeader("retry-after");
-            if (after) {
-              let sleep = new Date(after) - new Date();
-              if (sleep > 0) {
-                flash.alert("Rate limited. Sleeping for " + ((sleep + 100) / 1000) + "s.");
-                await new Promise(r => setTimeout(r, sleep + 100));
-              }
-            } else {
+          if (err) {
+            if (stopUploadingCodes.includes(err.status) ||
+              err.responseJSON && stopUploadingEnum.includes(err.responseJSON.errorCode)) {
+              flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
+              cancel = true;
               retries = 0;
+            } else {
+              // Throttling
+              let after = err.getResponseHeader("retry-after");
+              if (after) {
+                let sleep = new Date(after) - new Date();
+                if (sleep > 0) {
+                  flash.alert("Rate limited. Sleeping for " + ((sleep + 100) / 1000) + "s.");
+                  await new Promise(r => setTimeout(r, sleep + 100));
+                }
+              } else {
+                retries = 0;
+              }
             }
           }
         });
