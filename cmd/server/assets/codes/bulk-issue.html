@@ -208,7 +208,6 @@
           let batch = [];
           total = 0;
           $tableBody.empty();
-          let lastUpload = new Date(0);
 
           for (let i = parseInt($startAt.val()); i < rows.length && !cancelUpload; i++) {
             // Clear batch that was just uploaded.
