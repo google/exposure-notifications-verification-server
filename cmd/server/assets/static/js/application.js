@@ -276,7 +276,7 @@ function getCookie(cname) {
 }
 
 // Common error codes which should cancel the whole upload.
-let stopUploadingCodes = [
+const stopUploadingCodes = [
   '403', // forbidden
   '404', // not-found
   '503', // unavailable
