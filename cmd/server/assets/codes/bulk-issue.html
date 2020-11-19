@@ -115,9 +115,6 @@
 
   <script type="text/javascript">
     let total = 0;
-    let throttle = {{.throttleMs}}; // milliseconds per request.
-
-    // Common error codes which should cancel the whole upload.
     let stopUploadingCodes = [
       '429', // too many requests
       '403', // forbidden
@@ -232,19 +229,26 @@
                 $tableBody.append(row);
               }
 
-              // Throttling
-              let elapsed = new Date() - lastUpload
-              if (elapsed < throttle) {
-                await new Promise(r => setTimeout(r, throttle-elapsed));
-              }
-              lastUpload = new Date();
-
-              await uploadBatch(batch).catch(err => {
-                if (err && stopUploadingCodes.includes(err.status)) {
-                  flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
-                  cancelUpload = true;
-                }
-              });
+              let retry;
+              do {
+                retry = false;
+                await uploadBatch(batch).catch(err => {
+                  if (err && stopUploadingCodes.includes(err.status)) {
+                    flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
+                    cancelUpload = true;
+                  }
+                  // Throttling
+                  let after = err.getResponseHeader("retry-after");
+                  if (after) {
+                    let sleep = new Date(after) - new Date();
+                    if (sleep > 0) {
+                      flash.alert("Rate limited. Sleeping for " + (sleep/1000) + "s.");
+                      await new Promise(r => setTimeout(r, sleep));
+                      retry = true;
+                    }
+                  }
+                });
+              } while(retry);
 
               if (cancelUpload) {
                 if (total > 0) {

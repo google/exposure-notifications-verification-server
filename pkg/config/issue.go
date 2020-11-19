@@ -28,5 +28,4 @@ type IssueAPIConfig interface {
 	GetEnforceRealmQuotas() bool
 	GetRateLimitConfig() *ratelimit.Config
 	GetENXRedirectDomain() string
-	BulkUploadThrottleMs() uint64
 }

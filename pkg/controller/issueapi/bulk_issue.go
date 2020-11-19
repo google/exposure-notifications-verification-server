@@ -44,7 +44,6 @@ func (c *Controller) HandleBulkIssue() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["hasSMSConfig"] = hasSMSConfig
-		m["throttleMs"] = c.config.BulkUploadThrottleMs()
 		m.Title("Bulk issue codes")
 		c.h.RenderHTML(w, "codes/issue-bulk", m)
 	})

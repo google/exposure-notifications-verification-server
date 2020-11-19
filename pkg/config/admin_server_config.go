@@ -109,7 +109,3 @@ func (c *AdminAPIServerConfig) GetRateLimitConfig() *ratelimit.Config {
 func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }
-
-func (c *AdminAPIServerConfig) BulkUploadThrottleMs() uint64 {
-	return uint64(c.RateLimit.Interval/time.Millisecond) / c.RateLimit.Tokens
-}
