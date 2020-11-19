@@ -229,29 +229,7 @@
                 $tableBody.append(row);
               }
 
-              for(let retries = 3; retries > 0; reetries--) {
-                await uploadBatch(batch).then(
-                  () => {retries = 0;}).catch(
-                  err => {
-                    if (err && stopUploadingCodes.includes(err.status)) {
-                      flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
-                      cancelUpload = true;
-                      retries = 0;
-                    } else {
-                      // Throttling
-                      let after = err.getResponseHeader("retry-after");
-                      if (after) {
-                        let sleep = new Date(after) - new Date();
-                        if (sleep > 0) {
-                          flash.alert("Rate limited. Sleeping for " + ((sleep+100)/1000) + "s.");
-                          await new Promise(r => setTimeout(r, sleep + 100));
-                        }
-                      } else {
-                        retries = 0;
-                      }
-                    }
-                  });
-              }
+              cancelUpload = await uploadWithRetries(batch);
 
               if (cancelUpload) {
                 if (total > 0) {
@@ -308,6 +286,34 @@
         return request
       }
     });
+
+    async function uploadWithRetries(batch) {
+      let cancel = false;
+      for(let retries = 3; retries > 0; retries--) {
+        await uploadBatch(batch).then(
+          () => {retries = 0;}).catch(
+          async function(err) {
+            if (err && stopUploadingCodes.includes(err.status)) {
+              flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
+              cancel = true;
+              retries = 0;
+            } else {
+              // Throttling
+              let after = err.getResponseHeader("retry-after");
+              if (after) {
+                let sleep = new Date(after) - new Date();
+                if (sleep > 0) {
+                  flash.alert("Rate limited. Sleeping for " + ((sleep+100)/1000) + "s.");
+                  await new Promise(r => setTimeout(r, sleep + 100));
+                }
+              } else {
+                retries = 0;
+              }
+            }
+          });
+      }
+      return cancel;
+    }
 
     function uploadBatch(data) {
       return $.ajax({
