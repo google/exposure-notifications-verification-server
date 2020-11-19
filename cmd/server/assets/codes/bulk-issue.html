@@ -229,7 +229,7 @@
                 $tableBody.append(row);
               }
 
-              await uploadWithRetries(batch);
+              cancelUpload = await uploadWithRetries(batch);
 
               if (cancelUpload) {
                 if (total > 0) {
@@ -288,13 +288,14 @@
     });
 
     async function uploadWithRetries(batch) {
+      let cancel = false;
       for(let retries = 3; retries > 0; retries--) {
         await uploadBatch(batch).then(
           () => {retries = 0;}).catch(
           async function(err) {
             if (err && stopUploadingCodes.includes(err.status)) {
               flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
-              cancelUpload = true;
+              cancel = true;
               retries = 0;
             } else {
               // Throttling
@@ -311,6 +312,7 @@
             }
           });
       }
+      return cancel;
     }
 
     function uploadBatch(data) {
