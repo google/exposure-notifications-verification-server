@@ -338,7 +338,7 @@ You can expect the following responses from this API:
 
 -   `412` - The client requested a precondition that cannot be satisfied.
 
--   `429` - The client is rate limited. Check the `X-Retry-After` header to
+-   `429` - The client is rate limited. Check the `Retry-After` header to
     determine when to retry the request. Clients can also monitor the
     `X-RateLimit-Remaining` header that's returned with all responses to
     determine their rate limit and rate limit expiration.
