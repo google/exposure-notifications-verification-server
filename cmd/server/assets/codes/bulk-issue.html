@@ -229,26 +229,29 @@
                 $tableBody.append(row);
               }
 
-              let retry;
-              do {
-                retry = false;
-                await uploadBatch(batch).catch(err => {
-                  if (err && stopUploadingCodes.includes(err.status)) {
-                    flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
-                    cancelUpload = true;
-                  }
-                  // Throttling
-                  let after = err.getResponseHeader("retry-after");
-                  if (after) {
-                    let sleep = new Date(after) - new Date();
-                    if (sleep > 0) {
-                      flash.alert("Rate limited. Sleeping for " + ((sleep+100)/1000) + "s.");
-                      await new Promise(r => setTimeout(r, sleep + 100));
-                      retry = true;
+              for(let retries = 3; retries > 0; reetries--) {
+                await uploadBatch(batch).then(
+                  () => {retries = 0}).catch(
+                  err => {
+                    if (err && stopUploadingCodes.includes(err.status)) {
+                      flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
+                      cancelUpload = true;
+                      retries = 0;
+                    } else {
+                      // Throttling
+                      let after = err.getResponseHeader("retry-after");
+                      if (after) {
+                        let sleep = new Date(after) - new Date();
+                        if (sleep > 0) {
+                          flash.alert("Rate limited. Sleeping for " + ((sleep+100)/1000) + "s.");
+                          await new Promise(r => setTimeout(r, sleep + 100));
+                        }
+                      } else {
+                        retries = 0;
+                      }
                     }
-                  }
-                });
-              } while(retry);
+                  });
+              }
 
               if (cancelUpload) {
                 if (total > 0) {
