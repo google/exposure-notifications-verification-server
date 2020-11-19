@@ -114,7 +114,10 @@ func TestPurgeUsers(t *testing.T) {
 	}
 	expectExists(t, db, user.ID)
 
-	db.PurgeUsers(time.Duration(0)) // is admin
+	// is admin
+	if _, err := db.PurgeUsers(time.Duration(0)); err != nil {
+		t.Fatal(err)
+	}
 	expectExists(t, db, user.ID)
 
 	// Update an attribute
@@ -124,14 +127,20 @@ func TestPurgeUsers(t *testing.T) {
 	if err := db.SaveUser(&user, System); err != nil {
 		t.Fatal(err)
 	}
-	db.PurgeUsers(time.Duration(0)) // has a realm
+	// has a realm
+	if _, err := db.PurgeUsers(time.Duration(0)); err != nil {
+		t.Fatal(err)
+	}
 
 	user.RemoveRealm(realm)
 	if err := db.SaveUser(&user, System); err != nil {
 		t.Fatal(err)
 	}
 
-	db.PurgeUsers(time.Hour) // not old enough
+	// not old enough
+	if _, err := db.PurgeUsers(time.Hour); err != nil {
+		t.Fatal(err)
+	}
 	expectExists(t, db, user.ID)
 
 	db.PurgeUsers(time.Duration(0))
