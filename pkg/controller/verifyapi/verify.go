@@ -39,6 +39,12 @@ import (
 
 func (c *Controller) HandleVerify() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c.config.MaintenanceMode {
+			c.h.RenderJSON(w, http.StatusTooManyRequests,
+				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+			return
+		}
+
 		ctx := observability.WithBuildInfo(r.Context())
 
 		logger := logging.FromContext(ctx).Named("verifyapi.HandleVerify")
