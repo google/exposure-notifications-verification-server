@@ -242,8 +242,8 @@
                   if (after) {
                     let sleep = new Date(after) - new Date();
                     if (sleep > 0) {
-                      flash.alert("Rate limited. Sleeping for " + (sleep/1000) + "s.");
-                      await new Promise(r => setTimeout(r, sleep));
+                      flash.alert("Rate limited. Sleeping for " + ((sleep+100)/1000) + "s.");
+                      await new Promise(r => setTimeout(r, sleep + 100));
                       retry = true;
                     }
                   }
