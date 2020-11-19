@@ -62,6 +62,9 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 				return
 			}
 
+			// Re-check in case this realm's MFA requirements are different.
+			controller.StoreSessionMFAPrompted(session, false)
+
 			// Clear any flashes. It's possible that the user was redirected via a
 			// "missing realm" because their session expired, but then we auto logged
 			// them in and they are only a member of one realm. In that case, they'd

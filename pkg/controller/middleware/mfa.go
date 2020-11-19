@@ -51,6 +51,7 @@ func RequireMFA(authProvider auth.Provider, h *render.Renderer) mux.MiddlewareFu
 				return
 			}
 
+			prompted := controller.MFAPromptedFromSession(session)
 			if !mfaEnabled {
 				realm := controller.RealmFromContext(ctx)
 				if realm == nil {
@@ -58,11 +59,14 @@ func RequireMFA(authProvider auth.Provider, h *render.Renderer) mux.MiddlewareFu
 					return
 				}
 
-				mode := realm.EffectiveMFAMode(currentUser)
-				if mode == database.MFARequired || (mode == database.MFAOptionalPrompt && !controller.MFAPromptedFromSession(session)) {
+				if mode := realm.EffectiveMFAMode(currentUser); mode == database.MFARequired ||
+					mode == database.MFAOptionalPrompt && !prompted {
 					controller.RedirectToMFA(w, r, h)
 					return
 				}
+			}
+			if !prompted { // Store prompted check, so we don't check again.
+				controller.StoreSessionMFAPrompted(session, true)
 			}
 
 			next.ServeHTTP(w, r)
