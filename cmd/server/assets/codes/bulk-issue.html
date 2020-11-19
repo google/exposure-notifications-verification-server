@@ -231,7 +231,7 @@
 
               for(let retries = 3; retries > 0; reetries--) {
                 await uploadBatch(batch).then(
-                  () => {retries = 0}).catch(
+                  () => {retries = 0;}).catch(
                   err => {
                     if (err && stopUploadingCodes.includes(err.status)) {
                       flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
