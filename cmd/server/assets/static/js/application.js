@@ -293,8 +293,11 @@ async function uploadWithRetries(batch, uploadFn) {
       () => { retries = 0; }).catch(
         async function(err) {
           if (err) {
-            if (stopUploadingCodes.includes(err.status) ||
-              err.responseJSON && stopUploadingEnum.includes(err.responseJSON.errorCode)) {
+            if (err.responseJSON && stopUploadingEnum.includes(err.responseJSON.errorCode)) {
+              flash.alert("Status " + err.responseJSON.errorCode + " detected. Canceling remaining upload.");
+              cancel = true;
+              retries = 0;
+            } else if (stopUploadingCodes.includes(err.status)) {
               flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
               cancel = true;
               retries = 0;
