@@ -26,6 +26,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
+const (
+	// passwordSentinel is the password string inserted into forms.
+	passwordSentinel = "very-nice-try-maybe-next-time"
+)
+
 var (
 	shortCodeLengths            = []int{6, 7, 8}
 	shortCodeMinutes            = []int{}
@@ -265,7 +270,9 @@ func (c *Controller) HandleSettings() http.Handler {
 				// record.
 				smsConfig.ProviderType = sms.ProviderTypeTwilio
 				smsConfig.TwilioAccountSid = form.TwilioAccountSid
-				smsConfig.TwilioAuthToken = form.TwilioAuthToken
+				if v := form.TwilioAuthToken; v != passwordSentinel {
+					smsConfig.TwilioAuthToken = v
+				}
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
@@ -305,7 +312,9 @@ func (c *Controller) HandleSettings() http.Handler {
 				// record.
 				emailConfig.ProviderType = email.ProviderTypeSMTP
 				emailConfig.SMTPAccount = form.SMTPAccount
-				emailConfig.SMTPPassword = form.SMTPPassword
+				if v := form.SMTPPassword; v != passwordSentinel {
+					emailConfig.SMTPPassword = form.SMTPPassword
+				}
 				emailConfig.SMTPHost = form.SMTPHost
 				emailConfig.SMTPPort = form.SMTPPort
 
@@ -449,6 +458,8 @@ func (c *Controller) renderSettings(
 
 	m["quotaLimit"] = quotaLimit
 	m["quotaRemaining"] = quotaRemaining
+
+	m["passwordSentinel"] = passwordSentinel
 
 	c.h.RenderHTML(w, "realmadmin/edit", m)
 }
