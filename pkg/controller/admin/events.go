@@ -36,7 +36,7 @@ const (
 	// QueryRealmIDSearch is the query key to filter by realmID.
 	QueryRealmIDSearch = "realm_id"
 
-	// QueryIncludeTest is the query key to include test events.
+	// QueryIncludeTest is the query key to filter on events from test or not.
 	QueryIncludeTest = "include_test"
 )
 
@@ -58,8 +58,15 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
 
 		includeTest := r.FormValue(QueryIncludeTest)
-		if includeTest != "true" {
+		switch includeTest {
+		case "":
+			// by default, don't show test events
 			scopes = append(scopes, database.WithAuditFromTest(false))
+		case "only":
+			// only test events
+			scopes = append(scopes, database.WithAuditFromTest(true))
+		default:
+			// Any other string shows both test and non-test events
 		}
 
 		// Add realm filter if applicable
