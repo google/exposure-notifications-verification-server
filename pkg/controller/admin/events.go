@@ -60,6 +60,7 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		includeTest := r.FormValue(QueryIncludeTest)
 		switch includeTest {
 		case "":
+		case "false":
 			// by default, don't show test events
 			scopes = append(scopes, database.WithAuditFromTest(false))
 		case "only":
