@@ -60,18 +60,19 @@ type VerificationCode struct {
 	gorm.Model
 	Errorable
 
-	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
-	Code          string `gorm:"type:varchar(512)"`
-	LongCode      string `gorm:"type:varchar(512)"`
-	UUID          string `gorm:"type:uuid;default:null"`
-	Claimed       bool   `gorm:"default:false"`
-	TestType      string `gorm:"type:varchar(20)"`
-	SymptomDate   *time.Time
-	TestDate      *time.Time
-	ExpiresAt     time.Time
-	LongExpiresAt time.Time
-	IssuingUserID uint
-	IssuingAppID  uint
+	RealmID        uint   // VerificationCodes belong to exactly one realm when issued.
+	Code           string `gorm:"type:varchar(512)"`
+	LongCode       string `gorm:"type:varchar(512)"`
+	UUID           string `gorm:"type:uuid;default:null"`
+	Claimed        bool   `gorm:"default:false"`
+	TestType       string `gorm:"type:varchar(20)"`
+	SymptomDate    *time.Time
+	TestDate       *time.Time
+	ExpiresAt      time.Time
+	LongExpiresAt  time.Time
+	IssuingUserID  uint
+	IssuingAppID   uint
+	IssuingAuditID string
 }
 
 // TableName sets the VerificationCode table name
@@ -96,6 +97,20 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 
 		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
+		}
+	}
+
+	// If the request was an API request, we might have an audit ID.
+	if len(v.IssuingAuditID) != 0 {
+		sql := `
+			INSERT INTO audit_id_stats (date, realm_id, audit_id, codes_issued)
+				VALUES ($1, $2, $3, 1)
+			ON CONFLICT (date, realm_id, audit_id) DO UPDATE
+				SET codes_issued = audit_id_stats.codes_issued + 1
+		`
+
+		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingAuditID).Error; err != nil {
+			scope.Log(fmt.Sprintf("failed to update audit stats: %v", err))
 		}
 	}
 

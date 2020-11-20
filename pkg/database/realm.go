@@ -1277,6 +1277,29 @@ func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error
 	return stats, nil
 }
 
+// AuditIDStats returns the audit id stats for this realm. If no stats exist,
+// returns an empty slice.
+func (r *Realm) AuditIDStats(db *Database, start, stop time.Time) ([]*AuditIDStat, error) {
+	var stats []*AuditIDStat
+
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
+
+	if err := db.db.
+		Model(&AuditIDStat{}).
+		Where("realm_id = ?", r.ID).
+		Where("(date >= ? AND date <= ?)", start, stop).
+		Order("date DESC").
+		Find(&stats).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+	return stats, nil
+}
+
 // RenderWelcomeMessage message renders the realm's welcome message.
 func (r *Realm) RenderWelcomeMessage() string {
 	msg := project.TrimSpace(r.WelcomeMessage)

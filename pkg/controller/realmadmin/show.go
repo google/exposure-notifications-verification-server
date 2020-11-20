@@ -43,6 +43,12 @@ func wantUser(r *http.Request) bool {
 	return has
 }
 
+// wantAudit returns true if we want audit requests.
+func wantAudit(r *http.Request) bool {
+	_, has := r.URL.Query()["audit"]
+	return has
+}
+
 // getRealmStats returns the realm stats for a given date range.
 func (c *Controller) getRealmStats(ctx context.Context, realm *database.Realm, now, past time.Time) ([]*database.RealmStats, error) {
 	var stats []*database.RealmStats
@@ -74,6 +80,21 @@ func (c *Controller) getUserStats(ctx context.Context, realm *database.Realm, no
 	return userStats, nil
 }
 
+// getAuditStats gets the audit-id stats for a given date range.
+func (c *Controller) getAuditStats(ctx context.Context, realm *database.Realm, now, past time.Time) ([]*database.AuditIDStat, error) {
+	var stats []*database.AuditIDStat
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:audit_id",
+		Key:       strconv.FormatUint(uint64(realm.ID), 10),
+	}
+	if err := c.cacher.Fetch(ctx, cacheKey, &stats, cacheTimeout, func() (interface{}, error) {
+		return realm.AuditIDStats(c.db, past, now)
+	}); err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
 func (c *Controller) HandleShow(result ResultType) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -101,13 +122,20 @@ func (c *Controller) HandleShow(result ResultType) http.Handler {
 			return
 		}
 
+		// And the audit-id stats.
+		auditStats, err := c.getAuditStats(ctx, realm, now, past)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		switch result {
 		case CSV:
-			err = c.renderCSV(r, w, stats, userStats)
+			err = c.renderCSV(r, w, stats, userStats, auditStats)
 		case JSON:
-			err = c.renderJSON(r, w, stats, userStats)
+			err = c.renderJSON(r, w, stats, userStats, auditStats)
 		case HTML:
-			err = c.renderHTML(ctx, w, realm, stats, userStats)
+			err = c.renderHTML(ctx, w, realm, stats, userStats, auditStats)
 		}
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -116,9 +144,9 @@ func (c *Controller) HandleShow(result ResultType) http.Handler {
 	})
 }
 
-// formatData formats a slice of RealmUserStats into a format more conducive
+// formatPerUserStats formats a slice of RealmUserStats into a format more conducive
 // to charting in Javascript.
-func formatData(userStats []*database.RealmUserStats) ([]string, [][]interface{}) {
+func formatPerUserStats(userStats []*database.RealmUserStats) ([]string, [][]interface{}) {
 	// We need to format the per-user-per-day data properly for the charts.
 	// Create some LUTs to make this easier.
 	nameLUT := make(map[string]int)
@@ -153,26 +181,70 @@ func formatData(userStats []*database.RealmUserStats) ([]string, [][]interface{}
 	return names, data
 }
 
-func (c *Controller) renderHTML(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats, userStats []*database.RealmUserStats) error {
-	names, format := formatData(userStats)
+type AuditStatsPerDay struct {
+	Date        time.Time
+	CodesIssued uint
+}
+
+// formatAuditStats formats audit data for charting.
+func formatAuditStats(stats []*database.AuditIDStat) ([]string, [][]interface{}, []AuditStatsPerDay) {
+	idSet := make(map[string]int)
+	dates := make(map[time.Time]int)
+	for _, stat := range stats {
+		if _, ok := idSet[stat.AuditID]; !ok {
+			idSet[stat.AuditID] = len(idSet)
+		}
+		if _, ok := dates[stat.Date]; !ok {
+			dates[stat.Date] = len(dates)
+		}
+	}
+
+	// Get the ids
+	ids := make([]string, 0, len(idSet))
+	for id := range idSet {
+		ids = append(ids, id)
+	}
+
+	// Generate the charting data.
+	data := make([][]interface{}, len(dates))
+	perDate := make([]AuditStatsPerDay, len(dates))
+	for date, i := range dates {
+		data[i] = make([]interface{}, len(ids)+1)
+		data[i][0] = date.Format("Jan 2 2006")
+		perDate[i].Date = date
+	}
+	for _, stat := range stats {
+		i := dates[stat.Date]
+		data[i][idSet[stat.AuditID]+1] = stat.CodesIssued
+		perDate[i].CodesIssued += stat.CodesIssued
+	}
+
+	return ids, data, perDate
+}
+
+func (c *Controller) renderHTML(ctx context.Context, w http.ResponseWriter, realm *database.Realm, stats []*database.RealmStats, userStats []*database.RealmUserStats, auditIDStats []*database.AuditIDStat) error {
+	userNames, formattedUser := formatPerUserStats(userStats)
+	auditIDs, formattedAudit, auditPerDay := formatAuditStats(auditIDStats)
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm stats")
 	m["user"] = realm
 	m["stats"] = stats
-	m["names"] = names
-	m["userStats"] = format
+	m["userNames"] = userNames
+	m["userStats"] = formattedUser
+	m["auditIDs"] = auditIDs
+	m["auditStats"] = formattedAudit
+	m["auditPerDay"] = auditPerDay
 	c.h.RenderHTML(w, "realmadmin/show", m)
 
 	return nil
 }
 
 // renderCSV renders a CSV response.
-func (c *Controller) renderCSV(r *http.Request, w http.ResponseWriter, stats []*database.RealmStats, userStats []*database.RealmUserStats) error {
+func (c *Controller) renderCSV(r *http.Request, w http.ResponseWriter, stats []*database.RealmStats, userStats []*database.RealmUserStats, auditIDStats []*database.AuditIDStat) error {
 	wr := csv.NewWriter(w)
 	defer wr.Flush()
 
-	// Check if we want the realm stats or the per-user stats. We
-	// default to realm stats.
+	// Check which type of stats we are displaying.
 	if wantUser(r) {
 		if err := wr.Write(database.RealmUserStatsCSVHeader); err != nil {
 			return err
@@ -180,6 +252,16 @@ func (c *Controller) renderCSV(r *http.Request, w http.ResponseWriter, stats []*
 
 		for _, u := range userStats {
 			if err := wr.Write(u.CSV()); err != nil {
+				return err
+			}
+		}
+	} else if wantAudit(r) {
+		if err := wr.Write(database.AuditIDStatsCSVHeader); err != nil {
+			return err
+		}
+
+		for _, a := range auditIDStats {
+			if err := wr.Write(a.CSV()); err != nil {
 				return err
 			}
 		}
@@ -201,9 +283,11 @@ func (c *Controller) renderCSV(r *http.Request, w http.ResponseWriter, stats []*
 }
 
 // renderJSON renders a JSON response.
-func (c *Controller) renderJSON(r *http.Request, w http.ResponseWriter, stats []*database.RealmStats, userStats []*database.RealmUserStats) error {
+func (c *Controller) renderJSON(r *http.Request, w http.ResponseWriter, stats []*database.RealmStats, userStats []*database.RealmUserStats, auditIDStats []*database.AuditIDStat) error {
 	if wantUser(r) {
 		c.h.RenderJSON(w, http.StatusOK, userStats)
+	} else if wantAudit(r) {
+		c.h.RenderJSON(w, http.StatusOK, auditIDStats)
 	} else {
 		c.h.RenderJSON(w, http.StatusOK, stats)
 	}

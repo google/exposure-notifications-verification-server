@@ -2,8 +2,11 @@
 
 {{$realm := .realm}}
 {{$stats := .stats}}
-{{$names := .names}}
+{{$userNames := .userNames}}
 {{$userStats := .userStats}}
+{{$auditIDs := .auditIDs}}
+{{$auditStats := .auditStats}}
+{{$auditPerDay := .auditPerDay}}
 
 <!doctype html>
 <html lang="en">
@@ -36,6 +39,12 @@
           <span>Loading chart...</span>
         </div>
         {{end}}
+
+        {{if $auditStats}}
+        <div id="audit_chart" class="mb-3" style="height: 300px;" align="center">
+          <span>Loading chart...</span>
+        </div>
+        {{end}}
       </div>
     </div>
 
@@ -48,40 +57,79 @@
         <p class="card-text">Realm per-user stats
           (<a href="/realm/stats.csv?user">CSV</a>/<a href="/realm/stats.json?user">JSON</a>)
         </p>
+        <p class="card-text">Realm audit id stats
+          (<a href="/realm/stats.csv?audit">CSV</a>/<a href="/realm/stats.json?audit">JSON</a>)
+        </p>
       </div>
     </div>
 
     <div class="card mb-3 shadow-sm">
-    <div class="card-header">Data</div>
-      <div class="card-body">
-        {{if $stats}}
-        <table class="table table-bordered table-striped">
-          <thead>
-            <tr>
-              <th scope="col">Date</th>
-              <th scope="col" width="125">Issued</th>
-              <th scope="col" width="125">Claimed</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range $i, $stat := $stats}}
-            <tr onclick="dateClicked({{$i}}, '{{$stat.Date.Format "2006-01-02"}}')", style="cursor: pointer;">
-              <td>{{$stat.Date.Format "2006-01-02"}}</td>
-              <td>{{$stat.CodesIssued}}</td>
-              <td>{{$stat.CodesClaimed}}</td>
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
-        {{end}}
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="user-tab" data-toggle="tab" href="#user" role="tab" aria-controls="user" aria-selected="true">User Stats</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="audit-tab" data-toggle="tab" href="#audit" role="tab" aria-controls="audit" aria-selected="true">Audit Stats</a>
+          </li>
+        </ul>
+      </div>
 
-        {{if or $stats $userStats}}
-        <div class="font-italic">
-          This data is refreshed every 5 minutes.
+      <div class="card-body">
+        <div class="tab-content">
+          <div class="tab-pane" id="user" role="tabpanel" aria-labelledby="user-tab">
+            {{if $stats}}
+            <table class="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col" width="125">Issued</th>
+                  <th scope="col" width="125">Claimed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{range $i, $stat := $stats}}
+                <tr onclick="dateClicked({{$i}}, '{{$stat.Date.Format "2006-01-02"}}')", style="cursor: pointer;">
+                  <td>{{$stat.Date.Format "2006-01-02"}}</td>
+                  <td>{{$stat.CodesIssued}}</td>
+                  <td>{{$stat.CodesClaimed}}</td>
+                </tr>
+                {{end}}
+              </tbody>
+            </table>
+            <div class="font-italic">
+              This data is refreshed every 5 minutes.
+            </div>
+            {{else}}
+              <p>No codes have been issued by a user in this realm..</p>
+            {{end}}
+          </div>
+          <div class="tab-pane" id="audit" role="tabpanel" aria-labelledby="audit-tab">
+            {{if $auditPerDay}}
+            <table class="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col" width="125">Codes Issued</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{range $stat := $auditPerDay}}
+                <tr>
+                  <td>{{$stat.Date.Format "2006-01-02"}}</td>
+                  <td>{{$stat.CodesIssued}}</td>
+                </tr>
+                {{end}}
+              </tbody>
+            </table>
+            <div class="font-italic">
+              This data is refreshed every 5 minutes.
+            </div>
+            {{else}}
+              <p>No codes have been issued by a user in this realm..</p>
+            {{end}}
+          </div>
         </div>
-        {{else}}
-          <p>No codes have been issued in this realm.</p>
-        {{end}}
       </div>
     </div>
   </main>
@@ -94,6 +142,7 @@
     function drawChart() {
       drawRealmChart();
       drawUsersChart();
+      drawAuditChart();
     }
 
     // numDays is the length of the realm chart.
@@ -176,8 +225,9 @@
       });
     }
 
-    // holds the per-user-per-realm chart & data created by Google Charts.
+    // holds the charts created by Google Charts.
     var userChart, userChartData;
+    var auditChart, auditChartData;
 
     // highlightRow highlights a given row in the per-user-per-realm chart.
     // Passing -1 as the row turns off all selections.
@@ -204,7 +254,7 @@
       arr = arr.reverse();
 
       userChartData.addColumn('date', 'Day');
-      {{range $name := $names}}
+      {{range $name := $userNames}}
         userChartData.addColumn('number', '{{$name}}');
       {{end}}
       userChartData.addRows(arr);
@@ -217,6 +267,32 @@
 
       userChart = new google.visualization.LineChart(document.getElementById('per_user_chart'));
       userChart.draw(userChartData, options);
+    {{end}}
+    }
+
+    function drawAuditChart() {
+    {{if $auditStats}}
+      auditChartData = new google.visualization.DataTable();
+      arr = [
+      {{range $stat := $auditStats}}
+        fixDate({{$stat}}),
+      {{end}}
+      ];
+
+      auditChartData.addColumn('date', 'Day');
+      {{range $name := $auditIDs}}
+        auditChartData.addColumn('number', '{{$name}}');
+      {{end}}
+      auditChartData.addRows(arr);
+
+      var options = {
+        legend: "none",
+        tooltip: {trigger: 'focus'},
+        title: "Codes Per Audit User",
+      };
+
+      auditChart = new google.visualization.LineChart(document.getElementById('audit_chart'));
+      auditChart.draw(auditChartData, options);
     {{end}}
     }
   </script>

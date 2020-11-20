@@ -26,12 +26,13 @@ import (
 
 // IssueCode uses the ADMIN API to issue a verification code.
 // Currently does not accept the SMS param.
-func IssueCode(ctx context.Context, hostname string, apiKey, testType, symptomDate string, tzMinOffset int, timeout time.Duration) (*api.IssueCodeRequest, *api.IssueCodeResponse, error) {
+func IssueCode(ctx context.Context, hostname string, apiKey, testType, symptomDate, auditID string, tzMinOffset int, timeout time.Duration) (*api.IssueCodeRequest, *api.IssueCodeResponse, error) {
 	url := hostname + "/api/issue"
 	request := api.IssueCodeRequest{
 		TestType:    testType,
 		SymptomDate: symptomDate,
 		TZOffset:    float32(tzMinOffset),
+		AuditID:     auditID,
 	}
 	client := &http.Client{
 		Timeout: timeout,
