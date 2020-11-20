@@ -40,7 +40,7 @@
                "?include_test=only" // shows only test events
                "?include_test=all" // shows all test and non-test events
            -->
-          <input type="hidden" name="include_test" {{if .from_test}}value="{{.include_test}}"{{end}}>
+          <input type="hidden" name="include_test" value="{{if .from_test}}{{.include_test}}{{else}}false{{end}}">
           <div class="input-group">
             <span class="input-group-prepend">
               <select name="realm_id" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
