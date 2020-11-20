@@ -58,7 +58,9 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
 
 		includeTest := r.FormValue(QueryIncludeTest)
-		scopes = append(scopes, database.WithIncludeTest(includeTest == "true"))
+		if includeTest != "true" {
+			scopes = append(scopes, database.WithAuditFromTest(false))
+		}
 
 		// Add realm filter if applicable
 		var realm *database.Realm
