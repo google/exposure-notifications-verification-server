@@ -35,6 +35,9 @@ const (
 
 	// QueryRealmIDSearch is the query key to filter by realmID.
 	QueryRealmIDSearch = "realm_id"
+
+	// QueryIncludeTest is the query key to include test events.
+	QueryIncludeTest = "include_test"
 )
 
 // HandleEventsShow shows event logs.
@@ -53,6 +56,9 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		scopes := []database.Scope{}
 		scopes = append(scopes, database.WithAuditTime(from, to))
 		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
+
+		includeTest := r.FormValue(QueryIncludeTest)
+		scopes = append(scopes, database.WithIncludeTest(includeTest == "true"))
 
 		// Add realm filter if applicable
 		var realm *database.Realm
@@ -83,17 +89,18 @@ func (c *Controller) HandleEventsShow() http.Handler {
 			return
 		}
 
-		c.renderEvents(ctx, w, events, paginator, from, to, realm)
+		c.renderEvents(ctx, w, events, paginator, from, to, includeTest, realm)
 	})
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string, realm *database.Realm) {
+	events []*database.AuditEntry, paginator *pagination.Paginator, from, to, includeTest string, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["events"] = events
 	m["paginator"] = paginator
 	m[QueryFromSearch] = from
 	m[QueryToSearch] = to
+	m[QueryIncludeTest] = includeTest
 	m["realm"] = realm
 	c.h.RenderHTML(w, "admin/events/index", m)
 }

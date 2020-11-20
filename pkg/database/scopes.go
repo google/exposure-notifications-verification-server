@@ -76,6 +76,16 @@ func WithAuditRealmID(r uint) Scope {
 	}
 }
 
+// WithIncludeTest returns a scope that adds querying for Audit events originating from test.
+func WithIncludeTest(includeTest bool) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		if !includeTest {
+			return db.Where("audit_entries.from_test = false")
+		}
+		return db
+	}
+}
+
 // WithAuthorizedAppSearch returns a scope that adds querying for API keys by
 // name and preview, case-insensitive. It's only applicable to functions that
 // query AuthorizedApp.
