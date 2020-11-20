@@ -154,12 +154,12 @@ func TestMobileApp_List(t *testing.T) {
 		db := NewTestDatabase(t)
 
 		realm1 := NewRealmWithDefaults("realm1")
-		if err := db.SaveRealm(realm1, System); err != nil {
+		if err := db.SaveRealm(realm1, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
 		realm2 := NewRealmWithDefaults("realm2")
-		if err := db.SaveRealm(realm2, System); err != nil {
+		if err := db.SaveRealm(realm2, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -170,7 +170,7 @@ func TestMobileApp_List(t *testing.T) {
 			OS:      OSTypeIOS,
 			AppID:   "app1",
 		}
-		if err := db.SaveMobileApp(app1, System); err != nil {
+		if err := db.SaveMobileApp(app1, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -182,7 +182,7 @@ func TestMobileApp_List(t *testing.T) {
 			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 			AppID:   "app2",
 		}
-		if err := db.SaveMobileApp(app2, System); err != nil {
+		if err := db.SaveMobileApp(app2, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 

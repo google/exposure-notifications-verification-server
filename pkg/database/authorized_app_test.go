@@ -36,7 +36,7 @@ func TestDatabase_CreateFindAPIKey(t *testing.T) {
 		APIKeyType: APIKeyTypeAdmin,
 	}
 
-	apiKey, err := realm.CreateAuthorizedApp(db, authApp, System)
+	apiKey, err := realm.CreateAuthorizedApp(db, authApp, SystemTest)
 	if err != nil {
 		t.Fatal(err)
 	}

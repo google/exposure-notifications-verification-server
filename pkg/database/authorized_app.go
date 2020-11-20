@@ -59,7 +59,7 @@ var _ Auditable = (*AuthorizedApp)(nil)
 // verification codes and perform token exchanges.
 // This is controlled via a generated API key.
 //
-// Admin Keys are able to issue diagnosis keys and are not able to perticipate
+// Admin Keys are able to issue diagnosis keys and are not able to participate
 // the verification protocol.
 type AuthorizedApp struct {
 	gorm.Model
@@ -81,6 +81,10 @@ type AuthorizedApp struct {
 
 	// APIKeyType is the API key type.
 	APIKeyType APIKeyType `gorm:"column:api_key_type; type:integer; not null;"`
+
+	// TestApp marks this as a test app which may be used to ignore or filter
+	// data (such as audit logs) from this class of app.
+	TestApp bool `gorm:"type:boolean; default: false;"`
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -107,6 +111,10 @@ func (a *AuthorizedApp) IsAdminType() bool {
 
 func (a *AuthorizedApp) IsDeviceType() bool {
 	return a.APIKeyType == APIKeyTypeDevice
+}
+
+func (a *AuthorizedApp) IsTest() bool {
+	return a.TestApp
 }
 
 // Realm returns the associated realm for this app.

@@ -120,7 +120,7 @@ func realMain(ctx context.Context) error {
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
-		if err := db.SaveRealm(realm, database.System); err != nil {
+		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 			return fmt.Errorf("failed to create realm %+v: %w: %v", realm, err, realm.ErrorMessages())
 		}
 	}
@@ -134,7 +134,8 @@ func realMain(ctx context.Context) error {
 	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       adminKeyName + suffix,
 		APIKeyType: database.APIKeyTypeAdmin,
-	}, database.System)
+		TestApp:    true,
+	}, database.SystemTest)
 	if err != nil {
 		return fmt.Errorf("error trying to create a new Admin API Key: %w", err)
 	}
@@ -146,7 +147,7 @@ func realMain(ctx context.Context) error {
 		}
 		now := time.Now().UTC()
 		app.DeletedAt = &now
-		if err := db.SaveAuthorizedApp(app, database.System); err != nil {
+		if err := db.SaveAuthorizedApp(app, database.SystemTest); err != nil {
 			logger.Errorf("admin API key disable failed: %w", err)
 		}
 		logger.Info("successfully cleaned up e2e test admin key")
@@ -155,7 +156,8 @@ func realMain(ctx context.Context) error {
 	deviceKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       deviceKeyName + suffix,
 		APIKeyType: database.APIKeyTypeDevice,
-	}, database.System)
+		TestApp:    true,
+	}, database.SystemTest)
 	if err != nil {
 		return fmt.Errorf("error trying to create a new Device API Key: %w", err)
 	}
@@ -168,7 +170,7 @@ func realMain(ctx context.Context) error {
 		}
 		now := time.Now().UTC()
 		app.DeletedAt = &now
-		if err := db.SaveAuthorizedApp(app, database.System); err != nil {
+		if err := db.SaveAuthorizedApp(app, database.SystemTest); err != nil {
 			logger.Errorf("device API key disable failed: %w", err)
 		}
 		logger.Info("successfully cleaned up e2e test device key")
@@ -199,7 +201,7 @@ func realMain(ctx context.Context) error {
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
 }
 
-// Config is passed by value so that each http hadndler has a separate copy (since they are changing one of the)
+// Config is passed by value so that each http handler has a separate copy (since they are changing one of the)
 // config elements. Previous versions of those code had a race condition where the "DoRevise" status
 // could be changed while a handler was executing.
 func defaultHandler(ctx context.Context, config config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
