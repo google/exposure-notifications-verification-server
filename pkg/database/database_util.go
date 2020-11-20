@@ -67,8 +67,11 @@ func NewTestDatabaseWithCacher(tb testing.TB, cacher cache.Cacher) (*Database, *
 	// Determine the container image to use.
 	repo, tag := postgresRepo(tb)
 
-	// Start the container.
+	// These credentials (and this entire file) are only used for tests. They are
+	// used when spinning up an in-memory database for tests.
 	dbname, username, password := "en-verification-server", "my-username", "abcd1234"
+
+	// Start the container.
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: repo,
 		Tag:        tag,
