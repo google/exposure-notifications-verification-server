@@ -1691,6 +1691,44 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS allow_bulk_upload").Error
 			},
 		},
+		{
+			ID: "00067-AddTestAuditEntry",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("db migrations: adding allow_bulk_upload to realms")
+
+				sqls := []string{
+					`ALTER TABLE audit_entries ADD COLUMN IF NOT EXISTS from_test BOOL`,
+					`UPDATE audit_entries SET from_test = FALSE WHERE from_test IS NULL`,
+					`ALTER TABLE audit_entries ALTER COLUMN from_test SET DEFAULT FALSE`,
+					`ALTER TABLE audit_entries ALTER COLUMN from_test SET NOT NULL`,
+
+					`ALTER TABLE authorized_apps ADD COLUMN IF NOT EXISTS test_app BOOL`,
+					`UPDATE authorized_apps SET test_app = FALSE WHERE test_app IS NULL`,
+					`ALTER TABLE authorized_apps ALTER COLUMN test_app SET DEFAULT FALSE`,
+					`ALTER TABLE authorized_apps ALTER COLUMN test_app SET NOT NULL`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE audit_entries DROP COLUMN IF EXISTS from_test`,
+					`ALTER TABLE authorized_apps DROP COLUMN IF EXISTS test_app`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
 	})
 }
 

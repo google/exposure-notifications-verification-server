@@ -305,6 +305,11 @@ func (u *User) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", u.Name, u.Email)
 }
 
+// IsTest returns if this Auditable is a test resource.
+func (u *User) IsTest() bool {
+	return false // Test User not yet supported.
+}
+
 // DeleteUser deletes the user entry.
 func (db *Database) DeleteUser(u *User, actor Auditable) error {
 	if u == nil {

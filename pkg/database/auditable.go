@@ -22,6 +22,9 @@ type Auditable interface {
 
 	// AuditDisplay returns how this resource should appear in audit logs.
 	AuditDisplay() string
+
+	// IsTest marks this as a test resource for log filtering.
+	IsTest() bool
 }
 
 // BuildAuditEntry builds an AuditEntry from the given parameters. For actions
@@ -34,5 +37,6 @@ func BuildAuditEntry(actor Auditable, action string, target Auditable, realmID u
 	e.Action = action
 	e.TargetID = target.AuditID()
 	e.TargetDisplay = target.AuditDisplay()
+	e.FromTest = target.IsTest()
 	return &e
 }
