@@ -129,7 +129,7 @@ $(function() {
       minutes = `0${minutes}`;
     }
 
-    $this.html(`${year}-${month}-${day} ${hours}:${minutes} ${ampm}`);
+    $this.text(`${year}-${month}-${day} ${hours}:${minutes} ${ampm}`);
   });
 
   // Toast shows alerts/flash messages.
@@ -217,7 +217,7 @@ $(function() {
       // Create the text next to the icon.
       let $headerText = $("<strong>");
       $headerText.addClass("mr-auto");
-      $headerText.html(headerText);
+      $headerText.text(headerText);
       $header.append($headerText);
 
       // Create the close button.
@@ -235,7 +235,7 @@ $(function() {
       // Create the body.
       let $body = $("<div>");
       $body.addClass("toast-body");
-      $body.html(message);
+      $body.text(message);
 
       // Add the body to the toast.
       $toast.append($body);
