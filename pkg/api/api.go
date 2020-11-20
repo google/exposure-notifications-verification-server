@@ -183,6 +183,13 @@ type IssueCodeRequest struct {
 	// Optional: UUID is a handle which allows the issuer to track status
 	// of the issued verification code. If omitted the server will generate the UUID.
 	UUID string `json:"uuid"`
+
+	// A unique handle to the caller for statistics tracking. May be used as a
+	// finer-grained identifier to one or many issuers (where API-key is too
+	// broad to be useful). If an identifier is used that might uniquely
+	// identify a person, the caller should send a string that does not convey
+	// meaning to the server such as a UUID or one-way-hash.
+	AuditID string `json:"auditID"`
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.

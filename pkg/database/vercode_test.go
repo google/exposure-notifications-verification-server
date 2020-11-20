@@ -415,21 +415,23 @@ func TestStatDatesOnCreate(t *testing.T) {
 	}{
 		{
 			&VerificationCode{
-				Code:          "111111",
-				LongCode:      "111111",
-				TestType:      "negative",
-				ExpiresAt:     now.Add(time.Second),
-				LongExpiresAt: now.Add(time.Second),
-				IssuingUserID: 100, // need for RealmUserStats
-				IssuingAppID:  200, // need for AuthorizedAppStats
-				RealmID:       300, // need for RealmStats
+				Code:           "111111",
+				LongCode:       "111111",
+				TestType:       "negative",
+				ExpiresAt:      now.Add(time.Second),
+				LongExpiresAt:  now.Add(time.Second),
+				IssuingUserID:  100,   // need for RealmUserStats
+				IssuingAppID:   200,   // need for AuthorizedAppStats
+				IssuingAuditID: "foo", // need for AuditIDStat
+				RealmID:        300,   // need for RealmStats
 			},
-			nowStr},
+			nowStr,
+		},
 	}
 
 	for i, test := range tests {
 		if err := db.SaveVerificationCode(test.code, maxAge); err != nil {
-			t.Errorf("[%d] error saving code: %v", i, err)
+			t.Fatalf("[%d] error saving code: %v", i, err)
 		}
 
 		{
@@ -441,6 +443,28 @@ func TestStatDatesOnCreate(t *testing.T) {
 				Error; err != nil {
 				if IsNotFound(err) {
 					t.Fatalf("[%d] Error grabbing user stats %v", i, err)
+				}
+			}
+			if len(stats) != 1 {
+				t.Fatalf("[%d] expected one user stat", i)
+			}
+			if stats[0].CodesIssued != uint(i+1) {
+				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
+			}
+			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+		}
+
+		if len(test.code.IssuingAuditID) != 0 {
+			var stats []*AuditIDStat
+			if err := db.db.
+				Model(&AuditIDStat{}).
+				Select("*").
+				Scan(&stats).
+				Error; err != nil {
+				if IsNotFound(err) {
+					t.Fatalf("[%d] Error grabbing audit ID stats %v", i, err)
 				}
 			}
 			if len(stats) != 1 {

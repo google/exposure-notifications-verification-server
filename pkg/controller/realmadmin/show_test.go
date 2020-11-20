@@ -52,7 +52,7 @@ func TestFormatStats(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		names, format := formatData(test.data)
+		names, format := formatPerUserStats(test.data)
 		sort.Strings(test.names)
 		sort.Strings(names)
 		if !reflect.DeepEqual(test.names, names) {

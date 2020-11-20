@@ -1704,6 +1704,22 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00069-AddAuditIDStats",
+			Migrate: func(tx *gorm.DB) error {
+				tx.LogMode(true)
+				logger.Debugw("creating audit id stats table")
+				if err := tx.AutoMigrate(&AuditIDStat{}).Error; err != nil {
+					return err
+				}
+				sql := "CREATE UNIQUE INDEX IF NOT EXISTS idx_audit_id_stats_date_realm_id ON audit_id_stats (date, realm_id, audit_id)"
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				var s AuditIDStat
+				return tx.DropTable(s.TableName()).Error
+			},
+		},
 	})
 }
 
