@@ -63,7 +63,7 @@ type AuditEntry struct {
 	CreatedAt time.Time
 
 	// FromTest marks the entry as originating from an Auditable where IsTest is true.
-	FromTest bool `gorm:"type:boolean; default: false"`
+	FromTest bool `gorm:"type:boolean; default: false;"`
 }
 
 // SaveAuditEntry saves the audit entry.

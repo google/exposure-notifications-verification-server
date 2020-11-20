@@ -84,7 +84,7 @@ type AuthorizedApp struct {
 
 	// TestApp marks this as a test app which may be used to ignore or filter
 	// data (such as audit logs) from this class of app.
-	TestApp bool `gorm:"type:boolean; default: false"`
+	TestApp bool `gorm:"type:boolean; default: false;"`
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
