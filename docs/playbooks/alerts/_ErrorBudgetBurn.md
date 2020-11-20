@@ -4,8 +4,7 @@ This playbook applies to both
 [FastErrorBudgetBurn](./FastErrorBudgetBurn.md) and
 [SlowErrorBudgetBurn](./SlowErrorBudgetBurn.md).
 
-Our SLO is defined in
-[../../terraform/alerting/slos.tf](../../terraform/alerting/slos.tf).
+Our SLO is defined in [slos.tf](../../../terraform/alerting/slos.tf).
 
 The error budget start burning when 5xx error are returned.
 
