@@ -282,13 +282,24 @@ const stopUploadingCodes = [
   '503', // unavailable
 ];
 
+const stopUploadingEnum = [
+  'maintenance_mode',
+];
+
 async function uploadWithRetries(batch, uploadFn) {
   let cancel = false;
   for (let retries = 3; retries > 0; retries--) {
     await uploadFn(batch).then(
       () => { retries = 0; }).catch(
         async function(err) {
-          if (err && stopUploadingCodes.includes(err.status)) {
+          if (!err) {
+            return;
+          }
+          if (err.responseJSON && stopUploadingEnum.includes(err.responseJSON.errorCode)) {
+            flash.alert("Status " + err.responseJSON.errorCode + " detected. Canceling remaining upload.");
+            cancel = true;
+            retries = 0;
+          } else if (stopUploadingCodes.includes(err.status)) {
             flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
             cancel = true;
             retries = 0;
