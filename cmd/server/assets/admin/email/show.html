@@ -39,16 +39,9 @@
             </div>
 
             <div class="form-label-group">
-              <div class="input-group">
-                <input type="password" name="smtp_password" id="smtp-password" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPassword"}} is-invalid{{end}}" autocomplete="new-password"
-                  placeholder="SMTP password" {{if $emailConfig.SMTPPassword}}value="{{passwordSentinel}}"{{end}}>
-                <label for="smtp-password">SMTP password</label>
-                <div class="input-group-append">
-                  <a class="input-group-text" data-toggle-password="smtp-password">
-                    <span class="oi oi-lock-locked" aria-hidden="true"></span>
-                  </a>
-                </div>
-              </div>
+              <input type="password" name="smtp_password" id="smtp-password" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPassword"}} is-invalid{{end}}" autocomplete="new-password"
+                placeholder="SMTP password" {{if $emailConfig.SMTPPassword}}value="{{passwordSentinel}}"{{end}}>
+              <label for="smtp-password">SMTP password</label>
               {{template "errorable" $emailConfig.ErrorsFor "smtpPassword"}}
               <small class="form-text text-muted">
                 This is the password for your SMTP email.
