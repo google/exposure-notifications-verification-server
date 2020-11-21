@@ -45,7 +45,7 @@
 
     <div class="form-label-group">
       <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
-        placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{.passwordSentinel}}"{{end}}>
+        placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{passwordSentinel}}"{{end}}>
       <label for="twilio-auth-token">Twilio auth token</label>
       {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
       <small class="form-text text-muted">
