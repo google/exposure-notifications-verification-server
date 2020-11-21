@@ -49,6 +49,11 @@ type Provider interface {
 	// ClearSession removes any information about this auth from the session.
 	ClearSession(context.Context, *sessions.Session)
 
+	// RevokeSession revokes the session in the upstream identity provider, if one
+	// exists. This is a no-op for first-party identity. RevokeSession calls
+	// ClearSession on success.
+	RevokeSession(context.Context, *sessions.Session) error
+
 	// CreateUser creates a user in the auth provider. If pass is "", the provider
 	// creates and uses a random password.
 	CreateUser(ctx context.Context, name, email, pass string, sendInvite bool, composer InviteUserEmailFunc) (bool, error)
