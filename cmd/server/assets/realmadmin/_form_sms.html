@@ -35,7 +35,7 @@
   <div id="sms-form" class="collapse{{if not $realm.UseSystemSMSConfig}} show{{end}}">
     <div class="form-label-group">
       <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAccountSid"}} is-invalid{{end}}"
-        placeholder="Twilio account" value="{{if $smsConfig.TwilioAccountSid}}{{$smsConfig.TwilioAccountSid}}{{end}}" />
+        placeholder="Twilio account" {{if $smsConfig.TwilioAccountSid}}value="{{$smsConfig.TwilioAccountSid}}"{{end}} />
       <label for="twilio-account-sid">Twilio account</label>
       {{template "errorable" $smsConfig.ErrorsFor "twilioAccountSid"}}
       <small class="form-text text-muted">
@@ -45,7 +45,7 @@
 
     <div class="form-label-group">
       <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
-        placeholder="Twilio auth token" value="{{if $smsConfig.TwilioAuthToken}}{{.passwordSentinel}}{{end}}">
+        placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{.passwordSentinel}}"{{end}}>
       <label for="twilio-auth-token">Twilio auth token</label>
       {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
       <small class="form-text text-muted">
@@ -55,7 +55,7 @@
 
     <div class="form-label-group">
       <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioFromNumber"}} is-invalid{{end}}" autocomplete="new-password"
-        placeholder="Twilio number" value="{{if $smsConfig.TwilioFromNumber}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
+        placeholder="Twilio number" {{if $smsConfig.TwilioFromNumber}}value="{{$smsConfig.TwilioFromNumber}}"{{end}} />
       <label for="twilio-from-number">Twilio number</label>
       {{template "errorable" $smsConfig.ErrorsFor "twilioFromNumber"}}
       <small class="form-text text-muted">
