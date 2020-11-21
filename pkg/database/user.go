@@ -48,6 +48,9 @@ type User struct {
 
 	LastRevokeCheck    time.Time
 	LastPasswordChange time.Time
+
+	// TestUser marks the user as originating from a test.
+	TestUser bool `gorm:"type:boolean; default: false;"`
 }
 
 // PasswordChanged returns password change time or account creation time if unset.
@@ -307,7 +310,7 @@ func (u *User) AuditDisplay() string {
 
 // IsTest returns if this Auditable is a test resource.
 func (u *User) IsTest() bool {
-	return false // Test User not yet supported.
+	return u.TestUser
 }
 
 // DeleteUser deletes the user entry.

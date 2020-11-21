@@ -120,7 +120,7 @@ func realMain(ctx context.Context) error {
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
-		if err := db.SaveRealm(realm, database.System); err != nil {
+		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 			return fmt.Errorf("failed to create realm %+v: %w: %v", realm, err, realm.ErrorMessages())
 		}
 	}

@@ -31,7 +31,7 @@ func TestUserLifecycle(t *testing.T) {
 		SystemAdmin: false,
 	}
 
-	if err := db.SaveUser(&user, System); err != nil {
+	if err := db.SaveUser(&user, SystemTest); err != nil {
 		t.Fatalf("error creating user: %v", err)
 	}
 
@@ -69,7 +69,7 @@ func TestUserLifecycle(t *testing.T) {
 
 	// Update an attribute
 	user.SystemAdmin = true
-	if err := db.SaveUser(&user, System); err != nil {
+	if err := db.SaveUser(&user, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 

@@ -69,7 +69,7 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
-		if err := db.SaveRealm(realm, database.System); err != nil {
+		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 			tb.Fatalf("failed to create realm %+v: %v: %v", realm, err, realm.ErrorMessages())
 		}
 	}
@@ -83,7 +83,7 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       adminKeyName + suffix,
 		APIKeyType: database.APIKeyTypeAdmin,
-	}, database.System)
+	}, database.SystemTest)
 	if err != nil {
 		tb.Fatalf("error trying to create a new Admin API Key: %v", err)
 	}
@@ -91,7 +91,7 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 	deviceKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       deviceKeyName + suffix,
 		APIKeyType: database.APIKeyTypeDevice,
-	}, database.System)
+	}, database.SystemTest)
 	if err != nil {
 		tb.Fatalf("error trying to create a new Device API Key: %v", err)
 	}

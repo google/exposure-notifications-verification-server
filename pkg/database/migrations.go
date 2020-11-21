@@ -1706,6 +1706,11 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					`UPDATE authorized_apps SET test_app = FALSE WHERE test_app IS NULL`,
 					`ALTER TABLE authorized_apps ALTER COLUMN test_app SET DEFAULT FALSE`,
 					`ALTER TABLE authorized_apps ALTER COLUMN test_app SET NOT NULL`,
+
+					`ALTER TABLE users ADD COLUMN IF NOT EXISTS test_userBOOL`,
+					`UPDATE users SET test_user = FALSE WHERE test_user IS NULL`,
+					`ALTER TABLE users ALTER COLUMN test_user SET DEFAULT FALSE`,
+					`ALTER TABLE users ALTER COLUMN test_user SET NOT NULL`,
 				}
 
 				for _, sql := range sqls {
@@ -1719,6 +1724,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				sqls := []string{
 					`ALTER TABLE audit_entries DROP COLUMN IF EXISTS from_test`,
 					`ALTER TABLE authorized_apps DROP COLUMN IF EXISTS test_app`,
+					`ALTER TABLE users DROP COLUMN IF EXISTS test_user`,
 				}
 
 				for _, sql := range sqls {
