@@ -38,16 +38,9 @@
           </div>
 
           <div class="form-label-group">
-            <div class="input-group">
-              <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
-                placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{passwordSentinel}}"{{end}}>
-              <label for="twilio-auth-token">Twilio auth token</label>
-              <div class="input-group-append">
-                <a class="input-group-text" data-toggle-password="twilio-auth-token">
-                  <span class="oi oi-lock-locked" aria-hidden="true"></span>
-                </a>
-              </div>
-            </div>
+            <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
+              placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{passwordSentinel}}"{{end}}>
+            <label for="twilio-auth-token">Twilio auth token</label>
             {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
             <small class="form-text text-muted">
               This is the Twilio Auth Token. Get this value from the Twilio console.
