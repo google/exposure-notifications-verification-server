@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
@@ -70,7 +71,9 @@ func (c *Controller) HandleEmailUpdate() http.Handler {
 		// Update
 		emailConfig.ProviderType = email.ProviderTypeSMTP
 		emailConfig.SMTPAccount = form.SMTPAccount
-		emailConfig.SMTPPassword = form.SMTPPassword
+		if form.SMTPPassword != project.PasswordSentinel {
+			emailConfig.SMTPPassword = form.SMTPPassword
+		}
 		emailConfig.SMTPHost = form.SMTPHost
 		emailConfig.SMTPPort = form.SMTPPort
 		if err := c.db.SaveEmailConfig(emailConfig); err != nil {

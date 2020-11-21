@@ -169,15 +169,20 @@ func translate(l *gotext.Locale, key string, vars ...interface{}) (string, error
 
 func templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
-		"joinStrings":    strings.Join,
-		"trimSpace":      project.TrimSpace,
-		"stringContains": strings.Contains,
-		"toLower":        strings.ToLower,
-		"toUpper":        strings.ToUpper,
-		"safeHTML":       safeHTML,
-		"selectedIf":     selectedIf,
-		"t":              translate,
+		"joinStrings":      strings.Join,
+		"trimSpace":        project.TrimSpace,
+		"stringContains":   strings.Contains,
+		"toLower":          strings.ToLower,
+		"toUpper":          strings.ToUpper,
+		"safeHTML":         safeHTML,
+		"selectedIf":       selectedIf,
+		"t":                translate,
+		"passwordSentinel": pwdSentinel,
 	}
+}
+
+func pwdSentinel() string {
+	return project.PasswordSentinel
 }
 
 func textFuncs() texttemplate.FuncMap {
