@@ -47,9 +47,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -86,9 +84,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
     content   = "${local.playbook_prefix}/E2ETestErrorRatioHigh.md"
     mime_type = "text/markdown"
   }
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -125,9 +121,7 @@ resource "google_monitoring_alert_policy" "five_xx" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -162,9 +156,7 @@ resource "google_monitoring_alert_policy" "probers" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -199,9 +191,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -234,9 +224,7 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -273,9 +261,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
 
   depends_on = [
     google_monitoring_slo.availability-slo
@@ -311,9 +297,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [
-    google_monitoring_notification_channel.email.id,
-  ]
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
 
   depends_on = [
     google_monitoring_slo.availability-slo
