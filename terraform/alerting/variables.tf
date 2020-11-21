@@ -42,7 +42,17 @@ variable "https-forwarding-rule" {
 variable "alert-notification-channels" {
   type = map
   default = {
-    email_address = "nobody@example.com"
+    email = {
+      labels = {
+        email_address = "nobody@example.com"
+      }
+    }
+    slack = {
+      labels = {
+        channel_name = "#foo"
+        auth_token   = "abr"
+      }
+    }
   }
   description = "Notification channels"
 }
