@@ -1707,7 +1707,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					`ALTER TABLE authorized_apps ALTER COLUMN test_app SET DEFAULT FALSE`,
 					`ALTER TABLE authorized_apps ALTER COLUMN test_app SET NOT NULL`,
 
-					`ALTER TABLE users ADD COLUMN IF NOT EXISTS test_userBOOL`,
+					`ALTER TABLE users ADD COLUMN IF NOT EXISTS test_user BOOL`,
 					`UPDATE users SET test_user = FALSE WHERE test_user IS NULL`,
 					`ALTER TABLE users ALTER COLUMN test_user SET DEFAULT FALSE`,
 					`ALTER TABLE users ALTER COLUMN test_user SET NOT NULL`,
