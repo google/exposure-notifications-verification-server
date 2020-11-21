@@ -20,6 +20,11 @@ import (
 	"runtime"
 )
 
+const (
+	// PasswordSentinel is the password string inserted into forms.
+	PasswordSentinel = "very-nice-try-maybe-next-time"
+)
+
 var _, self, _, _ = runtime.Caller(0)
 
 // Root returns the filepath to the root of this project.

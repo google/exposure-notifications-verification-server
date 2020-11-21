@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -103,8 +104,7 @@ func TestHandleSettings_SMTP(t *testing.T) {
 	if got, want := smtpAccount, "myAccount"; got != want {
 		t.Errorf("expected %q to be %q", got, want)
 	}
-	if got, want := smtpPassword, "very-nice-try-maybe-next-time"; got != want {
-		// very-nice-try-maybe-next-time comes from passwordSentinel
+	if got, want := smtpPassword, project.PasswordSentinel; got != want {
 		t.Errorf("expected %q to be %q", got, want)
 	}
 	if got, want := smtpHost, "1.1.1.1"; got != want {

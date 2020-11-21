@@ -30,7 +30,7 @@
           <div id="smtp-form">
             <div class="form-label-group">
               <input type="text" name="smtp_account" id="smtp-account" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpAccount"}} is-invalid{{end}}"
-                placeholder="SMTP account" value="{{if $emailConfig}}{{$emailConfig.SMTPAccount}}{{end}}" />
+                placeholder="SMTP account" {{if $emailConfig.SMTPAccount}}value="{{$emailConfig.SMTPAccount}}"{{end}} />
               <label for="smtp-account">SMTP account</label>
               {{template "errorable" $emailConfig.ErrorsFor "smtpAccount"}}
               <small class="form-text text-muted">
@@ -41,7 +41,7 @@
             <div class="form-label-group">
               <div class="input-group">
                 <input type="password" name="smtp_password" id="smtp-password" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPassword"}} is-invalid{{end}}" autocomplete="new-password"
-                  placeholder="SMTP password" value="{{if $emailConfig}}{{$emailConfig.SMTPPassword}}{{end}}">
+                  placeholder="SMTP password" {{if $emailConfig.SMTPPassword}}value="{{passwordSentinel}}"{{end}}>
                 <label for="smtp-password">SMTP password</label>
                 <div class="input-group-append">
                   <a class="input-group-text" data-toggle-password="smtp-password">
@@ -57,7 +57,7 @@
 
             <div class="form-label-group">
               <input name="smtp_host" id="smtp-host" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
-                placeholder="SMTP host" value="{{if $emailConfig}}{{$emailConfig.SMTPHost}}{{end}}" />
+                placeholder="SMTP host"{{if $emailConfig.SMTPHost}} value="{{$emailConfig.SMTPHost}}"{{end}} />
               <label for="smtp-port">SMTP host</label>
               {{template "errorable" $emailConfig.ErrorsFor "smtpHost"}}
               <small class="form-text text-muted">
@@ -67,7 +67,7 @@
 
             <div class="form-label-group">
               <input name="smtp_port" id="smtp-port" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
-                placeholder="SMTP port" value="{{if $emailConfig}}{{$emailConfig.SMTPPort}}{{else}}587{{end}}" />
+                placeholder="SMTP port" value="{{if $emailConfig.SMTPPort}}{{$emailConfig.SMTPPort}}{{else}}587{{end}}" />
               <label for="smtp-port">SMTP port</label>
               {{template "errorable" $emailConfig.ErrorsFor "smtpPort"}}
               <small class="form-text text-muted">

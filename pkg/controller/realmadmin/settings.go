@@ -20,15 +20,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
-)
-
-const (
-	// passwordSentinel is the password string inserted into forms.
-	passwordSentinel = "very-nice-try-maybe-next-time"
 )
 
 var (
@@ -270,8 +266,8 @@ func (c *Controller) HandleSettings() http.Handler {
 				// record.
 				smsConfig.ProviderType = sms.ProviderTypeTwilio
 				smsConfig.TwilioAccountSid = form.TwilioAccountSid
-				if v := form.TwilioAuthToken; v != passwordSentinel {
-					smsConfig.TwilioAuthToken = v
+				if form.TwilioAuthToken != project.PasswordSentinel {
+					smsConfig.TwilioAuthToken = form.TwilioAuthToken
 				}
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
 
@@ -312,7 +308,7 @@ func (c *Controller) HandleSettings() http.Handler {
 				// record.
 				emailConfig.ProviderType = email.ProviderTypeSMTP
 				emailConfig.SMTPAccount = form.SMTPAccount
-				if v := form.SMTPPassword; v != passwordSentinel {
+				if form.SMTPPassword != project.PasswordSentinel {
 					emailConfig.SMTPPassword = form.SMTPPassword
 				}
 				emailConfig.SMTPHost = form.SMTPHost
@@ -458,8 +454,6 @@ func (c *Controller) renderSettings(
 
 	m["quotaLimit"] = quotaLimit
 	m["quotaRemaining"] = quotaRemaining
-
-	m["passwordSentinel"] = passwordSentinel
 
 	c.h.RenderHTML(w, "realmadmin/edit", m)
 }
