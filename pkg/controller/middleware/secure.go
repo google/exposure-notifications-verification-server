@@ -27,6 +27,7 @@ func SecureHeaders(devMode bool, serverType string) mux.MiddlewareFunc {
 		FrameDeny:            serverType == "html",
 		HostsProxyHeaders:    []string{"X-Forwarded-Host"},
 		IsDevelopment:        devMode,
+		ReferrerPolicy:       "strict-origin-when-cross-origin",
 		SSLProxyHeaders:      map[string]string{"X-Forwarded-Proto": "https"},
 		SSLRedirect:          !devMode,
 		STSIncludeSubdomains: true,
