@@ -48,7 +48,7 @@ type CleanupConfig struct {
 	// After this time it will be recycled. The code will be zeroed out, but its status persist.
 	VerificationCodeMaxAge time.Duration `env:"VERIFICATION_CODE_MAX_AGE, default=48h"`
 	// VerificationCodeStatusMaxAge is the time after which, even the status of the code will be deleted
-	// and the entry will be purged.
+	// and the entry will be purged. This value should be greater than VerificationCodeMaxAge
 	VerificationCodeStatusMaxAge time.Duration `env:"VERIFICATION_CODE_STATUS_MAX_AGE, default=336h"`
 	VerificationTokenMaxAge      time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE, default=24h"`
 }
@@ -85,6 +85,11 @@ func (c *CleanupConfig) Validate() error {
 	// Audit entries need to persist for at least 7 days. The default is 30d ays.
 	if c.AuditEntryMaxAge < 7*24*time.Hour {
 		return fmt.Errorf("AUDIT_ENTRY_MAX_AGE must be at least 7 days")
+	}
+
+	if c.VerificationCodeStatusMaxAge < c.VerificationCodeMaxAge {
+		return fmt.Errorf("the code status %q is expected to live longer than the life of the code %q",
+			c.VerificationCodeStatusMaxAge.String(), c.VerificationCodeMaxAge.String())
 	}
 
 	return nil
