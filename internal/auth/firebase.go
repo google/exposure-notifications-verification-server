@@ -108,9 +108,27 @@ func (f *firebaseAuth) StoreSession(ctx context.Context, session *sessions.Sessi
 	return nil
 }
 
-// ClearSession removes any session information for this auth.
+// ClearSession removes any session information for this auth. It does not
+// revoke the session upstream.
 func (f *firebaseAuth) ClearSession(ctx context.Context, session *sessions.Session) {
 	sessionClear(session, sessionKeyFirebaseCookie)
+}
+
+// RevokeSession revokes the upstream session in the provider.
+func (f *firebaseAuth) RevokeSession(ctx context.Context, session *sessions.Session) error {
+	data, err := f.loadCookie(ctx, session)
+	if err != nil {
+		return err
+	}
+
+	if data.UserID != "" {
+		if err := f.firebaseAuth.RevokeRefreshTokens(ctx, data.UserID); err != nil {
+			return fmt.Errorf("failed to revoke session: %w", err)
+		}
+	}
+
+	f.ClearSession(ctx, session)
+	return nil
 }
 
 // CreateUser creates a user in the upstream auth system with the given name and
@@ -291,6 +309,7 @@ func (f *firebaseAuth) emailVerificationLink(ctx context.Context, email string) 
 }
 
 type firebaseCookieData struct {
+	UserID        string
 	Email         string
 	EmailVerified bool
 	MFAEnabled    bool
@@ -306,6 +325,12 @@ func (f *firebaseAuth) dataFromCookie(ctx context.Context, cookie string) (*fire
 
 	if token.Claims == nil {
 		return nil, fmt.Errorf("token claims are empty")
+	}
+
+	// User ID
+	userID, ok := token.Claims["user_id"].(string)
+	if !ok {
+		return nil, fmt.Errorf("token claims for user_id are not a string")
 	}
 
 	// Email
@@ -328,6 +353,7 @@ func (f *firebaseAuth) dataFromCookie(ctx context.Context, cookie string) (*fire
 	_, mfaEnabled := firebase["sign_in_second_factor"]
 
 	return &firebaseCookieData{
+		UserID:        userID,
 		Email:         email,
 		EmailVerified: emailVerified,
 		MFAEnabled:    mfaEnabled,

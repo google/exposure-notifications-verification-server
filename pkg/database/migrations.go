@@ -420,13 +420,17 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_user_id").Error; err != nil {
-					return err
+				if tx.NewScope(&VerificationCode{}).HasColumn("issuing_user_id") {
+					if err := tx.Model(&VerificationCode{}).DropColumn("issuing_user_id").Error; err != nil {
+						return err
+					}
 				}
-				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_app_id").Error; err != nil {
-					return err
+				if tx.NewScope(&VerificationCode{}).HasColumn("issuing_app_id") {
+					if err := tx.Model(&VerificationCode{}).DropColumn("issuing_app_id").Error; err != nil {
+						return err
+					}
 				}
-				if err := tx.DropTable(&UserStats{}).Error; err != nil {
+				if err := tx.DropTableIfExists(&UserStats{}).Error; err != nil {
 					return err
 				}
 				return nil

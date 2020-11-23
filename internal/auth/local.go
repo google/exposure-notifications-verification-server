@@ -103,6 +103,12 @@ func (a *localAuth) ClearSession(ctx context.Context, session *sessions.Session)
 	sessionClear(session, sessionKeyLocalCookie)
 }
 
+// RevokeSession revokes the upstream session. It's a no-op for this provider.
+func (a *localAuth) RevokeSession(ctx context.Context, session *sessions.Session) error {
+	a.ClearSession(ctx, session)
+	return nil
+}
+
 // CreateUser creates a user in the upstream auth system with the given name and
 // email. It returns true if the user was created or false if the user already
 // exists.

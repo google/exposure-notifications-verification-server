@@ -17,17 +17,52 @@ package login
 import (
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
+// HandleSignOut handles session termination. It's possible for a user to
+// navigate to this page directly (without auth).
 func (c *Controller) HandleSignOut() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		logger := logging.FromContext(ctx).Named("login.HandleSignOut")
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
 			return
+		}
+
+		// If a user is currently logged in, update their last revoked check time.
+		email, err := c.authProvider.EmailAddress(ctx, session)
+		if err != nil {
+			logger.Debugw("failed to lookup user by email", "error", err)
+		} else {
+			currentUser, err := c.db.FindUserByEmail(email)
+			if err != nil {
+				if !database.IsNotFound(err) {
+					controller.InternalError(w, r, c.h, err)
+					return
+				}
+			}
+
+			if currentUser != nil {
+				// Update the user's last revoked checked time.
+				if err := c.db.UntouchUserRevokeCheck(currentUser); err != nil {
+					controller.InternalError(w, r, c.h, err)
+					return
+				}
+			}
+		}
+
+		// Revoke upstream session.
+		if err := c.authProvider.RevokeSession(ctx, session); err != nil {
+			// This is just a warning since a user could navigate to /signout without
+			// an active session.
+			logger.Debugw("failed to revoke session", "error", err)
 		}
 
 		// Set MaxAge to -1 to expire the session.

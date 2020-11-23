@@ -29,7 +29,7 @@
 
           <div class="form-label-group">
             <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAccountSid"}} is-invalid{{end}}"
-              placeholder="Twilio account" value="{{if $smsConfig}}{{$smsConfig.TwilioAccountSid}}{{end}}" />
+              placeholder="Twilio account" {{if $smsConfig.TwilioAccountSid}}value="{{$smsConfig.TwilioAccountSid}}"{{end}} />
             <label for="twilio-account-sid">Twilio account</label>
             {{template "errorable" $smsConfig.ErrorsFor "twilioAccountSid"}}
             <small class="form-text text-muted">
@@ -38,16 +38,9 @@
           </div>
 
           <div class="form-label-group">
-            <div class="input-group">
-              <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
-                placeholder="Twilio auth token" value="{{if $smsConfig}}{{$smsConfig.TwilioAuthToken}}{{end}}">
-              <label for="twilio-auth-token">Twilio auth token</label>
-              <div class="input-group-append">
-                <a class="input-group-text" data-toggle-password="twilio-auth-token">
-                  <span class="oi oi-lock-locked" aria-hidden="true"></span>
-                </a>
-              </div>
-            </div>
+            <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
+              placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{passwordSentinel}}"{{end}}>
+            <label for="twilio-auth-token">Twilio auth token</label>
             {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
             <small class="form-text text-muted">
               This is the Twilio Auth Token. Get this value from the Twilio console.
@@ -56,7 +49,7 @@
 
           <div class="form-label-group">
             <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioFromNumber"}} is-invalid{{end}}" autocomplete="new-password"
-              placeholder="Twilio number" value="{{if $smsConfig}}{{$smsConfig.TwilioFromNumber}}{{end}}" />
+              placeholder="Twilio number" {{if $smsConfig.TwilioFromNumber}}value="{{$smsConfig.TwilioFromNumber}}"{{end}} />
             <label for="twilio-from-number">Twilio number</label>
             {{template "errorable" $smsConfig.ErrorsFor "twilioFromNumber"}}
             <small class="form-text text-muted">
