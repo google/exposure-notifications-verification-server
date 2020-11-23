@@ -62,9 +62,7 @@
 
   <script type="text/javascript">
     $(function() {
-      {{template "login/login-js" .}}
-
-      function loginSuccess() {
+      let fn = function loginSuccess() {
         {{if .loginRedirect}}
         window.location.assign('{{.loginRedirect}}');
         {{else}}
@@ -73,6 +71,9 @@
         {{end}}
         {{end}}
       }
+
+      let hasCurrentUser ={{if .currentUser}}true{{else}}false{{end}};
+      loginScripts(hasCurrentUser, fn);
     });
   </script>
 </body>
