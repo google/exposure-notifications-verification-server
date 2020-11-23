@@ -105,12 +105,12 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
-		// Verification codes - purge codes from database entirerly.
+		// Verification codes - purge codes from database entirely.
 		// Their code/long_code hmac values will have been set to "".
 		func() {
 			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_CODE")
-			if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
+			if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeStatusMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
 				result = observability.ResultError("FAILED")
 			} else {
@@ -124,7 +124,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 		func() {
 			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_CODE_RECYCLE")
-			if count, err := c.db.RecycleVerificationCodes(c.config.VerificationCodeStatusMaxAge); err != nil {
+			if count, err := c.db.RecycleVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
 				result = observability.ResultError("FAILED")
 			} else {
