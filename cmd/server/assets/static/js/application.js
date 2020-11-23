@@ -323,11 +323,6 @@ async function uploadWithRetries(batch, uploadFn) {
 
 function checkPasswordValid(pwd, retype, requirements) {
   let $retyped = $('#retyped');
-  let $lenReq = $('#length-req');
-  let $upperReq = $('#upper-req');
-  let $lowerReq = $('#lower-req');
-  let $numReq = $('#num-req');
-  let $specialReq = $('#special-req');
 
   let errClass = "oi oi-circle-x pr-1";
   let checkClass = "oi oi-circle-check pr-1";
@@ -345,6 +340,12 @@ function checkPasswordValid(pwd, retype, requirements) {
   }
 
   if (requirements) {
+    let $lenReq = $('#length-req');
+    let $upperReq = $('#upper-req');
+    let $lowerReq = $('#lower-req');
+    let $numReq = $('#num-req');
+    let $specialReq = $('#special-req');
+
     let upper = 0;
     let lower = 0;
     let digit = 0;
