@@ -322,12 +322,11 @@ async function uploadWithRetries(batch, uploadFn) {
 }
 
 function checkPasswordValid(pwd, retype, requirements) {
-  let $retyped = $('#retyped');
-
   let errClass = "oi oi-circle-x pr-1";
   let checkClass = "oi oi-circle-check pr-1";
   let valid = true;
 
+  let $retyped = $('#retyped');
   if (pwd != retype) {
     $retyped.find("#icon").attr("class", errClass);
     $retyped.addClass("text-danger");
@@ -340,12 +339,6 @@ function checkPasswordValid(pwd, retype, requirements) {
   }
 
   if (requirements) {
-    let $lenReq = $('#length-req');
-    let $upperReq = $('#upper-req');
-    let $lowerReq = $('#lower-req');
-    let $numReq = $('#num-req');
-    let $specialReq = $('#special-req');
-
     let upper = 0;
     let lower = 0;
     let digit = 0;
@@ -364,6 +357,7 @@ function checkPasswordValid(pwd, retype, requirements) {
       }
     }
 
+    let $lenReq = $('#length-req');
     if (pwd.length < requirements.Length) {
       $lenReq.find("#icon").attr("class", errClass);
       $lenReq.addClass("text-danger");
@@ -375,6 +369,7 @@ function checkPasswordValid(pwd, retype, requirements) {
       $lenReq.removeClass("text-danger");
     }
 
+    let $upperReq = $('#upper-req');
     if (upper < requirements.Uppercase) {
       $upperReq.find("#icon").attr("class", errClass);
       $upperReq.addClass("text-danger");
@@ -386,6 +381,7 @@ function checkPasswordValid(pwd, retype, requirements) {
       $upperReq.removeClass("text-danger");
     }
 
+    let $lowerReq = $('#lower-req');
     if (lower < requirements.Lowercase) {
       $lowerReq.find("#icon").attr("class", errClass);
       $lowerReq.addClass("text-danger");
@@ -397,6 +393,7 @@ function checkPasswordValid(pwd, retype, requirements) {
       $lowerReq.removeClass("text-danger");
     }
 
+    let $numReq = $('#num-req');
     if (digit < requirements.Number) {
       $numReq.find("#icon").attr("class", errClass);
       $numReq.addClass("text-danger");
@@ -408,6 +405,7 @@ function checkPasswordValid(pwd, retype, requirements) {
       $numReq.removeClass("text-danger");
     }
 
+    let $specialReq = $('#special-req');
     if (special < requirements.Special) {
       $specialReq.find("#icon").attr("class", errClass);
       $specialReq.addClass("text-danger");
