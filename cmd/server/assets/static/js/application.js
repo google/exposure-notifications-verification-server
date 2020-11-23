@@ -320,3 +320,104 @@ async function uploadWithRetries(batch, uploadFn) {
   }
   return cancel;
 }
+
+function checkPasswordValid(pwd, retype, requirements) {
+  let $retyped = $('#retyped');
+  let $lenReq = $('#length-req');
+  let $upperReq = $('#upper-req');
+  let $lowerReq = $('#lower-req');
+  let $numReq = $('#num-req');
+  let $specialReq = $('#special-req');
+
+  let errClass = "oi oi-circle-x pr-1";
+  let checkClass = "oi oi-circle-check pr-1";
+  let valid = true;
+
+  if (pwd != retype) {
+    $retyped.find("#icon").attr("class", errClass);
+    $retyped.addClass("text-danger");
+    $retyped.removeClass("text-muted");
+    valid = false;
+  } else {
+    $retyped.find("#icon").attr("class", checkClass);
+    $retyped.addClass("text-muted");
+    $retyped.removeClass("text-danger");
+  }
+
+  if (requirements) {
+    let upper = 0;
+    let lower = 0;
+    let digit = 0;
+    let special = 0;
+    let specialPattern = new RegExp(/[~`!#$%\^&*+=\-\[\]\\';,/{}|\\":<>\?]/);
+    for (let i = 0; i < pwd.length; i++) {
+      let c = pwd.charAt(i);
+      if (!isNaN(parseInt(c, 10))) {
+        digit++;
+      } else if (specialPattern.test(c)) {
+        special++;
+      } else if (c == c.toUpperCase()) {
+        upper++;
+      } else if (c == c.toLowerCase()) {
+        lower++;
+      }
+    }
+
+    if (pwd.length < requirements.Length) {
+      $lenReq.find("#icon").attr("class", errClass);
+      $lenReq.addClass("text-danger");
+      $lenReq.removeClass("text-muted");
+      valid = false;
+    } else {
+      $lenReq.find("#icon").attr("class", checkClass);
+      $lenReq.addClass("text-muted");
+      $lenReq.removeClass("text-danger");
+    }
+
+    if (upper < requirements.Uppercase) {
+      $upperReq.find("#icon").attr("class", errClass);
+      $upperReq.addClass("text-danger");
+      $upperReq.removeClass("text-muted");
+      valid = false;
+    } else {
+      $upperReq.find("#icon").attr("class", checkClass);
+      $upperReq.addClass("text-muted");
+      $upperReq.removeClass("text-danger");
+    }
+
+    if (lower < requirements.Lowercase) {
+      $lowerReq.find("#icon").attr("class", errClass);
+      $lowerReq.addClass("text-danger");
+      $lowerReq.removeClass("text-muted");
+      valid = false;
+    } else {
+      $lowerReq.find("#icon").attr("class", checkClass);
+      $lowerReq.addClass("text-muted");
+      $lowerReq.removeClass("text-danger");
+    }
+
+    if (digit < requirements.Number) {
+      $numReq.find("#icon").attr("class", errClass);
+      $numReq.addClass("text-danger");
+      $numReq.removeClass("text-muted");
+      valid = false;
+    } else {
+      $numReq.find("#icon").attr("class", checkClass);
+      $numReq.addClass("text-muted");
+      $numReq.removeClass("text-danger");
+    }
+
+    if (special < requirements.Special) {
+      $specialReq.find("#icon").attr("class", errClass);
+      $specialReq.addClass("text-danger");
+      $specialReq.removeClass("text-muted");
+      valid = false;
+    } else {
+      $specialReq.find("#icon").attr("class", checkClass);
+      $specialReq.addClass("text-muted");
+      $specialReq.removeClass("text-danger");
+    }
+  }
+
+  return valid;
+}
