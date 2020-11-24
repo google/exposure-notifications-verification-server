@@ -17,7 +17,8 @@ package appsync
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -45,7 +46,23 @@ func New(config *config.AppSyncConfig, db *database.Database, h *render.Renderer
 // HandleSync performs the logic to sync mobile apps.
 func (c *Controller) HandleSync(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO(whaught): implement this
-		controller.InternalError(w, r, c.h, errors.New("not implemented"))
+		resp, err := http.Get(c.config.AppSyncURL)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		var apps AppsResponse
+		if err := json.Unmarshal(body, &apps); err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
 	})
 }

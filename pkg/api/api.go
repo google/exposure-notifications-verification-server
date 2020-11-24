@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	// TestTypeConfirmed is the string that represents a confirmed covid-19 test.
+	// TestTypeConfirmed is the string that represents a confirmed COVID-19 test.
 	TestTypeConfirmed = "confirmed"
 	// TestTypeLikely is the string that represents a clinical diagnosis.
 	TestTypeLikely = "likely"
@@ -56,6 +56,7 @@ const (
 	ErrMissingDate = "missing_date"
 
 	// Certificate API responses
+
 	// ErrTokenInvalid indicates the token provided is unknown or already used
 	ErrTokenInvalid = "token_invalid"
 	// ErrTokenExpired indicates that the token provided is known but expired.
@@ -259,7 +260,7 @@ type ExpireCodeResponse struct {
 	// After this time the code will no longer be accepted and is eligible for deletion.
 	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
 
-	// LongExpiresAtTimestamp repesents the time when the long code expires, in
+	// LongExpiresAtTimestamp represents the time when the long code expires, in
 	// UTC seconds since epoch.
 	LongExpiresAtTimestamp int64 `json:"longExpiresAtTimestamp,omitempty"`
 
