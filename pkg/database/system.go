@@ -27,3 +27,17 @@ func (s *system) AuditID() string {
 func (s *system) AuditDisplay() string {
 	return "System"
 }
+
+// SystemTest represents the system and actions it has taken. It's not stored in the
+// database.
+var SystemTest Auditable = new(systemTest)
+
+type systemTest struct{}
+
+func (s *systemTest) AuditID() string {
+	return "system_test:1"
+}
+
+func (s *systemTest) AuditDisplay() string {
+	return "SystemTest"
+}

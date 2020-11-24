@@ -46,7 +46,7 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
 	}
-	if err := harness.Database.SaveUser(admin, database.System); err != nil {
+	if err := harness.Database.SaveUser(admin, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 

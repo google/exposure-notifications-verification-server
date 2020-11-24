@@ -76,7 +76,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
-		if err := db.SaveRealm(realm, database.System); err != nil {
+		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 			tb.Fatalf("failed to create realm %+v: %v: %v", realm, err, realm.ErrorMessages())
 		}
 	}
@@ -90,7 +90,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       adminKeyName + suffix,
 		APIKeyType: database.APIKeyTypeAdmin,
-	}, database.System)
+	}, database.SystemTest)
 	if err != nil {
 		tb.Fatalf("error trying to create a new Admin API Key: %v", err)
 	}
@@ -98,7 +98,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 	deviceKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       deviceKeyName + suffix,
 		APIKeyType: database.APIKeyTypeDevice,
-	}, database.System)
+	}, database.SystemTest)
 	if err != nil {
 		tb.Fatalf("error trying to create a new Device API Key: %v", err)
 	}

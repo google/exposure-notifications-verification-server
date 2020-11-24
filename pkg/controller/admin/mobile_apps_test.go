@@ -44,7 +44,7 @@ func TestShowAdminMobileApps(t *testing.T) {
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
 	}
-	if err := harness.Database.SaveUser(admin, database.System); err != nil {
+	if err := harness.Database.SaveUser(admin, Test); err != nil {
 		t.Fatal(err)
 	}
 
@@ -56,7 +56,7 @@ func TestShowAdminMobileApps(t *testing.T) {
 		SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 		AppID:   "app2",
 	}
-	if err := harness.Database.SaveMobileApp(app, database.System); err != nil {
+	if err := harness.Database.SaveMobileApp(app, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 

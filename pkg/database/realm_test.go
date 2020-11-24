@@ -55,7 +55,7 @@ func TestPerUserRealmStats(t *testing.T) {
 
 	// Create a new realm
 	realm := NewRealmWithDefaults("test")
-	if err := db.SaveRealm(realm, System); err != nil {
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatalf("error saving realm: %v", err)
 	}
 
@@ -69,7 +69,7 @@ func TestPerUserRealmStats(t *testing.T) {
 			SystemAdmin: false,
 		}
 
-		if err := db.SaveUser(user, System); err != nil {
+		if err := db.SaveUser(user, SystemTest); err != nil {
 			t.Fatalf("[%v] error creating user: %v", name, err)
 		}
 		users = append(users, user)
@@ -117,12 +117,12 @@ func TestRealm_FindMobileApp(t *testing.T) {
 		db := NewTestDatabase(t)
 
 		realm1 := NewRealmWithDefaults("realm1")
-		if err := db.SaveRealm(realm1, System); err != nil {
+		if err := db.SaveRealm(realm1, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
 		realm2 := NewRealmWithDefaults("realm2")
-		if err := db.SaveRealm(realm2, System); err != nil {
+		if err := db.SaveRealm(realm2, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -133,7 +133,7 @@ func TestRealm_FindMobileApp(t *testing.T) {
 			OS:      OSTypeIOS,
 			AppID:   "app1",
 		}
-		if err := db.SaveMobileApp(app1, System); err != nil {
+		if err := db.SaveMobileApp(app1, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -144,7 +144,7 @@ func TestRealm_FindMobileApp(t *testing.T) {
 			OS:      OSTypeIOS,
 			AppID:   "app2",
 		}
-		if err := db.SaveMobileApp(app2, System); err != nil {
+		if err := db.SaveMobileApp(app2, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -179,7 +179,7 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	db.config.MaxCertificateSigningKeyVersions = 2
 
 	realm1 := NewRealmWithDefaults("realm1")
-	if err := db.SaveRealm(realm1, System); err != nil {
+	if err := db.SaveRealm(realm1, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
