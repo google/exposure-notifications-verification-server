@@ -39,7 +39,7 @@ variable "database_version" {
   type    = string
   default = "POSTGRES_13"
 
-  description = "Version of the database to use. Must be at least 12 or higher."
+  description = "Version of the database to use. Must be at least 13 or higher."
 }
 
 variable "database_disk_size_gb" {

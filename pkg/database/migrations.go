@@ -1695,6 +1695,15 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS allow_bulk_upload").Error
 			},
 		},
+		{
+			ID: "00068-EnablePGAudit",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.Exec(`CREATE EXTENSION pgaudit`).Error; err != nil {
+					logger.Warnw("failed to enable pgaudit", "error", err)
+				}
+				return nil
+			},
+		},
 	})
 }
 
