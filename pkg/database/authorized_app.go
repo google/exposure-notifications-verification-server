@@ -59,7 +59,7 @@ var _ Auditable = (*AuthorizedApp)(nil)
 // verification codes and perform token exchanges.
 // This is controlled via a generated API key.
 //
-// Admin Keys are able to issue diagnosis keys and are not able to perticipate
+// Admin Keys are able to issue diagnosis keys and are not able to participate
 // the verification protocol.
 type AuthorizedApp struct {
 	gorm.Model

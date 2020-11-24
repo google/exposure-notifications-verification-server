@@ -35,6 +35,9 @@ const (
 
 	// QueryRealmIDSearch is the query key to filter by realmID.
 	QueryRealmIDSearch = "realm_id"
+
+	// QueryIncludeTest is the query key to filter on events from test or not.
+	QueryIncludeTest = "include_test"
 )
 
 // HandleEventsShow shows event logs.
@@ -53,6 +56,11 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		scopes := []database.Scope{}
 		scopes = append(scopes, database.WithAuditTime(from, to))
 		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
+
+		includeTest, _ := strconv.ParseBool(r.FormValue(QueryIncludeTest))
+		if !includeTest {
+			scopes = append(scopes, database.WithoutAuditTest())
+		}
 
 		// Add realm filter if applicable
 		var realm *database.Realm

@@ -279,7 +279,7 @@ func TestIssueToken(t *testing.T) {
 			db := NewTestDatabase(t)
 
 			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
-			if err := db.SaveRealm(realm, System); err != nil {
+			if err := db.SaveRealm(realm, SystemTest); err != nil {
 				t.Fatal(err)
 			}
 
