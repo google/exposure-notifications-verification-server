@@ -56,9 +56,9 @@ func NewAppSyncConfig(ctx context.Context) (*AppSyncConfig, error) {
 
 func (c *AppSyncConfig) Validate() error {
 	if url, err := url.Parse(c.AppSyncURL); err != nil {
-		return fmt.Errorf("Unable to parse APP_SYNC_URL: %v", err)
+		return fmt.Errorf("unable to parse APP_SYNC_URL: %v", err)
 	} else if url == nil {
-		return errors.New("Expecting a value for APP_SYNC_URL")
+		return errors.New("expecting a value for APP_SYNC_URL")
 	}
 
 	return nil
