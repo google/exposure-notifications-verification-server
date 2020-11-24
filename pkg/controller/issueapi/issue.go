@@ -32,6 +32,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
 	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 )
 
 type dateParseSettings struct {
@@ -110,7 +111,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
-		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
+		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
@@ -150,6 +151,8 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		// Add realm so that metrics are groupable on a per-realm basis.
 		ctx = observability.WithRealmID(ctx, realm.ID)
+		m := tag.FromContext(ctx)
+		logger.Infow("/api/issue tag.Map in context", "m", m.String())
 
 		// If this realm requires a date but no date was specified, return an error.
 		if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
@@ -328,7 +331,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		if request.Phone != "" && smsProvider != nil {
 			if err := func() error {
-				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
+				defer observability.RecordLatency(&ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 
 				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
