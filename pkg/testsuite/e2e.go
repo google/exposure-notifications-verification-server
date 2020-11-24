@@ -18,13 +18,35 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/sethvargo/go-envconfig"
 )
+
+// E2EConfig represents configurations to run server E2E tests.
+type E2EConfig struct {
+	APIServerURL string           `env:"E2E_APISERVER_URL"`
+	AdminAPIURL  string           `env:"E2E_ADMINAPI_URL"`
+	ProjectID    string           `env:"E2E_PROJECT_ID"`
+	DBConfig     *database.Config `env:",prefix=E2E_"`
+}
+
+// NewE2EConfig returns a new E2E test config.
+func NewE2EConfig(tb testing.TB, ctx context.Context) *E2EConfig {
+	c := &E2EConfig{}
+	sm, err := secrets.SecretManagerFor(ctx, secrets.SecretManagerTypeGoogleSecretManager)
+	if err != nil {
+		tb.Fatalf("unable to connect to secret manager: %v", err)
+	}
+	if err := envconfig.ProcessWith(ctx, c, envconfig.OsLookuper(), secrets.Resolver(sm, &secrets.Config{})); err != nil {
+		tb.Fatalf("Unable to process environment: %v", err)
+	}
+	return c
+}
 
 // E2ESuite contains E2E test configs and other useful data.
 type E2ESuite struct {
-	cfg   *config.E2EConfig
+	cfg   *E2EConfig
 	db    *database.Database
 	realm *database.Realm
 
@@ -43,7 +65,7 @@ func (s *E2ESuite) NewAPIClient(context.Context, testing.TB) (*APIClient, error)
 
 // NewE2ESuite returns an E2E test suite.
 func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
-	cfg := config.NewE2EConfig(tb, ctx)
+	cfg := NewE2EConfig(tb, ctx)
 	db, err := cfg.DBConfig.Load(ctx)
 	if err != nil {
 		tb.Fatalf("failed to connect to database: %v", err)

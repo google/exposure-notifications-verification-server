@@ -17,10 +17,13 @@ package testsuite
 import (
 	"context"
 	"crypto/sha1"
+	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -38,9 +41,121 @@ import (
 	"github.com/mikehelmick/go-chaff"
 )
 
+const (
+	VerificationTokenDuration = time.Second * 2
+	APIKeyCacheDuration       = time.Second * 2
+
+	APISrvPort   = "8080"
+	AdminSrvPort = "8081"
+)
+
+// IntegrationTestConfig represents configurations to run server integration tests.
+type IntegrationTestConfig struct {
+	Observability *observability.Config
+	DBConfig      *database.Config
+
+	APISrvConfig      config.APIServerConfig
+	AdminAPISrvConfig config.AdminAPIServerConfig
+}
+
+func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationTestConfig, *database.Database) {
+	testDatabaseInstance, err := database.NewTestInstance()
+	if err != nil {
+		tb.Fatal(err)
+	}
+	tb.Cleanup(func() {
+		if err := testDatabaseInstance.Close(); err != nil {
+			tb.Fatal(err)
+		}
+	})
+
+	db, dbConfig := testDatabaseInstance.NewDatabase(tb, nil)
+
+	obConfig := &observability.Config{ExporterType: "NOOP"}
+	cacheConfig := cache.Config{Type: "IN_MEMORY"}
+	rlConfig := ratelimit.Config{Type: "NOOP"}
+
+	tmpdir, err := ioutil.TempDir("", "")
+	if err != nil {
+		tb.Fatal(err)
+	}
+	keyConfig := keys.Config{
+		KeyManagerType: "FILESYSTEM",
+		FilesystemRoot: tmpdir,
+	}
+
+	kms, err := keys.KeyManagerFor(ctx, &keyConfig)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	tb.Cleanup(func() {
+		if err := os.RemoveAll(tmpdir); err != nil {
+			tb.Fatal(err)
+		}
+	})
+
+	parent := keys.TestSigningKey(tb, kms)
+	skm, ok := kms.(keys.SigningKeyManager)
+	if !ok {
+		tb.Fatal("KMS doesn't implement interface SigningKeyManager")
+	}
+	keyID, err := skm.CreateKeyVersion(ctx, parent)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	tsConfig := config.TokenSigningConfig{
+		Keys:               keyConfig,
+		TokenSigningKeys:   []string{keyID},
+		TokenSigningKeyIDs: []string{"v1"},
+		TokenIssuer:        "diagnosis-verification-example",
+	}
+
+	csConfig := config.CertificateSigningConfig{
+		Keys:                    keyConfig,
+		PublicKeyCacheDuration:  15 * time.Minute,
+		SignerCacheDuration:     time.Minute,
+		CertificateSigningKey:   keyID,
+		CertificateSigningKeyID: "v1",
+		CertificateIssuer:       "diagnosis-verification-example",
+		CertificateAudience:     "exposure-notifications-server",
+		CertificateDuration:     15 * time.Minute,
+	}
+
+	cfg := IntegrationTestConfig{
+		Observability: obConfig,
+		DBConfig:      dbConfig,
+		APISrvConfig: config.APIServerConfig{
+			Database:                  *dbConfig,
+			Observability:             *obConfig,
+			Cache:                     cacheConfig,
+			DevMode:                   true,
+			Port:                      APISrvPort,
+			APIKeyCacheDuration:       APIKeyCacheDuration,
+			VerificationTokenDuration: VerificationTokenDuration,
+			TokenSigning:              tsConfig,
+			CertificateSigning:        csConfig,
+			RateLimit:                 rlConfig,
+		},
+		AdminAPISrvConfig: config.AdminAPIServerConfig{
+			Database:            *dbConfig,
+			Observability:       *obConfig,
+			Cache:               cacheConfig,
+			DevMode:             true,
+			RateLimit:           rlConfig,
+			Port:                AdminSrvPort,
+			APIKeyCacheDuration: APIKeyCacheDuration,
+			CollisionRetryCount: 6,
+			AllowedSymptomAge:   time.Hour * 336,
+		},
+	}
+
+	return &cfg, db
+}
+
 // IntegrationSuite contains the integration test configs and other useful data.
 type IntegrationSuite struct {
-	cfg *config.IntegrationTestConfig
+	cfg *IntegrationTestConfig
 
 	db    *database.Database
 	realm *database.Realm
@@ -54,7 +169,8 @@ type IntegrationSuite struct {
 // NewIntegrationSuite creates a IntegrationSuite for integration tests.
 func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 	tb.Helper()
-	cfg, db := config.NewIntegrationTestConfig(ctx, tb)
+
+	cfg, db := NewIntegrationTestConfig(ctx, tb)
 	if err := db.Open(ctx); err != nil {
 		tb.Fatalf("failed to connect to database: %v", err)
 	}
