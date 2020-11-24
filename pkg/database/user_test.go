@@ -97,6 +97,124 @@ func TestUserLifecycle(t *testing.T) {
 	}
 }
 
+func TestPurgeUsers(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+
+	email := "purge@example.com"
+	user := User{
+		Email:       email,
+		Name:        "Dr Delete",
+		SystemAdmin: true,
+	}
+
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatalf("error creating user: %v", err)
+	}
+	expectExists(t, db, user.ID)
+
+	// is admin
+	if _, err := db.PurgeUsers(time.Duration(0)); err != nil {
+		t.Fatal(err)
+	}
+	expectExists(t, db, user.ID)
+
+	// Update an attribute
+	user.SystemAdmin = false
+	realm := NewRealmWithDefaults("test")
+	user.AddRealm(realm)
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatal(err)
+	}
+	// has a realm
+	if _, err := db.PurgeUsers(time.Duration(0)); err != nil {
+		t.Fatal(err)
+	}
+
+	user.RemoveRealm(realm)
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatal(err)
+	}
+
+	// not old enough
+	if _, err := db.PurgeUsers(time.Hour); err != nil {
+		t.Fatal(err)
+	}
+	expectExists(t, db, user.ID)
+
+	db.PurgeUsers(time.Duration(0))
+
+	// Find user by ID - Expect deleted
+	{
+		got, err := db.FindUser(user.ID)
+		if err != nil && !IsNotFound(err) {
+			t.Fatalf("expected user to be deleted. got: %v", err)
+		}
+		if got != nil {
+			t.Fatalf("expected user to be deleted. got: %v", got)
+		}
+	}
+}
+
+func TestRemoveRealmUpdatesTime(t *testing.T) {
+	t.Parallel()
+
+	db := NewTestDatabase(t)
+	realm := NewRealmWithDefaults("test")
+
+	email := "purge@example.com"
+	user := User{
+		Email: email,
+		Name:  "Dr Delete",
+	}
+	user.AddRealm(realm)
+
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatalf("error creating user: %v", err)
+	}
+	got, err := db.FindUser(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := got.ID, user.ID; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
+	}
+
+	time.Sleep(time.Second) // in case this executes in under a nanosecond.
+
+	originalTime := got.Model.UpdatedAt
+	user.RemoveRealm(realm)
+	if err := db.SaveUser(&user, System); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err = db.FindUser(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := got.ID, user.ID; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
+	}
+	// Assert that the user time was updated.
+	if originalTime == got.Model.UpdatedAt {
+		t.Errorf("expected user time to be updated. Got %#v", originalTime.Format(time.RFC3339))
+	}
+}
+
+func expectExists(t *testing.T, db *Database, id uint) {
+	got, err := db.FindUser(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := got.ID, id; got != want {
+		t.Errorf("expected %#v to be %#v", got, want)
+	}
+}
+
 func TestUserNotFound(t *testing.T) {
 	t.Parallel()
 

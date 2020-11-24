@@ -44,6 +44,7 @@ type CleanupConfig struct {
 	AuthorizedAppMaxAge time.Duration `env:"AUTHORIZED_APP_MAX_AGE, default=336h"`
 	CleanupPeriod       time.Duration `env:"CLEANUP_PERIOD, default=15m"`
 	MobileAppMaxAge     time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
+	UserPurgeMaxAge     time.Duration `env:"USER_PURGE_MAX_AGE, default=720h"`
 	// VerificationCodeMaxAge is the period in which the full code should be available.
 	// After this time it will be recycled. The code will be zeroed out, but its status persist.
 	VerificationCodeMaxAge time.Duration `env:"VERIFICATION_CODE_MAX_AGE, default=48h"`

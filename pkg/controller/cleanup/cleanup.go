@@ -172,6 +172,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
+		// Users
+		func() {
+			defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "USER")
+			if count, err := c.db.PurgeUsers(c.config.UserPurgeMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge users: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged user entries", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
+
 		// If there are any errors, return them
 		if merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {

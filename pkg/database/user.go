@@ -339,6 +339,21 @@ func (db *Database) DeleteUser(u *User, actor Auditable) error {
 	})
 }
 
+// PurgeUsers will delete users who are not a system admin, not a member of any realms
+// and have not been modified before the expiry time.
+func (db *Database) PurgeUsers(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+	// Delete users who were created/updated before the expiry time.
+	rtn := db.db.Unscoped().
+		Where("users.system_admin = false AND users.created_at < ? AND users.updated_at < ?", deleteBefore, deleteBefore).
+		Where("NOT EXISTS(SELECT 1 FROM user_realms WHERE user_realms.user_id = users.id)"). // delete where no realm association exists.
+		Delete(&User{})
+	return rtn.RowsAffected, rtn.Error
+}
+
 func (db *Database) SaveUser(u *User, actor Auditable) error {
 	if u == nil {
 		return fmt.Errorf("provided user is nil")
