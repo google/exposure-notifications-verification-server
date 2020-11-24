@@ -68,20 +68,21 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		case "":
 			// All events
 		case "0":
-			scopes = append(scopes, database.WithAuditRealmID(0))
 			realm = &database.Realm{
 				Model: gorm.Model{ID: 0},
 				Name:  "System",
 			}
 		default:
-			if id, err := strconv.ParseUint(realmID, 10, 64); err != nil {
-				scopes = append(scopes, database.WithAuditRealmID(uint(id)))
-			}
-
-			if realm, err = c.db.FindRealm(realmID); err != nil {
+			realm, err = c.db.FindRealm(realmID)
+			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
+		}
+
+		// If a specific realm was provided, filter by that realm.
+		if realm != nil {
+			scopes = append(scopes, database.WithAuditRealmID(realm.ID))
 		}
 
 		// List the events
