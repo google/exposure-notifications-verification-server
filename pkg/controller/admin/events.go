@@ -57,16 +57,9 @@ func (c *Controller) HandleEventsShow() http.Handler {
 		scopes = append(scopes, database.WithAuditTime(from, to))
 		realmID := project.TrimSpace(r.FormValue(QueryRealmIDSearch))
 
-		includeTest := r.FormValue(QueryIncludeTest)
-		switch includeTest {
-		case "", "false":
-			// by default, don't show test events
-			scopes = append(scopes, database.WithAuditFromTest(false))
-		case "only":
-			// only test events
-			scopes = append(scopes, database.WithAuditFromTest(true))
-		default:
-			// Any other string shows both test and non-test events
+		includeTest, _ := strconv.ParseBool(r.FormValue(QueryIncludeTest))
+		if !includeTest {
+			scopes = append(scopes, database.WithoutAuditTest())
 		}
 
 		// Add realm filter if applicable
@@ -98,18 +91,17 @@ func (c *Controller) HandleEventsShow() http.Handler {
 			return
 		}
 
-		c.renderEvents(ctx, w, events, paginator, from, to, includeTest, realm)
+		c.renderEvents(ctx, w, events, paginator, from, to, realm)
 	})
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	events []*database.AuditEntry, paginator *pagination.Paginator, from, to, includeTest string, realm *database.Realm) {
+	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["events"] = events
 	m["paginator"] = paginator
 	m[QueryFromSearch] = from
 	m[QueryToSearch] = to
-	m[QueryIncludeTest] = includeTest
 	m["realm"] = realm
 	c.h.RenderHTML(w, "admin/events/index", m)
 }

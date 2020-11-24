@@ -76,10 +76,11 @@ func WithAuditRealmID(r uint) Scope {
 	}
 }
 
-// WithAuditFromTest returns a scope that adds querying for Audit events originating from test.
-func WithAuditFromTest(includeTest bool) Scope {
+// WithoutAuditTest excludes audit entries related to test entries created from
+// SystemTest.
+func WithoutAuditTest() Scope {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("audit_entries.from_test = ?", includeTest)
+		return db.Where("audit_entries.actor_id != ?", SystemTest.AuditID())
 	}
 }
 

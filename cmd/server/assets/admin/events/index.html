@@ -33,14 +33,8 @@
       </div>
 
       <div class="card-body">
-        <form method="GET" action="/admin/events" id="search-form">
-          <!--
-            hidden query to filter on test events values are:
-               "?include_test=false" // Filters out test events. Default if omitted.
-               "?include_test=only" // shows only test events
-               "?include_test=all" // shows all test and non-test events
-           -->
-          <input type="hidden" name="include_test" value="{{if .from_test}}{{.include_test}}{{else}}false{{end}}">
+        <form method="GET" id="search-form">
+          <!-- There's a hidden query param to filter on test `include_test=true` -->
           <div class="input-group">
             <span class="input-group-prepend">
               <select name="realm_id" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">

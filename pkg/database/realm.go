@@ -880,10 +880,6 @@ func (r *Realm) AuditDisplay() string {
 	return r.Name
 }
 
-func (r *Realm) IsTest() bool {
-	return false // Test Realm not yet supported
-}
-
 func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 	if r == nil {
 		return fmt.Errorf("provided realm is nil")

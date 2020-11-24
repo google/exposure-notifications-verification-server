@@ -286,11 +286,6 @@ func (a *MobileApp) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", a.Name, a.OS.Display())
 }
 
-// IsTest returns if this Auditable is a test resource.
-func (a *MobileApp) IsTest() bool {
-	return false // Test MobileApp not yet supported.
-}
-
 func (a *MobileApp) AfterFind(tx *gorm.DB) error {
 	a.URL = stringValue(a.URLPtr)
 	return nil

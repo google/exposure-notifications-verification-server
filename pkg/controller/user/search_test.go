@@ -43,7 +43,6 @@ func TestHandleSearch(t *testing.T) {
 		Name:        "Admin",
 		Realms:      []*database.Realm{realm},
 		AdminRealms: []*database.Realm{realm},
-		TestUser:    true,
 	}
 	if err := harness.Database.SaveUser(admin, database.SystemTest); err != nil {
 		t.Fatal(err)
@@ -66,10 +65,9 @@ func TestHandleSearch(t *testing.T) {
 
 	// Create another user.
 	user := &database.User{
-		Email:    "user@example.com",
-		Name:     "User",
-		Realms:   []*database.Realm{realm},
-		TestUser: true,
+		Email:  "user@example.com",
+		Name:   "User",
+		Realms: []*database.Realm{realm},
 	}
 	if err := harness.Database.SaveUser(user, database.SystemTest); err != nil {
 		t.Fatal(err)

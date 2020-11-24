@@ -134,7 +134,6 @@ func realMain(ctx context.Context) error {
 	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       adminKeyName + suffix,
 		APIKeyType: database.APIKeyTypeAdmin,
-		TestApp:    true,
 	}, database.SystemTest)
 	if err != nil {
 		return fmt.Errorf("error trying to create a new Admin API Key: %w", err)
@@ -156,7 +155,6 @@ func realMain(ctx context.Context) error {
 	deviceKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
 		Name:       deviceKeyName + suffix,
 		APIKeyType: database.APIKeyTypeDevice,
-		TestApp:    true,
 	}, database.SystemTest)
 	if err != nil {
 		return fmt.Errorf("error trying to create a new Device API Key: %w", err)
