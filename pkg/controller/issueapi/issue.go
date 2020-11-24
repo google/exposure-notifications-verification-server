@@ -32,7 +32,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
 	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 )
 
 type dateParseSettings struct {
@@ -151,8 +150,6 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		// Add realm so that metrics are groupable on a per-realm basis.
 		ctx = observability.WithRealmID(ctx, realm.ID)
-		m := tag.FromContext(ctx)
-		logger.Infow("/api/issue tag.Map in context", "m", m.String())
 
 		// If this realm requires a date but no date was specified, return an error.
 		if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
