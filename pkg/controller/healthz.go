@@ -38,7 +38,8 @@ func HandleHealthz(ctx context.Context, cfg *database.Config, h *render.Renderer
 		logger := logging.FromContext(ctx).Named("controller.HandleHealthz")
 
 		params := r.URL.Query()
-		if s := params.Get("service"); s == "database" {
+		switch service := params.Get("service"); service {
+		case "database":
 			if cfg == nil {
 				InternalError(w, r, h, fmt.Errorf("database not configured for health check"))
 				return
@@ -65,6 +66,10 @@ func HandleHealthz(ctx context.Context, cfg *database.Config, h *render.Renderer
 					return
 				}
 			}
+		case "alerts":
+			// TODO(ych): fire a metric and configure an alert
+		default:
+			logger.Warnw("unknown service", "service", service)
 		}
 
 		h.RenderJSON(w, http.StatusOK, map[string]string{"status": "ok"})
