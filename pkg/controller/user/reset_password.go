@@ -68,5 +68,6 @@ func (c *Controller) HandleResetPassword() http.Handler {
 
 		flash.Alert("Successfully sent password reset to %v", user.Email)
 		controller.Back(w, r, c.h)
+		return
 	})
 }

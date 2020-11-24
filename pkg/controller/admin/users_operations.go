@@ -103,6 +103,7 @@ func (c *Controller) HandleSystemAdminCreate() http.Handler {
 
 		flash.Alert("Successfully created system admin '%v'", user.Name)
 		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
+		return
 	})
 }
 
@@ -158,6 +159,7 @@ func (c *Controller) HandleSystemAdminRevoke() http.Handler {
 
 		flash.Alert("Successfully removed %v as a system admin", user.Email)
 		controller.Back(w, r, c.h)
+		return
 	})
 }
 

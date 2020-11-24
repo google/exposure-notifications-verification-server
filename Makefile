@@ -55,7 +55,7 @@ spellcheck:
 
 staticcheck:
 	@command -v staticcheck > /dev/null 2>&1 || go get honnef.co/go/tools/cmd/staticcheck
-	@staticcheck -checks="all" -tests $(GOFMT_FILES)
+	@staticcheck -checks="all,-S1023" -tests $(GOFMT_FILES)
 .PHONY: staticcheck
 
 test:

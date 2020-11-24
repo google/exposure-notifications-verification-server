@@ -69,5 +69,6 @@ func handleCSRFError(ctx context.Context, h *render.Renderer) http.Handler {
 		logger.Debugw("invalid csrf", "reason", reason)
 
 		controller.Unauthorized(w, r, h)
+		return
 	})
 }

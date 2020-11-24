@@ -111,6 +111,7 @@ func (c *Controller) HandleShow(result ResultType) http.Handler {
 		}
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 	})
 }

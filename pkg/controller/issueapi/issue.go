@@ -253,9 +253,9 @@ func (c *Controller) HandleIssue() http.Handler {
 		if realm.AbusePreventionEnabled {
 			key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
 			if err != nil {
-				controller.InternalError(w, r, c.h, err)
 				blame = observability.BlameServer
 				result = observability.ResultError("FAILED_TO_GENERATE_HMAC")
+				controller.InternalError(w, r, c.h, err)
 				return
 			}
 			limit, _, reset, ok, err := c.limiter.Take(ctx, key)

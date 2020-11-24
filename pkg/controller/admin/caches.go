@@ -74,6 +74,7 @@ func (c *Controller) HandleCachesClear() http.Handler {
 
 		flash.Alert("Successfully cleared cache for %s!", item.Name)
 		controller.Back(w, r, c.h)
+		return
 	})
 }
 
