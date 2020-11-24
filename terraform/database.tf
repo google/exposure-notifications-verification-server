@@ -39,7 +39,7 @@ resource "google_sql_database_instance" "db-inst" {
 
     database_flags {
       name  = "pgaudit.log"
-      value = "all"
+      value = "'all'" // CloudSQL quotes this value for some reason
     }
 
     backup_configuration {
