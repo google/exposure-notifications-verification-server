@@ -69,10 +69,11 @@ func WithAuditTime(from, to string) Scope {
 	}
 }
 
-// WithAuditRealmID returns a scope that adds querying for Audit events by realm.
-func WithAuditRealmID(r uint) Scope {
+// WithAuditRealmID returns a scope that adds querying for Audit events by
+// realm. The provided ID is expected to be stringable (int, uint, string).
+func WithAuditRealmID(id uint) Scope {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("audit_entries.realm_id = ?", r)
+		return db.Where("audit_entries.realm_id = ?", id)
 	}
 }
 
