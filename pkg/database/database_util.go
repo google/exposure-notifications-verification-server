@@ -35,6 +35,10 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
+const (
+	defaultPostgresImageRef = "postgres:13-alpine"
+)
+
 var (
 	approxTime = cmp.Options{cmpopts.EquateApproxTime(time.Second)}
 )
@@ -207,7 +211,7 @@ func generateKeys(tb testing.TB, qty, length int) []envconfig.Base64Bytes {
 func postgresRepo(tb testing.TB) (string, string) {
 	postgresImageRef := os.Getenv("CI_POSTGRES_IMAGE")
 	if postgresImageRef == "" {
-		postgresImageRef = "postgres:13-alpine"
+		postgresImageRef = defaultPostgresImageRef
 	}
 
 	parts := strings.SplitN(postgresImageRef, ":", 2)

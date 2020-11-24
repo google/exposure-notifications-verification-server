@@ -32,6 +32,16 @@ resource "google_sql_database_instance" "db-inst" {
       value = var.database_max_connections
     }
 
+    database_flags {
+      name  = "cloudsql.enable_pgaudit"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "pgaudit.log"
+      value = "all"
+    }
+
     backup_configuration {
       enabled    = true
       location   = var.database_backup_location
