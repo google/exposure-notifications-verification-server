@@ -47,6 +47,5 @@ func (c *Controller) HandleSync(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// TODO(whaught): implement this
 		controller.InternalError(w, r, c.h, errors.New("not implemented"))
-		return
 	})
 }
