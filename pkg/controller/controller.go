@@ -142,26 +142,31 @@ func MissingRealm(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 // not exist.
 func MissingAuthorizedApp(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingAuthorizedApp)
+	return
 }
 
 // MissingSession returns an internal error when the session does not exist.
 func MissingSession(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingSession)
+	return
 }
 
 // MissingUser returns an internal error when the user does not exist.
 func MissingUser(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingUser)
+	return
 }
 
 // RedirectToMFA redirects to the MFA registration.
 func RedirectToMFA(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	http.Redirect(w, r, "/login/register-phone", http.StatusSeeOther)
+	return
 }
 
 // RedirectToChangePassword redirects to the password reset page.
 func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	http.Redirect(w, r, "/login/change-password", http.StatusSeeOther)
+	return
 }
 
 func prefixInList(list []string, prefix string) bool {

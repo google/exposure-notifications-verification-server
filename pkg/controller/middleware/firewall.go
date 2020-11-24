@@ -94,6 +94,7 @@ func ProcessFirewall(h *render.Renderer, typ string) mux.MiddlewareFunc {
 
 			logger.Errorw("ip is not in an allowed cidr block")
 			controller.Unauthorized(w, r, h)
+			return
 		})
 	}
 }

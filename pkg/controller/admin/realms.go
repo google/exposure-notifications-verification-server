@@ -277,6 +277,7 @@ func (c *Controller) HandleRealmsAdd() http.Handler {
 
 		flash.Alert("Successfully added %q to %q", user.Name, realm.Name)
 		controller.Back(w, r, c.h)
+		return
 	})
 }
 
@@ -326,6 +327,7 @@ func (c *Controller) HandleRealmsRemove() http.Handler {
 		}
 		flash.Alert("Successfully removed %q from %q", user.Name, realm.Name)
 		controller.Back(w, r, c.h)
+		return
 	})
 }
 
@@ -364,5 +366,6 @@ func (c *Controller) HandleRealmsSelectAndAdmin() http.Handler {
 
 		flash.Error("User is not admin of %q", realm.Name)
 		controller.Back(w, r, c.h)
+		return
 	})
 }

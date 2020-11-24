@@ -55,6 +55,7 @@ func (c *Controller) HandleShow() http.Handler {
 
 			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
 				controller.InternalError(w, r, c.h, err)
+				return
 			}
 			return
 		}
@@ -67,6 +68,7 @@ func (c *Controller) HandleShow() http.Handler {
 
 			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
 				controller.InternalError(w, r, c.h, err)
+				return
 			}
 			return
 		}

@@ -81,6 +81,7 @@ func (c *Controller) HandleExpirePage() http.Handler {
 			flash.Error("Failed to expire code: %v.", apiErr.Error)
 			if err := c.renderStatus(ctx, w, realm, currentUser, code); err != nil {
 				controller.InternalError(w, r, c.h, err)
+				return
 			}
 			return
 		}

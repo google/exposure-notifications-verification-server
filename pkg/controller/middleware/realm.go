@@ -122,6 +122,7 @@ func RequireRealm(h *render.Renderer) mux.MiddlewareFunc {
 
 			if passwordRedirectRequired(ctx, currentUser, realm) {
 				controller.RedirectToChangePassword(w, r, h)
+				return
 			}
 
 			next.ServeHTTP(w, r)
@@ -163,6 +164,7 @@ func RequireRealmAdmin(h *render.Renderer) mux.MiddlewareFunc {
 
 			if passwordRedirectRequired(ctx, currentUser, realm) {
 				controller.RedirectToChangePassword(w, r, h)
+				return
 			}
 
 			next.ServeHTTP(w, r)

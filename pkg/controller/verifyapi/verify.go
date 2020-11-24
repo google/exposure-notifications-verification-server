@@ -56,9 +56,9 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
-			controller.MissingAuthorizedApp(w, r, c.h)
 			blame = observability.BlameClient
 			result = observability.ResultError("MISSING_AUTHORIZED_APP")
+			controller.MissingAuthorizedApp(w, r, c.h)
 			return
 		}
 
@@ -67,9 +67,10 @@ func (c *Controller) HandleVerify() http.Handler {
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			logger.Errorw("bad request", "error", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			blame = observability.BlameClient
 			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
 		}
 
@@ -77,9 +78,10 @@ func (c *Controller) HandleVerify() http.Handler {
 		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.ActiveKey())
 		if err != nil {
 			logger.Errorw("failed to get signer", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			blame = observability.BlameServer
 			result = observability.ResultError("FAILED_TO_GET_SIGNER")
+
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
 		}
 
@@ -87,9 +89,10 @@ func (c *Controller) HandleVerify() http.Handler {
 		acceptTypes, err := request.GetAcceptedTestTypes()
 		if err != nil {
 			logger.Errorf("invalid accept test types", "error", err)
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			blame = observability.BlameClient
 			result = observability.ResultError("INVALID_ACCEPT_TEST_TYPES")
+
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			return
 		}
 
@@ -100,23 +103,27 @@ func (c *Controller) HandleVerify() http.Handler {
 			blame = observability.BlameClient
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
 				result = observability.ResultError("VERIFICATION_CODE_EXPIRED")
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
+				return
 			case errors.Is(err, database.ErrVerificationCodeUsed):
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 				result = observability.ResultError("VERIFICATION_CODE_INVALID")
-			case errors.Is(err, database.ErrVerificationCodeNotFound):
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
+				return
+			case errors.Is(err, database.ErrVerificationCodeNotFound):
 				result = observability.ResultError("VERIFICATION_CODE_NOT_FOUND")
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
+				return
 			case errors.Is(err, database.ErrUnsupportedTestType):
-				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 				result = observability.ResultError("VERIFICATION_CODE_UNSUPPORTED_TEST_TYPE")
+				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
+				return
 			default:
 				logger.Errorw("failed to issue verification token", "error", err)
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 				result = observability.ResultError("UNKNOWN_ERROR")
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
+				return
 			}
-			return
 		}
 
 		subject := verificationToken.Subject()
