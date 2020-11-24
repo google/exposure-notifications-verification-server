@@ -28,7 +28,7 @@ import (
 
 var cacheTimeout = 5 * time.Minute
 
-// ResultType specfies which type of renderer you want.
+// ResultType specifies which type of renderer you want.
 type ResultType int
 
 const (
@@ -84,18 +84,21 @@ func (c *Controller) HandleShow(result ResultType) http.Handler {
 		realm := controller.RealmFromContext(ctx)
 		if realm == nil {
 			controller.MissingRealm(w, r, c.h)
+			return
 		}
 
 		// Get the realm stats.
 		stats, err := c.getRealmStats(ctx, realm, now, past)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		// Also get the per-user stats.
 		userStats, err := c.getUserStats(ctx, realm, now, past)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		switch result {
