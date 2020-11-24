@@ -37,9 +37,9 @@ variable "database_tier" {
 
 variable "database_version" {
   type    = string
-  default = "POSTGRES_12"
+  default = "POSTGRES_13"
 
-  description = "Version of the database to use. Must be at least 12 or higher."
+  description = "Version of the database to use. Must be at least 13 or higher."
 }
 
 variable "database_disk_size_gb" {
@@ -54,11 +54,6 @@ variable "database_max_connections" {
   default = 100000
 
   description = "Maximum number of allowed connections. If you change to a smaller instance size, you must lower this number."
-}
-
-variable "database_name" {
-  type    = string
-  default = "en-verification"
 }
 
 variable "database_backup_location" {

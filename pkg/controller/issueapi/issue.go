@@ -98,13 +98,19 @@ func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, e
 
 func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c.config.IsMaintenanceMode() {
+			c.h.RenderJSON(w, http.StatusTooManyRequests,
+				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+			return
+		}
+
 		ctx := observability.WithBuildInfo(r.Context())
 
 		logger := logging.FromContext(ctx).Named("issueapi.HandleIssue")
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
-		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
+		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
@@ -322,7 +328,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		if request.Phone != "" && smsProvider != nil {
 			if err := func() error {
-				defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &blame, &result)
+				defer observability.RecordLatency(&ctx, time.Now(), mSMSLatencyMs, &blame, &result)
 				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 
 				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {

@@ -115,13 +115,6 @@
 
   <script type="text/javascript">
     let total = 0;
-    // Common error codes which should cancel the whole upload.
-    let stopUploadingCodes = [
-      '429', // too many requests
-      '403', // forbidden
-      '404', // not-found
-      '503', // unavailable
-    ];
 
     $(function() {
       let $form = $('#form');
@@ -183,7 +176,7 @@
         $progressDiv.removeClass('d-none');
 
         if ($rememberCode.is(':checked')) {
-          setCookie('retryCode',$retryCode.val(),14);
+          setCookie('retryCode',$retryCode.val(),1);
         } else {
           setCookie('retryCode','',-1);
         }
@@ -208,6 +201,7 @@
           let batch = [];
           total = 0;
           $tableBody.empty();
+
           for (let i = parseInt($startAt.val()); i < rows.length && !cancelUpload; i++) {
             // Clear batch that was just uploaded.
             if (batch.length >= batchSize) {
@@ -228,12 +222,7 @@
                 $tableBody.append(row);
               }
 
-              await uploadBatch(batch).catch(err => {
-                if (err && stopUploadingCodes.includes(err.status)) {
-                  flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
-                  cancelUpload = true;
-                }
-              });
+              cancelUpload = await uploadWithRetries(batch, uploadBatch);
 
               if (cancelUpload) {
                 if (total > 0) {

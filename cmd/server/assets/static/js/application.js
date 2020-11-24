@@ -129,7 +129,7 @@ $(function() {
       minutes = `0${minutes}`;
     }
 
-    $this.html(`${year}-${month}-${day} ${hours}:${minutes} ${ampm}`);
+    $this.text(`${year}-${month}-${day} ${hours}:${minutes} ${ampm}`);
   });
 
   // Toast shows alerts/flash messages.
@@ -217,7 +217,7 @@ $(function() {
       // Create the text next to the icon.
       let $headerText = $("<strong>");
       $headerText.addClass("mr-auto");
-      $headerText.html(headerText);
+      $headerText.text(headerText);
       $header.append($headerText);
 
       // Create the close button.
@@ -235,7 +235,7 @@ $(function() {
       // Create the body.
       let $body = $("<div>");
       $body.addClass("toast-body");
-      $body.html(message);
+      $body.text(message);
 
       // Add the body to the toast.
       $toast.append($body);
@@ -252,7 +252,6 @@ $(function() {
 
   window.flash = flash;
 });
-
 
 function setCookie(cname, cvalue, exdays) {
   let d = new Date();
@@ -274,4 +273,346 @@ function getCookie(cname) {
     }
   }
   return "";
+}
+
+// Common error codes which should cancel the whole upload.
+const stopUploadingCodes = [
+  '403', // forbidden
+  '404', // not-found
+  '503', // unavailable
+];
+
+const stopUploadingEnum = [
+  'maintenance_mode',
+];
+
+async function uploadWithRetries(batch, uploadFn) {
+  let cancel = false;
+  for (let retries = 3; retries > 0; retries--) {
+    await uploadFn(batch).then(
+      () => { retries = 0; }).catch(
+        async function(err) {
+          if (!err) {
+            return;
+          }
+          if (err.responseJSON && stopUploadingEnum.includes(err.responseJSON.errorCode)) {
+            flash.alert("Status " + err.responseJSON.errorCode + " detected. Canceling remaining upload.");
+            cancel = true;
+            retries = 0;
+          } else if (stopUploadingCodes.includes(err.status)) {
+            flash.alert("Code " + err.status + " detected. Canceling remaining upload.");
+            cancel = true;
+            retries = 0;
+          } else {
+            // Throttling
+            let after = err.getResponseHeader("retry-after");
+            if (after) {
+              let sleep = new Date(after) - new Date();
+              if (sleep > 0) {
+                flash.alert("Rate limited. Sleeping for " + ((sleep + 100) / 1000) + "s.");
+                await new Promise(r => setTimeout(r, sleep + 100));
+              }
+            } else {
+              retries = 0;
+            }
+          }
+        });
+  }
+  return cancel;
+}
+
+function checkPasswordValid(pwd, retype, requirements) {
+  let valid = true;
+
+  if (pwd != retype) {
+    decorateValid($('#retyped'));
+    valid = false;
+  } else {
+    decorateInvalid($('#retyped'));
+  }
+
+  if (requirements) {
+    let upper = 0;
+    let lower = 0;
+    let digit = 0;
+    let special = 0;
+    let specialPattern = new RegExp(/[~`!#$%\^&*+=\-\[\]\\';,/{}|\\":<>\?]/);
+    for (let i = 0; i < pwd.length; i++) {
+      let c = pwd.charAt(i);
+      if (!isNaN(parseInt(c, 10))) {
+        digit++;
+      } else if (specialPattern.test(c)) {
+        special++;
+      } else if (c == c.toUpperCase()) {
+        upper++;
+      } else if (c == c.toLowerCase()) {
+        lower++;
+      }
+    }
+
+    if (pwd.length < requirements.Length) {
+      decorateValid($('#length-req'));
+      valid = false;
+    } else {
+      decorateInvalid($('#length-req'));
+    }
+
+    if (upper < requirements.Uppercase) {
+      decorateValid($('#upper-req'));
+      valid = false;
+    } else {
+      decorateInvalid($('#upper-req'));
+    }
+
+    if (lower < requirements.Lowercase) {
+      decorateValid($('#lower-req'));
+      valid = false;
+    } else {
+      decorateInvalid($('#lower-req'));
+    }
+
+    if (digit < requirements.Number) {
+      decorateValid($('#num-req'));
+      valid = false;
+    } else {
+      decorateInvalid($('#num-req'));
+    }
+
+    if (special < requirements.Special) {
+      decorateValid($('#special-req'));
+      valid = false;
+    } else {
+      decorateInvalid($('#special-req'));
+    }
+  }
+
+  return valid;
+}
+
+const errClass = "oi oi-circle-x pr-1";
+const checkClass = "oi oi-circle-check pr-1";
+
+function decorateValid($element) {
+  $element.find("#icon").attr("class", errClass);
+  $element.addClass("text-danger");
+  $element.removeClass("text-muted");
+}
+
+function decorateInvalid($element) {
+  $element.find("#icon").attr("class", checkClass);
+  $element.addClass("text-muted");
+  $element.removeClass("text-danger");
+}
+
+function loginScripts(hasCurrentUser, onLoginSuccess) {
+  let $loginDiv = $('#login-div');
+  let $submit = $('#submit');
+  let $email = $('#email');
+  let $password = $('#password');
+
+  let $pinDiv = $('#sms-code-div');
+  let $pinText = $('#code-text');
+  let $pinClose = $('#sms-code-close');
+  let $pinForm = $('#sms-code-form');
+  let $pin = $('#sms-code');
+  let $submitPin = $('#sms-code-submit');
+  let $resendPin = $('#sms-code-resend');
+  let $smsChange = $('#sms-change');
+  let $retype = $('#retype');
+
+  let $registeredDiv = $('#registered-div');
+  let $factors = $('#factors');
+
+  let verId = "";
+  let selectedFactorIndex = 0;
+
+  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+    'submit', {
+    'size': 'invisible',
+    'callback': (response) => onSignInSubmit(),
+  });
+
+  window.recaptchaVerifier.render()
+    .then(function(widgetId) {
+      window.recaptchaWidgetId = widgetId;
+    });
+
+  $pinForm.on('submit', function(event) {
+    event.preventDefault();
+
+    // Disable the submit button so we only attempt once.
+    $submitPin.prop('disabled', true);
+
+    // Ask user for the SMS verification code.
+    let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
+    let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+    // Complete sign-in.
+    resolver.resolveSignIn(multiFactorAssertion)
+      .then(function(userCredential) {
+        onLoginSuccess();
+      }).catch(function(err) {
+        flash.clear();
+        flash.error(err.message);
+        grecaptcha.reset(window.recaptchaWidgetId);
+        $submitPin.prop('disabled', false);
+      });
+  });
+
+  $pinClose.on('click', function(event) {
+    grecaptcha.reset(window.recaptchaWidgetId);
+    event.preventDefault();
+    $submit.prop('disabled', false);
+    $factors.empty();
+    $loginDiv.show();
+    $pinDiv.addClass('d-none');
+  });
+
+  $resendPin.on('click', function(event) {
+    event.preventDefault();
+    resendPin();
+  });
+
+  $smsChange.on('click', function(event) {
+    event.preventDefault();
+    $pinDiv.addClass('d-none');
+    $registeredDiv.removeClass('d-none');
+  });
+
+  function onSignInSubmit() {
+    // Disable the submit button so we only attempt once.
+    $submit.prop('disabled', true);
+
+    let signInPromise;
+    if (hasCurrentUser) {
+      let credentials = firebase.auth.EmailAuthProvider.credential($email.val().trim(), $password.val());
+      signInPromise = firebase.auth().currentUser.reauthenticateWithCredential(credentials);
+    } else {
+      signInPromise = firebase.auth().signInWithEmailAndPassword($email.val(), $password.val());
+    }
+
+    signInPromise.then(function(userCredential) {
+      onLoginSuccess();
+    }).catch(function(error) {
+      if (error.code == 'auth/multi-factor-auth-required') {
+        resolver = error.resolver;
+        populatePinText(resolver.hints);
+        populateFactors(resolver.hints);
+        if (resolver.hints[selectedFactorIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
+          let phoneInfoOptions = {
+            multiFactorHint: resolver.hints[selectedFactorIndex],
+            session: resolver.session
+          };
+          let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+          let appVerifier = window.recaptchaVerifier;
+          return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, appVerifier)
+            .then(function(verificationId) {
+              verId = verificationId;
+              setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+              $submitPin.prop('disabled', false);
+              $loginDiv.hide();
+              $pinDiv.removeClass('d-none');
+            }).catch(function(error) {
+              grecaptcha.reset(window.recaptchaWidgetId);
+              flash.clear();
+              flash.error(error);
+              $submit.prop('disabled', false);
+            });
+        } else {
+          flash.clear();
+          flash.error('Unsupported 2nd factor authentication type.');
+        }
+      } else if (error.code == 'auth/too-many-requests') {
+        grecaptcha.reset(window.recaptchaWidgetId);
+        flash.clear();
+        flash.error(error.message);
+        $submit.prop('disabled', false);
+      } else {
+        grecaptcha.reset(window.recaptchaWidgetId);
+        console.error(error);
+        flash.clear();
+        flash.error("Sign-in failed. Please try again.");
+        $submit.prop('disabled', false);
+      }
+    });
+  }
+
+  function resendPin() {
+    $resendPin.addClass('disabled');
+    setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+
+    let phoneInfoOptions = {
+      multiFactorHint: resolver.hints[selectedFactorIndex],
+      session: resolver.session
+    };
+    populatePinText(resolver.hints);
+    let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+    let appVerifier = window.recaptchaVerifier;
+    phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, appVerifier)
+      .then(function(verificationId) {
+        verId = verificationId;
+      }).catch(function(error) {
+        grecaptcha.reset(window.recaptchaWidgetId);
+        flash.clear();
+        flash.error(error.message);
+        $submit.prop('disabled', false);
+      });
+  }
+
+  function populatePinText(hints) {
+    let $displayName = $('<span/>');
+    $displayName.addClass('text-info');
+    $displayName.text(hints[selectedFactorIndex].displayName);
+
+    $pinText.empty();
+    $pinText.text('Code sent to ');
+    $pinText.append($displayName);
+  }
+
+  function populateFactors(hints) {
+    if (hints.length > 0) {
+      for (i = 0; i < hints.length; i++) {
+        appendAuthFactor(hints[i], i);
+      }
+    }
+    if (hints.length > 1) {
+      $smsChange.removeClass("d-none");
+    }
+  }
+
+  function appendAuthFactor(factor, i) {
+    let $li = $('<a/>');
+    $li.addClass('list-group-item list-group-item-action');
+    if (i == 0) {
+      $li.addClass('bg-light');
+      $li.attr('id', 'selected-factor');
+    }
+    let $row = $('<div/>').text(factor.displayName);
+    $li.append($row);
+
+    let $icon = $('<span/>');
+    $icon.addClass('oi oi-phone mr-1');
+    $icon.attr('aria-hidden', 'true');
+    $row.prepend($icon);
+
+    let $time = $('<small/>');
+    $time.addClass('row text-muted ml-1');
+    $time.text(`Phone number: ${factor.phoneNumber}`);
+    $row.append($time);
+
+    $li.on('click', function(event) {
+      $registeredDiv.addClass('d-none');
+      $pinDiv.removeClass('d-none');
+      if (selectedFactorIndex == i) {
+        return;
+      }
+
+      $('#selected-factor').removeClass('bg-light');
+      $li.addClass('bg-light');
+      $li.attr('id', 'selected-factor');
+      selectedFactorIndex = i;
+      resendPin();
+    });
+
+    $factors.append($li);
+  }
 }

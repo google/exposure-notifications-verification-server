@@ -420,13 +420,17 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_user_id").Error; err != nil {
-					return err
+				if tx.NewScope(&VerificationCode{}).HasColumn("issuing_user_id") {
+					if err := tx.Model(&VerificationCode{}).DropColumn("issuing_user_id").Error; err != nil {
+						return err
+					}
 				}
-				if err := tx.Model(&VerificationCode{}).DropColumn("issuing_app_id").Error; err != nil {
-					return err
+				if tx.NewScope(&VerificationCode{}).HasColumn("issuing_app_id") {
+					if err := tx.Model(&VerificationCode{}).DropColumn("issuing_app_id").Error; err != nil {
+						return err
+					}
 				}
-				if err := tx.DropTable(&UserStats{}).Error; err != nil {
+				if err := tx.DropTableIfExists(&UserStats{}).Error; err != nil {
 					return err
 				}
 				return nil
@@ -1674,7 +1678,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				logger.Debugw("db migrations: adding allow_bulk_upload to realms")
 
 				sqls := []string{
-					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload bool DEFAULT false`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload BOOL`,
+					`UPDATE realms SET allow_bulk_upload = FALSE WHERE allow_bulk_upload IS NULL`,
+					`ALTER TABLE realms ALTER COLUMN allow_bulk_upload SET DEFAULT FALSE`,
 					`ALTER TABLE realms ALTER COLUMN allow_bulk_upload SET NOT NULL`,
 				}
 
@@ -1687,6 +1693,15 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS allow_bulk_upload").Error
+			},
+		},
+		{
+			ID: "00068-EnablePGAudit",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.Exec(`CREATE EXTENSION pgaudit`).Error; err != nil {
+					logger.Warnw("failed to enable pgaudit", "error", err)
+				}
+				return nil
 			},
 		},
 	})

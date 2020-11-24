@@ -26,7 +26,7 @@ msgid "nav.bulk-issue-codes"
 msgstr "Crear códigos en lote"
 
 msgid "nav.check-code-status"
-msgstr "Verificar estado código"
+msgstr "Estado de código"
 
 msgid "nav.api-keys"
 msgstr "Claves API"
@@ -38,7 +38,7 @@ msgid "nav.event-log"
 msgstr "Registro de eventos"
 
 msgid "nav.signing-keys"
-msgstr "Firma de claves"
+msgstr "Llaves para firmar"
 
 msgid "nav.statistics"
 msgstr "Estadísticas"
@@ -47,4 +47,4 @@ msgid "nav.users"
 msgstr "Personas"
 
 msgid "nav.settings"
-msgstr "Configuraciones"
+msgstr "Configuración"

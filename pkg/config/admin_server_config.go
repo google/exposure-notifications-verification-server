@@ -40,6 +40,9 @@ type AdminAPIServerConfig struct {
 	// production environments.
 	DevMode bool `env:"DEV_MODE"`
 
+	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
+	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
+
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
 
@@ -47,7 +50,7 @@ type AdminAPIServerConfig struct {
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
-	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=660h"` // 660h is 28 days.
+	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=672h"` // 672h is 28 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
 	// For EN Express, the link will be
@@ -108,4 +111,8 @@ func (c *AdminAPIServerConfig) GetRateLimitConfig() *ratelimit.Config {
 
 func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
+}
+
+func (c *AdminAPIServerConfig) IsMaintenanceMode() bool {
+	return c.MaintenanceMode
 }

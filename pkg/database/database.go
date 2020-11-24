@@ -161,6 +161,10 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 		return fmt.Errorf("failed to create database connection")
 	}
 
+	// Set connection configuration.
+	rawSQL.SetConnMaxLifetime(c.MaxConnectionLifetime)
+	rawSQL.SetConnMaxIdleTime(c.MaxConnectionIdleTime)
+
 	var rawDB *gorm.DB
 	if err := withRetries(ctx, func(ctx context.Context) error {
 		var err error
@@ -177,10 +181,6 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	if rawDB == nil {
 		return fmt.Errorf("failed to initialize gorm")
 	}
-
-	// Set connection configuration.
-	rawDB.DB().SetConnMaxLifetime(c.MaxConnectionLifetime)
-	rawDB.DB().SetConnMaxIdleTime(c.MaxConnectionIdleTime)
 
 	// Log SQL statements in debug mode.
 	if c.Debug {
@@ -571,8 +571,8 @@ func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) 
 	return field, typ, true
 }
 
-// withRetries is a helper for creating a fibonacci backoff with capped retries,
-// useful for retrying database queries.
+// withRetries is a helper for creating a backoff with capped retries, useful
+// for retrying database queries.
 func withRetries(ctx context.Context, f retry.RetryFunc) error {
 	b, err := retry.NewConstant(500 * time.Millisecond)
 	if err != nil {

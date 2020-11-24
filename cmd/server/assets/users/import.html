@@ -166,7 +166,7 @@
 
             // If we've hit the batch limit or end of file, upload it.
             if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
-              await uploadBatch(batch, checked).catch(err => { });
+              cancelUpload = await uploadWithRetries(batch, b => uploadBatch(b, checked));
               if (cancelUpload) {
                 flash.warning("Successfully created " + totalUsersCreated + " new users."
                   + (rows.length - i) + " remaining.");

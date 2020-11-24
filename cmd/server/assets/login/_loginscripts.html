@@ -117,105 +117,16 @@
 </p>
 {{end}}
 
-{{define "login/pwd-validate-js"}}
-  let $retyped = $('#retyped');
+{{define "login/requirements"}}
   {{- if .requirements.HasRequirements}}
-  let $lenReq = $('#length-req');
-  let $upperReq = $('#upper-req');
-  let $lowerReq = $('#lower-req');
-  let $numReq = $('#num-req');
-  let $specialReq = $('#special-req');
+  let requirements = {
+    'Length': {{.requirements.Length}},
+    'Uppercase': {{.requirements.Uppercase}},
+    'Lowercase': {{.requirements.Lowercase}},
+    'Number': {{.requirements.Number}},
+    'Special': {{.requirements.Special}},
+  };
+  {{else}}
+  let requirements = null;
   {{end}}
-
-  function checkPasswordValid(pwd) {
-    {{if .requirements.HasRequirements}}
-    let upper = 0;
-    let lower = 0;
-    let digit = 0;
-    let special = 0;
-    let specialPattern = new RegExp(/[~`!#$%\^&*+=\-\[\]\\';,/{}|\\":<>\?]/);
-    for (let i = 0; i < pwd.length; i++) {
-      let c = pwd.charAt(i);
-      if (!isNaN(parseInt(c, 10))) {
-        digit++;
-      } else if (specialPattern.test(c)) {
-        special++;
-      } else if (c == c.toUpperCase()) {
-        upper++;
-      } else if (c == c.toLowerCase()) {
-        lower++;
-      }
-    }
-
-    let errClass = "oi oi-circle-x pr-1";
-    let checkClass = "oi oi-circle-check pr-1";
-    let valid = true
-
-    {{if gt .requirements.Length 0}}
-    if (pwd.length < {{.requirements.Length}}) {
-      $lenReq.find("#icon").attr("class", errClass)
-      $lenReq.addClass("text-danger");
-      valid = false;
-    } else {
-      $lenReq.find("#icon").attr("class", checkClass)
-      $lenReq.addClass("text-muted");
-    }
-    {{end}}
-
-    {{if gt .requirements.Uppercase 0}}
-    if (upper < {{.requirements.Uppercase}}) {
-      $upperReq.find("#icon").attr("class", errClass);
-      $upperReq.addClass("text-danger");
-      valid = false;
-    } else {
-      $upperReq.find("#icon").attr("class", checkClass);
-      $upperReq.addClass("text-muted");
-    }
-    {{end}}
-
-    {{if gt .requirements.Lowercase 0}}
-    if (lower < {{.requirements.Lowercase}}) {
-      $lowerReq.find("#icon").attr("class", errClass);
-      $lowerReq.addClass("text-danger");
-      valid = false;
-    } else {
-      $lowerReq.find("#icon").attr("class", checkClass);
-      $lowerReq.addClass("text-muted");
-    }
-    {{end}}
-
-    {{if gt .requirements.Number 0}}
-    if (digit < {{.requirements.Number}}) {
-      $numReq.find("#icon").attr("class", errClass);
-      $numReq.addClass("text-danger");
-      valid = false;
-    } else {
-      $numReq.find("#icon").attr("class", checkClass);
-      $numReq.addClass("text-muted");
-    }
-    {{end}}
-
-    {{if gt .requirements.Special 0}}
-    if (special < {{.requirements.Special}}) {
-      $specialReq.find("#icon").attr("class", errClass);
-      $specialReq.addClass("text-danger");
-      valid = false;
-    } else {
-      $specialReq.find("#icon").attr("class", checkClass);
-      $specialReq.addClass("text-muted");
-    }
-    {{end}}
-
-    if (pwd != $retype.val()) {
-      $retyped.find("#icon").attr("class", errClass);
-      $retyped.addClass("text-danger");
-      valid = false;
-    } else {
-      $retyped.find("#icon").attr("class", checkClass);
-      $retyped.addClass("text-muted");
-    }
-
-    {{end}}
-    return valid;
-  }
 {{end}}

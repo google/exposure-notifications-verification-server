@@ -65,6 +65,7 @@ func Server(
 	sessions.Options.MaxAge = int(cfg.SessionDuration.Seconds())
 	sessions.Options.Secure = !cfg.DevMode
 	sessions.Options.SameSite = http.SameSiteStrictMode
+	sessions.Options.HttpOnly = true
 
 	// Create the router
 	r := mux.NewRouter()

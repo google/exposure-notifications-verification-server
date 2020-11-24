@@ -12,12 +12,6 @@ variable "verification-server-project" {
   description = "GCP project for verification server. Required."
 }
 
-variable "notification-email" {
-  type        = string
-  default     = "nobody@example.com"
-  description = "Email address for alerts to go to."
-}
-
 variable "server_hosts" {
   type        = list(string)
   description = "List of domains upon which the web ui is served."
@@ -44,6 +38,25 @@ variable "https-forwarding-rule" {
   default     = "verification-server-https"
   description = "GCP Cloud Load Balancer forwarding rule name."
 }
+
+variable "alert-notification-channels" {
+  type = map
+  default = {
+    email = {
+      labels = {
+        email_address = "nobody@example.com"
+      }
+    }
+    slack = {
+      labels = {
+        channel_name = "#foo"
+        auth_token   = "abr"
+      }
+    }
+  }
+  description = "Notification channels"
+}
+
 
 terraform {
   required_version = ">= 0.13"

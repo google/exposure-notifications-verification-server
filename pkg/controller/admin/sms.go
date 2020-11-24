@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
@@ -67,7 +68,9 @@ func (c *Controller) HandleSMSUpdate() http.Handler {
 		// Update
 		smsConfig.ProviderType = sms.ProviderTypeTwilio
 		smsConfig.TwilioAccountSid = form.TwilioAccountSid
-		smsConfig.TwilioAuthToken = form.TwilioAuthToken
+		if form.TwilioAuthToken != project.PasswordSentinel {
+			smsConfig.TwilioAuthToken = form.TwilioAuthToken
+		}
 		smsConfig.TwilioFromNumber = form.TwilioFromNumber
 		if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 			flash.Error("Failed to save system SMS config: %v", err)

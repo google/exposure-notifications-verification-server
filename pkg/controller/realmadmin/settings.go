@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
@@ -265,7 +266,9 @@ func (c *Controller) HandleSettings() http.Handler {
 				// record.
 				smsConfig.ProviderType = sms.ProviderTypeTwilio
 				smsConfig.TwilioAccountSid = form.TwilioAccountSid
-				smsConfig.TwilioAuthToken = form.TwilioAuthToken
+				if form.TwilioAuthToken != project.PasswordSentinel {
+					smsConfig.TwilioAuthToken = form.TwilioAuthToken
+				}
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
 
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
@@ -305,7 +308,9 @@ func (c *Controller) HandleSettings() http.Handler {
 				// record.
 				emailConfig.ProviderType = email.ProviderTypeSMTP
 				emailConfig.SMTPAccount = form.SMTPAccount
-				emailConfig.SMTPPassword = form.SMTPPassword
+				if form.SMTPPassword != project.PasswordSentinel {
+					emailConfig.SMTPPassword = form.SMTPPassword
+				}
 				emailConfig.SMTPHost = form.SMTPHost
 				emailConfig.SMTPPort = form.SMTPPort
 

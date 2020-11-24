@@ -63,25 +63,12 @@
           </div>
 
           {{template "login/pindiv" .}}
-
         </div>
       </div>
     </div>
-
-    <div id="recaptcha-container" class="center-block"></div>
   </main>
 
   <script type="text/javascript">
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-      'recaptcha-container',
-      { 'size': 'invisible' }
-    );
-
-    recaptchaVerifier.render()
-      .then(function(widgetId) {
-        window.recaptchaWidgetId = widgetId;
-      });
-
     $(function() {
       let $registerDiv = $('#register-div');
       let $displayName = $('#display');
@@ -101,6 +88,18 @@
       let $factors = $('#factors');
 
       let verId = ""
+
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        'submit-register', {
+          'size': 'invisible',
+          'callback': (response) => onSignInSubmit(),
+        },
+      );
+
+      window.recaptchaVerifier.render()
+        .then(function(widgetId) {
+          window.recaptchaWidgetId = widgetId;
+        });
 
       // Initialize pretty phone
       let phone = document.querySelector('#phone');
@@ -194,38 +193,6 @@
           });
       }
 
-      $registerForm.on('submit', function(event) {
-        event.preventDefault();
-
-        // Disable the submit button so we only attempt once.
-        $submit.prop('disabled', true);
-
-        let user = firebase.auth().currentUser
-        user.multiFactor.getSession().then(function(multiFactorSession) {
-          // Specify the phone number and pass the MFA session.
-          let phoneInfoOptions = {
-            phoneNumber: iti.getNumber(),
-            session: multiFactorSession
-          };
-          let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-          // Send SMS verification code.
-          return phoneAuthProvider.verifyPhoneNumber(
-            phoneInfoOptions, window.recaptchaVerifier);
-        }).then(function(verificationId) {
-          verId = verificationId
-          setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
-          $registerDiv.hide();
-          $pinDiv.removeClass('d-none');
-        }).catch(function(err) {
-          if (err.code == 'auth/requires-recent-login') {
-              window.location.assign('/login?redir=login/register-phone');
-            }
-          flash.clear();
-          flash.error(err.message);
-          $submit.prop('disabled', false);
-        });
-      });
-
       $pinForm.on('submit', function(event) {
         event.preventDefault();
 
@@ -258,11 +225,13 @@
           flash.error(err.message);
           $submitPin.prop('disabled', false);
         }).then(function() {
+          grecaptcha.reset(window.recaptchaWidgetId);
           $submit.prop('disabled', false);
         });
       });
 
       $pinClose.on('click', function(event) {
+        grecaptcha.reset(window.recaptchaWidgetId);
         $submit.prop('disabled', false);
         $registerDiv.show();
         $pinDiv.addClass('d-none');
@@ -277,15 +246,50 @@
           session: resolver.session
         };
         let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-        phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+        let appVerifier = window.recaptchaVerifier;
+        phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, appVerifier)
           .then(function(verificationId) {
             verId = verificationId;
-          }).catch(function(error) {
+          }).catch(function(err) {
+            grecaptcha.reset(window.recaptchaWidgetId);
             flash.clear();
-            flash.error(error.message);
+            flash.error(err.message);
             $submit.prop('disabled', false);
           });
       });
+
+      function onSignInSubmit() {
+        event.preventDefault();
+
+        // Disable the submit button so we only attempt once.
+        $submit.prop('disabled', true);
+
+        let user = firebase.auth().currentUser
+        user.multiFactor.getSession().then(function(multiFactorSession) {
+          // Specify the phone number and pass the MFA session.
+          let phoneInfoOptions = {
+            phoneNumber: iti.getNumber(),
+            session: multiFactorSession
+          };
+          let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+          // Send SMS verification code.
+          return phoneAuthProvider.verifyPhoneNumber(
+            phoneInfoOptions, window.recaptchaVerifier);
+        }).then(function(verificationId) {
+          verId = verificationId
+          setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+          $registerDiv.hide();
+          $pinDiv.removeClass('d-none');
+        }).catch(function(err) {
+          if (err.code == 'auth/requires-recent-login') {
+            window.location.assign('/login?redir=login/register-phone');
+          }
+          grecaptcha.reset(window.recaptchaWidgetId);
+          flash.clear();
+          flash.error(err.message);
+          $submit.prop('disabled', false);
+        });
+      }
 
       function setSession(user) {
         let factorCount = user.multiFactor.enrolledFactors.length;

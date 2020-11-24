@@ -19,6 +19,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -39,9 +40,33 @@ func init() {
 	gob.Register(*new(sessionKey))
 }
 
-// Back goes back to the referrer.
+// Back goes back to the referrer. If the referrer is missing, or if the
+// referrer base URL does not match the request base URL, the redirect is to the
+// homepage.
 func Back(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
-	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+	logger := logging.FromContext(r.Context()).Named("controller.Back")
+
+	ref := r.Header.Get("Referer")
+	if ref == "" {
+		logger.Warnw("referrer is empty")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	refURL, err := url.Parse(ref)
+	if err != nil {
+		logger.Warnw("failed to parse referrer URL", "error", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	if got, want := refURL.Host, r.Host; got != want {
+		logger.Warnw("referrer host mismatch (+%q, -%q)", got, want)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, ref, http.StatusSeeOther)
 }
 
 // InternalError handles an internal error, returning the right response to the

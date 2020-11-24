@@ -20,7 +20,7 @@ PROGNAME="$(basename $0)"
 ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
 
 DOCKER_CMD="$(command -v docker || true)"
-DB_CONTAINER_IMAGE="registry.hub.docker.com/library/postgres:12-alpine"
+DB_CONTAINER_IMAGE="registry.hub.docker.com/library/postgres:13-alpine"
 
 KEY_MANAGER="IN_MEMORY"
 

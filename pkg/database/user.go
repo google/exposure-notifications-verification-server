@@ -280,6 +280,15 @@ func (db *Database) TouchUserRevokeCheck(u *User) error {
 		Error
 }
 
+// UntouchUserRevokeCheck removes the last revoke check, forcing it to occur on
+// next auth.
+func (db *Database) UntouchUserRevokeCheck(u *User) error {
+	return db.db.
+		Model(u).
+		UpdateColumn("last_revoke_check", nil).
+		Error
+}
+
 // PasswordChanged updates the last password change timestamp of the user.
 func (db *Database) PasswordChanged(email string, t time.Time) error {
 	q := db.db.

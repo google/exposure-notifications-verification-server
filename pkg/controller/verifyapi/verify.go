@@ -39,6 +39,12 @@ import (
 
 func (c *Controller) HandleVerify() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c.config.MaintenanceMode {
+			c.h.RenderJSON(w, http.StatusTooManyRequests,
+				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+			return
+		}
+
 		ctx := observability.WithBuildInfo(r.Context())
 
 		logger := logging.FromContext(ctx).Named("verifyapi.HandleVerify")
@@ -46,7 +52,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
 
-		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
+		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result, &blame)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {

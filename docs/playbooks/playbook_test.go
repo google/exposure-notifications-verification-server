@@ -25,8 +25,10 @@ import (
 )
 
 const (
-	alertTF       = "../../terraform/alerting/alerts.tf"
-	playbooksGlob = "./alerts/*.md"
+	alertTF = "../../terraform/alerting/alerts.tf"
+
+	// Ignore files not starting with an upper case letter.
+	playbooksGlob = "./alerts/[A-Z]*.md"
 )
 
 var alertPolicySchema = hcl.BodySchema{

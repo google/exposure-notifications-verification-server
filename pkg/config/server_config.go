@@ -76,7 +76,7 @@ type ServerConfig struct {
 	// Application Config
 	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
 	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
-	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=660h"` // 660h is 28 days.
+	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=672h"` // 672h is 28 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
 	AssetsPath  string `env:"ASSETS_PATH, default=./cmd/server/assets"`
@@ -93,6 +93,9 @@ type ServerConfig struct {
 	// If Dev mode is true, cookies aren't required to be sent over secure channels.
 	// This includes CSRF protection base cookie. You want this false in production (the default).
 	DevMode bool `env:"DEV_MODE"`
+
+	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
+	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
@@ -152,6 +155,10 @@ func (c *ServerConfig) GetRateLimitConfig() *ratelimit.Config {
 
 func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
+}
+
+func (c *ServerConfig) IsMaintenanceMode() bool {
+	return c.MaintenanceMode
 }
 
 // FirebaseConfig represents configuration specific to firebase auth.
