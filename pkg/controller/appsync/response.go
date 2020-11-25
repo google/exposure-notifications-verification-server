@@ -14,16 +14,19 @@
 
 package appsync
 
+// AppsResponse is the body for the published list of android apps.
 type AppsResponse struct {
 	Apps []App `json:"apps"`
 }
 
+// App represents single app for the AppResponse body.
 type App struct {
 	Region        string `json:"region"`
-	IsEnx         bool   `json:"is_enx"`
+	IsEnx         bool   `json:"is_enx,omitempty"`
 	AndroidTarget `json:"android_target"`
 }
 
+// AndroidTarget holds the android metadata for an App of AppResponse.
 type AndroidTarget struct {
 	Namespace              string `json:"namespace"`
 	PackageName            string `json:"package_name"`
