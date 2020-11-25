@@ -18,13 +18,16 @@ package appsync
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/hashicorp/go-multierror"
 )
 
 // Controller is a controller for the appsync service.
@@ -45,7 +48,14 @@ func New(config *config.AppSyncConfig, db *database.Database, h *render.Renderer
 
 // HandleSync performs the logic to sync mobile apps.
 func (c *Controller) HandleSync(ctx context.Context) http.Handler {
+	type AppSyncResult struct {
+		OK     bool    `json:"ok"`
+		Errors []error `json:"errors,omitempty"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := logging.FromContext(ctx).Named("appsync.HandleSync")
+
 		resp, err := http.Get(c.config.AppSyncURL)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -63,6 +73,72 @@ func (c *Controller) HandleSync(ctx context.Context) http.Handler {
 		if err := json.Unmarshal(body, &apps); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
+		}
+
+		var merr *multierror.Error
+		realms := map[string]*database.Realm{}
+		appsByRealm := map[uint][]*database.MobileApp{}
+
+		for _, app := range apps.Apps {
+			realm, has := realms[app.Region]
+			if !has {
+				realm, err := c.db.FindRealmByRegion(app.Region)
+				if err != nil {
+					merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm: %w", err))
+					continue
+				}
+				realms[app.Region] = realm
+			}
+
+			realmApps, has := appsByRealm[realm.ID]
+			if !has {
+				// Only Android supported for sync.
+				realmApps, err := c.db.ListActiveAppsByOS(realm.ID, database.OSTypeAndroid)
+				if err != nil {
+					merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm: %w", err))
+					continue
+				}
+				appsByRealm[realm.ID] = realmApps
+			}
+
+			has = false
+			for _, a := range realmApps {
+				// TODO(whaught): what's up with package_name. do not submit.
+				if a.SHA == app.SHA256CertFingerprints {
+					has = true
+					break
+				}
+			}
+
+			// Didn't find an app. make one.
+			if !has {
+				logger.Infof("App not found during sync. Adding app %#v", app)
+				// TODO(whaught): what are default values of these fields. do not submit.
+				newApp := &database.MobileApp{
+					Name:    "app", // do not submit
+					RealmID: realm.ID,
+					URL:     "https://example2.com", // do not submit
+					OS:      database.OSTypeAndroid,
+					SHA:     app.SHA256CertFingerprints,
+					AppID:   "app", // do not submit
+				}
+				if err := c.db.SaveMobileApp(newApp, database.System); err != nil {
+					merr = multierror.Append(merr, fmt.Errorf("failed saving mobile app: %v", err))
+					continue
+				}
+			}
+		}
+
+		// If there are any errors, return them
+		if merr != nil {
+			if errs := merr.WrappedErrors(); len(errs) > 0 {
+				logger.Errorw("failed to sync apps", "errors", errs)
+				c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
+					OK:     false,
+					Errors: errs,
+				})
+				return
+			}
 		}
 	})
 }

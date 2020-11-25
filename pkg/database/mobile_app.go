@@ -66,7 +66,7 @@ type MobileApp struct {
 	// OS is the type of the application we're using (eg, iOS, Android).
 	OS OSType `gorm:"column:os; type:int;"`
 
-	// IOSAppID is a unique string representing the app.
+	// AppID is a unique string representing the app.
 	AppID string `gorm:"column:app_id; type:varchar(512);"`
 
 	// SHA is a unique hash of the app.
