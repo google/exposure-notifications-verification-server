@@ -218,7 +218,7 @@
             if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
               $tableBody.empty();
               for(let r = 0; r < batch.length; r++) {
-                let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["symptomDate"] + "</td></tr>";
+                let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["testDate"] + "</td></tr>";
                 $tableBody.append(row);
               }
 
@@ -265,7 +265,7 @@
 
         // Escape csv row contents
         request["phone"] = $("<div>").text(cols[0].trim()).html();
-        request["symptomDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+        request["testDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
         if (request["phone"] == "") {
           return "";
         }
