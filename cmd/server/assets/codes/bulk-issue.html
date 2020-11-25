@@ -164,7 +164,7 @@
 
       $newCode.on('click', function(event) {
         event.preventDefault();
-        $retryCode.val(genCode(12));
+        $retryCode.val(genRandomString(12));
       });
 
       $form.on('submit', function(event) {
