@@ -281,7 +281,11 @@
         // Clear and hide errors
         flash.clear();
 
-        let data = {};
+        let data = {
+          // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
+          // to prevent network traffic observation.
+          'padding': btoa(genRandomString(5  + Math.floor(Math.random() * 15))),
+        };
         $($form.serializeArray()).each(function(i, obj) {
           data[obj.name] = obj.value
         });

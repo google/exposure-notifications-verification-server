@@ -134,7 +134,7 @@
       let tzOffset = new Date().getTimezoneOffset();
       let randomString = getCookie("retryCode");
       if (randomString == "") {
-        randomString = genCode();
+        randomString = genRandomString(12);
       } else {
         $rememberCode.prop("checked", true);
       }
@@ -164,7 +164,7 @@
 
       $newCode.on('click', function(event) {
         event.preventDefault();
-        $retryCode.val(genCode());
+        $retryCode.val(genRandomString(12));
       });
 
       $form.on('submit', function(event) {
@@ -267,6 +267,9 @@
         request["phone"] = $("<div>").text(cols[0].trim()).html();
         request["testDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
         request["symptomDate"] = (cols.length > 2) ? $("<div>").text(cols[2].trim()).html() : "";
+        // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
+        // to prevent network traffic observation.
+        request["padding"] = btoa(genRandomString(5  + Math.floor(Math.random() * 15)));
         if (request["phone"] == "") {
           return "";
         }
@@ -305,11 +308,6 @@
           flash.error(message);
         },
       });
-    }
-
-    // generates a random 16 digit alphanumeric code
-    function genCode() {
-      return Math.random().toString(36).substr(2, 8) + Math.random().toString(36).substr(2, 8);
     }
   </script>
 </body>
