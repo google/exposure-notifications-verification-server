@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -56,14 +57,15 @@ func (c *Controller) HandleSync(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := logging.FromContext(ctx).Named("appsync.HandleSync")
 
-		resp, err := http.Get(c.config.AppSyncURL)
+		client := http.Client{Timeout: c.config.Timeout}
+		resp, err := client.Get(c.config.AppSyncURL)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(io.LimitReader(resp.Body, c.config.FileSizeLimit))
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
