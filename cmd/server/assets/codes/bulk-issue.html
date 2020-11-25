@@ -266,6 +266,7 @@
         // Escape csv row contents
         request["phone"] = $("<div>").text(cols[0].trim()).html();
         request["testDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+        request["symptomDate"] = (cols.length > 2) ? $("<div>").text(cols[2].trim()).html() : "";
         if (request["phone"] == "") {
           return "";
         }
