@@ -39,7 +39,7 @@
               <label class="custom-file-label" for="csv" id="file-label">Select a CSV file...</label>
             </div>
             <small class="form-text text-muted">
-              The CSV file must be of the format <code>phone,date</code>. Each
+              The CSV file must be of the format <code>phone,testDate,[optional]symptomDate</code>. Each
               entry must appear on its own line, and phone numbers must be in
               <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a>
               format and dates in <a href="https://www.iso.org/iso-8601-date-and-time-format.html" target="_blank">ISO 8601</a>.
@@ -218,7 +218,7 @@
             if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
               $tableBody.empty();
               for(let r = 0; r < batch.length; r++) {
-                let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["symptomDate"] + "</td></tr>";
+                let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["testDate"] + "</td></tr>";
                 $tableBody.append(row);
               }
 
@@ -265,7 +265,8 @@
 
         // Escape csv row contents
         request["phone"] = $("<div>").text(cols[0].trim()).html();
-        request["symptomDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+        request["testDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+        request["symptomDate"] = (cols.length > 2) ? $("<div>").text(cols[2].trim()).html() : "";
         if (request["phone"] == "") {
           return "";
         }
