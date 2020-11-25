@@ -164,7 +164,7 @@
 
       $newCode.on('click', function(event) {
         event.preventDefault();
-        $retryCode.val(genCode());
+        $retryCode.val(genCode(12));
       });
 
       $form.on('submit', function(event) {
@@ -267,6 +267,9 @@
         request["phone"] = $("<div>").text(cols[0].trim()).html();
         request["testDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
         request["symptomDate"] = (cols.length > 2) ? $("<div>").text(cols[2].trim()).html() : "";
+        // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
+        // to prevent network traffic observation.
+        request["padding"] = btoa(genCode(5  + Math.floor(Math.random() * 15)));
         if (request["phone"] == "") {
           return "";
         }
@@ -307,9 +310,17 @@
       });
     }
 
-    // generates a random 16 digit alphanumeric code
-    function genCode() {
-      return Math.random().toString(36).substr(2, 8) + Math.random().toString(36).substr(2, 8);
+    // generates a random alphanumeric code
+    function genCode(len) {
+      let i = len;
+      let s = "";
+      for (; i >= 6; i -= 6) {
+        s += Math.random().toString(36).substr(2, 8);
+      }
+      if (i > 0) {
+        s += Math.random().toString(36).substr(2, 2 + i);
+      }
+      return s;
     }
   </script>
 </body>
