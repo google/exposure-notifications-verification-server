@@ -616,3 +616,16 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
     $factors.append($li);
   }
 }
+
+// generates a random alphanumeric code
+function genRandomString(len) {
+  let i = len;
+  let s = "";
+  for (; i >= 6; i -= 6) {
+    s += Math.random().toString(36).substr(2, 8);
+  }
+  if (i > 0) {
+    s += Math.random().toString(36).substr(2, 2 + i);
+  }
+  return s;
+}
