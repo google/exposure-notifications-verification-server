@@ -16,11 +16,9 @@
 package appsync
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -48,14 +46,14 @@ func New(config *config.AppSyncConfig, db *database.Database, h *render.Renderer
 }
 
 // HandleSync performs the logic to sync mobile apps.
-func (c *Controller) HandleSync(ctx context.Context) http.Handler {
+func (c *Controller) HandleSync() http.Handler {
 	type AppSyncResult struct {
 		OK     bool    `json:"ok"`
 		Errors []error `json:"errors,omitempty"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := logging.FromContext(ctx).Named("appsync.HandleSync")
+		logger := logging.FromContext(r.Context()).Named("appsync.HandleSync")
 
 		client := http.Client{Timeout: c.config.Timeout}
 		resp, err := client.Get(c.config.AppSyncURL)
@@ -64,15 +62,10 @@ func (c *Controller) HandleSync(ctx context.Context) http.Handler {
 			return
 		}
 
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(io.LimitReader(resp.Body, c.config.FileSizeLimit))
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
 		var apps AppsResponse
-		if err := json.Unmarshal(body, &apps); err != nil {
+		defer resp.Body.Close()
+
+		if err := json.NewDecoder(io.LimitReader(resp.Body, c.config.FileSizeLimitBytes)).Decode(&apps); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
@@ -84,9 +77,9 @@ func (c *Controller) HandleSync(ctx context.Context) http.Handler {
 		for _, app := range apps.Apps {
 			realm, has := realms[app.Region]
 			if !has {
-				realm, err := c.db.FindRealmByRegion(app.Region)
+				realm, err = c.db.FindRealmByRegion(app.Region)
 				if err != nil {
-					merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm: %w", err))
+					merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm %s: %w", app.Region, err))
 					continue
 				}
 				realms[app.Region] = realm
@@ -97,7 +90,7 @@ func (c *Controller) HandleSync(ctx context.Context) http.Handler {
 				// Only Android supported for sync.
 				realmApps, err := c.db.ListActiveAppsByOS(realm.ID, database.OSTypeAndroid)
 				if err != nil {
-					merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm: %w", err))
+					merr = multierror.Append(merr, fmt.Errorf("unable to list apps for realm %d: %w", realm.ID, err))
 					continue
 				}
 				appsByRealm[realm.ID] = realmApps
@@ -134,7 +127,6 @@ func (c *Controller) HandleSync(ctx context.Context) http.Handler {
 		// If there are any errors, return them
 		if merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {
-				logger.Errorw("failed to sync apps", "errors", errs)
 				c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
 					OK:     false,
 					Errors: errs,
