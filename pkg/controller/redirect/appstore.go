@@ -31,8 +31,7 @@ func (c *Controller) getAppStoreData(realmID uint) (*AppStoreData, error) {
 	// Pick first Android app (in the realm) for Play Store redirect.
 	androidURL := ""
 	androidAppID := ""
-	scopes := []database.Scope{database.WithAppOS(database.OSTypeAndroid)}
-	androidApps, err := c.db.ListActiveApps(realmID, scopes...)
+	androidApps, err := c.db.ListActiveApps(realmID, []database.Scope{database.WithAppOS(database.OSTypeAndroid)}...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Android Apps: %w", err)
 	}

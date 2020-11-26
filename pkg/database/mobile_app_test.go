@@ -199,8 +199,7 @@ func TestMobileApp_List(t *testing.T) {
 			t.Errorf("got %v apps, wanted: 2", len(extapp))
 		}
 
-		scopes := []Scope{WithAppOS(OSTypeAndroid)}
-		apps, err := db.ListActiveApps(realm1.ID, scopes...)
+		apps, err := db.ListActiveApps(realm1.ID, []Scope{WithAppOS(OSTypeAndroid)}...)
 		if err != nil {
 			t.Fatal(err)
 		}
