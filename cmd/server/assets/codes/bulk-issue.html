@@ -111,6 +111,23 @@
         </table>
       </div>
     </div>
+    <div class="card mb-3 shadow-sm d-none" id="error-div">
+      <div class="card-header">Errors</div>
+      <div class="card-body" >
+        <h3>Errors</h3>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Line</th>
+              <th>Phone number</th>
+              <th>Test date</th>
+              <th>Error message</th>
+            </tr>
+          </thead>
+          <tbody id="error-table"></tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
   <script type="text/javascript">
@@ -130,6 +147,9 @@
       let $rememberCode = $('#remember-code');
       let $newCode = $('#new-code');
       let $startAt = $('#start-at');
+
+      let $errorDiv = $('#error-div');
+      let $errorTable = $('#error-table');
 
       let tzOffset = new Date().getTimezoneOffset();
       let randomString = getCookie("retryCode");
@@ -222,7 +242,7 @@
                 $tableBody.append(row);
               }
 
-              cancelUpload = await uploadWithRetries(batch, uploadBatch);
+              cancelUpload = await uploadWithRetries(batch, d => uploadBatch(d, i));
 
               if (cancelUpload) {
                 if (total > 0) {
@@ -282,33 +302,37 @@
         request["tzOffset"] = tzOffset;
         return request
       }
-    });
 
-    function uploadBatch(data) {
-      return $.ajax({
-        url: '/codes/issue',
-        type: 'POST',
-        dataType: 'json',
-        cache: false,
-        contentType: 'application/json',
-        headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
-        // TODO: at the moment we only support one-at-a-time
-        data: JSON.stringify(data[0]),
-        success: function(result) {
-          total++;
-          if (result.error) {
-            flash.error(result.error);
-          }
-        },
-        error: function(xhr, resp, text) {
-          let message = resp;
-          if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
-            message = message + ": " + xhr.responseJSON.error;
-          }
-          flash.error(message);
-        },
-      });
-    }
+      function uploadBatch(data, i) {
+        return $.ajax({
+          url: '/codes/issue',
+          type: 'POST',
+          dataType: 'json',
+          cache: false,
+          contentType: 'application/json',
+          headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
+          // TODO: at the moment we only support one-at-a-time
+          data: JSON.stringify(data[0]),
+          success: function(result) {
+            total++;
+            if (result.error) {
+              flash.error(result.error);
+            }
+          },
+          error: function(xhr, resp, text) {
+            let message = resp;
+            if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+              message = message + ": " + xhr.responseJSON.error;
+            }
+            $errorDiv.removeClass('d-none');
+            let row = "<tr><td>" + i + "</td><td>" + data[0]["phone"] + "</td><td>" +
+                data[0]["testDate"] + "</td><td>" + message + "</td></tr>";
+            $errorTable.append(row);
+            flash.error(message);
+          },
+        });
+      }
+    });
   </script>
 </body>
 
