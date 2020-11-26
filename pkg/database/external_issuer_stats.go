@@ -78,11 +78,11 @@ type jsonExternalIssuerStat struct {
 }
 
 type jsonExternalIssuerStatStats struct {
-	Date time.Time                     `json:"date"`
-	Data []*jsonExternalIssuerStatData `json:"data"`
+	Date       time.Time                           `json:"date"`
+	IssuerData []*jsonExternalIssuerStatIssuerData `json:"issuer_data"`
 }
 
-type jsonExternalIssuerStatData struct {
+type jsonExternalIssuerStatIssuerData struct {
 	IssuerID    string `json:"issuer_id"`
 	CodesIssued uint   `json:"codes_issued"`
 }
@@ -94,13 +94,13 @@ func (s ExternalIssuerStats) MarshalJSON() ([]byte, error) {
 		return json.Marshal(struct{}{})
 	}
 
-	m := make(map[time.Time][]*jsonExternalIssuerStatData)
+	m := make(map[time.Time][]*jsonExternalIssuerStatIssuerData)
 	for _, stat := range s {
 		if m[stat.Date] == nil {
-			m[stat.Date] = make([]*jsonExternalIssuerStatData, 0, 8)
+			m[stat.Date] = make([]*jsonExternalIssuerStatIssuerData, 0, 8)
 		}
 
-		m[stat.Date] = append(m[stat.Date], &jsonExternalIssuerStatData{
+		m[stat.Date] = append(m[stat.Date], &jsonExternalIssuerStatIssuerData{
 			IssuerID:    stat.IssuerID,
 			CodesIssued: stat.CodesIssued,
 		})
@@ -109,8 +109,8 @@ func (s ExternalIssuerStats) MarshalJSON() ([]byte, error) {
 	stats := make([]*jsonExternalIssuerStatStats, 0, len(m))
 	for k, v := range m {
 		stats = append(stats, &jsonExternalIssuerStatStats{
-			Date: k,
-			Data: v,
+			Date:       k,
+			IssuerData: v,
 		})
 	}
 
@@ -141,7 +141,7 @@ func (s *ExternalIssuerStats) UnmarshalJSON(b []byte) error {
 	}
 
 	for _, stat := range result.Stats {
-		for _, r := range stat.Data {
+		for _, r := range stat.IssuerData {
 			*s = append(*s, &ExternalIssuerStat{
 				Date:        stat.Date,
 				RealmID:     result.RealmID,

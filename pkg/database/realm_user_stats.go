@@ -82,11 +82,11 @@ type jsonRealmUserStat struct {
 }
 
 type jsonRealmUserStatStats struct {
-	Date time.Time                `json:"date"`
-	Data []*jsonRealmUserStatData `json:"data"`
+	Date       time.Time                      `json:"date"`
+	IssuerData []*jsonRealmUserStatIssuerData `json:"issuer_data"`
 }
 
-type jsonRealmUserStatData struct {
+type jsonRealmUserStatIssuerData struct {
 	UserID      uint   `json:"user_id"`
 	Name        string `json:"name"`
 	CodesIssued uint   `json:"codes_issued"`
@@ -99,13 +99,13 @@ func (s RealmUserStats) MarshalJSON() ([]byte, error) {
 		return json.Marshal(struct{}{})
 	}
 
-	m := make(map[time.Time][]*jsonRealmUserStatData)
+	m := make(map[time.Time][]*jsonRealmUserStatIssuerData)
 	for _, stat := range s {
 		if m[stat.Date] == nil {
-			m[stat.Date] = make([]*jsonRealmUserStatData, 0, 8)
+			m[stat.Date] = make([]*jsonRealmUserStatIssuerData, 0, 8)
 		}
 
-		m[stat.Date] = append(m[stat.Date], &jsonRealmUserStatData{
+		m[stat.Date] = append(m[stat.Date], &jsonRealmUserStatIssuerData{
 			UserID:      stat.UserID,
 			Name:        stat.Name,
 			CodesIssued: stat.CodesIssued,
@@ -115,8 +115,8 @@ func (s RealmUserStats) MarshalJSON() ([]byte, error) {
 	stats := make([]*jsonRealmUserStatStats, 0, len(m))
 	for k, v := range m {
 		stats = append(stats, &jsonRealmUserStatStats{
-			Date: k,
-			Data: v,
+			Date:       k,
+			IssuerData: v,
 		})
 	}
 
@@ -147,7 +147,7 @@ func (s *RealmUserStats) UnmarshalJSON(b []byte) error {
 	}
 
 	for _, stat := range result.Stats {
-		for _, r := range stat.Data {
+		for _, r := range stat.IssuerData {
 			*s = append(*s, &RealmUserStat{
 				Date:        stat.Date,
 				RealmID:     result.RealmID,

@@ -159,13 +159,13 @@
 
         dataTable.addColumn('date', 'Date');
 
-        data.statistics[0].data.forEach(function(row) {
+        data.statistics[0].issuer_data.forEach(function(row) {
           dataTable.addColumn('number', row.name);
         })
 
         data.statistics.reverse().forEach(function(row) {
           let rowData = [utcDate(row.date)];
-          row.data.forEach(function(entry) {
+          row.issuer_data.forEach(function(entry) {
             rowData.push(entry.codes_issued);
           });
           dataTable.addRow(rowData);
@@ -206,13 +206,13 @@
 
         dataTable.addColumn('date', 'Date');
 
-        data.statistics[0].data.forEach(function(row) {
+        data.statistics[0].issuer_data.forEach(function(row) {
           dataTable.addColumn('number', row.issuer_id);
         })
 
         data.statistics.reverse().forEach(function(row) {
           let rowData = [utcDate(row.date)];
-          row.data.forEach(function(entry) {
+          row.issuer_data.forEach(function(entry) {
             rowData.push(entry.codes_issued);
           });
           dataTable.addRow(rowData);
