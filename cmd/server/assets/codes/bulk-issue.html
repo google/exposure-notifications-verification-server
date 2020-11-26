@@ -268,8 +268,10 @@
               flash.alert("Successfully issued " + total + " codes.");
             }
           }
+
           $import.prop('disabled', false);
           $cancel.addClass('d-none');
+          $tableBody.empty();
         };
 
         return { start, cancel };
