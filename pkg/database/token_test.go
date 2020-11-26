@@ -27,6 +27,8 @@ import (
 )
 
 func TestSubject(t *testing.T) {
+	t.Parallel()
+
 	testDay, err := time.Parse("2006-01-02", "2020-07-07")
 	if err != nil {
 		t.Fatalf("test setup error: %v", err)
@@ -94,7 +96,11 @@ func TestSubject(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		tc := tc
+
 		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := ParseSubject(tc.Sub)
 			if err != nil {
 				if tc.Error == "" {
@@ -276,6 +282,7 @@ func TestIssueToken(t *testing.T) {
 
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
+
 			db := NewTestDatabase(t)
 
 			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
@@ -369,6 +376,7 @@ func TestIssueToken(t *testing.T) {
 
 func TestPurgeTokens(t *testing.T) {
 	t.Parallel()
+
 	db := NewTestDatabase(t)
 
 	now := time.Now()

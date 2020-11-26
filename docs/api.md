@@ -195,6 +195,17 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   the padding.
 * `uuid` is optional as request input. The server will generate a uuid on response if omitted.
   * This is a handle which allows the issuer to track status of the issued verification code.
+* `externalIssuerID` is an optional field supplied by the API caller to uniquely
+  identify the entity making this request. This is useful where callers are
+  using a single API key behind an ERP, or when callers are using the
+  verification server as an API with a different authentication system. This
+  field is optional.
+
+  * The information provided is stored exactly as-is. If the identifier is
+    uniquely identifying PII (such as an email address, employee ID, SSN, etc),
+    the caller should apply a cryptographic hash before sending that data. **The
+    system does not sanitize or encrypt these external IDs, it is the caller's
+    responsibility to do so.**
 
 **IssueCodeResponse**
 

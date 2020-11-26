@@ -229,9 +229,6 @@ func TestRoutes_realmadminRoutes(t *testing.T) {
 			req: httptest.NewRequest("GET", "/stats.csv", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/stats/20201112", nil),
-		},
-		{
 			req: httptest.NewRequest("GET", "/events", nil),
 		},
 	}

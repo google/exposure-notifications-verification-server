@@ -1255,25 +1255,120 @@ func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id i
 
 // Stats returns the usage statistics for this realm. If no stats exist,
 // returns an empty array.
-func (r *Realm) Stats(db *Database, start, stop time.Time) ([]*RealmStats, error) {
-	var stats []*RealmStats
-
+func (r *Realm) Stats(db *Database, start, stop time.Time) (RealmStats, error) {
 	start = timeutils.Midnight(start)
 	stop = timeutils.Midnight(stop)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
 
-	if err := db.db.
-		Model(&RealmStats{}).
-		Where("realm_id = ?", r.ID).
-		Where("(date >= ? AND date <= ?)", start, stop).
-		Order("date DESC").
-		Find(&stats).
-		Error; err != nil {
+	sql := `
+		SELECT
+			d.date AS date,
+			$1 AS realm_id,
+			COALESCE(s.codes_issued, 0) AS codes_issued,
+			COALESCE(s.codes_claimed, 0) AS codes_claimed
+		FROM (
+			SELECT date::date FROM generate_series($2, $3, '1 day'::interval) date
+		) d
+		LEFT JOIN realm_stats s ON s.realm_id = $1 AND s.date = d.date
+		ORDER BY date DESC`
+
+	var stats []*RealmStat
+	if err := db.db.Raw(sql, r.ID, start, stop).Scan(&stats).Error; err != nil {
 		if IsNotFound(err) {
 			return stats, nil
 		}
 		return nil, err
 	}
+	return stats, nil
+}
 
+// ExternalIssuerStats returns the external issuer stats for this realm. If no
+// stats exist, returns an empty slice.
+func (r *Realm) ExternalIssuerStats(db *Database, start, stop time.Time) (ExternalIssuerStats, error) {
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	// Pull the stats by generating the full date range and full list of external
+	// issuers that generated data in that range, then join on stats. This will
+	// ensure we have a full list (with values of 0 where appropriate) to ensure
+	// continuity in graphs.
+	sql := `
+		SELECT
+			d.date AS date,
+			$1 AS realm_id,
+			d.issuer_id AS issuer_id,
+			COALESCE(s.codes_issued, 0) AS codes_issued
+		FROM (
+			SELECT
+				d.date AS date,
+				i.issuer_id AS issuer_id
+			FROM generate_series($2, $3, '1 day'::interval) d
+			CROSS JOIN (
+				SELECT DISTINCT(issuer_id)
+				FROM external_issuer_stats
+				WHERE realm_id = $1 AND date >= $2 AND date <= $3
+			) AS i
+		) d
+		LEFT JOIN external_issuer_stats s ON s.realm_id = $1 AND s.issuer_id = d.issuer_id AND s.date = d.date
+		ORDER BY date DESC, issuer_id`
+
+	var stats []*ExternalIssuerStat
+	if err := db.db.Raw(sql, r.ID, start, stop).Scan(&stats).Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+	return stats, nil
+}
+
+// UserStats returns a set of UserStats for a given date range.
+func (r *Realm) UserStats(db *Database, start, stop time.Time) (RealmUserStats, error) {
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
+
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	// Pull the stats by generating the full date range and full list of users
+	// that generated data in that range, then join on stats. This will ensure we
+	// have a full list (with values of 0 where appropriate) to ensure continuity
+	// in graphs.
+	sql := `
+		SELECT
+			d.date AS date,
+			$1 AS realm_id,
+			d.user_id AS user_id,
+			u.name AS name,
+			COALESCE(s.codes_issued, 0) AS codes_issued
+		FROM (
+			SELECT
+				d.date AS date,
+				i.user_id AS user_id
+			FROM generate_series($2, $3, '1 day'::interval) d
+			CROSS JOIN (
+				SELECT DISTINCT(user_id)
+				FROM user_stats
+				WHERE realm_id = $1 AND date >= $2 AND date <= $3
+			) AS i
+		) d
+		LEFT JOIN user_stats s ON s.realm_id = $1 AND s.user_id = d.user_id AND s.date = d.date
+		LEFT JOIN users u ON u.id = d.user_id
+		ORDER BY date DESC, user_id`
+
+	var stats []*RealmUserStat
+	if err := db.db.Raw(sql, r.ID, start, stop).Scan(&stats).Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
 	return stats, nil
 }
 
@@ -1332,52 +1427,4 @@ func ToCIDRList(s string) ([]string, error) {
 
 	sort.Strings(cidrs)
 	return cidrs, nil
-}
-
-// RealmUserStats carries the per-user-per-day-per-realm Codes issued.
-// This is a structure joined from multiple tables in the DB.
-type RealmUserStats struct {
-	UserID      uint      `json:"user_id"`
-	Name        string    `json:"name"`
-	CodesIssued uint      `json:"codes_issued"`
-	Date        time.Time `json:"date"`
-}
-
-// RealmUserStatsCSVHeader is a header for CSV stats
-var RealmUserStatsCSVHeader = []string{"User ID", "Name", "Codes Issued", "Date"}
-
-// CSV returns a slice of the data from a RealmUserStats for CSV writing.
-func (s *RealmUserStats) CSV() []string {
-	return []string{
-		fmt.Sprintf("%d", s.UserID),
-		s.Name,
-		fmt.Sprintf("%d", s.CodesIssued),
-		s.Date.Format("2006-01-02"),
-	}
-}
-
-// CodesPerUser returns a set of UserStats for a given date range.
-func (r *Realm) CodesPerUser(db *Database, start, stop time.Time) ([]*RealmUserStats, error) {
-	start = timeutils.UTCMidnight(start)
-	stop = timeutils.UTCMidnight(stop)
-	if start.After(stop) {
-		return nil, ErrBadDateRange
-	}
-
-	var stats []*RealmUserStats
-	if err := db.db.
-		Model(&UserStats{}).
-		Select("users.id, users.name, codes_issued, date").
-		Where("realm_id = ?", r.ID).
-		Where("date >= ? AND date <= ?", start, stop).
-		Joins("INNNER JOIN users ON users.id = user_id").
-		Order("date DESC").
-		Scan(&stats).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return stats, nil
-		}
-		return nil, err
-	}
-	return stats, nil
 }

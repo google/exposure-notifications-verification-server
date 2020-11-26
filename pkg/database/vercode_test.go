@@ -27,6 +27,7 @@ import (
 
 func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	t.Parallel()
+
 	db := NewTestDatabase(t)
 
 	uuid := "5148c75c-2bc5-4874-9d1c-f9185d0e1b8a"
@@ -135,6 +136,7 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	t.Parallel()
 
 	db := NewTestDatabase(t)
+
 	var realmID uint = 123
 	var userID uint = 456
 
@@ -211,6 +213,8 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 }
 
 func TestVerCodeValidate(t *testing.T) {
+	t.Parallel()
+
 	maxAge := time.Hour * 24 * 14
 	oldTest := time.Now().Add(-1 * 20 * oneDay)
 	cases := []struct {
@@ -265,7 +269,11 @@ func TestVerCodeValidate(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		tc := tc
+
 		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
 			if err := tc.Code.Validate(maxAge); err != tc.Err {
 				t.Fatalf("wrong error, want %v, got: %v", tc.Err, err)
 			}
@@ -274,6 +282,8 @@ func TestVerCodeValidate(t *testing.T) {
 }
 
 func TestVerCodeIsExpired(t *testing.T) {
+	t.Parallel()
+
 	code := VerificationCode{
 		Code:      "12345678",
 		TestType:  "confirmed",
@@ -287,6 +297,7 @@ func TestVerCodeIsExpired(t *testing.T) {
 
 func TestDeleteVerificationCode(t *testing.T) {
 	t.Parallel()
+
 	db := NewTestDatabase(t)
 
 	maxAge := time.Hour
@@ -314,6 +325,7 @@ func TestDeleteVerificationCode(t *testing.T) {
 
 func TestVerificationCodesCleanup(t *testing.T) {
 	t.Parallel()
+
 	db := NewTestDatabase(t)
 
 	now := time.Now()
@@ -402,8 +414,9 @@ func TestStatDatesOnCreate(t *testing.T) {
 	// all dates, and a bunch of corner cases. This is intended as a
 	// smokescreen.
 	t.Parallel()
+
 	db := NewTestDatabase(t)
-	db.db.LogMode(true)
+
 	fmtString := "2006-01-02"
 	now := time.Now()
 	nowStr := now.Format(fmtString)
@@ -415,25 +428,27 @@ func TestStatDatesOnCreate(t *testing.T) {
 	}{
 		{
 			&VerificationCode{
-				Code:          "111111",
-				LongCode:      "111111",
-				TestType:      "negative",
-				ExpiresAt:     now.Add(time.Second),
-				LongExpiresAt: now.Add(time.Second),
-				IssuingUserID: 100, // need for RealmUserStats
-				IssuingAppID:  200, // need for AuthorizedAppStats
-				RealmID:       300, // need for RealmStats
+				Code:              "111111",
+				LongCode:          "111111",
+				TestType:          "negative",
+				ExpiresAt:         now.Add(time.Second),
+				LongExpiresAt:     now.Add(time.Second),
+				IssuingUserID:     100,        // need for RealmUserStats
+				IssuingAppID:      200,        // need for AuthorizedAppStats
+				IssuingExternalID: "aa-bb-cc", // need for ExternalIssuerStats
+				RealmID:           300,        // need for RealmStats
 			},
-			nowStr},
+			nowStr,
+		},
 	}
 
 	for i, test := range tests {
 		if err := db.SaveVerificationCode(test.code, maxAge); err != nil {
-			t.Errorf("[%d] error saving code: %v", i, err)
+			t.Fatalf("[%d] error saving code: %v", i, err)
 		}
 
 		{
-			var stats []*RealmUserStats
+			var stats []*RealmUserStat
 			if err := db.db.
 				Model(&UserStats{}).
 				Select("*").
@@ -441,6 +456,28 @@ func TestStatDatesOnCreate(t *testing.T) {
 				Error; err != nil {
 				if IsNotFound(err) {
 					t.Fatalf("[%d] Error grabbing user stats %v", i, err)
+				}
+			}
+			if len(stats) != 1 {
+				t.Fatalf("[%d] expected one user stat", i)
+			}
+			if stats[0].CodesIssued != uint(i+1) {
+				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
+			}
+			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+		}
+
+		if len(test.code.IssuingExternalID) != 0 {
+			var stats []*ExternalIssuerStat
+			if err := db.db.
+				Model(&ExternalIssuerStats{}).
+				Select("*").
+				Scan(&stats).
+				Error; err != nil {
+				if IsNotFound(err) {
+					t.Fatalf("[%d] Error grabbing external issuer stats %v", i, err)
 				}
 			}
 			if len(stats) != 1 {
@@ -477,7 +514,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 		}
 
 		{
-			var stats []*RealmStats
+			var stats []*RealmStat
 			if err := db.db.
 				Model(&RealmStats{}).
 				Select("*").

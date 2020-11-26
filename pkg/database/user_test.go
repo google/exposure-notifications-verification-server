@@ -75,7 +75,7 @@ func TestUserLifecycle(t *testing.T) {
 
 	// Update password changed
 	now := time.Now().UTC()
-	now = now.Truncate(time.Second) // db loses nanos
+	now = now.Truncate(time.Second) // db loses nanoseconds
 	if err := db.PasswordChanged(email, now); err != nil {
 		t.Fatalf("error updating password changed time: %v", err)
 	}
@@ -143,7 +143,9 @@ func TestPurgeUsers(t *testing.T) {
 	}
 	expectExists(t, db, user.ID)
 
-	db.PurgeUsers(time.Duration(0))
+	if _, err := db.PurgeUsers(time.Duration(0)); err != nil {
+		t.Fatal(err)
+	}
 
 	// Find user by ID - Expect deleted
 	{
