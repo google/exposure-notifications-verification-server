@@ -37,15 +37,13 @@ func ProcessLocale(locales *i18n.LocaleMap) mux.MiddlewareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			// TODO(sethvargo): extract from session/cookie as well
 			param := r.URL.Query().Get(QueryKeyLanguage)
-			cookie := ""
 			header := r.Header.Get(HeaderAcceptLanguage)
 
 			// Find the "best" language from the given parameters. They are in
 			// priority order.
 			m := controller.TemplateMapFromContext(ctx)
-			m["locale"] = locales.Lookup(param, cookie, header)
+			m["locale"] = locales.Lookup(param, header)
 
 			next.ServeHTTP(w, r)
 		})

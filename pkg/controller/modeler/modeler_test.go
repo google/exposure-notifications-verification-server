@@ -89,7 +89,7 @@ func TestRebuildModel(t *testing.T) {
 		line := []uint{50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50}
 		for _, y := range line {
 			if err := db.RawDB().
-				Create(&database.RealmStats{
+				Create(&database.RealmStat{
 					Date:        nextDate(),
 					RealmID:     realm.ID,
 					CodesIssued: y,
@@ -124,7 +124,7 @@ func TestRebuildModel(t *testing.T) {
 		line := []uint{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
 		for _, y := range line {
 			if err := db.RawDB().
-				Create(&database.RealmStats{
+				Create(&database.RealmStat{
 					Date:        nextDate(),
 					RealmID:     realm.ID,
 					CodesIssued: y,
@@ -159,7 +159,7 @@ func TestRebuildModel(t *testing.T) {
 		line := []uint{1, 26, 61, 13, 19, 50, 9, 20, 91, 187, 39, 4, 2, 5, 1}
 		for _, y := range line {
 			if err := db.RawDB().
-				Create(&database.RealmStats{
+				Create(&database.RealmStat{
 					Date:        nextDate(),
 					RealmID:     realm.ID,
 					CodesIssued: y,
@@ -194,7 +194,7 @@ func TestRebuildModel(t *testing.T) {
 		line := []uint{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 		for _, y := range line {
 			if err := db.RawDB().
-				Create(&database.RealmStats{
+				Create(&database.RealmStat{
 					Date:        nextDate(),
 					RealmID:     realm.ID,
 					CodesIssued: y,
@@ -233,7 +233,7 @@ func TestRebuildModel(t *testing.T) {
 
 		for _, y := range line {
 			if err := db.RawDB().
-				Create(&database.RealmStats{
+				Create(&database.RealmStat{
 					Date:        nextDate(),
 					RealmID:     realm.ID,
 					CodesIssued: y,

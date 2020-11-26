@@ -184,12 +184,18 @@ type IssueCodeRequest struct {
 	// of the issued verification code. If omitted the server will generate the UUID.
 	UUID string `json:"uuid"`
 
-	// A unique handle to the caller for statistics tracking. May be used as a
-	// finer-grained identifier to one or many issuers (where API-key is too
-	// broad to be useful). If an identifier is used that might uniquely
-	// identify a person, the caller should send a string that does not convey
-	// meaning to the server such as a UUID or one-way-hash.
-	AuditID string `json:"auditID"`
+	// ExternalIssuerID is a optional information supplied by the API caller to
+	// uniquely identify the entity making this request. This is useful where
+	// callers are using a single API key behind an ERP, or when callers are using
+	// the verification server as an API with a different authentication system.
+	// This field is optional.
+
+	// The information provided is stored exactly as-is. If the identifier is
+	// uniquely identifying PII (such as an email address, employee ID, SSN, etc),
+	// the caller should apply a cryptographic hash before sending that data. The
+	// system does not sanitize or encrypt these external IDs, it is the caller's
+	// responsibility to do so.
+	ExternalIssuerID string `json:"externalIssuerID"`
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.

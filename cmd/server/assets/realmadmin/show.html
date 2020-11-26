@@ -1,12 +1,6 @@
 {{define "realmadmin/show"}}
 
 {{$realm := .realm}}
-{{$stats := .stats}}
-{{$userNames := .userNames}}
-{{$userStats := .userStats}}
-{{$auditIDs := .auditIDs}}
-{{$auditStats := .auditStats}}
-{{$auditPerDay := .auditPerDay}}
 
 <!doctype html>
 <html lang="en">
@@ -14,7 +8,7 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body class="tab-content" id="realm-stats-show">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -22,278 +16,226 @@
 
     <h1>Realm stats</h1>
     <p>
-      The data below shows realm statistics.
+      The data below shows realm statistics and visualizations.
     </p>
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Statistics</div>
-      <div class="card-body table-responsive">
-        {{if $stats}}
-        <div id="realm_chart" class="mb-3" style="height: 300px;" align="center">
-          <span>Loading chart...</span>
-        </div>
-        {{end}}
-
-        {{if $userStats}}
-        <div id="per_user_chart" class="mb-3" style="height: 300px;" align="center">
-          <span>Loading chart...</span>
-        </div>
-        {{end}}
-
-        {{if $auditStats}}
-        <div id="audit_chart" class="mb-3" style="height: 300px;" align="center">
-          <span>Loading chart...</span>
-        </div>
-        {{end}}
-      </div>
-    </div>
-
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Export</div>
-      <div class="card-body">
-        <p class="card-text"> Realm stats
-          (<a href="/realm/stats.csv">CSV</a>/<a href="/realm/stats.json">JSON</a>)
-        </p>
-        <p class="card-text">Realm per-user stats
-          (<a href="/realm/stats.csv?user">CSV</a>/<a href="/realm/stats.json?user">JSON</a>)
-        </p>
-        <p class="card-text">Realm audit id stats
-          (<a href="/realm/stats.csv?audit">CSV</a>/<a href="/realm/stats.json?audit">JSON</a>)
-        </p>
-      </div>
-    </div>
-
-    <div class="card mb-3 shadow-sm">
+    <div class="card mb-3">
       <div class="card-header">
-        <ul class="nav nav-tabs card-header-tabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <a class="nav-link" id="user-tab" data-toggle="tab" href="#user" role="tab" aria-controls="user" aria-selected="true">User Stats</a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link" id="audit-tab" data-toggle="tab" href="#audit" role="tab" aria-controls="audit" aria-selected="true">Audit Stats</a>
-          </li>
-        </ul>
+        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+        Codes issued &amp; claimed
+        <span class="font-weight-bold float-right" data-toggle="tooltip"
+          title="These are the number of codes issued per day. It includes codes issued by users, API keys, and external systems. It also captures codes claimed.">?</span>
       </div>
+      <div id="realm_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
+        <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+      </div>
+      <small class="card-footer text-muted text-right">
+        <span class="mr-1">Export as:</span>
+        <a href="/realm/stats.csv" class="mr-1">CSV</a>
+        <a href="/realm/stats.json">JSON</a>
+      </small>
+    </div>
 
-      <div class="card-body">
-        <div class="tab-content">
-          <div class="tab-pane" id="user" role="tabpanel" aria-labelledby="user-tab">
-            {{if $stats}}
-            <table class="table table-bordered table-striped">
-              <thead>
-                <tr>
-                  <th scope="col">Date</th>
-                  <th scope="col" width="125">Issued</th>
-                  <th scope="col" width="125">Claimed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {{range $i, $stat := $stats}}
-                <tr onclick="dateClicked({{$i}}, '{{$stat.Date.Format "2006-01-02"}}')", style="cursor: pointer;">
-                  <td>{{$stat.Date.Format "2006-01-02"}}</td>
-                  <td>{{$stat.CodesIssued}}</td>
-                  <td>{{$stat.CodesClaimed}}</td>
-                </tr>
-                {{end}}
-              </tbody>
-            </table>
-            <div class="font-italic">
-              This data is refreshed every 5 minutes.
-            </div>
-            {{else}}
-              <p>No codes have been issued by a user in this realm..</p>
-            {{end}}
-          </div>
-          <div class="tab-pane" id="audit" role="tabpanel" aria-labelledby="audit-tab">
-            {{if $auditPerDay}}
-            <table class="table table-bordered table-striped">
-              <thead>
-                <tr>
-                  <th scope="col">Date</th>
-                  <th scope="col" width="125">Codes Issued</th>
-                </tr>
-              </thead>
-              <tbody>
-                {{range $stat := $auditPerDay}}
-                <tr>
-                  <td>{{$stat.Date.Format "2006-01-02"}}</td>
-                  <td>{{$stat.CodesIssued}}</td>
-                </tr>
-                {{end}}
-              </tbody>
-            </table>
-            <div class="font-italic">
-              This data is refreshed every 5 minutes.
-            </div>
-            {{else}}
-              <p>No codes have been issued by a user in this realm..</p>
-            {{end}}
-          </div>
-        </div>
+    <div class="card mb-3">
+      <div class="card-header">
+        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+        Codes issued by user
+        <span class="font-weight-bold float-right" data-toggle="tooltip"
+          title="These are the number of codes issued per user per day. It only includes codes generated via the UI with a logged in user.">?</span>
       </div>
+      <div id="per_user_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
+        <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+      </div>
+      <small class="card-footer text-muted text-right">
+        <span class="mr-1">Export as:</span>
+        <a href="/realm/stats.csv?scope=user" class="mr-1">CSV</a>
+        <a href="/realm/stats.json?scope=user">JSON</a>
+      </small>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">
+        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+        Codes issued by external issuers
+        <span class="font-weight-bold float-right" data-toggle="tooltip"
+          title="These are the number of codes issued per user by external issuers. These codes can only be issued by the API.">?</span>
+      </div>
+      <div id="external_issuers_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
+        <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+      </div>
+      <small class="card-footer text-muted text-right">
+        <span class="mr-1">Export as:</span>
+        <a href="/realm/stats.csv?scope=external" class="mr-1">CSV</a>
+        <a href="/realm/stats.json?scope=external">JSON</a>
+      </small>
     </div>
   </main>
 
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
-    google.charts.load('current', {packages: ['corechart']});
-    google.charts.setOnLoadCallback(drawChart)
+    let realmChartDiv = document.getElementById('realm_chart');
+    let perUserChartDiv = document.getElementById('per_user_chart');
+    let externalIssuersChartDiv = document.getElementById('external_issuers_chart');
+    let dateFormatter;
 
-    function drawChart() {
+    google.charts.load('current', {
+      packages: ['corechart'],
+      callback: function() {
+        dateFormatter = new google.visualization.DateFormat({
+          pattern: 'MMM dd',
+        });
+
+        drawCharts();
+      },
+    });
+
+    function drawCharts() {
       drawRealmChart();
       drawUsersChart();
-      drawAuditChart();
+      drawExternalIssuersChart();
     }
 
-    // numDays is the length of the realm chart.
-    var numDays = 0;
+    // utcDate parses the given RFC-3339 date as a javascript date, then
+    // converts it to a UTC date.
+    function utcDate(str) {
+      let d = new Date(str);
+      let offset = d.getTimezoneOffset() * 60 * 1000;
+      return new Date(d.getTime() + offset);
+    }
 
-    // drawRealmChart draws the realm line chart.
     function drawRealmChart() {
-    {{if $stats}}
-      // Reverse the array, so the dates are in ascending order.
-      let arr = [
-        {{range $stat := $stats}}
-          ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}, {{$stat.CodesClaimed}}],
-        {{end}}
-      ];
-      numDays = arr.length;
-      arr = arr.reverse();
-      arr.unshift(['Date', 'Issued', "Claimed"]);
-
-      let data = google.visualization.arrayToDataTable(arr);
-
-      let options = {
-        colors: ['#007bff', '#ff7b00'],
-        legend: {position: 'bottom'},
-        tooltip: {trigger: 'focus'},
-        title: "Codes Issued and Claimed (includes API-issued)",
-      };
-
-      let chart = new google.visualization.LineChart(document.getElementById('realm_chart'));
-      chart.draw(data, options);
-    {{end}}
-    }
-
-    // fixDate converts the first element in an array to a Date.
-    // This is just to properly munge types for Google Charts, and the
-    // per-user-per-realm chart.
-    function fixDate(arr) {
-      arr[0] = new Date(arr[0])
-      return arr
-    }
-
-    // lastRow holds the last row the user has clicked.
-    var lastRow = -1;
-
-    // dateClicked selects the rows in the charts.
-    function dateClicked(i, d) {
-      // We reverse all data when charting, so we need to fix the index.
-      i = numDays - i;
-
-      // If the user has selected the row again, clear all selections and exit.
-      if (i == lastRow) {
-        lastRow = -1;
-        drawRealmChart(); // put the line chart back up.
-        highlightRow(-1);
-        return;
-      }
-      lastRow = i;
-
-      // Select the new row.
-      highlightRow(i);
-
-      // Create a pie chart of all users for the selected day.
-      $.getJSON(window.location.pathname+"/"+d, function(resp) {
-        // If we got no data, do nothing.
-        if (jQuery.isEmptyObject(resp)) {
+      $.ajax({
+        url: '/realm/stats.json',
+        dataType: 'json',
+      })
+      .done(function(data, status, xhr) {
+        if (!data.statistics) {
           return;
         }
 
-        // Build the pie chart.
-        let arr = [['Name', 'Codes Issued']];
-        for (var i = 0; i < resp.length; i++) {
-          arr.push([resp[i].name+' ('+resp[i].codes_issued+')', resp[i].codes_issued]);
-        }
-        let data = google.visualization.arrayToDataTable(arr);
+        var dataTable = new google.visualization.DataTable();
+
+        dataTable.addColumn('date', 'Date');
+        dataTable.addColumn('number', 'Issued');
+        dataTable.addColumn('number', 'Claimed');
+
+        data.statistics.reverse().forEach(function(row) {
+          dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed]);
+        });
+
+        dateFormatter.format(dataTable, 0);
+
         let options = {
-          title: 'Codes Issued On: '+d,
-          pieSliceText: 'label',
+          colors: ['#007bff', '#ff7b00'],
+          chartArea: {
+            left: 30, // leave room for y-axis labels
+            width: '100%'
+          },
+          hAxis: { format: 'M/d' },
+          legend: { position: 'top' },
+          width: '100%'
         };
-        let chart = new google.visualization.PieChart(document.getElementById('realm_chart'));
-        chart.draw(data, options);
+
+        let chart = new google.visualization.LineChart(realmChartDiv);
+        chart.draw(dataTable, options);
+      })
+      .fail(function(xhr, status, err) {
+        flash.error('Failed to render realm stats: ' + err);
       });
     }
 
-    // holds the charts created by Google Charts.
-    var userChart, userChartData;
-    var auditChart, auditChartData;
-
-    // highlightRow highlights a given row in the per-user-per-realm chart.
-    // Passing -1 as the row turns off all selections.
-    function highlightRow(index) {
-      if (index == -1) {
-        userChart.setSelection(null);
-        return;
-      }
-      var s = [];
-      for (var i = 0; i < userChartData.getNumberOfColumns(); i++) {
-        s = s.concat({row:index, column:i})
-      }
-      userChart.setSelection(s);
-    }
-
     function drawUsersChart() {
-    {{if $userStats}}
-      userChartData = new google.visualization.DataTable();
-      arr = [
-      {{range $stat := $userStats}}
-        fixDate({{$stat}}),
-      {{end}}
-      ];
-      arr = arr.reverse();
+      $.ajax({
+        url: '/realm/stats.json',
+        data: { scope: 'user' },
+        dataType: 'json',
+      })
+      .done(function(data, status, xhr) {
+        if (!data.statistics) {
+          return;
+        }
 
-      userChartData.addColumn('date', 'Day');
-      {{range $name := $userNames}}
-        userChartData.addColumn('number', '{{$name}}');
-      {{end}}
-      userChartData.addRows(arr);
+        var dataTable = new google.visualization.DataTable();
 
-      var options = {
-        legend: "none",
-        tooltip: {trigger: 'focus'},
-        title: "Codes Per User (excludes API-issued)",
-      };
+        dataTable.addColumn('date', 'Date');
 
-      userChart = new google.visualization.LineChart(document.getElementById('per_user_chart'));
-      userChart.draw(userChartData, options);
-    {{end}}
+        data.statistics[0].data.forEach(function(row) {
+          dataTable.addColumn('number', row.name);
+        })
+
+        data.statistics.reverse().forEach(function(row) {
+          let rowData = [utcDate(row.date)];
+          row.data.forEach(function(entry) {
+            rowData.push(entry.codes_issued);
+          });
+          dataTable.addRow(rowData);
+        });
+
+        dateFormatter.format(dataTable, 0);
+
+        let options = {
+          chartArea: {
+            left: 30, // leave room for y-axis labels
+            width: '100%'
+          },
+          hAxis: { format: 'M/d' },
+          legend: 'none',
+          width: '100%'
+        };
+
+        let chart = new google.visualization.LineChart(perUserChartDiv);
+        chart.draw(dataTable, options);
+      })
+      .fail(function(xhr, status, err) {
+        flash.error('Failed to render user stats: ' + err);
+      });
     }
 
-    function drawAuditChart() {
-    {{if $auditStats}}
-      auditChartData = new google.visualization.DataTable();
-      arr = [
-      {{range $stat := $auditStats}}
-        fixDate({{$stat}}),
-      {{end}}
-      ];
+    function drawExternalIssuersChart() {
+      $.ajax({
+        url: '/realm/stats.json',
+        data: { scope: 'external' },
+        dataType: 'json',
+      })
+      .done(function(data, status, xhr) {
+        if (!data.statistics) {
+          return;
+        }
 
-      auditChartData.addColumn('date', 'Day');
-      {{range $name := $auditIDs}}
-        auditChartData.addColumn('number', '{{$name}}');
-      {{end}}
-      auditChartData.addRows(arr);
+        var dataTable = new google.visualization.DataTable();
 
-      var options = {
-        legend: "none",
-        tooltip: {trigger: 'focus'},
-        title: "Codes Per Audit User",
-      };
+        dataTable.addColumn('date', 'Date');
 
-      auditChart = new google.visualization.LineChart(document.getElementById('audit_chart'));
-      auditChart.draw(auditChartData, options);
-    {{end}}
+        data.statistics[0].data.forEach(function(row) {
+          dataTable.addColumn('number', row.issuer_id);
+        })
+
+        data.statistics.reverse().forEach(function(row) {
+          let rowData = [utcDate(row.date)];
+          row.data.forEach(function(entry) {
+            rowData.push(entry.codes_issued);
+          });
+          dataTable.addRow(rowData);
+        });
+
+        dateFormatter.format(dataTable, 0);
+
+        let options = {
+          chartArea: {
+            left: 30, // leave room for y-axis labels
+            width: '100%'
+          },
+          hAxis: { format: 'M/d' },
+          legend: 'none',
+          width: '100%'
+        };
+
+        let chart = new google.visualization.LineChart(externalIssuersChartDiv);
+        chart.draw(dataTable, options);
+      })
+      .fail(function(xhr, status, err) {
+        flash.error('Failed to render external issuer stats: ' + err);
+      });
     }
   </script>
 </body>

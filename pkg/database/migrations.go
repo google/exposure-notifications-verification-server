@@ -878,7 +878,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00036-AddRealmStats",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Debugw("db migrations: adding realm stats")
-				if err := tx.AutoMigrate(&RealmStats{}).Error; err != nil {
+				if err := tx.AutoMigrate(&RealmStat{}).Error; err != nil {
 					return err
 				}
 				statements := []string{
@@ -893,7 +893,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				if err := tx.DropTable(&RealmStats{}).Error; err != nil {
+				if err := tx.DropTable(&RealmStat{}).Error; err != nil {
 					return err
 				}
 				return nil
@@ -1698,26 +1698,21 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00068-EnablePGAudit",
 			Migrate: func(tx *gorm.DB) error {
-				if err := tx.Exec(`CREATE EXTENSION pgaudit`).Error; err != nil {
-					logger.Warnw("failed to enable pgaudit", "error", err)
-				}
+				_ = tx.Exec(`CREATE EXTENSION pgaudit`).Error
 				return nil
 			},
 		},
 		{
-			ID: "00069-AddAuditIDStats",
+			ID: "00069-AddExternalIssuerStats",
 			Migrate: func(tx *gorm.DB) error {
-				tx.LogMode(true)
-				logger.Debugw("creating audit id stats table")
-				if err := tx.AutoMigrate(&AuditIDStat{}).Error; err != nil {
+				if err := tx.AutoMigrate(&ExternalIssuerStat{}).Error; err != nil {
 					return err
 				}
-				sql := "CREATE UNIQUE INDEX IF NOT EXISTS idx_audit_id_stats_date_realm_id ON audit_id_stats (date, realm_id, audit_id)"
+				sql := `CREATE UNIQUE INDEX IF NOT EXISTS idx_external_issuer_stats_date_issuer_id_realm_id ON external_issuer_stats (date, issuer_id, realm_id)`
 				return tx.Exec(sql).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
-				var s AuditIDStat
-				return tx.DropTable(s.TableName()).Error
+				return tx.DropTable(&ExternalIssuerStat{}).Error
 			},
 		},
 	})

@@ -26,6 +26,8 @@ import (
 )
 
 func TestSMS(t *testing.T) {
+	t.Parallel()
+
 	realm := NewRealmWithDefaults("test")
 	realm.SMSTextTemplate = "This is your Exposure Notifications Verification code: [enslink] Expires in [longexpires] hours"
 	realm.RegionCode = "US-WA"
@@ -92,13 +94,9 @@ func TestPerUserRealmStats(t *testing.T) {
 		t.Error("len(users) = 0, expected ≠ 0")
 	}
 
-	stats, err := realm.CodesPerUser(db, startDate, endDate)
+	stats, err := realm.UserStats(db, startDate, endDate)
 	if err != nil {
 		t.Fatalf("error getting stats: %v", err)
-	}
-
-	if len(stats) != numDays*len(users) {
-		t.Errorf("len(stats) = %d, expected %d", len(stats), numDays*len(users))
 	}
 
 	for i := 0; i < len(stats)-1; i++ {

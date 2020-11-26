@@ -90,8 +90,16 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		}
 		code, err := func() (*api.IssueCodeResponse, error) {
 			defer recordLatency(ctx, time.Now(), "/api/issue")
+
 			// Issue the verification code.
-			codeRequest, code, err := IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, testType, symptomDate, adminID, 0, timeout)
+			codeRequest := &api.IssueCodeRequest{
+				TestType:         testType,
+				SymptomDate:      symptomDate,
+				TZOffset:         0,
+				ExternalIssuerID: adminID,
+			}
+
+			code, err := IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codeRequest)
 			if err != nil {
 				result = observability.ResultNotOK()
 				return nil, fmt.Errorf("error issuing verification code: %w", err)

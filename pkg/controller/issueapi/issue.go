@@ -304,11 +304,12 @@ func (c *Controller) HandleIssue() http.Handler {
 			SymptomDate:    parsedDates[0],
 			TestDate:       parsedDates[1],
 			MaxSymptomAge:  c.config.GetAllowedSymptomAge(),
-			IssuingUser:    user,
-			IssuingApp:     authApp,
 			RealmID:        realm.ID,
 			UUID:           rUUID,
-			AuditID:        request.AuditID,
+
+			IssuingUser:       user,
+			IssuingApp:        authApp,
+			IssuingExternalID: request.ExternalIssuerID,
 		}
 
 		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())

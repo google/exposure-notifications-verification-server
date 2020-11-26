@@ -22,15 +22,10 @@ import (
 
 // UserStats represents statistics related to a user in the database.
 type UserStats struct {
-	Date        time.Time `gorm:"date"`
-	UserID      uint      `gorm:"user_id"`
-	RealmID     uint      `gorm:"realm_id"`
-	CodesIssued uint      `gorm:"codes_issued"`
-}
-
-// TableName sets the UserStats table name
-func (UserStats) TableName() string {
-	return "user_stats"
+	Date        time.Time `gorm:"date;"`
+	UserID      uint      `gorm:"user_id;"`
+	RealmID     uint      `gorm:"realm_id;"`
+	CodesIssued uint      `gorm:"codes_issued;"`
 }
 
 // SaveUserStats saves some UserStats to the database.

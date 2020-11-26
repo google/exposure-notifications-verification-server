@@ -26,21 +26,21 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/icsv"
 )
 
-var _ icsv.Marshaler = (RealmStats)(nil)
+var _ icsv.Marshaler = (ExternalIssuerStats)(nil)
 
-// RealmStats represents a logical collection of stats of a realm.
-type RealmStats []*RealmStat
+// ExternalIssuerStats is a collection of external issuer stats.
+type ExternalIssuerStats []*ExternalIssuerStat
 
-// RealmStat represents statistics related to a user in the database.
-type RealmStat struct {
-	Date         time.Time `gorm:"date; not null;"`
-	RealmID      uint      `gorm:"realm_id; not null;"`
-	CodesIssued  uint      `gorm:"codes_issued; default:0;"`
-	CodesClaimed uint      `gorm:"codes_claimed; default:0;"`
+// ExternalIssuerStat represents statistics related to a user in the database.
+type ExternalIssuerStat struct {
+	Date        time.Time `gorm:"column:date; type:date;"`
+	RealmID     uint      `gorm:"column:realm_id; type:int"`
+	IssuerID    string    `gorm:"column:issuer_id; type:varchar(255)"`
+	CodesIssued uint      `gorm:"column:codes_issued; type:int;"`
 }
 
 // MarshalCSV returns bytes in CSV format.
-func (s RealmStats) MarshalCSV() ([]byte, error) {
+func (s ExternalIssuerStats) MarshalCSV() ([]byte, error) {
 	// Do nothing if there's no records
 	if len(s) == 0 {
 		return nil, nil
@@ -49,15 +49,16 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 
-	if err := w.Write([]string{"date", "codes_issued", "codes_claimed"}); err != nil {
+	if err := w.Write([]string{"date", "realm_id", "issuer_id", "codes_issued"}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
 	for i, stat := range s {
 		if err := w.Write([]string{
 			stat.Date.Format("2006-01-02"),
+			strconv.FormatUint(uint64(stat.RealmID), 10),
+			stat.IssuerID,
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
-			strconv.FormatUint(uint64(stat.CodesClaimed), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -71,36 +72,45 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-type jsonRealmStat struct {
-	RealmID uint                  `json:"realm_id"`
-	Stats   []*jsonRealmStatStats `json:"statistics"`
+type jsonExternalIssuerStat struct {
+	RealmID uint                           `json:"realm_id"`
+	Stats   []*jsonExternalIssuerStatStats `json:"statistics"`
 }
 
-type jsonRealmStatStats struct {
-	Date time.Time               `json:"date"`
-	Data *jsonRealmStatStatsData `json:"data"`
+type jsonExternalIssuerStatStats struct {
+	Date time.Time                     `json:"date"`
+	Data []*jsonExternalIssuerStatData `json:"data"`
 }
 
-type jsonRealmStatStatsData struct {
-	CodesIssued  uint `json:"codes_issued"`
-	CodesClaimed uint `json:"codes_claimed"`
+type jsonExternalIssuerStatData struct {
+	IssuerID    string `json:"issuer_id"`
+	CodesIssued uint   `json:"codes_issued"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
-func (s RealmStats) MarshalJSON() ([]byte, error) {
+func (s ExternalIssuerStats) MarshalJSON() ([]byte, error) {
 	// Do nothing if there's no records
 	if len(s) == 0 {
 		return json.Marshal(struct{}{})
 	}
 
-	var stats []*jsonRealmStatStats
+	m := make(map[time.Time][]*jsonExternalIssuerStatData)
 	for _, stat := range s {
-		stats = append(stats, &jsonRealmStatStats{
-			Date: stat.Date,
-			Data: &jsonRealmStatStatsData{
-				CodesIssued:  stat.CodesIssued,
-				CodesClaimed: stat.CodesClaimed,
-			},
+		if m[stat.Date] == nil {
+			m[stat.Date] = make([]*jsonExternalIssuerStatData, 0, 8)
+		}
+
+		m[stat.Date] = append(m[stat.Date], &jsonExternalIssuerStatData{
+			IssuerID:    stat.IssuerID,
+			CodesIssued: stat.CodesIssued,
+		})
+	}
+
+	stats := make([]*jsonExternalIssuerStatStats, 0, len(m))
+	for k, v := range m {
+		stats = append(stats, &jsonExternalIssuerStatStats{
+			Date: k,
+			Data: v,
 		})
 	}
 
@@ -109,7 +119,7 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 		return stats[i].Date.After(stats[j].Date)
 	})
 
-	var result jsonRealmStat
+	var result jsonExternalIssuerStat
 	result.RealmID = s[0].RealmID
 	result.Stats = stats
 
@@ -120,40 +130,26 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 	return b, nil
 }
 
-func (s *RealmStats) UnmarshalJSON(b []byte) error {
+func (s *ExternalIssuerStats) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 {
 		return nil
 	}
 
-	var result jsonRealmStat
+	var result jsonExternalIssuerStat
 	if err := json.Unmarshal(b, &result); err != nil {
 		return err
 	}
 
 	for _, stat := range result.Stats {
-		*s = append(*s, &RealmStat{
-			Date:         stat.Date,
-			RealmID:      result.RealmID,
-			CodesIssued:  stat.Data.CodesIssued,
-			CodesClaimed: stat.Data.CodesClaimed,
-		})
+		for _, r := range stat.Data {
+			*s = append(*s, &ExternalIssuerStat{
+				Date:        stat.Date,
+				RealmID:     result.RealmID,
+				IssuerID:    r.IssuerID,
+				CodesIssued: r.CodesIssued,
+			})
+		}
 	}
 
 	return nil
-}
-
-// HistoricalCodesIssued returns a slice of the historical codes issued for
-// this realm by date descending.
-func (r *Realm) HistoricalCodesIssued(db *Database, limit uint64) ([]uint64, error) {
-	var stats []uint64
-	if err := db.db.
-		Model(&RealmStats{}).
-		Where("realm_id = ?", r.ID).
-		Order("date DESC").
-		Limit(limit).
-		Pluck("codes_issued", &stats).
-		Error; err != nil {
-		return nil, err
-	}
-	return stats, nil
 }

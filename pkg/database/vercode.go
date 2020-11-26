@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
@@ -51,6 +52,7 @@ var (
 
 	ErrInvalidTestType    = errors.New("invalid test type, must be confirmed, likely, or negative")
 	ErrCodeAlreadyExpired = errors.New("code already expired")
+	ErrCodeAlreadyClaimed = errors.New("code already claimed")
 	ErrCodeTooShort       = errors.New("verification code must be at least 6 digits")
 	ErrTestTooOld         = errors.New("test date is more than 14 day ago")
 )
@@ -60,24 +62,49 @@ type VerificationCode struct {
 	gorm.Model
 	Errorable
 
-	RealmID        uint   // VerificationCodes belong to exactly one realm when issued.
-	Code           string `gorm:"type:varchar(512)"`
-	LongCode       string `gorm:"type:varchar(512)"`
-	UUID           string `gorm:"type:uuid;default:null"`
-	Claimed        bool   `gorm:"default:false"`
-	TestType       string `gorm:"type:varchar(20)"`
-	SymptomDate    *time.Time
-	TestDate       *time.Time
-	ExpiresAt      time.Time
-	LongExpiresAt  time.Time
-	IssuingUserID  uint
-	IssuingAppID   uint
-	IssuingAuditID string
+	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
+	Code          string `gorm:"type:varchar(512)"`
+	LongCode      string `gorm:"type:varchar(512)"`
+	UUID          string `gorm:"type:uuid;default:null"`
+	Claimed       bool   `gorm:"default:false"`
+	TestType      string `gorm:"type:varchar(20)"`
+	SymptomDate   *time.Time
+	TestDate      *time.Time
+	ExpiresAt     time.Time
+	LongExpiresAt time.Time
+
+	// IssuingUserID is the ID of the user in the database that created this
+	// verification code. This is only populated if the code was created via the
+	// UI.
+	IssuingUserID uint
+
+	// IssuingAppID is the ID of the app in the database that created this
+	// verification code. This is only populated if the code was created via the
+	// API.
+	IssuingAppID uint
+
+	// IssuingExternalID is an optional ID to an external system that created this
+	// verification code. This is only populated if the code was created via the
+	// API AND the API caller supplied it in the request. This ID has no meaning
+	// in this system. It can be up to 255 characters in length.
+	IssuingExternalID string
 }
 
 // TableName sets the VerificationCode table name
 func (VerificationCode) TableName() string {
 	return "verification_codes"
+}
+
+// BeforeSave is used by callbacks.
+func (v *VerificationCode) BeforeSave(scope *gorm.Scope) error {
+	if len(v.IssuingExternalID) > 255 {
+		v.AddError("issuingExternalID", "cannot exceed 255 characters")
+	}
+
+	if len(v.Errors()) > 0 {
+		return fmt.Errorf("email config validation failed: %s", strings.Join(v.ErrorMessages(), ", "))
+	}
+	return nil
 }
 
 // AfterCreate runs after the verification code has been saved, primarily used
@@ -100,16 +127,16 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 		}
 	}
 
-	// If the request was an API request, we might have an audit ID.
-	if len(v.IssuingAuditID) != 0 {
+	// If the request was an API request, we might have an external issuer ID.
+	if len(v.IssuingExternalID) != 0 {
 		sql := `
-			INSERT INTO audit_id_stats (date, realm_id, audit_id, codes_issued)
+			INSERT INTO external_issuer_stats (date, realm_id, issuer_id, codes_issued)
 				VALUES ($1, $2, $3, 1)
-			ON CONFLICT (date, realm_id, audit_id) DO UPDATE
-				SET codes_issued = audit_id_stats.codes_issued + 1
+			ON CONFLICT (date, realm_id, issuer_id) DO UPDATE
+				SET codes_issued = external_issuer_stats.codes_issued + 1
 		`
 
-		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingAuditID).Error; err != nil {
+		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingExternalID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update audit stats: %v", err))
 		}
 	}
@@ -286,10 +313,10 @@ func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
 			return err
 		}
 		if vc.IsExpired() {
-			return errors.New("code already expired")
+			return ErrCodeAlreadyExpired
 		}
 		if vc.Claimed {
-			return errors.New("code already caimed")
+			return ErrCodeAlreadyClaimed
 		}
 
 		vc.ExpiresAt = time.Now()

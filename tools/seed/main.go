@@ -18,14 +18,19 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
+	"time"
 
 	firebase "firebase.google.com/go"
 	firebaseauth "firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/jinzhu/gorm"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -201,6 +206,83 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create admin api key: %w", err)
 	}
 	logger.Infow("created device api key", "key", adminAPIKey)
+
+	// Generate some codes
+	now := time.Now().UTC()
+	users := []*database.User{user, unverified, super, admin}
+	externalIDs := make([]string, 4)
+	for i := range externalIDs {
+		b := make([]byte, 8)
+		if _, err := rand.Read(b); err != nil {
+			return fmt.Errorf("failed to read rand: %w", err)
+		}
+		externalIDs[i] = hex.EncodeToString(b)
+	}
+
+	for day := 1; day <= 30; day++ {
+		max := rand.Intn(50)
+		for i := 0; i < max; i++ {
+			date := now.Add(time.Duration(day) * -24 * time.Hour)
+
+			issuingUserID := uint(0)
+			issuingAppID := uint(0)
+			issuingExternalID := ""
+
+			// Random determine if this was issued by an app (60% chance).
+			if rand.Intn(10) <= 6 {
+				issuingAppID = apps[rand.Intn(len(apps))].ID
+
+				// Random determine if the code had an external audit.
+				if rand.Intn(2) == 0 {
+					b := make([]byte, 8)
+					if _, err := rand.Read(b); err != nil {
+						return fmt.Errorf("failed to read rand: %w", err)
+					}
+					issuingExternalID = externalIDs[rand.Intn(len(externalIDs))]
+				}
+			} else {
+				issuingUserID = users[rand.Intn(len(users))].ID
+			}
+
+			code := fmt.Sprintf("%08d", rand.Intn(99999999))
+			longCode := fmt.Sprintf("%015d", rand.Intn(999999999999999))
+			testDate := now.Add(-48 * time.Hour)
+
+			verificationCode := &database.VerificationCode{
+				Model: gorm.Model{
+					CreatedAt: date,
+				},
+				RealmID:       realm1.ID,
+				Code:          code,
+				ExpiresAt:     now.Add(15 * time.Minute),
+				LongCode:      longCode,
+				LongExpiresAt: now.Add(24 * time.Hour),
+				TestType:      "confirmed",
+				SymptomDate:   &testDate,
+				TestDate:      &testDate,
+
+				IssuingUserID:     issuingUserID,
+				IssuingAppID:      issuingAppID,
+				IssuingExternalID: issuingExternalID,
+			}
+			// If a verification code already exists, it will fail to save, and we retry.
+			if err := db.SaveVerificationCode(verificationCode, 672*time.Hour); err != nil {
+				return fmt.Errorf("failed to create verification code: %w", err)
+			}
+
+			// 40% chance that the code is claimed
+			if rand.Intn(10) <= 4 {
+				accept := map[string]struct{}{
+					api.TestTypeConfirmed: {},
+					api.TestTypeLikely:    {},
+					api.TestTypeNegative:  {},
+				}
+				if _, err := db.VerifyCodeAndIssueToken(realm1.ID, code, accept, 24*time.Hour); err != nil {
+					return fmt.Errorf("failed to claim token: %w", err)
+				}
+			}
+		}
+	}
 
 	return nil
 }

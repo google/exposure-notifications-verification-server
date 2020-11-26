@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -37,7 +37,6 @@ var (
 	apikeyFlag   = flag.String("apikey", "", "API Key to use")
 	adminIDFlag  = flag.String("adminID", "", "AdminID for statistics tracking")
 	addrFlag     = flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
-	timeoutFlag  = flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 )
 
 func main() {
@@ -60,7 +59,14 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	request, response, err := clients.IssueCode(ctx, *addrFlag, *apikeyFlag, *testFlag, *onsetFlag, *adminIDFlag, *tzOffsetFlag, *timeoutFlag)
+	request := &api.IssueCodeRequest{
+		TestType:         *testFlag,
+		SymptomDate:      *onsetFlag,
+		TZOffset:         float32(*tzOffsetFlag),
+		ExternalIssuerID: *adminIDFlag,
+	}
+
+	response, err := clients.IssueCode(ctx, *addrFlag, *apikeyFlag, request)
 	logger.Infow("sent request", "request", request)
 	if err != nil {
 		return fmt.Errorf("failed to get token: %w", err)
