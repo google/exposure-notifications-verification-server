@@ -20,7 +20,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
@@ -39,7 +38,7 @@ func (c *Controller) HandleExport() http.Handler {
 			Page:  0,
 			Limit: 10000,
 		}
-		users, _, err := realm.ListUsers(c.db, pageParams, []database.Scope{}...)
+		users, _, err := realm.ListUsers(c.db, pageParams)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

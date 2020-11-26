@@ -39,7 +39,7 @@ func (c *Controller) getAndroidData(region string) ([]AndroidData, error) {
 		return nil, fmt.Errorf("unable to lookup realm: %w", err)
 	}
 
-	apps, err := c.db.ListActiveAppsByOS(realm.ID, database.OSTypeAndroid)
+	apps, err := c.db.ListActiveApps(realm.ID, database.WithAppOS(database.OSTypeAndroid))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get android data: %w", err)
 	}

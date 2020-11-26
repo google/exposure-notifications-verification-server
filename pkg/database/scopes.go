@@ -77,11 +77,31 @@ func WithAuditRealmID(id uint) Scope {
 	}
 }
 
+// WithRealmSearch returns a scope that adds querying for realms by name. It's
+// only applicable to functions that query Realm.
+func WithRealmSearch(q string) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		q = project.TrimSpace(q)
+		if q != "" {
+			q = `%` + q + `%`
+			return db.Where("realms.name ILIKE ?", q)
+		}
+		return db
+	}
+}
+
 // WithoutAuditTest excludes audit entries related to test entries created from
 // SystemTest.
 func WithoutAuditTest() Scope {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("audit_entries.actor_id != ?", SystemTest.AuditID())
+	}
+}
+
+// WithAppOS returns a scope that for querying MobileApps by Operating System type.
+func WithAppOS(os OSType) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("os = ?", os)
 	}
 }
 
@@ -108,19 +128,6 @@ func WithMobileAppSearch(q string) Scope {
 		if q != "" {
 			q = `%` + q + `%`
 			return db.Where("mobile_apps.name ILIKE ?", q)
-		}
-		return db
-	}
-}
-
-// WithRealmSearch returns a scope that adds querying for realms by name. It's
-// only applicable to functions that query Realm.
-func WithRealmSearch(q string) Scope {
-	return func(db *gorm.DB) *gorm.DB {
-		q = project.TrimSpace(q)
-		if q != "" {
-			q = `%` + q + `%`
-			return db.Where("realms.name ILIKE ?", q)
 		}
 		return db
 	}

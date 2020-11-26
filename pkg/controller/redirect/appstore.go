@@ -31,7 +31,7 @@ func (c *Controller) getAppStoreData(realmID uint) (*AppStoreData, error) {
 	// Pick first Android app (in the realm) for Play Store redirect.
 	androidURL := ""
 	androidAppID := ""
-	androidApps, err := c.db.ListActiveAppsByOS(realmID, database.OSTypeAndroid)
+	androidApps, err := c.db.ListActiveApps(realmID, database.WithAppOS(database.OSTypeAndroid))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Android Apps: %w", err)
 	}
@@ -42,7 +42,7 @@ func (c *Controller) getAppStoreData(realmID uint) (*AppStoreData, error) {
 
 	// Pick first iOS app (in the realm) for Store redirect.
 	iosURL := ""
-	iosApps, err := c.db.ListActiveAppsByOS(realmID, database.OSTypeIOS)
+	iosApps, err := c.db.ListActiveApps(realmID, database.WithAppOS(database.OSTypeIOS))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get iOS Apps: %w", err)
 	}

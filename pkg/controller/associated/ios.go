@@ -54,7 +54,7 @@ type Appstrings struct {
 
 // getAppIds finds all the iOS app ids we know about.
 func (c *Controller) getAppIds(realmID uint) ([]string, error) {
-	apps, err := c.db.ListActiveAppsByOS(realmID, database.OSTypeIOS)
+	apps, err := c.db.ListActiveApps(realmID, database.WithAppOS(database.OSTypeIOS))
 	if err != nil {
 		return nil, err
 	}
