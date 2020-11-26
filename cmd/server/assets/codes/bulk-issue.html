@@ -113,25 +113,23 @@
     </div>
     <div class="card mb-3 shadow-sm d-none" id="error-div">
       <div class="card-header">Errors</div>
-      <div class="card-body" >
-        <h3>Errors</h3>
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Line</th>
-              <th>Phone number</th>
-              <th>Test date</th>
-              <th>Error message</th>
-            </tr>
-          </thead>
-          <tbody id="error-table"></tbody>
-        </table>
-      </div>
+      <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+        <thead>
+          <tr>
+            <th>Line</th>
+            <th>Phone number</th>
+            <th>Test date</th>
+            <th>Error message</th>
+          </tr>
+        </thead>
+        <tbody id="error-table"></tbody>
+      </table>
     </div>
   </main>
 
   <script type="text/javascript">
     let total = 0;
+    let totalErrs = 0;
 
     $(function() {
       let $form = $('#form');
@@ -223,6 +221,7 @@
           let rows = e.target.result.split('\n');
           let batch = [];
           total = 0;
+          totalErrs = 0;
           $tableBody.empty();
 
           for (let i = parseInt($startAt.val()); i < rows.length && !cancelUpload; i++) {
@@ -241,8 +240,10 @@
             if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
               $tableBody.empty();
               for(let r = 0; r < batch.length; r++) {
-                let row = "<tr><td>" + batch[r]["phone"] + "</td><td>" + batch[r]["testDate"] + "</td></tr>";
-                $tableBody.append(row);
+                let $row = $('<tr/>');
+                $row.append($('<td/>').text(batch[r]["phone"]));
+                $row.append($('<td/>').text(batch[r]["testDate"]));
+                $tableBody.append($row);
               }
 
               cancelUpload = await uploadWithRetries(batch, d => uploadBatch(d, i));
@@ -267,6 +268,10 @@
             if (total > 0) {
               flash.alert("Successfully issued " + total + " codes.");
             }
+          }
+
+          if (totalErrs > 0) {
+            flash.error("Received errors for " + totalErrs + " entries. See error table for details.");
           }
 
           $import.prop('disabled', false);
@@ -326,15 +331,18 @@
             }
           },
           error: function(xhr, resp, text) {
+            totalErrs++;
             let message = resp;
             if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
               message = message + ": " + xhr.responseJSON.error;
             }
             $errorDiv.removeClass('d-none');
-            let row = "<tr><td>" + i + "</td><td>" + data[0]["phone"] + "</td><td>" +
-                data[0]["testDate"] + "</td><td>" + message + "</td></tr>";
-            $errorTable.append(row);
-            flash.error(message);
+            let $row = $('<tr/>');
+            $row.append($('<td/>').text(i));
+            $row.append($('<td/>').text(data[0]["phone"]));
+            $row.append($('<td/>').text(data[0]["testDate"]));
+            $row.append($('<td/>').text(message));
+            $errorTable.append($row);
           },
         });
       }
