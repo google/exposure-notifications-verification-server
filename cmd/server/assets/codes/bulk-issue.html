@@ -195,6 +195,9 @@
         $table.removeClass('d-none');
         $progressDiv.removeClass('d-none');
 
+        $errorDiv.addClass("d-none");
+        $errorTable.empty();
+
         if ($rememberCode.is(':checked')) {
           setCookie('retryCode',$retryCode.val(),1);
         } else {
