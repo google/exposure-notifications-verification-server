@@ -271,7 +271,7 @@
           }
 
           if (totalErrs > 0) {
-            flash.error("Received errors for " + totalErrs + " entries. See error table for details.");
+            flash.error(`Received errors for ${totalErrs} entries. See error table for details.`);
           }
 
           $import.prop('disabled', false);
