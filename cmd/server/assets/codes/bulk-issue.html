@@ -250,8 +250,7 @@
 
               if (cancelUpload) {
                 if (total > 0) {
-                  flash.warning("Successfully issued " + total + " codes."
-                    + (rows.length - i) + " remaining.");
+                  flash.warning(`Successfully issued ${total} codes. ${(rows.length - i)} +  remaining.`);
                 }
                 break;
               }
@@ -266,7 +265,7 @@
             $progress.width('100%');
             $progress.html('100%');
             if (total > 0) {
-              flash.alert("Successfully issued " + total + " codes.");
+              flash.alert(`Successfully issued ${total} codes.`);
             }
           }
 
