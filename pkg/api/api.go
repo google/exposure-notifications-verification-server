@@ -225,6 +225,19 @@ type IssueCodeResponse struct {
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 
+// BatchIssueCodeRequest defines the request for issuing many codes at once.
+type BatchIssueCodeRequest  {
+	[]*IssueCodeRequest
+}
+
+// BatchIssueCodeResponse defines the response for BatchIssueCodeRequest
+type BatchIssueCodeResponse {
+	[]*IssueCodeResponse
+
+	Error     string `json:"error"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
 // CheckCodeStatusRequest defines the parameters to request the status for a
 // previously issued OTP code. This is called by the Web frontend.
 // API is served at /api/checkcodestatus
