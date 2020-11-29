@@ -283,7 +283,7 @@ func TestIssueToken(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
 
-			db := NewTestDatabase(t)
+			db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
 			if err := db.SaveRealm(realm, SystemTest); err != nil {
@@ -335,7 +335,7 @@ func TestIssueToken(t *testing.T) {
 					t.Fatalf("error reading token from db: %v", err)
 				}
 
-				if diff := cmp.Diff(tok, got, approxTime); diff != "" {
+				if diff := cmp.Diff(tok, got, ApproxTime); diff != "" {
 					t.Fatalf("mismatch (-want, +got):\n%s", diff)
 				}
 
@@ -377,7 +377,7 @@ func TestIssueToken(t *testing.T) {
 func TestPurgeTokens(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	now := time.Now()
 	testData := []*Token{

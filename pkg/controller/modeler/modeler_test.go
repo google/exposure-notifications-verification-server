@@ -27,11 +27,19 @@ import (
 	"github.com/sethvargo/go-limiter/memorystore"
 )
 
+var testDatabaseInstance *database.TestInstance
+
+func TestMain(m *testing.M) {
+	testDatabaseInstance = database.MustTestInstance()
+	defer testDatabaseInstance.MustClose()
+	m.Run()
+}
+
 func testModeler(tb testing.TB) *Controller {
 	tb.Helper()
 
 	ctx := context.Background()
-	db, dbConfig := database.NewTestDatabaseWithConfig(tb)
+	db, dbConfig := testDatabaseInstance.NewDatabase(tb, nil)
 
 	config := config.Modeler{
 		Database: *dbConfig,

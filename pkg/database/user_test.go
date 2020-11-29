@@ -22,7 +22,7 @@ import (
 func TestUserLifecycle(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	email := "dr@example.com"
 	user := User{
@@ -91,8 +91,8 @@ func TestUserLifecycle(t *testing.T) {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 
-		if got, want := got.PasswordChanged(), now; got != want {
-			t.Errorf("expected %#v to be %#v", got.String(), want.String())
+		if got, want := got.PasswordChanged().Unix(), now.Unix(); got != want {
+			t.Errorf("expected %#v to be %#v (diff: %#v)", got, want, got-want)
 		}
 	}
 }
@@ -100,7 +100,7 @@ func TestUserLifecycle(t *testing.T) {
 func TestPurgeUsers(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	email := "purge@example.com"
 	user := User{
@@ -162,7 +162,8 @@ func TestPurgeUsers(t *testing.T) {
 func TestRemoveRealmUpdatesTime(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
 	realm := NewRealmWithDefaults("test")
 
 	email := "purge@example.com"
@@ -220,7 +221,7 @@ func expectExists(t *testing.T, db *Database, id uint) {
 func TestUserNotFound(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	_, err := db.FindUserByEmail("fake@user.com")
 	if err == nil {

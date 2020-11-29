@@ -24,7 +24,7 @@ import (
 func TestDatabase_CreateFindAPIKey(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	realm, err := db.CreateRealm("foo")
 	if err != nil {
@@ -77,7 +77,7 @@ func TestDatabase_CreateFindAPIKey(t *testing.T) {
 func TestDatabase_GenerateAPIKey(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	realm, err := db.CreateRealm("bar")
 	if err != nil {
@@ -102,7 +102,7 @@ func TestDatabase_GenerateAPIKey(t *testing.T) {
 func TestDatabase_GenerateVerifyAPIKeySignature(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	apiKey, realmID := "abcd1234", uint64(15)
 
