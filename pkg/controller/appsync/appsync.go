@@ -89,7 +89,7 @@ func (c *Controller) HandleSync() http.Handler {
 
 			realmApps, has := appsByRealm[realm.ID]
 			if !has { // Find all of the apps for this realm and cache that list in our appByRealmMap
-				realmApps, err := c.db.ListActiveAppsByOS(realm.ID, database.OSTypeAndroid)
+				realmApps, err := c.db.ListActiveApps(realm.ID, database.WithAppOS(database.OSTypeAndroid))
 				if err != nil {
 					merr = multierror.Append(merr, fmt.Errorf("unable to list apps for realm %d: %w", realm.ID, err))
 					continue
