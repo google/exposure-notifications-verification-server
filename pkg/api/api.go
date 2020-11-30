@@ -226,13 +226,13 @@ type IssueCodeResponse struct {
 }
 
 // BatchIssueCodeRequest defines the request for issuing many codes at once.
-type BatchIssueCodeRequest  {
-	[]*IssueCodeRequest
+type BatchIssueCodeRequest struct {
+	Codes []*IssueCodeRequest `json:"codes"`
 }
 
-// BatchIssueCodeResponse defines the response for BatchIssueCodeRequest
-type BatchIssueCodeResponse {
-	[]*IssueCodeResponse
+// BatchIssueCodeResponse defines the response for BatchIssueCodeRequest.
+type BatchIssueCodeResponse struct {
+	Codes []*IssueCodeResponse `json:"codes"`
 
 	Error     string `json:"error"`
 	ErrorCode string `json:"errorCode,omitempty"`

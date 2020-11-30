@@ -15,6 +15,7 @@
 package issueapi
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -151,218 +152,212 @@ func (c *Controller) HandleIssue() http.Handler {
 		// Add realm so that metrics are groupable on a per-realm basis.
 		ctx = observability.WithRealmID(ctx, realm.ID)
 
-		// If this realm requires a date but no date was specified, return an error.
-		if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate))
-			blame = observability.BlameClient
-			result = observability.ResultError("MISSING_REQUIRED_FIELDS")
-			return
-		}
-
-		// Validate that the request with the provided test type is valid for this realm.
-		if !realm.ValidTestType(request.TestType) {
-			c.h.RenderJSON(w, http.StatusBadRequest,
-				api.Errorf("unsupported test type: %v", request.TestType))
-			blame = observability.BlameClient
-			result = observability.ResultError("UNSUPPORTED_TEST_TYPE")
-			return
-		}
-
-		// Verify SMS configuration if phone was provided
-		var smsProvider sms.Provider
-		if request.Phone != "" {
-			smsProvider, err = realm.SMSProvider(c.db)
-			if err != nil {
-				logger.Errorw("failed to get sms provider", "error", err)
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to get sms provider"))
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
-				return
-			}
-			if smsProvider == nil {
-				err := fmt.Errorf("phone provided, but no sms provider is configured")
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
-				return
-			}
-		}
-
-		// Verify the test type
-		request.TestType = strings.ToLower(request.TestType)
-		if _, ok := c.validTestType[request.TestType]; !ok {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("invalid test type"))
-			blame = observability.BlameClient
-			result = observability.ResultError("INVALID_TEST_TYPE")
-			return
-		}
-
-		// Set up parallel arrays to leverage the observability reporting and connect the parse / validation errors
-		// to the correct date.
-		parsedDates := make([]*time.Time, 2)
-		input := []string{request.SymptomDate, request.TestDate}
-		dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
-		for i, d := range input {
-			if d != "" {
-				parsed, err := time.Parse("2006-01-02", d)
-				if err != nil {
-					c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err))
-					blame = observability.BlameClient
-					result = observability.ResultError(dateSettings[i].ParseError)
-					return
-				}
-				// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
-				maxDate := timeutils.UTCMidnight(time.Now())
-				minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
-
-				validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
-				if err != nil {
-					err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
-						dateSettings[i].Name,
-						minDate.Format("2006-01-02"),
-						maxDate.Format("2006-01-02"),
-						parsed.Format("2006-01-02"),
-					)
-					c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
-					blame = observability.BlameClient
-					result = observability.ResultError(dateSettings[i].ValidateError)
-					return
-				}
-				parsedDates[i] = validatedDate
-			}
-		}
-
-		// If there is a client-provided UUID, check if a code has already been issued.
-		// this prevents us from consuming quota on conflict.
-		rUUID := project.TrimSpaceAndNonPrintable(request.UUID)
-		if rUUID != "" {
-			if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
-				if !database.IsNotFound(err) {
-					controller.InternalError(w, r, c.h, err)
-					return
-				}
-			} else if code != nil {
-				c.h.RenderJSON(w, http.StatusConflict,
-					api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists))
-				return
-			}
-		}
-
-		// If we got this far, we're about to issue a code - take from the limiter
-		// to ensure this is permitted.
-		if realm.AbusePreventionEnabled {
-			key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
-			if err != nil {
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_GENERATE_HMAC")
+		resp, code, err := c.issue(ctx, &request, realm)
+		if err != nil {
+			if code == http.StatusInternalServerError {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			limit, _, reset, ok, err := c.limiter.Take(ctx, key)
-			if err != nil {
-				logger.Errorw("failed to take from limiter", "error", err)
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again"))
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER")
-				return
-			}
-
-			stats.Record(ctx, mRealmTokenUsed.M(1))
-
-			if !ok {
-				logger.Warnw("realm has exceeded daily quota",
-					"realm", realm.ID,
-					"limit", limit,
-					"reset", reset)
-
-				if c.config.GetEnforceRealmQuotas() {
-					c.h.RenderJSON(w, http.StatusTooManyRequests, api.Errorf("exceeded realm quota, please contact the realm admin."))
-					blame = observability.BlameClient
-					result = observability.ResultError("QUOTA_EXCEEDED")
-					return
-				}
-			}
-		}
-
-		now := time.Now().UTC()
-		expiryTime := now.Add(realm.CodeDuration.Duration)
-		longExpiryTime := now.Add(realm.LongCodeDuration.Duration)
-		if request.Phone == "" || smsProvider == nil {
-			// If this isn't going to be send via SMS, make the long code expiration time same as short.
-			// This is because the long code will never be shown or sent.
-			longExpiryTime = expiryTime
-		}
-
-		// Generate verification code
-		codeRequest := otp.Request{
-			DB:             c.db,
-			ShortLength:    realm.CodeLength,
-			ShortExpiresAt: expiryTime,
-			LongLength:     realm.LongCodeLength,
-			LongExpiresAt:  longExpiryTime,
-			TestType:       request.TestType,
-			SymptomDate:    parsedDates[0],
-			TestDate:       parsedDates[1],
-			MaxSymptomAge:  c.config.GetAllowedSymptomAge(),
-			RealmID:        realm.ID,
-			UUID:           rUUID,
-
-			IssuingUser:       user,
-			IssuingApp:        authApp,
-			IssuingExternalID: request.ExternalIssuerID,
-		}
-
-		code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
-		if err != nil {
-			logger.Errorw("failed to issue code", "error", err)
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_ISSUE_CODE")
-
-			// GormV1 doesn't have a good way to match db errors
-			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
-				c.h.RenderJSON(w, http.StatusConflict,
-					api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists))
-				return
-			}
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again"))
+			c.h.RenderJSON(w, code, err)
 			return
 		}
 
-		if request.Phone != "" && smsProvider != nil {
-			if err := func() error {
-				defer observability.RecordLatency(&ctx, time.Now(), mSMSLatencyMs, &blame, &result)
-				message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+		c.h.RenderJSON(w, http.StatusOK, resp)
+	})
+}
 
-				if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
-					// Delete the token
-					if err := c.db.DeleteVerificationCode(code); err != nil {
-						logger.Errorw("failed to delete verification code", "error", err)
-						// fallthrough to the error
-					}
+func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, realm *database.Realm) (*api.IssueCodeResponse, int, error) {
+	// If this realm requires a date but no date was specified, return an error.
+	if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
+		blame = observability.BlameClient
+		result = observability.ResultError("MISSING_REQUIRED_FIELDS")
+		return nil, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate)
+	}
 
-					logger.Errorw("failed to send sms", "error", err)
-					blame = observability.BlameServer
-					result = observability.ResultError("FAILED_TO_SEND_SMS")
-					return err
-				}
+	// Validate that the request with the provided test type is valid for this realm.
+	if !realm.ValidTestType(request.TestType) {
+		blame = observability.BlameClient
+		result = observability.ResultError("UNSUPPORTED_TEST_TYPE")
+		return nil, http.StatusBadRequest, api.Errorf("unsupported test type: %v", request.TestType)
+	}
 
-				return nil
-			}(); err != nil {
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.Errorf("failed to send sms: %s", err))
-				return
+	// Verify SMS configuration if phone was provided
+	var smsProvider sms.Provider
+	if request.Phone != "" {
+		smsProvider, err = realm.SMSProvider(c.db)
+		if err != nil {
+			logger.Errorw("failed to get sms provider", "error", err)
+			blame = observability.BlameServer
+			result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
+			return nil, http.StatusInternalServerError, api.Errorf("failed to get sms provider")
+		}
+		if smsProvider == nil {
+			err := fmt.Errorf("phone provided, but no sms provider is configured")
+			blame = observability.BlameServer
+			result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
+			return nil, http.StatusBadRequest, api.Error(err)
+		}
+	}
+
+	// Verify the test type
+	request.TestType = strings.ToLower(request.TestType)
+	if _, ok := c.validTestType[request.TestType]; !ok {
+		blame = observability.BlameClient
+		result = observability.ResultError("INVALID_TEST_TYPE")
+		return nil, http.StatusBadRequest, api.Errorf("invalid test type")
+	}
+
+	// Set up parallel arrays to leverage the observability reporting and connect the parse / validation errors
+	// to the correct date.
+	parsedDates := make([]*time.Time, 2)
+	input := []string{request.SymptomDate, request.TestDate}
+	dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
+	for i, d := range input {
+		if d != "" {
+			parsed, err := time.Parse("2006-01-02", d)
+			if err != nil {
+				blame = observability.BlameClient
+				result = observability.ResultError(dateSettings[i].ParseError)
+				return nil, http.StatusBadRequest, api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err)
 			}
+			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+			maxDate := timeutils.UTCMidnight(time.Now())
+			minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+
+			validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
+			if err != nil {
+				err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
+					dateSettings[i].Name,
+					minDate.Format("2006-01-02"),
+					maxDate.Format("2006-01-02"),
+					parsed.Format("2006-01-02"),
+				)
+				blame = observability.BlameClient
+				result = observability.ResultError(dateSettings[i].ValidateError)
+				return nil, http.StatusBadRequest, api.Error(err)
+			}
+			parsedDates[i] = validatedDate
+		}
+	}
+
+	// If there is a client-provided UUID, check if a code has already been issued.
+	// this prevents us from consuming quota on conflict.
+	rUUID := project.TrimSpaceAndNonPrintable(request.UUID)
+	if rUUID != "" {
+		if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
+			if !database.IsNotFound(err) {
+				return nil, http.StatusInternalServerError, err
+			}
+		} else if code != nil {
+			return nil, http.StatusConflict, api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists)
+		}
+	}
+
+	// If we got this far, we're about to issue a code - take from the limiter
+	// to ensure this is permitted.
+	if realm.AbusePreventionEnabled {
+		key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
+		if err != nil {
+			blame = observability.BlameServer
+			result = observability.ResultError("FAILED_TO_GENERATE_HMAC")
+			return nil, http.StatusInternalServerError, err
+		}
+		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
+		if err != nil {
+			logger.Errorw("failed to take from limiter", "error", err)
+			blame = observability.BlameServer
+			result = observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER")
+			return nil, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again")
 		}
 
-		c.h.RenderJSON(w, http.StatusOK,
-			&api.IssueCodeResponse{
-				UUID:                   uuid,
-				VerificationCode:       code,
-				ExpiresAt:              expiryTime.Format(time.RFC1123),
-				ExpiresAtTimestamp:     expiryTime.UTC().Unix(),
-				LongExpiresAt:          longExpiryTime.Format(time.RFC1123),
-				LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
-			})
-	})
+		stats.Record(ctx, mRealmTokenUsed.M(1))
+
+		if !ok {
+			logger.Warnw("realm has exceeded daily quota",
+				"realm", realm.ID,
+				"limit", limit,
+				"reset", reset)
+
+			if c.config.GetEnforceRealmQuotas() {
+				blame = observability.BlameClient
+				result = observability.ResultError("QUOTA_EXCEEDED")
+				return nil, http.StatusTooManyRequests, api.Errorf("exceeded realm quota, please contact the realm admin.")
+			}
+		}
+	}
+
+	now := time.Now().UTC()
+	expiryTime := now.Add(realm.CodeDuration.Duration)
+	longExpiryTime := now.Add(realm.LongCodeDuration.Duration)
+	if request.Phone == "" || smsProvider == nil {
+		// If this isn't going to be send via SMS, make the long code expiration time same as short.
+		// This is because the long code will never be shown or sent.
+		longExpiryTime = expiryTime
+	}
+
+	// Generate verification code
+	codeRequest := otp.Request{
+		DB:             c.db,
+		ShortLength:    realm.CodeLength,
+		ShortExpiresAt: expiryTime,
+		LongLength:     realm.LongCodeLength,
+		LongExpiresAt:  longExpiryTime,
+		TestType:       request.TestType,
+		SymptomDate:    parsedDates[0],
+		TestDate:       parsedDates[1],
+		MaxSymptomAge:  c.config.GetAllowedSymptomAge(),
+		RealmID:        realm.ID,
+		UUID:           rUUID,
+
+		IssuingUser:       user,
+		IssuingApp:        authApp,
+		IssuingExternalID: request.ExternalIssuerID,
+	}
+
+	code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
+	if err != nil {
+		logger.Errorw("failed to issue code", "error", err)
+		blame = observability.BlameServer
+		result = observability.ResultError("FAILED_TO_ISSUE_CODE")
+
+		// GormV1 doesn't have a good way to match db errors
+		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
+			return nil, http.StatusConflict, api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists)
+		}
+		return nil, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again")
+	}
+
+	if request.Phone != "" && smsProvider != nil {
+		if err := func() error {
+			defer observability.RecordLatency(&ctx, time.Now(), mSMSLatencyMs, &blame, &result)
+			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+
+			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
+				// Delete the token
+				if err := c.db.DeleteVerificationCode(code); err != nil {
+					logger.Errorw("failed to delete verification code", "error", err)
+					// fallthrough to the error
+				}
+
+				logger.Errorw("failed to send sms", "error", err)
+				blame = observability.BlameServer
+				result = observability.ResultError("FAILED_TO_SEND_SMS")
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return nil, http.StatusInternalServerError, api.Errorf("failed to send sms: %s", err)
+		}
+
+		return &api.IssueCodeResponse{
+			UUID:                   uuid,
+			VerificationCode:       code,
+			ExpiresAt:              expiryTime.Format(time.RFC1123),
+			ExpiresAtTimestamp:     expiryTime.UTC().Unix(),
+			LongExpiresAt:          longExpiryTime.Format(time.RFC1123),
+			LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
+		}, 0, nil
+	}
 }
 
 func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User, error) {

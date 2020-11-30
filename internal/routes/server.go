@@ -221,6 +221,7 @@ func Server(
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 		sub.Handle("/bulk-issue", issueapiController.HandleBulkIssue()).Methods("GET")
+		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
 
 		codesController := codes.NewServer(ctx, cfg, db, h)
 		codesRoutes(sub, codesController)
