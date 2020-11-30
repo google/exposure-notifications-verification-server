@@ -22,7 +22,17 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
+var testDatabaseInstance *database.TestInstance
+
+func TestMain(m *testing.M) {
+	testDatabaseInstance = database.MustTestInstance()
+	defer testDatabaseInstance.MustClose()
+	m.Run()
+}
+
 func TestGenerateCode(t *testing.T) {
+	t.Parallel()
+
 	// Run through a whole bunch of iterations.
 	for j := 0; j < 1000; j++ {
 		code, err := GenerateCode(8)
@@ -43,6 +53,8 @@ func TestGenerateCode(t *testing.T) {
 }
 
 func TestGenerateAlphanumericCode(t *testing.T) {
+	t.Parallel()
+
 	// Run through a whole bunch of iterations.
 	for j := 0; j < 1000; j++ {
 		code, err := GenerateAlphanumericCode(16)
@@ -53,7 +65,6 @@ func TestGenerateAlphanumericCode(t *testing.T) {
 		if got := len(code); got != 16 {
 			t.Fatalf("code is wrong length want 16, got %v", got)
 		}
-		t.Log(code)
 
 		for i, c := range code {
 			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z')) {
@@ -65,8 +76,9 @@ func TestGenerateAlphanumericCode(t *testing.T) {
 
 func TestIssue(t *testing.T) {
 	t.Parallel()
-	db := database.NewTestDatabase(t)
+
 	ctx := context.Background()
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)

@@ -63,7 +63,7 @@ type Config struct {
 	// EncryptionKey is the reference to an encryption/decryption key to use when
 	// for application-layer encryption before values are persisted to the
 	// database.
-	EncryptionKey string `env:"DB_ENCRYPTION_KEY,required"`
+	EncryptionKey string `env:"DB_ENCRYPTION_KEY,required" json:"-"`
 
 	// APIKeyDatabaseHMAC is the HMAC key to use for API keys before storing them
 	// in the database.
@@ -75,7 +75,7 @@ type Config struct {
 
 	// VerificationCodeDatabaseHMAC is the HMAC key to hash codes before storing
 	// them in the database.
-	VerificationCodeDatabaseHMAC []envconfig.Base64Bytes `env:"DB_VERIFICATION_CODE_DATABASE_KEY,required"`
+	VerificationCodeDatabaseHMAC []envconfig.Base64Bytes `env:"DB_VERIFICATION_CODE_DATABASE_KEY,required" json:"-"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The

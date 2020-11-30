@@ -31,7 +31,7 @@ import (
 func TestHandleIssue_IssueCode(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t)
+	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	// Get the default realm
 	realm, err := harness.Database.FindRealm(1)

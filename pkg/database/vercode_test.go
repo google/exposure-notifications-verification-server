@@ -27,7 +27,8 @@ import (
 
 func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	t.Parallel()
-	db := NewTestDatabase(t)
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	uuid := "5148c75c-2bc5-4874-9d1c-f9185d0e1b8a"
 	code := "12345678"
@@ -78,7 +79,8 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
 	realm, err := db.CreateRealm("testRealm")
 	if err != nil {
 		t.Fatalf("failed to create realm: %v", err)
@@ -107,6 +109,8 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	}
 
 	t.Run("normal_find", func(t *testing.T) {
+		t.Parallel()
+
 		got, err := realm.FindVerificationCodeByUUID(db, codeUUID)
 		if err != nil {
 			t.Fatal(err)
@@ -117,6 +121,8 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	})
 
 	t.Run("wrong_realm", func(t *testing.T) {
+		t.Parallel()
+
 		_, err := otherRealm.FindVerificationCodeByUUID(db, codeUUID)
 		if err == nil || !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("expected error: not found, got: %v", err)
@@ -124,6 +130,8 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	})
 
 	t.Run("wrong_uuid", func(t *testing.T) {
+		t.Parallel()
+
 		_, err := realm.FindVerificationCodeByUUID(db, uuid.Must(uuid.NewRandom()).String())
 		if err == nil || !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("expected error: not found, got: %v", err)
@@ -134,7 +142,8 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
 	var realmID uint = 123
 	var userID uint = 456
 
@@ -173,7 +182,7 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	vc := &VerificationCode{
 		Code:          "123456",
@@ -211,6 +220,8 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 }
 
 func TestVerCodeValidate(t *testing.T) {
+	t.Parallel()
+
 	maxAge := time.Hour * 24 * 14
 	oldTest := time.Now().Add(-1 * 20 * oneDay)
 	cases := []struct {
@@ -265,7 +276,11 @@ func TestVerCodeValidate(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		tc := tc
+
 		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
 			if err := tc.Code.Validate(maxAge); err != tc.Err {
 				t.Fatalf("wrong error, want %v, got: %v", tc.Err, err)
 			}
@@ -274,6 +289,8 @@ func TestVerCodeValidate(t *testing.T) {
 }
 
 func TestVerCodeIsExpired(t *testing.T) {
+	t.Parallel()
+
 	code := VerificationCode{
 		Code:      "12345678",
 		TestType:  "confirmed",
@@ -287,7 +304,8 @@ func TestVerCodeIsExpired(t *testing.T) {
 
 func TestDeleteVerificationCode(t *testing.T) {
 	t.Parallel()
-	db := NewTestDatabase(t)
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	maxAge := time.Hour
 	code := VerificationCode{
@@ -306,15 +324,15 @@ func TestDeleteVerificationCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := db.FindVerificationCode("12345678")
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	if _, err := db.FindVerificationCode("12345678"); !errors.Is(err, gorm.ErrRecordNotFound) {
 		t.Fatal(err)
 	}
 }
 
 func TestVerificationCodesCleanup(t *testing.T) {
 	t.Parallel()
-	db := NewTestDatabase(t)
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	now := time.Now()
 	maxAge := time.Hour // not important to this test case
@@ -389,11 +407,10 @@ func TestVerificationCodesCleanup(t *testing.T) {
 				t.Fatalf("wrong error, want: %v got: %v", gorm.ErrRecordNotFound, err)
 			}
 		} else {
-			if diff := cmp.Diff(testData[i], got, approxTime, cmpopts.IgnoreUnexported(VerificationCode{}), cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
+			if diff := cmp.Diff(testData[i], got, ApproxTime, cmpopts.IgnoreUnexported(VerificationCode{}), cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
 				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}
 		}
-
 	}
 }
 
@@ -402,8 +419,9 @@ func TestStatDatesOnCreate(t *testing.T) {
 	// all dates, and a bunch of corner cases. This is intended as a
 	// smokescreen.
 	t.Parallel()
-	db := NewTestDatabase(t)
-	db.db.LogMode(true)
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
 	fmtString := "2006-01-02"
 	now := time.Now()
 	nowStr := now.Format(fmtString)
@@ -415,25 +433,27 @@ func TestStatDatesOnCreate(t *testing.T) {
 	}{
 		{
 			&VerificationCode{
-				Code:          "111111",
-				LongCode:      "111111",
-				TestType:      "negative",
-				ExpiresAt:     now.Add(time.Second),
-				LongExpiresAt: now.Add(time.Second),
-				IssuingUserID: 100, // need for RealmUserStats
-				IssuingAppID:  200, // need for AuthorizedAppStats
-				RealmID:       300, // need for RealmStats
+				Code:              "111111",
+				LongCode:          "111111",
+				TestType:          "negative",
+				ExpiresAt:         now.Add(time.Second),
+				LongExpiresAt:     now.Add(time.Second),
+				IssuingUserID:     100,        // need for RealmUserStats
+				IssuingAppID:      200,        // need for AuthorizedAppStats
+				IssuingExternalID: "aa-bb-cc", // need for ExternalIssuerStats
+				RealmID:           300,        // need for RealmStats
 			},
-			nowStr},
+			nowStr,
+		},
 	}
 
 	for i, test := range tests {
 		if err := db.SaveVerificationCode(test.code, maxAge); err != nil {
-			t.Errorf("[%d] error saving code: %v", i, err)
+			t.Fatalf("[%d] error saving code: %v", i, err)
 		}
 
 		{
-			var stats []*RealmUserStats
+			var stats []*RealmUserStat
 			if err := db.db.
 				Model(&UserStats{}).
 				Select("*").
@@ -441,6 +461,28 @@ func TestStatDatesOnCreate(t *testing.T) {
 				Error; err != nil {
 				if IsNotFound(err) {
 					t.Fatalf("[%d] Error grabbing user stats %v", i, err)
+				}
+			}
+			if len(stats) != 1 {
+				t.Fatalf("[%d] expected one user stat", i)
+			}
+			if stats[0].CodesIssued != uint(i+1) {
+				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
+			}
+			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+		}
+
+		if len(test.code.IssuingExternalID) != 0 {
+			var stats []*ExternalIssuerStat
+			if err := db.db.
+				Model(&ExternalIssuerStats{}).
+				Select("*").
+				Scan(&stats).
+				Error; err != nil {
+				if IsNotFound(err) {
+					t.Fatalf("[%d] Error grabbing external issuer stats %v", i, err)
 				}
 			}
 			if len(stats) != 1 {
@@ -477,7 +519,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 		}
 
 		{
-			var stats []*RealmStats
+			var stats []*RealmStat
 			if err := db.db.
 				Model(&RealmStats{}).
 				Select("*").

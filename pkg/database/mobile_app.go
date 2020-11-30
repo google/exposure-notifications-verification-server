@@ -186,13 +186,14 @@ func (db *Database) SearchActiveAppsWithRealm(p *pagination.PageParams, q string
 	return apps, paginator, err
 }
 
-// ListActiveAppsByOS finds mobile apps by their realm and OS.
-func (db *Database) ListActiveAppsByOS(realmID uint, os OSType) ([]*MobileApp, error) {
+// ListActiveApps finds mobile apps by their realm.
+func (db *Database) ListActiveApps(realmID uint, scopes ...Scope) ([]*MobileApp, error) {
 	// Find the apps.
 	var apps []*MobileApp
 	if err := db.db.
 		Model(&MobileApp{}).
-		Where("realm_id = ? AND os = ?", realmID, os).
+		Scopes(scopes...).
+		Where("realm_id = ?", realmID).
 		Find(&apps).
 		Error; err != nil {
 		if IsNotFound(err) {

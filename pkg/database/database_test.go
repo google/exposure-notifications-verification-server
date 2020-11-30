@@ -15,26 +15,13 @@
 package database
 
 import (
-	"time"
-
-	"github.com/jinzhu/gorm"
+	"testing"
 )
 
-// UserStats represents statistics related to a user in the database.
-type UserStats struct {
-	Date        time.Time `gorm:"date;"`
-	UserID      uint      `gorm:"user_id;"`
-	RealmID     uint      `gorm:"realm_id;"`
-	CodesIssued uint      `gorm:"codes_issued;"`
-}
+var testDatabaseInstance *TestInstance
 
-// SaveUserStats saves some UserStats to the database.
-// This function is provided for testing only.
-func (db *Database) SaveUserStats(u *UserStats) error {
-	return db.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(u).Error; err != nil {
-			return err
-		}
-		return nil
-	})
+func TestMain(m *testing.M) {
+	testDatabaseInstance = MustTestInstance()
+	defer testDatabaseInstance.MustClose()
+	m.Run()
 }

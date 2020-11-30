@@ -26,13 +26,8 @@ import (
 
 // IssueCode uses the ADMIN API to issue a verification code.
 // Currently does not accept the SMS param.
-func IssueCode(ctx context.Context, hostname string, apiKey, testType, symptomDate string, tzMinOffset int, timeout time.Duration) (*api.IssueCodeRequest, *api.IssueCodeResponse, error) {
+func IssueCode(ctx context.Context, hostname, apiKey string, request *api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
 	url := hostname + "/api/issue"
-	request := api.IssueCodeRequest{
-		TestType:    testType,
-		SymptomDate: symptomDate,
-		TZOffset:    float32(tzMinOffset),
-	}
 	client := &http.Client{
 		Timeout: timeout,
 	}
@@ -43,9 +38,9 @@ func IssueCode(ctx context.Context, hostname string, apiKey, testType, symptomDa
 	headers.Add("X-API-Key", apiKey)
 
 	if err := jsonclient.MakeRequest(ctx, client, url, headers, request, &response); err != nil {
-		return &request, nil, err
+		return nil, err
 	}
-	return &request, &response, nil
+	return &response, nil
 }
 
 // CheckCodeStatus uses the ADMIN API to retrieve the status of an OTP code.

@@ -39,6 +39,8 @@ func HandleHealthz(ctx context.Context, cfg *database.Config, h *render.Renderer
 
 		params := r.URL.Query()
 		switch service := params.Get("service"); service {
+		case "":
+			// Do nothing and continue rendering - this is a basic HTTP health check
 		case "database":
 			if cfg == nil {
 				InternalError(w, r, h, fmt.Errorf("database not configured for health check"))

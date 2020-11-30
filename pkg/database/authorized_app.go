@@ -370,21 +370,36 @@ func (db *Database) generateAPIKeySignatures(apiKey string) ([][]byte, error) {
 // the key. It does this by computing the expected signature and then doing a
 // constant-time comparison against the provided signature.
 func (db *Database) VerifyAPIKeySignature(key string) (string, uint64, error) {
+	logger := db.logger.Named("VerifyAPIKeySignature")
+
+	key = project.TrimSpaceAndNonPrintable(key)
+
 	parts := strings.SplitN(key, ".", 3)
 	if len(parts) != 3 {
 		return "", 0, fmt.Errorf("invalid API key format: wrong number of parts")
 	}
 
 	// Decode the provided signature.
-	gotSig, err := base64util.DecodeString(parts[2])
+	gotSigStr := parts[2]
+	gotSig, err := base64util.DecodeString(gotSigStr)
 	if err != nil {
-		return "", 0, fmt.Errorf("invalid API key format: decoding failed")
+		return "", 0, fmt.Errorf("invalid API key format: decoding failed: %w", err)
+	}
+
+	gotKey := parts[0]
+	if gotKey == "" {
+		return "", 0, fmt.Errorf("invalid API key format: missing API key")
+	}
+
+	gotRealm := parts[1]
+	if gotRealm == "" {
+		return "", 0, fmt.Errorf("invalid API key format: missing realm")
 	}
 
 	// Generate the expected signature.
-	expSigs, err := db.generateAPIKeySignatures(parts[0] + "." + parts[1])
+	expSigs, err := db.generateAPIKeySignatures(gotKey + "." + gotRealm)
 	if err != nil {
-		return "", 0, fmt.Errorf("invalid API key format: signature invalid")
+		return "", 0, fmt.Errorf("invalid API key format: signature generation: %w", err)
 	}
 
 	found := false
@@ -397,6 +412,9 @@ func (db *Database) VerifyAPIKeySignature(key string) (string, uint64, error) {
 	}
 
 	if !found {
+		logger.Debugw("API key signature did not match any expected values",
+			"got", gotSig,
+			"expected", expSigs)
 		return "", 0, fmt.Errorf("invalid API key format: signature invalid")
 	}
 

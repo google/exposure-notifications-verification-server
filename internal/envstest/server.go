@@ -122,7 +122,7 @@ func (r *TestServerResponse) LoggedInSession(session *sessions.Session, email st
 // NewServer creates a new test UI server instance. When this function returns,
 // a full UI server will be running locally on a random port. Cleanup is handled
 // automatically.
-func NewServer(tb testing.TB) *TestServerResponse {
+func NewServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *TestServerResponse {
 	tb.Helper()
 
 	if testing.Short() {
@@ -130,7 +130,7 @@ func NewServer(tb testing.TB) *TestServerResponse {
 	}
 
 	// Create the config and requirements.
-	response := newServerConfig(tb)
+	response := newServerConfig(tb, testDatabaseInstance)
 
 	ctx := context.Background()
 
@@ -194,7 +194,7 @@ type serverConfigResponse struct {
 // newServerConfig creates a new server configuration. It creates all the keys,
 // databases, and cacher, but does not actually start the server. All cleanup is
 // scheduled by t.Cleanup.
-func newServerConfig(tb testing.TB) *serverConfigResponse {
+func newServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance) *serverConfigResponse {
 	tb.Helper()
 
 	if testing.Short() {
@@ -219,7 +219,7 @@ func newServerConfig(tb testing.TB) *serverConfigResponse {
 	})
 
 	// Create the database.
-	db, dbConfig := database.NewTestDatabaseWithCacher(tb, cacher)
+	db, dbConfig := testDatabaseInstance.NewDatabase(tb, cacher)
 
 	// Create the key manager.
 	keyManager := keys.TestKeyManager(tb)

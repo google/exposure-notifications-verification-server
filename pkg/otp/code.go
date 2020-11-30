@@ -86,9 +86,12 @@ type Request struct {
 	SymptomDate    *time.Time
 	TestDate       *time.Time
 	MaxSymptomAge  time.Duration
-	IssuingUser    *database.User
-	IssuingApp     *database.AuthorizedApp
 	UUID           string
+
+	// Issuing includes information about the issuer.
+	IssuingUser       *database.User
+	IssuingApp        *database.AuthorizedApp
+	IssuingExternalID string
 }
 
 // Issue will generate a verification code and save it to the database, based on
@@ -124,17 +127,18 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, s
 		}
 
 		verificationCode = database.VerificationCode{
-			RealmID:       o.RealmID,
-			Code:          code,
-			LongCode:      longCode,
-			TestType:      strings.ToLower(o.TestType),
-			SymptomDate:   o.SymptomDate,
-			TestDate:      o.TestDate,
-			ExpiresAt:     o.ShortExpiresAt,
-			LongExpiresAt: o.LongExpiresAt,
-			IssuingUserID: issuingUserID,
-			IssuingAppID:  issuingAppID,
-			UUID:          o.UUID,
+			RealmID:           o.RealmID,
+			Code:              code,
+			LongCode:          longCode,
+			TestType:          strings.ToLower(o.TestType),
+			SymptomDate:       o.SymptomDate,
+			TestDate:          o.TestDate,
+			ExpiresAt:         o.ShortExpiresAt,
+			LongExpiresAt:     o.LongExpiresAt,
+			IssuingUserID:     issuingUserID,
+			IssuingAppID:      issuingAppID,
+			IssuingExternalID: o.IssuingExternalID,
+			UUID:              o.UUID,
 		}
 		// If a verification code already exists, it will fail to save, and we retry.
 		if err = o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {

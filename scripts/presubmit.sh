@@ -37,8 +37,16 @@ fi
 
 
 echo "📚 Fetch dependencies"
-OUT="$(go get -t ./... 2>&1)" || {
+OUT="$(go get -t -tags=performance,e2e ./... 2>&1)" || {
   echo "✋ Error fetching dependencies"
+  echo "\n\n${OUT}\n\n"
+  exit 1
+}
+
+
+echo "📚 Fetch test dependencies"
+OUT="$(go test -i -tags=performance,e2e ./... 2>&1)" || {
+  echo "✋ Error fetching test dependencies"
   echo "\n\n${OUT}\n\n"
   exit 1
 }
@@ -76,9 +84,6 @@ make copyrightcheck || {
   echo "✋ Missing copyrights."
   exit 1
 }
-
-echo "🔨 Building"
-go build ./...
 
 
 echo "🌌 Verify and tidy module"

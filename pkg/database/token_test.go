@@ -27,6 +27,8 @@ import (
 )
 
 func TestSubject(t *testing.T) {
+	t.Parallel()
+
 	testDay, err := time.Parse("2006-01-02", "2020-07-07")
 	if err != nil {
 		t.Fatalf("test setup error: %v", err)
@@ -94,7 +96,11 @@ func TestSubject(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		tc := tc
+
 		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := ParseSubject(tc.Sub)
 			if err != nil {
 				if tc.Error == "" {
@@ -276,7 +282,8 @@ func TestIssueToken(t *testing.T) {
 
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
-			db := NewTestDatabase(t)
+
+			db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
 			if err := db.SaveRealm(realm, SystemTest); err != nil {
@@ -328,7 +335,7 @@ func TestIssueToken(t *testing.T) {
 					t.Fatalf("error reading token from db: %v", err)
 				}
 
-				if diff := cmp.Diff(tok, got, approxTime); diff != "" {
+				if diff := cmp.Diff(tok, got, ApproxTime); diff != "" {
 					t.Fatalf("mismatch (-want, +got):\n%s", diff)
 				}
 
@@ -369,7 +376,8 @@ func TestIssueToken(t *testing.T) {
 
 func TestPurgeTokens(t *testing.T) {
 	t.Parallel()
-	db := NewTestDatabase(t)
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	now := time.Now()
 	testData := []*Token{

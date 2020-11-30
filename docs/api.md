@@ -62,7 +62,7 @@ Exchange a verification code for a long term verification token.
   * `["confirmed", "likely"]`
   * `["confirmed", "likely", "negative"]`
   * It is not possible to get just `likely` or just `negative` - if a client
-        passes `likely` they are indiciating they can process both `confirmed` and `likely`.
+        passes `likely` they are indicating they can process both `confirmed` and `likely`.
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
   number of base64-encoded bytes into this field. The server does not process
@@ -98,7 +98,7 @@ Possible error code responses. New error codes may be added in future releases.
 | `code_invalid`          | 400         | No    | Code invalid or used, user may need to obtain a new code. |
 | `code_expired`          | 400         | No    | Code has expired, user may need to obtain a new code. |
 | `code_not_found`        | 400         | No    | The server has no record of that code. |
-| `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecgonized test type |
+| `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecognized test type |
 | `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided. |
 | `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code |
 | `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later. |
@@ -195,6 +195,17 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   the padding.
 * `uuid` is optional as request input. The server will generate a uuid on response if omitted.
   * This is a handle which allows the issuer to track status of the issued verification code.
+* `externalIssuerID` is an optional field supplied by the API caller to uniquely
+  identify the entity making this request. This is useful where callers are
+  using a single API key behind an ERP, or when callers are using the
+  verification server as an API with a different authentication system. This
+  field is optional.
+
+  * The information provided is stored exactly as-is. If the identifier is
+    uniquely identifying PII (such as an email address, employee ID, SSN, etc),
+    the caller should apply a cryptographic hash before sending that data. **The
+    system does not sanitize or encrypt these external IDs, it is the caller's
+    responsibility to do so.**
 
 **IssueCodeResponse**
 

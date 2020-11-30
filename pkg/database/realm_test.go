@@ -26,6 +26,8 @@ import (
 )
 
 func TestSMS(t *testing.T) {
+	t.Parallel()
+
 	realm := NewRealmWithDefaults("test")
 	realm.SMSTextTemplate = "This is your Exposure Notifications Verification code: [enslink] Expires in [longexpires] hours"
 	realm.RegionCode = "US-WA"
@@ -47,7 +49,7 @@ func TestSMS(t *testing.T) {
 func TestPerUserRealmStats(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	numDays := 7
 	endDate := timeutils.Midnight(time.Now())
@@ -92,13 +94,9 @@ func TestPerUserRealmStats(t *testing.T) {
 		t.Error("len(users) = 0, expected ≠ 0")
 	}
 
-	stats, err := realm.CodesPerUser(db, startDate, endDate)
+	stats, err := realm.UserStats(db, startDate, endDate)
 	if err != nil {
 		t.Fatalf("error getting stats: %v", err)
-	}
-
-	if len(stats) != numDays*len(users) {
-		t.Errorf("len(stats) = %d, expected %d", len(stats), numDays*len(users))
 	}
 
 	for i := 0; i < len(stats)-1; i++ {
@@ -114,7 +112,9 @@ func TestRealm_FindMobileApp(t *testing.T) {
 	t.Parallel()
 
 	t.Run("access_across_realms", func(t *testing.T) {
-		db := NewTestDatabase(t)
+		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 		realm1 := NewRealmWithDefaults("realm1")
 		if err := db.SaveRealm(realm1, SystemTest); err != nil {
@@ -173,7 +173,7 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	db.config.CertificateSigningKeyRing = filepath.Join(project.Root(), "local", "test", "realm")
 	db.config.MaxCertificateSigningKeyVersions = 2

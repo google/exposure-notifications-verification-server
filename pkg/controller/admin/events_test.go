@@ -31,7 +31,9 @@ import (
 const RFC3339PartialLocal = "2006-01-02T15:04:05"
 
 func TestShowAdminEvents(t *testing.T) {
-	harness := envstest.NewServer(t)
+	t.Parallel()
+
+	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	// Get the default realm
 	realm, err := harness.Database.FindRealm(1)

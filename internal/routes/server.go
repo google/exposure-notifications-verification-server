@@ -390,10 +390,9 @@ func realmadminRoutes(r *mux.Router, c *realmadmin.Controller) {
 	r.Handle("/settings", c.HandleSettings()).Methods("GET", "POST")
 	r.Handle("/settings/enable-express", c.HandleEnableExpress()).Methods("POST")
 	r.Handle("/settings/disable-express", c.HandleDisableExpress()).Methods("POST")
-	r.Handle("/stats", c.HandleShow(realmadmin.HTML)).Methods("GET")
-	r.Handle("/stats.json", c.HandleShow(realmadmin.JSON)).Methods("GET")
-	r.Handle("/stats.csv", c.HandleShow(realmadmin.CSV)).Methods("GET")
-	r.Handle("/stats/{date}", c.HandleStats()).Methods("GET")
+	r.Handle("/stats", c.HandleShow()).Methods("GET")
+	r.Handle("/stats.csv", c.HandleShow()).Methods("GET")
+	r.Handle("/stats.json", c.HandleShow()).Methods("GET")
 	r.Handle("/events", c.HandleEvents()).Methods("GET")
 }
 

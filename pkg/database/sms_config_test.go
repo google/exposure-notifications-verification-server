@@ -23,7 +23,7 @@ import (
 func TestSMSConfig_Lifecycle(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	// Create realm
 	realmName := t.Name()
@@ -116,7 +116,7 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 func TestSMSProvider(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	realm, err := db.CreateRealm("test-sms-realm-1")
 	if err != nil {
