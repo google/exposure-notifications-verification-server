@@ -45,6 +45,7 @@ resource "google_project_service" "services" {
     "binaryauthorization.googleapis.com",
     "cloudbuild.googleapis.com",
     "cloudidentity.googleapis.com",
+    "cloudidentity.googleapis.com",
     "cloudkms.googleapis.com",
     "cloudscheduler.googleapis.com",
     "compute.googleapis.com",
