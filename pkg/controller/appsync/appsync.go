@@ -29,6 +29,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+const playStoreLink = `https://play.google.com/store/apps/details?id=`
+
 // Controller is a controller for the appsync service.
 type Controller struct {
 	config *config.AppSyncConfig
@@ -76,7 +78,7 @@ func (c *Controller) HandleSync() http.Handler {
 
 		for _, app := range apps.Apps {
 			realm, has := realms[app.Region]
-			if !has {
+			if !has { // Find this apps region and cache it in our realms map
 				realm, err = c.db.FindRealmByRegion(app.Region)
 				if err != nil {
 					merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm %s: %w", app.Region, err))
@@ -86,8 +88,7 @@ func (c *Controller) HandleSync() http.Handler {
 			}
 
 			realmApps, has := appsByRealm[realm.ID]
-			if !has {
-				// Only Android supported for sync.
+			if !has { // Find all of the apps for this realm and cache that list in our appByRealmMap
 				realmApps, err := c.db.ListActiveAppsByOS(realm.ID, database.OSTypeAndroid)
 				if err != nil {
 					merr = multierror.Append(merr, fmt.Errorf("unable to list apps for realm %d: %w", realm.ID, err))
@@ -96,9 +97,8 @@ func (c *Controller) HandleSync() http.Handler {
 				appsByRealm[realm.ID] = realmApps
 			}
 
-			has = false
+			has = false // Find out if this realm's applist already has an app with this fingerprint.
 			for _, a := range realmApps {
-				// TODO(whaught): what's up with package_name. do not submit.
 				if a.SHA == app.SHA256CertFingerprints {
 					has = true
 					break
@@ -108,14 +108,13 @@ func (c *Controller) HandleSync() http.Handler {
 			// Didn't find an app. make one.
 			if !has {
 				logger.Infof("App not found during sync. Adding app %#v", app)
-				// TODO(whaught): what are default values of these fields. do not submit.
 				newApp := &database.MobileApp{
-					Name:    "app", // do not submit
+					Name:    app.Region + " Android App",
 					RealmID: realm.ID,
-					URL:     "https://example2.com", // do not submit
+					URL:     playStoreLink + app.PackageName,
 					OS:      database.OSTypeAndroid,
 					SHA:     app.SHA256CertFingerprints,
-					AppID:   "app", // do not submit
+					AppID:   app.PackageName,
 				}
 				if err := c.db.SaveMobileApp(newApp, database.System); err != nil {
 					merr = multierror.Append(merr, fmt.Errorf("failed saving mobile app: %v", err))
