@@ -20,6 +20,10 @@ resource "google_compute_global_address" "verification-enx-redirect" {
   count   = local.enable_enx_redirect ? 1 : 0
   name    = "verification-enx-redirect-address"
   project = var.project
+
+  depends_on = [
+    google_project_service.services["compute.googleapis.com"],
+  ]
 }
 
 # Redirects all requests to https
@@ -32,6 +36,10 @@ resource "google_compute_url_map" "enx-redirect-urlmap-http" {
     strip_query    = false
     https_redirect = true
   }
+
+  depends_on = [
+    google_project_service.services["compute.googleapis.com"],
+  ]
 }
 
 resource "google_compute_url_map" "enx-redirect-urlmap-https" {
@@ -40,6 +48,10 @@ resource "google_compute_url_map" "enx-redirect-urlmap-https" {
   provider        = google-beta
   project         = var.project
   default_service = google_compute_backend_service.enx-redirect[0].id
+
+  depends_on = [
+    google_project_service.services["compute.googleapis.com"],
+  ]
 }
 
 resource "google_compute_target_http_proxy" "enx-redirect-http" {
@@ -104,6 +116,16 @@ resource "google_compute_managed_ssl_certificate" "enx-redirect-root" {
   managed {
     domains = ["www.${var.enx_redirect_domain}"]
   }
+
+  # This is to prevent destroying the cert while it's still attached to the load
+  # balancer.
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [
+    google_project_service.services["compute.googleapis.com"],
+  ]
 }
 
 resource "google_compute_managed_ssl_certificate" "enx-redirect" {
@@ -117,4 +139,14 @@ resource "google_compute_managed_ssl_certificate" "enx-redirect" {
     // we can only have 100 domains in this list.
     domains = [for o in var.enx_redirect_domain_map : o.host]
   }
+
+  # This is to prevent destroying the cert while it's still attached to the load
+  # balancer.
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [
+    google_project_service.services["compute.googleapis.com"],
+  ]
 }
