@@ -1346,6 +1346,7 @@ func (r *Realm) UserStats(db *Database, start, stop time.Time) (RealmUserStats, 
 			$1 AS realm_id,
 			d.user_id AS user_id,
 			u.name AS name,
+			u.email AS email,
 			COALESCE(s.codes_issued, 0) AS codes_issued
 		FROM (
 			SELECT

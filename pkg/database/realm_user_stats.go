@@ -39,6 +39,7 @@ type RealmUserStat struct {
 	RealmID     uint
 	UserID      uint
 	Name        string
+	Email       string
 	CodesIssued uint
 }
 
@@ -52,7 +53,7 @@ func (s RealmUserStats) MarshalCSV() ([]byte, error) {
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 
-	if err := w.Write([]string{"date", "realm_id", "user_id", "name", "codes_issued"}); err != nil {
+	if err := w.Write([]string{"date", "realm_id", "user_id", "name", "email", "codes_issued"}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
@@ -62,6 +63,7 @@ func (s RealmUserStats) MarshalCSV() ([]byte, error) {
 			strconv.FormatUint(uint64(stat.RealmID), 10),
 			strconv.FormatUint(uint64(stat.UserID), 10),
 			stat.Name,
+			stat.Email,
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
@@ -89,6 +91,7 @@ type jsonRealmUserStatStats struct {
 type jsonRealmUserStatIssuerData struct {
 	UserID      uint   `json:"user_id"`
 	Name        string `json:"name"`
+	Email       string `json:"email"`
 	CodesIssued uint   `json:"codes_issued"`
 }
 
@@ -108,6 +111,7 @@ func (s RealmUserStats) MarshalJSON() ([]byte, error) {
 		m[stat.Date] = append(m[stat.Date], &jsonRealmUserStatIssuerData{
 			UserID:      stat.UserID,
 			Name:        stat.Name,
+			Email:       stat.Email,
 			CodesIssued: stat.CodesIssued,
 		})
 	}
@@ -153,6 +157,7 @@ func (s *RealmUserStats) UnmarshalJSON(b []byte) error {
 				RealmID:     result.RealmID,
 				UserID:      r.UserID,
 				Name:        r.Name,
+				Email:       r.Email,
 				CodesIssued: r.CodesIssued,
 			})
 		}
