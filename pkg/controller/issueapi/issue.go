@@ -33,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
 	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 )
 
 type dateParseSettings struct {
@@ -97,6 +98,14 @@ func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, e
 	return &date, nil
 }
 
+type issueResult struct {
+	issueResponse *api.IssueCodeResponse
+	httpCode      int
+	errorReturn   *api.ErrorReturn
+	obsBlame      tag.Mutator
+	obsResult     tag.Mutator
+}
+
 func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if c.config.IsMaintenanceMode() {
@@ -106,26 +115,24 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		ctx := observability.WithBuildInfo(r.Context())
-
-		logger := logging.FromContext(ctx).Named("issueapi.HandleIssue")
-
-		var blame = observability.BlameNone
-		var result = observability.ResultOK()
-		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &blame, &result)
+		result := &issueResult{
+			httpCode:  http.StatusOK,
+			obsBlame:  observability.BlameNone,
+			obsResult: observability.ResultOK(),
+		}
+		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
-			blame = observability.BlameClient
-			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			return
 		}
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-			blame = observability.BlameClient
-			result = observability.ResultError("MISSING_AUTHORIZED_APP")
+			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("MISSING_AUTHORIZED_APP")
 			return
 		}
 
@@ -134,8 +141,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
-				blame = observability.BlameClient
-				result = observability.ResultError("UNAUTHORIZED")
+				result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("UNAUTHORIZED")
 				return
 			}
 		} else {
@@ -144,21 +150,20 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 		if realm == nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
-			blame = observability.BlameServer
-			result = observability.ResultError("MISSING_REALM")
+			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("MISSING_REALM")
 			return
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
 		ctx = observability.WithRealmID(ctx, realm.ID)
 
-		resp, code, err := c.issue(ctx, &request, realm)
-		if err != nil {
-			if code == http.StatusInternalServerError {
-				controller.InternalError(w, r, c.h, err)
+		resp := c.issue(ctx, &request, realm, user, authApp, result)
+		if result.errorReturn != nil {
+			if result.httpCode == http.StatusInternalServerError {
+				controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))
 				return
 			}
-			c.h.RenderJSON(w, code, err)
+			c.h.RenderJSON(w, result.httpCode, result.errorReturn)
 			return
 		}
 
@@ -166,19 +171,23 @@ func (c *Controller) HandleIssue() http.Handler {
 	})
 }
 
-func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, realm *database.Realm) (*api.IssueCodeResponse, int, error) {
+func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest,
+	realm *database.Realm, user *database.User, authApp *database.AuthorizedApp, result *issueResult) *api.IssueCodeResponse {
+	logger := logging.FromContext(ctx).Named("issueapi.issue")
+	var err error
+
 	// If this realm requires a date but no date was specified, return an error.
 	if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
-		blame = observability.BlameClient
-		result = observability.ResultError("MISSING_REQUIRED_FIELDS")
-		return nil, http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate)
+		result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("MISSING_REQUIRED_FIELDS")
+		result.httpCode, result.errorReturn = http.StatusBadRequest, api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate)
+		return nil
 	}
 
 	// Validate that the request with the provided test type is valid for this realm.
 	if !realm.ValidTestType(request.TestType) {
-		blame = observability.BlameClient
-		result = observability.ResultError("UNSUPPORTED_TEST_TYPE")
-		return nil, http.StatusBadRequest, api.Errorf("unsupported test type: %v", request.TestType)
+		result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("UNSUPPORTED_TEST_TYPE")
+		result.httpCode, result.errorReturn = http.StatusBadRequest, api.Errorf("unsupported test type: %v", request.TestType)
+		return nil
 	}
 
 	// Verify SMS configuration if phone was provided
@@ -187,24 +196,24 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, r
 		smsProvider, err = realm.SMSProvider(c.db)
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
-			return nil, http.StatusInternalServerError, api.Errorf("failed to get sms provider")
+			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
+			result.httpCode, result.errorReturn = http.StatusInternalServerError, api.Errorf("failed to get sms provider")
+			return nil
 		}
 		if smsProvider == nil {
 			err := fmt.Errorf("phone provided, but no sms provider is configured")
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
-			return nil, http.StatusBadRequest, api.Error(err)
+			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("FAILED_TO_GET_SMS_PROVIDER")
+			result.httpCode, result.errorReturn = http.StatusBadRequest, api.Error(err)
+			return nil
 		}
 	}
 
 	// Verify the test type
 	request.TestType = strings.ToLower(request.TestType)
 	if _, ok := c.validTestType[request.TestType]; !ok {
-		blame = observability.BlameClient
-		result = observability.ResultError("INVALID_TEST_TYPE")
-		return nil, http.StatusBadRequest, api.Errorf("invalid test type")
+		result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("INVALID_TEST_TYPE")
+		result.httpCode, result.errorReturn = http.StatusBadRequest, api.Errorf("invalid test type")
+		return nil
 	}
 
 	// Set up parallel arrays to leverage the observability reporting and connect the parse / validation errors
@@ -216,9 +225,9 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, r
 		if d != "" {
 			parsed, err := time.Parse("2006-01-02", d)
 			if err != nil {
-				blame = observability.BlameClient
-				result = observability.ResultError(dateSettings[i].ParseError)
-				return nil, http.StatusBadRequest, api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err)
+				result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError(dateSettings[i].ParseError)
+				result.httpCode, result.errorReturn = http.StatusBadRequest, api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err)
+				return nil
 			}
 			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
 			maxDate := timeutils.UTCMidnight(time.Now())
@@ -232,9 +241,9 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, r
 					maxDate.Format("2006-01-02"),
 					parsed.Format("2006-01-02"),
 				)
-				blame = observability.BlameClient
-				result = observability.ResultError(dateSettings[i].ValidateError)
-				return nil, http.StatusBadRequest, api.Error(err)
+				result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError(dateSettings[i].ValidateError)
+				result.httpCode, result.errorReturn = http.StatusBadRequest, api.Error(err)
+				return nil
 			}
 			parsedDates[i] = validatedDate
 		}
@@ -246,10 +255,14 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, r
 	if rUUID != "" {
 		if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
 			if !database.IsNotFound(err) {
-				return nil, http.StatusInternalServerError, err
+				result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("FAILED_TO_CHECK_UUID")
+				result.httpCode, result.errorReturn = http.StatusInternalServerError, api.Error(err)
+				return nil
 			}
 		} else if code != nil {
-			return nil, http.StatusConflict, api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists)
+			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("UUID_CONFLICT")
+			result.httpCode, result.errorReturn = http.StatusConflict, api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists)
+			return nil
 		}
 	}
 
@@ -258,16 +271,16 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, r
 	if realm.AbusePreventionEnabled {
 		key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
 		if err != nil {
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_GENERATE_HMAC")
-			return nil, http.StatusInternalServerError, err
+			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("FAILED_TO_GENERATE_HMAC")
+			result.httpCode, result.errorReturn = http.StatusInternalServerError, api.Error(err)
+			return nil
 		}
 		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
 		if err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER")
-			return nil, http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again")
+			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER")
+			result.httpCode, result.errorReturn = http.StatusInternalServerError, api.Errorf("failed to verify realm stats, please try again")
+			return nil
 		}
 
 		stats.Record(ctx, mRealmTokenUsed.M(1))
@@ -279,9 +292,9 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, r
 				"reset", reset)
 
 			if c.config.GetEnforceRealmQuotas() {
-				blame = observability.BlameClient
-				result = observability.ResultError("QUOTA_EXCEEDED")
-				return nil, http.StatusTooManyRequests, api.Errorf("exceeded realm quota, please contact the realm admin.")
+				result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("QUOTA_EXCEEDED")
+				result.httpCode, result.errorReturn = http.StatusTooManyRequests, api.Errorf("exceeded realm quota, please contact the realm admin.")
+				return nil
 			}
 		}
 	}
@@ -317,19 +330,20 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, r
 	code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 	if err != nil {
 		logger.Errorw("failed to issue code", "error", err)
-		blame = observability.BlameServer
-		result = observability.ResultError("FAILED_TO_ISSUE_CODE")
+		result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("FAILED_TO_ISSUE_CODE")
 
 		// GormV1 doesn't have a good way to match db errors
 		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
-			return nil, http.StatusConflict, api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists)
+			result.httpCode, result.errorReturn = http.StatusConflict, api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists)
+			return nil
 		}
-		return nil, http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again")
+		result.httpCode, result.errorReturn = http.StatusInternalServerError, api.Errorf("failed to generate otp code, please try again")
+		return nil
 	}
 
 	if request.Phone != "" && smsProvider != nil {
 		if err := func() error {
-			defer observability.RecordLatency(&ctx, time.Now(), mSMSLatencyMs, &blame, &result)
+			defer observability.RecordLatency(&ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
 			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
@@ -340,23 +354,23 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest, r
 				}
 
 				logger.Errorw("failed to send sms", "error", err)
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_SEND_SMS")
+				result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("FAILED_TO_SEND_SMS")
 				return err
 			}
 			return nil
 		}(); err != nil {
-			return nil, http.StatusInternalServerError, api.Errorf("failed to send sms: %s", err)
+			result.httpCode, result.errorReturn = http.StatusInternalServerError, api.Errorf("failed to send sms: %s", err)
+			return nil
 		}
+	}
 
-		return &api.IssueCodeResponse{
-			UUID:                   uuid,
-			VerificationCode:       code,
-			ExpiresAt:              expiryTime.Format(time.RFC1123),
-			ExpiresAtTimestamp:     expiryTime.UTC().Unix(),
-			LongExpiresAt:          longExpiryTime.Format(time.RFC1123),
-			LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
-		}, 0, nil
+	return &api.IssueCodeResponse{
+		UUID:                   uuid,
+		VerificationCode:       code,
+		ExpiresAt:              expiryTime.Format(time.RFC1123),
+		ExpiresAtTimestamp:     expiryTime.UTC().Unix(),
+		LongExpiresAt:          longExpiryTime.Format(time.RFC1123),
+		LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
 	}
 }
 
