@@ -64,6 +64,8 @@ module "en-alerting" {
   adminapi_hosts  = ["adminapi.notexistdomain.notexist"]
   apiserver_hosts = ["apiserver.notexistdomain.notexist"]
   server_hosts    = ["encv-test.notexistdomain.notexist"]
+
+  depends_on = [module.en]
 }
 
 output "en" {
