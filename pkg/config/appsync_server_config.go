@@ -42,7 +42,7 @@ type AppSyncConfig struct {
 	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
 
 	// AppSync config
-	AppSyncURL         string        `env:"APP_SYNC_URL, default=https://www.gstatic.com/exposurenotifications/apps.json"`
+	AppSyncURL         string        `env:"APP_SYNC_URL"`
 	FileSizeLimitBytes int64         `env:"APP_SYNC_SIZE_LIMIT, default=10240"`
 	Timeout            time.Duration `env:"APP_SYNC_TIMEOUT, default=1m"`
 }
@@ -58,10 +58,12 @@ func NewAppSyncConfig(ctx context.Context) (*AppSyncConfig, error) {
 }
 
 func (c *AppSyncConfig) Validate() error {
-	if url, err := url.Parse(c.AppSyncURL); err != nil {
-		return fmt.Errorf("unable to parse APP_SYNC_URL: %v", err)
-	} else if url == nil {
-		return errors.New("expecting a value for APP_SYNC_URL")
+	if c.AppSyncURL != "" {
+		if url, err := url.Parse(c.AppSyncURL); err != nil {
+			return fmt.Errorf("unable to parse APP_SYNC_URL: %v", err)
+		} else if url == nil {
+			return errors.New("expecting a URL value for APP_SYNC_URL")
+		}
 	}
 
 	return nil

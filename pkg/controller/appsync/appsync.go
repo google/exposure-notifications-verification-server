@@ -17,6 +17,7 @@ package appsync
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -56,6 +57,11 @@ func (c *Controller) HandleSync() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := logging.FromContext(r.Context()).Named("appsync.HandleSync")
+
+		if c.config.AppSyncURL == "" {
+			controller.InternalError(w, r, c.h, errors.New("no APP_SYNC_URL configured"))
+			return
+		}
 
 		client := http.Client{Timeout: c.config.Timeout}
 		resp, err := client.Get(c.config.AppSyncURL)
