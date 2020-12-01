@@ -165,7 +165,20 @@ Terraform module.
           apiserver_hosts = ["apiserver.example.org"]
           server_hosts    = ["example.org"]
 
-          notification-email = "example+alert@google.com"
+          alert-notification-channels = {
+              email = {
+                  labels = {
+                      email_address = "nobody@example.com"
+                  }
+              }
+              slack = {
+                  labels = {
+                      channel_name = "#foo"
+                      auth_token   = "abr"
+                  }
+              }
+          }
+          depends_on = [module.en]
       }
 
       output "en" {
