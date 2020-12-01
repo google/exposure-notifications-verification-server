@@ -6,15 +6,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "header.create-verification-code"
-msgstr "Create verification code"
-
-msgid "header.diagnosis"
-msgstr "Diagnosis"
-
-msgid "header.dates"
-msgstr "Dates"
-
 #
 # navigation menus
 # ----------------
@@ -48,3 +39,104 @@ msgstr "Users"
 
 msgid "nav.settings"
 msgstr "Settings"
+
+msgid "nav.change-realm"
+msgstr "Change realm"
+
+msgid "nav.select-realm"
+msgstr "Select realm"
+
+msgid "nav.system-admin"
+msgstr "System admin"
+
+msgid "nav.my-account"
+msgstr "My account"
+
+msgid "nav.sign-out"
+msgstr "Sign out"
+
+
+#
+# issue code
+# ----------
+
+msgid "codes.issue.header"
+msgstr "Create verification code"
+
+msgid "codes.issue.instructions"
+msgstr "Complete the following form to issue a single-use token to verify a patient. Do not submit this form until you are prepared to relay the code to the patient."
+
+msgid "codes.issue.diagnosis-header"
+msgstr "Diagnosis"
+
+msgid "codes.issue.dates-header"
+msgstr "Dates"
+
+msgid "codes.issue.confirmed-test"
+msgstr "Positive test"
+
+msgid "codes.issue.confirmed-test-details"
+msgstr "Confirmed positive test result from an official testing source"
+
+msgid "codes.issue.likely-test"
+msgstr "Likely diagnosis"
+
+msgid "codes.issue.likely-test-details"
+msgstr "Clinical diagnosis without a test"
+
+msgid "codes.issue.negative-test"
+msgstr "Negative test"
+
+msgid "codes.issue.negative-test-details"
+msgstr "Confirmed negative test result from an official testing source"
+
+msgid "codes.issue.testing-date-label"
+msgstr "Testing date (local time)"
+
+msgid "codes.issue.symptoms-date-label"
+msgstr "Symptoms onset (local time)"
+
+msgid "codes.issue.sms-text-message-header"
+msgstr "SMS text message (recommended)"
+
+msgid "codes.issue.sms-text-message-label"
+msgstr "Patient phone number"
+
+msgid "codes.issue.sms-text-message-detail"
+msgstr "If provided, the system will send a text message containing the code to the patient. This must be a phone number capable of receiving SMS text messages."
+
+msgid "codes.issue.create-code-button"
+msgstr "Create verification code"
+
+msgid "codes.issue.reset-code-button"
+msgstr "Reset and go back"
+
+msgid "codes.issue.sms-verification-link-header"
+msgstr "SMS verification link"
+
+msgid "codes.issue.sms-verification-detail"
+msgstr "Successfully sent SMS to %s. Instruct the patient to check their text messages on their mobile phone where Exposure Notifications is enabled."
+
+msgid "codes.issue.backup-short-code-header"
+msgstr "Backup short code"
+
+msgid "codes.issue.backup-short-code-detail"
+msgstr "Share this code with the patient if they did not receive the SMS text message on their mobile phone."
+
+msgid "codes.issue.generated-short-code-header"
+msgstr "Generated short code"
+
+msgid "codes.issue.generated-short-code-detail"
+msgstr "Share this code with the patient immediately."
+
+msgid "codes.issue.uuid-header"
+msgstr "Unique identifier"
+
+msgid "codes.issue.uuid-detail"
+msgstr "Use this to see if the verification code has been redeemed."
+
+msgid "codes.issue.countdown-expires-in"
+msgstr "Expires in"
+
+msgid "codes.issue.countdown-expired"
+msgstr "EXPIRED"
