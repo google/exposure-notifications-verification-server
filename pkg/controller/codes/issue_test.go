@@ -89,10 +89,10 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 
 		// Click the issue button.
 		chromedp.Click(`#submit`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#code`, chromedp.ByQuery),
+		chromedp.WaitVisible(`#short-code`, chromedp.ByQuery),
 
 		// Get the code.
-		chromedp.TextContent(`#code`, &code, chromedp.ByQuery),
+		chromedp.TextContent(`#short-code`, &code, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}
