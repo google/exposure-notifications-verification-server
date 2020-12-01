@@ -238,10 +238,14 @@ func (c *Controller) HandleIssue() http.Handler {
 		if rUUID != "" {
 			if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
 				if !database.IsNotFound(err) {
+					blame = observability.BlameServer
+					result = observability.ResultError("FAILED_TO_CHECK_UUID")
 					controller.InternalError(w, r, c.h, err)
 					return
 				}
 			} else if code != nil {
+				blame = observability.BlameClient
+				result = observability.ResultError("UUID_CONFLICT")
 				c.h.RenderJSON(w, http.StatusConflict,
 					api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists))
 				return
