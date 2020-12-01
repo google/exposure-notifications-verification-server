@@ -23,7 +23,7 @@ import (
 func TestEmailConfig_Lifecycle(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	// Create realm
 	realmName := t.Name()
@@ -116,7 +116,7 @@ func TestEmailConfig_Lifecycle(t *testing.T) {
 func TestEmailProvider(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	realm, err := db.CreateRealm("test-email-realm-1")
 	if err != nil {

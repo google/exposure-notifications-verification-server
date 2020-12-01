@@ -1715,6 +1715,16 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.DropTable(&ExternalIssuerStat{}).Error
 			},
 		},
+		{
+			ID: "00070-AddExternalIssuerIDToVerificationCode",
+			Migrate: func(tx *gorm.DB) error {
+				sql := `ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS issuing_external_id VARCHAR(255)`
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.DropTable(&ExternalIssuerStat{}).Error
+			},
+		},
 	})
 }
 

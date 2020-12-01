@@ -23,7 +23,7 @@ import (
 func TestMobileApp_Validation(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	t.Run("name", func(t *testing.T) {
 		t.Parallel()
@@ -151,7 +151,9 @@ func TestMobileApp_List(t *testing.T) {
 	t.Parallel()
 
 	t.Run("access_mobileapps_and_realms", func(t *testing.T) {
-		db := NewTestDatabase(t)
+		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 		realm1 := NewRealmWithDefaults("realm1")
 		if err := db.SaveRealm(realm1, SystemTest); err != nil {

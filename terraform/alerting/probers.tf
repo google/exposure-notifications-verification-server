@@ -35,6 +35,7 @@ resource "google_monitoring_uptime_check_config" "https" {
       host       = each.key
     }
   }
+
   depends_on = [
     null_resource.manual-step-to-enable-workspace
   ]

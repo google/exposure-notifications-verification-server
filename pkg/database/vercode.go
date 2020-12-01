@@ -76,18 +76,18 @@ type VerificationCode struct {
 	// IssuingUserID is the ID of the user in the database that created this
 	// verification code. This is only populated if the code was created via the
 	// UI.
-	IssuingUserID uint
+	IssuingUserID uint `gorm:"column:issuing_user_id; type:integer;"`
 
 	// IssuingAppID is the ID of the app in the database that created this
 	// verification code. This is only populated if the code was created via the
 	// API.
-	IssuingAppID uint
+	IssuingAppID uint `gorm:"column:issuing_app_id; type:integer;"`
 
 	// IssuingExternalID is an optional ID to an external system that created this
 	// verification code. This is only populated if the code was created via the
 	// API AND the API caller supplied it in the request. This ID has no meaning
 	// in this system. It can be up to 255 characters in length.
-	IssuingExternalID string
+	IssuingExternalID string `gorm:"column:issuing_external_id; type:varchar(255);"`
 }
 
 // TableName sets the VerificationCode table name

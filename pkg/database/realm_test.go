@@ -49,7 +49,7 @@ func TestSMS(t *testing.T) {
 func TestPerUserRealmStats(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	numDays := 7
 	endDate := timeutils.Midnight(time.Now())
@@ -112,7 +112,9 @@ func TestRealm_FindMobileApp(t *testing.T) {
 	t.Parallel()
 
 	t.Run("access_across_realms", func(t *testing.T) {
-		db := NewTestDatabase(t)
+		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 		realm1 := NewRealmWithDefaults("realm1")
 		if err := db.SaveRealm(realm1, SystemTest); err != nil {
@@ -171,7 +173,7 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	db.config.CertificateSigningKeyRing = filepath.Join(project.Root(), "local", "test", "realm")
 	db.config.MaxCertificateSigningKeyVersions = 2

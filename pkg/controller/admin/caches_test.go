@@ -28,7 +28,9 @@ import (
 )
 
 func TestShowAdminCaches(t *testing.T) {
-	harness := envstest.NewServer(t)
+	t.Parallel()
+
+	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	// Get the default realm
 	realm, err := harness.Database.FindRealm(1)

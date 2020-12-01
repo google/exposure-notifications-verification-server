@@ -26,7 +26,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/util"
 	"github.com/google/exposure-notifications-server/pkg/verification"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
 )
 
@@ -130,7 +129,7 @@ func TestIntegration(t *testing.T) {
 			}
 
 			if tc.expire {
-				time.Sleep(config.VerificationTokenDuration)
+				time.Sleep(testsuite.VerificationTokenDuration)
 			}
 
 			certRequest := api.VerificationCertificateRequest{

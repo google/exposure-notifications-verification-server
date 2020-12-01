@@ -28,7 +28,7 @@ import (
 func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	uuid := "5148c75c-2bc5-4874-9d1c-f9185d0e1b8a"
 	code := "12345678"
@@ -79,7 +79,8 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
 	realm, err := db.CreateRealm("testRealm")
 	if err != nil {
 		t.Fatalf("failed to create realm: %v", err)
@@ -108,6 +109,8 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	}
 
 	t.Run("normal_find", func(t *testing.T) {
+		t.Parallel()
+
 		got, err := realm.FindVerificationCodeByUUID(db, codeUUID)
 		if err != nil {
 			t.Fatal(err)
@@ -118,6 +121,8 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	})
 
 	t.Run("wrong_realm", func(t *testing.T) {
+		t.Parallel()
+
 		_, err := otherRealm.FindVerificationCodeByUUID(db, codeUUID)
 		if err == nil || !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("expected error: not found, got: %v", err)
@@ -125,6 +130,8 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 	})
 
 	t.Run("wrong_uuid", func(t *testing.T) {
+		t.Parallel()
+
 		_, err := realm.FindVerificationCodeByUUID(db, uuid.Must(uuid.NewRandom()).String())
 		if err == nil || !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("expected error: not found, got: %v", err)
@@ -135,7 +142,7 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	var realmID uint = 123
 	var userID uint = 456
@@ -175,7 +182,7 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	vc := &VerificationCode{
 		Code:          "123456",
@@ -298,7 +305,7 @@ func TestVerCodeIsExpired(t *testing.T) {
 func TestDeleteVerificationCode(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	maxAge := time.Hour
 	code := VerificationCode{
@@ -317,8 +324,7 @@ func TestDeleteVerificationCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := db.FindVerificationCode("12345678")
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	if _, err := db.FindVerificationCode("12345678"); !errors.Is(err, gorm.ErrRecordNotFound) {
 		t.Fatal(err)
 	}
 }
@@ -326,7 +332,7 @@ func TestDeleteVerificationCode(t *testing.T) {
 func TestVerificationCodesCleanup(t *testing.T) {
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	now := time.Now()
 	maxAge := time.Hour // not important to this test case
@@ -401,11 +407,10 @@ func TestVerificationCodesCleanup(t *testing.T) {
 				t.Fatalf("wrong error, want: %v got: %v", gorm.ErrRecordNotFound, err)
 			}
 		} else {
-			if diff := cmp.Diff(testData[i], got, approxTime, cmpopts.IgnoreUnexported(VerificationCode{}), cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
+			if diff := cmp.Diff(testData[i], got, ApproxTime, cmpopts.IgnoreUnexported(VerificationCode{}), cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
 				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}
 		}
-
 	}
 }
 
@@ -415,7 +420,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 	// smokescreen.
 	t.Parallel()
 
-	db := NewTestDatabase(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	fmtString := "2006-01-02"
 	now := time.Now()

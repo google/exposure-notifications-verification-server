@@ -9,14 +9,14 @@
   {{template "head" .}}
 
   <style>
-    #code {
+    .d-code {
       flex-shrink: 10;
       font-size: 1.5em;
       line-height: 2.3em;
       max-width: 480px;
     }
 
-    #code span {
+    .d-code span {
       flex: 1;
       margin: 0 0.1em;
     }
@@ -139,7 +139,7 @@
               <label for="symptomDate" class="col-sm-3">Patient phone</label>
               <div class="col-sm-9">
                 <div class="input-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" placeholder="+1 (555) 555-5555" autocomplete="off" />
+                  <input type="tel" id="phone" name="phone" class="form-control" autocomplete="off" class="w-100" />
                 </div>
                 <small class="form-text text-muted">
                   If provided, the system will send text containing the code to the
@@ -166,25 +166,49 @@
         <span id="long-code-expires-at" class="sm float-right text-danger"></span>
       </div>
       <div class="card-body">
-        <p class="mb-0">
-          <span class="oi oi-circle-check text-success pr-1" aria-hidden="true"></span>
-          Successfully sent SMS to <strong id="long-code-phone"></strong>.
-        </p>
+        <div class="d-flex">
+          <span class="oi oi-circle-check text-success mr-2 mt-1" aria-hidden="true"></span>
+          <span>
+            Successfully sent SMS to <strong id="long-code-phone"></strong>.
+            Instruct the patient to check their text messages on their mobile
+            phone where Exposure Notifications is enabled.
+          </span>
+        </div>
       </div>
     </div>
 
-    <div id="code-confirm" class="card d-none mb-3 shadow-sm">
+    <div id="backup-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
-        Generated short code
-        <span id="code-expires-at" class="sm float-right text-danger"></span>
+        Backup short code
+        <span id="backup-code-expires-at" class="sm float-right text-danger"></span>
       </div>
       <div class="card-body">
-        <p>
-          <span class="oi oi-warning text-warning pr-1" aria-hidden="true"></span>
-          Share this code with the patient.
-        </p>
+        <div class="d-flex">
+          <span class="oi oi-warning text-warning mr-2 mt-1" aria-hidden="true"></span>
+          <span>
+            Share this code with the patient if they did <strong>not</strong>
+            receive the SMS text message on their mobile phone.
+          </span>
+        </div>
 
-        <div id="code" class="text-center user-select-none text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mb-3"></div>
+        <div id="backup-code" class="d-code text-center user-select-none text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mt-3 mb-2"></div>
+      </div>
+    </div>
+
+    <div id="short-code-confirm" class="card d-none mb-3 shadow-sm">
+      <div class="card-header">
+        Generated short code
+        <span id="short-code-expires-at" class="sm float-right text-danger"></span>
+      </div>
+      <div class="card-body">
+        <div class="d-flex">
+          <span class="oi oi-circle-check text-success mr-2 mt-1" aria-hidden="true"></span>
+          <span>
+            Share this code with the patient immediately.
+          </span>
+        </div>
+
+        <div id="short-code" class="d-code text-center user-select-none text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mt-3 mb-2"></div>
       </div>
     </div>
 
@@ -231,9 +255,9 @@
     let $longCodeConfirm;
       let $longCodeExpiresAt;
       let $longCodePhone;
-    let $codeConfirm;
-      let $codeExpiresAt;
-      let $code;
+    let $shortCodeConfirm;
+      let $shortCodeExpiresAt;
+      let $shortCode;
     let $uuidConfirm;
       let $uuid;
 
@@ -253,9 +277,12 @@
       $longCodeConfirm = $('#long-code-confirm');
         $longCodeExpiresAt = $('#long-code-expires-at');
         $longCodePhone = $('#long-code-phone');
-      $codeConfirm = $('#code-confirm');
-        $codeExpiresAt = $('#code-expires-at');
-        $code = $('#code');
+      $backupCodeConfirm = $('#backup-code-confirm');
+        $backupCodeExpiresAt = $('#backup-code-expires-at');
+        $backupCode = $('#backup-code');
+      $shortCodeConfirm = $('#short-code-confirm');
+        $shortCodeExpiresAt = $('#short-code-expires-at');
+        $shortCode = $('#short-code');
       $uuidConfirm = $('#uuid-confirm');
         $uuid = $('#uuid');
 
@@ -316,17 +343,22 @@
 
         // Long
         $longCodeConfirm.addClass('d-none');
-        $longCodeExpiresAt.html('');
-        $longCodePhone.html('');
+        $longCodeExpiresAt.empty();
+        $longCodePhone.empty();
+
+        // Backup
+        $backupCodeConfirm.addClass('d-none');
+        $backupCodeExpiresAt.empty();
+        $backupCode.empty();
 
         // Short
-        $codeConfirm.addClass('d-none');
-        $codeExpiresAt.html('');
-        $code.html('');
+        $shortCodeConfirm.addClass('d-none');
+        $shortCodeExpiresAt.empty();
+        $shortCode.empty();
 
         // UUID
         $uuidConfirm.addClass('d-none');
-        $uuid.html('');
+        $uuid.empty();
 
         // Buttons
         $buttonSubmit.prop('disabled', false);
@@ -365,31 +397,51 @@
             // Show reset button
             $buttonReset.removeClass('d-none');
 
+            let $targetCodeConfirm;
+            let $targetCodeExpiresAt;
+            let $targetCode;
+
             // If a phone was provided...
             if ($longCodePhone && $longCodePhone.length && $inputPhone && $inputPhone.length && $inputPhone.val().length) {
               // Start countdown
               longCodeCountdown = countdown($longCodeExpiresAt, result.longExpiresAtTimestamp);
 
               // Update HTML
-              $longCodePhone.html($inputPhone.val());
+              $longCodePhone.text($inputPhone.val());
 
               // Show long code
               $longCodeConfirm.removeClass('d-none');
+
+              // Set targets to backup
+              $targetCodeConfirm = $backupCodeConfirm;
+              $targetCodeExpiresAt = $backupCodeExpiresAt;
+              $targetCode = $backupCode;
+            } else {
+              // Set targets to short
+              $targetCodeConfirm = $shortCodeConfirm;
+              $targetCodeExpiresAt = $shortCodeExpiresAt;
+              $targetCode = $shortCode;
             }
 
             // Build the code - this is a collection of HTML spans
             {
               // Start countdown
-              codeCountdown = countdown($codeExpiresAt, result.expiresAtTimestamp);
+              codeCountdown = countdown($targetCodeExpiresAt, result.expiresAtTimestamp);
 
               // Update HTML
               let code = result.code;
               for(let i = 0; i < code.length; i++) {
-                let $span = $('<span class="border rounded ml-1 py-2 bg-light">').text(code.charAt(i));
-                $code.append($span);
+                let $span = $('<span>').text(code.charAt(i));
+                  $span.addClass('border');
+                  $span.addClass('rounded');
+                  $span.addClass('ml-1');
+                  $span.addClass('py-2');
+                  $span.addClass('bg-light');
+                  $span.text(code.charAt(i));
+                $targetCode.append($span);
               }
 
-              $codeConfirm.removeClass('d-none');
+              $targetCodeConfirm.removeClass('d-none');
             }
 
             // UUID section
