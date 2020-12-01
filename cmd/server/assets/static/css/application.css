@@ -148,3 +148,8 @@ main.container[role="main"] {
 .table-inner-border-only {
   border-style: hidden;
 }
+
+/* International phone picker */
+.iti {
+  width: 100%;
+}
