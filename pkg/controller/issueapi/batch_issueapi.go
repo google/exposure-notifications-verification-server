@@ -15,9 +15,11 @@
 package issueapi
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
@@ -31,6 +33,8 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
 			return
 		}
+
+		resp := &api.BatchIssueCodeResponse{}
 
 		ctx := r.Context()
 		realm := controller.RealmFromContext(ctx)
@@ -86,10 +90,25 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		// Add realm so that metrics are groupable on a per-realm basis.
 		ctx = observability.WithRealmID(ctx, realm.ID)
 
-		for _, singleIssue := range request.Codes {
-			resp := c.issue(ctx, singleIssue, realm, user, authApp, result)
+		// TODO(whaught): batch size limits
+		logger := logging.FromContext(ctx).Named("issueapi.HandleBatchIssue")
+
+		resp.Codes = make([]*api.IssueCodeResponse, len(request.Codes))
+		for i, singleIssue := range request.Codes {
+			resp.Codes[i] = c.issue(ctx, singleIssue, realm, user, authApp, result)
+			if result.errorReturn != nil {
+				if result.httpCode == http.StatusInternalServerError {
+					controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))
+					return
+				}
+				// continue processing if when a single code issuance fails.
+				logger.Warnw("single code issuance failed: %v", result.errorReturn)
+				continue
+			}
+
 		}
 
+		// Batch returns success, even if individual codes fail.
 		c.h.RenderJSON(w, http.StatusOK, resp)
 		return
 	})
