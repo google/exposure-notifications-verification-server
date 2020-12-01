@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 
@@ -124,6 +125,8 @@ func realMain(ctx context.Context) error {
 	}
 	defer limiterStore.Close(ctx)
 
+	// Note that rate limiting is installed _after_ the chaff middleware because
+	// we do not want chaff requests to count towards rate-limiting quota.
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.APIKeyFunc(ctx, db, "apiserver:ratelimit:", cfg.RateLimit.HMACKey),
 		limitware.AllowOnError(false))
@@ -153,10 +156,6 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	// Install the rate limiting first. In this case, we want to limit by key
-	// first to reduce the chance of a database lookup.
-	r.Use(rateLimit)
-
 	// Other common middlewares
 	requireAPIKey := middleware.RequireAPIKey(cacher, db, h, []database.APIKeyType{
 		database.APIKeyTypeDevice,
@@ -165,37 +164,48 @@ func realMain(ctx context.Context) error {
 
 	r.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
 
+	// Make verify chaff tracker.
+	verifyChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyResponse), chaff.DefaultCapacity)
+	if err != nil {
+		return fmt.Errorf("error creating verify chaffer: %v", err)
+	}
+	defer verifyChaffTracker.Close()
+
+	// Make cert chaff tracker.
+	certChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeCertificateResponse), chaff.DefaultCapacity)
+	if err != nil {
+		return fmt.Errorf("error creating cert chaffer: %v", err)
+	}
+	defer certChaffTracker.Close()
+
 	{
-		sub := r.PathPrefix("/api").Subrouter()
+		sub := r.PathPrefix("/api/verify").Subrouter()
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
-
-		chaffDet := chaff.HeaderDetector("X-Chaff")
+		sub.Use(processChaff(verifyChaffTracker))
+		sub.Use(rateLimit)
 
 		// POST /api/verify
-		verifyChaff, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyResponse), chaff.DefaultCapacity)
-		if err != nil {
-			return fmt.Errorf("error creating chaffer: %v", err)
-		}
-
-		defer verifyChaff.Close()
 		verifyapiController, err := verifyapi.New(ctx, cfg, db, h, tokenSigner)
 		if err != nil {
 			return fmt.Errorf("failed to create verify api controller: %w", err)
 		}
-		sub.Handle("/verify", verifyChaff.HandleTrack(chaffDet, verifyapiController.HandleVerify())).Methods("POST")
+		sub.Handle("", verifyapiController.HandleVerify()).Methods("POST")
+	}
+
+	{
+		sub := r.PathPrefix("/api/certificate").Subrouter()
+		sub.Use(requireAPIKey)
+		sub.Use(processFirewall)
+		sub.Use(processChaff(certChaffTracker))
+		sub.Use(rateLimit)
 
 		// POST /api/certificate
-		certChaff, err := chaff.NewTracker(chaff.NewJSONResponder(encodeCertificateResponse), chaff.DefaultCapacity)
-		if err != nil {
-			return fmt.Errorf("error creating chaffer: %v", err)
-		}
-		defer certChaff.Close()
 		certapiController, err := certapi.New(ctx, cfg, db, cacher, certificateSigner, h)
 		if err != nil {
 			return fmt.Errorf("failed to create certapi controller: %w", err)
 		}
-		sub.Handle("/certificate", certChaff.HandleTrack(chaffDet, certapiController.HandleCertificate())).Methods("POST")
+		sub.Handle("", certapiController.HandleCertificate()).Methods("POST")
 	}
 
 	srv, err := server.New(cfg.Port)
@@ -204,6 +214,14 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
+}
+
+func processChaff(t *chaff.Tracker) mux.MiddlewareFunc {
+	detector := chaff.HeaderDetector("X-Chaff")
+
+	return func(next http.Handler) http.Handler {
+		return t.HandleTrack(detector, next)
+	}
 }
 
 // makePadFromChaff makes a Padding structure from chaff data.
