@@ -35,11 +35,9 @@
       </div>
     {{end}}
 
-    <h1>{{t $.locale "header.create-verification-code"}}</h1>
+    <h1>{{t $.locale "codes.issue.header"}}</h1>
     <p>
-      Complete the following form to issue a single-use token to verify a
-      patient. Do not submit this form until you are prepared to relay
-      the code to the patient.
+      {{t $.locale "codes.issue.instructions"}}
     </p>
 
     {{/* Calculate the column width based on the number of expected choices */}}
@@ -53,7 +51,7 @@
     <form id="issue" action="#">
       <div id="form-area">
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">{{t $.locale "header.diagnosis"}}</div>
+          <div class="card-header">{{t $.locale "codes.issue.diagnosis-header"}}</div>
           <div class="card-body">
             <div class="form-row">
               {{if $currentRealm.ValidTestType "confirmed"}}
@@ -61,9 +59,9 @@
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
                   <label class="form-check-label" for="testType1">
-                    <strong>Positive</strong> test
+                    {{t $.locale "codes.issue.confirmed-test"}}
                     <small class="form-text text-muted">
-                      Confirmed positive test result from an official testing source
+                      {{t $.locale "codes.issue.confirmed-test-details"}}
                     </small>
                   </label>
                 </div>
@@ -75,9 +73,9 @@
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" />
                   <label class="form-check-label" for="testType2">
-                    Likely diagnosis
+                    {{t $.locale "codes.issue.likely-test"}}
                     <small class="form-text text-muted">
-                      Clinical diagnosis without a test
+                      {{t $.locale "codes.issue.likely-test-details"}}
                     </small>
                   </label>
                 </div>
@@ -89,9 +87,9 @@
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="testType" id="testType3" value="negative" />
                   <label class="form-check-label" for="testType3">
-                    <strong>Negative</strong> test
+                    {{t $.locale "codes.issue.negative-test"}}
                     <small class="form-text text-muted">
-                      Confirmed negative test result from an official testing source
+                      {{t $.locale "codes.issue.negative-test-details"}}
                     </small>
                   </label>
                 </div>
@@ -102,49 +100,36 @@
         </div>
 
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">{{t $.locale "header.dates"}}</div>
+          <div class="card-header">{{t $.locale "codes.issue.dates-header"}}</div>
           <div class="card-body">
             <div class="form-row">
               <div class="form-group col-md-6">
-                <label for="testDate">Testing date (local time)</label>
+                <label for="testDate">{{t $.locale "codes.issue.testing-date-label"}}</label>
                 <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
               </div>
 
               <div class="form-group col-md-6">
-                <label for="symptomDate">Symptoms onset (local time)</label>
+                <label for="symptomDate">{{t $.locale "codes.issue.symptoms-date-label"}}</label>
                 <div class="input-group">
                   <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
                 </div>
               </div>
             </div>
-
-            {{if $currentRealm.RequireDate}}
-            <div class="form-row">
-              <div class="col">
-                <small class="form-text text-muted">
-                  {{$currentRealm.Name}} requires at least one date to be
-                  provided.
-                </small>
-              </div>
-            </div>
-            {{end}}
           </div>
         </div>
 
         {{ if $hasSMSConfig }}
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">Notification</div>
+          <div class="card-header">{{t $.locale "codes.issue.sms-text-message-header"}}</div>
           <div class="card-body">
             <div class="row form-group">
-              <label for="symptomDate" class="col-sm-3">Patient phone</label>
-              <div class="col-sm-9">
+              <label for="symptomDate" class="col-sm-6 col-md-4 col-lg-3">{{t $.locale "codes.issue.sms-text-message-label"}}</label>
+              <div class="col-sm-6 col-md-8 col-lg-9">
                 <div class="input-group">
                   <input type="tel" id="phone" name="phone" class="form-control" autocomplete="off" class="w-100" />
                 </div>
                 <small class="form-text text-muted">
-                  If provided, the system will send text containing the code to the
-                  patient. This must be a phone number capable of receiving SMS text
-                  messages.
+                  {{t $.locale "codes.issue.sms-text-message-detail"}}
                 </small>
               </div>
             </div>
@@ -154,7 +139,7 @@
 
         <div class="row mb-3">
           <div class="col">
-            <button id="submit" type="submit" class="btn btn-primary btn-block">Create verification code</button>
+            <button id="submit" type="submit" class="btn btn-primary btn-block">{{t $.locale "codes.issue.create-code-button"}}</button>
           </div>
         </div>
       </div>
@@ -162,16 +147,16 @@
 
     <div id="long-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
-        SMS verification link
-        <span id="long-code-expires-at" class="sm float-right text-danger"></span>
+        {{t $.locale "codes.issue.sms-verification-link-header"}}
+        <span id="long-code-expires-at" class="sm float-right text-danger"
+          data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
+          data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}"></span>
       </div>
       <div class="card-body">
         <div class="d-flex">
           <span class="oi oi-circle-check text-success mr-2 mt-1" aria-hidden="true"></span>
           <span>
-            Successfully sent SMS to <strong id="long-code-phone"></strong>.
-            Instruct the patient to check their text messages on their mobile
-            phone where Exposure Notifications is enabled.
+            {{t $.locale "codes.issue.sms-verification-detail" "<strong id=\"long-code-phone\"></strong>" | safeHTML}}
           </span>
         </div>
       </div>
@@ -179,15 +164,16 @@
 
     <div id="backup-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
-        Backup short code
-        <span id="backup-code-expires-at" class="sm float-right text-danger"></span>
+        {{t $.locale "codes.issue.backup-short-code-header"}}
+        <span id="backup-code-expires-at" class="sm float-right text-danger"
+          data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
+          data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}"></span>
       </div>
       <div class="card-body">
         <div class="d-flex">
           <span class="oi oi-warning text-warning mr-2 mt-1" aria-hidden="true"></span>
           <span>
-            Share this code with the patient if they did <strong>not</strong>
-            receive the SMS text message on their mobile phone.
+            {{t $.locale "codes.issue.backup-short-code-detail"}}
           </span>
         </div>
 
@@ -197,14 +183,16 @@
 
     <div id="short-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
-        Generated short code
-        <span id="short-code-expires-at" class="sm float-right text-danger"></span>
+        {{t $.locale "codes.issue.generated-short-code-header"}}
+        <span id="short-code-expires-at" class="sm float-right text-danger"
+          data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
+          data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}"></span>
       </div>
       <div class="card-body">
         <div class="d-flex">
           <span class="oi oi-circle-check text-success mr-2 mt-1" aria-hidden="true"></span>
           <span>
-            Share this code with the patient immediately.
+            {{t $.locale "codes.issue.generated-short-code-detail"}}
           </span>
         </div>
 
@@ -213,21 +201,19 @@
     </div>
 
     <div id="uuid-confirm" class="card d-none mb-3 shadow-sm">
-      <div class="card-header">Unique identifier</div>
+      <div class="card-header">
+        {{t $.locale "codes.issue.uuid-header"}}
+      </div>
       <div class="card-body">
         <p>
           <span class="oi oi-info text-info pr-1" aria-hidden="true"></span>
-          Use this to see if the verification code has been redeemed.
+          {{t $.locale "codes.issue.uuid-detail"}}
         </p>
 
         <div class="form-group row">
           <div class="input-group col-sm-8 offset-sm-2">
             <input type="text" id="uuid" class="form-control text-monospace">
-            <div class="input-group-append">
-              <a class="input-group-text" data-toggle="tooltip" title="Copy to clipboard" data-copy data-copy-target="uuid">
-                <span class="oi oi-clipboard" aria-hidden="true"></span>
-              </a>
-            </div>
+            {{template "clippy" "uuid"}}
           </div>
         </div>
       </div>
@@ -235,12 +221,10 @@
 
     <div class="row mb-3">
       <div class="col">
-        <button id="reset" class="d-none btn btn-secondary btn-block">Reset and go back</button>
+        <button id="reset" class="d-none btn btn-secondary btn-block">{{t $.locale "codes.issue.reset-code-button"}}</button>
       </div>
     </div>
   </main>
-
-  {{template "codescripts" .}}
 
   <script type="text/javascript">
     let $form;
