@@ -45,23 +45,24 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		var blame = observability.BlameNone
-		var result = observability.ResultOK()
-		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &blame, &result)
+		result := &issueResult{
+			httpCode:  http.StatusOK,
+			obsBlame:  observability.BlameNone,
+			obsResult: observability.ResultOK(),
+		}
+		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 
-		var request api.IssueCodeRequest
+		var request api.BatchIssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
-			blame = observability.BlameClient
-			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			return
 		}
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-			blame = observability.BlameClient
-			result = observability.ResultError("MISSING_AUTHORIZED_APP")
+			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("MISSING_AUTHORIZED_APP")
 			return
 		}
 
@@ -69,8 +70,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
-				blame = observability.BlameClient
-				result = observability.ResultError("UNAUTHORIZED")
+				result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("UNAUTHORIZED")
 				return
 			}
 		} else {
@@ -79,14 +79,18 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 		if realm == nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
-			blame = observability.BlameServer
-			result = observability.ResultError("MISSING_REALM")
+			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("MISSING_REALM")
 			return
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
 		ctx = observability.WithRealmID(ctx, realm.ID)
 
+		for _, singleIssue := range request.Codes {
+			resp := c.issue(ctx, singleIssue, realm, user, authApp, result)
+		}
+
+		c.h.RenderJSON(w, http.StatusOK, resp)
 		return
 	})
 }
