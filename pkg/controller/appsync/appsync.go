@@ -99,12 +99,12 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 
 			name := generateAppName(app)
 			if hasGeneratedName { // add a random string to names on collision
-				s, err := project.RandomString()
+				s, err := project.RandomBase64String(8)
 				if err != nil {
-					logger.Errorw("error generating app name", "error", err)
+					merr = multierror.Append(merr, fmt.Errorf("error generating app name: %w", err))
 					continue
 				}
-				name += " " + s[:8]
+				name += " " + s
 			}
 
 			var playStoreURL = &url.URL{

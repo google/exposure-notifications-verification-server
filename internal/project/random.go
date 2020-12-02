@@ -18,6 +18,7 @@ package project
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 )
 
@@ -28,4 +29,13 @@ func RandomString() (string, error) {
 		return "", fmt.Errorf("failed to generate random: %w", err)
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(b[:])), nil
+}
+
+// RandomBase64String encodes a random base64 string of a given length.
+func RandomBase64String(len int) (string, error) {
+	b := make([]byte, len)
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("failed to generate random: %w", err)
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
 }
