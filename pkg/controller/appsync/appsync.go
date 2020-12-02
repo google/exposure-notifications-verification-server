@@ -116,7 +116,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 				AppID:   app.PackageName,
 			}
 			if err := c.db.SaveMobileApp(newApp, database.System); err != nil {
-				merr = multierror.Append(merr, fmt.Errorf("failed saving mobile app: %v", err))
+				merr = multierror.Append(merr, fmt.Errorf("failed saving mobile app: %w", err))
 				continue
 			}
 		}
