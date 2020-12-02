@@ -105,31 +105,11 @@ $(function() {
   $("[data-timestamp]").each(function(i, e) {
     let $this = $(e);
     let date = new Date($this.data("timestamp"));
-
-    let year = date.getFullYear();
-    let month = date.getMonth() + 1;
-    if (month < 10) {
-      month = `0${month}`;
-    }
-    let day = date.getDate();
-    if (day < 10) {
-      day = `0${day}`;
-    }
-    let ampm = "AM";
-    let hours = date.getHours();
-    if (hours > 12) {
-      ampm = "PM";
-      hours = hours - 12;
-    }
-    if (hours < 10) {
-      hours = `0${hours}`;
-    }
-    let minutes = date.getMinutes();
-    if (minutes < 10) {
-      minutes = `0${minutes}`;
-    }
-
-    $this.text(`${year}-${month}-${day} ${hours}:${minutes} ${ampm}`);
+    $this.tooltip({
+      placement: "top",
+      title: date.toISOString(),
+    });
+    $this.text(date.toLocaleString());
   });
 
   // Toast shows alerts/flash messages.

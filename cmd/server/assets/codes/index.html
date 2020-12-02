@@ -49,9 +49,7 @@
           <a href="/codes/{{$code.UUID}}" class="list-group-item list-group-item-action">
             <span class="text-monospace">{{$code.UUID}}</span>
             <br />
-            <small
-              data-timestamp="{{$code.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}"
-              data-toggle="tooltip" title="{{$code.CreatedAt.Format "2006-02-01 15:04 UTC"}}">
+            <small data-timestamp="{{$code.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">
               {{$code.CreatedAt.Format "2006-02-01 15:04"}}
             </small>
           </a>
