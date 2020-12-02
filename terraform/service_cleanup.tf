@@ -114,7 +114,6 @@ resource "google_cloud_run_service" "cleanup" {
 
         dynamic "env" {
           for_each = merge(
-            local.appsync_config,
             local.cache_config,
             local.csrf_config,
             local.database_config,
