@@ -36,6 +36,23 @@
       </small>
     </div>
 
+    <div class="card mb-3">
+      <div class="card-header">
+        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+        Daily active users
+        <span class="font-weight-bold float-right" data-toggle="tooltip"
+          title="These are daily active users as reported by the apps. See the verification server API documentation for how to populate these metrics.">?</span>
+      </div>
+      <div id="daily_active_users_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
+        <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+      </div>
+      <small class="card-footer text-muted text-right">
+        <span class="mr-1">Export as:</span>
+        <a href="/realm/stats.csv" class="mr-1">CSV</a>
+        <a href="/realm/stats.json">JSON</a>
+      </small>
+    </div>
+
     <div class="row">
       <div class="col-lg-6 pr-2">
         <div class="card mb-3">
@@ -84,6 +101,7 @@
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
     let realmChartDiv = document.getElementById('realm_chart');
+    let dailyUsersChartDiv = document.getElementById('daily_active_users_chart');
     let $perUserTable = $('#per_user_table');
     let $perExternalIssuerTable = $('#per_external_issuer_table');
     let dateFormatter;
@@ -100,9 +118,9 @@
     });
 
     function drawCharts() {
-      drawRealmChart();
-      drawUsersChart();
-      drawExternalIssuersChart();
+      drawRealmCharts();
+      drawUsersTable();
+      drawExternalIssuersTable();
     }
 
     // utcDate parses the given RFC-3339 date as a javascript date, then
@@ -113,7 +131,7 @@
       return new Date(d.getTime() + offset);
     }
 
-    function drawRealmChart() {
+    function drawRealmCharts() {
       $.ajax({
         url: '/realm/stats.json',
         dataType: 'json',
@@ -123,38 +141,67 @@
           return;
         }
 
-        var dataTable = new google.visualization.DataTable();
+        // Code stats
+        {
+          var dataTable = new google.visualization.DataTable();
+          dataTable.addColumn('date', 'Date');
+          dataTable.addColumn('number', 'Issued');
+          dataTable.addColumn('number', 'Claimed');
 
-        dataTable.addColumn('date', 'Date');
-        dataTable.addColumn('number', 'Issued');
-        dataTable.addColumn('number', 'Claimed');
+          data.statistics.reverse().forEach(function(row) {
+            dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed]);
+          });
 
-        data.statistics.reverse().forEach(function(row) {
-          dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed]);
-        });
+          dateFormatter.format(dataTable, 0);
 
-        dateFormatter.format(dataTable, 0);
-
-        let options = {
-          colors: ['#007bff', '#ff7b00'],
-          chartArea: {
-            left: 30, // leave room for y-axis labels
+          let options = {
+            colors: ['#007bff', '#ff7b00'],
+            chartArea: {
+              left: 30, // leave room for y-axis labels
+              width: '100%'
+            },
+            hAxis: { format: 'M/d' },
+            legend: { position: 'top' },
             width: '100%'
-          },
-          hAxis: { format: 'M/d' },
-          legend: { position: 'top' },
-          width: '100%'
-        };
+          };
 
-        let chart = new google.visualization.LineChart(realmChartDiv);
-        chart.draw(dataTable, options);
+          let chart = new google.visualization.LineChart(realmChartDiv);
+          chart.draw(dataTable, options);
+        }
+
+        // Daily actives
+        {
+          var dataTable = new google.visualization.DataTable();
+          dataTable.addColumn('date', 'Date');
+          dataTable.addColumn('number', 'Users');
+
+          data.statistics.reverse().forEach(function(row) {
+            dataTable.addRow([utcDate(row.date), row.data.daily_active_users]);
+          });
+
+          dateFormatter.format(dataTable, 0);
+
+          let options = {
+            colors: ['#007bff', '#ff7b00'],
+            chartArea: {
+              left: 30, // leave room for y-axis labels
+              width: '100%'
+            },
+            hAxis: { format: 'M/d' },
+            legend: 'none',
+            width: '100%'
+          };
+
+          let chart = new google.visualization.LineChart(dailyUsersChartDiv);
+          chart.draw(dataTable, options);
+        }
       })
       .fail(function(xhr, status, err) {
         flash.error('Failed to render realm stats: ' + err);
       });
     }
 
-    function drawUsersChart() {
+    function drawUsersTable() {
       $.ajax({
         url: '/realm/stats.json',
         data: { scope: 'user' },
@@ -233,7 +280,7 @@
       });
     }
 
-    function drawExternalIssuersChart() {
+    function drawExternalIssuersTable() {
       $.ajax({
         url: '/realm/stats.json',
         data: { scope: 'external' },

@@ -1725,6 +1725,17 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.DropTable(&ExternalIssuerStat{}).Error
 			},
 		},
+		{
+			ID: "00071-AddDailyActiveUsersToRealmStats",
+			Migrate: func(tx *gorm.DB) error {
+				sql := `ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS daily_active_users INTEGER DEFAULT 0`
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sql := `ALTER TABLE realm_stats DROP COLUMN IF EXISTS daily_active_users`
+				return tx.Exec(sql).Error
+			},
+		},
 	})
 }
 
