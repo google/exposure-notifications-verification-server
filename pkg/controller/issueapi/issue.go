@@ -99,11 +99,10 @@ func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, e
 }
 
 type issueResult struct {
-	issueResponse *api.IssueCodeResponse
-	httpCode      int
-	errorReturn   *api.ErrorReturn
-	obsBlame      tag.Mutator
-	obsResult     tag.Mutator
+	httpCode    int
+	errorReturn *api.ErrorReturn
+	obsBlame    tag.Mutator
+	obsResult   tag.Mutator
 }
 
 func (c *Controller) HandleIssue() http.Handler {
