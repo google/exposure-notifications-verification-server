@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "google_service_account" "cleanup" {
+resource "google_service_account" "appsync" {
   project      = var.project
-  account_id   = "en-verification-cleanup-sa"
-  display_name = "Verification cleanup"
+  account_id   = "en-verification-appsync-sa"
+  display_name = "Verification App Sync"
 }
 
-resource "google_service_account_iam_member" "cloudbuild-deploy-cleanup" {
-  service_account_id = google_service_account.cleanup.id
+resource "google_service_account_iam_member" "cloudbuild-deploy-appsync" {
+  service_account_id = google_service_account.appsync.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
 
@@ -29,7 +29,7 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-cleanup" {
   ]
 }
 
-resource "google_secret_manager_secret_iam_member" "cleanup-db" {
+resource "google_secret_manager_secret_iam_member" "appsync-db" {
   for_each = toset([
     "sslcert",
     "sslkey",
@@ -39,10 +39,10 @@ resource "google_secret_manager_secret_iam_member" "cleanup-db" {
 
   secret_id = google_secret_manager_secret.db-secret[each.key].id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cleanup.email}"
+  member    = "serviceAccount:${google_service_account.appsync.email}"
 }
 
-resource "google_project_iam_member" "cleanup-observability" {
+resource "google_project_iam_member" "appsync-observability" {
   for_each = toset([
     "roles/cloudtrace.agent",
     "roles/logging.logWriter",
@@ -52,57 +52,57 @@ resource "google_project_iam_member" "cleanup-observability" {
 
   project = var.project
   role    = each.key
-  member  = "serviceAccount:${google_service_account.cleanup.email}"
+  member  = "serviceAccount:${google_service_account.appsync.email}"
 }
 
-resource "google_kms_crypto_key_iam_member" "cleanup-database-encrypter" {
+resource "google_kms_crypto_key_iam_member" "appsync-database-encrypter" {
   crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-  member        = "serviceAccount:${google_service_account.cleanup.email}"
+  member        = "serviceAccount:${google_service_account.appsync.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "cleanup-db-apikey-db-hmac" {
+resource "google_secret_manager_secret_iam_member" "appsync-db-apikey-db-hmac" {
   secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cleanup.email}"
+  member    = "serviceAccount:${google_service_account.appsync.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "cleanup-db-apikey-sig-hmac" {
+resource "google_secret_manager_secret_iam_member" "appsync-db-apikey-sig-hmac" {
   secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cleanup.email}"
+  member    = "serviceAccount:${google_service_account.appsync.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "cleanup-db-verification-code-hmac" {
+resource "google_secret_manager_secret_iam_member" "appsync-db-verification-code-hmac" {
   secret_id = google_secret_manager_secret.db-verification-code-hmac.id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cleanup.email}"
+  member    = "serviceAccount:${google_service_account.appsync.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "cleanup-cache-hmac-key" {
+resource "google_secret_manager_secret_iam_member" "appsync-cache-hmac-key" {
   secret_id = google_secret_manager_secret.cache-hmac-key.id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cleanup.email}"
+  member    = "serviceAccount:${google_service_account.appsync.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "cleanup-ratelimit-hmac-key" {
+resource "google_secret_manager_secret_iam_member" "appsync-ratelimit-hmac-key" {
   secret_id = google_secret_manager_secret.ratelimit-hmac-key.id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.cleanup.email}"
+  member    = "serviceAccount:${google_service_account.appsync.email}"
 }
 
-resource "google_cloud_run_service" "cleanup" {
-  name     = "cleanup"
+resource "google_cloud_run_service" "appsync" {
+  name     = "appsync"
   location = var.region
 
   autogenerate_revision_name = true
 
   template {
     spec {
-      service_account_name = google_service_account.cleanup.email
+      service_account_name = google_service_account.appsync.email
 
       containers {
-        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cleanup:initial"
+        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/appsync:initial"
 
         resources {
           limits = {
@@ -114,7 +114,6 @@ resource "google_cloud_run_service" "cleanup" {
 
         dynamic "env" {
           for_each = merge(
-            local.appsync_config,
             local.cache_config,
             local.csrf_config,
             local.database_config,
@@ -123,7 +122,7 @@ resource "google_cloud_run_service" "cleanup" {
             local.signing_config,
 
             // This MUST come last to allow overrides!
-            lookup(var.service_environment, "cleanup", {}),
+            lookup(var.service_environment, "appsync", {}),
           )
 
           content {
@@ -144,14 +143,14 @@ resource "google_cloud_run_service" "cleanup" {
   depends_on = [
     google_project_service.services["run.googleapis.com"],
 
-    google_secret_manager_secret_iam_member.cleanup-db,
-    google_project_iam_member.cleanup-observability,
-    google_kms_crypto_key_iam_member.cleanup-database-encrypter,
-    google_secret_manager_secret_iam_member.cleanup-db-apikey-db-hmac,
-    google_secret_manager_secret_iam_member.cleanup-db-apikey-sig-hmac,
-    google_secret_manager_secret_iam_member.cleanup-db-verification-code-hmac,
-    google_secret_manager_secret_iam_member.cleanup-cache-hmac-key,
-    google_secret_manager_secret_iam_member.cleanup-ratelimit-hmac-key,
+    google_secret_manager_secret_iam_member.appsync-db,
+    google_project_iam_member.appsync-observability,
+    google_kms_crypto_key_iam_member.appsync-database-encrypter,
+    google_secret_manager_secret_iam_member.appsync-db-apikey-db-hmac,
+    google_secret_manager_secret_iam_member.appsync-db-apikey-sig-hmac,
+    google_secret_manager_secret_iam_member.appsync-db-verification-code-hmac,
+    google_secret_manager_secret_iam_member.appsync-cache-hmac-key,
+    google_secret_manager_secret_iam_member.appsync-ratelimit-hmac-key,
 
     null_resource.build,
     null_resource.migrate,
@@ -165,30 +164,30 @@ resource "google_cloud_run_service" "cleanup" {
   }
 }
 
-output "cleanup_url" {
-  value = google_cloud_run_service.cleanup.status.0.url
+output "appsync_url" {
+  value = google_cloud_run_service.appsync.status.0.url
 }
 
 #
 # Create scheduler job to invoke the service on a fixed interval.
 #
 
-resource "google_service_account" "cleanup-invoker" {
+resource "google_service_account" "appsync-invoker" {
   project      = data.google_project.project.project_id
-  account_id   = "en-cleanup-invoker-sa"
-  display_name = "Verification cleanup invoker"
+  account_id   = "en-appsync-invoker-sa"
+  display_name = "Verification appsync invoker"
 }
 
-resource "google_cloud_run_service_iam_member" "cleanup-invoker" {
-  project  = google_cloud_run_service.cleanup.project
-  location = google_cloud_run_service.cleanup.location
-  service  = google_cloud_run_service.cleanup.name
+resource "google_cloud_run_service_iam_member" "appsync-invoker" {
+  project  = google_cloud_run_service.appsync.project
+  location = google_cloud_run_service.appsync.location
+  service  = google_cloud_run_service.appsync.name
   role     = "roles/run.invoker"
-  member   = "serviceAccount:${google_service_account.cleanup-invoker.email}"
+  member   = "serviceAccount:${google_service_account.appsync-invoker.email}"
 }
 
-resource "google_cloud_scheduler_job" "cleanup-worker" {
-  name             = "cleanup-worker"
+resource "google_cloud_scheduler_job" "appsync-worker" {
+  name             = "appsync-worker"
   region           = var.cloudscheduler_location
   schedule         = "0 * * * *"
   time_zone        = "America/Los_Angeles"
@@ -200,16 +199,16 @@ resource "google_cloud_scheduler_job" "cleanup-worker" {
 
   http_target {
     http_method = "GET"
-    uri         = "${google_cloud_run_service.cleanup.status.0.url}/"
+    uri         = "${google_cloud_run_service.appsync.status.0.url}/"
     oidc_token {
-      audience              = google_cloud_run_service.cleanup.status.0.url
-      service_account_email = google_service_account.cleanup-invoker.email
+      audience              = google_cloud_run_service.appsync.status.0.url
+      service_account_email = google_service_account.appsync-invoker.email
     }
   }
 
   depends_on = [
     google_app_engine_application.app,
-    google_cloud_run_service_iam_member.cleanup-invoker,
+    google_cloud_run_service_iam_member.appsync-invoker,
     google_project_service.services["cloudscheduler.googleapis.com"],
   ]
 }

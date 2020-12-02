@@ -13,6 +13,10 @@
 # limitations under the License.
 
 locals {
+  appsync_config = {
+    APP_SYNC_URL ="https://www.gstatic.com/exposurenotifications/apps.json"
+  }
+
   gcp_config = {
     PROJECT_ID = var.project
   }
