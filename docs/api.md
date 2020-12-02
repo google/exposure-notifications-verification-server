@@ -121,7 +121,7 @@ Exchange a verification token for a verification certificate (for sending to a k
 
 * `token`: must be exactly the string that was returned on the `/api/verify` request
 * `ekeyhmac`: must be calculated on the client
-  * The client generates an HMAC secret and calcualtes the HMAC of the actual TEK data
+  * The client generates an HMAC secret and calculates the HMAC of the actual TEK data
   * [Plaintext generation algorithm](https://github.com/google/exposure-notifications-server/blob/main/docs/design/verification_protocol.md)
   * [Sample HMAC generation (Go)](https://github.com/google/exposure-notifications-server/blob/main/pkg/verification/utils.go)
   * The key server will re-calculate this HMAC and it MUST match what is presented here.
@@ -314,17 +314,17 @@ past).
 
 In addition to "real" requests, the server also accepts chaff (fake) requests.
 These can be used to obfuscate real traffic from a network observer or server
-operator. 
+operator.
 
 Chaff requests:
 
-* MUST resent the `X-API-Key` header with a valid API key (oterwise you will
-  get an authorized error)
-* MUST be sent via a `POST` requesxt, otherwise you will get an invalid method
+* MUST send the `X-API-Key` header with a valid API key (otherwise you will
+  get an unauthorized error)
+* MUST be sent via a `POST` request, otherwise you will get an invalid method
   error
-* SHOULD send a valid JSON body with padding out to the same size as the rest
-  of the client requests so that chaff requests appear the same size
-  on the wire as valid requests.
+* SHOULD send a valid JSON body with random padding similar in size as the rest
+  of the client requests so that chaff requests appear the same on the wire as
+  other valid requests.
 
 To initiate a chaff request, set the `X-Chaff` header on your request:
 
