@@ -70,7 +70,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 		if !has { // Find this apps region and cache it in our realms map
 			realm, err = c.db.FindRealmByRegion(app.Region)
 			if err != nil {
-				merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm %s: %w", app.Region, err))
+				merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm for region %q: %w", app.Region, err))
 				continue
 			}
 			realms[app.Region] = realm
