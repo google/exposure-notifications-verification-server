@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appsync
+package clients
 
 // AppsResponse is the body for the published list of android apps.
 type AppsResponse struct {
