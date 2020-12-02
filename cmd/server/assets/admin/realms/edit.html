@@ -3,6 +3,7 @@
 {{$currentUser := .currentUser}}
 {{$realm := .realm}}
 {{$systemSMSConfig := .systemSMSConfig}}
+{{$systemEmailConfig := .systemEmailConfig}}
 
 <!doctype html>
 <html lang="en">
@@ -80,7 +81,7 @@
 
           {{if $systemSMSConfig}}
           <hr>
-          <h6 class="mb-3">SMS Config</h6>
+          <h6 class="mb-3">SMS configuration</h6>
           <div class="form-group form-check">
             <input type="checkbox" name="can_use_system_sms_config" id="can-use-system-sms-config" class="form-check-input" value="1" {{if $realm.CanUseSystemSMSConfig}} checked{{end}}>
             <label class="form-check-label" for="can-use-system-sms-config">
@@ -91,6 +92,23 @@
               enabled, the realm will not see the credentials, but they will be
               able to send SMS messages using them. This could incur unexpected
               costs for the credential owner.
+            </small>
+          </div>
+          {{end}}
+
+          {{if $systemEmailConfig}}
+          <hr>
+          <h6 class="mb-3">Email configuration</h6>
+          <div class="form-group form-check">
+            <input type="checkbox" name="can_use_system_email_config" id="can-use-system-email-config" class="form-check-input" value="1" {{if $realm.CanUseSystemEmailConfig}} checked{{end}}>
+            <label class="form-check-label" for="can-use-system-email-config">
+              Share system email configuration
+            </label>
+            <small class="form-text text-muted">
+              Allow this realm to consume the system email credentials. If
+              enabled, the realm will not see the credentials, but they will be
+              able to send email messages using them. This could incur
+              unexpected costs for the credential owner.
             </small>
           </div>
           {{end}}
