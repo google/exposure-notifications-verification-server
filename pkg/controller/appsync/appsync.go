@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -27,7 +28,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-const playStoreLink = `https://play.google.com/store/apps/details?id=`
+const playStoreHost = `play.google.com/store/apps/details`
 
 // HandleSync performs the logic to sync mobile apps.
 func (c *Controller) HandleSync() http.Handler {
@@ -94,7 +95,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 
 		// Didn't find an app. make one.
 		if !hasSHA {
-			logger.Infow("App not found during sync, adding", "app", app)
+			logger.Infow("app not found during sync, adding", "app", app)
 
 			name := generateAppName(app)
 			if hasGeneratedName { // add a random string to names on collision
@@ -106,10 +107,16 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 				name += " " + s[:8]
 			}
 
+			var playStoreURL = &url.URL{
+				Scheme:   "https",
+				Host:     playStoreHost,
+				RawQuery: "id=" + app.PackageName,
+			}
+
 			newApp := &database.MobileApp{
 				Name:    name,
 				RealmID: realm.ID,
-				URL:     playStoreLink + app.PackageName,
+				URL:     playStoreURL.String(),
 				OS:      database.OSTypeAndroid,
 				SHA:     app.SHA256CertFingerprints,
 				AppID:   app.PackageName,
