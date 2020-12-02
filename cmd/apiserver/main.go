@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 
@@ -182,7 +181,7 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("/api/verify").Subrouter()
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
-		sub.Use(processChaff(verifyChaffTracker))
+		sub.Use(middleware.ProcessChaff(db, verifyChaffTracker))
 		sub.Use(rateLimit)
 
 		// POST /api/verify
@@ -197,7 +196,7 @@ func realMain(ctx context.Context) error {
 		sub := r.PathPrefix("/api/certificate").Subrouter()
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
-		sub.Use(processChaff(certChaffTracker))
+		sub.Use(middleware.ProcessChaff(db, certChaffTracker))
 		sub.Use(rateLimit)
 
 		// POST /api/certificate
@@ -214,14 +213,6 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
-}
-
-func processChaff(t *chaff.Tracker) mux.MiddlewareFunc {
-	detector := chaff.HeaderDetector("X-Chaff")
-
-	return func(next http.Handler) http.Handler {
-		return t.HandleTrack(detector, next)
-	}
 }
 
 // makePadFromChaff makes a Padding structure from chaff data.

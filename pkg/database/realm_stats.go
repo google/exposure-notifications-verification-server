@@ -33,10 +33,11 @@ type RealmStats []*RealmStat
 
 // RealmStat represents statistics related to a user in the database.
 type RealmStat struct {
-	Date         time.Time `gorm:"date; not null;"`
-	RealmID      uint      `gorm:"realm_id; not null;"`
-	CodesIssued  uint      `gorm:"codes_issued; default:0;"`
-	CodesClaimed uint      `gorm:"codes_claimed; default:0;"`
+	Date             time.Time `gorm:"date; not null;"`
+	RealmID          uint      `gorm:"realm_id; not null;"`
+	CodesIssued      uint      `gorm:"codes_issued; default:0;"`
+	CodesClaimed     uint      `gorm:"codes_claimed; default:0;"`
+	DailyActiveUsers uint      `gorm:"daily_active_users; default:0;"`
 }
 
 // MarshalCSV returns bytes in CSV format.
@@ -49,7 +50,7 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 
-	if err := w.Write([]string{"date", "codes_issued", "codes_claimed"}); err != nil {
+	if err := w.Write([]string{"date", "codes_issued", "codes_claimed", "daily_active_users"}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
@@ -58,6 +59,7 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 			stat.Date.Format("2006-01-02"),
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
 			strconv.FormatUint(uint64(stat.CodesClaimed), 10),
+			strconv.FormatUint(uint64(stat.DailyActiveUsers), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -82,8 +84,9 @@ type jsonRealmStatStats struct {
 }
 
 type jsonRealmStatStatsData struct {
-	CodesIssued  uint `json:"codes_issued"`
-	CodesClaimed uint `json:"codes_claimed"`
+	CodesIssued      uint `json:"codes_issued"`
+	CodesClaimed     uint `json:"codes_claimed"`
+	DailyActiveUsers uint `json:"daily_active_users"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -98,8 +101,9 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 		stats = append(stats, &jsonRealmStatStats{
 			Date: stat.Date,
 			Data: &jsonRealmStatStatsData{
-				CodesIssued:  stat.CodesIssued,
-				CodesClaimed: stat.CodesClaimed,
+				CodesIssued:      stat.CodesIssued,
+				CodesClaimed:     stat.CodesClaimed,
+				DailyActiveUsers: stat.DailyActiveUsers,
 			},
 		})
 	}
@@ -132,10 +136,11 @@ func (s *RealmStats) UnmarshalJSON(b []byte) error {
 
 	for _, stat := range result.Stats {
 		*s = append(*s, &RealmStat{
-			Date:         stat.Date,
-			RealmID:      result.RealmID,
-			CodesIssued:  stat.Data.CodesIssued,
-			CodesClaimed: stat.Data.CodesClaimed,
+			Date:             stat.Date,
+			RealmID:          result.RealmID,
+			CodesIssued:      stat.Data.CodesIssued,
+			CodesClaimed:     stat.Data.CodesClaimed,
+			DailyActiveUsers: stat.Data.DailyActiveUsers,
 		})
 	}
 
