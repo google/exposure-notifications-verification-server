@@ -14,7 +14,7 @@
 
 resource "google_service_account" "appsync" {
   project      = var.project
-  account_id   = "en-verification-appsync-sa"
+  account_id   = "en-ver-appsync-sa"
   display_name = "Verification App Sync"
 }
 
@@ -175,7 +175,7 @@ output "appsync_url" {
 
 resource "google_service_account" "appsync-invoker" {
   project      = data.google_project.project.project_id
-  account_id   = "en-appsync-invoker-sa"
+  account_id   = "en-appsync-invk-sa"
   display_name = "Verification appsync invoker"
 }
 
