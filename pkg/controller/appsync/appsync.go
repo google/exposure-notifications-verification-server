@@ -62,38 +62,30 @@ func (c *Controller) HandleSync() http.Handler {
 // checks to see if there exists an app with the AppResponse SHA hash, if not it creates a new MobileApp.
 func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *multierror.Error {
 	logger := logging.FromContext(ctx).Named("appsync.syncApps")
-	var err error
 	var merr *multierror.Error
 
 	realms := map[string]*database.Realm{}
 	appsByRealm := map[uint][]*database.MobileApp{}
 
 	for _, app := range apps.Apps {
-		realm, has := realms[app.Region]
-		if !has { // Find this apps region and cache it in our realms map
-			realm, err = c.db.FindRealmByRegion(app.Region)
-			if err != nil {
-				merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm for region %q: %w", app.Region, err))
-				continue
-			}
-			realms[app.Region] = realm
+
+		realm, err := c.findRealmForApp(app, realms)
+		if err != nil {
+			merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm for region %q: %w", app.Region, err))
+			continue
 		}
 
-		realmApps, has := appsByRealm[realm.ID]
-		if !has { // Find all of the apps for this realm and cache that list in our appByRealmMap
-			realmApps, err = c.db.ListActiveApps(realm.ID, database.WithAppOS(database.OSTypeAndroid))
-			if err != nil {
-				merr = multierror.Append(merr, fmt.Errorf("unable to list apps for realm %d: %w", realm.ID, err))
-				continue
-			}
-			appsByRealm[realm.ID] = realmApps
+		realmApps, err := c.findAppsForRealm(realm.ID, appsByRealm)
+		if err != nil {
+			merr = multierror.Append(merr, fmt.Errorf("unable to list apps for realm %d: %w", realm.ID, err))
+			continue
 		}
 
-		has = false // Find out if this realm's applist already has an app with this fingerprint.
-		hasGeneratedName := false
+		// Find out if this realm's applist already has an app with this fingerprint.
+		hasSHA, hasGeneratedName := false, false
 		for _, a := range realmApps {
 			if a.SHA == app.SHA256CertFingerprints {
-				has = true
+				hasSHA = true
 			}
 			if a.Name == generateAppName(app) {
 				hasGeneratedName = true
@@ -101,7 +93,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 		}
 
 		// Didn't find an app. make one.
-		if !has {
+		if !hasSHA {
 			logger.Infow("App not found during sync, adding", "app", app)
 
 			name := generateAppName(app)
@@ -125,6 +117,34 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 		}
 	}
 	return merr
+}
+
+func (c *Controller) findRealmForApp(
+	app clients.App, realms map[string]*database.Realm) (*database.Realm, error) {
+	var err error
+	realm, has := realms[app.Region]
+	if !has { // Find this apps region and cache it in our realms map
+		realm, err = c.db.FindRealmByRegion(app.Region)
+		if err != nil {
+			return nil, err
+		}
+		realms[app.Region] = realm
+	}
+	return realm, nil
+}
+
+func (c *Controller) findAppsForRealm(
+	realmID uint, appsByRealm map[uint][]*database.MobileApp) ([]*database.MobileApp, error) {
+	var err error
+	realmApps, has := appsByRealm[realmID]
+	if !has { // Find all of the apps for this realm and cache that list in our appByRealmMap
+		realmApps, err = c.db.ListActiveApps(realmID, database.WithAppOS(database.OSTypeAndroid))
+		if err != nil {
+			return nil, err
+		}
+		appsByRealm[realmID] = realmApps
+	}
+	return realmApps, nil
 }
 
 func generateAppName(app clients.App) string {
