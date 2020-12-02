@@ -17,6 +17,9 @@ package clients
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"time"
 
@@ -105,4 +108,25 @@ func GetCertificate(ctx context.Context, hostname, apikey, token, hmac string, t
 		return &request, nil, err
 	}
 	return &request, &response, nil
+}
+
+// AppSync makes the API call to synchronize mobile apps.
+func AppSync(url string, timeout time.Duration, sizeLimit int64) (*AppsResponse, error) {
+	if url == "" {
+		return nil, errors.New("no APP_SYNC_URL configured")
+	}
+
+	client := http.Client{Timeout: timeout}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var apps AppsResponse
+	defer resp.Body.Close()
+
+	if err := json.NewDecoder(io.LimitReader(resp.Body, sizeLimit)).Decode(&apps); err != nil {
+		return nil, err
+	}
+	return &apps, nil
 }
