@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appsync syncs the published list of mobile apps to this server's db.
 package appsync
 
 import (
@@ -21,31 +20,14 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
 )
 
 const playStoreLink = `https://play.google.com/store/apps/details?id=`
-
-// Controller is a controller for the appsync service.
-type Controller struct {
-	config *config.AppSyncConfig
-	db     *database.Database
-	h      *render.Renderer
-}
-
-// New creates a new appsync controller.
-func New(config *config.AppSyncConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
-	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-	}, nil
-}
 
 // HandleSync performs the logic to sync mobile apps.
 func (c *Controller) HandleSync() http.Handler {
@@ -115,8 +97,9 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 		// Didn't find an app. make one.
 		if !has {
 			logger.Infof("App not found during sync. Adding app %#v", app)
+			s, _ := project.RandomString()
 			newApp := &database.MobileApp{
-				Name:    app.Region + " Android App",
+				Name:    app.Region + " Android App " + s[:8],
 				RealmID: realm.ID,
 				URL:     playStoreLink + app.PackageName,
 				OS:      database.OSTypeAndroid,

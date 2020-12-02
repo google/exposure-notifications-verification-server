@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -179,7 +180,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 			tb.Errorf("failed to close db: %v", err)
 		}
 	})
-	randomStr, err := randomString()
+	randomStr, err := project.RandomString()
 	if err != nil {
 		tb.Fatalf("failed to generate random string: %v", err)
 	}
@@ -198,7 +199,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 	}
 
 	// Create new API keys
-	suffix, err := randomString()
+	suffix, err := project.RandomString()
 	if err != nil {
 		tb.Fatalf("failed to create suffix string for API keys: %v", err)
 	}
