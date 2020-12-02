@@ -1,4 +1,4 @@
-# Code issuer user guide
+# Case worker (code issuer) guide
 
 This is a high-level guide that can be used as a basis for creating a user guide
 for an individual public health authority that is using the verification server.
