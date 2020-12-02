@@ -4,6 +4,9 @@ This is an uptime check on the custom domain. Failing these checks means
 the clients cannot reach the verification server via the encv.org
 hostnames.
 
+The check happens every 60s, and this alert will fire if the server
+failed the check for 5min.
+
 ## Triage steps
 
 There are multiple components involved here so you need to thoroughly
