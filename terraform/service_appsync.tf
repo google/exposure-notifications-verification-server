@@ -102,7 +102,7 @@ resource "google_cloud_run_service" "appsync" {
       service_account_name = google_service_account.appsync.email
 
       containers {
-        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/appsync:initial"
+        image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/app-sync:initial"
 
         resources {
           limits = {
