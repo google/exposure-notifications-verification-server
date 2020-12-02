@@ -21,7 +21,7 @@ import (
 	"fmt"
 )
 
-// Generate random string of 32 characters in length
+// RandomString generates a random string of 32 characters in length
 func RandomString() (string, error) {
 	b := make([]byte, 512)
 	if _, err := rand.Read(b[:]); err != nil {
