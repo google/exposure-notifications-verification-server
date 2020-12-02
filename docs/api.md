@@ -314,13 +314,28 @@ past).
 
 In addition to "real" requests, the server also accepts chaff (fake) requests.
 These can be used to obfuscate real traffic from a network observer or server
-operator. To initiate a chaff request, set the `X-Chaff` header on your request:
+operator. 
+
+Chaff requests:
+
+* MUST resent the `X-API-Key` header with a valid API key (oterwise you will
+  get an authorized error)
+* MUST be sent via a `POST` requesxt, otherwise you will get an invalid method
+  error
+* SHOULD send a valid JSON body with padding out to the same size as the rest
+  of the client requests so that chaff requests appear the same size
+  on the wire as valid requests.
+
+To initiate a chaff request, set the `X-Chaff` header on your request:
 
 ```sh
-curl https://example.encv.org/api/endpoint \
+curl https://apiserver.example.com/api/verify \
+  --header "x-api-key: YOUR-API-KEY" \
   --header "content-type: application/json" \
   --header "accept: application/json" \
-  --header "x-chaff: 1"
+  --header "x-chaff: 1" \
+  --request POST \
+  --data '{"padding":"base64 encoded padding"}'
 ```
 
 The client should still send a real request with a real request body (the body
