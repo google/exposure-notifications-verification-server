@@ -232,9 +232,9 @@ type BatchIssueCodeRequest struct {
 
 // BatchIssueCodeResponse defines the response for BatchIssueCodeRequest.
 type BatchIssueCodeResponse struct {
-	Codes []*IssueCodeResponse `json:"codes"`
+	Codes []*IssueCodeResponse `json:"codes,omitempty"`
 
-	Error     string `json:"error"`
+	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 

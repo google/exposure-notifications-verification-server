@@ -22,6 +22,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
@@ -37,17 +38,6 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		resp := &api.BatchIssueCodeResponse{}
 
 		ctx := r.Context()
-		realm := controller.RealmFromContext(ctx)
-		if !realm.AllowBulkUpload {
-			controller.Unauthorized(w, r, c.h)
-			return
-		}
-
-		hasSMSConfig, err := realm.HasSMSConfig(c.db)
-		if err != nil || !hasSMSConfig {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
 
 		result := &issueResult{
 			httpCode:  http.StatusOK,
@@ -70,6 +60,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
+		var realm *database.Realm
 		if authApp != nil {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
@@ -84,6 +75,11 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		if realm == nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("MISSING_REALM")
+			return
+		}
+
+		if !realm.AllowBulkUpload {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
