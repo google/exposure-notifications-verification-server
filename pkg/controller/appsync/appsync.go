@@ -102,7 +102,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 
 		// Didn't find an app. make one.
 		if !has {
-			logger.Infof("App not found during sync. Adding app %#v", app)
+			logger.Infow("App not found during sync, adding", "app", app)
 
 			name := generateAppName(app)
 			if hasGeneratedName { // add a random string to names on collision
