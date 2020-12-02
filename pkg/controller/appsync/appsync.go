@@ -37,6 +37,7 @@ func (c *Controller) HandleSync() http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		apps, err := clients.AppSync(c.config.AppSyncURL, c.config.Timeout, c.config.FileSizeLimitBytes)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -44,7 +45,7 @@ func (c *Controller) HandleSync() http.Handler {
 		}
 
 		// If there are any errors, return them
-		if merr := c.syncApps(r.Context(), apps); merr != nil {
+		if merr := c.syncApps(ctx, apps); merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {
 				c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
 					OK:     false,
@@ -57,6 +58,8 @@ func (c *Controller) HandleSync() http.Handler {
 	})
 }
 
+// syncApps looks up the realm and associated list of MobileApps for each entry of AppsResponse. Then it
+// checks to see if there exists an app with the AppResponse SHA hash, if not it creates a new MobileApp.
 func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *multierror.Error {
 	logger := logging.FromContext(ctx).Named("appsync.syncApps")
 	var err error

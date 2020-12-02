@@ -58,12 +58,14 @@ func NewAppSyncConfig(ctx context.Context) (*AppSyncConfig, error) {
 }
 
 func (c *AppSyncConfig) Validate() error {
-	if c.AppSyncURL != "" {
-		if url, err := url.Parse(c.AppSyncURL); err != nil {
-			return fmt.Errorf("unable to parse APP_SYNC_URL: %v", err)
-		} else if url == nil {
-			return errors.New("expecting a URL value for APP_SYNC_URL")
-		}
+	if c.AppSyncURL == "" {
+		return nil
+	}
+
+	if url, err := url.Parse(c.AppSyncURL); err != nil {
+		return fmt.Errorf("unable to parse APP_SYNC_URL: %v", err)
+	} else if url == nil {
+		return errors.New("expecting a URL value for APP_SYNC_URL")
 	}
 
 	return nil

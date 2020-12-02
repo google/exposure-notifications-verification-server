@@ -81,8 +81,8 @@ func TestAppSync(t *testing.T) {
 		}
 
 		merr := c.syncApps(context.Background(), resp)
-		if merr != nil {
-			t.Fatalf(merr.ErrorOrNil().Error())
+		if e := merr.ErrorOrNil(); e != nil {
+			t.Fatalf(e.Error())
 		}
 
 		apps, err := db.ListActiveApps(realm.ID)
@@ -90,8 +90,8 @@ func TestAppSync(t *testing.T) {
 			t.Fatal("failed to list apps", err)
 		}
 
-		if len(apps) != 2 {
-			t.Errorf("got %d apps, expected 2", len(apps))
+		if got, want := len(apps), 2; got != want {
+			t.Errorf("got %d apps, expected %d", got, want)
 		}
 	})
 }
