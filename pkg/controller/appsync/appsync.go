@@ -98,7 +98,11 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 
 			name := generateAppName(app)
 			if hasGeneratedName { // add a random string to names on collision
-				s, _ := project.RandomString()
+				s, err := project.RandomString()
+				if err != nil {
+					logger.Errorw("error generating app name", "error", err)
+					continue
+				}
 				name += " " + s[:8]
 			}
 
