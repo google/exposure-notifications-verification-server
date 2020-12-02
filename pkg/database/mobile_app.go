@@ -128,7 +128,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	a.SHA = strings.Join(shas, "\n")
 
 	if len(a.Errors()) > 0 {
-		return fmt.Errorf("validation failed")
+		return fmt.Errorf("validation failed: %v", a.Errors())
 	}
 
 	return nil

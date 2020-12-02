@@ -48,12 +48,15 @@ func TestAppSync(t *testing.T) {
 		}
 
 		m := &database.MobileApp{
+			Name:    "US-WA Android App",
 			RealmID: realm.ID,
 			OS:      database.OSTypeAndroid,
 			AppID:   "testAppId",
 			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 		}
-		db.SaveMobileApp(m, database.SystemTest)
+		if err := db.SaveMobileApp(m, database.SystemTest); err != nil {
+			t.Fatalf("error saving realm: %v", err)
+		}
 
 		resp := &clients.AppsResponse{
 			Apps: []clients.App{

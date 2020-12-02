@@ -78,7 +78,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 
 		realmApps, has := appsByRealm[realm.ID]
 		if !has { // Find all of the apps for this realm and cache that list in our appByRealmMap
-			realmApps, err := c.db.ListActiveApps(realm.ID, database.WithAppOS(database.OSTypeAndroid))
+			realmApps, err = c.db.ListActiveApps(realm.ID, database.WithAppOS(database.OSTypeAndroid))
 			if err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("unable to list apps for realm %d: %w", realm.ID, err))
 				continue
@@ -87,19 +87,28 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 		}
 
 		has = false // Find out if this realm's applist already has an app with this fingerprint.
+		hasGeneratedName := false
 		for _, a := range realmApps {
 			if a.SHA == app.SHA256CertFingerprints {
 				has = true
-				break
+			}
+			if a.Name == generateAppName(app) {
+				hasGeneratedName = true
 			}
 		}
 
 		// Didn't find an app. make one.
 		if !has {
 			logger.Infof("App not found during sync. Adding app %#v", app)
-			s, _ := project.RandomString()
+
+			name := generateAppName(app)
+			if hasGeneratedName { // add a random string to names on collision
+				s, _ := project.RandomString()
+				name += " " + s[:8]
+			}
+
 			newApp := &database.MobileApp{
-				Name:    app.Region + " Android App " + s[:8],
+				Name:    name,
 				RealmID: realm.ID,
 				URL:     playStoreLink + app.PackageName,
 				OS:      database.OSTypeAndroid,
@@ -113,4 +122,8 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 		}
 	}
 	return merr
+}
+
+func generateAppName(app clients.App) string {
+	return app.Region + " Android App"
 }
