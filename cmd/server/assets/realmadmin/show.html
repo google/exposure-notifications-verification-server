@@ -36,46 +36,56 @@
       </small>
     </div>
 
-    <div class="card mb-3">
-      <div class="card-header">
-        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-        Codes issued by user
-        <span class="font-weight-bold float-right" data-toggle="tooltip"
-          title="These are the number of codes issued per user per day. It only includes codes generated via the UI with a logged in user.">?</span>
+    <div class="row">
+      <div class="col-lg-6 pr-2">
+        <div class="card mb-3">
+          <div class="card-header">
+            <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+            Codes issued by user by day
+            <span class="font-weight-bold float-right" data-toggle="tooltip"
+              title="These are the number of codes issued per user per day. Click on a row to expand or collapse the details.">?</span>
+          </div>
+          <div id="per_user_table" class="overflow-auto" style="height:400px">
+            <div class="container d-flex h-100 w-100">
+              <p class="justify-content-center align-self-center text-center font-italic w-100">Loading data...</p>
+            </div>
+          </div>
+          <small class="card-footer text-muted text-right">
+            <span class="mr-1">Export as:</span>
+            <a href="/realm/stats.csv?scope=user" class="mr-1">CSV</a>
+            <a href="/realm/stats.json?scope=user">JSON</a>
+          </small>
+        </div>
       </div>
-      <div id="per_user_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
-        <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
-      </div>
-      <small class="card-footer text-muted text-right">
-        <span class="mr-1">Export as:</span>
-        <a href="/realm/stats.csv?scope=user" class="mr-1">CSV</a>
-        <a href="/realm/stats.json?scope=user">JSON</a>
-      </small>
-    </div>
 
-    <div class="card mb-3">
-      <div class="card-header">
-        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-        Codes issued by external issuers
-        <span class="font-weight-bold float-right" data-toggle="tooltip"
-          title="These are the number of codes issued per user by external issuers. These codes can only be issued by the API.">?</span>
+      <div class="col-lg-6 pl-2">
+        <div class="card mb-3">
+          <div class="card-header">
+            <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+            Codes issued by external issuers
+            <span class="font-weight-bold float-right" data-toggle="tooltip"
+              title="These are the number of codes issued per user by external issuers. These codes can only be issued by the API.">?</span>
+          </div>
+          <div id="per_external_issuer_table" class="overflow-auto" style="height:400px">
+            <div class="container d-flex h-100 w-100">
+              <p class="justify-content-center align-self-center text-center font-italic w-100">Loading data...</p>
+            </div>
+          </div>
+          <small class="card-footer text-muted text-right">
+            <span class="mr-1">Export as:</span>
+            <a href="/realm/stats.csv?scope=external" class="mr-1">CSV</a>
+            <a href="/realm/stats.json?scope=external">JSON</a>
+          </small>
+        </div>
       </div>
-      <div id="external_issuers_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
-        <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
-      </div>
-      <small class="card-footer text-muted text-right">
-        <span class="mr-1">Export as:</span>
-        <a href="/realm/stats.csv?scope=external" class="mr-1">CSV</a>
-        <a href="/realm/stats.json?scope=external">JSON</a>
-      </small>
     </div>
   </main>
 
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
     let realmChartDiv = document.getElementById('realm_chart');
-    let perUserChartDiv = document.getElementById('per_user_chart');
-    let externalIssuersChartDiv = document.getElementById('external_issuers_chart');
+    let $perUserTable = $('#per_user_table');
+    let $perExternalIssuerTable = $('#per_external_issuer_table');
     let dateFormatter;
 
     google.charts.load('current', {
@@ -155,36 +165,68 @@
           return;
         }
 
-        var dataTable = new google.visualization.DataTable();
+        $perUserTable.empty();
 
-        dataTable.addColumn('date', 'Date');
+        let $listGroup = $('<div>');
+          $listGroup.addClass('list-group');
+          $listGroup.addClass('list-group-flush');
+        $perUserTable.append($listGroup);
 
-        data.statistics[0].issuer_data.forEach(function(row) {
-          dataTable.addColumn('number', row.name);
-        })
+        data.statistics.forEach(function(row) {
+          let date = utcDate(row.date);
+          let id = `collapse-user-${date.getTime()}`;
 
-        data.statistics.reverse().forEach(function(row) {
-          let rowData = [utcDate(row.date)];
-          row.issuer_data.forEach(function(entry) {
-            rowData.push(entry.codes_issued);
+          let $dateRow = $('<div>');
+            $dateRow.addClass('list-group-item');
+            $dateRow.addClass('list-group-item-action');
+            $dateRow.attr('data-toggle', 'collapse');
+            $dateRow.attr('data-target', `#${id}`);
+            $dateRow.attr('aria-expanded', false);
+            $dateRow.attr('aria-controls', id);
+            $dateRow.text(date.toLocaleDateString());
+          $listGroup.append($dateRow);
+
+          let $issuerData = $('<div>');
+            $issuerData.attr('id', id);
+            $issuerData.addClass('collapse');
+            $issuerData.addClass('list-group-item');
+            $issuerData.addClass('p-0 pl-3');
+            $issuerData.data('parent', '#per_user_table');
+          $listGroup.append($issuerData);
+
+          let $table = $('<table>');
+            $table.addClass('table');
+            $table.addClass('table-bordered');
+            $table.addClass('table-striped');
+            $table.addClass('table-fixed');
+            $table.addClass('table-inner-border-only');
+            $table.addClass('border-left');
+            $table.addClass('mb-0');
+          $issuerData.append($table);
+
+          let $thead = $('<thead>');
+          $table.append($thead)
+
+          let $trhead = $('<tr>');
+            $trhead.append(
+              $('<th>').text('Name'),
+              $('<th>').text('Email'),
+              $('<th width="80">').text('Issued'));
+          $thead.append($trhead);
+
+          let $tbody = $('<tbody>');
+          $table.append($tbody);
+
+          row.issuer_data.forEach(function(issuer) {
+            let $name = $('<td>').text(issuer.name);
+            let $email = $('<td>').text(issuer.email);
+            let $codes_issued = $('<td align="right">').text(issuer.codes_issued);
+
+            let $tr = $('<tr>');
+              $tr.append($name, $email, $codes_issued);
+              $tbody.append($tr);
           });
-          dataTable.addRow(rowData);
         });
-
-        dateFormatter.format(dataTable, 0);
-
-        let options = {
-          chartArea: {
-            left: 30, // leave room for y-axis labels
-            width: '100%'
-          },
-          hAxis: { format: 'M/d' },
-          legend: 'none',
-          width: '100%'
-        };
-
-        let chart = new google.visualization.LineChart(perUserChartDiv);
-        chart.draw(dataTable, options);
       })
       .fail(function(xhr, status, err) {
         flash.error('Failed to render user stats: ' + err);
@@ -202,36 +244,66 @@
           return;
         }
 
-        var dataTable = new google.visualization.DataTable();
+        $perExternalIssuerTable.empty();
 
-        dataTable.addColumn('date', 'Date');
+        let $listGroup = $('<div>');
+          $listGroup.addClass('list-group');
+          $listGroup.addClass('list-group-flush');
+        $perExternalIssuerTable.append($listGroup);
 
-        data.statistics[0].issuer_data.forEach(function(row) {
-          dataTable.addColumn('number', row.issuer_id);
-        })
+        data.statistics.forEach(function(row) {
+          let date = utcDate(row.date);
+          let id = `collapse-external-${date.getTime()}`;
 
-        data.statistics.reverse().forEach(function(row) {
-          let rowData = [utcDate(row.date)];
-          row.issuer_data.forEach(function(entry) {
-            rowData.push(entry.codes_issued);
+          let $dateRow = $('<div>');
+            $dateRow.addClass('list-group-item');
+            $dateRow.addClass('list-group-item-action');
+            $dateRow.attr('data-toggle', 'collapse');
+            $dateRow.attr('data-target', `#${id}`);
+            $dateRow.attr('aria-expanded', false);
+            $dateRow.attr('aria-controls', id);
+            $dateRow.text(date.toLocaleDateString());
+          $listGroup.append($dateRow);
+
+          let $issuerData = $('<div>');
+            $issuerData.attr('id', id);
+            $issuerData.addClass('collapse');
+            $issuerData.addClass('list-group-item');
+            $issuerData.addClass('p-0 pl-3');
+            $issuerData.data('parent', '#per_user_table');
+          $listGroup.append($issuerData);
+
+          let $table = $('<table>');
+            $table.addClass('table');
+            $table.addClass('table-bordered');
+            $table.addClass('table-striped');
+            $table.addClass('table-fixed');
+            $table.addClass('table-inner-border-only');
+            $table.addClass('border-left');
+            $table.addClass('mb-0');
+          $issuerData.append($table);
+
+          let $thead = $('<thead>');
+          $table.append($thead)
+
+          let $trhead = $('<tr>');
+            $trhead.append(
+              $('<th>').text('ID'),
+              $('<th width="80">').text('Issued'));
+          $thead.append($trhead);
+
+          let $tbody = $('<tbody>');
+          $table.append($tbody);
+
+          row.issuer_data.forEach(function(issuer) {
+            let $name = $('<td>').text(issuer.issuer_id);
+            let $codes_issued = $('<td align="right">').text(issuer.codes_issued);
+
+            let $tr = $('<tr>');
+              $tr.append($name, $codes_issued);
+              $tbody.append($tr);
           });
-          dataTable.addRow(rowData);
         });
-
-        dateFormatter.format(dataTable, 0);
-
-        let options = {
-          chartArea: {
-            left: 30, // leave room for y-axis labels
-            width: '100%'
-          },
-          hAxis: { format: 'M/d' },
-          legend: 'none',
-          width: '100%'
-        };
-
-        let chart = new google.visualization.LineChart(externalIssuersChartDiv);
-        chart.draw(dataTable, options);
       })
       .fail(function(xhr, status, err) {
         flash.error('Failed to render external issuer stats: ' + err);

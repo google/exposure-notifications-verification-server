@@ -1361,7 +1361,7 @@ func (r *Realm) UserStats(db *Database, start, stop time.Time) (RealmUserStats, 
 		) d
 		LEFT JOIN user_stats s ON s.realm_id = $1 AND s.user_id = d.user_id AND s.date = d.date
 		LEFT JOIN users u ON u.id = d.user_id
-		ORDER BY date DESC, user_id`
+		ORDER BY date DESC, u.name`
 
 	var stats []*RealmUserStat
 	if err := db.db.Raw(sql, r.ID, start, stop).Scan(&stats).Error; err != nil {
