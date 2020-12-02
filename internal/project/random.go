@@ -25,7 +25,7 @@ import (
 func RandomString() (string, error) {
 	b := make([]byte, 512)
 	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf("failed to generate random: %v", err)
+		return "", fmt.Errorf("failed to generate random: %w", err)
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(b[:])), nil
 }
