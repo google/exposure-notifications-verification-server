@@ -53,12 +53,13 @@ func (c *Controller) HandleRealmsIndex() http.Handler {
 
 func (c *Controller) HandleRealmsCreate() http.Handler {
 	type FormData struct {
-		Name                   string `form:"name"`
-		RegionCode             string `form:"regionCode"`
-		UseRealmCertificateKey bool   `form:"useRealmCertificateKey"`
-		CertificateIssuer      string `form:"certificateIssuer"`
-		CertificateAudience    string `form:"certificateAudience"`
-		CanUseSystemSMSConfig  bool   `form:"can_use_system_sms_config"`
+		Name                    string `form:"name"`
+		RegionCode              string `form:"regionCode"`
+		UseRealmCertificateKey  bool   `form:"useRealmCertificateKey"`
+		CertificateIssuer       string `form:"certificateIssuer"`
+		CertificateAudience     string `form:"certificateAudience"`
+		CanUseSystemSMSConfig   bool   `form:"can_use_system_sms_config"`
+		CanUseSystemEmailConfig bool   `form:"can_use_system_email_config"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -83,11 +84,17 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 			return
 		}
 
+		emailConfig, err := c.db.SystemEmailConfig()
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
 			var realm database.Realm
 			realm.UseRealmCertificateKey = true
-			c.renderNewRealm(ctx, w, &realm, smsConfig)
+			c.renderNewRealm(ctx, w, &realm, smsConfig, emailConfig)
 			return
 		}
 
@@ -96,7 +103,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 			var realm database.Realm
 			realm.UseRealmCertificateKey = true
 			flash.Error("Failed to process form: %v", err)
-			c.renderNewRealm(ctx, w, &realm, smsConfig)
+			c.renderNewRealm(ctx, w, &realm, smsConfig, emailConfig)
 			return
 		}
 
@@ -106,9 +113,10 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		realm.CertificateIssuer = form.CertificateIssuer
 		realm.CertificateAudience = form.CertificateAudience
 		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
+		realm.CanUseSystemEmailConfig = form.CanUseSystemEmailConfig
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to create realm: %v", err)
-			c.renderNewRealm(ctx, w, realm, smsConfig)
+			c.renderNewRealm(ctx, w, realm, smsConfig, emailConfig)
 			return
 		}
 		flash.Alert("Created realm: %q.", realm.Name)
@@ -117,7 +125,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		currentUser.AdminRealms = append(currentUser.AdminRealms, realm)
 		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
 			flash.Error("Failed to add you as an admin to the realm: %v", err)
-			c.renderNewRealm(ctx, w, realm, smsConfig)
+			c.renderNewRealm(ctx, w, realm, smsConfig, emailConfig)
 			return
 		}
 		flash.Alert("Added you as a user and admin to the realm.")
@@ -137,18 +145,21 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 	})
 }
 
-func (c *Controller) renderNewRealm(ctx context.Context, w http.ResponseWriter, realm *database.Realm, smsConfig *database.SMSConfig) {
+func (c *Controller) renderNewRealm(ctx context.Context, w http.ResponseWriter,
+	realm *database.Realm, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("New Realm - System Admin")
 	m["realm"] = realm
 	m["systemSMSConfig"] = smsConfig
+	m["systemEmailConfig"] = emailConfig
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	c.h.RenderHTML(w, "admin/realms/new", m)
 }
 
 func (c *Controller) HandleRealmsUpdate() http.Handler {
 	type FormData struct {
-		CanUseSystemSMSConfig bool `form:"can_use_system_sms_config"`
+		CanUseSystemSMSConfig   bool `form:"can_use_system_sms_config"`
+		CanUseSystemEmailConfig bool `form:"can_use_system_email_config"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +191,12 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 			return
 		}
 
+		emailConfig, err := c.db.SystemEmailConfig()
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		var quotaLimit, quotaRemaining uint64
 		if realm.AbusePreventionEnabled {
 			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
@@ -197,21 +214,22 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderEditRealm(ctx, w, realm, smsConfig, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, smsConfig, emailConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderEditRealm(ctx, w, realm, smsConfig, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, smsConfig, emailConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
 		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
+		realm.CanUseSystemEmailConfig = form.CanUseSystemEmailConfig
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to create realm: %v", err)
-			c.renderEditRealm(ctx, w, realm, smsConfig, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, smsConfig, emailConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -221,11 +239,13 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 }
 
 func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
-	realm *database.Realm, smsConfig *database.SMSConfig, quotaLimit, quotaRemaining uint64) {
+	realm *database.Realm, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig,
+	quotaLimit, quotaRemaining uint64) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm: %s - System Admin", realm.Name)
 	m["realm"] = realm
 	m["systemSMSConfig"] = smsConfig
+	m["systemEmailConfig"] = emailConfig
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	m["quotaLimit"] = quotaLimit
 	m["quotaRemaining"] = quotaRemaining
