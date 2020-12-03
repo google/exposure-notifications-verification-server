@@ -10,6 +10,7 @@ This page includes helpful tips for configuring things in production.
 - [Rotating secrets](#rotating-secrets)
 - [SMS with Twilio](#sms-with-twilio)
 - [Identity Platform setup](#identity-platform-setup)
+- [End-to-end test runner setup](#End-to-end-test-runner)
 - [Architecture](#architecture)
 
 <!-- /TOC -->
@@ -411,6 +412,68 @@ The verification server uses the Google Identity Platform for authorization.
 2. Navigate to https://firebase.corp.google.com/u/0/project/{your project id}/authentication/emails to modify the email templates sent during password reset / verify email. Customize the link to your custom domain (if applicable) and direct it to '/login/manage-account' to use the custom password selection. You may also customize the text of the email if you wish.
 
 3. Visit [Google Identity Platform Settings](https://console.cloud.google.com/customer-identity/settings) and ensure that 'Enable create (sign-up)' and 'Enable delete' are unchecked. This system is intended to be invite-only and these flows are handled by administrators.
+
+## End-to-end test runner
+
+Log in as a system admin and view realms, select the `e2e-test-realm`.
+
+![system admin realms](images/e2e/image01.png)
+
+Join the realm
+
+![join e2e-test-realm](images/e2e/image02.png)
+
+Select the "Back to e2e-test-realm" link
+
+![back to e2e-test-realm](images/e2e/image03.png)
+
+Select `Signing Keys` from the drop down menu
+
+![select signing keys](images/e2e/image04.png)
+
+Create a new (initial) realm specific signing key
+
+![create realm signing keys](images/e2e/image05.png)
+
+Set the issuer and audience values (`iss`/`aud`) according to your domain settings, and click `Save realm certificate settings`. You will need this information
+later when configuring the key server.
+
+![create realm signing keys](images/e2e/image06.png)
+
+Now, upgrade to realm specific signing keys for this realm.
+
+![create realm signing keys](images/e2e/image07.png)
+
+Moving on to the key server. Connect to your key server instance
+and run the admin console. Create a new verification key.
+
+![create key server verificaiton key](images/e2e/image08.png)
+
+Set the name, issuer, audience and JWKS URI in the configuration.
+
+![verification key configration](images/e2e/image09.png)
+
+Navigate back to the admin console home, and then click back into the
+newly created verification key config. Refresh this page until the JWKS
+importer has picked up the public key. 
+
+When that is ready, navigate back to the admin console home and create
+a new authorized health authority.
+
+![new health aurhority](images/e2e/image10.png)
+
+Set the Health Authority ID to `e2e-test-only`, set the regions to
+something your system is not using, and select the matching certificate
+value.
+
+![health authority config](images/e2e/image11.png)
+
+Wait 5 minutes (cache refresh at exposure service), and then force the end to end
+workflows to run (verification Cloud Scheduler).
+
+![cloud scheduler](images/e2e/image12.png)
+
+If the workflows move to `success`, then you have done everything correctly!
 
 ## Architecture
 
