@@ -17,7 +17,6 @@ package issueapi
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -35,27 +34,28 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		resp := &api.BatchIssueCodeResponse{}
-
 		ctx := r.Context()
+		resp := &api.BatchIssueCodeResponse{}
 
 		result := &issueResult{
 			httpCode:  http.StatusOK,
 			obsBlame:  observability.BlameNone,
 			obsResult: observability.ResultOK(),
 		}
-		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
+		defer recordObservability(&ctx, result)
 
 		var request api.BatchIssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result.obsBlame = observability.BlameClient
+			result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
-			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("MISSING_AUTHORIZED_APP")
+			result.obsBlame = observability.BlameClient
+			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
@@ -64,7 +64,8 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		if authApp != nil {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
-				result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("UNAUTHORIZED")
+				result.obsBlame = observability.BlameClient
+				result.obsResult = observability.ResultError("UNAUTHORIZED")
 				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				return
 			}
@@ -73,7 +74,8 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			realm = controller.RealmFromContext(ctx)
 		}
 		if realm == nil {
-			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("MISSING_REALM")
+			result.obsBlame = observability.BlameServer
+			result.obsResult = observability.ResultError("MISSING_REALM")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			return
 		}
@@ -91,7 +93,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 
 		resp.Codes = make([]*api.IssueCodeResponse, len(request.Codes))
 		for i, singleIssue := range request.Codes {
-			resp.Codes[i] = c.issue(ctx, singleIssue, realm, user, authApp, result)
+			result, resp.Codes[i] = c.issue(ctx, singleIssue, realm, user, authApp)
 			if result.errorReturn != nil {
 				if result.httpCode == http.StatusInternalServerError {
 					controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))
@@ -101,7 +103,6 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				logger.Warnw("single code issuance failed: %v", result.errorReturn)
 				continue
 			}
-
 		}
 
 		// Batch returns success, even if individual codes fail.
