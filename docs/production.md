@@ -447,11 +447,11 @@ Now, upgrade to realm specific signing keys for this realm.
 Moving on to the key server. Connect to your key server instance
 and run the admin console. Create a new verification key.
 
-![create key server verificaiton key](images/e2e/image08.png)
+![create key server verification key](images/e2e/image08.png)
 
 Set the name, issuer, audience and JWKS URI in the configuration.
 
-![verification key configration](images/e2e/image09.png)
+![verification key configuration](images/e2e/image09.png)
 
 Navigate back to the admin console home, and then click back into the
 newly created verification key config. Refresh this page until the JWKS
@@ -460,7 +460,7 @@ importer has picked up the public key.
 When that is ready, navigate back to the admin console home and create
 a new authorized health authority.
 
-![new health aurhority](images/e2e/image10.png)
+![new health authority](images/e2e/image10.png)
 
 Set the Health Authority ID to `e2e-test-only`, set the regions to
 something your system is not using, and select the matching certificate
