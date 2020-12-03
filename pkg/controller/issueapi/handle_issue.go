@@ -20,7 +20,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"go.opencensus.io/tag"
@@ -48,7 +47,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			obsBlame:  observability.BlameNone,
 			obsResult: observability.ResultOK(),
 		}
-		defer recordObservability(&ctx, result)
+		defer recordObservability(ctx, result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
@@ -58,7 +57,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		authApp, user, err := c.getAuthorizationFromContext(r)
+		_, _, err := c.getAuthorizationFromContext(r)
 		if err != nil {
 			result.obsBlame = observability.BlameClient
 			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
@@ -66,30 +65,10 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		var realm *database.Realm
-		if authApp != nil {
-			realm, err = authApp.Realm(c.db)
-			if err != nil {
-				result.obsBlame = observability.BlameClient
-				result.obsResult = observability.ResultError("UNAUTHORIZED")
-				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
-				return
-			}
-		} else {
-			// if it's a user logged in, we can pull realm from the context.
-			realm = controller.RealmFromContext(ctx)
-		}
-		if realm == nil {
-			result.obsBlame = observability.BlameServer
-			result.obsResult = observability.ResultError("MISSING_REALM")
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
-			return
-		}
-
 		// Add realm so that metrics are groupable on a per-realm basis.
+		realm := controller.RealmFromContext(ctx)
 		ctx = observability.WithRealmID(ctx, realm.ID)
-
-		result, resp := c.issue(ctx, &request, realm, user, authApp)
+		result, resp := c.issue(ctx, &request)
 		if result.errorReturn != nil {
 			if result.httpCode == http.StatusInternalServerError {
 				controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))

@@ -33,9 +33,9 @@ import (
 	"go.opencensus.io/stats"
 )
 
-func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest,
-	realm *database.Realm, user *database.User, authApp *database.AuthorizedApp) (*issueResult, *api.IssueCodeResponse) {
+func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
 	logger := logging.FromContext(ctx).Named("issueapi.issue")
+	realm := controller.RealmFromContext(ctx)
 	var err error
 
 	// If this realm requires a date but no date was specified, return an error.
@@ -220,8 +220,8 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest,
 		RealmID:        realm.ID,
 		UUID:           rUUID,
 
-		IssuingUser:       user,
-		IssuingApp:        authApp,
+		IssuingUser:       controller.UserFromContext(ctx),
+		IssuingApp:        controller.AuthorizedAppFromContext(ctx),
 		IssuingExternalID: request.ExternalIssuerID,
 	}
 
@@ -300,6 +300,6 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 	return authorizedApp, currentUser, nil
 }
 
-func recordObservability(ctx *context.Context, result *issueResult) {
-	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
+func recordObservability(ctx context.Context, result *issueResult) {
+	observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 }
