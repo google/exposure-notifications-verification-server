@@ -42,3 +42,31 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [resource.job]
+    - title: Redis error count by label.job [SUM]
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                  fetch generic_task
+                  | metric 'custom.googleapis.com/opencensus/redis/client/errors'
+                  | align rate(1m)
+                  | every 1m
+                  | group_by [resource.job, metric.detail], [value_errors_aggregate: aggregate(value.errors)]
+    - title: Redis cache hit ratio [SUM]
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                  fetch redis_instance
+                  | metric 'redis.googleapis.com/stats/cache_hit_ratio'
+                  | group_by 1m, [value_cache_hit_ratio_mean: mean(value.cache_hit_ratio)]
+                  | every 1m
+                  | group_by [],
+                  [value_cache_hit_ratio_mean_aggregate:
+                      aggregate(value_cache_hit_ratio_mean)]
