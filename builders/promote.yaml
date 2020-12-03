@@ -63,9 +63,9 @@ steps:
   - '-'
 
 #
-# app-sync
+# appsync
 #
-- id: 'promote-app-sync'
+- id: 'promote-appsync'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'
@@ -73,7 +73,7 @@ steps:
   - 'pipefail'
   - '-c'
   - |-
-    gcloud run services update-traffic "app-sync" \
+    gcloud run services update-traffic "appsync" \
       --quiet \
       --project "${PROJECT_ID}" \
       --platform "managed" \
