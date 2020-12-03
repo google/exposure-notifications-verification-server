@@ -26,7 +26,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	verobs "github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
@@ -76,7 +75,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
-	ctx = verobs.WithBuildInfo(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher

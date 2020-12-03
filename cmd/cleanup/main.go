@@ -26,7 +26,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	verobs "github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -75,7 +74,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
-	ctx = verobs.WithBuildInfo(ctx)
+	ctx, obs := middleware.WithObservability(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup database
@@ -96,6 +95,9 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Common observability context
+	r.Use(obs)
 
 	// Request ID injection
 	populateRequestID := middleware.PopulateRequestID(h)
