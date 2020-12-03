@@ -109,6 +109,9 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				// continue processing if when a single code issuance fails.
 				// if any issuance fails, the returned code is the code of the first failure.
 				logger.Warnw("single code issuance failed: %v", result.errorReturn)
+				if resp.Codes[i] == nil {
+					resp.Codes[i] = &api.IssueCodeResponse{}
+				}
 				resp.Codes[i].ErrorCode = result.errorReturn.ErrorCode
 				resp.Codes[i].Error = result.errorReturn.Error
 				if httpCode == http.StatusOK {
@@ -118,7 +121,6 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			}
 		}
 
-		// Batch returns success, even if individual codes fail.
 		c.h.RenderJSON(w, httpCode, resp)
 		return
 	})
