@@ -138,7 +138,7 @@ function destroy() {
   # especially when previous terraform deployment failed. So grepping from terraform state instead.
   db_inst_name="$(terraform state show module.en.google_sql_database_instance.db-inst | grep -Eo 'name.*=.*"terraform-[a-zA-Z0-9]+"' | grep -Eo 'terraform-[a-zA-Z0-9]+' | uniq)" || best_effort
   if [[ -n "${db_inst_name}" ]]; then
-    gcloud sql instances delete ${db_inst_name} -q --project=${PROJECT_ID}
+    gcloud sql instances delete ${db_inst_name} -q --project=${PROJECT_ID} || best_effort
   fi
   # Clean up states after manual DB delete
   terraform state rm module.en.google_sql_user.user || best_effort
@@ -149,6 +149,7 @@ function destroy() {
   local vpc_connector_name="serverless-vpc-connector"
   gcloud compute networks vpc-access connectors delete ${vpc_connector_name} -q --region us-central1 --project=$PROJECT_ID || best_effort
 
+  echo "Start terraform destroy"
   terraform destroy -auto-approve
   popd > /dev/null
 }
