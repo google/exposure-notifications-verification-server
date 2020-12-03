@@ -301,5 +301,5 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 }
 
 func recordObservability(ctx context.Context, result *issueResult) {
-	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
+	observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 }
