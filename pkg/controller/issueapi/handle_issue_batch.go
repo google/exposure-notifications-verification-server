@@ -97,6 +97,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
+		httpCode := http.StatusOK
 		resp.Codes = make([]*api.IssueCodeResponse, l)
 		for i, singleIssue := range request.Codes {
 			result, resp.Codes[i] = c.issue(ctx, singleIssue, realm, user, authApp)
@@ -106,13 +107,19 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 					return
 				}
 				// continue processing if when a single code issuance fails.
+				// if any issuance fails, the returned code is the code of the first failure.
 				logger.Warnw("single code issuance failed: %v", result.errorReturn)
+				resp.Codes[i].ErrorCode = result.errorReturn.ErrorCode
+				resp.Codes[i].Error = result.errorReturn.Error
+				if httpCode == http.StatusOK {
+					httpCode = result.httpCode
+				}
 				continue
 			}
 		}
 
 		// Batch returns success, even if individual codes fail.
-		c.h.RenderJSON(w, http.StatusOK, resp)
+		c.h.RenderJSON(w, httpCode, resp)
 		return
 	})
 }
