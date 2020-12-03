@@ -29,6 +29,7 @@ type App struct {
 // AndroidTarget holds the android metadata for an App of AppResponse.
 type AndroidTarget struct {
 	Namespace              string `json:"namespace"`
+	AppName                string `json:"app_name,omitempty"`
 	PackageName            string `json:"package_name"`
 	SHA256CertFingerprints string `json:"sha256_cert_fingerprints"`
 }

@@ -159,5 +159,8 @@ func (c *Controller) findAppsForRealm(
 }
 
 func generateAppName(app clients.App) string {
+	if app.AppName != "" {
+		return app.AppName
+	}
 	return app.Region + " Android App"
 }
