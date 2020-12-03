@@ -15,6 +15,7 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -45,58 +46,12 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		var request api.UserBatchRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			logger.Errorw("Error decoding request", "error", err)
+			logger.Errorw("error decoding request", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
-		newUsers := make([]*api.BatchUser, 0, len(request.Users))
-
-		var batchErr *multierror.Error
-		for _, batchUser := range request.Users {
-			// See if the user already exists by email - they may be a member of another
-			// realm.
-			user, err := c.db.FindUserByEmail(batchUser.Email)
-			if err != nil {
-				if !database.IsNotFound(err) {
-					logger.Errorw("Error finding user", "error", err)
-					batchErr = multierror.Append(batchErr, err)
-					continue
-				}
-
-				user = new(database.User)
-				user.Email = batchUser.Email
-				user.Name = batchUser.Name
-			}
-			user.Realms = append(user.Realms, realm)
-
-			// Save the user in the database.
-			if err := c.db.SaveUser(user, currentUser); err != nil {
-				logger.Errorw("Error saving user", "error", err)
-				batchErr = multierror.Append(batchErr, err)
-				continue
-			}
-
-			// Create the invitation email composer.
-			inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email)
-			if err != nil {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
-
-			// Create the user in the auth provider. This could be a noop depending on
-			// the auth provider.
-			created, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", request.SendInvites, inviteComposer)
-			if err != nil {
-				logger.Errorw("failed to import user", "user", user.Email, "error", err)
-				batchErr = multierror.Append(batchErr, err)
-				continue
-			}
-
-			if created {
-				newUsers = append(newUsers, &batchUser)
-			}
-		}
+		newUsers, batchErr := c.importUsers(ctx, request.Users, request.SendInvites)
 
 		response := &api.UserBatchResponse{
 			NewUsers: newUsers,
@@ -114,4 +69,59 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK, response)
 	})
+}
+
+func (c *Controller) importUsers(ctx context.Context, users []api.BatchUser, sendInvites bool) ([]*api.BatchUser, *multierror.Error) {
+	logger := logging.FromContext(ctx).Named("user.importUsers")
+	realm := controller.RealmFromContext(ctx)
+	currentUser := controller.UserFromContext(ctx)
+
+	newUsers := make([]*api.BatchUser, 0, len(users))
+	var batchErr *multierror.Error
+
+	for i, batchUser := range users {
+		// See if the user already exists by email - they may be a member of another
+		// realm.
+		user, err := c.db.FindUserByEmail(batchUser.Email)
+		if err != nil {
+			if !database.IsNotFound(err) {
+				logger.Errorw("error finding user", "error", err)
+				batchErr = multierror.Append(batchErr, err)
+				continue
+			}
+
+			user = new(database.User)
+			user.Email = batchUser.Email
+			user.Name = batchUser.Name
+		}
+		user.Realms = append(user.Realms, realm)
+
+		// Save the user in the database.
+		if err := c.db.SaveUser(user, currentUser); err != nil {
+			logger.Errorw("error saving user", "error", err)
+			batchErr = multierror.Append(batchErr, err)
+			continue
+		}
+
+		// Create the invitation email composer.
+		inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email)
+		if err != nil {
+			batchErr = multierror.Append(batchErr, err)
+			continue
+		}
+
+		// Create the user in the auth provider. This could be a noop depending on
+		// the auth provider.
+		created, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", sendInvites, inviteComposer)
+		if err != nil {
+			logger.Errorw("failed to import user", "user", user.Email, "error", err)
+			batchErr = multierror.Append(batchErr, err)
+			continue
+		}
+
+		if created {
+			newUsers = append(newUsers, &users[i])
+		}
+	}
+	return newUsers, batchErr
 }
