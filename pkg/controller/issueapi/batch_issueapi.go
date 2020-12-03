@@ -48,15 +48,15 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 
 		var request api.BatchIssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
 		authApp, user, err := c.getAuthorizationFromContext(r)
 		if err != nil {
-			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("MISSING_AUTHORIZED_APP")
+			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
 
@@ -64,8 +64,8 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		if authApp != nil {
 			realm, err = authApp.Realm(c.db)
 			if err != nil {
-				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				result.obsBlame, result.obsResult = observability.BlameClient, observability.ResultError("UNAUTHORIZED")
+				c.h.RenderJSON(w, http.StatusUnauthorized, nil)
 				return
 			}
 		} else {
@@ -73,8 +73,8 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			realm = controller.RealmFromContext(ctx)
 		}
 		if realm == nil {
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			result.obsBlame, result.obsResult = observability.BlameServer, observability.ResultError("MISSING_REALM")
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			return
 		}
 
