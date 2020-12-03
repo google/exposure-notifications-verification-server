@@ -39,14 +39,15 @@ func (c *Controller) HandleIssue() http.Handler {
 				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
 			return
 		}
-
-		ctx := observability.WithBuildInfo(r.Context())
+		ctx := r.Context()
+		realm := controller.RealmFromContext(ctx)
 
 		result := &issueResult{
 			httpCode:  http.StatusOK,
 			obsBlame:  observability.BlameNone,
 			obsResult: observability.ResultOK(),
 		}
+		ctx = observability.WithRealmID(observability.WithBuildInfo(ctx), realm.ID)
 		defer recordObservability(ctx, result)
 
 		var request api.IssueCodeRequest
@@ -66,8 +67,6 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
-		realm := controller.RealmFromContext(ctx)
-		ctx = observability.WithRealmID(ctx, realm.ID)
 		result, resp := c.issue(ctx, &request)
 		if result.errorReturn != nil {
 			if result.httpCode == http.StatusInternalServerError {

@@ -37,6 +37,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 		ctx := r.Context()
 		logger := logging.FromContext(ctx).Named("issueapi.HandleBatchIssue")
+		realm := controller.RealmFromContext(ctx)
 
 		resp := &api.BatchIssueCodeResponse{}
 		result := &issueResult{
@@ -44,6 +45,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			obsBlame:  observability.BlameNone,
 			obsResult: observability.ResultOK(),
 		}
+		ctx = observability.WithRealmID(observability.WithBuildInfo(ctx), realm.ID)
 		defer recordObservability(ctx, result)
 
 		var request api.BatchIssueCodeRequest
@@ -63,8 +65,6 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
-		realm := controller.RealmFromContext(ctx)
-		ctx = observability.WithRealmID(ctx, realm.ID)
 		if !realm.AllowBulkUpload {
 			controller.Unauthorized(w, r, c.h)
 			return
