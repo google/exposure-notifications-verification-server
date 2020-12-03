@@ -102,6 +102,7 @@ Possible error code responses. New error codes may be added in future releases.
 | `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided. |
 | `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code |
 | `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later. |
+| `quota_exceeded`        | 429         | Yes   | The realm has run out of its daily quota allocation for issuing codes. Wait and retry later.
 | `unsupported_test_type` | 412         | No    | The code may be valid, but represents a test type the client cannot process. User may need to upgrade software. |
 |                         | 500         | Yes   | Internal processing error, may be successful on retry. |
 

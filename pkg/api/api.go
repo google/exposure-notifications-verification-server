@@ -32,11 +32,17 @@ const (
 	TestTypeNegative = "negative"
 
 	// error_code definitions for the APIs.
+
 	// General
+
+	// ErrUnparsableRequest indicates that the request could not be correctly parsed.
 	ErrUnparsableRequest = "unparsable_request"
-	ErrInternal          = "internal_server_error"
+	// ErrInternal indicates some server-side error whose details are opaque to the caller.
+	// this could mean a database or RPC connection drop or some other internal outage.
+	ErrInternal = "internal_server_error"
 
 	// Verify API responses
+
 	// ErrVerifyCodeInvalid indicates the code entered is unknown or already used.
 	ErrVerifyCodeInvalid = "code_invalid"
 	// ErrVerifyCodeExpired indicates the code provided is known to the server, but expired.
@@ -46,7 +52,7 @@ const (
 	// ErrVerifyCodeUserUnauth indicates the code does not belong to the requesting user.
 	ErrVerifyCodeUserUnauth = "code_user_unauthorized"
 	// ErrUnsupportedTestType indicates the client is unable to process the appropriate test type
-	// in thise case, the user should be directed to upgrade their app / operating system.
+	// in this case, the user should be directed to upgrade their app / operating system.
 	// Accompanied by an HTTP status of StatusPreconditionFailed (412).
 	ErrUnsupportedTestType = "unsupported_test_type"
 	// ErrInvalidTestType indicates the client says it supports a test type this server doesn't
@@ -54,6 +60,12 @@ const (
 	ErrInvalidTestType = "invalid_test_type"
 	// ErrMissingDate indicates the realm requires a date, but none was supplied.
 	ErrMissingDate = "missing_date"
+	// ErrUUIDAlreadyExists indicates that the UUID has already been used for an issued code.
+	ErrUUIDAlreadyExists = "uuid_already_exists"
+	// ErrMaintenanceMode indicates that the server is read-only for maintenance.
+	ErrMaintenanceMode = "maintenance_mode"
+	// ErrQuotaExceeded indicates the realm has exceeded its daily allotment of codes.
+	ErrQuotaExceeded = "quota_exceeded"
 
 	// Certificate API responses
 
@@ -63,10 +75,6 @@ const (
 	ErrTokenExpired = "token_expired"
 	// ErrHMACInvalid indicates that the HMAC that is being signed is invalid (wrong length)
 	ErrHMACInvalid = "hmac_invalid"
-	// ErrUUIDAlreadyExists indicates that the UUID has already been used for an issued code.
-	ErrUUIDAlreadyExists = "uuid_already_exists"
-	// ErrMaintenanceMode indicates that the server is read-only for maintenance.
-	ErrMaintenanceMode = "maintenance_mode"
 )
 
 // ErrorReturn defines the common error type.

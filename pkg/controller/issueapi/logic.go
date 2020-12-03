@@ -54,7 +54,18 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 			obsBlame:    observability.BlameClient,
 			obsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
 			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("unsupported test type: %v", request.TestType),
+			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
+		}, nil
+	}
+
+	// Verify the test type
+	request.TestType = strings.ToLower(request.TestType)
+	if _, ok := c.validTestType[request.TestType]; !ok {
+		return &issueResult{
+			obsBlame:    observability.BlameClient,
+			obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
+			httpCode:    http.StatusBadRequest,
+			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrUnsupportedTestType),
 		}, nil
 	}
 
@@ -82,17 +93,6 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 		}
 	}
 
-	// Verify the test type
-	request.TestType = strings.ToLower(request.TestType)
-	if _, ok := c.validTestType[request.TestType]; !ok {
-		return &issueResult{
-			obsBlame:    observability.BlameClient,
-			obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("invalid test type"),
-		}, nil
-	}
-
 	// Set up parallel arrays to leverage the observability reporting and connect the parse / validation errors
 	// to the correct date.
 	parsedDates := make([]*time.Time, 2)
@@ -106,7 +106,7 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 					obsBlame:    observability.BlameClient,
 					obsResult:   observability.ResultError(dateSettings[i].ParseError),
 					httpCode:    http.StatusBadRequest,
-					errorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err),
+					errorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
 				}, nil
 			}
 			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
@@ -191,7 +191,7 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 					obsBlame:    observability.BlameClient,
 					obsResult:   observability.ResultError("QUOTA_EXCEEDED"),
 					httpCode:    http.StatusTooManyRequests,
-					errorReturn: api.Errorf("exceeded realm quota, please contact the realm admin."),
+					errorReturn: api.Errorf("exceeded realm quota, please contact the realm admin.").WithCode(api.ErrQuotaExceeded),
 				}, nil
 			}
 		}
