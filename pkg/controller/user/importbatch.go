@@ -46,7 +46,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		var request api.UserBatchRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			logger.Errorw("Error decoding request", "error", err)
+			logger.Errorw("error decoding request", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
@@ -85,7 +85,7 @@ func (c *Controller) importUsers(ctx context.Context, users []api.BatchUser, sen
 		user, err := c.db.FindUserByEmail(batchUser.Email)
 		if err != nil {
 			if !database.IsNotFound(err) {
-				logger.Errorw("Error finding user", "error", err)
+				logger.Errorw("error finding user", "error", err)
 				batchErr = multierror.Append(batchErr, err)
 				continue
 			}
@@ -98,7 +98,7 @@ func (c *Controller) importUsers(ctx context.Context, users []api.BatchUser, sen
 
 		// Save the user in the database.
 		if err := c.db.SaveUser(user, currentUser); err != nil {
-			logger.Errorw("Error saving user", "error", err)
+			logger.Errorw("error saving user", "error", err)
 			batchErr = multierror.Append(batchErr, err)
 			continue
 		}
