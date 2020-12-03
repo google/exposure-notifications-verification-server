@@ -78,7 +78,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 	// Parameterize observability.RecordLatency()
 	recordLatency := func(ctx context.Context, start time.Time, step string) {
 		stepMutator := tag.Upsert(stepTagKey, step)
-		observability.RecordLatency(&ctx, start, mLatencyMs, &stepMutator, &result)
+		observability.RecordLatency(ctx, start, mLatencyMs, &stepMutator, &result)
 	}
 
 	for i := 0; i < iterations; i++ {

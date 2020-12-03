@@ -92,6 +92,7 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc, op
 func (m *Middleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := observability.WithBuildInfo(r.Context())
+		r = r.Clone(ctx)
 
 		logger := logging.FromContext(ctx).Named("ratelimit.Handle")
 

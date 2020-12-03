@@ -74,6 +74,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
+	ctx = observability.WithBuildInfo(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup database

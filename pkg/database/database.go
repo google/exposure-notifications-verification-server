@@ -325,7 +325,6 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 				_ = scope.Err(fmt.Errorf("realm_id is of unknown type %v", t))
 				return
 			}
-
 			ctx = observability.WithRealmID(ctx, realmID)
 		}
 

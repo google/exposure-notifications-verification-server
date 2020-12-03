@@ -35,8 +35,7 @@ const (
 )
 
 // RequireAPIKey reads the X-API-Key header and validates it is a real
-// authorized app. It also ensures currentAuthorizedApp is set in the template
-// map.
+// authorized app. It also ensures currentAuthorizedApp is set in the template map.
 func RequireAPIKey(cacher cache.Cacher, db *database.Database, h *render.Renderer, allowedTypes []database.APIKeyType) mux.MiddlewareFunc {
 	allowedTypesMap := make(map[database.APIKeyType]struct{}, len(allowedTypes))
 	for _, t := range allowedTypes {
