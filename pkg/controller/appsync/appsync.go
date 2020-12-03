@@ -81,7 +81,13 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 	for _, app := range apps.Apps {
 		realm, err := c.findRealmForApp(app, realms)
 		if err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm for region %q: %w", app.Region, err))
+			if database.IsNotFound(err) {
+				logger.Warnw("no app corresponds to region, skipping",
+					"app", app.AndroidTarget.AppName,
+					"region", app.Region)
+			} else {
+				merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm for region %q: %w", app.Region, err))
+			}
 			continue
 		}
 
