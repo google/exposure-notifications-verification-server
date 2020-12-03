@@ -25,6 +25,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
+const maxBatchSize = 10
+
 // HandleBatchIssue shows the page for batch-issuing codes.
 func (c *Controller) HandleBatchIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,10 +35,10 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
 			return
 		}
-
 		ctx := r.Context()
-		resp := &api.BatchIssueCodeResponse{}
+		logger := logging.FromContext(ctx).Named("issueapi.HandleBatchIssue")
 
+		resp := &api.BatchIssueCodeResponse{}
 		result := &issueResult{
 			httpCode:  http.StatusOK,
 			obsBlame:  observability.BlameNone,
@@ -79,19 +81,23 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("missing realm"))
 			return
 		}
+		// Add realm so that metrics are groupable on a per-realm basis.
+		ctx = observability.WithRealmID(ctx, realm.ID)
 
 		if !realm.AllowBulkUpload {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		// Add realm so that metrics are groupable on a per-realm basis.
-		ctx = observability.WithRealmID(ctx, realm.ID)
+		l := len(request.Codes)
+		if l > maxBatchSize {
+			result.obsBlame = observability.BlameClient
+			result.obsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit exceeded"))
+			return
+		}
 
-		// TODO(whaught): batch size limits
-		logger := logging.FromContext(ctx).Named("issueapi.HandleBatchIssue")
-
-		resp.Codes = make([]*api.IssueCodeResponse, len(request.Codes))
+		resp.Codes = make([]*api.IssueCodeResponse, l)
 		for i, singleIssue := range request.Codes {
 			result, resp.Codes[i] = c.issue(ctx, singleIssue, realm, user, authApp)
 			if result.errorReturn != nil {
