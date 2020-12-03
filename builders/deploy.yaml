@@ -65,9 +65,9 @@ steps:
   - '-'
 
 #
-# app-sync
+# appsync
 #
-- id: 'deploy-app-sync'
+- id: 'deploy-appsync'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
   args:
   - 'bash'
@@ -75,12 +75,12 @@ steps:
   - 'pipefail'
   - '-c'
   - |-
-    gcloud run deploy "app-sync" \
+    gcloud run deploy "appsync" \
       --quiet \
       --project "${PROJECT_ID}" \
       --platform "managed" \
       --region "${_REGION}" \
-      --image "gcr.io/${PROJECT_ID}/${_REPO}/app-sync:${_TAG}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/appsync:${_TAG}" \
       --no-traffic
   waitFor:
   - '-'
