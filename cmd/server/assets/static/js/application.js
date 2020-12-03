@@ -105,31 +105,11 @@ $(function() {
   $("[data-timestamp]").each(function(i, e) {
     let $this = $(e);
     let date = new Date($this.data("timestamp"));
-
-    let year = date.getFullYear();
-    let month = date.getMonth() + 1;
-    if (month < 10) {
-      month = `0${month}`;
-    }
-    let day = date.getDate();
-    if (day < 10) {
-      day = `0${day}`;
-    }
-    let ampm = "AM";
-    let hours = date.getHours();
-    if (hours > 12) {
-      ampm = "PM";
-      hours = hours - 12;
-    }
-    if (hours < 10) {
-      hours = `0${hours}`;
-    }
-    let minutes = date.getMinutes();
-    if (minutes < 10) {
-      minutes = `0${minutes}`;
-    }
-
-    $this.text(`${year}-${month}-${day} ${hours}:${minutes} ${ampm}`);
+    $this.tooltip({
+      placement: "top",
+      title: date.toISOString(),
+    });
+    $this.text(date.toLocaleString());
   });
 
   // Toast shows alerts/flash messages.
@@ -628,4 +608,89 @@ function genRandomString(len) {
     s += Math.random().toString(36).substr(2, 2 + i);
   }
   return s;
+}
+
+// element is expected to be a jquery element or dom query selector, ts is
+// the number of seconds since epoch, UTC.
+function countdown(element, ts, expiredCallback) {
+  if (typeof (ts) === 'undefined') {
+    return;
+  }
+
+  let $element = $(element);
+  let date = new Date(ts * 1000).getTime();
+
+  const formattedTime = function() {
+    let now = new Date().getTime();
+    let diff = date - now;
+
+    if (diff <= 0) {
+      return false;
+    }
+
+    let hours = Math.floor(diff / (1000 * 60 * 60));
+    let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    let time;
+
+    // hours
+    if (hours < 10) {
+      time = `0${hours}`;
+    } else {
+      time = `${hours}`;
+    }
+
+    // minutes
+    if (minutes < 10) {
+      time = `${time}:0${minutes}`;
+    } else {
+      time = `${time}:${minutes}`;
+    }
+
+    // seconds
+    if (seconds < 10) {
+      time = `${time}:0${seconds}`;
+    } else {
+      time = `${time}:${seconds}`;
+    }
+
+    return time;
+  };
+
+  // Fire once so the time is displayed immediately.
+  setTimeOrExpired($element, formattedTime(), expiredCallback);
+
+  // Set timer.
+  const fn = setInterval(function() {
+    let time = formattedTime();
+    if (!time) {
+      clearInterval(fn);
+    }
+    setTimeOrExpired($element, time, expiredCallback);
+  }, 1000);
+
+  return fn;
+}
+
+function setTimeOrExpired(element, time, expiredCallback) {
+  let $element = $(element);
+
+  if (!time) {
+    if (typeof expiredCallback === 'function') {
+      expiredCallback();
+    }
+
+    let expiredText = $element.data("countdownExpired");
+    if (!expiredText) {
+      expiredText = 'EXPIRED';
+    }
+    return element.html(expiredText);
+  }
+
+  let prefix = $element.data("countdownPrefix");
+  if (!prefix) {
+    prefix = '';
+  }
+  return element.html(`${prefix} ${time}`.trim());
 }

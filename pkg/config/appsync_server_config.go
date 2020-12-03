@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -41,7 +42,9 @@ type AppSyncConfig struct {
 	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
 
 	// AppSync config
-	AppSyncURL string `env:"APP_SYNC_URL, default=https://www.gstatic.com/exposurenotifications/apps.json"`
+	AppSyncURL         string        `env:"APP_SYNC_URL"`
+	FileSizeLimitBytes int64         `env:"APP_SYNC_SIZE_LIMIT, default=10240"`
+	Timeout            time.Duration `env:"APP_SYNC_TIMEOUT, default=1m"`
 }
 
 // NewAppSyncConfig returns the environment config for the appsync server.
@@ -55,10 +58,14 @@ func NewAppSyncConfig(ctx context.Context) (*AppSyncConfig, error) {
 }
 
 func (c *AppSyncConfig) Validate() error {
+	if c.AppSyncURL == "" {
+		return nil
+	}
+
 	if url, err := url.Parse(c.AppSyncURL); err != nil {
 		return fmt.Errorf("unable to parse APP_SYNC_URL: %v", err)
 	} else if url == nil {
-		return errors.New("expecting a value for APP_SYNC_URL")
+		return errors.New("expecting a URL value for APP_SYNC_URL")
 	}
 
 	return nil

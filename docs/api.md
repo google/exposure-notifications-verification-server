@@ -121,7 +121,7 @@ Exchange a verification token for a verification certificate (for sending to a k
 
 * `token`: must be exactly the string that was returned on the `/api/verify` request
 * `ekeyhmac`: must be calculated on the client
-  * The client generates an HMAC secret and calcualtes the HMAC of the actual TEK data
+  * The client generates an HMAC secret and calculates the HMAC of the actual TEK data
   * [Plaintext generation algorithm](https://github.com/google/exposure-notifications-server/blob/main/docs/design/verification_protocol.md)
   * [Sample HMAC generation (Go)](https://github.com/google/exposure-notifications-server/blob/main/pkg/verification/utils.go)
   * The key server will re-calculate this HMAC and it MUST match what is presented here.
@@ -314,14 +314,35 @@ past).
 
 In addition to "real" requests, the server also accepts chaff (fake) requests.
 These can be used to obfuscate real traffic from a network observer or server
-operator. To initiate a chaff request, set the `X-Chaff` header on your request:
+operator.
+
+Chaff requests:
+
+* MUST send the `X-API-Key` header with a valid API key (otherwise you will
+  get an unauthorized error)
+* MUST be sent via a `POST` request, otherwise you will get an invalid method
+  error
+* SHOULD send a valid JSON body with random padding similar in size as the rest
+  of the client requests so that chaff requests appear the same on the wire as
+  other valid requests.
+
+To initiate a chaff request, set the `X-Chaff` header on your request:
 
 ```sh
-curl https://example.encv.org/api/endpoint \
+curl https://apiserver.example.com/api/verify \
+  --header "x-api-key: YOUR-API-KEY" \
   --header "content-type: application/json" \
   --header "accept: application/json" \
-  --header "x-chaff: 1"
+  --header "x-chaff: 1" \
+  --request POST \
+  --data '{"padding":"base64 encoded padding"}'
 ```
+
+If the `X-Chaff` header has a value of "daily" (case-insensitive), the request
+will be counted toward the realm's daily active user count. Since the server
+records data in UTC time, clients should send this value once **per UTC day** if
+they are collecting server-side adoption metrics. The server will still respond
+with fake data that should be ignored per guidance below.
 
 The client should still send a real request with a real request body (the body
 will not be processed). The server will respond with a fake response that your

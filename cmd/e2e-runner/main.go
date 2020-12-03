@@ -17,8 +17,6 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"os"
@@ -29,6 +27,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -65,15 +64,6 @@ func main() {
 		logger.Fatal(err)
 	}
 	logger.Info("successful shutdown")
-}
-
-// Generate random string of 32 characters in length
-func randomString() (string, error) {
-	b := make([]byte, 512)
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf("failed to generate random: %v", err)
-	}
-	return fmt.Sprintf("%x", sha256.Sum256(b[:])), nil
 }
 
 func realMain(ctx context.Context) error {
@@ -126,7 +116,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Create new API keys
-	suffix, err := randomString()
+	suffix, err := project.RandomString()
 	if err != nil {
 		return fmt.Errorf("failed to create suffix string for API keys: %w", err)
 	}

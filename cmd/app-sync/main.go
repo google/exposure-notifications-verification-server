@@ -106,7 +106,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cleanup controller: %w", err)
 	}
-	r.Handle("/", appSyncController.HandleSync(ctx)).Methods("GET")
+	r.Handle("/", appSyncController.HandleSync()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {

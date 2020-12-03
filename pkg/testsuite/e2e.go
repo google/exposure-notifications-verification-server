@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/sethvargo/go-envconfig"
 )
@@ -78,7 +79,7 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 			tb.Errorf("failed to close db: %v", err)
 		}
 	})
-	randomStr, err := randomString()
+	randomStr, err := project.RandomString()
 	if err != nil {
 		tb.Fatalf("failed to generate random string: %v", err)
 	}
@@ -97,7 +98,7 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 	}
 
 	// Create new API keys
-	suffix, err := randomString()
+	suffix, err := project.RandomString()
 	if err != nil {
 		tb.Fatalf("failed to create suffix string for API keys: %v", err)
 	}
