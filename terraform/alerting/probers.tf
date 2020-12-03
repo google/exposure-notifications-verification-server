@@ -18,7 +18,7 @@ resource "google_monitoring_uptime_check_config" "https" {
   for_each = toset(compact(concat(var.server_hosts, var.apiserver_hosts, var.adminapi_hosts, var.extra-hosts)))
 
   display_name = each.key
-  timeout      = "3s"
+  timeout      = "10s"
   period       = "60s"
 
   http_check {
