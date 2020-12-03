@@ -435,8 +435,10 @@ Create a new (initial) realm specific signing key
 
 ![create realm signing keys](images/e2e/image05.png)
 
-Set the issuer and audience values (`iss`/`aud`) according to your domain settings, and click `Save realm certificate settings`. You will need this information
-later when configuring the key server.
+Set the issuer and audience values (`iss`/`aud`). The suggested issuer is
+the reverse DNS of your verification server plus the realm (`e2e-test-realm`)
+and the suggested audience value is the reverse DNS of your key server's exposure
+service. You will need this information later when configuring the key server.
 
 ![create realm signing keys](images/e2e/image06.png)
 
