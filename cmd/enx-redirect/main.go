@@ -29,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/associated"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/redirect"
+	verobs "github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -77,7 +78,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
-	ctx = observability.WithBuildInfo(ctx)
+	ctx = verobs.WithBuildInfo(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
