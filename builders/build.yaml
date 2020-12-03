@@ -115,30 +115,30 @@ steps:
   - 'build-apiserver'
 
 #
-# app-sync
+# appsync
 #
-- id: 'build-app-sync'
+- id: 'build-appsync'
   name: 'golang:1.15.2'
   args:
   - 'go'
   - 'build'
   - '-trimpath'
   - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/app-sync'
-  - './cmd/app-sync'
+  - '-o=./bin/appsync'
+  - './cmd/appsync'
   waitFor:
   - 'download-modules'
 
-- id: 'dockerize-app-sync'
+- id: 'dockerize-appsync'
   name: 'docker:19'
   args:
   - 'build'
   - '--file=builders/service.dockerfile'
-  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/app-sync:${_TAG}'
-  - '--build-arg=SERVICE=app-sync'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/appsync:${_TAG}'
+  - '--build-arg=SERVICE=appsync'
   - '.'
   waitFor:
-  - 'build-app-sync'
+  - 'build-appsync'
 
 #
 # cleanup
@@ -296,7 +296,7 @@ steps:
 images:
 - 'gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/app-sync:${_TAG}'
+- 'gcr.io/${PROJECT_ID}/${_REPO}/appsync:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}'
 - 'gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}'

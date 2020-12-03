@@ -33,8 +33,8 @@ const playStoreHost = `play.google.com/store/apps/details`
 // HandleSync performs the logic to sync mobile apps.
 func (c *Controller) HandleSync() http.Handler {
 	type AppSyncResult struct {
-		OK     bool    `json:"ok"`
-		Errors []error `json:"errors,omitempty"`
+		OK     bool     `json:"ok"`
+		Errors []string `json:"errors,omitempty"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,9 +48,19 @@ func (c *Controller) HandleSync() http.Handler {
 		// If there are any errors, return them
 		if merr := c.syncApps(ctx, apps); merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {
+				// Convert error messages to strings to they appear correctly in JSON.
+				// See here for more information:
+				//
+				//   https://stackoverflow.com/questions/44989924/golang-error-types-are-empty-when-encoded-to-json
+				//
+				errMsgs := make([]string, len(errs))
+				for i, err := range errs {
+					errMsgs[i] = err.Error()
+				}
+
 				c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
 					OK:     false,
-					Errors: errs,
+					Errors: errMsgs,
 				})
 				return
 			}
@@ -69,10 +79,15 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 	appsByRealm := map[uint][]*database.MobileApp{}
 
 	for _, app := range apps.Apps {
-
 		realm, err := c.findRealmForApp(app, realms)
 		if err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm for region %q: %w", app.Region, err))
+			if database.IsNotFound(err) {
+				logger.Warnw("no app corresponds to region, skipping",
+					"app", app.AndroidTarget.AppName,
+					"region", app.Region)
+			} else {
+				merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm for region %q: %w", app.Region, err))
+			}
 			continue
 		}
 
