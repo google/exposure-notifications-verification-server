@@ -53,7 +53,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 		newUsers := make([]*api.BatchUser, 0, len(request.Users))
 
 		var batchErr *multierror.Error
-		for _, batchUser := range request.Users {
+		for i, batchUser := range request.Users {
 			// See if the user already exists by email - they may be a member of another
 			// realm.
 			user, err := c.db.FindUserByEmail(batchUser.Email)
@@ -94,7 +94,7 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			}
 
 			if created {
-				newUsers = append(newUsers, &batchUser)
+				newUsers = append(newUsers, &request.Users[i])
 			}
 		}
 
