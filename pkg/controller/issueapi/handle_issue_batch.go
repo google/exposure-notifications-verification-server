@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/hashicorp/go-multierror"
 )
 
 const maxBatchSize = 10
@@ -98,6 +99,8 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 
 		httpCode := http.StatusOK
+		var merr *multierror.Error
+
 		resp.Codes = make([]*api.IssueCodeResponse, l)
 		for i, singleIssue := range request.Codes {
 			result, resp.Codes[i] = c.issue(ctx, singleIssue, realm, user, authApp)
@@ -109,6 +112,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				// continue processing if when a single code issuance fails.
 				// if any issuance fails, the returned code is the code of the first failure.
 				logger.Warnw("single code issuance failed: %v", result.errorReturn)
+				merr = multierror.Append(merr, errors.New(result.errorReturn.Error))
 				if resp.Codes[i] == nil {
 					resp.Codes[i] = &api.IssueCodeResponse{}
 				}
@@ -119,6 +123,10 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				}
 				continue
 			}
+		}
+
+		if err := merr.ErrorOrNil(); err != nil {
+			resp.Error = err.Error()
 		}
 
 		c.h.RenderJSON(w, httpCode, resp)
