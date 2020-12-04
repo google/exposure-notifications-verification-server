@@ -63,7 +63,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
-		if realm := controller.RealmFromContext(ctx); realm == nil || !realm.AllowBulkUpload {
+		if realm := controller.RealmFromContext(ctx); !realm.AllowBulkUpload {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}

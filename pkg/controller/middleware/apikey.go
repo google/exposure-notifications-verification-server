@@ -24,7 +24,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/mux"
@@ -109,7 +108,6 @@ func RequireAPIKey(cacher cache.Cacher, db *database.Database, h *render.Rendere
 			// Save the authorized app on the context.
 			ctx = controller.WithAuthorizedApp(ctx, &authApp)
 			ctx = controller.WithRealm(ctx, &realm)
-			ctx = observability.WithRealmID(ctx, realm.ID)
 			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
