@@ -177,6 +177,7 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   "phone": "+CC Phone number",
   "padding": "<bytes>",
   "uuid": "string UUID",
+  "externalIssuerID": "external-ID",
 }
 ```
 
