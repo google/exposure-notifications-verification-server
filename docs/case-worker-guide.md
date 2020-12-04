@@ -40,3 +40,35 @@ After the code is successfully issued, the `short code` will be displayed to be 
 The unique identifier can be used later to confirm if the verification code was used or not.
 
 ![issue code](images/users/issue02.png "view code")
+
+## Bulk issue verification codes
+
+If [enabled in the realm](/realm-admin-guide.md#bulk-issue-codes), there will be a menu option to bulk issue codes.
+
+![bulk issue menu](images/users/menu_bulk_issue.png "bulk issue menu")
+
+This allows the user to upload a .csv file and issue many codes at once to a list of patient phone numbers and their associated test date. The bulk uploader assumes that all results are `positive`.
+
+The bulk uploader is written as a javascript client. Rather than uploading the file, it parses on the client and makes requests to the issue API. This allows the server to discard phone numbers after sending the SMS without storing them. The uploader may be canceled and resumed, respects the server's rate-limiting throttle, and prevents the user from sending an SMS to the same phone twice using a retry code.
+
+### CSV Format
+`patient phone`,`test date`, [optional] `symptom date`
+
+* The patient phone must be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164).
+* All dates must be in [ISO-8601 format](https://www.iso.org/iso-8601-date-and-time-format.html).
+
+![bulk issue codes](images/users/bulk_issue.png "bulk issue codes")
+
+### Select a file
+Select .CSV file in the format: phone, symptom-date
+
+### Start at line
+Select a line to start at. This defaults to 0 for a new file, but allows the upload to resume if it fails or is canceled in the middle.
+
+### Retry code
+The user is provided a unique retry-code, although the user may alternatively enter their own, memorable, unique string. If the user is resuming a previous upload, they should enter the retry-code that was used for that upload.
+
+This code is a unique string which is used to one-way hash each phone number to a UUID which is then stored for tracking purposes. This prevents the server from sending an SMS to the same phone number twice if a .CSV is uploaded with the same retry-code. The server will respond with status `Conflict` if it receives the same UUID more than once. The user should keep the value of their retry-code a secret, so that no other user can discover if a phone number has been used by the system.
+
+### Remember code
+This checkbox to saves the retry code as a browser cookie for 1 day. Alternatively you may remember the retry-code yourself.
