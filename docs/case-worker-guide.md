@@ -1,3 +1,5 @@
+<!-- TOC -->autoauto- [Case worker (code issuer) guide](#case-worker-code-issuer-guide)auto  - [Account setup](#account-setup)auto    - [Second factor authentication](#second-factor-authentication)auto  - [Issuing verification codes](#issuing-verification-codes)auto  - [Bulk issue verification codes](#bulk-issue-verification-codes)auto    - [CSV Format](#csv-format)auto    - [Fields](#fields)auto      - [Select a file](#select-a-file)auto      - [Start at line](#start-at-line)auto      - [Retry code](#retry-code)auto      - [Remember code](#remember-code)auto    - [After processing](#after-processing)autoauto<!-- /TOC -->
+
 # Case worker (code issuer) guide
 
 This is a high-level guide that can be used as a basis for creating a user guide
@@ -51,7 +53,7 @@ This allows the user to upload a .csv file and issue many codes at once to a lis
 
 The bulk uploader is written as a javascript client. Rather than uploading the file, it parses on the client and makes requests to the issue API. This allows the server to discard phone numbers after sending the SMS without storing them. The uploader may be canceled and resumed, respects the server's rate-limiting throttle, and prevents the user from sending an SMS to the same phone twice using a retry code.
 
-#### CSV Format
+### CSV Format
 `patient phone`,`test date`, [optional] `symptom date`
 
 * The patient phone must be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164).

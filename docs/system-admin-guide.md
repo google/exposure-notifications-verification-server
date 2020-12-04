@@ -1,3 +1,5 @@
+<!-- TOC -->autoauto- [System admin guide](#system-admin-guide)auto  - [Account setup](#account-setup)auto  - [Inviting new admins](#inviting-new-admins)auto  - [Creating new realms](#creating-new-realms)auto  - [View realm information](#view-realm-information)auto  - [Joining realms](#joining-realms)auto  - [Create system SMS configuration](#create-system-sms-configuration)auto  - [Create system SMTP configuration](#create-system-smtp-configuration)auto  - [Clearing caches](#clearing-caches)auto  - [Getting system information](#getting-system-information)autoauto<!-- /TOC -->
+
 # System admin guide
 
 This guide describes common system administration tasks. Note this is different
