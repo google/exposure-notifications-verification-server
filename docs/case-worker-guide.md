@@ -53,8 +53,9 @@ The bulk uploader is written as a javascript client. Rather than uploading the f
 
 ### CSV Format
 `patient phone`,`test date`, [optional] `symptom date`
-The patient phone should be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164).
-All dates should be in [ISO-8601 format](https://www.iso.org/iso-8601-date-and-time-format.html).
+
+* The patient phone should be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164).
+* All dates should be in [ISO-8601 format](https://www.iso.org/iso-8601-date-and-time-format.html).
 
 ![bulk issue codes](images/users/bulk_issue.png "bulk issue codes")
 
