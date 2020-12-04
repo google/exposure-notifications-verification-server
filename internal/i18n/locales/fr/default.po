@@ -11,10 +11,10 @@ msgstr ""
 # ----------------
 
 msgid "nav.issue-code"
-msgstr "Emettre un code"
+msgstr "Émettre un code"
 
 msgid "nav.bulk-issue-codes"
-msgstr "Emettre des codes multiples"
+msgstr "Émettre des codes multiples"
 
 msgid "nav.check-code-status"
 msgstr "Vérifier l'état d'un code"
@@ -97,7 +97,7 @@ msgid "codes.issue.symptoms-date-label"
 msgstr "Apparition des symptômes (heure locale)"
 
 msgid "codes.issue.sms-text-message-header"
-msgstr "Message SMS (recommendé)"
+msgstr "Message SMS (recommandé)"
 
 msgid "codes.issue.sms-text-message-label"
 msgstr "Numéro de téléphone du patient"
@@ -115,7 +115,7 @@ msgid "codes.issue.sms-verification-link-header"
 msgstr "Lien de vérification SMS"
 
 msgid "codes.issue.sms-verification-detail"
-msgstr "SMS envoyé avec succès au %s. Demandez au patient de vérifier ses messages SMS sur son téléphone où Exposure Notifications est activé."
+msgstr "SMS envoyé avec succès au %s. Demandez au patient de vérifier ses messages SMS sur son téléphone où Notifications d'exposition au COVID-19 est activé."
 
 msgid "codes.issue.backup-short-code-header"
 msgstr "Code court de secours"
