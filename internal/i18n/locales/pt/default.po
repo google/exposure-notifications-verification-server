@@ -29,7 +29,7 @@ msgid "nav.event-log"
 msgstr "Registro de eventos"
 
 msgid "nav.signing-keys"
-msgstr "Chaves assinantes"
+msgstr "Chaves de assinatura"
 
 msgid "nav.statistics"
 msgstr "Estatísticas"
@@ -67,7 +67,7 @@ msgid "codes.issue.instructions"
 msgstr "Preencha o seguinte formulário para criar um código de uso único para verificar um paciente. Não envie este formulário até estar pronto para repassar o códio ao paciente."
 
 msgid "codes.issue.diagnosis-header"
-msgstr "Diagnose"
+msgstr "Diagnóstico"
 
 msgid "codes.issue.dates-header"
 msgstr "Datas"
@@ -121,7 +121,7 @@ msgid "codes.issue.backup-short-code-header"
 msgstr "Código reserva"
 
 msgid "codes.issue.backup-short-code-detail"
-msgstr "Compartilhe este código com o paciente se ele não recebeu a mensagem de texto SMS no seu celular."
+msgstr "Compartilhe este código com o paciente se ele não receber a mensagem de texto SMS no seu celular."
 
 msgid "codes.issue.generated-short-code-header"
 msgstr "O código reserva foi criado"
