@@ -55,7 +55,6 @@ Also under realm settings `settings` from the drop down menu, there are several 
     A new tab is added to the realm that allows the issuance of many codes from a CSV file.
     This can be useful for case-workers who are given a data-set of test results rather than
     administering tests one-by-one.
-    More information about this feature is [documented here](https://example.com).
 
   * Disabled
 
@@ -64,19 +63,32 @@ Also under realm settings `settings` from the drop down menu, there are several 
 
 ### Allowed Test Types
 
+  Realms may allow the following test result types from case workers.
+
   * Positive + Likely + Negative
-
   * Positive + Likely
-
   * Positive
+
+  Although only `positive` and `likely` are used for matching exposure notifications on the client,
+  `negative` is recommended for realms where the test result is shown to the user through the patient app.
+  Showing all diagnosis - including `negative` through the app upon code issuance is a more powerful way to
+  drive adoption of this system and can be more secure because the receipt of an SMS from this system does not
+  reveal the diagnosis outcome.
 
 ### Date Configuration
 
-  * Optional Date
+Issuing codes have two date fields `testDate` and `symptomDate`. If this setting is marked `required`
+the issuer must pass one or both of these dates. Case workers might ask for the date of symptom onset together
+with the test, but when only `testDate` is given, apps are optionally recommended to prompt the user to enter
+a date for first onset of symptoms - this may allow for more accurate matching of exposure.
 
-  * Required Date
+If set to `optional`, codes may be issued successfully with no dates present.
 
 ### Code Length & Expiration
+
+This setting adjusts the number of characters required for both long an short code.
+Realm admins may also define how long an issued code lasts before it expires. Once expired,
+the patient will not longer be able to claim the diagnosis as theirs.
 
 ### SMS Text Template
 
