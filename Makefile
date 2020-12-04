@@ -16,6 +16,7 @@ VETTERS = "asmdecl,assign,atomic,bools,buildtag,cgocall,composites,copylocks,err
 GOFMT_FILES = $(shell go list -f '{{.Dir}}' ./...)
 HTML_FILES = $(shell find . -name \*.html)
 GO_FILES = $(shell find . -name \*.go)
+MD_FILES = $(shell find . -name \*.md)
 
 fmtcheck:
 	@command -v goimports > /dev/null 2>&1 || go get golang.org/x/tools/cmd/goimports
@@ -50,7 +51,7 @@ copyrightcheck:
 
 spellcheck:
 	@command -v misspell > /dev/null 2>&1 || go get github.com/client9/misspell/cmd/misspell
-	@misspell -locale="US" -error -source="text" $(GO_FILES) $(HTML_FILES)
+	@misspell -locale="US" -error -source="text" $(GO_FILES) $(HTML_FILES) $(MD_FILES)
 .PHONY: spellcheck
 
 staticcheck:
