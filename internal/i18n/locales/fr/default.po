@@ -41,10 +41,10 @@ msgid "nav.settings"
 msgstr "Paramètres"
 
 msgid "nav.change-realm"
-msgstr "Changer de domaine (realm)"
+msgstr "Changer de domaine"
 
 msgid "nav.select-realm"
-msgstr "Sélectionner un domaine (realm)"
+msgstr "Sélectionner un domaine"
 
 msgid "nav.system-admin"
 msgstr "Administrateur système"
