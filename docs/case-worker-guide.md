@@ -1,11 +1,21 @@
-<!-- TOC -->autoauto- [Case worker (code issuer) guide](#case-worker-code-issuer-guide)auto  - [Account setup](#account-setup)auto    - [Second factor authentication](#second-factor-authentication)auto  - [Issuing verification codes](#issuing-verification-codes)auto  - [Bulk issue verification codes](#bulk-issue-verification-codes)auto    - [CSV Format](#csv-format)auto    - [Fields](#fields)auto      - [Select a file](#select-a-file)auto      - [Start at line](#start-at-line)auto      - [Retry code](#retry-code)auto      - [Remember code](#remember-code)auto    - [After processing](#after-processing)autoauto<!-- /TOC -->
+* 1. [Account setup](#Accountsetup)
+	* 1.1. [Second factor authentication](#Secondfactorauthentication)
+* 2. [Issuing verification codes](#Issuingverificationcodes)
+* 3. [Bulk issue verification codes](#Bulkissueverificationcodes)
+	* 3.1. [CSV Format](#CSVFormat)
+	* 3.2. [Fields](#Fields)
+		* 3.2.1. [Select a file](#Selectafile)
+		* 3.2.2. [Start at line](#Startatline)
+		* 3.2.3. [Retry code](#Retrycode)
+		* 3.2.4. [Remember code](#Remembercode)
+	* 3.3. [After processing](#Afterprocessing)
 
 # Case worker (code issuer) guide
 
 This is a high-level guide that can be used as a basis for creating a user guide
 for an individual public health authority that is using the verification server.
 
-## Account setup
+##  1. <a name='Accountsetup'></a>Account setup
 
 An administrator of your realm must invite you to join.
 Expect to receive an email for a new account / password reset.
@@ -13,13 +23,13 @@ This will provide a link to set up your account password.
 
 ![new user](images/users/step02.png "Create a password")
 
-### Second factor authentication
+###  1.1. <a name='Secondfactorauthentication'></a>Second factor authentication
 
 On your next login, you will be given the option to enroll a second factor for authentication (SMS sent to your mobile phone). It is highly recommended to enroll in a second factor. It can be helpful to set up multiple different phone numbers as backups for the second factor.
 
 ![new user](images/users/step04.png "second factor")
 
-## Issuing verification codes
+##  2. <a name='Issuingverificationcodes'></a>Issuing verification codes
 
 To issue a verification code
 
@@ -43,7 +53,7 @@ The unique identifier can be used later to confirm if the verification code was 
 
 ![issue code](images/users/issue02.png "view code")
 
-## Bulk issue verification codes
+##  3. <a name='Bulkissueverificationcodes'></a>Bulk issue verification codes
 
 If [enabled in the realm](/realm-admin-guide.md#bulk-issue-codes), there will be a menu option to bulk issue codes.
 
@@ -53,7 +63,7 @@ This allows the user to upload a .csv file and issue many codes at once to a lis
 
 The bulk uploader is written as a javascript client. Rather than uploading the file, it parses on the client and makes requests to the issue API. This allows the server to discard phone numbers after sending the SMS without storing them. The uploader may be canceled and resumed, respects the server's rate-limiting throttle, and prevents the user from sending an SMS to the same phone twice using a retry code.
 
-### CSV Format
+###  3.1. <a name='CSVFormat'></a>CSV Format
 `patient phone`,`test date`, [optional] `symptom date`
 
 * The patient phone must be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164).
@@ -61,22 +71,22 @@ The bulk uploader is written as a javascript client. Rather than uploading the f
 
 ![bulk issue codes](images/issue/bulk_issue.png "bulk issue codes")
 
-### Fields
-#### Select a file
+###  3.2. <a name='Fields'></a>Fields
+####  3.2.1. <a name='Selectafile'></a>Select a file
 Select .CSV file in the format: phone, symptom-date
 
-#### Start at line
+####  3.2.2. <a name='Startatline'></a>Start at line
 Select a line to start at. This defaults to 0 for a new file, but allows the upload to resume if it fails or is canceled in the middle.
 
-#### Retry code
+####  3.2.3. <a name='Retrycode'></a>Retry code
 The user is provided a unique retry-code, although the user may alternatively enter their own, memorable, unique string. If the user is resuming a previous upload, they should enter the retry-code that was used for that upload.
 
 This code is a unique string which is used to one-way hash each phone number to a UUID which is then stored for tracking purposes. This prevents the server from sending an SMS to the same phone number twice if a .CSV is uploaded with the same retry-code. The server will respond with status `Conflict` if it receives the same UUID more than once. The user should keep the value of their retry-code a secret, so that no other user can discover if a phone number has been used by the system.
 
-#### Remember code
+####  3.2.4. <a name='Remembercode'></a>Remember code
 This checkbox to saves the retry code as a browser cookie for 1 day. Alternatively you may remember the retry-code yourself.
 
-### After processing
+###  3.3. <a name='Afterprocessing'></a>After processing
 After processing, a message will appear at the top with the count of successfully issued codes and a count of failures. If there are errors, they will be presented in a table with the line number of the failure and the error message received. The user may correct the entries and retry the failed lines.
 
 ![bulk issue errors](images/issue/bulk_issue_done.png "bulk issue errors")
