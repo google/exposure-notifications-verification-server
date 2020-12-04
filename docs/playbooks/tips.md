@@ -47,7 +47,7 @@ By default you can edit the query using the UI (See [Using Metrics
 Explorer][]), useful for quick poking around.
 
 Since all of our dashboards/alerts are defined in Monitoring Query
-Language (mql), you should also be familiar with construcing the query
+Language (mql), you should also be familiar with constructing the query
 using the Query Editor (See [Using the Query Editor][]).
 
 ## Monitoring Query Language (mql)
