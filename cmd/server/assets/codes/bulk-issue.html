@@ -128,6 +128,7 @@
   </main>
 
   <script type="text/javascript">
+    const batchSize = 10;
     let total = 0;
     let totalErrs = 0;
 
@@ -206,8 +207,6 @@
         reader.onload = upload.start;
         reader.readAsText($csv[0].files[0]);
       });
-
-      const batchSize = 1;
 
       function readFile() {
         // State for managing cleanup and canceling
@@ -315,14 +314,13 @@
 
       function uploadBatch(data, i) {
         return $.ajax({
-          url: '/codes/issue',
+          url: '/codes/batch-issue',
           type: 'POST',
           dataType: 'json',
           cache: false,
           contentType: 'application/json',
           headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
-          // TODO: at the moment we only support one-at-a-time
-          data: JSON.stringify(data[0]),
+          data: JSON.stringify({'codes':data}),
           success: function(result) {
             total++;
             if (result.error) {
