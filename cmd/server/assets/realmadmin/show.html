@@ -138,6 +138,8 @@
       })
       .done(function(data, status, xhr) {
         if (!data.statistics) {
+          $(realmChartDiv).find('p').text('No data yet.');
+          $(dailyUsersChartDiv).find('p').text('No data yet.');
           return;
         }
 
@@ -209,6 +211,7 @@
       })
       .done(function(data, status, xhr) {
         if (!data.statistics) {
+          $perUserTable.find('p').text('There is no per-user data yet.')
           return;
         }
 
@@ -288,6 +291,7 @@
       })
       .done(function(data, status, xhr) {
         if (!data.statistics) {
+          $perExternalIssuerTable.find('p').text('There is no external issuing data yet.')
           return;
         }
 
