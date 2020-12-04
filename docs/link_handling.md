@@ -44,14 +44,45 @@ Sample iOS universal link metadata
 
 ```shell
 ❯ curl -A "iphone" "https://us-moo.en.express/.well-known/apple-app-site-association"
-{"applinks":{"details":[{"appIDs":["com.google.test.application"],"components":[{"/":"/*","comment":"handle all urls"}]}]}}
+{
+	"applinks": {
+		"details": [
+			{
+				"appIDs": [
+					"com.google.test.application"
+				],
+				"components": [
+					{
+						"/": "/*",
+						"comment": "handle all urls"
+					}
+				]
+			}
+		]
+	}
+}
 ```
 
 Sample Android universal link metadata
 
 ```shell
 ❯ curl "https://us-moo.en.express/.well-known/assetlinks.json"
-[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"gov.moosylvania.enx","sha256_cert_fingerprints":["A0:78:81:44:73:27:91:F3:0F:38:EE:98:D6:95:BD:B5:4D:3D:9C:81:A2:90:0B:15:59:DC:C3:DB:B5:B6:93:93","45:0B:F6:29:B0:65:82:D1:C8:3A:8B:6F:91:54:02:C0:92:C6:B6:23:C5:D2:49:20:A5:F1:5A:3D:8C:1B:6E:65","AA:14:E8:9D:37:4C:B3:6C:80:E7:9F:73:BC:9A:01:D3:16:77:DC:C6:91:AA:DE:A1:5F:73:74:11:B3:36:A3:91"]}}]
+[
+	{
+		"relation": [
+			"delegate_permission/common.handle_all_urls"
+		],
+		"target": {
+			"namespace": "android_app",
+			"package_name": "gov.moosylvania.enx",
+			"sha256_cert_fingerprints": [
+				"A0:78:81:44:73:27:91:F3:0F:38:EE:98:D6:95:BD:B5:4D:3D:9C:81:A2:90:0B:15:59:DC:C3:DB:B5:B6:93:93",
+				"45:0B:F6:29:B0:65:82:D1:C8:3A:8B:6F:91:54:02:C0:92:C6:B6:23:C5:D2:49:20:A5:F1:5A:3D:8C:1B:6E:65",
+				"AA:14:E8:9D:37:4C:B3:6C:80:E7:9F:73:BC:9A:01:D3:16:77:DC:C6:91:AA:DE:A1:5F:73:74:11:B3:36:A3:91"
+			]
+		}
+	}
+]
 ```
 
 For the iOS universal links, if the custom EN app is installed that handles the `us-wa.en.express` domain, then the Washington app will get a chance to handle it. It is up to that
