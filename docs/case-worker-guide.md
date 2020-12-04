@@ -45,7 +45,7 @@ The unique identifier can be used later to confirm if the verification code was 
 
 If [enabled in the realm](/realm-admin-guide.md#bulk-issue-codes), there will be a menu option to bulk issue codes.
 
-![bulk issue menu](images/users/menu_bulk_issue.png "bulk issue menu")
+![bulk issue menu](images/issue/menu_bulk_issue.png "bulk issue menu")
 
 This allows the user to upload a .csv file and issue many codes at once to a list of patient phone numbers and their associated test date. The bulk uploader assumes that all results are `positive`.
 
@@ -57,7 +57,7 @@ The bulk uploader is written as a javascript client. Rather than uploading the f
 * The patient phone must be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164).
 * All dates must be in [ISO-8601 format](https://www.iso.org/iso-8601-date-and-time-format.html).
 
-![bulk issue codes](images/users/bulk_issue.png "bulk issue codes")
+![bulk issue codes](images/issue/bulk_issue.png "bulk issue codes")
 
 ### Select a file
 Select .CSV file in the format: phone, symptom-date
