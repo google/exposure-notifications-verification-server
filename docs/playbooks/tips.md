@@ -7,7 +7,7 @@ Link to [Google Cloud Console][].
 Tips to quickly navigate around Cloud Console:
 
 1. You can "pin" commonly used pages to the top of the left sidebar.
-   Hover your mouse on a page and there's a pin button.
+   Hover your mouse on a page in the sidebar and there's a pin button.
 2. At the top of the page you can search the name of the page you want
    to access.
 
@@ -23,8 +23,8 @@ resource.type="cloud_run_revision"
 logName="projects/encv-prod/logs/run.googleapis.com%2Fstderr"
 ```
 
-You can further filter the query using filter on `jsonPayload`. E.g. the
-following query will give you all log lines from e2e test:
+You can further narrow down using filters on `jsonPayload`. E.g. the
+following query will give you log lines from e2e test:
 
 ```
 resource.type="cloud_run_revision"
@@ -46,18 +46,16 @@ side bar (Under OPERATIONS -> Monitoring -> Metrics Explorer).
 By default you can edit the query using the UI (See [Using Metrics
 Explorer][]), useful for quick poking around.
 
-Note since all of our dashboards/alerts are defined in Monitoring Query
+Since all of our dashboards/alerts are defined in Monitoring Query
 Language (mql), you should also be familiar with construcing the query
 using the Query Editor (See [Using the Query Editor][]).
 
 ## Monitoring Query Language (mql)
 
-Note this section is intended to give a quick overview of the Monitoring Query
-Language used by our monitoring/dashboard/alerting. You are encouraged
-to read the [MQL reference][] and [MQL examples][] to get more details.
-
-MQL is a powerful query language on Google Cloud Monitoring. It's
-intended to be easy to read and write.
+This section is intended to give a quick overview of the Monitoring
+Query Language used by our monitoring/dashboard/alerting. You are
+encouraged to read the [MQL reference][] and [MQL examples][] to get
+more details.
 
 An MQL query looks like this:
 
@@ -85,18 +83,17 @@ Line by line explanation
      - Tip: Metrics defined in our code has a prefix of
        `.../opencensus/en-verification-server/`. We
        also have other metrics provided by OpenCensus to gain visibility
-       into several part of the external libraries.
+       into several parts of the external libraries.
        - `.../opencensus/go.sql/`
        - `.../opencensus/grpc.io/`
        - `.../opencensus/opencensus.io/http/`
        - `.../opencensus/redis/`
-   - For Google Cloud Monitoring built-in metrics they are often
+   - For Google Cloud Monitoring built-in metrics they are usually
      prefixed by the name of the service, e.g.
      `run.googleapis.com/request_count` from Cloud Run.
-     - Tip: If you are unsure what metrics are available from Cloud
-       Monitoring, you can get that from Metrics Editor: once
-       you select a "resource type", the UI will give you a narrowed
-       down list of metrics specific to that resource type.
+     - Tip: If you are unsure what metrics are available: use Metrics
+       Editor, select a "resource type", the UI will give you a list of
+       metrics specific to that resource type.
 3. `filter metric.result == "OK"`: a filter on the result. You can add
    multiple predicates here: `filter foo && bar`.  Auto completion
    should help you explore available fields to filter on.
@@ -114,5 +111,5 @@ Line by line explanation
 [MQL examples]: https://cloud.google.com/monitoring/mql/examples
 [MQL reference]: https://cloud.google.com/monitoring/mql/reference
 [Using Metrics Explorer]: https://cloud.google.com/monitoring/charts/metrics-explorer#find-me
-[Using the Logs Viewer]: https://cloud.google.com/logging/docs/view/logs-viewer-interface
+[Using the Logs Explorer]: https://cloud.google.com/logging/docs/view/logs-viewer-interface
 [Using the Query Editor]: https://cloud.google.com/monitoring/mql/query-editor
