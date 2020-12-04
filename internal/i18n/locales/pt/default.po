@@ -64,7 +64,7 @@ msgid "codes.issue.header"
 msgstr "Criar código de verificação"
 
 msgid "codes.issue.instructions"
-msgstr "Preencha o seguinte formulário para criar um código de uso único para verificar um paciente. Não envie este formulário até estar pronto para repassar o códio ao paciente."
+msgstr "Preencha o seguinte formulário para criar um código de uso único para verificar um paciente. Não envie este formulário até estar pronto para repassar o código ao paciente."
 
 msgid "codes.issue.diagnosis-header"
 msgstr "Diagnóstico"
