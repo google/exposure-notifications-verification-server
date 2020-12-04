@@ -1,18 +1,19 @@
-* 1. [Access protection recommendations](#Accessprotectionrecommendations)
-	* 1.1. [Account protection](#Accountprotection)
-	* 1.2. [API key protection](#APIkeyprotection)
-* 2. [Settings, enabling EN Express](#SettingsenablingENExpress)
-* 3. [Settings, code settings](#Settingscodesettings)
-	* 3.1. [Bulk Issue Codes](#BulkIssueCodes)
-	* 3.2. [Allowed Test Types](#AllowedTestTypes)
-	* 3.3. [Date Configuration](#DateConfiguration)
-	* 3.4. [Code Length & Expiration](#CodeLengthExpiration)
-	* 3.5. [SMS Text Template](#SMSTextTemplate)
-* 4. [Settings, Twilio SMS credentials](#SettingsTwilioSMScredentials)
-* 5. [Adding users](#Addingusers)
-* 6. [API Keys](#APIKeys)
-* 7. [Rotating certificate signing keys](#Rotatingcertificatesigningkeys)
-	* 7.1. [Step 1 - Create a new signing key version](#Step1-Createanewsigningkeyversion)
+- [Realm admin guide](#realm-admin-guide)
+  - [Access protection recommendations](#access-protection-recommendations)
+    - [Account protection](#account-protection)
+    - [API key protection](#api-key-protection)
+  - [Settings, enabling EN Express](#settings-enabling-en-express)
+  - [Settings, code settings](#settings-code-settings)
+    - [Bulk Issue Codes](#bulk-issue-codes)
+    - [Allowed Test Types](#allowed-test-types)
+    - [Date Configuration](#date-configuration)
+    - [Code Length & Expiration](#code-length--expiration)
+    - [SMS Text Template](#sms-text-template)
+  - [Settings, Twilio SMS credentials](#settings-twilio-sms-credentials)
+  - [Adding users](#adding-users)
+  - [API Keys](#api-keys)
+  - [Rotating certificate signing keys](#rotating-certificate-signing-keys)
+    - [Step 1 - Create a new signing key version](#step-1---create-a-new-signing-key-version)
 
 # Realm admin guide
 
@@ -20,9 +21,9 @@ This guide provides high-level steps for realm administrators to follow.
 
 If you are not a realm administrator, you will not have access to these screens.
 
-##  1. <a name='Accessprotectionrecommendations'></a>Access protection recommendations
+## Access protection recommendations
 
-###  1.1. <a name='Accountprotection'></a>Account protection
+### Account protection
 
 We provide a base level of account protection measures that we urge you to share with your caseworkers that are issuing verification codes.
 
@@ -34,13 +35,13 @@ We provide a base level of account protection measures that we urge you to share
 
 Realm administrators should monitor the number of codes issued and take corrective action if needed (suspend a user's access to issue codes)
 
-###  1.2. <a name='APIkeyprotection'></a>API key protection
+### API key protection
 
 * API keys should not be checked into source code.
 * ADMIN level API Keys can issue codes, these should be closely guarded and their access should be monitored. Periodically, the API key should be rotated.
 
 
-##  2. <a name='SettingsenablingENExpress'></a>Settings, enabling EN Express
+## Settings, enabling EN Express
 
 Go to the realm setting by selecting the `settings` drop down menu (shown under your name).
 
@@ -58,13 +59,13 @@ Once that is confirmed and saved, click the `Enable EN Express` button.
 
 ![express](images/admin/settings03.png "Enable EN Express")
 
-##  3. <a name='Settingscodesettings'></a>Settings, code settings
+## Settings, code settings
 
 Also under realm settings `settings` from the drop down menu, there are several settings for code issuance.
 
 ![express](images/admin/settings_code.png "Code settings")
 
-###  3.1. <a name='BulkIssueCodes'></a>Bulk Issue Codes
+### Bulk Issue Codes
 
   * Enabled
 
@@ -78,7 +79,7 @@ Also under realm settings `settings` from the drop down menu, there are several 
     Only the single issue-code tab will be shown. Calls to the batch issue API will fail
     for this realm.
 
-###  3.2. <a name='AllowedTestTypes'></a>Allowed Test Types
+### Allowed Test Types
 
   Realms may allow the following test result types from case workers.
 
@@ -92,7 +93,7 @@ Also under realm settings `settings` from the drop down menu, there are several 
   drive adoption of this system and can be more secure because the receipt of an SMS from this system does not
   reveal the diagnosis outcome.
 
-###  3.3. <a name='DateConfiguration'></a>Date Configuration
+### Date Configuration
 
 Issuing codes have two date fields `testDate` and `symptomDate`. If this setting is marked `required`
 the issuer must pass one or both of these dates. Case workers might ask for the date of symptom onset together
@@ -101,7 +102,7 @@ a date for first onset of symptoms - this may allow for more accurate matching o
 
 If set to `optional`, codes may be issued successfully with no dates present.
 
-###  3.4. <a name='CodeLengthExpiration'></a>Code Length & Expiration
+### Code Length & Expiration
 
 This setting adjusts the number of characters required for both long and short codes.
 Realm admins may also define how long an issued code lasts before it expires. Once expired,
@@ -112,7 +113,7 @@ If EN Express is enabled, these fields are not adjustable.
 Short codes are intended to be used where a case-worker may need to dictate the code to their patients
 whereas long codes may be more secure for realms where they may be sent via SMS (but may be more difficult to dictate and recall).
 
-###  3.5. <a name='SMSTextTemplate'></a>SMS Text Template
+### SMS Text Template
 
 It is possible to customize the text of the SMS message that gets sent to patients.
 See the help text on that page for guidance.
@@ -123,14 +124,14 @@ The fields `[region]`, `[code]`, `[expires]`, `[longcode]`, and `[longexpires]` 
 which will be programmatically substituted with values. It is recommended that the text of this SMS be composed
 in such a way that is respectful to the patient and does not reveal details about their diagnosis to potential onlookers of the phone's notifications with further information presented in-app.
 
-##  4. <a name='SettingsTwilioSMScredentials'></a>Settings, Twilio SMS credentials
+## Settings, Twilio SMS credentials
 
 To dispatch verification codes / links over SMS, a realm must provide their credentials for [Twilio](https://www.twilio.com/). The necessary credentials (Twilio account, auth token, and phone number)
 must be obtained from the Twilio console.
 
 ![smssettings](images/admin/sms01.png "SMS settings")
 
-##  5. <a name='Addingusers'></a>Adding users
+## Adding users
 
 Go to realm users admin by selecting 'Users' from the drop-down menu (shown under your name).
 
@@ -147,7 +148,7 @@ If a user only needs to be able to issue verification codes, they do not need to
 
 ![users](images/admin/users02.png "User listing")
 
-##  6. <a name='APIKeys'></a>API Keys
+## API Keys
 
 API Keys are used by your mobile app to access the verification server.
 These API keys should be kept secret and only used by your mobile app.
@@ -171,7 +172,7 @@ If you fail to copy it, you will need to create another one.
 
 ![api keys](images/admin/apikeys03.png "API key created")
 
-##  7. <a name='Rotatingcertificatesigningkeys'></a>Rotating certificate signing keys
+## Rotating certificate signing keys
 
 Periodically, you will want to rotate the certificate signing key for your verification certificates.
 
@@ -179,7 +180,7 @@ This is done from the 'Signing Keys' screen.
 
 ![settings](images/admin/menu_signing.png "Click on your name and select 'Signing Keys'")
 
-###  7.1. <a name='Step1-Createanewsigningkeyversion'></a>Step 1 - Create a new signing key version
+### Step 1 - Create a new signing key version
 
 Click the "Create a new signing key version" button. This will _create_ but not make active a new key.
 

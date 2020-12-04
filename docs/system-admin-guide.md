@@ -1,12 +1,13 @@
-* 1. [Account setup](#Accountsetup)
-* 2. [Inviting new admins](#Invitingnewadmins)
-* 3. [Creating new realms](#Creatingnewrealms)
-* 4. [View realm information](#Viewrealminformation)
-* 5. [Joining realms](#Joiningrealms)
-* 6. [Create system SMS configuration](#CreatesystemSMSconfiguration)
-* 7. [Create system SMTP configuration](#CreatesystemSMTPconfiguration)
-* 8. [Clearing caches](#Clearingcaches)
-* 9. [Getting system information](#Gettingsysteminformation)
+- [System admin guide](#system-admin-guide)
+  - [Account setup](#account-setup)
+  - [Inviting new admins](#inviting-new-admins)
+  - [Creating new realms](#creating-new-realms)
+  - [View realm information](#view-realm-information)
+  - [Joining realms](#joining-realms)
+  - [Create system SMS configuration](#create-system-sms-configuration)
+  - [Create system SMTP configuration](#create-system-smtp-configuration)
+  - [Clearing caches](#clearing-caches)
+  - [Getting system information](#getting-system-information)
 
 # System admin guide
 
@@ -15,7 +16,7 @@ from infrastructure administration. System administrators are super users of the
 system and are responsible for creating realms and configuring system-level
 parameters that apply to all realms.
 
-##  1. <a name='Accountsetup'></a>Account setup
+## Account setup
 
 To become a system admin, an existing system admin must invite you to join. You
 will receive an email notification. If you are already a member of the system
@@ -23,7 +24,7 @@ will receive an email notification. If you are already a member of the system
 of the system, an account will be provisioned automatically and you will be
 prompted to reset your password.
 
-##  2. <a name='Invitingnewadmins'></a>Inviting new admins
+## Inviting new admins
 
 As a system admin, you can invite new system admins. Before inviting a system
 admin, perform due diligence to ensure the user requires admin permissions.
@@ -49,7 +50,7 @@ Click "Create System Admin" to create the user. If the user already exists in
 the system, they will be promoted. Otherwise, an account will be automatically
 provisioned and they will receive an email with password reset instructions.
 
-##  3. <a name='Creatingnewrealms'></a>Creating new realms
+## Creating new realms
 
 To create a new realm for a health authority, visit the `/admin/realms` URL. You
 can access it directly via:
@@ -71,7 +72,7 @@ these values must match what is supplied to the key server.
 
 Note that must realm properties are immutable after creation!
 
-##  4. <a name='Viewrealminformation'></a>View realm information
+## View realm information
 
 As a system administrator, you can view high-level realm information such as
 abuse prevention statistics, recent events, and mobile apps. To view high-level
@@ -93,7 +94,7 @@ Click on the realm name in the realms list view:
 You can see abuse prevention statistics and deep links to events and mobile apps
 for this realm. You do **not** need to join the realm to see this data.
 
-##  5. <a name='Joiningrealms'></a>Joining realms
+## Joining realms
 
 As a system administrator, you can join a realm as a realm administrator to help
 debug issues like misconfigurations. To join a realm as an administrator, visit
@@ -114,7 +115,7 @@ Click on the realm name in the realms list view:
 Scroll to the bottom and click "Join realm". **This event is audited and
 logged!**
 
-##  6. <a name='CreatesystemSMSconfiguration'></a>Create system SMS configuration
+## Create system SMS configuration
 
 The system can optionally provide a system-level SMS configuration and then
 share that configuration on a per-realm basis. Even if a system-level SMS
@@ -139,7 +140,7 @@ that realm.
 
 ![Realm show SMS settings](images/system-admin/realm-show-sms.png "Realm show SMS settings")
 
-##  7. <a name='CreatesystemSMTPconfiguration'></a>Create system SMTP configuration
+## Create system SMTP configuration
 
 The system can optionally provide a system-level email configuration and then
 share that configuration on a per-realm basis. Even if a system-level email
@@ -163,7 +164,7 @@ with that realm.
 
 ![Realm show email settings](images/system-admin/realm-show-email.png "Realm show email settings")
 
-##  8. <a name='Clearingcaches'></a>Clearing caches
+## Clearing caches
 
 In some situations, it may be beneficial to clear certain cached data in the
 system. For example, if a health authority pushes out a bad configuration, it
@@ -182,7 +183,7 @@ Or by choosing "System admin" from the dropdown and selecting the "Caches" tab.
 Each cache is self-described under the name. Press the big red button to clear
 the cache. You will be prompted to confirm.
 
-##  9. <a name='Gettingsysteminformation'></a>Getting system information
+## Getting system information
 
 In some situations, the server engineering team may request build information for your system. To access the build information, visit the `/admin/info` URL. You can access it
 directly via:
