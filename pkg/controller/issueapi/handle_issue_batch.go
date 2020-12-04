@@ -74,7 +74,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		if l > maxBatchSize {
 			result.obsBlame = observability.BlameClient
 			result.obsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit exceeded"))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit [%d] exceeded", maxBatchSize))
 			return
 		}
 
