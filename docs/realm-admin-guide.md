@@ -86,9 +86,14 @@ If set to `optional`, codes may be issued successfully with no dates present.
 
 ### Code Length & Expiration
 
-This setting adjusts the number of characters required for both long an short code.
+This setting adjusts the number of characters required for both long and short codes.
 Realm admins may also define how long an issued code lasts before it expires. Once expired,
 the patient will not longer be able to claim the diagnosis as theirs.
+
+If EN Express is enabled, these fields are not adjustable.
+
+Short codes are intended to be used where a case-worker may need to dictate the code to their patients
+whereas long codes may be more secure for realms where they may be sent via SMS (but may be more difficult to dictate and recall).
 
 ### SMS Text Template
 
