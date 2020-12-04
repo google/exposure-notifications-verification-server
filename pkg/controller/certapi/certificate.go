@@ -38,14 +38,14 @@ const (
 
 func (c *Controller) HandleCertificate() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := observability.WithBuildInfo(r.Context())
+		ctx := r.Context()
 
 		logger := logging.FromContext(ctx).Named("certapi.HandleCertificate")
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
 
-		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &blame, &result)
+		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
@@ -56,8 +56,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 			controller.MissingAuthorizedApp(w, r, c.h)
 			return
 		}
-
-		ctx = observability.WithRealmID(ctx, authApp.RealmID)
 
 		// Get the public key for the token.
 		allowedPublicKeys := make(map[string]crypto.PublicKey)

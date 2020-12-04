@@ -85,6 +85,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
+	ctx, obs := middleware.WithObservability(ctx)
 	logger.Infow("observability exporter", "config", e2eConfig.Observability)
 
 	db, err := e2eConfig.Database.Load(ctx)
@@ -169,6 +170,9 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Common observability context
+	r.Use(obs)
 
 	// Request ID injection
 	populateRequestID := middleware.PopulateRequestID(h)

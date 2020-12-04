@@ -20,6 +20,7 @@ import (
 
 	"firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/gorilla/sessions"
 )
 
@@ -61,11 +62,13 @@ func AuthorizedAppFromContext(ctx context.Context) *database.AuthorizedApp {
 	return t
 }
 
-// WithRealm stores the current realm on the context.
+// WithRealm stores the current realm on the context and the realm.ID
+// on the observability context.
 func WithRealm(ctx context.Context, r *database.Realm) context.Context {
 	m := TemplateMapFromContext(ctx)
 	m["currentRealm"] = r
 	ctx = WithTemplateMap(ctx, m)
+	ctx = observability.WithRealmID(ctx, r.ID)
 
 	return context.WithValue(ctx, contextKeyRealm, r)
 }

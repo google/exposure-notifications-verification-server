@@ -85,6 +85,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
+	ctx, obs := middleware.WithObservability(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
@@ -116,6 +117,9 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Common observability context
+	r.Use(obs)
 
 	// Rate limiting
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)

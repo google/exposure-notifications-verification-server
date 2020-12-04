@@ -91,8 +91,7 @@ func NewMiddleware(ctx context.Context, s limiter.Store, f httplimit.KeyFunc, op
 // metadata about when it's safe to retry.
 func (m *Middleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := observability.WithBuildInfo(r.Context())
-
+		ctx := r.Context()
 		logger := logging.FromContext(ctx).Named("ratelimit.Handle")
 
 		var result = observability.ResultOK()

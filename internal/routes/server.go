@@ -70,6 +70,10 @@ func Server(
 	// Create the router
 	r := mux.NewRouter()
 
+	// Common observability context
+	ctx, obs := middleware.WithObservability(ctx)
+	r.Use(obs)
+
 	// Inject template middleware - this needs to be first because other
 	// middlewares may add data to the template map.
 	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)

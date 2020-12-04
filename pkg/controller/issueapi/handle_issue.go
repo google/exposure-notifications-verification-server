@@ -40,14 +40,11 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 		ctx := r.Context()
-		realm := controller.RealmFromContext(ctx)
-
 		result := &issueResult{
 			httpCode:  http.StatusOK,
 			obsBlame:  observability.BlameNone,
 			obsResult: observability.ResultOK(),
 		}
-		ctx = observability.WithRealmID(observability.WithBuildInfo(ctx), realm.ID)
 		defer recordObservability(ctx, result)
 
 		var request api.IssueCodeRequest

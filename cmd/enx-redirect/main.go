@@ -77,6 +77,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
+	ctx, obs := middleware.WithObservability(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
@@ -98,6 +99,9 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Common observability context
+	r.Use(obs)
 
 	// Create the renderer
 	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)

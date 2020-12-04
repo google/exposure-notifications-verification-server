@@ -253,7 +253,7 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 
 	if request.Phone != "" && smsProvider != nil {
 		if err := func() error {
-			defer observability.RecordLatency(&ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
+			defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
 
 			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 
@@ -301,5 +301,5 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 }
 
 func recordObservability(ctx context.Context, result *issueResult) {
-	observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
+	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 }

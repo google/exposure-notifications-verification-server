@@ -30,13 +30,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/modeler"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/sethvargo/go-signalcontext"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/gorilla/mux"
+	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
@@ -77,6 +77,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
+	ctx, obs := middleware.WithObservability(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
@@ -104,6 +105,9 @@ func realMain(ctx context.Context) error {
 
 	// Create the router
 	r := mux.NewRouter()
+
+	// Common observability context
+	r.Use(obs)
 
 	// Request ID injection
 	populateRequestID := middleware.PopulateRequestID(h)
