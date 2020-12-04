@@ -1,6 +1,6 @@
 {{define "realmadmin/show"}}
 
-{{$realm := .realm}}
+{{$currentRealm := .currentRealm}}
 
 <!doctype html>
 <html lang="en">
@@ -23,76 +23,212 @@
       <div class="card-header">
         <span class="oi oi-bar-chart mr-2 ml-n1"></span>
         Codes issued &amp; claimed
-        <span class="font-weight-bold float-right" data-toggle="tooltip"
-          title="These are the number of codes issued per day. It includes codes issued by users, API keys, and external systems. It also captures codes claimed.">?</span>
       </div>
       <div id="realm_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
         <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
       </div>
-      <small class="card-footer text-muted text-right">
-        <span class="mr-1">Export as:</span>
-        <a href="/realm/stats.csv" class="mr-1">CSV</a>
-        <a href="/realm/stats.json">JSON</a>
+      <small class="card-footer d-flex justify-content-between text-muted">
+        <a href="#" data-toggle="modal" data-target="#realm-modal">Learn more about this chart</a>
+        <span>
+          <span class="mr-1">Export as:</span>
+          <a href="/realm/stats.csv" class="mr-1">CSV</a>
+          <a href="/realm/stats.json">JSON</a>
+        </span>
       </small>
+    </div>
+
+    <div class="modal fade" id="realm-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Codes issued &amp; claimed</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body mb-n3">
+            <p>
+              This graph reflects the total number of codes issued and claimed
+              for {{$currentRealm.Name}}, grouped by UTC day.
+            </p>
+
+            <strong>Issued</strong>
+            <p>
+              This line tracks the total number of codes issued. Codes can be
+              issued via the web interface or via the API. Both types of codes
+              are included in this count.
+            </p>
+
+            <strong>Claimed</strong>
+            <p>
+              This line tracks the total number of codes claimed. Codes can only
+              be claimed by the end user using the API. Typically the iOS or
+              Android application is responsible for claiming the code.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="card mb-3">
       <div class="card-header">
         <span class="oi oi-bar-chart mr-2 ml-n1"></span>
         Daily active users
-        <span class="font-weight-bold float-right" data-toggle="tooltip"
-          title="These are daily active users as reported by the apps. See the verification server API documentation for how to populate these metrics.">?</span>
       </div>
       <div id="daily_active_users_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
         <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
       </div>
-      <small class="card-footer text-muted text-right">
-        <span class="mr-1">Export as:</span>
-        <a href="/realm/stats.csv" class="mr-1">CSV</a>
-        <a href="/realm/stats.json">JSON</a>
+      <small class="card-footer d-flex justify-content-between text-muted">
+        <a href="#" data-toggle="modal" data-target="#daily-active-users-modal">Learn more about this chart</a>
+        <span>
+          <span class="mr-1">Export as:</span>
+          <a href="/realm/stats.csv" class="mr-1">CSV</a>
+          <a href="/realm/stats.json">JSON</a>
+        </span>
       </small>
     </div>
 
+    <div class="modal fade" id="daily-active-users-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Daily active users</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body mb-n3">
+            <p>
+              This graph reflects the total number of reported daily active
+              users for {{$currentRealm.Name}}. You may need to alter your iOS
+              and Android applications to publish this metric.
+            </p>
+
+            <p>
+              See the
+              <a
+              href="https://github.com/google/exposure-notifications-verification-server/blob/main/docs/api.md#chaffing-requests"
+              target="_BLANK" rel="noopener">API documentation</a> for
+              information on how to populate these metrics from your
+              application.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="row">
-      <div class="col-lg-6 pr-2">
+      <div class="col-lg-6 pr-lg-2">
         <div class="card mb-3">
           <div class="card-header">
             <span class="oi oi-bar-chart mr-2 ml-n1"></span>
             Codes issued by user by day
-            <span class="font-weight-bold float-right" data-toggle="tooltip"
-              title="These are the number of codes issued per user per day. Click on a row to expand or collapse the details.">?</span>
           </div>
           <div id="per_user_table" class="overflow-auto" style="height:400px">
             <div class="container d-flex h-100 w-100">
               <p class="justify-content-center align-self-center text-center font-italic w-100">Loading data...</p>
             </div>
           </div>
-          <small class="card-footer text-muted text-right">
-            <span class="mr-1">Export as:</span>
-            <a href="/realm/stats.csv?scope=user" class="mr-1">CSV</a>
-            <a href="/realm/stats.json?scope=user">JSON</a>
+          <small class="card-footer d-flex justify-content-between text-muted">
+            <a href="#" data-toggle="modal" data-target="#per-user-table-modal">Learn more about this table</a>
+            <span>
+              <span class="mr-1">Export as:</span>
+              <a href="/realm/stats.csv?scope=user" class="mr-1">CSV</a>
+              <a href="/realm/stats.json?scope=user">JSON</a>
+            </span>
           </small>
         </div>
       </div>
 
-      <div class="col-lg-6 pl-2">
+      <div class="modal fade" id="per-user-table-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Codes issued by user by day</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body mb-n3">
+              <p>
+                This table reflects the number of codes issued each day, broken
+                down by user. A user is a human with a username and password who
+                authenticates to this server and issues verification codes.
+                API.
+              </p>
+
+              <p>
+                To see per user statistics for a given date, click on that date
+                in the table. The row will expand to include information about
+                the users that issued codes on that date.
+              </p>
+
+              <p>
+                This graph does <u>not</u> include codes that were issued via
+                the
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 pl-lg-2">
         <div class="card mb-3">
           <div class="card-header">
             <span class="oi oi-bar-chart mr-2 ml-n1"></span>
             Codes issued by external issuers
-            <span class="font-weight-bold float-right" data-toggle="tooltip"
-              title="These are the number of codes issued per user by external issuers. These codes can only be issued by the API.">?</span>
           </div>
           <div id="per_external_issuer_table" class="overflow-auto" style="height:400px">
             <div class="container d-flex h-100 w-100">
               <p class="justify-content-center align-self-center text-center font-italic w-100">Loading data...</p>
             </div>
           </div>
-          <small class="card-footer text-muted text-right">
-            <span class="mr-1">Export as:</span>
-            <a href="/realm/stats.csv?scope=external" class="mr-1">CSV</a>
-            <a href="/realm/stats.json?scope=external">JSON</a>
+          <small class="card-footer d-flex justify-content-between text-muted">
+            <a href="#" data-toggle="modal" data-target="#per-external-issuer-table-modal">Learn more about this table</a>
+            <span>
+              <span class="mr-1">Export as:</span>
+              <a href="/realm/stats.csv?scope=external" class="mr-1">CSV</a>
+              <a href="/realm/stats.json?scope=external">JSON</a>
+            </span>
           </small>
+        </div>
+      </div>
+
+      <div class="modal fade" id="per-external-issuer-table-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Codes issued by external issuers by day</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body mb-n3">
+              <p>
+                This table reflects the number of codes issued each day, broken
+                down by external issuer. An external issuer is an optional
+                client-supplied string when issuing a code via the Admin API.
+                See the <a
+                href="https://github.com/google/exposure-notifications-verification-server/blob/main/docs/api.md#apiissue"
+                target="_BLANK" rel="noopener">API documentation</a> for
+                information on how to populate this value when issuing codes.
+              </p>
+
+              <p>
+                To see per external issuer statistics for a given date, click on
+                that date in the table. The row will expand to include
+                information about the external issuers that issued codes on that
+                date.
+              </p>
+
+              <p>
+                This graph does <u>not</u> include codes that were issued via
+                users who have logged into the web interface or codes that were
+                issued via the API without an <code>external_issuer</code>
+                value.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
