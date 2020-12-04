@@ -51,12 +51,14 @@ Also under realm settings `settings` from the drop down menu, there are several 
 ### Bulk Issue Codes
 
   * Enabled
+
     A new tab is added to the realm that allows the issuance of many codes from a CSV file.
     This can be useful for case-workers who are given a data-set of test results rather than
     administering tests one-by-one.
     More information about this feature is [documented here](https://example.com).
 
   * Disabled
+
     Only the single issue-code tab will be shown. Calls to the batch issue API will fail
     for this realm.
 
