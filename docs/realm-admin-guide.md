@@ -28,7 +28,7 @@ Realm administrators should monitor the number of codes issued and take correcti
 
 Go to the realm setting by selecting the `settings` drop down menu (shown under your name).
 
-![settings](images/admin/settings01.png "Click on your name and select 'settings'")
+![settings](images/admin/menu_settings.png "Click on your name and select 'settings'")
 
 Under general settings, confirm the `Name` (display name only) and `Region code` settings.
 
@@ -42,7 +42,37 @@ Once that is confirmed and saved, click the `Enable EN Express` button.
 
 ![express](images/admin/settings03.png "Enable EN Express")
 
-After you have enabled EN Express, it is possible to customize the text of the SMS message that gets sent to patients.
+## Settings, code settings
+
+Also under realm settings `settings` from the drop down menu, there are several settings for code issuance.
+
+![express](images/admin/settings_code.png "Code settings")
+
+### Bulk Issue Codes
+
+  * Enabled
+
+  * Disabled
+
+### Allowed Test Types
+
+  * Positive + Likely + Negative
+
+  * Positive + Likely
+
+  * Positive
+
+### Date Configuration
+
+  * Optional Date
+
+  * Required Date
+
+### Code Length & Expiration
+
+### SMS Text Template
+
+It is possible to customize the text of the SMS message that gets sent to patients.
 See the help text on that page for guidance.
 
 ![sms text](images/admin/settings04.png "SMS Template")
@@ -58,7 +88,7 @@ must be obtained from the Twilio console.
 
 Go to realm users admin by selecting 'Users' from the drop-down menu (shown under your name).
 
-![settings](images/admin/settings01.png "Click on your name and select 'Users'")
+![settings](images/admin/menu_users.png "Click on your name and select 'Users'")
 
 Add users, by clicking on `create a new user`.
 
@@ -76,7 +106,7 @@ If a user only needs to be able to issue verification codes, they do not need to
 API Keys are used by your mobile app to access the verification server.
 These API keys should be kept secret and only used by your mobile app.
 
-![api keys](images/admin/settings01.png "Click on your name and select 'API Keys'")
+![api keys](images/admin/menu_apikeys.png "Click on your name and select 'API Keys'")
 
 Click the link to create a new API key.
 
@@ -101,7 +131,7 @@ Periodically, you will want to rotate the certificate signing key for your verif
 
 This is done from the 'Signing Keys' screen.
 
-![settings](images/admin/settings01.png "Click on your name and select 'Signing Keys'")
+![settings](images/admin/menu_signing.png "Click on your name and select 'Signing Keys'")
 
 ### Step 1 - Create a new signing key version
 
