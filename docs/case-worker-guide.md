@@ -51,6 +51,11 @@ This allows the user to upload a .csv file and issue many codes at once to a lis
 
 The bulk uploader is written as a javascript client. Rather than uploading the file, it parses on the client and makes requests to the issue API. This allows the server to discard phone numbers after sending the SMS without storing them. The uploader may be cancelled and resumed, respects the server's rate-limiting throttle, and prevents the user from sending an SMS to the same phone twice using a retry code.
 
+### CSV Format
+`patient phone`,`test date`, [optional] `symptom date`
+The patient phone should be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164).
+All dates should be in [ISO-8601 format](https://www.iso.org/iso-8601-date-and-time-format.html).
+
 ![bulk issue codes](images/users/bulk_issue.png "bulk issue codes")
 
 ### Select a file
