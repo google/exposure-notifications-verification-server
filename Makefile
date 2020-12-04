@@ -50,7 +50,7 @@ copyrightcheck:
 
 spellcheck:
 	@command -v misspell > /dev/null 2>&1 || go get github.com/client9/misspell/cmd/misspell
-	@misspell -locale="US" -error -source="text" **/*
+	@misspell -locale="US" -error -source="text" $(GO_FILES) $(HTML_FILES)
 .PHONY: spellcheck
 
 staticcheck:
