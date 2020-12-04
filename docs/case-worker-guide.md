@@ -49,7 +49,7 @@ If [enabled in the realm](/realm-admin-guide.md#bulk-issue-codes), there will be
 
 This allows the user to upload a .csv file and issue many codes at once to a list of patient phone numbers and their associated test date. The bulk uploader assumes that all results are `positive`.
 
-The bulk uploader is written as a javascript client. Rather than uploading the file, it parses on the client and makes requests to the issue API. This allows the server to discard phone numbers after sending the SMS without storing them. The uploader may be cancelled and resumed, respects the server's rate-limiting throttle, and prevents the user from sending an SMS to the same phone twice using a retry code.
+The bulk uploader is written as a javascript client. Rather than uploading the file, it parses on the client and makes requests to the issue API. This allows the server to discard phone numbers after sending the SMS without storing them. The uploader may be canceled and resumed, respects the server's rate-limiting throttle, and prevents the user from sending an SMS to the same phone twice using a retry code.
 
 ### CSV Format
 `patient phone`,`test date`, [optional] `symptom date`
@@ -63,7 +63,7 @@ The bulk uploader is written as a javascript client. Rather than uploading the f
 Select .CSV file in the format: phone, symptom-date
 
 ### Start at line
-Select a line to start at. This defaults to 0 for a new file, but allows the upload to resume if it fails or is cancelled in the middle.
+Select a line to start at. This defaults to 0 for a new file, but allows the upload to resume if it fails or is canceled in the middle.
 
 ### Retry code
 The user is provided a unique retry-code, although the user may alternatively enter their own, memorable, unique string. If the user is resuming a previous upload, they should enter the retry-code that was used for that upload.
