@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/icsv"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 var _ icsv.Marshaler = (RealmUserStats)(nil)
@@ -59,7 +60,7 @@ func (s RealmUserStats) MarshalCSV() ([]byte, error) {
 
 	for i, stat := range s {
 		if err := w.Write([]string{
-			stat.Date.Format("2006-01-02"),
+			stat.Date.Format(project.RFC3339Date),
 			strconv.FormatUint(uint64(stat.RealmID), 10),
 			strconv.FormatUint(uint64(stat.UserID), 10),
 			stat.Name,

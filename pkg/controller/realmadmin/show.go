@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/icsv"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -51,7 +52,7 @@ func (c *Controller) HandleShow() http.Handler {
 			var stats icsv.Marshaler
 			var err error
 
-			nowFormatted := now.Format("20060102150405")
+			nowFormatted := now.Format(project.RFC3339Squish)
 
 			switch r.URL.Query().Get("scope") {
 			case "external":

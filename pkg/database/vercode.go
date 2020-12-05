@@ -179,7 +179,7 @@ func (v *VerificationCode) FormatSymptomDate() string {
 	if v.SymptomDate == nil {
 		return ""
 	}
-	return v.SymptomDate.Format("2006-01-02")
+	return v.SymptomDate.Format(project.RFC3339Date)
 }
 
 // IsCodeExpired checks to see if the actual code provided is the short or long

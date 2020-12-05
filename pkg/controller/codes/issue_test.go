@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -70,7 +71,7 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
-	yesterday := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+	yesterday := time.Now().Add(-24 * time.Hour).Format(project.RFC3339Date)
 
 	var code string
 	if err := chromedp.Run(taskCtx,
