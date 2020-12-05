@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -422,9 +423,8 @@ func TestStatDatesOnCreate(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	fmtString := "2006-01-02"
 	now := time.Now()
-	nowStr := now.Format(fmtString)
+	nowStr := now.Format(project.RFC3339Date)
 	maxAge := time.Hour
 
 	tests := []struct {
@@ -469,7 +469,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 			if stats[0].CodesIssued != uint(i+1) {
 				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
 			}
-			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
 		}
@@ -491,7 +491,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 			if stats[0].CodesIssued != uint(i+1) {
 				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
 			}
-			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
 		}
@@ -513,7 +513,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 			if stats[0].CodesIssued != uint(i+1) {
 				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
 			}
-			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
 		}
@@ -535,7 +535,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 			if stats[0].CodesIssued != uint(i+1) {
 				t.Errorf("[%d] expected stat.CodesIssued = %d, expected %d", i, stats[0].CodesIssued, i+1)
 			}
-			if f := stats[0].Date.Format(fmtString); f != test.statDate {
+			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
 		}

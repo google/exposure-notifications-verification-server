@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
@@ -52,8 +53,8 @@ func (c *Controller) HandleIssue() http.Handler {
 		now := time.Now().UTC()
 		pastDaysDuration := -1 * c.serverconfig.AllowedSymptomAge
 		displayAllowedDays := fmt.Sprintf("%.0f", c.serverconfig.AllowedSymptomAge.Hours()/24.0)
-		m["maxDate"] = now.Format("2006-01-02")
-		m["minDate"] = now.Add(pastDaysDuration).Format("2006-01-02")
+		m["maxDate"] = now.Format(project.RFC3339Date)
+		m["minDate"] = now.Add(pastDaysDuration).Format(project.RFC3339Date)
 		m["maxSymptomDays"] = displayAllowedDays
 		m["duration"] = realm.CodeDuration.Duration.String()
 		m["hasSMSConfig"] = hasSMSConfig

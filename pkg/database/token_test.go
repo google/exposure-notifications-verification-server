@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -29,7 +30,7 @@ import (
 func TestSubject(t *testing.T) {
 	t.Parallel()
 
-	testDay, err := time.Parse("2006-01-02", "2020-07-07")
+	testDay, err := time.Parse(project.RFC3339Date, "2020-07-07")
 	if err != nil {
 		t.Fatalf("test setup error: %v", err)
 	}

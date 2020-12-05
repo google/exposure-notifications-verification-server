@@ -25,6 +25,7 @@ import (
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/util"
 	"github.com/google/exposure-notifications-server/pkg/verification"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
 )
@@ -80,7 +81,7 @@ func TestIntegration(t *testing.T) {
 			now := time.Now().UTC()
 			curDayInterval := timeToInterval(now)
 			nextInterval := curDayInterval
-			symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format("2006-01-02")
+			symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 			testType := "confirmed"
 			tzMinOffset := 0
 
