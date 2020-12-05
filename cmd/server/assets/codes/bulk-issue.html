@@ -50,10 +50,10 @@
 
           <div class="form-label-group">
             <input type="number" class="form-control text-monospace" id="start-at"
-              placeholder="Start at line" value="0" min="0">
+              placeholder="Start at line" value="1" min="1">
             <label for="start-at">Start at line</label>
             <small class="form-text text-muted">
-              Parsing the CSV will start at this line. Begin at 0 for a new file.
+              Parsing the CSV will start at this line. Begin at 1 for a new file.
               This can be used to resume a canceled or partial upload.
             </small>
           </div>
@@ -116,9 +116,9 @@
       <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
         <thead>
           <tr>
-            <th>Line</th>
-            <th>Phone number</th>
-            <th>Test date</th>
+            <th width="60">Line</th>
+            <th width="150">Phone#</th>
+            <th width="130">Test date</th>
             <th>Error message</th>
           </tr>
         </thead>
@@ -128,6 +128,7 @@
   </main>
 
   <script type="text/javascript">
+    const batchSize = 10;
     let total = 0;
     let totalErrs = 0;
 
@@ -170,7 +171,7 @@
       $csv.change(function(file) {
         let fileName = file.target.files[0].name;
         $fileLabel.html(fileName);
-        $startAt.val(0);
+        $startAt.val(1);
         $import.prop('disabled', false);
       });
 
@@ -207,8 +208,6 @@
         reader.readAsText($csv[0].files[0]);
       });
 
-      const batchSize = 1;
-
       function readFile() {
         // State for managing cleanup and canceling
         let cancelUpload = false;
@@ -224,7 +223,7 @@
           totalErrs = 0;
           $tableBody.empty();
 
-          for (let i = parseInt($startAt.val()); i < rows.length && !cancelUpload; i++) {
+          for (let i = parseInt($startAt.val() - 1); i < rows.length && !cancelUpload; i++) {
             // Clear batch that was just uploaded.
             if (batch.length >= batchSize) {
               batch = [];
@@ -254,7 +253,7 @@
                 }
                 break;
               }
-              $startAt.val(i + 1);
+              $startAt.val(i + 2);
               let percent = Math.floor((i + 1) * 100 / rows.length) + "%";
               $progress.width(percent);
               $progress.html(percent);
@@ -313,35 +312,52 @@
         return request
       }
 
-      function uploadBatch(data, i) {
+      function uploadBatch(data, lastRow) {
         return $.ajax({
-          url: '/codes/issue',
+          url: '/codes/batch-issue',
           type: 'POST',
           dataType: 'json',
           cache: false,
           contentType: 'application/json',
           headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
-          // TODO: at the moment we only support one-at-a-time
-          data: JSON.stringify(data[0]),
+          data: JSON.stringify({'codes':data}),
           success: function(result) {
-            total++;
+            total += data.length;
             if (result.error) {
               flash.error(result.error);
             }
           },
           error: function(xhr, resp, text) {
-            totalErrs++;
-            let message = resp;
-            if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
-              message = message + ": " + xhr.responseJSON.error;
+            if (!xhr || !xhr.responseJSON) {
+              return
             }
-            $errorDiv.removeClass('d-none');
-            let $row = $('<tr/>');
-            $row.append($('<td/>').text(i));
-            $row.append($('<td/>').text(data[0]["phone"]));
-            $row.append($('<td/>').text(data[0]["testDate"]));
-            $row.append($('<td/>').text(message));
-            $errorTable.append($row);
+
+            if (!xhr.responseJSON.codes) {
+              let message = resp;
+              if (xhr.responseJSON.error) {
+                message = message + ": " + xhr.responseJSON.error;
+              }
+              flash.error(message);
+              return
+            }
+
+
+            let l = xhr.responseJSON.codes.length;
+            for(let i = 0; i < l; i++) {
+              let code = xhr.responseJSON.codes[i]
+              if (code.error) {
+                totalErrs++;
+                $errorDiv.removeClass('d-none');
+                let $row = $('<tr/>');
+                $row.append($('<td/>').text(lastRow - l + i + 1));
+                $row.append($('<td/>').text(data[i]["phone"]));
+                $row.append($('<td/>').text(data[i]["testDate"]));
+                $row.append($('<td/>').text(code.error));
+                $errorTable.append($row);
+              } else {
+                total++;
+              }
+            }
           },
         });
       }
