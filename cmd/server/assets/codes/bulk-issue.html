@@ -53,7 +53,7 @@
               placeholder="Start at line" value="1" min="1">
             <label for="start-at">Start at line</label>
             <small class="form-text text-muted">
-              Parsing the CSV will start at this line. Begin at 0 for a new file.
+              Parsing the CSV will start at this line. Begin at 1 for a new file.
               This can be used to resume a canceled or partial upload.
             </small>
           </div>
@@ -116,9 +116,9 @@
       <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
         <thead>
           <tr>
-            <th>Line</th>
-            <th>Phone number</th>
-            <th>Test date</th>
+            <th width="60">Line</th>
+            <th width="150">Phone#</th>
+            <th width="130">Test date</th>
             <th>Error message</th>
           </tr>
         </thead>
@@ -350,8 +350,8 @@
                 $errorDiv.removeClass('d-none');
                 let $row = $('<tr/>');
                 $row.append($('<td/>').text(lastRow - l + i + 1));
-                $row.append($('<td/>').text(code["phone"]));
-                $row.append($('<td/>').text(code["testDate"]));
+                $row.append($('<td/>').text(data[i]["phone"]));
+                $row.append($('<td/>').text(data[i]["testDate"]));
                 $row.append($('<td/>').text(code.error));
                 $errorTable.append($row);
               } else {
