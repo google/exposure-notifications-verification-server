@@ -32,7 +32,7 @@ import (
 
 const cacheTimeout = 30 * time.Minute
 
-func (c *Controller) HandleShow() http.Handler {
+func (c *Controller) HandleStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -102,7 +102,7 @@ func (c *Controller) HandleShow() http.Handler {
 func (c *Controller) renderHTML(ctx context.Context, w http.ResponseWriter, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm stats")
-	c.h.RenderHTML(w, "realmadmin/show", m)
+	c.h.RenderHTML(w, "realmadmin/stats", m)
 }
 
 // getRealmStats returns the realm stats for a given date range.
