@@ -54,11 +54,13 @@
 
                 <button type="submit" id="submit-register" class="btn btn-primary btn-block">Register</button>
               </form>
-
-
-              <a id="skip" href="/codes/issue" class="float-right mt-3 card-link {{if eq .mfaMode.String "required"}}d-none{{end}}">
-                Skip for now
-              </a>
+            </div>
+            <div class="card-footer text-right">
+              <small>
+                <a id="skip" href="/codes/issue" class="text-secondary {{if eq .mfaMode.String "required"}}d-none{{end}}">
+                  Skip for now &rarr;
+                </a>
+              </small>
             </div>
           </div>
 

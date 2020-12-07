@@ -45,14 +45,13 @@ func (c *Controller) HandleVerify() http.Handler {
 			return
 		}
 
-		ctx := observability.WithBuildInfo(r.Context())
-
+		ctx := r.Context()
 		logger := logging.FromContext(ctx).Named("verifyapi.HandleVerify")
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
 
-		defer observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result, &blame)
+		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
@@ -61,8 +60,6 @@ func (c *Controller) HandleVerify() http.Handler {
 			controller.MissingAuthorizedApp(w, r, c.h)
 			return
 		}
-
-		ctx = observability.WithRealmID(ctx, authApp.RealmID)
 
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {

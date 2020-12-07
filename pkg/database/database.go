@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/bits"
 	"os"
 	"strconv"
 	"strings"
@@ -287,45 +286,38 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 		if ok && field.Field.CanInterface() && field.Field.Interface() != nil {
 			realmIDRaw := field.Field.Interface()
 
-			var realmID uint
+			var realmID uint64
 			switch t := realmIDRaw.(type) {
 			case uint:
-				realmID = t
+				realmID = uint64(t)
 			case uint8:
-				realmID = uint(t)
+				realmID = uint64(t)
 			case uint16:
-				realmID = uint(t)
+				realmID = uint64(t)
 			case uint32:
-				realmID = uint(t)
+				realmID = uint64(t)
 			case uint64:
-				realmID = uint(t)
+				realmID = t
 			case int:
-				realmID = uint(t)
+				realmID = uint64(t)
 			case int8:
-				realmID = uint(t)
+				realmID = uint64(t)
 			case int16:
-				realmID = uint(t)
+				realmID = uint64(t)
 			case int32:
-				realmID = uint(t)
+				realmID = uint64(t)
 			case int64:
-				realmID = uint(t)
+				realmID = uint64(t)
 			case string:
-				raw, err := strconv.ParseUint(t, 10, 64)
-				if err != nil {
+				var err error
+				if realmID, err = strconv.ParseUint(t, 10, 64); err != nil {
 					_ = scope.Err(fmt.Errorf("failed to parse realm_id: %w", err))
 					return
 				}
-
-				if raw >= 1<<bits.UintSize-1 {
-					_ = scope.Err(fmt.Errorf("uint overflows %d bits", bits.UintSize))
-					return
-				}
-				realmID = uint(raw)
 			default:
 				_ = scope.Err(fmt.Errorf("realm_id is of unknown type %v", t))
 				return
 			}
-
 			ctx = observability.WithRealmID(ctx, realmID)
 		}
 

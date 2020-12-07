@@ -17,6 +17,8 @@ package issueapi
 import (
 	"testing"
 	"time"
+
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 func TestDateValidation(t *testing.T) {
@@ -25,7 +27,7 @@ func TestDateValidation(t *testing.T) {
 		t.Fatalf("error loading utc")
 	}
 	var aug1 time.Time
-	aug1, err = time.ParseInLocation("2006-01-02", "2020-08-01", utc)
+	aug1, err = time.ParseInLocation(project.RFC3339Date, "2020-08-01", utc)
 	if err != nil {
 		t.Fatalf("error parsing date")
 	}
@@ -47,7 +49,7 @@ func TestDateValidation(t *testing.T) {
 		{"2020-07-29", aug1, -60, true, "2020-07-30"},
 	}
 	for i, test := range tests {
-		date, err := time.ParseInLocation("2006-01-02", test.v, utc)
+		date, err := time.ParseInLocation(project.RFC3339Date, test.v, utc)
 		if err != nil {
 			t.Fatalf("[%d] error parsing date %q", i, test.v)
 		}
@@ -61,7 +63,7 @@ func TestDateValidation(t *testing.T) {
 			} else {
 				t.Fatalf("[%d] expected error", i)
 			}
-		} else if s := newDate.Format("2006-01-02"); s != test.expected {
+		} else if s := newDate.Format(project.RFC3339Date); s != test.expected {
 			t.Fatalf("[%d] validateDate returned a different date %q != %q", i, s, test.expected)
 		}
 	}

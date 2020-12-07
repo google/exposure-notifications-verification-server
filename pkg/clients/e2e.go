@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
@@ -56,7 +57,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		testType = "likely"
 		iterations++
 	}
-	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format("2006-01-02")
+	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 	adminID := ""
 	revisionToken := ""
 
@@ -78,7 +79,7 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 	// Parameterize observability.RecordLatency()
 	recordLatency := func(ctx context.Context, start time.Time, step string) {
 		stepMutator := tag.Upsert(stepTagKey, step)
-		observability.RecordLatency(&ctx, start, mLatencyMs, &stepMutator, &result)
+		observability.RecordLatency(ctx, start, mLatencyMs, &stepMutator, &result)
 	}
 
 	for i := 0; i < iterations; i++ {

@@ -96,5 +96,5 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		}
 	}
 
-	c.h.RenderHTML(w, "realmkeys", m)
+	c.h.RenderHTML(w, "realmadmin/keys", m)
 }

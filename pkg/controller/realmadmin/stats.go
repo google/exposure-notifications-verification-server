@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/icsv"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -31,7 +32,7 @@ import (
 
 const cacheTimeout = 30 * time.Minute
 
-func (c *Controller) HandleShow() http.Handler {
+func (c *Controller) HandleStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -51,7 +52,7 @@ func (c *Controller) HandleShow() http.Handler {
 			var stats icsv.Marshaler
 			var err error
 
-			nowFormatted := now.Format("20060102150405")
+			nowFormatted := now.Format(project.RFC3339Squish)
 
 			switch r.URL.Query().Get("scope") {
 			case "external":
@@ -101,7 +102,7 @@ func (c *Controller) HandleShow() http.Handler {
 func (c *Controller) renderHTML(ctx context.Context, w http.ResponseWriter, realm *database.Realm) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm stats")
-	c.h.RenderHTML(w, "realmadmin/show", m)
+	c.h.RenderHTML(w, "realmadmin/stats", m)
 }
 
 // getRealmStats returns the realm stats for a given date range.

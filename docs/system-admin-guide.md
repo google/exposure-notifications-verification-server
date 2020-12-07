@@ -1,3 +1,14 @@
+- [System admin guide](#system-admin-guide)
+  - [Account setup](#account-setup)
+  - [Inviting new admins](#inviting-new-admins)
+  - [Creating new realms](#creating-new-realms)
+  - [View realm information](#view-realm-information)
+  - [Joining realms](#joining-realms)
+  - [Create system SMS configuration](#create-system-sms-configuration)
+  - [Create system SMTP configuration](#create-system-smtp-configuration)
+  - [Clearing caches](#clearing-caches)
+  - [Getting system information](#getting-system-information)
+
 # System admin guide
 
 This guide describes common system administration tasks. Note this is different

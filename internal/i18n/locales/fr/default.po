@@ -1,0 +1,142 @@
+msgid ""
+msgstr ""
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#
+# navigation menus
+# ----------------
+
+msgid "nav.issue-code"
+msgstr "Émettre un code"
+
+msgid "nav.bulk-issue-codes"
+msgstr "Émettre des codes multiples"
+
+msgid "nav.check-code-status"
+msgstr "Vérifier l'état d'un code"
+
+msgid "nav.api-keys"
+msgstr "Clés d'API"
+
+msgid "nav.mobile-apps"
+msgstr "Applications mobiles"
+
+msgid "nav.event-log"
+msgstr "Journal d'événements"
+
+msgid "nav.signing-keys"
+msgstr "Clés de signature"
+
+msgid "nav.statistics"
+msgstr "Statistiques"
+
+msgid "nav.users"
+msgstr "Utilisateurs"
+
+msgid "nav.settings"
+msgstr "Paramètres"
+
+msgid "nav.change-realm"
+msgstr "Changer de domaine"
+
+msgid "nav.select-realm"
+msgstr "Sélectionner un domaine"
+
+msgid "nav.system-admin"
+msgstr "Administrateur système"
+
+msgid "nav.my-account"
+msgstr "Mon compte"
+
+msgid "nav.sign-out"
+msgstr "Déconnexion"
+
+
+#
+# issue code
+# ----------
+
+msgid "codes.issue.header"
+msgstr "Créer un code de vérification"
+
+msgid "codes.issue.instructions"
+msgstr "Remplissez le formulaire suivant pour émettre un code à usage unique pour vérifier un patient. Ne soumettre ce formulaire que lorsque vous êtes prêt à transmettre le code au patient."
+
+msgid "codes.issue.diagnosis-header"
+msgstr "Diagnostic"
+
+msgid "codes.issue.dates-header"
+msgstr "Dates"
+
+msgid "codes.issue.confirmed-test"
+msgstr "Test positif"
+
+msgid "codes.issue.confirmed-test-details"
+msgstr "Résultat de test positif confirmé par une source officielle de dépistage"
+
+msgid "codes.issue.likely-test"
+msgstr "Diagnostic vraisemblable"
+
+msgid "codes.issue.likely-test-details"
+msgstr "Diagnostic clinique sans test"
+
+msgid "codes.issue.negative-test"
+msgstr "Test négatif"
+
+msgid "codes.issue.negative-test-details"
+msgstr "Résultat de test négatif confirmé par une source officielle de dépistage"
+
+msgid "codes.issue.testing-date-label"
+msgstr "Date du test (heure locale)"
+
+msgid "codes.issue.symptoms-date-label"
+msgstr "Apparition des symptômes (heure locale)"
+
+msgid "codes.issue.sms-text-message-header"
+msgstr "Message SMS (recommandé)"
+
+msgid "codes.issue.sms-text-message-label"
+msgstr "Numéro de téléphone du patient"
+
+msgid "codes.issue.sms-text-message-detail"
+msgstr "S'il est fourni, le système enverra au patient par SMS un message textuel contenant le code. Ce numéro doit être capabe de recevoir des messages SMS."
+
+msgid "codes.issue.create-code-button"
+msgstr "Créer un code de vérification"
+
+msgid "codes.issue.reset-code-button"
+msgstr "Annuler et revenir en arrière"
+
+msgid "codes.issue.sms-verification-link-header"
+msgstr "Lien de vérification SMS"
+
+msgid "codes.issue.sms-verification-detail"
+msgstr "SMS envoyé avec succès au %s. Demandez au patient de vérifier ses messages SMS sur son téléphone où Notifications d'exposition au COVID-19 est activé."
+
+msgid "codes.issue.backup-short-code-header"
+msgstr "Code court de secours"
+
+msgid "codes.issue.backup-short-code-detail"
+msgstr "Partagez ce code avec le patient s'il n'a pas recu de SMS sur son téléphone portable."
+
+msgid "codes.issue.generated-short-code-header"
+msgstr "Générer un code court"
+
+msgid "codes.issue.generated-short-code-detail"
+msgstr "Partagez ce code immédiatement avec le patient."
+
+msgid "codes.issue.uuid-header"
+msgstr "Identificateur unique"
+
+msgid "codes.issue.uuid-detail"
+msgstr "Utilisez ceci pour vérifier qu'un code a bien été saisi."
+
+msgid "codes.issue.countdown-expires-in"
+msgstr "Expire dans"
+
+msgid "codes.issue.countdown-expired"
+msgstr "EXPIRÉ"

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/jinzhu/gorm"
 )
@@ -67,10 +68,10 @@ func (s *Subject) String() string {
 
 	parts[0] = s.TestType
 	if s.SymptomDate != nil {
-		parts[1] = s.SymptomDate.Format("2006-01-02")
+		parts[1] = s.SymptomDate.Format(project.RFC3339Date)
 	}
 	if s.TestDate != nil {
-		parts[2] = s.TestDate.Format("2006-01-02")
+		parts[2] = s.TestDate.Format(project.RFC3339Date)
 	}
 
 	return strings.Join(parts, ".")
@@ -90,7 +91,7 @@ func ParseSubject(sub string) (*Subject, error) {
 	}
 	var symptomDate *time.Time
 	if parts[1] != "" {
-		parsedDate, err := time.Parse("2006-01-02", parts[1])
+		parsedDate, err := time.Parse(project.RFC3339Date, parts[1])
 		if err != nil {
 			return nil, fmt.Errorf("subject contains invalid symptom date: %w", err)
 		}
@@ -99,7 +100,7 @@ func ParseSubject(sub string) (*Subject, error) {
 
 	var testDate *time.Time
 	if len(parts) == 3 && parts[2] != "" {
-		parsedDate, err := time.Parse("2006-01-02", parts[2])
+		parsedDate, err := time.Parse(project.RFC3339Date, parts[2])
 		if err != nil {
 			return nil, fmt.Errorf("subject contains invalid test date: %w", err)
 		}
@@ -118,7 +119,7 @@ func (t *Token) FormatSymptomDate() string {
 	if t.SymptomDate == nil {
 		return ""
 	}
-	return t.SymptomDate.Format("2006-01-02")
+	return t.SymptomDate.Format(project.RFC3339Date)
 }
 
 // FormatTestDate returns YYYY-MM-DD formatted test date, or "" if nil.
@@ -126,7 +127,7 @@ func (t *Token) FormatTestDate() string {
 	if t.TestDate == nil {
 		return ""
 	}
-	return t.TestDate.Format("2006-01-02")
+	return t.TestDate.Format(project.RFC3339Date)
 }
 
 func (t *Token) Subject() *Subject {

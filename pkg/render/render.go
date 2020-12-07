@@ -152,6 +152,20 @@ func selectedIf(v bool) htmltemplate.HTML {
 	return ""
 }
 
+func readonlyIf(v bool) htmltemplate.HTML {
+	if v {
+		return htmltemplate.HTML("readonly")
+	}
+	return ""
+}
+
+func disabledIf(v bool) htmltemplate.HTML {
+	if v {
+		return htmltemplate.HTML("disabled")
+	}
+	return ""
+}
+
 // translate accepts a message printer (populated by middleware) and prints the
 // translated text for the given key. If the printer is nil, an error is
 // returned.
@@ -176,6 +190,8 @@ func templateFuncs() htmltemplate.FuncMap {
 		"toUpper":          strings.ToUpper,
 		"safeHTML":         safeHTML,
 		"selectedIf":       selectedIf,
+		"readonlyIf":       readonlyIf,
+		"disabledIf":       disabledIf,
 		"t":                translate,
 		"passwordSentinel": pwdSentinel,
 	}

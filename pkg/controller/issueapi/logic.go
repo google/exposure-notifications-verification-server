@@ -100,7 +100,7 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 	dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
 	for i, d := range input {
 		if d != "" {
-			parsed, err := time.Parse("2006-01-02", d)
+			parsed, err := time.Parse(project.RFC3339Date, d)
 			if err != nil {
 				return &issueResult{
 					obsBlame:    observability.BlameClient,
@@ -117,9 +117,9 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 			if err != nil {
 				err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
 					dateSettings[i].Name,
-					minDate.Format("2006-01-02"),
-					maxDate.Format("2006-01-02"),
-					parsed.Format("2006-01-02"),
+					minDate.Format(project.RFC3339Date),
+					maxDate.Format(project.RFC3339Date),
+					parsed.Format(project.RFC3339Date),
 				)
 				return &issueResult{
 					obsBlame:    observability.BlameClient,
@@ -253,7 +253,7 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 
 	if request.Phone != "" && smsProvider != nil {
 		if err := func() error {
-			defer observability.RecordLatency(&ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
+			defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
 
 			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
 
@@ -301,5 +301,5 @@ func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.Aut
 }
 
 func recordObservability(ctx context.Context, result *issueResult) {
-	observability.RecordLatency(&ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
+	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 }
