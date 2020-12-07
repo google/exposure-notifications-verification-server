@@ -17,7 +17,7 @@ msgid "nav.bulk-issue-codes"
 msgstr "Gerar lote de códigos"
 
 msgid "nav.check-code-status"
-msgstr "Verificar estado do código"
+msgstr "Verificar status do código"
 
 msgid "nav.api-keys"
 msgstr "Chaves de API"
@@ -38,7 +38,7 @@ msgid "nav.users"
 msgstr "Usuários"
 
 msgid "nav.settings"
-msgstr "Configuração"
+msgstr "Configurações"
 
 msgid "nav.change-realm"
 msgstr "Mudar de âmbito"
@@ -64,7 +64,7 @@ msgid "codes.issue.header"
 msgstr "Criar código de verificação"
 
 msgid "codes.issue.instructions"
-msgstr "Preencha o seguinte formulário para criar um código de uso único para verificar um paciente. Não envie este formulário até estar pronto para repassar o código ao paciente."
+msgstr "Preencha o seguinte formulário para criar um token de uso único para verificar um paciente. Não envie este formulário até estar pronto para repassar o código ao paciente."
 
 msgid "codes.issue.diagnosis-header"
 msgstr "Diagnóstico"
@@ -103,7 +103,7 @@ msgid "codes.issue.sms-text-message-label"
 msgstr "Número de telefone do paciente"
 
 msgid "codes.issue.sms-text-message-detail"
-msgstr "Se for providenciado, o sistema enviará uma mensagem de texto contendo o código ao paciente. O número precisa ser capaz de receber mensagens de texto SMS."
+msgstr "Se for providenciado, o sistema enviará uma mensagem de texto contendo o código ao paciente. O número precisa estar habilitado para receber mensagens de texto SMS."
 
 msgid "codes.issue.create-code-button"
 msgstr "Criar código de verificação"
@@ -115,13 +115,13 @@ msgid "codes.issue.sms-verification-link-header"
 msgstr "Link de verificação de código"
 
 msgid "codes.issue.sms-verification-detail"
-msgstr "Código enviado a %s com sucesso. Oriente o paciente a verificar suas mensagens de texto no telefone onde Notificações de Exposição estiverem habilitadas."
+msgstr "Código enviado a %s com sucesso. Oriente o paciente a verificar suas mensagens de texto no telefone onde Notificações de Exposição estiverem ativadas."
 
 msgid "codes.issue.backup-short-code-header"
 msgstr "Código reserva"
 
 msgid "codes.issue.backup-short-code-detail"
-msgstr "Compartilhe este código com o paciente se ele não receber a mensagem de texto SMS no seu celular."
+msgstr "Compartilhe este código com o paciente se ele não receber a mensagem de texto SMS no celular."
 
 msgid "codes.issue.generated-short-code-header"
 msgstr "O código reserva foi criado"
