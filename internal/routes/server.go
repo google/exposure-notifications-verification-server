@@ -224,7 +224,6 @@ func Server(
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
-		sub.Handle("/bulk-issue", issueapiController.HandleBulkIssue()).Methods("GET")
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
 
 		codesController := codes.NewServer(ctx, cfg, db, h)
@@ -336,6 +335,7 @@ func Server(
 // codesRoutes are the routes for checking codes.
 func codesRoutes(r *mux.Router, c *codes.Controller) {
 	r.Handle("/issue", c.HandleIssue()).Methods("GET")
+	r.Handle("/bulk-issue", c.HandleBulkIssue()).Methods("GET")
 	r.Handle("/status", c.HandleIndex()).Methods("GET")
 	r.Handle("/{uuid}", c.HandleShow()).Methods("GET")
 	r.Handle("/{uuid}/expire", c.HandleExpirePage()).Methods("PATCH")

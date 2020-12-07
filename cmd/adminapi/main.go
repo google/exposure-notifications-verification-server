@@ -162,6 +162,7 @@ func realMain(ctx context.Context) error {
 
 		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
+		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
 
 		codesController := codes.NewAPI(ctx, cfg, db, h)
 		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")
