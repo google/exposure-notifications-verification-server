@@ -1,3 +1,18 @@
+- [API access](#api-access)
+- [API usage](#api-usage)
+  - [Authenticating](#authenticating)
+  - [Error reporting](#error-reporting)
+- [API Methods](#api-methods)
+  - [`/api/verify`](#apiverify)
+  - [`/api/certificate`](#apicertificate)
+- [Admin APIs](#admin-apis)
+  - [`/api/issue`](#apiissue)
+  - [`/api/batch-issue`](#apibatch-issue)
+  - [`/api/checkcodestatus`](#apicheckcodestatus)
+  - [`/api/expirecode`](#apiexpirecode)
+- [Chaffing requests](#chaffing-requests)
+- [Response codes overview](#response-codes-overview)
+
 # API access
 
 Access to the verification server API requires an API key. An API key typically
@@ -92,19 +107,19 @@ Exchange a verification code for a long term verification token.
 
 Possible error code responses. New error codes may be added in future releases.
 
-| ErrorCode               | HTTP Status | Retry | Meaning |
-|-------------------------|-------------|-------|---------|
-| `unparsable_request`    | 400         | No    | Client sent an request the sever cannot parse |
-| `code_invalid`          | 400         | No    | Code invalid or used, user may need to obtain a new code. |
-| `code_expired`          | 400         | No    | Code has expired, user may need to obtain a new code. |
-| `code_not_found`        | 400         | No    | The server has no record of that code. |
-| `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecognized test type |
-| `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided. |
-| `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code |
-| `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later. |
-| `quota_exceeded`        | 429         | Yes   | The realm has run out of its daily quota allocation for issuing codes. Wait and retry later.
+| ErrorCode               | HTTP Status | Retry | Meaning                                                                                                         |
+| ----------------------- | ----------- | ----- | --------------------------------------------------------------------------------------------------------------- |
+| `unparsable_request`    | 400         | No    | Client sent an request the sever cannot parse                                                                   |
+| `code_invalid`          | 400         | No    | Code invalid or used, user may need to obtain a new code.                                                       |
+| `code_expired`          | 400         | No    | Code has expired, user may need to obtain a new code.                                                           |
+| `code_not_found`        | 400         | No    | The server has no record of that code.                                                                          |
+| `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecognized test type                                                          |
+| `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided.                                        |
+| `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code                                                               |
+| `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.                                           |
+| `quota_exceeded`        | 429         | Yes   | The realm has run out of its daily quota allocation for issuing codes. Wait and retry later.                    |
 | `unsupported_test_type` | 412         | No    | The code may be valid, but represents a test type the client cannot process. User may need to upgrade software. |
-|                         | 500         | Yes   | Internal processing error, may be successful on retry. |
+|                         | 500         | Yes   | Internal processing error, may be successful on retry.                                                          |
 
 ## `/api/certificate`
 
@@ -150,13 +165,13 @@ Exchange a verification token for a verification certificate (for sending to a k
 
 Possible error code responses. New error codes may be added in future releases.
 
-| ErrorCode               | HTTP Status | Retry | Meaning |
-|-------------------------|-------------|-------|---------|
-| `token_invalid`         | 400         | No    | The provided token is invalid, or already used to generate a certificate |
-| `token_expired`         | 400         | No    | Code invalid or used, user may need to obtain a new code. |
-| `hmac_invalid`          | 400         | No    | The `ekeyhmac` field, when base64 decoded is not the right size (32 bytes) |
-| `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later. |
-|                         | 500         | Yes   | Internal processing error, may be successful on retry. |
+| ErrorCode             | HTTP Status | Retry | Meaning                                                                    |
+| --------------------- | ----------- | ----- | -------------------------------------------------------------------------- |
+| `token_invalid`       | 400         | No    | The provided token is invalid, or already used to generate a certificate   |
+| `token_expired`       | 400         | No    | Code invalid or used, user may need to obtain a new code.                  |
+| `hmac_invalid`        | 400         | No    | The `ekeyhmac` field, when base64 decoded is not the right size (32 bytes) |
+| `maintenance_mode   ` | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.      |
+|                       | 500         | Yes   | Internal processing error, may be successful on retry.                     |
 
 # Admin APIs
 
@@ -244,6 +259,65 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   network observer. The server _may_ generate and insert a random number of
   base64-encoded bytes into this field. The client should not process the
   padding.
+
+## `/api/batch-issue`
+
+Request a batch of verification codes to be issued. Accepts a list of IssueCodeRequest. See [`/api/issue`](#apiissue) for details of the fields of a single issue request and response. The indices of the respective
+`codes` arrays will match each request/response pair unless a server error occurs which results in an empty `codes`
+array response.
+
+**BatchIssueCodeRequest**
+
+```json
+{
+  "codes" : [
+    {
+      "uuid": "string UUID",
+      "code": "short verification code",
+      "expiresAt": "RFC1123 formatted string timestamp",
+      "expiresAtTimestamp": 0,
+      "expiresAt": "RFC1123 UTC timestamp",
+      "expiresAtTimestamp": 0,
+      "longExpiresAt": "RFC1123 UTC timestamp",
+      "longExpiresAtTimestamp": 0,
+      "error": "descriptive error message",
+      "errorCode": "well defined error code from api.go",
+    },
+    {
+      ...
+    }
+  ]
+}
+```
+
+**BatchIssueCodeResponse**
+
+Note: The `error` and `errorCode` of the outer response body will match the first error from the `codes` array.
+The response http code will also match the first seen error. The caller should iterate `codes` to handle errors
+for each code response. The index of each responses will match the index of the original request.
+
+```
+{
+  "codes": [
+    {
+      "uuid": "string UUID",
+      "code": "short verification code",
+      "expiresAt": "RFC1123 formatted string timestamp",
+      "expiresAtTimestamp": 0,
+      "expiresAt": "RFC1123 UTC timestamp",
+      "expiresAtTimestamp": 0,
+      "longExpiresAt": "RFC1123 UTC timestamp",
+      "longExpiresAtTimestamp": 0,
+      "error": "descriptive error message",
+      "errorCode": "well defined error code from api.go",
+    },{
+      ...
+    }
+  ],
+  "error": "descriptive error message",
+  "errorCode": "well defined error code from api.go",
+}
+```
 
 ## `/api/checkcodestatus`
 
