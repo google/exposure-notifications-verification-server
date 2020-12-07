@@ -285,7 +285,7 @@ array response.
     },
     {
       ...
-    }
+    },
   ]
 }
 ```
@@ -313,7 +313,7 @@ for each code response. The index of each responses will match the index of the 
     },
     {
       ...
-    }
+    },
   ],
   "error": "descriptive error message",
   "errorCode": "well defined error code from api.go",
