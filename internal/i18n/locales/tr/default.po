@@ -103,7 +103,7 @@ msgid "codes.issue.sms-text-message-label"
 msgstr "Hastanın telefon numarası"
 
 msgid "codes.issue.sms-text-message-detail"
-msgstd "Bu alan doldurulursa, sistem üretilen kodu hastaya kısa mesaj (SMS) olarak atacaktır. O yüzden bu numara SMS alabilen bir numara olmalıdır."
+msgstr "Bu alan doldurulursa, sistem üretilen kodu hastaya kısa mesaj (SMS) olarak atacaktır. O yüzden bu numara SMS alabilen bir numara olmalıdır."
 
 msgid "codes.issue.create-code-button"
 msgstr "Doğrulama kodu üret"
