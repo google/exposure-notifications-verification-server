@@ -152,6 +152,12 @@ func TestRoutes_userRoutes(t *testing.T) {
 			req: httptest.NewRequest("DELETE", "/12345", nil),
 		},
 		{
+			req: httptest.NewRequest("GET", "/12345/stats.json", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/12345/stats.csv", nil),
+		},
+		{
 			req: httptest.NewRequest("POST", "/12345/reset-password", nil),
 		},
 	}

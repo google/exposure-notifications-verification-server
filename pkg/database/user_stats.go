@@ -15,22 +15,139 @@
 package database
 
 import (
+	"bytes"
+	"encoding/csv"
+	"encoding/json"
+	"fmt"
+	"sort"
+	"strconv"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/icsv"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/jinzhu/gorm"
 )
 
-// UserStats represents statistics related to a user in the database.
-type UserStats struct {
-	Date        time.Time `gorm:"date;"`
-	UserID      uint      `gorm:"user_id;"`
-	RealmID     uint      `gorm:"realm_id;"`
-	CodesIssued uint      `gorm:"codes_issued;"`
+var _ icsv.Marshaler = (UserStats)(nil)
+
+// UserStats represents a logical collection of stats for a user.
+type UserStats []*UserStat
+
+// UserStat represents a single-date statistic for a user.
+type UserStat struct {
+	Date        time.Time `gorm:"date; not null;"`
+	UserID      uint      `gorm:"user_id; not null;"`
+	RealmID     uint      `gorm:"realm_id; default:0;"`
+	CodesIssued uint      `gorm:"codes_issued; default:0;"`
 }
 
-// SaveUserStats saves some UserStats to the database.
-// This function is provided for testing only.
-func (db *Database) SaveUserStats(u *UserStats) error {
+// MarshalCSV returns bytes in CSV format.
+func (s UserStats) MarshalCSV() ([]byte, error) {
+	// Do nothing if there's no records
+	if len(s) == 0 {
+		return nil, nil
+	}
+
+	var b bytes.Buffer
+	w := csv.NewWriter(&b)
+
+	if err := w.Write([]string{"date", "user_id", "realm_id", "codes_issued"}); err != nil {
+		return nil, fmt.Errorf("failed to write CSV header: %w", err)
+	}
+
+	for i, stat := range s {
+		if err := w.Write([]string{
+			stat.Date.Format(project.RFC3339Date),
+			strconv.FormatUint(uint64(stat.UserID), 10),
+			strconv.FormatUint(uint64(stat.RealmID), 10),
+			strconv.FormatUint(uint64(stat.CodesIssued), 10),
+		}); err != nil {
+			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
+		}
+	}
+
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("failed to create CSV: %w", err)
+	}
+
+	return b.Bytes(), nil
+}
+
+type jsonUserStat struct {
+	UserID  uint                 `json:"user_id"`
+	RealmID uint                 `json:"realm_id"`
+	Stats   []*jsonUserStatStats `json:"statistics"`
+}
+
+type jsonUserStatStats struct {
+	Date time.Time              `json:"date"`
+	Data *jsonUserStatStatsData `json:"data"`
+}
+
+type jsonUserStatStatsData struct {
+	CodesIssued uint `json:"codes_issued"`
+}
+
+// MarshalJSON is a custom JSON marshaller.
+func (s UserStats) MarshalJSON() ([]byte, error) {
+	// Do nothing if there's no records
+	if len(s) == 0 {
+		return json.Marshal(struct{}{})
+	}
+
+	var stats []*jsonUserStatStats
+	for _, stat := range s {
+		stats = append(stats, &jsonUserStatStats{
+			Date: stat.Date,
+			Data: &jsonUserStatStatsData{
+				CodesIssued: stat.CodesIssued,
+			},
+		})
+	}
+
+	// Sort in descending order.
+	sort.Slice(stats, func(i, j int) bool {
+		return stats[i].Date.After(stats[j].Date)
+	})
+
+	var result jsonUserStat
+	result.UserID = s[0].UserID
+	result.RealmID = s[0].RealmID
+	result.Stats = stats
+
+	b, err := json.Marshal(result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal json: %w", err)
+	}
+	return b, nil
+}
+
+func (s *UserStats) UnmarshalJSON(b []byte) error {
+	if len(b) == 0 {
+		return nil
+	}
+
+	var result jsonUserStat
+	if err := json.Unmarshal(b, &result); err != nil {
+		return err
+	}
+
+	for _, stat := range result.Stats {
+		*s = append(*s, &UserStat{
+			Date:        stat.Date,
+			UserID:      result.UserID,
+			RealmID:     result.RealmID,
+			CodesIssued: stat.Data.CodesIssued,
+		})
+	}
+
+	return nil
+}
+
+// SaveUserStat saves some UserStats to the database. This function is provided
+// for testing only.
+func (db *Database) SaveUserStat(u *UserStat) error {
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(u).Error; err != nil {
 			return err

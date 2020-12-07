@@ -78,13 +78,13 @@ func TestPerUserRealmStats(t *testing.T) {
 
 		// Add some stats per user.
 		for i := 0; i < numDays; i++ {
-			stat := &UserStats{
+			stat := &UserStat{
 				RealmID:     realm.ID,
 				UserID:      user.ID,
 				Date:        startDate.Add(time.Duration(i) * 24 * time.Hour),
 				CodesIssued: uint(10 + i + userIdx),
 			}
-			if err := db.SaveUserStats(stat); err != nil {
+			if err := db.SaveUserStat(stat); err != nil {
 				t.Fatalf("error saving user stats %v", err)
 			}
 		}

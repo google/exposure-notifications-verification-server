@@ -50,3 +50,10 @@ func New(
 		h:            h,
 	}
 }
+
+func (c *Controller) findUser(currentUser *database.User, realm *database.Realm, id interface{}) (*database.User, error) {
+	if currentUser.SystemAdmin {
+		return c.db.FindUser(id)
+	}
+	return realm.FindUser(c.db, id)
+}

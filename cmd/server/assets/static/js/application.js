@@ -694,3 +694,11 @@ function setTimeOrExpired(element, time, expiredCallback) {
   }
   return element.html(`${prefix} ${time}`.trim());
 }
+
+// utcDate parses the given RFC-3339 date as a javascript date, then converts it
+// to a UTC date.
+function utcDate(str) {
+  let d = new Date(str);
+  let offset = d.getTimezoneOffset() * 60 * 1000;
+  return new Date(d.getTime() + offset);
+}
