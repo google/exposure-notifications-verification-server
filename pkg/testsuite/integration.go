@@ -290,6 +290,7 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 
 		issueapiController := issueapi.New(ctx, &s.cfg.AdminAPISrvConfig, s.db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
+		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
 
 		codesController := codes.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.db, h)
 		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")
