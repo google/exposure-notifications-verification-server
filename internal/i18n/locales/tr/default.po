@@ -133,7 +133,7 @@ msgid "codes.issue.uuid-header"
 msgstr "Unique identifier"
 
 msgid "codes.issue.uuid-detail"
-msgstr "Use this to see if the verification code has been redeemed."
+msgstr "Bu eşsiz kod ile hastaya gönderilen doğrulama kodunun kullanılıp kullanılmadığını tespit edebilirsiniz."
 
 msgid "codes.issue.countdown-expires-in"
 msgstr "Kalan süre"
