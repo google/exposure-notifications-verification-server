@@ -68,7 +68,7 @@ func WithRealm(ctx context.Context, r *database.Realm) context.Context {
 	m := TemplateMapFromContext(ctx)
 	m["currentRealm"] = r
 	ctx = WithTemplateMap(ctx, m)
-	ctx = observability.WithRealmID(ctx, r.ID)
+	ctx = observability.WithRealmID(ctx, uint64(r.ID))
 
 	return context.WithValue(ctx, contextKeyRealm, r)
 }
