@@ -35,6 +35,12 @@ func TestRoutes_codesRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
+			req: httptest.NewRequest("GET", "/issue", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/bulk-issue", nil),
+		},
+		{
 			req: httptest.NewRequest("GET", "/status", nil),
 		},
 		{
