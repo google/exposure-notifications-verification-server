@@ -22,7 +22,7 @@ resource "google_monitoring_slo" "availability-slo" {
   # the basics
   service = google_monitoring_custom_service.verification-server.service_id
   slo_id = "availability-slo"
-  display_name = "99.9% of requests are successful over rolling 28 days"
+  display_name = "99.5% of requests are successful over rolling 28 days"
   project = var.monitoring-host-project
   # create if GCLB is used
   count = var.https-forwarding-rule == "" ? 0 : 1
