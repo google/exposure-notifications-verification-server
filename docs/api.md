@@ -310,7 +310,8 @@ for each code response. The index of each responses will match the index of the 
       "longExpiresAtTimestamp": 0,
       "error": "descriptive error message",
       "errorCode": "well defined error code from api.go",
-    },{
+    },
+    {
       ...
     }
   ],
