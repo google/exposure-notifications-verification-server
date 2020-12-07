@@ -16,22 +16,28 @@ package apikey
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-
 	"github.com/gorilla/mux"
 )
 
-// HandleShow displays the API key.
-func (c *Controller) HandleShow() http.Handler {
+const statsCacheTimeout = 30 * time.Minute
+
+func (c *Controller) HandleStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
 
-		logger := logging.FromContext(ctx).Named("apikey.HandleShow")
+		logger := logging.FromContext(ctx).Named("apikey.HandleStats")
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -51,15 +57,6 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		// If the API key is present, add it to the variables map and then delete it
-		// from the session.
-		apiKey, ok := session.Values["apiKey"]
-		if ok {
-			m := controller.TemplateMapFromContext(ctx)
-			m["apiKey"] = apiKey
-			delete(session.Values, "apiKey")
-		}
-
 		// Pull the authorized app from the id.
 		authApp, err := c.findAuthorizedApp(currentUser, realm, vars["id"])
 		if err != nil {
@@ -73,14 +70,42 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		c.renderShow(ctx, w, authApp)
+		stats, err := c.getStats(ctx, authApp, realm)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		pth := r.URL.Path
+		switch {
+		case strings.HasSuffix(pth, ".csv"):
+			nowFormatted := time.Now().UTC().Format(project.RFC3339Squish)
+			filename := fmt.Sprintf("%s-apikey-stats.csv", nowFormatted)
+			c.h.RenderCSV(w, http.StatusOK, filename, stats)
+			return
+		case strings.HasSuffix(pth, ".json"):
+			c.h.RenderJSON(w, http.StatusOK, stats)
+			return
+		default:
+			controller.InternalError(w, r, c.h, fmt.Errorf("unknown path %q", pth))
+			return
+		}
 	})
 }
 
-// renderShow renders the edit page.
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, authApp *database.AuthorizedApp) {
-	m := controller.TemplateMapFromContext(ctx)
-	m.Title("API key: %s", authApp.Name)
-	m["authApp"] = authApp
-	c.h.RenderHTML(w, "apikeys/show", m)
+func (c *Controller) getStats(ctx context.Context, authApp *database.AuthorizedApp, realm *database.Realm) (database.AuthorizedAppStats, error) {
+	now := time.Now().UTC()
+	past := now.Add(-30 * 24 * time.Hour)
+
+	var stats database.AuthorizedAppStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:app",
+		Key:       strconv.FormatUint(uint64(authApp.ID), 10),
+	}
+	if err := c.cacher.Fetch(ctx, cacheKey, &stats, statsCacheTimeout, func() (interface{}, error) {
+		return authApp.Stats(c.db, past, now)
+	}); err != nil {
+		return nil, err
+	}
+	return stats, nil
 }

@@ -39,6 +39,11 @@ type UserStat struct {
 	UserID      uint      `gorm:"user_id; not null;"`
 	RealmID     uint      `gorm:"realm_id; default:0;"`
 	CodesIssued uint      `gorm:"codes_issued; default:0;"`
+
+	// Non-database fields, these are added via the stats lookup using the join
+	// table.
+	UserName  string `gorm:"-"`
+	UserEmail string `gorm:"-"`
 }
 
 // MarshalCSV returns bytes in CSV format.
@@ -51,15 +56,17 @@ func (s UserStats) MarshalCSV() ([]byte, error) {
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 
-	if err := w.Write([]string{"date", "user_id", "realm_id", "codes_issued"}); err != nil {
+	if err := w.Write([]string{"date", "realm_id", "user_id", "user_name", "user_email", "codes_issued"}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
 	for i, stat := range s {
 		if err := w.Write([]string{
 			stat.Date.Format(project.RFC3339Date),
-			strconv.FormatUint(uint64(stat.UserID), 10),
 			strconv.FormatUint(uint64(stat.RealmID), 10),
+			strconv.FormatUint(uint64(stat.UserID), 10),
+			stat.UserName,
+			stat.UserEmail,
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
@@ -75,9 +82,11 @@ func (s UserStats) MarshalCSV() ([]byte, error) {
 }
 
 type jsonUserStat struct {
-	UserID  uint                 `json:"user_id"`
-	RealmID uint                 `json:"realm_id"`
-	Stats   []*jsonUserStatStats `json:"statistics"`
+	RealmID   uint                 `json:"realm_id"`
+	UserID    uint                 `json:"user_id"`
+	UserName  string               `json:"user_name"`
+	UserEmail string               `json:"user_email"`
+	Stats     []*jsonUserStatStats `json:"statistics"`
 }
 
 type jsonUserStatStats struct {
@@ -112,8 +121,10 @@ func (s UserStats) MarshalJSON() ([]byte, error) {
 	})
 
 	var result jsonUserStat
-	result.UserID = s[0].UserID
 	result.RealmID = s[0].RealmID
+	result.UserID = s[0].UserID
+	result.UserName = s[0].UserName
+	result.UserEmail = s[0].UserEmail
 	result.Stats = stats
 
 	b, err := json.Marshal(result)
@@ -136,8 +147,10 @@ func (s *UserStats) UnmarshalJSON(b []byte) error {
 	for _, stat := range result.Stats {
 		*s = append(*s, &UserStat{
 			Date:        stat.Date,
-			UserID:      result.UserID,
 			RealmID:     result.RealmID,
+			UserID:      result.UserID,
+			UserName:    result.UserName,
+			UserEmail:   result.UserEmail,
 			CodesIssued: stat.Data.CodesIssued,
 		})
 	}

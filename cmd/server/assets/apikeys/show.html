@@ -18,9 +18,6 @@
     {{template "flash" .}}
 
     <h1>{{$authApp.Name}} API key</h1>
-    <p class="float-right">
-      <a href="/realm/apikeys/{{$authApp.ID}}/edit">Edit</a>
-    </p>
     <p>
       Here is information about the API key.
     </p>
@@ -40,7 +37,13 @@
     {{end}}
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
+      <div class="card-header">
+        <span class="oi oi-key mr-2 ml-n1" aria-hidden="true"></span>
+        Details about {{$authApp.Name}}
+        <a href="/realm/apikeys/{{$authApp.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this API key">
+          <span class="oi oi-pencil" aria-hidden="true"></span>
+        </a>
+      </div>
       <div class="card-body">
         <strong>App name</strong>
         <div class="mb-3">
@@ -61,73 +64,110 @@
     </div>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Statistics</div>
-      <div class="card-body table-responsive">
-        {{if $stats}}
-        <div id="chart" class="mb-3" style="height: 300px;">
-          <span>Loading chart...</span>
-        </div>
-        <table class="table table-bordered table-striped">
-          <thead>
-            <tr>
-              <th scope="col" width="125px">Date</th>
-              <th scope="col">Keys issued</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range $stat := $stats}}
-            <tr>
-              <td>{{$stat.Date.Format "2006-01-02"}}</td>
-              <td>{{$stat.CodesIssued}}</td>
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
-        <div class="font-italic">
-          This data is refreshed every 5 minutes.
-        </div>
-        {{else}}
-          <p>This app has not recently issued any codes.</p>
-        {{end}}
+      <div class="card-header">
+        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+        Statistics
       </div>
+      <div class="card-body">
+        <div id="apikey_stats_chart" class="container d-flex h-100 w-100" style="min-height:300px;">
+          <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+        </div>
+      </div>
+      <small class="card-footer d-flex justify-content-between text-muted">
+        <span>
+          This data is refreshed every 30 minutes.
+          <a href="#" data-toggle="modal" data-target="#apikey-stats-modal">Learn more</a>
+        </span>
+        <span>
+          <span class="mr-1">Export as:</span>
+          <a href="/realm/apikeys/{{$authApp.ID}}/stats.csv" class="mr-1">CSV</a>
+          <a href="/realm/apikeys/{{$authApp.ID}}/stats.json">JSON</a>
+        </span>
+      </small>
     </div>
 
-    <div>
-      <p>
-        <a href="/realm/apikeys">&larr; Back to all API keys</a>
-      </p>
+    <div class="modal fade" id="apikey-stats-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Codes issued by {{$authApp.Name}}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body mb-n3">
+            <p>
+              This chart reflects the number of codes issued by
+              {{$authApp.Name}}.
+            </p>
+            <p>
+              This chart does <u>not</u> include codes that were issued by users
+              via the UI or codes that were issued using a different API key.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
-  {{if $stats}}
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script>
-    google.charts.load('current', {packages: ['line']});
-    google.charts.setOnLoadCallback(drawChart)
+    let userStatsChartDiv = document.getElementById('apikey_stats_chart');
+    let dateFormatter;
 
-    function drawChart() {
-      let arr = [
-        {{range $stat := $stats}}
-        ['{{$stat.Date.Format "Jan 2"}}', {{$stat.CodesIssued}}],
-        {{end}}
-      ];
+    google.charts.load('current', {
+      packages: ['corechart'],
+      callback: function() {
+        dateFormatter = new google.visualization.DateFormat({
+          pattern: 'MMM dd',
+        });
 
-      // Reverse the array, so the dates are in ascending order.
-      arr = arr.reverse();
-      arr.unshift(['Date', 'Codes issued']);
-      let data = google.visualization.arrayToDataTable(arr);
+        drawStats();
+      },
+    });
 
-      let options = {
-        colors: ['#007bff'],
-        legend: {position: 'none'},
-        tooltip: {trigger: 'focus'},
-      };
+    function drawStats() {
+      $.ajax({
+        url: '/realm/apikeys/{{$authApp.ID}}/stats.json',
+        dataType: 'json',
+      })
+      .done(function(data, status, xhr) {
+        if (!data.statistics) {
+          $(userStatsChartDiv).find('p').text('This API key has not yet issued any codes.');
+          return;
+        }
 
-      let chart = new google.charts.Line(document.getElementById('chart'));
-      chart.draw(data, google.charts.Line.convertOptions(options));
+        var dataTable = new google.visualization.DataTable();
+        dataTable.addColumn('date', 'Date');
+        dataTable.addColumn('number', 'Issued');
+
+        data.statistics.reverse().forEach(function(row) {
+          dataTable.addRow([utcDate(row.date), row.data.codes_issued]);
+        });
+
+        dateFormatter.format(dataTable, 0);
+
+        let options = {
+          colors: ['#007bff'],
+          chartArea: {
+            left: 30, // leave room for y-axis labels
+            top: 20,
+            bottom: 20,
+            width: '100%',
+            height: '100%',
+          },
+          hAxis: { format: 'M/d' },
+          legend: 'none',
+        };
+
+        let chart = new google.visualization.LineChart(userStatsChartDiv);
+        chart.draw(dataTable, options);
+      })
+      .fail(function(xhr, status, err) {
+        flash.error('Failed to render API key stats: ' + err);
+      });
     }
   </script>
-  {{end}}
 </body>
 
 </html>

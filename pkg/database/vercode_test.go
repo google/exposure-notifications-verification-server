@@ -497,9 +497,9 @@ func TestStatDatesOnCreate(t *testing.T) {
 		}
 
 		{
-			var stats []*AuthorizedAppStats
+			var stats []*AuthorizedAppStat
 			if err := db.db.
-				Model(&AuthorizedAppStats{}).
+				Model(&AuthorizedAppStat{}).
 				Select("*").
 				Scan(&stats).
 				Error; err != nil {
