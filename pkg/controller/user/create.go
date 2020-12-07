@@ -104,13 +104,7 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		flash.Alert("Successfully created user %v.", user.Name)
 
-		stats, err := c.getStats(ctx, user, realm)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		c.renderShow(ctx, w, user, stats)
+		c.renderShow(ctx, w, user)
 	})
 }
 

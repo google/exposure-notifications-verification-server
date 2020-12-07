@@ -377,6 +377,8 @@ func userRoutes(r *mux.Router, c *user.Controller) {
 	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
 	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
 	r.Handle("/{id:[0-9]+}", c.HandleDelete()).Methods("DELETE")
+	r.Handle("/{id:[0-9]+}/stats.json", c.HandleUserStats()).Methods("GET")
+	r.Handle("/{id:[0-9]+}/stats.csv", c.HandleUserStats()).Methods("GET")
 	r.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods("POST")
 }
 

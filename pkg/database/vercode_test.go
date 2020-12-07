@@ -455,7 +455,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 		{
 			var stats []*RealmUserStat
 			if err := db.db.
-				Model(&UserStats{}).
+				Model(&UserStat{}).
 				Select("*").
 				Scan(&stats).
 				Error; err != nil {
@@ -477,7 +477,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 		if len(test.code.IssuingExternalID) != 0 {
 			var stats []*ExternalIssuerStat
 			if err := db.db.
-				Model(&ExternalIssuerStats{}).
+				Model(&ExternalIssuerStat{}).
 				Select("*").
 				Scan(&stats).
 				Error; err != nil {

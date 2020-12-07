@@ -206,26 +206,36 @@ func (db *Database) FindUserByEmail(email string) (*User, error) {
 
 // Stats returns the usage statistics for this user at the provided realm. If no
 // stats exist, it returns an empty array.
-func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) ([]*UserStats, error) {
-	var stats []*UserStats
+func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) (UserStats, error) {
+	start = timeutils.UTCMidnight(start)
+	stop = timeutils.UTCMidnight(stop)
 
-	start = timeutils.Midnight(start)
-	stop = timeutils.Midnight(stop)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
 
-	if err := db.db.
-		Model(&UserStats{}).
-		Where("user_id = ?", u.ID).
-		Where("realm_id = ?", realmID).
-		Where("date >= ? AND date <= ?", start, stop).
-		Order("date DESC").
-		Find(&stats).
-		Error; err != nil {
+	// Pull the stats by generating the full date range, then join on stats. This
+	// will ensure we have a full list (with values of 0 where appropriate) to
+	// ensure continuity in graphs.
+	sql := `
+		SELECT
+			d.date AS date,
+			$1 AS user_id,
+			$2 AS realm_id,
+			COALESCE(s.codes_issued, 0) AS codes_issued
+		FROM (
+			SELECT date::date FROM generate_series($3, $4, '1 day'::interval) date
+		) d
+		LEFT JOIN user_stats s ON s.user_id = $1 AND s.realm_id = $2 AND s.date = d.date
+		ORDER BY date DESC`
+
+	var stats []*UserStat
+	if err := db.db.Raw(sql, u.ID, realmID, start, stop).Scan(&stats).Error; err != nil {
 		if IsNotFound(err) {
 			return stats, nil
 		}
 		return nil, err
 	}
-
 	return stats, nil
 }
 
