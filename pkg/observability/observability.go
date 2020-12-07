@@ -112,8 +112,8 @@ func APITagKeys() []tag.Key {
 
 // WithRealmID creates a new context with the realm id attached to the
 // observability context.
-func WithRealmID(octx context.Context, realmID uint) context.Context {
-	realmIDStr := strconv.FormatUint(uint64(realmID), 10)
+func WithRealmID(octx context.Context, realmID uint64) context.Context {
+	realmIDStr := strconv.FormatUint(realmID, 10)
 	ctx, err := tag.New(octx, tag.Upsert(RealmTagKey, realmIDStr))
 	if err != nil {
 		logger := logging.FromContext(octx).Named("observability.WithRealmID")
