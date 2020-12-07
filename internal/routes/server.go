@@ -363,6 +363,8 @@ func apikeyRoutes(r *mux.Router, c *apikey.Controller) {
 	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
 	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods("PATCH")
 	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods("PATCH")
+	r.Handle("/{id:[0-9]+}/stats.json", c.HandleStats()).Methods("GET")
+	r.Handle("/{id:[0-9]+}/stats.csv", c.HandleStats()).Methods("GET")
 }
 
 // userRoutes are the user routes.

@@ -415,7 +415,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: "00017-AddIssuerIDColumns",
 			Migrate: func(tx *gorm.DB) error {
 				logger.Debugw("adding issuer id columns to verification codes")
-				err := tx.AutoMigrate(&VerificationCode{}, &UserStat{}, &AuthorizedAppStats{}).Error
+				err := tx.AutoMigrate(&VerificationCode{}, &UserStat{}, &AuthorizedAppStat{}).Error
 				return err
 
 			},

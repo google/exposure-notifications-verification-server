@@ -39,3 +39,10 @@ func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, 
 		h:      h,
 	}
 }
+
+func (c *Controller) findAuthorizedApp(currentUser *database.User, realm *database.Realm, id interface{}) (*database.AuthorizedApp, error) {
+	if currentUser.SystemAdmin {
+		return c.db.FindAuthorizedApp(id)
+	}
+	return realm.FindAuthorizedApp(c.db, id)
+}

@@ -220,17 +220,19 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) (UserSta
 	sql := `
 		SELECT
 			d.date AS date,
-			$1 AS user_id,
-			$2 AS realm_id,
+			$1 AS realm_id,
+			$2 AS user_id,
+			$3 AS user_name,
+			$4 AS user_email,
 			COALESCE(s.codes_issued, 0) AS codes_issued
 		FROM (
-			SELECT date::date FROM generate_series($3, $4, '1 day'::interval) date
+			SELECT date::date FROM generate_series($5, $6, '1 day'::interval) date
 		) d
-		LEFT JOIN user_stats s ON s.user_id = $1 AND s.realm_id = $2 AND s.date = d.date
+		LEFT JOIN user_stats s ON s.user_id = $2 AND s.realm_id = $1 AND s.date = d.date
 		ORDER BY date DESC`
 
 	var stats []*UserStat
-	if err := db.db.Raw(sql, u.ID, realmID, start, stop).Scan(&stats).Error; err != nil {
+	if err := db.db.Raw(sql, realmID, u.ID, u.Name, u.Email, start, stop).Scan(&stats).Error; err != nil {
 		if IsNotFound(err) {
 			return stats, nil
 		}

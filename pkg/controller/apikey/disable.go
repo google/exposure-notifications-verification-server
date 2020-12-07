@@ -47,7 +47,7 @@ func (c *Controller) HandleDisable() http.Handler {
 			return
 		}
 
-		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
+		authApp, err := c.findAuthorizedApp(currentUser, realm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)

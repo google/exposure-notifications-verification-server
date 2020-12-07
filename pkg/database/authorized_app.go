@@ -154,6 +154,21 @@ func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp, actor Audi
 	return fullAPIKey, nil
 }
 
+// FindAuthorizedApp finds the authorized app by the given id.
+func (db *Database) FindAuthorizedApp(id interface{}) (*AuthorizedApp, error) {
+	var app AuthorizedApp
+	if err := db.db.
+		Unscoped().
+		Model(AuthorizedApp{}).
+		Order("LOWER(name) ASC").
+		Where("id = ?", id).
+		First(&app).
+		Error; err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
 // FindAuthorizedAppByAPIKey located an authorized app based on API key.
 func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, error) {
 	logger := db.logger.Named("FindAuthorizedAppByAPIKey")
@@ -204,25 +219,36 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 
 // Stats returns the usage statistics for this app. If no stats exist, it
 // returns an empty array.
-func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) ([]*AuthorizedAppStats, error) {
-	var stats []*AuthorizedAppStats
-
+func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) (AuthorizedAppStats, error) {
 	start = timeutils.UTCMidnight(start)
 	stop = timeutils.UTCMidnight(stop)
 
-	if err := db.db.
-		Model(&AuthorizedAppStats{}).
-		Where("authorized_app_id = ?", a.ID).
-		Where("date >= ? AND date <= ?", start, stop).
-		Order("date DESC").
-		Find(&stats).
-		Error; err != nil {
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	// Pull the stats by generating the full date range, then join on stats. This
+	// will ensure we have a full list (with values of 0 where appropriate) to
+	// ensure continuity in graphs.
+	sql := `
+		SELECT
+			d.date AS date,
+			$1 AS authorized_app_id,
+			$2 AS authorized_app_name,
+			COALESCE(s.codes_issued, 0) AS codes_issued
+		FROM (
+			SELECT date::date FROM generate_series($3, $4, '1 day'::interval) date
+		) d
+		LEFT JOIN authorized_app_stats s ON s.authorized_app_id = $1 AND s.date = d.date
+		ORDER BY date DESC`
+
+	var stats []*AuthorizedAppStat
+	if err := db.db.Raw(sql, a.ID, a.Name, start, stop).Scan(&stats).Error; err != nil {
 		if IsNotFound(err) {
 			return stats, nil
 		}
 		return nil, err
 	}
-
 	return stats, nil
 }
 

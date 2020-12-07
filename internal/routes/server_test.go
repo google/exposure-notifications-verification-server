@@ -119,6 +119,12 @@ func TestRoutes_apikeyRoutes(t *testing.T) {
 		{
 			req: httptest.NewRequest("PATCH", "/12345/enable", nil),
 		},
+		{
+			req: httptest.NewRequest("GET", "/12345/stats.json", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/12345/stats.csv", nil),
+		},
 	}
 
 	for _, tc := range cases {
