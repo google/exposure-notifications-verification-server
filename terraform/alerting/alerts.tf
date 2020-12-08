@@ -236,15 +236,32 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
 resource "google_monitoring_alert_policy" "fast_burn" {
   project      = var.verification-server-project
   display_name = "FastErrorBudgetBurn"
-  combiner     = "OR"
+  combiner     = "AND"
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
+  
   conditions {
-    display_name = "2% burn in 1 hour"
+    display_name = "Fast burn over last hour"
     condition_threshold {
       filter     = <<-EOT
       select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "3600s")
+      EOT
+      duration   = "0s"
+      comparison = "COMPARISON_GT"
+      # burn rate = budget consumed * period / alerting window = .02 * (7 * 24 * 60)/60 = 3.36
+      threshold_value = 3.36
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  conditions {
+    display_name = "Fast burn over last 5 minutes"
+    condition_threshold {
+      filter     = <<-EOT
+      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "300s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -276,11 +293,28 @@ resource "google_monitoring_alert_policy" "slow_burn" {
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
+  
   conditions {
-    display_name = "5% burn in 6 hour"
+    display_name = "Slow burn over last 6 hours"
     condition_threshold {
       filter     = <<-EOT
       select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "21600s")
+      EOT
+      duration   = "0s"
+      comparison = "COMPARISON_GT"
+      # burn rate = budget consumed * period / alerting window = .05 * (7 * 24 * 60)/360 = 1.4
+      threshold_value = 1.4
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+    conditions {
+    display_name = "Slow burn over last 30 minutes"
+    condition_threshold {
+      filter     = <<-EOT
+      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo", "1800s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
