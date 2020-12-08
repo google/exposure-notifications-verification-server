@@ -1736,6 +1736,17 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec(sql).Error
 			},
 		},
+		{
+			ID: "00072-ChangeSMSTemplateType",
+			Migrate: func(tx *gorm.DB) error {
+				logger.Debugw("changing type of SMS Template text")
+				return tx.Exec("ALTER TABLE realms ALTER COLUMN sms_text_template TYPE text").Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				// No rollback for this, as there is no reason to do so.
+				return nil
+			},
+		},
 	})
 }
 

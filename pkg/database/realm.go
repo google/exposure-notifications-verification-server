@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -81,6 +82,9 @@ const (
 	SMSLongExpires   = "[longexpires]"
 	SMSENExpressLink = "[enslink]"
 
+	SMSTemplateMaxLength    = 800
+	SMSTemplateExpansionMax = 918
+
 	EmailInviteLink        = "[invitelink]"
 	EmailPasswordResetLink = "[passwordresetlink]"
 	EmailVerifyLink        = "[verifylink]"
@@ -136,7 +140,7 @@ type Realm struct {
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
 
 	// SMS configuration
-	SMSTextTemplate string `gorm:"type:varchar(400); not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+	SMSTextTemplate string `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
 
 	// SMSCountry is an optional field to hint the default phone picker country
 	// code.
@@ -367,6 +371,19 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
 			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
 		}
+	}
+
+	// Check template length.
+	if l := len(r.SMSTextTemplate); l > SMSTemplateMaxLength {
+		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %v characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
+	}
+	// Check expansion length based on settings.
+	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
+	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
+	enxDomain := os.Getenv("ENX_REDIRECT_DOMAIN")
+	expandedSMSText := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain)
+	if l := len(expandedSMSText); l > SMSTemplateExpansionMax {
+		r.AddError("SMSTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 	}
 
 	if r.UseSystemEmailConfig && !r.CanUseSystemEmailConfig {
