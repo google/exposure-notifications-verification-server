@@ -11,7 +11,7 @@ msgstr ""
 # ----------------
 
 msgid "nav.issue-code"
-msgstr "コードを発行""
+msgstr "コードを発行"
 
 msgid "nav.bulk-issue-codes"
 msgstr "複数のコードを発行"
