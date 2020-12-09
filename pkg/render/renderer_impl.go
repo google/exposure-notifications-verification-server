@@ -73,7 +73,7 @@ type Impl struct {
 var _ Renderer = (*Impl)(nil) // ensure interface satisfied
 
 // New creates a new renderer with the given details.
-func New(ctx context.Context, root string, debug bool) (Renderer, error) {
+func New(ctx context.Context, root string, debug bool) (*Impl, error) {
 	logger := logging.FromContext(ctx)
 
 	r := &Impl{
