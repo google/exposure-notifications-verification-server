@@ -66,7 +66,7 @@ locals {
   rate_limit_config = {
     RATE_LIMIT_HMAC_KEY   = "secret://${google_secret_manager_secret_version.ratelimit-hmac-key.id}"
     RATE_LIMIT_TYPE       = "REDIS"
-    RATE_LIMIT_TOKENS     = "120"
+    RATE_LIMIT_TOKENS     = "60"
     RATE_LIMIT_INTERVAL   = "1m"
     RATE_LIMIT_REDIS_HOST = google_redis_instance.cache.host
     RATE_LIMIT_REDIS_PORT = google_redis_instance.cache.port

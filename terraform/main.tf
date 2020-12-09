@@ -189,7 +189,7 @@ export CACHE_REDIS_HOST="${google_redis_instance.cache.host}"
 export CACHE_REDIS_PORT="${google_redis_instance.cache.port}"
 
 export RATE_LIMIT_TYPE="REDIS"
-export RATE_LIMIT_TOKENS="120"
+export RATE_LIMIT_TOKENS="60"
 export RATE_LIMIT_INTERVAL="1m"
 export RATE_LIMIT_REDIS_HOST="${google_redis_instance.cache.host}"
 export RATE_LIMIT_REDIS_PORT="${google_redis_instance.cache.port}"

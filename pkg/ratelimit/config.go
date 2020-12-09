@@ -43,7 +43,7 @@ const (
 type Config struct {
 	// Common configuration
 	Type     RateLimitType `env:"RATE_LIMIT_TYPE, default=NOOP"`
-	Tokens   uint64        `env:"RATE_LIMIT_TOKENS, default=120"`
+	Tokens   uint64        `env:"RATE_LIMIT_TOKENS, default=60"`
 	Interval time.Duration `env:"RATE_LIMIT_INTERVAL, default=1m"`
 
 	// HMACKey is the key to use when calculating the HMAC of keys before saving
