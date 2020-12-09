@@ -72,6 +72,17 @@ locals {
     RATE_LIMIT_REDIS_PORT = google_redis_instance.cache.port
   }
 
+  # service admin_api gets doubled tokens
+  admin_api_rate_limit_config = {
+    RATE_LIMIT_HMAC_KEY   = "secret://${google_secret_manager_secret_version.ratelimit-hmac-key.id}"
+    RATE_LIMIT_TYPE       = "REDIS"
+    RATE_LIMIT_TOKENS     = "120"
+    RATE_LIMIT_INTERVAL   = "1m"
+    RATE_LIMIT_REDIS_HOST = google_redis_instance.cache.host
+    RATE_LIMIT_REDIS_PORT = google_redis_instance.cache.port
+  }
+
+
   signing_config = {
     CERTIFICATE_KEY_MANAGER     = "GOOGLE_CLOUD_KMS"
     CERTIFICATE_SIGNING_KEY     = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
