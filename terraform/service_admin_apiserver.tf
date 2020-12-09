@@ -189,6 +189,7 @@ resource "google_compute_backend_service" "adminapi" {
   backend {
     group = google_compute_region_network_endpoint_group.adminapi[0].id
   }
+  security_policy = google_compute_security_policy.cloud-armor.name
 }
 
 resource "google_cloud_run_service_iam_member" "adminapi-public" {
