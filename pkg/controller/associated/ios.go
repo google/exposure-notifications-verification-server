@@ -68,14 +68,17 @@ func (c *Controller) getIosData(realmID uint) (*IOSData, error) {
 		return nil, nil
 	}
 
+	details := make([]Detail, len(ids))
+	for i, id := range ids {
+		details[i] = Detail{
+			AppID: id,
+			Paths: []string{"*"},
+		}
+	}
+
 	return &IOSData{
 		Applinks: Applinks{
-			Details: []Detail{{
-				AppIds: ids,
-				Components: []Component{
-					{Path: "/*", Comment: "handle all urls"},
-				}},
-			},
+			Details: details,
 		},
 	}, nil
 }
