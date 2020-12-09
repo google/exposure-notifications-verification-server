@@ -38,7 +38,7 @@ func TestShowBulkIssueCodes(t *testing.T) {
 	db.SaveRealm(realm, database.SystemTest)
 
 	config := &config.ServerConfig{}
-	h, err := render.NewTest(ctx, "", t)
+	h, err := render.NewTest(ctx, "../../../cmd/server/assets", t)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}

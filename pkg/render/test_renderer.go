@@ -33,8 +33,8 @@ type TestImpl struct {
 var _ Renderer = (*TestImpl)(nil) // ensure interface satisfied
 
 // NewTest creates a new renderer with the given details.
-func NewTest(ctx context.Context, root string, t *testing.T) (*TestImpl, error) {
-	i, err := New(ctx, root, true)
+func NewTest(ctx context.Context, root string, t *testing.T) (Renderer, error) {
+	i, err := newImpl(ctx, root, true)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,14 @@ func (r *TestImpl) RenderCSV(w http.ResponseWriter, code int, filename string, d
 }
 
 func (r *TestImpl) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
-	err := templatecheck.CheckText(r.textTemplates.Lookup(tmpl), data, textFuncs())
+	if r.textTemplates == nil {
+		r.T.Fatal("no email templates loaded")
+	}
+	t := r.textTemplates.Lookup(tmpl)
+	if t == nil {
+		r.T.Fatalf("could not find template %q", tmpl)
+	}
+	err := templatecheck.CheckText(t, data, textFuncs())
 	if err != nil {
 		r.T.Fatalf("failed to render test template %v", err)
 	}
@@ -60,9 +67,19 @@ func (r *TestImpl) RenderHTML(w http.ResponseWriter, tmpl string, data interface
 	r.RenderHTMLStatus(w, http.StatusOK, tmpl, data)
 }
 func (r *TestImpl) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string, data interface{}) {
-	err := templatecheck.CheckHTML(r.templates.Lookup(tmpl), data, templateFuncs())
+	if r.templates == nil {
+		r.T.Fatal("no html templates loaded")
+		return
+	}
+	t := r.templates.Lookup(tmpl)
+	if t == nil {
+		r.T.Fatalf("could not find template %q", tmpl)
+		return
+	}
+	err := templatecheck.CheckHTML(t, data, templateFuncs())
 	if err != nil {
 		r.T.Fatalf("failed to render test template %v", err)
+		return
 	}
 }
 
