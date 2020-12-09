@@ -24,13 +24,21 @@ import (
 // Renderer is responsible for rendering various content and templates like HTML
 // and JSON responses.
 type Renderer interface {
+	// RenderCSV renders the input as a CSV.
 	RenderCSV(w http.ResponseWriter, code int, filename string, data icsv.Marshaler)
+
+	// RenderEmail renders the given email HTML template by name.
 	RenderEmail(tmpl string, data interface{}) ([]byte, error)
 
+	// RenderHTML calls RenderHTMLStatus with a http.StatusOK (200).
 	RenderHTML(w http.ResponseWriter, tmpl string, data interface{})
+	// RenderHTML500 renders the given error as HTML.
 	RenderHTML500(w http.ResponseWriter, err error)
+	// RenderHTMLStatus renders the given HTML template by name.
 	RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string, data interface{})
 
+	// RenderJSON renders the interface as JSON.
 	RenderJSON(w http.ResponseWriter, code int, data interface{})
+	// RenderJSON500 renders the given error as JSON.
 	RenderJSON500(w http.ResponseWriter, err error)
 }
