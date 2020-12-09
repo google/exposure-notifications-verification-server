@@ -272,16 +272,14 @@ array response.
 {
   "codes" : [
     {
+      "symptomDate": "YYYY-MM-DD",
+      "testDate": "YYYY-MM-DD",
+      "testType": "<valid test type>",
+      "tzOffset": 0,
+      "phone": "+CC Phone number",
+      "padding": "<bytes>",
       "uuid": "string UUID",
-      "code": "short verification code",
-      "expiresAt": "RFC1123 formatted string timestamp",
-      "expiresAtTimestamp": 0,
-      "expiresAt": "RFC1123 UTC timestamp",
-      "expiresAtTimestamp": 0,
-      "longExpiresAt": "RFC1123 UTC timestamp",
-      "longExpiresAtTimestamp": 0,
-      "error": "descriptive error message",
-      "errorCode": "well defined error code from api.go",
+      "externalIssuerID": "external-ID",
     },
     {
       ...
