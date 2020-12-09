@@ -25,11 +25,11 @@ import (
 type Controller struct {
 	config *config.AppSyncConfig
 	db     *database.Database
-	h      *render.Renderer
+	h      render.Renderer
 }
 
 // New creates a new appsync controller.
-func New(config *config.AppSyncConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
+func New(config *config.AppSyncConfig, db *database.Database, h render.Renderer) (*Controller, error) {
 	return &Controller{
 		config: config,
 		db:     db,

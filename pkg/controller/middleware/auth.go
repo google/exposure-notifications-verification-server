@@ -32,7 +32,7 @@ import (
 // RequireAuth requires a user to be logged in. It also ensures that currentUser
 // is set in the template map. It fetches a user from the session and stores the
 // full record in the request context.
-func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h *render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
+func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
 	cacheTTL := 15 * time.Minute
 
 	return func(next http.Handler) http.Handler {
@@ -133,7 +133,7 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 
 // RequireSystemAdmin requires the current user is a global administrator. It must
 // come after RequireAuth so that a user is set on the context.
-func RequireSystemAdmin(h *render.Renderer) mux.MiddlewareFunc {
+func RequireSystemAdmin(h render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

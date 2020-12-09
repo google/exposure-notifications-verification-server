@@ -32,7 +32,7 @@ import (
 //
 // MUST first run RequireAuth to populate user and RequireRealm to populate the
 // realm.
-func RequireVerified(authProvider auth.Provider, db *database.Database, h *render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
+func RequireVerified(authProvider auth.Provider, db *database.Database, h render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

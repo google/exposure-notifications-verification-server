@@ -33,7 +33,7 @@ import (
 )
 
 // LoadCurrentRealm loads the selected realm from the cache to the context
-func LoadCurrentRealm(cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
+func LoadCurrentRealm(cacher cache.Cacher, db *database.Database, h render.Renderer) mux.MiddlewareFunc {
 	cacheTTL := 5 * time.Minute
 
 	return func(next http.Handler) http.Handler {
@@ -93,7 +93,7 @@ func LoadCurrentRealm(cacher cache.Cacher, db *database.Database, h *render.Rend
 // Must come after:
 //   LoadCurrentRealm to populate the current realm.
 //   RequireAuth so that a user is set on the context.
-func RequireRealm(h *render.Renderer) mux.MiddlewareFunc {
+func RequireRealm(h render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -135,7 +135,7 @@ func RequireRealm(h *render.Renderer) mux.MiddlewareFunc {
 // Must come after:
 //   LoadCurrentRealm to populate the current realm.
 //   RequireAuth so that a user is set on the context.
-func RequireRealmAdmin(h *render.Renderer) mux.MiddlewareFunc {
+func RequireRealmAdmin(h render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
