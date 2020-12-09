@@ -27,7 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
-func TestShowBulkIssueCodes(t *testing.T) {
+func TestRenderBulkIssue(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
