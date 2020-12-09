@@ -50,9 +50,10 @@ resource "google_compute_security_policy" "cloud-armor" {
   //    there's other attributes that you can use.
   // 3. Run `terraform apply` with "preview=true" first.
   // 4. Go to "Monitoring - Dashboards" and choose "Network Security Policies".
-  //    Select "Breakdown By Policy Name" and ensure the newly enabled policy
-  //    does not match too many traffics. This will be the traffic that will be
-  //    blocked.
+  //    Check the "Previewd Requests" graph at the bottom and see how many
+  //    traffic would be blocked if "preview=false". Ensure the rule doesn't
+  //    block all traffic by accident. If it does block too many traffics, go
+  //    back and review the expression.
   // 5. Run `terraform apply` again with "preview=false".
   //
   // Block certain User-Agent
