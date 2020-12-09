@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
@@ -40,7 +41,7 @@ func TestRenderBulkIssue(t *testing.T) {
 	}
 
 	config := &config.ServerConfig{}
-	h, err := render.NewTest(ctx, "../../../cmd/server/assets", t)
+	h, err := render.NewTest(ctx, project.Root()+"/cmd/server/assets", t)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
