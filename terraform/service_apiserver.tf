@@ -197,6 +197,7 @@ resource "google_compute_backend_service" "apiserver" {
   backend {
     group = google_compute_region_network_endpoint_group.apiserver[0].id
   }
+  security_policy = google_compute_security_policy.cloud-armor.name
 }
 
 resource "google_cloud_run_service_iam_member" "apiserver-public" {
