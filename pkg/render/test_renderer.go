@@ -44,6 +44,7 @@ func (r *TestImpl) RenderCSV(w http.ResponseWriter, code int, filename string, d
 
 func (r *TestImpl) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 	templatecheck.CheckText(r.textTemplates.Lookup(tmpl), data, textFuncs())
+	return []byte{}, nil
 }
 
 func (r *TestImpl) RenderHTML500(w http.ResponseWriter, err error) {
