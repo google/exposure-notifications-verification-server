@@ -452,6 +452,8 @@ func (c *Controller) renderSettings(
 	m["longCodeHours"] = longCodeHours
 	m["enxRedirectDomain"] = c.config.GetENXRedirectDomain()
 
+	m["maxSMSTemplate"] = database.SMSTemplateMaxLength
+
 	m["quotaLimit"] = quotaLimit
 	m["quotaRemaining"] = quotaRemaining
 
