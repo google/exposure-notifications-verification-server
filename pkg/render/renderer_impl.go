@@ -48,9 +48,9 @@ var allowedResponseCodes = map[int]struct{}{
 	500: {},
 }
 
-// Impl is responsible for rendering various content and templates like HTML
+// ProdRenderer is responsible for rendering various content and templates like HTML
 // and JSON responses. This implementation caches templates and uses a pool of buffers.
-type Impl struct {
+type ProdRenderer struct {
 	// debug indicates templates should be reloaded on each invocation and real
 	// error responses should be rendered. Do not enable in production.
 	debug bool
@@ -70,14 +70,14 @@ type Impl struct {
 	templatesRoot string
 }
 
-var _ Renderer = (*Impl)(nil) // ensure interface satisfied
+var _ Renderer = (*ProdRenderer)(nil) // ensure interface satisfied
 
 // New creates a new renderer with the given details.
 func New(ctx context.Context, root string, debug bool) (Renderer, error) {
 	return newImpl(ctx, root, debug)
 }
 
-func newImpl(ctx context.Context, root string, debug bool) (*Impl, error) {
+func newImpl(ctx context.Context, root string, debug bool) (*ProdRenderer, error) {
 	logger := logging.FromContext(ctx)
 
 	r := &Impl{
@@ -100,7 +100,7 @@ func newImpl(ctx context.Context, root string, debug bool) (*Impl, error) {
 }
 
 // loadTemplates loads or reloads all templates.
-func (r *Impl) loadTemplates() error {
+func (r *ProdRenderer) loadTemplates() error {
 	if r.templatesRoot == "" {
 		return nil
 	}
@@ -214,7 +214,7 @@ func textFuncs() texttemplate.FuncMap {
 
 // AllowedResponseCode returns true if the code is a permitted response code,
 // false otherwise.
-func (r *Impl) AllowedResponseCode(code int) bool {
+func (r *ProdRenderer) AllowedResponseCode(code int) bool {
 	_, ok := allowedResponseCodes[code]
 	return ok
 }

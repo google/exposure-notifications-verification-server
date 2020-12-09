@@ -23,14 +23,14 @@ import (
 	"github.com/jba/templatecheck"
 )
 
-// TestImpl defines a test version of the renderer
-type TestImpl struct {
-	Impl // the implementation under test
+// TestRenderer defines a test version of the renderer
+type TestRenderer struct {
+	ProdRenderer // the implementation under test
 
 	T *testing.T
 }
 
-var _ Renderer = (*TestImpl)(nil) // ensure interface satisfied
+var _ Renderer = (*TestRenderer)(nil) // ensure interface satisfied
 
 // NewTest creates a new renderer with the given details.
 func NewTest(ctx context.Context, root string, t *testing.T) (Renderer, error) {
@@ -38,14 +38,14 @@ func NewTest(ctx context.Context, root string, t *testing.T) (Renderer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &TestImpl{Impl: *i, T: t}, nil
+	return &TestRenderer{ProdRenderer: *i, T: t}, nil
 }
 
-func (r *TestImpl) RenderCSV(w http.ResponseWriter, code int, filename string, data icsv.Marshaler) {
+func (r *TestRenderer) RenderCSV(w http.ResponseWriter, code int, filename string, data icsv.Marshaler) {
 	// Not supported for test. Doesn't use templates.
 }
 
-func (r *TestImpl) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
+func (r *TestRenderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 	if r.textTemplates == nil {
 		r.T.Fatal("no email templates loaded")
 	}
@@ -60,13 +60,13 @@ func (r *TestImpl) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (r *TestImpl) RenderHTML500(w http.ResponseWriter, err error) {
+func (r *TestRenderer) RenderHTML500(w http.ResponseWriter, err error) {
 	r.RenderHTMLStatus(w, http.StatusInternalServerError, "500", map[string]string{"error": err.Error()})
 }
-func (r *TestImpl) RenderHTML(w http.ResponseWriter, tmpl string, data interface{}) {
+func (r *TestRenderer) RenderHTML(w http.ResponseWriter, tmpl string, data interface{}) {
 	r.RenderHTMLStatus(w, http.StatusOK, tmpl, data)
 }
-func (r *TestImpl) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string, data interface{}) {
+func (r *TestRenderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string, data interface{}) {
 	if r.templates == nil {
 		r.T.Fatal("no html templates loaded")
 		return
@@ -83,9 +83,9 @@ func (r *TestImpl) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string
 	}
 }
 
-func (r *TestImpl) RenderJSON(w http.ResponseWriter, code int, data interface{}) {
+func (r *TestRenderer) RenderJSON(w http.ResponseWriter, code int, data interface{}) {
 	// Not supported for test. Doesn't use templates.
 }
-func (r *TestImpl) RenderJSON500(w http.ResponseWriter, err error) {
+func (r *TestRenderer) RenderJSON500(w http.ResponseWriter, err error) {
 	// Not supported for test. Doesn't use templates.
 }
