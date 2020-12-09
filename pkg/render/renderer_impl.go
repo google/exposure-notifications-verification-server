@@ -80,7 +80,7 @@ func New(ctx context.Context, root string, debug bool) (Renderer, error) {
 func newImpl(ctx context.Context, root string, debug bool) (*ProdRenderer, error) {
 	logger := logging.FromContext(ctx)
 
-	r := &Impl{
+	r := &ProdRenderer{
 		debug:  debug,
 		logger: logger,
 		rendererPool: &sync.Pool{
