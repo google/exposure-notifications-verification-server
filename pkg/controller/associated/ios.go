@@ -37,7 +37,7 @@ type Applinks struct {
 }
 
 type Detail struct {
-	AppId string   `json:"appID,omitempty"`
+	AppID string   `json:"appID,omitempty"`
 	Paths []string `json:"components,omitempty"`
 }
 
@@ -77,7 +77,7 @@ func (c *Controller) getIosData(region string) (*IOSData, error) {
 	details := make([]Detail, len(ids))
 	for i, id := range ids {
 		details[i] = Detail{
-			AppId: id,
+			AppID: id,
 			Paths: []string{"*"},
 		}
 	}
