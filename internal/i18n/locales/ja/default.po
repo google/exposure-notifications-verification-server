@@ -1,0 +1,142 @@
+msgid ""
+msgstr ""
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#
+# navigation menus
+# ----------------
+
+msgid "nav.issue-code"
+msgstr "コードを発行""
+
+msgid "nav.bulk-issue-codes"
+msgstr "複数のコードを発行"
+
+msgid "nav.check-code-status"
+msgstr "コードの状態を確認"
+
+msgid "nav.api-keys"
+msgstr "APIキー"
+
+msgid "nav.mobile-apps"
+msgstr "モバイルアプリ"
+
+msgid "nav.event-log"
+msgstr "イベントログ"
+
+msgid "nav.signing-keys"
+msgstr "署名鍵"
+
+msgid "nav.statistics"
+msgstr "統計"
+
+msgid "nav.users"
+msgstr "ユーザー"
+
+msgid "nav.settings"
+msgstr "設定"
+
+msgid "nav.change-realm"
+msgstr "管轄の変更"
+
+msgid "nav.select-realm"
+msgstr "管轄を選択"
+
+msgid "nav.system-admin"
+msgstr "システム管理"
+
+msgid "nav.my-account"
+msgstr "アカウント"
+
+msgid "nav.sign-out"
+msgstr "サインアウト"
+
+
+#
+# issue code
+# ----------
+
+msgid "codes.issue.header"
+msgstr "検証用コードの作成"
+
+msgid "codes.issue.instructions"
+msgstr "使い捨ての患者確認用コードを生成するには、下記のフォームを入力してください。患者にコードを渡す準備が整うまではフォームを送信しないでください。"
+
+msgid "codes.issue.diagnosis-header"
+msgstr "診断"
+
+msgid "codes.issue.dates-header"
+msgstr "日付"
+
+msgid "codes.issue.confirmed-test"
+msgstr "陽性"
+
+msgid "codes.issue.confirmed-test-details"
+msgstr "公式の検査結果から陽性を確認した"
+
+msgid "codes.issue.likely-test"
+msgstr "可能性が高い"
+
+msgid "codes.issue.likely-test-details"
+msgstr "試験無しでの臨床診断"
+
+msgid "codes.issue.negative-test"
+msgstr "陰性"
+
+msgid "codes.issue.negative-test-details"
+msgstr "公式の検査結果から陰性を確認した"
+
+msgid "codes.issue.testing-date-label"
+msgstr "検査日(現地時間)"
+
+msgid "codes.issue.symptoms-date-label"
+msgstr "発症日(現地時間)"
+
+msgid "codes.issue.sms-text-message-header"
+msgstr "SMSテキストメッセージ(推奨)"
+
+msgid "codes.issue.sms-text-message-label"
+msgstr "患者の電話番号"
+
+msgid "codes.issue.sms-text-message-detail"
+msgstr "電話番号が提供されれば、システムは患者にコードを記述したテキストメッセージを送信します。SMSテキストメッセージを受信できる電話番号が必要です。"
+
+msgid "codes.issue.create-code-button"
+msgstr "確認コードを生成"
+
+msgid "codes.issue.reset-code-button"
+msgstr "リセットして戻る"
+
+msgid "codes.issue.sms-verification-link-header"
+msgstr "SMS検証リンク"
+
+msgid "codes.issue.sms-verification-detail"
+msgstr "%s へSMSを正常に送信しました。接触確認アプリが有効になっている携帯でテキストメッセージを確認するように、患者に指示してください。"
+
+msgid "codes.issue.backup-short-code-header"
+msgstr "予備の短いコード"
+
+msgid "codes.issue.backup-short-code-detail"
+msgstr "もし患者の携帯にSMSテキストメッセージが届かなかった場合は、このコードを共有してください。"
+
+msgid "codes.issue.generated-short-code-header"
+msgstr "生成された短いコード"
+
+msgid "codes.issue.generated-short-code-detail"
+msgstr "速やかにこのコードを患者と共有してください。"
+
+msgid "codes.issue.uuid-header"
+msgstr "一意の識別子"
+
+msgid "codes.issue.uuid-detail"
+msgstr "確認コードが使用されたか調べるにはこの識別子を使用してください。"
+
+msgid "codes.issue.countdown-expires-in"
+msgstr "有効期限"
+
+msgid "codes.issue.countdown-expired"
+msgstr "期限切れ"
