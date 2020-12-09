@@ -35,7 +35,9 @@ func TestRenderBulkIssue(t *testing.T) {
 	realm := database.NewRealmWithDefaults("Test Realm")
 	realm.AllowBulkUpload = true
 	ctx = controller.WithRealm(ctx, realm)
-	db.SaveRealm(realm, database.SystemTest)
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatalf("failed to save realm: %v", err)
+	}
 
 	config := &config.ServerConfig{}
 	h, err := render.NewTest(ctx, "../../../cmd/server/assets", t)
@@ -51,7 +53,9 @@ func TestRenderBulkIssue(t *testing.T) {
 		TwilioAuthToken:  "def123",
 		TwilioFromNumber: "+11234567890",
 	}
-	db.SaveSMSConfig(sms)
+	if err := db.SaveSMSConfig(sms); err != nil {
+		t.Fatalf("failed to save SMSConfig: %v", err)
+	}
 
 	r := &http.Request{}
 	r = r.WithContext(ctx)
