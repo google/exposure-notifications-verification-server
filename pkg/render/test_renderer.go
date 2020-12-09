@@ -17,6 +17,7 @@ package render
 import (
 	"context"
 	"net/http"
+	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/icsv"
 	"github.com/jba/templatecheck"
@@ -25,17 +26,19 @@ import (
 // TestImpl defines a test version of the renderer
 type TestImpl struct {
 	Impl // the implementation under test
+
+	T *testing.T
 }
 
 var _ Renderer = (*TestImpl)(nil) // ensure interface satisfied
 
 // NewTest creates a new renderer with the given details.
-func NewTest(ctx context.Context, root string) (*TestImpl, error) {
+func NewTest(ctx context.Context, root string, t *testing.T) (*TestImpl, error) {
 	i, err := New(ctx, root, true)
 	if err != nil {
 		return nil, err
 	}
-	return &TestImpl{Impl: *i}, nil
+	return &TestImpl{Impl: *i, T: t}, nil
 }
 
 func (r *TestImpl) RenderCSV(w http.ResponseWriter, code int, filename string, data icsv.Marshaler) {
@@ -43,7 +46,10 @@ func (r *TestImpl) RenderCSV(w http.ResponseWriter, code int, filename string, d
 }
 
 func (r *TestImpl) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
-	templatecheck.CheckText(r.textTemplates.Lookup(tmpl), data, textFuncs())
+	err := templatecheck.CheckText(r.textTemplates.Lookup(tmpl), data, textFuncs())
+	if err != nil {
+		r.T.Fatalf("failed to render test template %v", err)
+	}
 	return []byte{}, nil
 }
 
@@ -54,7 +60,10 @@ func (r *TestImpl) RenderHTML(w http.ResponseWriter, tmpl string, data interface
 	r.RenderHTMLStatus(w, http.StatusOK, tmpl, data)
 }
 func (r *TestImpl) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string, data interface{}) {
-	templatecheck.CheckHTML(r.templates.Lookup(tmpl), data, templateFuncs())
+	err := templatecheck.CheckHTML(r.templates.Lookup(tmpl), data, templateFuncs())
+	if err != nil {
+		r.T.Fatalf("failed to render test template %v", err)
+	}
 }
 
 func (r *TestImpl) RenderJSON(w http.ResponseWriter, code int, data interface{}) {
