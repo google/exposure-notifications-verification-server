@@ -2,6 +2,12 @@
 
 {{$authApp := .authApp}}
 
+{{$currentMembership := .currentMembership}}
+{{$canWrite := false}}
+{{if $currentMembership.Can rbac.APIKeyWrite}}
+  {{$canWrite = true}}
+{{end}}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -14,13 +20,15 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <div class="card mt-4 mb-3">
+    <div class="card shadow-sm mt-4 mb-3">
       <div class="card-header">
         <span class="oi oi-key mr-2 ml-n1" aria-hidden="true"></span>
         API keys
-        <a href="/realm/apikeys/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New API key">
-          <span class="oi oi-plus small" aria-hidden="true"></span>
-        </a>
+        {{if $canWrite}}
+          <a href="/realm/apikeys/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New API key">
+            <span class="oi oi-plus small" aria-hidden="true"></span>
+          </a>
+        {{end}}
       </div>
 
       <div class="card-body">
@@ -46,7 +54,9 @@
               <th scope="col">App</th>
               <th scope="col" width="90">Key</th>
               <th scope="col" width="90">Type</th>
-              <th scope="col" width="40"></th>
+              {{if $canWrite}}
+                <th scope="col" width="40"></th>
+              {{end}}
             </tr>
           </thead>
           <tbody>
@@ -71,25 +81,27 @@
                 {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" title="Can be used to issue verification codes">Admin</span>{{end}}
                 {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
               </td>
-              <td class="text-center">
-                {{if .DeletedAt}}
-                <a href="/realm/apikeys/{{.ID}}/enable" class="d-block text-danger"
-                  data-method="patch"
-                  data-confirm="Are you sure you want to restore '{{.Name}}'?"
-                  data-toggle="tooltip"
-                  title="Restore this API key">
-                  <span class="oi oi-loop-circular" aria-hidden="true"></span>
-                </a>
-                {{else}}
-                <a href="/realm/apikeys/{{.ID}}/disable" class="d-block text-danger"
-                  data-method="patch"
-                  data-confirm="Are you sure you want to disable '{{.Name}}'?"
-                  data-toggle="tooltip"
-                  title="Disable this API key">
-                  <span class="oi oi-trash" aria-hidden="true"></span>
-                </a>
-                {{end}}
-              </td>
+              {{if $canWrite}}
+                <td class="text-center">
+                  {{if .DeletedAt}}
+                  <a href="/realm/apikeys/{{.ID}}/enable" class="d-block text-danger"
+                    data-method="patch"
+                    data-confirm="Are you sure you want to restore '{{.Name}}'?"
+                    data-toggle="tooltip"
+                    title="Restore this API key">
+                    <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                  </a>
+                  {{else}}
+                  <a href="/realm/apikeys/{{.ID}}/disable" class="d-block text-danger"
+                    data-method="patch"
+                    data-confirm="Are you sure you want to disable '{{.Name}}'?"
+                    data-toggle="tooltip"
+                    title="Disable this API key">
+                    <span class="oi oi-trash" aria-hidden="true"></span>
+                  </a>
+                  {{end}}
+                </td>
+              {{end}}
             </tr>
           {{end}}
           </tbody>

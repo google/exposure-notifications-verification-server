@@ -2,6 +2,7 @@
 
 {{$currentUser := .currentUser}}
 {{$realm := .realm}}
+{{$membership := .membership}}
 {{$systemSMSConfig := .systemSMSConfig}}
 {{$systemEmailConfig := .systemEmailConfig}}
 
@@ -23,20 +24,7 @@
     </p>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">
-        {{if $currentUser.CanAdminRealm $realm.ID}}
-        <a href="/admin/realms/{{$realm.ID}}/realmadmin">
-          <span class="oi oi-wrench text-dark" aria-hidden="true"
-          data-toggle="tooltip" title="Edit as realm admin"></span>
-        </a>
-        {{else}}
-        <span data-toggle="tooltip" title="Join realm to configure as realm admin">
-          <a class="disabled">
-            <span class="oi oi-wrench" aria-hidden="true"></span>
-          </a>
-        </span>
-        {{end}}
-        Details</div>
+      <div class="card-header">Details</div>
       <div class="card-body">
         <form method="POST" action="/admin/realms/{{$realm.ID}}">
           {{ .csrfField }}
@@ -133,7 +121,7 @@
       </div>
     </div>
 
-    {{if $currentUser.CanAdminRealm $realm.ID}}
+    {{if and $membership ($membership.Can rbac.LegacyRealmAdmin)}}
       <div class="card mb-3 shadow-sm">
         <div class="card-header">Leave realm</div>
         <div class="card-body">

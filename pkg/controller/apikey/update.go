@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 )
@@ -41,19 +42,20 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.APIKeyWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
-		authApp, err := realm.FindAuthorizedApp(c.db, vars["id"])
+		authApp, err := currentRealm.FindAuthorizedApp(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -104,5 +106,5 @@ func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, auth
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Edit API key: %s", authApp.Name)
 	m["authApp"] = authApp
-	c.h.RenderHTML(w, "/realm/apikeys/edit", m)
+	c.h.RenderHTML(w, "apikeys/edit", m)
 }

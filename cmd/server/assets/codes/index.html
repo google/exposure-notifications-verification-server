@@ -53,6 +53,10 @@
               {{$code.CreatedAt.Format "2006-02-01 15:04"}}
             </small>
           </a>
+        {{else}}
+          <div class="card-body text-center">
+            <em>You have not issued any codes recently.</em>
+          </div>
         {{end}}
       </div>
     </div>

@@ -30,6 +30,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/leonelquinteros/gotext"
 
 	"go.uber.org/zap"
@@ -161,6 +162,13 @@ func readonlyIf(v bool) htmltemplate.HTML {
 	return ""
 }
 
+func checkedIf(v bool) htmltemplate.HTML {
+	if v {
+		return htmltemplate.HTML("checked")
+	}
+	return ""
+}
+
 func disabledIf(v bool) htmltemplate.HTML {
 	if v {
 		return htmltemplate.HTML("disabled")
@@ -193,11 +201,14 @@ func templateFuncs() htmltemplate.FuncMap {
 		"toJSON":           json.Marshal,
 		"toBase64":         base64.StdEncoding.EncodeToString,
 		"safeHTML":         safeHTML,
+		"checkedIf":        checkedIf,
 		"selectedIf":       selectedIf,
 		"readonlyIf":       readonlyIf,
 		"disabledIf":       disabledIf,
 		"t":                translate,
 		"passwordSentinel": pwdSentinel,
+
+		"rbac": rbac.PermissionMap,
 	}
 }
 

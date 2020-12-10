@@ -71,6 +71,12 @@
 {{$publicKeys := .publicKeys}}
 {{$csrfField := .csrfField}}
 
+{{$currentMembership := .currentMembership}}
+{{$canWrite := false}}
+{{if $currentMembership.Can rbac.SettingsWrite}}
+  {{$canWrite = true}}
+{{end}}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -303,6 +309,23 @@
       </p>
     {{end}}
   </main>
+
+  <script type="text/javascript">
+    {{if not $canWrite}}
+      {{/*
+
+        This is a little bit hacky, since technically the user could disable
+        javascript, but we do server-side validation to prevent actual data
+        mutation without permission.
+
+      */}}
+      $('body').find('input, button, select, textarea, a.btn')
+        .addClass('disabled')
+        .addClass('readonly')
+        .prop('disabled', true)
+        .prop('readonly', true);
+    {{end}}
+  </script>
 </body>
 </html>
 {{end}}

@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleDisableExpress() http.Handler {
@@ -32,31 +33,31 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
-
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
+		if !membership.Can(rbac.SettingsWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
-		if !realm.EnableENExpress {
+		if !currentRealm.EnableENExpress {
 			flash.Error("Realm is not currently enrolled in EN Express.")
-			c.renderSettings(ctx, w, r, realm, nil, nil, 0, 0)
+			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
 			return
 		}
 
 		defaultSettings := database.NewRealmWithDefaults("--")
-		realm.EnableENExpress = false
-		realm.SMSTextTemplate = defaultSettings.SMSTextTemplate
-		if err := c.db.SaveRealm(realm, currentUser); err != nil {
+		currentRealm.EnableENExpress = false
+		currentRealm.SMSTextTemplate = defaultSettings.SMSTextTemplate
+		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 			flash.Error("Failed to disable EN Express: %v", err)
 
-			c.renderSettings(ctx, w, r, realm, nil, nil, 0, 0)
+			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
 			return
 		}
 
@@ -76,41 +77,41 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
-
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
+		if !membership.Can(rbac.SettingsWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
-		if realm.EnableENExpress {
+		if currentRealm.EnableENExpress {
 			flash.Error("Realm already has EN Express Enabled.")
-			c.renderSettings(ctx, w, r, realm, nil, nil, 0, 0)
+			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
 			return
 		}
 
 		// Enable EN Express by setting default settings.
 		enxSettings := database.NewRealmWithDefaults("--")
-		realm.EnableENExpress = true
-		realm.CodeLength = enxSettings.CodeLength
-		realm.CodeDuration = enxSettings.CodeDuration
-		realm.LongCodeLength = enxSettings.LongCodeLength
-		realm.LongCodeDuration = enxSettings.LongCodeDuration
-		realm.SMSTextTemplate = "Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)"
+		currentRealm.EnableENExpress = true
+		currentRealm.CodeLength = enxSettings.CodeLength
+		currentRealm.CodeDuration = enxSettings.CodeDuration
+		currentRealm.LongCodeLength = enxSettings.LongCodeLength
+		currentRealm.LongCodeDuration = enxSettings.LongCodeDuration
+		currentRealm.SMSTextTemplate = "Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)"
 		// Confirmed is the only allowed test type for EN Express.
-		realm.AllowedTestTypes = database.TestTypeConfirmed
+		currentRealm.AllowedTestTypes = database.TestTypeConfirmed
 
-		if err := c.db.SaveRealm(realm, currentUser); err != nil {
+		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 			flash.Error("Failed to enable EN Express: %v", err)
 			// This will allow the user to correct other validation errors and then click "uprade" again.
-			realm.EnableENExpress = false
-			realm.SMSTextTemplate = enxSettings.SMSTextTemplate
-			c.renderSettings(ctx, w, r, realm, nil, nil, 0, 0)
+			currentRealm.EnableENExpress = false
+			currentRealm.SMSTextTemplate = enxSettings.SMSTextTemplate
+			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
 			return
 		}
 

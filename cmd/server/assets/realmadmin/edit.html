@@ -4,6 +4,12 @@
 {{$smsConfig := .smsConfig}}
 {{$testTypes := .testTypes}}
 
+{{$currentMembership := .currentMembership}}
+{{$canWrite := false}}
+{{if $currentMembership.Can rbac.SettingsWrite}}
+  {{$canWrite = true}}
+{{end}}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -25,9 +31,9 @@
       <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs" role="tablist">
           {{if not $realm.EnableENExpress}}
-          <li class="nav-item" role="presentation">
-            <a class="nav-link" id="express-tab" data-toggle="tab" href="#express" role="tab" aria-controls="express" aria-selected="true">ENX</a>
-          </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="express-tab" data-toggle="tab" href="#express" role="tab" aria-controls="express" aria-selected="true">ENX</a>
+            </li>
           {{end}}
           <li class="nav-item" role="presentation">
             <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general" role="tab" aria-controls="general" aria-selected="true">General</a>
@@ -80,25 +86,42 @@
     </div>
 
     {{if $realm.EnableENExpress}}
-    <p class="text-center">
-      <a href="#advanced-settings" class="text-muted small" data-toggle="collapse">
-        Advanced settings
-      </a>
-    </p>
+      <p class="text-center">
+        <a href="#advanced-settings" class="text-muted small" data-toggle="collapse">
+          Advanced settings
+        </a>
+      </p>
 
-    <div id="advanced-settings" class="card mb-3 shadow-sm collapse">
-      <div class="card-header">
-        Advanced settings
+      <div id="advanced-settings" class="card mb-3 shadow-sm collapse">
+        <div class="card-header">
+          Advanced settings
+        </div>
+        <div class="card-body">
+          {{template "realmadmin/_form_express" .}}
+        </div>
       </div>
-      <div class="card-body">
-        {{template "realmadmin/_form_express" .}}
-      </div>
-    </div>
     {{end}}
   </main>
 
   <script type="text/javascript">
     $(function(){
+      {{if not $canWrite}}
+        {{/*
+
+          This is a little bit hacky, since technically the user could disable
+          javascript, but we do server-side validation to prevent actual data
+          mutation without permission.
+
+          We specifically do this before changing tabs to reduce the FOUT.
+
+        */}}
+        $('body').find('input, button, select, textarea, a.btn')
+          .addClass('disabled')
+          .addClass('readonly')
+          .prop('disabled', true)
+          .prop('readonly', true);
+      {{end}}
+
       changeTab(window.location.hash);
 
       $('.nav-tabs a').on('click', function(event) {

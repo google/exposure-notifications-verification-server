@@ -16,17 +16,31 @@ package admin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
 func (c *Controller) HandleRealmsIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		memberships := controller.MembershipsFromContext(ctx)
+		membershipsMap := make(map[uint]bool, len(memberships))
+		for _, m := range memberships {
+			membershipsMap[m.RealmID] = true
+		}
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
@@ -45,6 +59,7 @@ func (c *Controller) HandleRealmsIndex() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		m.Title("Realms - System Admin")
 		m["realms"] = realms
+		m["memberships"] = membershipsMap
 		m["query"] = q
 		m["paginator"] = paginator
 		c.h.RenderHTML(w, "admin/realms/index", m)
@@ -119,16 +134,15 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 			c.renderNewRealm(ctx, w, realm, smsConfig, emailConfig)
 			return
 		}
-		flash.Alert("Created realm: %q.", realm.Name)
+		flash.Alert("Created realm %q", realm.Name)
 
-		currentUser.Realms = append(currentUser.Realms, realm)
-		currentUser.AdminRealms = append(currentUser.AdminRealms, realm)
-		if err := c.db.SaveUser(currentUser, currentUser); err != nil {
+		// Make the current user an admin of the realm they just created.
+		if err := currentUser.AddToRealm(c.db, realm, rbac.LegacyRealmAdmin, currentUser); err != nil {
 			flash.Error("Failed to add you as an admin to the realm: %v", err)
 			c.renderNewRealm(ctx, w, realm, smsConfig, emailConfig)
 			return
 		}
-		flash.Alert("Added you as a user and admin to the realm.")
+		flash.Alert("Added you as an administrator of %q", realm.Name)
 
 		if realm.UseRealmCertificateKey {
 			// If we are using realm specific keys - we need to create the first one.
@@ -138,10 +152,10 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 				http.Redirect(w, r, "/admin/realms", http.StatusSeeOther)
 				return
 			}
-			flash.Alert("Created initial signing key for realm, id: %q", keyID)
+			flash.Alert("Created initial signing key %q", keyID)
 		}
 
-		http.Redirect(w, r, "/admin/realms", http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/admin/realms/%d/edit", realm.ID), http.StatusSeeOther)
 	})
 }
 
@@ -185,6 +199,12 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 			return
 		}
 
+		membership, err := currentUser.FindMembership(c.db, realm.ID)
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		smsConfig, err := c.db.SystemSMSConfig()
 		if err != nil && !database.IsNotFound(err) {
 			controller.InternalError(w, r, c.h, err)
@@ -214,14 +234,14 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderEditRealm(ctx, w, realm, smsConfig, emailConfig, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderEditRealm(ctx, w, realm, smsConfig, emailConfig, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -229,21 +249,22 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		realm.CanUseSystemEmailConfig = form.CanUseSystemEmailConfig
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			flash.Error("Failed to create realm: %v", err)
-			c.renderEditRealm(ctx, w, realm, smsConfig, emailConfig, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
 		flash.Alert("Successfully updated realm %q", realm.Name)
-		http.Redirect(w, r, "/admin/realms", http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/admin/realms/%d/edit", realm.ID), http.StatusSeeOther)
 	})
 }
 
 func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
-	realm *database.Realm, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig,
+	realm *database.Realm, membership *database.Membership, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig,
 	quotaLimit, quotaRemaining uint64) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm: %s - System Admin", realm.Name)
 	m["realm"] = realm
+	m["membership"] = membership
 	m["systemSMSConfig"] = smsConfig
 	m["systemEmailConfig"] = emailConfig
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
@@ -282,18 +303,12 @@ func (c *Controller) HandleRealmsAdd() http.Handler {
 			return
 		}
 
-		user.Realms = append(user.Realms, realm)
-		user.AdminRealms = append(user.AdminRealms, realm)
-
-		// Save the user
-		if err := c.db.SaveUser(user, currentUser); err != nil {
-			flash.Error("Failed to add %q to %q: %v", user.Name, realm.Name, err)
+		// Add the user to the realm.
+		if err := user.AddToRealm(c.db, realm, rbac.LegacyRealmAdmin, currentUser); err != nil {
+			flash.Error("Failed to add %s to %s: %s", user.Name, realm.Name, err)
 			controller.Back(w, r, c.h)
 			return
 		}
-
-		// Store the current realm on the session.
-		controller.StoreSessionRealm(session, realm)
 
 		flash.Alert("Successfully added %q to %q", user.Name, realm.Name)
 		controller.Back(w, r, c.h)
@@ -331,7 +346,12 @@ func (c *Controller) HandleRealmsRemove() http.Handler {
 			return
 		}
 
-		user.RemoveRealm(realm)
+		// Delete the user from the realm.
+		if err := user.DeleteFromRealm(c.db, realm, currentUser); err != nil {
+			flash.Error("Failed to add %s to %s: %s", user.Name, realm.Name, err)
+			controller.Back(w, r, c.h)
+			return
+		}
 
 		// Save the user
 		if err := c.db.SaveUser(user, currentUser); err != nil {
@@ -340,51 +360,10 @@ func (c *Controller) HandleRealmsRemove() http.Handler {
 			return
 		}
 
-		// If the currently-selected realm is the realm the admin just left, clear
-		// it.
-		if controller.RealmIDFromSession(session) == realm.ID {
-			controller.ClearSessionRealm(session)
-		}
+		// Clear realm selection from session.
+		controller.ClearSessionRealm(session)
+
 		flash.Alert("Successfully removed %q from %q", user.Name, realm.Name)
-		controller.Back(w, r, c.h)
-		return
-	})
-}
-
-func (c *Controller) HandleRealmsSelectAndAdmin() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		vars := mux.Vars(r)
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-		flash := controller.Flash(session)
-
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
-
-		realm, err := c.db.FindRealm(vars["id"])
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		if currentUser.CanAdminRealm(realm.ID) {
-			currentRealm := controller.RealmFromContext(ctx)
-			if currentRealm == nil || currentRealm.ID != realm.ID {
-				flash.Alert("Realm %q selected.", realm.Name)
-				controller.StoreSessionRealm(session, realm)
-			}
-			http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
-		}
-
-		flash.Error("User is not admin of %q", realm.Name)
 		controller.Back(w, r, c.h)
 		return
 	})

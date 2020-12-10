@@ -51,9 +51,24 @@ func New(
 	}
 }
 
-func (c *Controller) findUser(currentUser *database.User, realm *database.Realm, id interface{}) (*database.User, error) {
+func (c *Controller) findUser(currentUser *database.User, realm *database.Realm, id interface{}) (*database.User, *database.Membership, error) {
+	var user *database.User
+	var err error
+
+	// Look up the user.
 	if currentUser.SystemAdmin {
-		return c.db.FindUser(id)
+		user, err = c.db.FindUser(id)
+	} else {
+		user, err = realm.FindUser(c.db, id)
 	}
-	return realm.FindUser(c.db, id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	membership, err := user.FindMembership(c.db, realm.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return user, membership, nil
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 const (
@@ -32,11 +33,17 @@ func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
+		if !membership.Can(rbac.MobileAppRead) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		currentRealm := membership.Realm
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
@@ -49,7 +56,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		scopes = append(scopes, database.WithMobileAppSearch(q))
 
 		// Perform the lazy load on authorized apps for the realm.
-		apps, paginator, err := realm.ListMobileApps(c.db, pageParams, scopes...)
+		apps, paginator, err := currentRealm.ListMobileApps(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

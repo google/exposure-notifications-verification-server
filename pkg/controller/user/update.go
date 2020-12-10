@@ -16,18 +16,20 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
 )
 
 func (c *Controller) HandleUpdate() http.Handler {
 	type FormData struct {
-		Name  string `form:"name"`
-		Admin bool   `form:"admin"`
+		Name        string            `form:"name"`
+		Admin       bool              `form:"admin"`
+		Permissions []rbac.Permission `form:"permissions"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,19 +43,20 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.UserWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
-		user, err := c.findUser(currentUser, realm, vars["id"])
+		user, userMembership, err := c.findUser(currentUser, currentRealm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -66,55 +69,50 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderEdit(ctx, w, user)
+			c.renderEdit(ctx, w, user, userMembership)
 			return
 		}
 
 		var form FormData
-		err = controller.BindForm(w, r, &form)
-
-		// Build the user struct
-		user.Name = form.Name
-		if err != nil {
-			if terr, ok := err.(schema.MultiError); ok {
-				for k, err := range terr {
-					user.AddError(k, err.Error())
-				}
-			}
-
-			flash.Error("Failed to process form: %v", err)
-			c.renderEdit(ctx, w, user)
+		if err := controller.BindForm(w, r, &form); err != nil {
+			flash.Error("failed to process form: %v", err)
+			c.renderEdit(ctx, w, user, userMembership)
 			return
 		}
 
-		// Manage realm admin permissions.
-		if form.Admin {
-			user.AddRealmAdmin(realm)
-		} else {
-			user.RemoveRealmAdmin(realm)
-		}
-
+		// Update user properties.
+		user.Name = form.Name
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to update user: %v", err)
-			c.renderUpdate(ctx, w, user)
+			c.renderEdit(ctx, w, user, userMembership)
 			return
+		}
+
+		// Update membership properties, iff the target user differs
+		if currentUser.ID != user.ID {
+			permission, err := rbac.CompileAndAuthorize(membership.Permissions, form.Permissions)
+			if err != nil {
+				flash.Error("Failed to update user permissions: %s", err)
+				c.renderEdit(ctx, w, user, userMembership)
+				return
+			}
+			if err := user.AddToRealm(c.db, currentRealm, permission, currentUser); err != nil {
+				flash.Error("Failed to update user in realm: %v", err)
+				c.renderEdit(ctx, w, user, membership)
+				return
+			}
 		}
 
 		flash.Alert("Successfully updated user '%v'", form.Name)
-		http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/realm/users/%d", user.ID), http.StatusSeeOther)
 	})
 }
 
-func (c *Controller) renderUpdate(ctx context.Context, w http.ResponseWriter, user *database.User) {
-	m := controller.TemplateMapFromContext(ctx)
-	m.Title("New user")
-	m["user"] = user
-	c.h.RenderHTML(w, "users/new", m)
-}
-
-func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user *database.User) {
+func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user *database.User, membership *database.Membership) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Edit user: %s", user.Name)
 	m["user"] = user
+	m["userMembership"] = membership
+	m["permissions"] = rbac.PermissionMap()
 	c.h.RenderHTML(w, "users/edit", m)
 }

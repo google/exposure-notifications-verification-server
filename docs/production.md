@@ -10,7 +10,7 @@ This page includes helpful tips for configuring things in production.
 - [Rotating secrets](#rotating-secrets)
 - [SMS with Twilio](#sms-with-twilio)
 - [Identity Platform setup](#identity-platform-setup)
-- [End-to-end test runner setup](#End-to-end-test-runner)
+- [End-to-end test runner](#end-to-end-test-runner)
 - [Architecture](#architecture)
 
 <!-- /TOC -->
@@ -104,7 +104,7 @@ configurations are available:
 
 ## User administration
 
-There are three types of "users" for the system:
+There are two types of "users" for the system:
 
 -   **System administrator** - global system administrators are the IT
     administrators of the system. They can create new realms and edit global
@@ -113,20 +113,12 @@ There are three types of "users" for the system:
     Typically a system administrator creates a realm, adds the initial realm
     admin, then removes themselves from the realm.
 
--   **Realm administrator** - realm administrators control the configuration of
-    one or more realms. A user may be an administrator of 0 or more realms. If a
-    user is an administrator of a realm, they have permissions to change
-    realm-specific settings including the realm name, signing keys, SMS
-    configuration, etc. To create a realm administrator, check the "Admin" box
-    in the UI for a new or existing user to promote them to a realm
-    administrator. Note that realm administration is per-realm; making a user an
-    admin of "Realm 1" does not make them an admin of "Realm 2".
-
--   **User** - users have the ability to generate and lookup the status of
-    codes. A user can be a member of multiple realms. To create a user, visit
-    the realm and click "Add User". If a user is a member of multiple realms (by
-    email address), they will be prompted to choose a realm after authenticating
-    to the system.
+-   **Realm users** - users have membership in 0 or more realms, and their
+    permissions in the realm determine their level of access. Most users will
+    only have permission to issue codes. However, some users will have control
+    over administering the realm, viewing statistics, inviting other realm
+    users, or updating realm settings. See the [realm admininistration
+    guide](realm-admin-guide.md) for more information.
 
 When bootstrapping a new system, a default system administrator with the email
 address "super@example.com" is created in the database. This user is **NOT**
@@ -457,7 +449,7 @@ Set the name, issuer, audience and JWKS URI in the configuration.
 
 Navigate back to the admin console home, and then click back into the
 newly created verification key config. Refresh this page until the JWKS
-importer has picked up the public key. 
+importer has picked up the public key.
 
 When that is ready, navigate back to the admin console home and create
 a new authorized health authority.

@@ -1,9 +1,13 @@
 {{define "users/index"}}
 
 {{$csrfField := .csrfField}}
-{{$currentUser := .currentUser}}
-{{$currentRealm := .currentRealm}}
-{{$users := .users}}
+{{$memberships := .memberships}}
+
+{{$currentMembership := .currentMembership}}
+{{$canWrite := false}}
+{{if $currentMembership.Can rbac.UserWrite}}
+  {{$canWrite = true}}
+{{end}}
 
 <!doctype html>
 <html lang="en">
@@ -18,16 +22,18 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <div class="card mt-4 mb-3">
+    <div class="card shadow-sm mt-4 mb-3">
       <div class="card-header">
         <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
         Users
-        <a href="/realm/users/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New user">
-          <span class="oi oi-plus small" aria-hidden="true"></span>
-        </a>
-        <a href="/realm/users/import" class="float-right mr-3 text-secondary" data-toggle="tooltip" title="Bulk import users">
-          <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
-        </a>
+        {{if $canWrite}}
+          <a href="/realm/users/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New user">
+            <span class="oi oi-plus small" aria-hidden="true"></span>
+          </a>
+          <a href="/realm/users/import" class="float-right mr-3 text-secondary" data-toggle="tooltip" title="Bulk import users">
+            <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
+          </a>
+        {{end}}
       </div>
 
       <div class="card-body">
@@ -45,37 +51,39 @@
         </form>
       </div>
 
-      {{if $users}}
+      {{if $memberships}}
         <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
               <th scope="col">Name</th>
               <th scope="col" width="300">Email</th>
-              <th scope="col" width="40"></th>
+              {{if $canWrite}}
+                <th scope="col" width="40"></th>
+              {{end}}
             </tr>
           </thead>
           <tbody>
-            {{range $users}}
-            <tr id="user-{{.ID}}">
+            {{range $membership := $memberships}}
+            {{$user := $membership.User}}
+            <tr id="user-{{$user.ID}}">
               <td>
-                <a href="/realm/users/{{.ID}}">{{.Name}}</a>
-                {{if .CanAdminRealm $currentRealm.ID}}
-                  <span class="ml-1 badge badge-pill badge-primary">Admin</span>
-                {{end}}
+                <a href="/realm/users/{{$user.ID}}">{{$user.Name}}</a>
               </td>
               <td>
-                {{.Email}}
+                {{$user.Email}}
               </td>
-              <td class="text-center">
-                {{if not (eq .ID $currentUser.ID)}}
-                {{- /* cannot delete yourself */ -}}
-                <a href="/realm/users/{{.ID}}" class="d-block text-danger" data-method="DELETE"
-                  data-confirm="Are you sure you want to remove '{{.Name}}'?" data-toggle="tooltip"
-                  title="Remove this user">
-                  <span class="oi oi-trash" aria-hidden="true"></span>
-                </a>
-                {{end}}
-              </td>
+              {{if $canWrite}}
+                <td class="text-center">
+                  {{if not (eq $membership.UserID $currentMembership.UserID)}}
+                  {{- /* cannot delete yourself */ -}}
+                  <a href="/realm/users/{{$user.ID}}" class="d-block text-danger" data-method="DELETE"
+                    data-confirm="Are you sure you want to remove '{{$user.Name}}'?" data-toggle="tooltip"
+                    title="Remove this user">
+                    <span class="oi oi-trash" aria-hidden="true"></span>
+                  </a>
+                  {{end}}
+                </td>
+              {{end}}
             </tr>
             {{end}}
           </tbody>

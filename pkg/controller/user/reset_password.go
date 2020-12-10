@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
@@ -34,14 +35,20 @@ func (c *Controller) HandleResetPassword() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.UserWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
+		currentRealm := membership.Realm
+
 		// Pull the user from the id.
-		user, err := realm.FindUser(c.db, vars["id"])
+		user, err := currentRealm.FindUser(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)

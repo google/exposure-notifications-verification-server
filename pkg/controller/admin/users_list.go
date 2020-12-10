@@ -38,8 +38,6 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 		var scopes []database.Scope
 		filter := strings.TrimSpace(r.FormValue("filter"))
 		switch filter {
-		case "realmAdmins":
-			scopes = append(scopes, database.OnlyRealmAdmins())
 		case "systemAdmins":
 			scopes = append(scopes, database.OnlySystemAdmins())
 		default:
@@ -82,9 +80,16 @@ func (c *Controller) HandleUserShow() http.Handler {
 			return
 		}
 
+		memberships, err := user.ListMemberships(c.db)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		m.Title("User: %s - System Admin", user.Name)
 		m["user"] = user
+		m["memberships"] = memberships
 		c.h.RenderHTML(w, "admin/users/show", m)
 	})
 }
