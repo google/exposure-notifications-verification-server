@@ -33,6 +33,7 @@ type IOSData struct {
 }
 
 type Applinks struct {
+	Apps    []string `json:"apps"`
 	Details []Detail `json:"details,omitempty"`
 }
 
@@ -84,6 +85,7 @@ func (c *Controller) getIosData(region string) (*IOSData, error) {
 
 	return &IOSData{
 		Applinks: Applinks{
+			Apps:    []string{}, // expected always empty.
 			Details: details,
 		},
 	}, nil
