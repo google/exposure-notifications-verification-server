@@ -265,13 +265,13 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 				}
 
 				logger.Errorw("failed to send sms", "error", err)
-				result.obsBlame = observability.BlameServer
+				result.obsBlame = observability.BlameClient
 				result.obsResult = observability.ResultError("FAILED_TO_SEND_SMS")
 				return err
 			}
 			return nil
 		}(); err != nil {
-			result.httpCode = http.StatusInternalServerError
+			result.httpCode = http.StatusBadRequest
 			result.errorReturn = api.Errorf("failed to send sms: %s", err)
 			return result, nil
 		}
