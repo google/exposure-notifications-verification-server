@@ -2,6 +2,28 @@ displayName: Verification Server
 gridLayout:
   columns: "2"
   widgets:
+    - title: SLO
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        thresholds:
+            - label: SLO Goal
+              value: 0.995
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                https_lb_rule::
+                loadbalancing.googleapis.com/https/request_count
+                | filter resource.backend_name = "apiserver"
+                | {
+                    filter metric.response_code_class = 200
+                    ;
+                    filter metric.response_code_class = 200 || metric.response_code_class = 500
+                }
+                | group_by [resource.backend_name]
+                | outer_join 0
+                | div
     - title: Cloud Run Revision - Request Count (grouped) [SUM]
       xyChart:
         chartOptions:
