@@ -33,7 +33,7 @@ type IOSData struct {
 }
 
 type Applinks struct {
-	Apps    []string `json:"details"`
+	Apps    []string `json:"apps"`
 	Details []Detail `json:"details,omitempty"`
 }
 
