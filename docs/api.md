@@ -205,7 +205,8 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
 * `tzOffset`
   * Offset in minutes of the user's timezone. Positive, negative, 0, or omitted (using the default of 0) are all valid. 0 is considered to be UTC.
 * `phone`
-  * Phone number to send the SMS too
+  * Phone number to send the SMS to. If a phone number is provided, but the SMS text
+    message fails to send, the API will return a 4xx client error.
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
   number of base64-encoded bytes into this field. The server does not process
