@@ -1,0 +1,142 @@
+msgid ""
+msgstr ""
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#
+# navigation menus
+# ----------------
+
+msgid "nav.issue-code"
+msgstr "Code erstellen"
+
+msgid "nav.bulk-issue-codes"
+msgstr "Codes im Block erstellen"
+
+msgid "nav.check-code-status"
+msgstr "Code Status abfragen"
+
+msgid "nav.api-keys"
+msgstr "API Schlüssel"
+
+msgid "nav.mobile-apps"
+msgstr "Mobile Anwendung"
+
+msgid "nav.event-log"
+msgstr "Event Protokoll"
+
+msgid "nav.signing-keys"
+msgstr "Signaturschlüssel"
+
+msgid "nav.statistics"
+msgstr "Statistiken"
+
+msgid "nav.users"
+msgstr "Anwender"
+
+msgid "nav.settings"
+msgstr "Einstellungen"
+
+msgid "nav.change-realm"
+msgstr "Bezirk wechseln"
+
+msgid "nav.select-realm"
+msgstr "Bezirk auswählen"
+
+msgid "nav.system-admin"
+msgstr "System Administrator"
+
+msgid "nav.my-account"
+msgstr "Mein Account"
+
+msgid "nav.sign-out"
+msgstr "Ausloggen"
+
+
+#
+# issue code
+# ----------
+
+msgid "codes.issue.header"
+msgstr "Verifizierungscode erstellen"
+
+msgid "codes.issue.instructions"
+msgstr "Bitte füllen Sie das folgende Formular aus, um einen Einweg-Token zum Verifizieren eines Patienten zu erstellen. Dieses Formular erst absenden, wenn Sie den Einweg-Token dem Patienten mitteilen können."
+
+msgid "codes.issue.diagnosis-header"
+msgstr "Diagnose"
+
+msgid "codes.issue.dates-header"
+msgstr "Zeiten"
+
+msgid "codes.issue.confirmed-test"
+msgstr "Positiver Test"
+
+msgid "codes.issue.confirmed-test-details"
+msgstr "Bestätigter positiver Labortest"
+
+msgid "codes.issue.likely-test"
+msgstr "Voraussichtliche Diagnose"
+
+msgid "codes.issue.likely-test-details"
+msgstr "Ärztliche Diagnose ohne Test"
+
+msgid "codes.issue.negative-test"
+msgstr "Negativer Test"
+
+msgid "codes.issue.negative-test-details"
+msgstr "Bestätigter negativer Labortest"
+
+msgid "codes.issue.testing-date-label"
+msgstr "Datum Test"
+
+msgid "codes.issue.symptoms-date-label"
+msgstr "Datum erster Symptome"
+
+msgid "codes.issue.sms-text-message-header"
+msgstr "SMS Textnachricht (empfohlen)"
+
+msgid "codes.issue.sms-text-message-label"
+msgstr "Patienten Telefonnummer"
+
+msgid "codes.issue.sms-text-message-detail"
+msgstr "Das System sendet dem Patienten eine Textnachricht mit dem Verifizierungscode. Die eingetragene Telefonnummer muss Textnachrichten erhalten können."
+
+msgid "codes.issue.create-code-button"
+msgstr "Verifikationscode erstellen"
+
+msgid "codes.issue.reset-code-button"
+msgstr "Verwerfen und Zurück"
+
+msgid "codes.issue.sms-verification-link-header"
+msgstr "SMS Verifikation"
+
+msgid "codes.issue.sms-verification-detail"
+msgstr "Textnachricht erfolgreich an %s versendet. Bitte fragen Sie den Patienten den Erhalt zu überprüfen."
+
+msgid "codes.issue.backup-short-code-header"
+msgstr "Ersatzbestätigungscode"
+
+msgid "codes.issue.backup-short-code-detail"
+msgstr "Bitte teilen Sie dem Patienten diesen Ersatzbestätigungscode mit, wenn der Erhalt der Textnachricht nicht bestätigt werden konnte."
+
+msgid "codes.issue.generated-short-code-header"
+msgstr "Bestätigungscode erstellen"
+
+msgid "codes.issue.generated-short-code-detail"
+msgstr "Bitte teilen Sie diesen Bestätigungscode dem Patienten unmittelbar mit."
+
+msgid "codes.issue.uuid-header"
+msgstr "Eindeutiger Zuordnungsschlüsssel"
+
+msgid "codes.issue.uuid-detail"
+msgstr "Benutzen Sie den Zuordnungsschlüsssel um zu überprüfen ob der Verifizierungscode eingelöst wurde."
+
+msgid "codes.issue.countdown-expires-in"
+msgstr "Verfällt in"
+
+msgid "codes.issue.countdown-expired"
+msgstr "Verfallen"
