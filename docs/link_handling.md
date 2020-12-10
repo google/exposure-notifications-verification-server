@@ -48,7 +48,7 @@ Sample iOS universal link metadata
 	"applinks": {
 		"details": [
 			{
-				"appID": "com.google.test.application",
+				"appID": "ABCD1234.com.google.test.application",
 				"paths": ["*"]
 			}
 		]
