@@ -219,3 +219,89 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestRealm_SMSConfig(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm := NewRealmWithDefaults("test")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("error saving realm: %v", err)
+	}
+
+	// Initial realm should have no config
+	if _, err := realm.SMSConfig(db); err == nil {
+		t.Fatalf("expected error")
+	}
+
+	// Create config
+	if err := db.SaveSMSConfig(&SMSConfig{
+		RealmID:          realm.ID,
+		TwilioAccountSid: "sid",
+		TwilioAuthToken:  "token",
+		TwilioFromNumber: "111-111-1111",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		// Now the realm should have a config
+		smsConfig, err := realm.SMSConfig(db)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := smsConfig.TwilioAccountSid, "sid"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := smsConfig.TwilioAuthToken, "token"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := smsConfig.TwilioFromNumber, "111-111-1111"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+	}
+
+	// Create system config
+	if err := db.SaveSMSConfig(&SMSConfig{
+		TwilioAccountSid: "system-sid",
+		TwilioAuthToken:  "system-token",
+		IsSystem:         true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create from number
+	smsFromNumber := &SMSFromNumber{
+		Label: "Default",
+		Value: "222-222-2222",
+	}
+	if err := db.CreateOrUpdateSMSFromNumbers([]*SMSFromNumber{smsFromNumber}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Update to use system config
+	realm.CanUseSystemSMSConfig = true
+	realm.UseSystemSMSConfig = true
+	realm.SMSFromNumberID = smsFromNumber.ID
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	// The realm should use the system config.
+	{
+		smsConfig, err := realm.SMSConfig(db)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := smsConfig.TwilioAccountSid, "system-sid"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := smsConfig.TwilioAuthToken, "system-token"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := smsConfig.TwilioFromNumber, "222-222-2222"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+	}
+}

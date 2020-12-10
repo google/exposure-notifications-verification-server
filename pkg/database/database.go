@@ -618,6 +618,22 @@ func float64Diff(old, new float64) string {
 	return stringDiff(strconv.FormatFloat(old, 'f', 4, 64), strconv.FormatFloat(new, 'f', 4, 64))
 }
 
+// uintValue gets the value of the uint pointer, returning 0 for nil.
+func uintValue(v *uint) uint {
+	if v == nil {
+		return 0
+	}
+	return *v
+}
+
+// uintPtr converts the uint value to a pointer, returning nil for 0.
+func uintPtr(v uint) *uint {
+	if v == 0 {
+		return nil
+	}
+	return &v
+}
+
 func uintDiff(old, new uint) string {
 	return stringDiff(strconv.FormatUint(uint64(old), 10), strconv.FormatUint(uint64(new), 10))
 }

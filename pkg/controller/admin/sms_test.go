@@ -71,7 +71,8 @@ func TestShowAdminSMS(t *testing.T) {
 
 	wantAccountSid := "abc123"
 	wantAuthToken := "def456"
-	wantFromNumber := "+11234567890"
+	wantFromNumber1 := "+11234567890"
+	wantFromNumber2 := "+99999999999"
 
 	if err := chromedp.Run(taskCtx,
 		// Pre-authenticate the user.
@@ -80,13 +81,24 @@ func TestShowAdminSMS(t *testing.T) {
 		// Visit /admin
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/sms`),
 
-		// Wait for render.
+		// Wait for render
 		chromedp.WaitVisible(`body#admin-sms-show`, chromedp.ByQuery),
 
-		// Set fields and submit
+		// Set fields
 		chromedp.SetValue(`input#twilio-account-sid`, wantAccountSid, chromedp.ByQuery),
 		chromedp.SetValue(`input#twilio-auth-token`, wantAuthToken, chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number`, wantFromNumber, chromedp.ByQuery),
+
+		// From number 1
+		chromedp.Click(`a#add-phone-number`, chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number-0-label`, "aaa", chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number-0-value`, wantFromNumber1, chromedp.ByQuery),
+
+		// From number 2
+		chromedp.Click(`a#add-phone-number`, chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number-1-label`, "zzz", chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number-1-value`, wantFromNumber2, chromedp.ByQuery),
+
+		// Submit form
 		chromedp.Submit(`form#sms-form`, chromedp.ByQuery),
 
 		// Wait for render.
@@ -106,7 +118,29 @@ func TestShowAdminSMS(t *testing.T) {
 	if systemSMSConfig.TwilioAuthToken != wantAuthToken {
 		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAuthToken, wantAuthToken)
 	}
-	if systemSMSConfig.TwilioFromNumber != wantFromNumber {
-		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioFromNumber, wantFromNumber)
+
+	smsFromNumbers, err := harness.Database.SMSFromNumbers()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := len(smsFromNumbers), 2; got != want {
+		t.Fatalf("expected %d to be %d", got, want)
+	}
+
+	aaa := smsFromNumbers[0]
+	if got, want := aaa.Label, "aaa"; got != want {
+		t.Errorf("expected %q to be %q", got, want)
+	}
+	if got, want := aaa.Value, wantFromNumber1; got != want {
+		t.Errorf("expected %q to be %q", got, want)
+	}
+
+	zzz := smsFromNumbers[1]
+	if got, want := zzz.Label, "zzz"; got != want {
+		t.Errorf("expected %q to be %q", got, want)
+	}
+	if got, want := zzz.Value, wantFromNumber2; got != want {
+		t.Errorf("expected %q to be %q", got, want)
 	}
 }

@@ -66,6 +66,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		SMS                bool   `form:"sms"`
 		UseSystemSMSConfig bool   `form:"use_system_sms_config"`
 		SMSCountry         string `form:"sms_country"`
+		SMSFromNumberID    uint   `form:"sms_from_number_id"`
 		TwilioAccountSid   string `form:"twilio_account_sid"`
 		TwilioAuthToken    string `form:"twilio_auth_token"`
 		TwilioFromNumber   string `form:"twilio_from_number"`
@@ -170,6 +171,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		if form.SMS {
 			realm.UseSystemSMSConfig = form.UseSystemSMSConfig
 			realm.SMSCountry = form.SMSCountry
+			realm.SMSFromNumberID = form.SMSFromNumberID
 		}
 
 		// Email
@@ -393,6 +395,13 @@ func (c *Controller) renderSettings(
 		}
 	}
 
+	// Look up the sms from numbers.
+	smsFromNumbers, err := c.db.SMSFromNumbers()
+	if err != nil {
+		controller.InternalError(w, r, c.h, err)
+		return
+	}
+
 	// Don't pass through the system config to the template - we don't want to
 	// risk accidentally rendering its ID or values since the realm should never
 	// see these values. However, we have to go lookup the actual SMS config
@@ -434,6 +443,7 @@ func (c *Controller) renderSettings(
 	m.Title("Realm settings")
 	m["realm"] = realm
 	m["smsConfig"] = smsConfig
+	m["smsFromNumbers"] = smsFromNumbers
 	m["emailConfig"] = emailConfig
 	m["countries"] = database.Countries
 	m["testTypes"] = map[string]database.TestType{
