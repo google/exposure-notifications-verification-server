@@ -78,6 +78,7 @@ func (c *Controller) getIosData(realmID uint) (*IOSData, error) {
 
 	return &IOSData{
 		Applinks: Applinks{
+			Apps:    []string{}, // expected always empty.
 			Details: details,
 		},
 	}, nil
