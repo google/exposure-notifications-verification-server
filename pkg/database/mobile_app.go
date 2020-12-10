@@ -69,7 +69,7 @@ type MobileApp struct {
 	// AppID is a unique string representing the app.
 	//
 	// For iOS this should include the team ID or app ID prefix followed by
-	// the bundle ID. eg. ABCD1234.com.apple.wwdc
+	// the bundle ID. eg. ABCD1234.com.google.test.application
 	AppID string `gorm:"column:app_id; type:varchar(512);"`
 
 	// SHA is a unique hash of the app.
