@@ -18,6 +18,8 @@ package render
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	htmltemplate "html/template"
 	"os"
@@ -188,6 +190,8 @@ func templateFuncs() htmltemplate.FuncMap {
 		"stringContains":   strings.Contains,
 		"toLower":          strings.ToLower,
 		"toUpper":          strings.ToUpper,
+		"toJSON":           json.Marshal,
+		"toBase64":         base64.StdEncoding.EncodeToString,
 		"safeHTML":         safeHTML,
 		"selectedIf":       selectedIf,
 		"readonlyIf":       readonlyIf,

@@ -2,6 +2,7 @@
 
 {{$realm := .realm}}
 {{$smsConfig := .smsConfig}}
+{{$smsFromNumbers := .smsFromNumbers}}
 {{$countries := .countries}}
 
 <p class="mb-4">
@@ -25,14 +26,14 @@
 
     <div class="form-group form-check">
       <input type="checkbox" name="use_system_sms_config" id="use-system-sms-config" class="form-check-input" value="1" {{if $realm.UseSystemSMSConfig}} checked{{end}}
-        data-toggle="collapse" data-target="#sms-form">
+        data-toggle="collapse" data-target=".sms-system-form">
       <label class="form-check-label" for="use-system-sms-config">
         Use system SMS configuration
       </label>
     </div>
   {{end}}
 
-  <div id="sms-form" class="collapse{{if not $realm.UseSystemSMSConfig}} show{{end}}">
+  <div class="sms-system-form collapse{{if not $realm.UseSystemSMSConfig}} show{{end}}">
     <div class="form-label-group">
       <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAccountSid"}} is-invalid{{end}}"
         placeholder="Twilio account" {{if $smsConfig.TwilioAccountSid}}value="{{$smsConfig.TwilioAccountSid}}"{{end}} />
@@ -67,8 +68,34 @@
     </div>
   </div>
 
+  <div class="sms-system-form collapse{{if $realm.UseSystemSMSConfig}} show{{end}}">
+    <div class="form-label-group">
+      <select name="sms_from_number_id" id="sms-from-number-id" class="form-control custom-select {{if $realm.ErrorsFor "smsFromNumber"}}is-invalid{{end}}">
+        <option selected disabled>From number</option>
+        {{range $smsFromNumber := $smsFromNumbers}}
+          <option value="{{$smsFromNumber.ID}}" {{selectedIf (eq $realm.SMSFromNumberID $smsFromNumber.ID)}}>{{$smsFromNumber.Label}} &nbsp;&bull;&nbsp; {{$smsFromNumber.Value}}</option>
+        {{end}}
+      </select>
+      {{template "errorable" $realm.ErrorsFor "smsFromNumber"}}
+      <small class="form-text text-muted">
+        <p>
+          This is the phone number from which text messages will originate.
+          Since you are using the system SMS configuration, you must choose one
+          of these numbers. To request a new number, contact your system
+          administrator.
+        </p>
+        <p>
+          <strong>Warning!</strong> These phone numbers may be changed if they
+          are reported as spam or repeatedly failing to deliver. The phone
+          number will always correspond to your region, but do not rely on this
+          exact phone number.
+        </p>
+      </small>
+    </div>
+  </div>
+
   <div class="form-label-group">
-    <select name="sms_country" id="sms_country" class="form-control custom-select">
+    <select name="sms_country" id="sms-country" class="form-control custom-select">
       <option selected disabled>SMS country</option>
       {{range $name, $value := $countries}}
         <option value="{{$value}}"{{if eq $realm.SMSCountry $value}} selected{{end}}>{{$name}}</option>

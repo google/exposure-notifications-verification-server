@@ -109,6 +109,21 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("created realm", "realm", realm2)
 
+	// Create some system sms from numbers
+	if err := db.CreateOrUpdateSMSFromNumbers([]*database.SMSFromNumber{
+		{
+			Label: "USA",
+			Value: "111-111-1111",
+		},
+		{
+			Label: "Mexico",
+			Value: "55-1234-5678",
+		},
+	}); err != nil {
+		return fmt.Errorf("failed to create sms from numbers: %w", err)
+	}
+	logger.Infow("created sms from numbers")
+
 	// Create users
 	user := &database.User{Email: "user@example.com", Name: "Demo User"}
 	if _, err := db.FindUserByEmail(user.Email); database.IsNotFound(err) {

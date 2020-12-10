@@ -26,10 +26,17 @@ import (
 
 // HandleSMSUpdate creates or updates the SMS config.
 func (c *Controller) HandleSMSUpdate() http.Handler {
+	type FormDataFromNumber struct {
+		ID    uint   `form:"id"`
+		Label string `form:"label,required"`
+		Value string `form:"value,required"`
+	}
+
 	type FormData struct {
 		TwilioAccountSid string `form:"twilio_account_sid"`
 		TwilioAuthToken  string `form:"twilio_auth_token"`
-		TwilioFromNumber string `form:"twilio_from_number"`
+
+		TwilioFromNumbers []*FormDataFromNumber `form:"twilio_from_numbers"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,29 +59,56 @@ func (c *Controller) HandleSMSUpdate() http.Handler {
 			smsConfig.IsSystem = true
 		}
 
+		smsFromNumbers, err := c.db.SMSFromNumbers()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderShowSMS(ctx, w, smsConfig)
+			c.renderShowSMS(ctx, w, smsConfig, smsFromNumbers)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShowSMS(ctx, w, smsConfig)
+			c.renderShowSMS(ctx, w, smsConfig, smsFromNumbers)
 			return
 		}
 
-		// Update
+		// Update Twilio config
 		smsConfig.ProviderType = sms.ProviderTypeTwilio
 		smsConfig.TwilioAccountSid = form.TwilioAccountSid
 		if form.TwilioAuthToken != project.PasswordSentinel {
 			smsConfig.TwilioAuthToken = form.TwilioAuthToken
 		}
-		smsConfig.TwilioFromNumber = form.TwilioFromNumber
 		if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 			flash.Error("Failed to save system SMS config: %v", err)
-			c.renderShowSMS(ctx, w, smsConfig)
+			c.renderShowSMS(ctx, w, smsConfig, smsFromNumbers)
+			return
+		}
+
+		// Update from numbers
+		updatedSMSFromNumbers := make([]*database.SMSFromNumber, 0, len(form.TwilioFromNumbers))
+		for _, v := range form.TwilioFromNumbers {
+			// People do weird things in multi-forms. Only accept the value if it's
+			// completely intact.
+			if v == nil || v.Label == "" || v.Value == "" {
+				continue
+			}
+
+			var smsFromNumber database.SMSFromNumber
+			smsFromNumber.ID = v.ID
+			smsFromNumber.Label = v.Label
+			smsFromNumber.Value = v.Value
+			updatedSMSFromNumbers = append(updatedSMSFromNumbers, &smsFromNumber)
+		}
+
+		if err := c.db.CreateOrUpdateSMSFromNumbers(updatedSMSFromNumbers); err != nil {
+			flash.Error("Failed to save system SMS from numbers: %s", err)
+			c.renderShowSMS(ctx, w, smsConfig, smsFromNumbers)
 			return
 		}
 
@@ -83,9 +117,11 @@ func (c *Controller) HandleSMSUpdate() http.Handler {
 	})
 }
 
-func (c *Controller) renderShowSMS(ctx context.Context, w http.ResponseWriter, smsConfig *database.SMSConfig) {
+func (c *Controller) renderShowSMS(ctx context.Context, w http.ResponseWriter,
+	smsConfig *database.SMSConfig, smsFromNumbers []*database.SMSFromNumber) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("SMS - System Admin")
 	m["smsConfig"] = smsConfig
+	m["smsFromNumbers"] = smsFromNumbers
 	c.h.RenderHTML(w, "admin/sms/show", m)
 }

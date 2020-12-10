@@ -50,6 +50,23 @@ func TestHandleSettings_SMS(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Create a system configuration.
+	if err := harness.Database.SaveSMSConfig(&database.SMSConfig{
+		TwilioAccountSid: "sid",
+		TwilioAuthToken:  "token",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a system phone number.
+	smsFromNumber := &database.SMSFromNumber{
+		Label: "Default",
+		Value: "+111-111-1111",
+	}
+	if err := harness.Database.CreateOrUpdateSMSFromNumbers([]*database.SMSFromNumber{smsFromNumber}); err != nil {
+		t.Fatal(err)
+	}
+
 	// Log in the user.
 	session, err := harness.LoggedInSession(nil, admin.Email)
 	if err != nil {
@@ -208,5 +225,55 @@ func TestHandleSettings_SMS(t *testing.T) {
 	// Check database again
 	if _, err := realm.SMSConfig(harness.Database); !database.IsNotFound(err) {
 		t.Fatal("expected smsConfig to be deleted")
+	}
+
+	// Update realm to be allowed to use the system config.
+	realm.CanUseSystemSMSConfig = true
+	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	// Update to use system config
+	if err := chromedp.Run(taskCtx,
+		// Pre-authenticate the user.
+		browser.SetCookie(cookie),
+
+		// Visit page.
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/settings#sms`),
+
+		// Wait for render.
+		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
+
+		// Fill out the form.
+		chromedp.Click(`input#use-system-sms-config`, chromedp.ByQuery),
+		chromedp.SendKeys(`select#sms-from-number-id`, `Default`),
+		chromedp.SendKeys(`select#sms-country`, `Mexico`),
+
+		// Click submit.
+		chromedp.Click(`input#update-sms`, chromedp.ByQuery),
+
+		// Wait for the page to reload.
+		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		realm, err := harness.Database.FindRealm(realm.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := realm.UseSystemSMSConfig, true; got != want {
+			t.Errorf("expected %t to be %t", got, want)
+		}
+
+		if got, want := realm.SMSFromNumberID, smsFromNumber.ID; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+
+		if got, want := realm.SMSCountry, "mx"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
 	}
 }
