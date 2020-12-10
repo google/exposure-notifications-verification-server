@@ -34,7 +34,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
       | align delta(1m)
       | every 1m
       | group_by [resource.backend_target_name], [val: percentile(value.backend_latencies, 99)]
-      | condition val > 2000 'ms'
+      | condition val > 2 's'
       EOT
       trigger {
         count = 1
@@ -73,7 +73,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
       | group_by [metric.step, metric.test_type], [val: sum(value.request_count)]
       | ratio
       | window 1m
-      | condition ratio > 0.1
+      | condition ratio > 10 '%'
       EOT
       trigger {
         count = 1
@@ -143,7 +143,7 @@ resource "google_monitoring_alert_policy" "probers" {
       | align next_older(1m)
       | every 1m
       | group_by [resource.host], [val: fraction_true(value.check_passed)]
-      | condition val < 0.2 '10^2.%'
+      | condition val < 20 '%'
       EOT
       trigger {
         count = 1
