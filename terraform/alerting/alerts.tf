@@ -211,10 +211,8 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
       cloud_run_revision::logging.googleapis.com/user/stackdriver_export_error_count
       | align rate(1m)
       | group_by [resource.service_name], [val: sum(value.stackdriver_export_error_count)]
-      # Alert when there's more than 1 failures every two minutes
-      # 1/(2*60) = 0.017
-      # The Stackdriver exports every 2 minutes.
-      | condition val > 0.017 '1/s'
+      # Any export error for more than 5min should alert.
+      | condition val > 0
       EOT
       trigger {
         count = 1
