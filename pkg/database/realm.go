@@ -141,6 +141,7 @@ type Realm struct {
 
 	// SMS configuration
 	SMSTextTemplate           string         `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+	SMSTextAlternateLabels    pq.StringArray `gorm:"column:alternate_sms_labels; type:varchar(50)[];"`
 	SMSTextAlternateTemplates pq.StringArray `gorm:"column:alternate_sms_templates; type:text[];"`
 
 	// SMSCountry is an optional field to hint the default phone picker country
