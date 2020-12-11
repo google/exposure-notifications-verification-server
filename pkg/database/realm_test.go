@@ -215,7 +215,7 @@ func TestValidation(t *testing.T) {
 		{
 			Name: "alternate_sms_template valid",
 			Input: &Realm{
-				Name:                      "a",
+				Name:                      "b",
 				CodeLength:                6,
 				LongCodeLength:            12,
 				EnableENExpress:           false,
