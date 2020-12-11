@@ -140,7 +140,8 @@ type Realm struct {
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
 
 	// SMS configuration
-	SMSTextTemplate string `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+	SMSTextTemplate           string         `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+	SMSTextAlternateTemplates pq.StringArray `gorm:"column:alternate_sms_templates; type:text[];"`
 
 	// SMSCountry is an optional field to hint the default phone picker country
 	// code.

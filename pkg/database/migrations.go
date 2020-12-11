@@ -1801,6 +1801,16 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00075-AddAlternateSMSTemplates",
+			Migrate: func(tx *gorm.DB) error {
+				sql := `ALTER TABLE realms ADD COLUMN IF NOT EXISTS alternate_sms_templates text[]`
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE realms DROP COLUMN IF EXISTS alternate_sms_templates").Error
+			},
+		},
 	})
 }
 
