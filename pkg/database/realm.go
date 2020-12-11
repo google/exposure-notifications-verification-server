@@ -375,10 +375,6 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
-	// Check template length.
-	if l := len(r.SMSTextTemplate); l > SMSTemplateMaxLength {
-		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %v characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
-	}
 	// Check expansion length based on settings.
 	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
 	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
@@ -441,20 +437,20 @@ func (r *Realm) validateSMSTemplate(t string) {
 		if strings.Contains(t, SMSRegion) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
 		}
-		if strings.Contains(t, SMSCode) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSCode, SMSENExpressLink))
-		}
-		if strings.Contains(t, SMSExpires) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allowed for expiration", SMSExpires, SMSLongExpires))
-		}
 		if strings.Contains(t, SMSLongCode) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
 		}
+
 	} else {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
-		if c, lc := strings.Contains(t, "[code]"), strings.Contains(t, "[longcode]"); !(c || lc) || (c && lc) {
-			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
 		}
+	}
+
+	// Check template length.
+	if l := len(t); l > SMSTemplateMaxLength {
+		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %v characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
 	}
 }
 

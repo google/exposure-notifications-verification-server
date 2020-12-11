@@ -205,7 +205,7 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
   conditions {
     display_name = "Stackdriver metric export error rate"
     condition_monitoring_query_language {
-      duration = "300s"
+      duration = "900s"
       query    = <<-EOT
       fetch
       cloud_run_revision::logging.googleapis.com/user/stackdriver_export_error_count
@@ -241,7 +241,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
-  
+
   conditions {
     display_name = "Fast burn over last hour"
     condition_threshold {
@@ -294,7 +294,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
-  
+
   conditions {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
@@ -311,7 +311,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     }
   }
 
-    conditions {
+  conditions {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
