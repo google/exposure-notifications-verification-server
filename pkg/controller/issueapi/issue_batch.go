@@ -64,7 +64,9 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 
 		// Add realm so that metrics are groupable on a per-realm basis.
 		if realm := controller.RealmFromContext(ctx); !realm.AllowBulkUpload {
-			controller.Unauthorized(w, r, c.h)
+			result.obsBlame = observability.BlameClient
+			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
 			return
 		}
 
