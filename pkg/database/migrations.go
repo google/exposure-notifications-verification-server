@@ -38,7 +38,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			ID: initState,
 			Migrate: func(tx *gorm.DB) error {
 				// Create required extensions on new DB so AutoMigrate doesn't fail.
-				return tx.Exec("CREATE EXTENSION hstore").Error
+				return tx.Exec("CREATE EXTENSION IF NOT EXISTS hstore").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
