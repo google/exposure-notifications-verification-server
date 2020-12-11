@@ -51,6 +51,7 @@ func TestRealm_SMSTemplateValidation(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	valid := "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
+	label := "alternate label 1"
 
 	realm := NewRealmWithDefaults("test")
 	if err := db.SaveRealm(realm, SystemTest); err != nil {
@@ -76,16 +77,30 @@ func TestRealm_SMSTemplateValidation(t *testing.T) {
 
 	realm.errors = make(map[string][]string)
 	realm.SMSTextAlternateTemplates = []string{"No expansions. Should fail."}
-	realm.SMSTextAlternateLabels = []string{"alternate label 1"}
+	realm.SMSTextAlternateLabels = []string{label}
 	if err := db.SaveRealm(realm, SystemTest); err == nil {
 		t.Fatal("expected invalid: sms template, must contain [code] or [longcode]l")
 	}
 
 	realm.errors = make(map[string][]string)
 	realm.SMSTextAlternateTemplates = []string{valid}
-	realm.SMSTextAlternateLabels = []string{"alternate label 1"}
+	realm.SMSTextAlternateLabels = []string{label}
 	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatalf("error saving realm: %v", err)
+	}
+
+	realm, err := db.FindRealm(realm.ID)
+	if err != nil {
+		t.Fatalf("error retrieving realm: %v", err)
+	}
+	if realm.SMSTextTemplate != valid {
+		t.Fatalf("Template not set. got %s want %s.", realm.SMSTextTemplate, valid)
+	}
+	if realm.SMSTextAlternateLabels[0] != label {
+		t.Fatalf("Alternate labels not set. got %s want %s.", realm.SMSTextAlternateTemplates[0], label)
+	}
+	if realm.SMSTextAlternateTemplates[0] != valid {
+		t.Fatalf("Alternate template not set. got %s want %s.", realm.SMSTextAlternateTemplates[0], valid)
 	}
 }
 
