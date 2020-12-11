@@ -46,6 +46,49 @@ func TestSMS(t *testing.T) {
 	}
 }
 
+func TestRealm_SMSTemplateValidation(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	valid := "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
+
+	realm := NewRealmWithDefaults("test")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("error saving realm: %v", err)
+	}
+
+	realm.SMSTextTemplate = "No expansions. Should fail."
+	if err := db.SaveRealm(realm, SystemTest); err == nil {
+		t.Fatal("expected invalid: sms template, must contain [code] or [longcode]")
+	}
+
+	realm.errors = make(map[string][]string)
+	realm.SMSTextTemplate = valid
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("error saving realm: %v", err)
+	}
+
+	realm.errors = make(map[string][]string)
+	realm.SMSTextAlternateTemplates = []string{valid}
+	if err := db.SaveRealm(realm, SystemTest); err == nil {
+		t.Fatal("expected invalid: alternate SMS template must have a label")
+	}
+
+	realm.errors = make(map[string][]string)
+	realm.SMSTextAlternateTemplates = []string{"No expansions. Should fail."}
+	realm.SMSTextAlternateLabels = []string{"alternate label 1"}
+	if err := db.SaveRealm(realm, SystemTest); err == nil {
+		t.Fatal("expected invalid: sms template, must contain [code] or [longcode]l")
+	}
+
+	realm.errors = make(map[string][]string)
+	realm.SMSTextAlternateTemplates = []string{valid}
+	realm.SMSTextAlternateLabels = []string{"alternate label 1"}
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("error saving realm: %v", err)
+	}
+}
+
 func TestPerUserRealmStats(t *testing.T) {
 	t.Parallel()
 

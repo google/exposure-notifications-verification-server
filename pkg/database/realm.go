@@ -364,14 +364,13 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("longCodeDuration", "must be no more than 24 hours")
 	}
 
-	r.ValidateSMSTemplate(r.SMSTextTemplate)
+	r.validateSMSTemplate(r.SMSTextTemplate)
 	if r.SMSTextAlternateTemplates != nil {
 		if r.SMSTextAlternateLabels == nil || len(r.SMSTextAlternateLabels) != len(r.SMSTextAlternateTemplates) {
 			r.AddError("smsAlternateLabels", "every alternate SMS template must have a label")
 		}
-
 		for _, t := range r.SMSTextAlternateTemplates {
-			r.ValidateSMSTemplate(t)
+			r.validateSMSTemplate(t)
 		}
 	}
 
@@ -433,7 +432,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
-func (r *Realm) ValidateSMSTemplate(t string) {
+func (r *Realm) validateSMSTemplate(t string) {
 	if r.EnableENExpress {
 		if !strings.Contains(t, SMSENExpressLink) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
