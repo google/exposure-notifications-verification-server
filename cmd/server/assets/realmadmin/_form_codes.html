@@ -190,6 +190,21 @@
     {{end}}
   </div>
 
+  <div class="btn-grou dropright pb-2">
+    <button type="button" id="sms-template-dropdown-title" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      Default SMS template
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item active" href="#">Default SMS template</a>
+      <a class="dropdown-item" href="#">Another template</a>
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="#">New SMS template</a>
+    </div>
+  </div>
+  <div class="form-label-group">
+    <input type="form-control text-monospace" id="template-label" class="form-control" value="Default SMS template" placeholder="Template label"/>
+    <label for="sms-text-template">Template label</label>
+  </div>
   <div class="form-label-group">
     <textarea name="sms_text_template" id="sms-text-template" class="form-control text-monospace{{if $realm.ErrorsFor "SMSTextTemplate"}} is-invalid{{end}}"
       rows="5" placeholder="SMS text template">{{$realm.SMSTextTemplate}}</textarea>
@@ -204,7 +219,7 @@
       length of of the SMS message should not exceed 160 characters, or your message will need to be split
       in transit and may not be joined correctly. There are some special strings that you can use
       to substitute items.<br/>
-      
+
       If your choose to exceed 160 characters, your message will be broken up into
       individual messages of 153 characters and reconstructed at the mobile device.  The user may be
       charged for each individual message. The overall maximum length of an SMS Template is {{.maxSMSTemplate}}
