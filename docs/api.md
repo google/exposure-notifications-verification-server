@@ -267,6 +267,8 @@ Request a batch of verification codes to be issued. Accepts a list of IssueCodeR
 `codes` arrays will match each request/response pair unless a server error occurs which results in an empty `codes`
 array response.
 
+This API currently supports a limit of up 10 codes per request.
+
 **BatchIssueCodeRequest**
 
 ```json
