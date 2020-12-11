@@ -34,6 +34,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/lib/pq"
 	"github.com/russross/blackfriday/v2"
 )
@@ -140,9 +141,8 @@ type Realm struct {
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
 
 	// SMS configuration
-	SMSTextTemplate           string         `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
-	SMSTextAlternateLabels    pq.StringArray `gorm:"column:alternate_sms_labels; type:varchar(50)[];"`
-	SMSTextAlternateTemplates pq.StringArray `gorm:"column:alternate_sms_templates; type:text[];"`
+	SMSTextTemplate           string          `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+	SMSTextAlternateTemplates postgres.Hstore `gorm:"column:alternate_sms_templates; type:hstore"`
 
 	// SMSCountry is an optional field to hint the default phone picker country
 	// code.
@@ -366,11 +366,12 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 
 	r.validateSMSTemplate(r.SMSTextTemplate)
 	if r.SMSTextAlternateTemplates != nil {
-		if r.SMSTextAlternateLabels == nil || len(r.SMSTextAlternateLabels) != len(r.SMSTextAlternateTemplates) {
-			r.AddError("smsAlternateLabels", "every alternate SMS template must have a label")
-		}
-		for _, t := range r.SMSTextAlternateTemplates {
-			r.validateSMSTemplate(t)
+		for l, t := range r.SMSTextAlternateTemplates {
+			if t == nil {
+				r.AddError("SMSTextAlternateTemplates", fmt.Sprintf("no template for label %s", l))
+				continue
+			}
+			r.validateSMSTemplate(*t)
 		}
 	}
 
