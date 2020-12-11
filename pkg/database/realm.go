@@ -364,27 +364,14 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("longCodeDuration", "must be no more than 24 hours")
 	}
 
-	if r.EnableENExpress {
-		if !strings.Contains(r.SMSTextTemplate, SMSENExpressLink) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
-		}
-		if strings.Contains(r.SMSTextTemplate, SMSRegion) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
-		}
-		if strings.Contains(r.SMSTextTemplate, SMSCode) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSCode, SMSENExpressLink))
-		}
-		if strings.Contains(r.SMSTextTemplate, SMSExpires) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allowed for expiration", SMSExpires, SMSLongExpires))
-		}
-		if strings.Contains(r.SMSTextTemplate, SMSLongCode) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
+	r.ValidateSMSTemplate(r.SMSTextTemplate)
+	if r.SMSTextAlternateTemplates != nil {
+		if r.SMSTextAlternateLabels == nil || len(r.SMSTextAlternateLabels) != len(r.SMSTextAlternateTemplates) {
+			r.AddError("smsAlternateLabels", "every alternate SMS template must have a label")
 		}
 
-	} else {
-		// Check that we have exactly one of [code] or [longcode] as template substitutions.
-		if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
-			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+		for _, t := range r.SMSTextAlternateTemplates {
+			r.ValidateSMSTemplate(t)
 		}
 	}
 
@@ -444,6 +431,31 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		return fmt.Errorf("realm validation failed: %s", strings.Join(r.ErrorMessages(), ", "))
 	}
 	return nil
+}
+
+func (r *Realm) ValidateSMSTemplate(t string) {
+	if r.EnableENExpress {
+		if !strings.Contains(t, SMSENExpressLink) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
+		}
+		if strings.Contains(t, SMSRegion) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
+		}
+		if strings.Contains(t, SMSCode) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSCode, SMSENExpressLink))
+		}
+		if strings.Contains(t, SMSExpires) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allowed for expiration", SMSExpires, SMSLongExpires))
+		}
+		if strings.Contains(t, SMSLongCode) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
+		}
+	} else {
+		// Check that we have exactly one of [code] or [longcode] as template substitutions.
+		if c, lc := strings.Contains(t, "[code]"), strings.Contains(t, "[longcode]"); !(c || lc) || (c && lc) {
+			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+		}
+	}
 }
 
 // GetCodeDurationMinutes is a helper for the HTML rendering to get a round
