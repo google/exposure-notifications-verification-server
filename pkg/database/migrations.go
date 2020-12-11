@@ -1805,7 +1805,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00075-EnableExtension_hstore",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("enabling hstore extension")
 				return tx.Exec("CREATE EXTENSION IF NOT EXISTS hstore").Error
 			},
 		},
