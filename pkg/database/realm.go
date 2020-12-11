@@ -369,20 +369,14 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		if strings.Contains(r.SMSTextTemplate, SMSRegion) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
 		}
-		if strings.Contains(r.SMSTextTemplate, SMSCode) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSCode, SMSENExpressLink))
-		}
-		if strings.Contains(r.SMSTextTemplate, SMSExpires) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allowed for expiration", SMSExpires, SMSLongExpires))
-		}
 		if strings.Contains(r.SMSTextTemplate, SMSLongCode) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
 		}
 
 	} else {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
-		if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
-			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+		if c, lc := strings.Contains(r.SMSTextTemplate, SMSCode), strings.Contains(r.SMSTextTemplate, SMSLongCode); !(c || lc) || (c && lc) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
 		}
 	}
 

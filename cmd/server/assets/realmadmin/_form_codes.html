@@ -224,6 +224,8 @@
           </li>
           {{end}}
           <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
+          <li><code>[code]</code>The 'short' verification code can be optionally included here in the event the link isn't clickable for the user. Typically this is not needed.</li>
+          <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units). Should be included if <code>[code]</code> is used</li>
         </ul>
 
         Here is an example SMS template using EN Express.
