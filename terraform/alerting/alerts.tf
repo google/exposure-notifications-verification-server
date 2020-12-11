@@ -290,7 +290,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 resource "google_monitoring_alert_policy" "slow_burn" {
   project      = var.verification-server-project
   display_name = "SlowErrorBudgetBurn"
-  combiner     = "OR"
+  combiner     = "AND"
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
