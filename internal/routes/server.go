@@ -194,19 +194,6 @@ func Server(
 		}
 	}
 
-	// Redirect old /home path to /codes/issue. This route is no longer in use,
-	// but the redirect is preserved in case people have their browser open to the
-	// old page.
-	//
-	// TODO: remove in 0.18+.
-	{
-		sub := r.PathPrefix("/home").Subrouter()
-
-		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("GET")
-		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("GET")
-		sub.Handle("/issue", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("POST")
-	}
-
 	// codes
 	{
 		sub := r.PathPrefix("/codes").Subrouter()
