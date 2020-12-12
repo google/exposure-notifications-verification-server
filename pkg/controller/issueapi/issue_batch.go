@@ -17,6 +17,7 @@ package issueapi
 import (
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -78,30 +79,48 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
+		resp.Codes = make([]*api.IssueCodeResponse, l)
+		errorCh := make(chan *StatusAndError, len(request.Codes))
+		var wg sync.WaitGroup
+		for i, singleIssue := range request.Codes {
+			wg.Add(1)
+			go func(i int, singleIssue *api.IssueCodeRequest) {
+				defer wg.Done()
+
+				result, resp.Codes[i] = c.issue(ctx, singleIssue)
+				if result.errorReturn != nil {
+					// continue processing if when a single code issuance fails.
+					// if any issuance fails, the returned code is the code of the first failure.
+					logger.Warnw("single code issuance failed: %v", result.errorReturn)
+
+					errorCh <- &StatusAndError{
+						HTTPStatus: result.httpCode,
+						Error:      result.errorReturn.Error,
+					}
+					if resp.Codes[i] == nil {
+						resp.Codes[i] = &api.IssueCodeResponse{}
+					}
+					resp.Codes[i].ErrorCode = result.errorReturn.ErrorCode
+					resp.Codes[i].Error = result.errorReturn.Error
+				}
+			}(i, singleIssue)
+		}
+
+		// wait for the work group to finish
+		wg.Wait()
+
 		httpCode := http.StatusOK
 		var merr *multierror.Error
-
-		resp.Codes = make([]*api.IssueCodeResponse, l)
-		for i, singleIssue := range request.Codes {
-			result, resp.Codes[i] = c.issue(ctx, singleIssue)
-			if result.errorReturn != nil {
-				if result.httpCode == http.StatusInternalServerError {
-					controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))
-					return
+		// replay error channel
+		for {
+			select {
+			case report := <-errorCh:
+				if httpCode != http.StatusOK {
+					httpCode = report.HTTPStatus
 				}
-				// continue processing if when a single code issuance fails.
-				// if any issuance fails, the returned code is the code of the first failure.
-				logger.Warnw("single code issuance failed: %v", result.errorReturn)
 				merr = multierror.Append(merr, errors.New(result.errorReturn.Error))
-				if resp.Codes[i] == nil {
-					resp.Codes[i] = &api.IssueCodeResponse{}
-				}
-				resp.Codes[i].ErrorCode = result.errorReturn.ErrorCode
-				resp.Codes[i].Error = result.errorReturn.Error
-				if httpCode == http.StatusOK {
-					httpCode = result.httpCode
-				}
-				continue
+			default:
+				break
 			}
 		}
 
@@ -112,4 +131,9 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		c.h.RenderJSON(w, httpCode, resp)
 		return
 	})
+}
+
+type StatusAndError struct {
+	HTTPStatus int
+	Error      string
 }
