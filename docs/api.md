@@ -205,7 +205,8 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
 * `tzOffset`
   * Offset in minutes of the user's timezone. Positive, negative, 0, or omitted (using the default of 0) are all valid. 0 is considered to be UTC.
 * `phone`
-  * Phone number to send the SMS too
+  * Phone number to send the SMS to. If a phone number is provided, but the SMS text
+    message fails to send, the API will return a 4xx client error.
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
   number of base64-encoded bytes into this field. The server does not process
@@ -266,22 +267,22 @@ Request a batch of verification codes to be issued. Accepts a list of IssueCodeR
 `codes` arrays will match each request/response pair unless a server error occurs which results in an empty `codes`
 array response.
 
+This API currently supports a limit of up 10 codes per request.
+
 **BatchIssueCodeRequest**
 
 ```json
 {
   "codes" : [
     {
+      "symptomDate": "YYYY-MM-DD",
+      "testDate": "YYYY-MM-DD",
+      "testType": "<valid test type>",
+      "tzOffset": 0,
+      "phone": "+CC Phone number",
+      "padding": "<bytes>",
       "uuid": "string UUID",
-      "code": "short verification code",
-      "expiresAt": "RFC1123 formatted string timestamp",
-      "expiresAtTimestamp": 0,
-      "expiresAt": "RFC1123 UTC timestamp",
-      "expiresAtTimestamp": 0,
-      "longExpiresAt": "RFC1123 UTC timestamp",
-      "longExpiresAtTimestamp": 0,
-      "error": "descriptive error message",
-      "errorCode": "well defined error code from api.go",
+      "externalIssuerID": "external-ID",
     },
     {
       ...

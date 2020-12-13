@@ -1747,6 +1747,60 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00073-AddSMSFromNumbers",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`CREATE TABLE sms_from_numbers (
+						id SERIAL PRIMARY KEY NOT NULL,
+						label CITEXT UNIQUE,
+						value TEXT UNIQUE
+					)`,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS sms_from_number_id INTEGER`,
+					`ALTER TABLE realms ADD CONSTRAINT fk_sms_from_number FOREIGN KEY (sms_from_number_id) REFERENCES sms_from_numbers(id)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sql := `DROP TABLE IF EXISTS sms_from_numbers`
+				return tx.Exec(sql).Error
+			},
+		},
+		{
+			ID: "00074-MigrateSystemSMSConfig",
+			Migrate: func(tx *gorm.DB) error {
+				systemSMSConfig, err := db.SystemSMSConfig()
+				if err != nil {
+					// There are no system sms configs, so there's no migration needed.
+					if IsNotFound(err) {
+						return nil
+					}
+					return fmt.Errorf("failed to find system sms config: %w", err)
+				}
+
+				// Create an SMS from number for that entry.
+				smsFromNumber := &SMSFromNumber{
+					Label: "Default",
+					Value: systemSMSConfig.TwilioFromNumber,
+				}
+				if err := db.CreateOrUpdateSMSFromNumbers([]*SMSFromNumber{smsFromNumber}); err != nil {
+					return fmt.Errorf("failed to create sms from number: %w", err)
+				}
+
+				// Update anyone using the system config.
+				sql := `UPDATE realms SET sms_from_number_id = ? WHERE use_system_sms_config IS TRUE`
+				return tx.Exec(sql, smsFromNumber.ID).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 }
 

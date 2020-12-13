@@ -158,6 +158,12 @@ type Realm struct {
 	// configuration, making it impossible to opt out of text message sending.
 	UseSystemSMSConfig bool `gorm:"column:use_system_sms_config; type:bool; not null; default:false;"`
 
+	// SMSFromNumberID is a realm-level configuration that only applies when using
+	// the system SMS configuration. It determines which of the system SMS numbers
+	// to use as the sender when sending text messages.
+	SMSFromNumberID    uint  `gorm:"-"`
+	SMSFromNumberIDPtr *uint `gorm:"column:sms_from_number_id; type:integer;"`
+
 	// EmailInviteTemplate is the template for inviting new users.
 	EmailInviteTemplate string `gorm:"type:text;"`
 
@@ -299,6 +305,7 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 	r.RegionCode = stringValue(r.RegionCodePtr)
 	r.WelcomeMessage = stringValue(r.WelcomeMessagePtr)
 	r.SMSCountry = stringValue(r.SMSCountryPtr)
+	r.SMSFromNumberID = uintValue(r.SMSFromNumberIDPtr)
 
 	return nil
 }
@@ -323,7 +330,13 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")
 	}
 
+	if r.UseSystemSMSConfig && r.SMSFromNumberID == 0 {
+		r.AddError("smsFromNumber", "is required to use the system config")
+	}
+
 	r.SMSCountryPtr = stringPtr(r.SMSCountry)
+
+	r.SMSFromNumberIDPtr = uintPtr(r.SMSFromNumberID)
 
 	if r.EnableENExpress {
 		if r.RegionCode == "" {
@@ -356,20 +369,14 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		if strings.Contains(r.SMSTextTemplate, SMSRegion) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
 		}
-		if strings.Contains(r.SMSTextTemplate, SMSCode) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSCode, SMSENExpressLink))
-		}
-		if strings.Contains(r.SMSTextTemplate, SMSExpires) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - only the %q is allowed for expiration", SMSExpires, SMSLongExpires))
-		}
 		if strings.Contains(r.SMSTextTemplate, SMSLongCode) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
 		}
 
 	} else {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
-		if c, lc := strings.Contains(r.SMSTextTemplate, "[code]"), strings.Contains(r.SMSTextTemplate, "[longcode]"); !(c || lc) || (c && lc) {
-			r.AddError("SMSTextTemplate", "must contain exactly one of [code] or [longcode]")
+		if c, lc := strings.Contains(r.SMSTextTemplate, SMSCode), strings.Contains(r.SMSTextTemplate, SMSLongCode); !(c || lc) || (c && lc) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
 		}
 	}
 
@@ -518,6 +525,16 @@ func (r *Realm) SMSConfig(db *Database) (*SMSConfig, error) {
 	if err := q.First(&smsConfig).Error; err != nil {
 		return nil, err
 	}
+
+	// For system configurations, look up the appropriate from number.
+	if smsConfig.IsSystem {
+		smsFromNumber, err := db.FindSMSFromNumber(r.SMSFromNumberID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to lookup sms from number: %w", err)
+		}
+		smsConfig.TwilioFromNumber = smsFromNumber.Value
+	}
+
 	return &smsConfig, nil
 }
 

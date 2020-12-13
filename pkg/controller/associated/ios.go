@@ -33,19 +33,13 @@ type IOSData struct {
 }
 
 type Applinks struct {
+	Apps    []string `json:"apps"`
 	Details []Detail `json:"details,omitempty"`
 }
 
 type Detail struct {
-	AppIds     []string    `json:"appIDs,omitempty"`
-	Components []Component `json:"components,omitempty"`
-}
-
-type Component struct {
-	Path    string `json:"/,omitempty"`
-	Param   string `json:"?,omitempty"`
-	Exclude *bool  `json:"exclude,omitempty"`
-	Comment string `json:"comment,omitempty"`
+	AppID string   `json:"appID,omitempty"`
+	Paths []string `json:"components,omitempty"`
 }
 
 type Appstrings struct {
@@ -81,14 +75,18 @@ func (c *Controller) getIosData(region string) (*IOSData, error) {
 		return nil, nil
 	}
 
+	details := make([]Detail, len(ids))
+	for i, id := range ids {
+		details[i] = Detail{
+			AppID: id,
+			Paths: []string{"*"},
+		}
+	}
+
 	return &IOSData{
 		Applinks: Applinks{
-			Details: []Detail{{
-				AppIds: ids,
-				Components: []Component{
-					{Path: "/*", Comment: "handle all urls"},
-				}},
-			},
+			Apps:    []string{}, // expected always empty.
+			Details: details,
 		},
 	}, nil
 }

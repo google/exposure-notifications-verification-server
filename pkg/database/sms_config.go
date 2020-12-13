@@ -51,11 +51,15 @@ type SMSConfig struct {
 
 func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 	// Twilio config is all or nothing
-	if (s.TwilioAccountSid != "" || s.TwilioAuthToken != "" || s.TwilioFromNumber != "") &&
-		(s.TwilioAccountSid == "" || s.TwilioAuthToken == "" || s.TwilioFromNumber == "") {
+	if (s.TwilioAccountSid != "" || s.TwilioAuthToken != "") &&
+		(s.TwilioAccountSid == "" || s.TwilioAuthToken == "") {
 		s.AddError("twilioAccountSid", "all must be specified or all must be blank")
 		s.AddError("twilioAuthToken", "all must be specified or all must be blank")
-		s.AddError("twilioFromNumber", "all must be specified or all must be blank")
+	}
+
+	if s.IsSystem {
+		// Do not persist from numbers for system configs
+		s.TwilioFromNumber = ""
 	}
 
 	if len(s.Errors()) > 0 {

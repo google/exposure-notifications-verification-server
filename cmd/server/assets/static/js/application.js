@@ -411,11 +411,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
     'size': 'invisible',
     'callback': (response) => onSignInSubmit(),
   });
-
-  window.recaptchaVerifier.render()
-    .then(function(widgetId) {
-      window.recaptchaWidgetId = widgetId;
-    });
+  window.recaptchaVerifier.render();
 
   $pinForm.on('submit', function(event) {
     event.preventDefault();
@@ -433,13 +429,13 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
       }).catch(function(err) {
         flash.clear();
         flash.error(err.message);
-        grecaptcha.reset(window.recaptchaWidgetId);
+        window.recaptchaVerifier.reset();
         $submitPin.prop('disabled', false);
       });
   });
 
   $pinClose.on('click', function(event) {
-    grecaptcha.reset(window.recaptchaWidgetId);
+    window.recaptchaVerifier.reset();
     event.preventDefault();
     $submit.prop('disabled', false);
     $factors.empty();
@@ -492,7 +488,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
               $loginDiv.hide();
               $pinDiv.removeClass('d-none');
             }).catch(function(error) {
-              grecaptcha.reset(window.recaptchaWidgetId);
+              window.recaptchaVerifier.reset();
               flash.clear();
               flash.error(error);
               $submit.prop('disabled', false);
@@ -502,12 +498,12 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
           flash.error('Unsupported 2nd factor authentication type.');
         }
       } else if (error.code == 'auth/too-many-requests') {
-        grecaptcha.reset(window.recaptchaWidgetId);
+        window.recaptchaVerifier.reset();
         flash.clear();
         flash.error(error.message);
         $submit.prop('disabled', false);
       } else {
-        grecaptcha.reset(window.recaptchaWidgetId);
+        window.recaptchaVerifier.reset();
         console.error(error);
         flash.clear();
         flash.error("Sign-in failed. Please try again.");
@@ -531,7 +527,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
       .then(function(verificationId) {
         verId = verificationId;
       }).catch(function(error) {
-        grecaptcha.reset(window.recaptchaWidgetId);
+        window.recaptchaVerifier.reset();
         flash.clear();
         flash.error(error.message);
         $submit.prop('disabled', false);

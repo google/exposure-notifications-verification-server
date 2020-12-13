@@ -34,7 +34,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
       | align delta(1m)
       | every 1m
       | group_by [resource.backend_target_name], [val: percentile(value.backend_latencies, 99)]
-      | condition val > 2000 'ms'
+      | condition val > 2 's'
       EOT
       trigger {
         count = 1
@@ -73,7 +73,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
       | group_by [metric.step, metric.test_type], [val: sum(value.request_count)]
       | ratio
       | window 1m
-      | condition ratio > 0.1
+      | condition ratio > 10 '%'
       EOT
       trigger {
         count = 1
@@ -143,7 +143,7 @@ resource "google_monitoring_alert_policy" "probers" {
       | align next_older(1m)
       | every 1m
       | group_by [resource.host], [val: fraction_true(value.check_passed)]
-      | condition val < 0.2 '10^2.%'
+      | condition val < 20 '%'
       EOT
       trigger {
         count = 1
@@ -205,13 +205,14 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
   conditions {
     display_name = "Stackdriver metric export error rate"
     condition_monitoring_query_language {
-      duration = "300s"
+      duration = "900s"
       query    = <<-EOT
       fetch
       cloud_run_revision::logging.googleapis.com/user/stackdriver_export_error_count
-      | align rate(1m)
+      | align rate(5m)
       | group_by [resource.service_name], [val: sum(value.stackdriver_export_error_count)]
-      | condition val > 0.1 '1/s'
+      # Any export error for more than 5min should alert.
+      | condition val > 0
       EOT
       trigger {
         count = 1
@@ -240,7 +241,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
-  
+
   conditions {
     display_name = "Fast burn over last hour"
     condition_threshold {
@@ -289,11 +290,11 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 resource "google_monitoring_alert_policy" "slow_burn" {
   project      = var.verification-server-project
   display_name = "SlowErrorBudgetBurn"
-  combiner     = "OR"
+  combiner     = "AND"
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
-  
+
   conditions {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
@@ -310,7 +311,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     }
   }
 
-    conditions {
+  conditions {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
