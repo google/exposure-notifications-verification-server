@@ -7,7 +7,7 @@
 {{$currentMembership := .currentMembership}}
 
 {{if $user.ID}}
-<form method="POST" action="/realm/users/{{$user.ID}}">
+<form method="POST" id="user-form" action="/realm/users/{{$user.ID}}">
   <input type="hidden" name="_method" value="PATCH">
   {{else}}
   <form method="POST" action="/realm/users">
@@ -50,7 +50,7 @@
       {{end}}
     </div>
 
-    <button type="submit" id="submit" class="btn btn-primary btn-block">
+    <button type="submit" class="btn btn-primary btn-block">
       {{if $user.ID}}
         Update user
       {{else}}
