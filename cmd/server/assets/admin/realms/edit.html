@@ -121,7 +121,7 @@
       </div>
     </div>
 
-    {{if and $membership ($membership.Can rbac.RealmSettingsWrite)}}
+    {{if $membership.Can rbac.SettingsWrite}}
       <div class="card mb-3 shadow-sm">
         <div class="card-header">Leave realm</div>
         <div class="card-body">
