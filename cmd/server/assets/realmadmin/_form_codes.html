@@ -205,7 +205,7 @@
   {{range $i, $v := .smsTemplates}}
   <div id="sms-template-{{$i}}-div" {{if ne $i 0}}class="d-none"{{end}}>
     <div class="form-label-group">
-      <input type="form-control text-monospace" name="sms_text_label_{{$i}}" class="form-control" value="{{$v.Label}}" placeholder="Template label" readonly/>
+      <input type="form-control text-monospace" name="sms_text_label_{{$i}}" class="form-control" value="{{$v.Label}}" placeholder="Template label" {{if eq $i 0}}readonly{{end}}/>
       <label for="sms-text-template">Template label</label>
     </div>
     <div class="form-label-group">
@@ -213,6 +213,7 @@
         rows="5" placeholder="SMS text template">{{$v.Value}}</textarea>
       <label for="sms-text-template">SMS text template</label>
     </div>
+    {{if ne $i 0}}<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-{{$i}}');">Delete template</button>{{end}}
   </div>
   {{end}}
   {{if $realm.ErrorsFor "SMSTextTemplate"}}
@@ -333,6 +334,11 @@
           $(this).on('click', event => selectSMSTemplate($(this), event));
         }
       );
+      function removeTemplate(name) {
+        $("#"+name).remove();
+        $("#"+name+"-div").remove();
+        selectSMSTemplate($("sms-template-0"), nil);
+      }
 
       function selectSMSTemplate($elem, event) {
         event.preventDefault();
@@ -367,6 +373,8 @@
             </div>`
           );
           $in.append($textArea);
+          let $delete = $(`<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-${next}');">Delete template</button>`);
+          $in.append($delete);
           $in.insertBefore($explain);
         }
 
@@ -378,6 +386,12 @@
         $lastActive = $elem;
       }
   });
+
+  function removeTemplate(name) {
+    $("#sms-template-0").trigger("click");
+    $("#"+name).remove();
+    $("#"+name+"-div").remove();
+  }
 </script>
 
 {{end}}
