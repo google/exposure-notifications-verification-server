@@ -52,11 +52,6 @@ func PermissionMap() map[string]Permission {
 	for k, v := range _Permission_map {
 		m[v] = k
 	}
-
-	// Add in legacy roles
-	m["LegacyRealmUser"] = LegacyRealmUser
-	m["LegacyRealmAdmin"] = LegacyRealmAdmin
-
 	return m
 }
 
