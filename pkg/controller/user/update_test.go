@@ -102,4 +102,38 @@ func TestUpdate(t *testing.T) {
 	if got, want := membership.Permissions, 0; got.Value() != int64(want) {
 		t.Errorf("expected %v to be %v", got, want)
 	}
+
+	// Now add permissions back
+	for _, permission := range rbac.PermissionMap() {
+		target := fmt.Sprintf(`input#permission-%d`, permission.Value())
+
+		if err := chromedp.Run(taskCtx,
+			// Pre-authenticate the user.
+			browser.SetCookie(cookie),
+
+			// Visit /realm/users.
+			chromedp.Navigate(fmt.Sprintf(`http://`+harness.Server.Addr()+`/realm/users/%d/edit`, user.ID)),
+
+			// Wait for render.
+			chromedp.WaitVisible(`body#users-edit`, chromedp.ByQuery),
+
+			// Fill out the form.
+			chromedp.Click(target, chromedp.ByQuery),
+			chromedp.Submit(`form#user-form`, chromedp.ByQuery),
+
+			// Wait for render.
+			chromedp.WaitVisible(`body#users-show`, chromedp.ByQuery),
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		membership, err := user.FindMembership(harness.Database, realm.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !membership.Can(permission) {
+			t.Errorf("expected %s to be added", permission)
+		}
+	}
 }
