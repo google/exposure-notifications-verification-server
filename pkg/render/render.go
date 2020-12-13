@@ -148,30 +148,30 @@ func safeHTML(s string) htmltemplate.HTML {
 	return htmltemplate.HTML(s)
 }
 
-func selectedIf(v bool) htmltemplate.HTML {
+func selectedIf(v bool) htmltemplate.HTMLAttr {
 	if v {
-		return htmltemplate.HTML("selected")
+		return "selected"
 	}
 	return ""
 }
 
-func readonlyIf(v bool) htmltemplate.HTML {
+func readonlyIf(v bool) htmltemplate.HTMLAttr {
 	if v {
-		return htmltemplate.HTML("readonly")
+		return "readonly"
 	}
 	return ""
 }
 
-func checkedIf(v bool) htmltemplate.HTML {
+func checkedIf(v bool) htmltemplate.HTMLAttr {
 	if v {
-		return htmltemplate.HTML("checked")
+		return "checked"
 	}
 	return ""
 }
 
-func disabledIf(v bool) htmltemplate.HTML {
+func disabledIf(v bool) htmltemplate.HTMLAttr {
 	if v {
-		return htmltemplate.HTML("disabled")
+		return "disabled"
 	}
 	return ""
 }
