@@ -151,8 +151,6 @@ func (c *Controller) HandleSettings() http.Handler {
 			return
 		}
 
-		parseSMSTextTemplates(r, &form)
-
 		// General
 		if form.General {
 			realm.Name = form.Name
@@ -162,6 +160,7 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		// Codes
 		if form.Codes {
+			parseSMSTextTemplates(r, &form)
 			realm.AllowedTestTypes = form.AllowedTestTypes
 			realm.RequireDate = form.RequireDate
 			realm.AllowBulkUpload = form.AllowBulkUpload
