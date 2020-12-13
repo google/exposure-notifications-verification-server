@@ -184,7 +184,7 @@ func (u *User) AddToRealm(db *Database, r *Realm, permissions rbac.Permission, a
 		}
 
 		conflict := fmt.Sprintf(`ON CONFLICT (user_id, realm_id) DO UPDATE
-			SET permissions = %d`, permissions.Value())
+			SET permissions = %d`, permissions)
 		if err := tx.
 			Set("gorm:insert_option", conflict).
 			Model(&Membership{}).

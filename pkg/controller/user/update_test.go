@@ -62,7 +62,7 @@ func TestUpdate(t *testing.T) {
 	defer done()
 
 	for _, permission := range rbac.PermissionMap() {
-		target := fmt.Sprintf(`input#permission-%d`, permission.Value())
+		target := fmt.Sprintf(`input#permission-%d`, permission)
 
 		if err := chromedp.Run(taskCtx,
 			// Pre-authenticate the user.
@@ -99,13 +99,13 @@ func TestUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := membership.Permissions, 0; got.Value() != int64(want) {
+	if got, want := int64(membership.Permissions), int64(0); got != want {
 		t.Errorf("expected %v to be %v", got, want)
 	}
 
 	// Now add permissions back
 	for _, permission := range rbac.PermissionMap() {
-		target := fmt.Sprintf(`input#permission-%d`, permission.Value())
+		target := fmt.Sprintf(`input#permission-%d`, permission)
 
 		if err := chromedp.Run(taskCtx,
 			// Pre-authenticate the user.

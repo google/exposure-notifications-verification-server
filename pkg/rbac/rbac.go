@@ -18,6 +18,7 @@
 package rbac
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"sort"
 )
@@ -72,9 +73,9 @@ func PermissionNames(p Permission) []string {
 // because most database systems lack unsigned integer types.
 type Permission int64
 
-// Value returns the permissions value as an integer.
-func (p Permission) Value() int64 {
-	return int64(p)
+// Value returns the permissions value as an integer for sql drivers.
+func (p Permission) Value() (driver.Value, error) {
+	return int64(p), nil
 }
 
 const (
