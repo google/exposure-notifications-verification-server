@@ -225,7 +225,11 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					return err
 				}
 				for _, u := range users {
-					if err := u.AddToRealm(db, defaultRealm, rbac.LegacyRealmAdmin, System); err != nil {
+					permission := rbac.LegacyRealmUser
+					if u.SystemAdmin {
+						permission = rbac.LegacyRealmAdmin
+					}
+					if err := u.AddToRealm(db, defaultRealm, permission, System); err != nil {
 						return err
 					}
 				}
