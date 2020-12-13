@@ -209,7 +209,7 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
       query    = <<-EOT
       fetch
       cloud_run_revision::logging.googleapis.com/user/stackdriver_export_error_count
-      | align rate(1m)
+      | align rate(5m)
       | group_by [resource.service_name], [val: sum(value.stackdriver_export_error_count)]
       # Any export error for more than 5min should alert.
       | condition val > 0
