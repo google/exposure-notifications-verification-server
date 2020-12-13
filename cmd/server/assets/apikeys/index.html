@@ -3,10 +3,7 @@
 {{$authApp := .authApp}}
 
 {{$currentMembership := .currentMembership}}
-{{$canWrite := false}}
-{{if $currentMembership.Can rbac.APIKeyWrite}}
-  {{$canWrite = true}}
-{{end}}
+{{$canWrite := $currentMembership.Can rbac.APIKeyWrite}}
 
 <!doctype html>
 <html lang="en">

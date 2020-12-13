@@ -72,10 +72,7 @@
 {{$csrfField := .csrfField}}
 
 {{$currentMembership := .currentMembership}}
-{{$canWrite := false}}
-{{if $currentMembership.Can rbac.SettingsWrite}}
-  {{$canWrite = true}}
-{{end}}
+{{$canWrite := $currentMembership.Can rbac.SettingsWrite}}
 
 <!doctype html>
 <html lang="en">

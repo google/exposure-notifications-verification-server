@@ -1,10 +1,7 @@
 {{define "codes/show"}}
 
 {{$currentMembership := .currentMembership}}
-{{$canWrite := false}}
-{{if $currentMembership.Can rbac.CodeExpire}}
-  {{$canWrite = true}}
-{{end}}
+{{$canWrite := $currentMembership.Can rbac.CodeExpire}}
 
 <!doctype html>
 <html lang="en">

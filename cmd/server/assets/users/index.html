@@ -4,10 +4,7 @@
 {{$memberships := .memberships}}
 
 {{$currentMembership := .currentMembership}}
-{{$canWrite := false}}
-{{if $currentMembership.Can rbac.UserWrite}}
-  {{$canWrite = true}}
-{{end}}
+{{$canWrite := $currentMembership.Can rbac.UserWrite}}
 
 <!doctype html>
 <html lang="en">
