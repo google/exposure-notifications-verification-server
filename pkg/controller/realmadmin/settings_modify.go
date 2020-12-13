@@ -15,9 +15,9 @@
 package realmadmin
 
 import (
-	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+	"github.com/jinzhu/gorm/dialects/postgres"
 )
 
 var (
@@ -37,6 +38,11 @@ var (
 	passwordRotationWarningDays = []int{0, 1, 3, 5, 7, 30}
 )
 
+const (
+	labelPrefix    = "sms_text_label_"
+	templatePrefix = "sms_text_template_"
+)
+
 func init() {
 	for i := 5; i <= 60; i++ {
 		shortCodeMinutes = append(shortCodeMinutes, i)
@@ -46,55 +52,56 @@ func init() {
 	}
 }
 
+type FormData struct {
+	General        bool   `form:"general"`
+	Name           string `form:"name"`
+	RegionCode     string `form:"region_code"`
+	WelcomeMessage string `form:"welcome_message"`
+
+	Codes                     bool               `form:"codes"`
+	AllowedTestTypes          database.TestType  `form:"allowed_test_types"`
+	AllowBulkUpload           bool               `form:"allow_bulk"`
+	RequireDate               bool               `form:"require_date"`
+	CodeLength                uint               `form:"code_length"`
+	CodeDurationMinutes       int64              `form:"code_duration"`
+	LongCodeLength            uint               `form:"long_code_length"`
+	LongCodeDurationHours     int64              `form:"long_code_duration"`
+	SMSTextTemplate           string             `form:"-"`
+	SMSTextAlternateTemplates map[string]*string `form:"-"`
+
+	SMS                bool   `form:"sms"`
+	UseSystemSMSConfig bool   `form:"use_system_sms_config"`
+	SMSCountry         string `form:"sms_country"`
+	SMSFromNumberID    uint   `form:"sms_from_number_id"`
+	TwilioAccountSid   string `form:"twilio_account_sid"`
+	TwilioAuthToken    string `form:"twilio_auth_token"`
+	TwilioFromNumber   string `form:"twilio_from_number"`
+
+	Email                bool   `form:"email"`
+	UseSystemEmailConfig bool   `form:"use_system_email_config"`
+	SMTPAccount          string `form:"smtp_account"`
+	SMTPPassword         string `form:"smtp_password"`
+	SMTPHost             string `form:"smtp_host"`
+	SMTPPort             string `form:"smtp_port"`
+	EmailInviteTemplate  string `form:"email_invite_template"`
+
+	Security                    bool   `form:"security"`
+	MFAMode                     int16  `form:"mfa_mode"`
+	MFARequiredGracePeriod      int64  `form:"mfa_grace_period"`
+	EmailVerifiedMode           int16  `form:"email_verified_mode"`
+	PasswordRotationPeriodDays  uint   `form:"password_rotation_period_days"`
+	PasswordRotationWarningDays uint   `form:"password_rotation_warning_days"`
+	AllowedCIDRsAdminAPI        string `form:"allowed_cidrs_adminapi"`
+	AllowedCIDRsAPIServer       string `form:"allowed_cidrs_apiserver"`
+	AllowedCIDRsServer          string `form:"allowed_cidrs_server"`
+
+	AbusePrevention            bool    `form:"abuse_prevention"`
+	AbusePreventionEnabled     bool    `form:"abuse_prevention_enabled"`
+	AbusePreventionLimitFactor float32 `form:"abuse_prevention_limit_factor"`
+	AbusePreventionBurst       uint64  `form:"abuse_prevention_burst"`
+}
+
 func (c *Controller) HandleSettings() http.Handler {
-	type FormData struct {
-		General        bool   `form:"general"`
-		Name           string `form:"name"`
-		RegionCode     string `form:"region_code"`
-		WelcomeMessage string `form:"welcome_message"`
-
-		Codes                 bool              `form:"codes"`
-		AllowedTestTypes      database.TestType `form:"allowed_test_types"`
-		AllowBulkUpload       bool              `form:"allow_bulk"`
-		RequireDate           bool              `form:"require_date"`
-		CodeLength            uint              `form:"code_length"`
-		CodeDurationMinutes   int64             `form:"code_duration"`
-		LongCodeLength        uint              `form:"long_code_length"`
-		LongCodeDurationHours int64             `form:"long_code_duration"`
-		SMSTextTemplate       string            `form:"sms_text_template"`
-
-		SMS                bool   `form:"sms"`
-		UseSystemSMSConfig bool   `form:"use_system_sms_config"`
-		SMSCountry         string `form:"sms_country"`
-		SMSFromNumberID    uint   `form:"sms_from_number_id"`
-		TwilioAccountSid   string `form:"twilio_account_sid"`
-		TwilioAuthToken    string `form:"twilio_auth_token"`
-		TwilioFromNumber   string `form:"twilio_from_number"`
-
-		Email                bool   `form:"email"`
-		UseSystemEmailConfig bool   `form:"use_system_email_config"`
-		SMTPAccount          string `form:"smtp_account"`
-		SMTPPassword         string `form:"smtp_password"`
-		SMTPHost             string `form:"smtp_host"`
-		SMTPPort             string `form:"smtp_port"`
-		EmailInviteTemplate  string `form:"email_invite_template"`
-
-		Security                    bool   `form:"security"`
-		MFAMode                     int16  `form:"mfa_mode"`
-		MFARequiredGracePeriod      int64  `form:"mfa_grace_period"`
-		EmailVerifiedMode           int16  `form:"email_verified_mode"`
-		PasswordRotationPeriodDays  uint   `form:"password_rotation_period_days"`
-		PasswordRotationWarningDays uint   `form:"password_rotation_warning_days"`
-		AllowedCIDRsAdminAPI        string `form:"allowed_cidrs_adminapi"`
-		AllowedCIDRsAPIServer       string `form:"allowed_cidrs_apiserver"`
-		AllowedCIDRsServer          string `form:"allowed_cidrs_server"`
-
-		AbusePrevention            bool    `form:"abuse_prevention"`
-		AbusePreventionEnabled     bool    `form:"abuse_prevention_enabled"`
-		AbusePreventionLimitFactor float32 `form:"abuse_prevention_limit_factor"`
-		AbusePreventionBurst       uint64  `form:"abuse_prevention_burst"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -144,6 +151,8 @@ func (c *Controller) HandleSettings() http.Handler {
 			return
 		}
 
+		parseSMSTextTemplates(r, &form)
+
 		// General
 		if form.General {
 			realm.Name = form.Name
@@ -157,6 +166,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			realm.RequireDate = form.RequireDate
 			realm.AllowBulkUpload = form.AllowBulkUpload
 			realm.SMSTextTemplate = form.SMSTextTemplate
+			realm.SMSTextAlternateTemplates = postgres.Hstore(form.SMSTextAlternateTemplates)
 
 			// These fields can only be set if ENX is disabled
 			if !realm.EnableENExpress {
@@ -368,104 +378,38 @@ func (c *Controller) HandleSettings() http.Handler {
 	})
 }
 
-func (c *Controller) renderSettings(
-	ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm,
-	smsConfig *database.SMSConfig, emailConfig *database.EmailConfig, quotaLimit, quotaRemaining uint64) {
-	if smsConfig == nil {
-		var err error
-		smsConfig, err = realm.SMSConfig(c.db)
-		if err != nil {
-			if !database.IsNotFound(err) {
-				controller.InternalError(w, r, c.h, err)
-				return
+func parseSMSTextTemplates(r *http.Request, form *FormData) {
+	// Associate by index
+	templates := map[string]*TemplateData{}
+	for k, v := range r.PostForm {
+		s := v[0]
+		if strings.HasPrefix(k, labelPrefix) {
+			i := k[len(labelPrefix):]
+			if t, has := templates[i]; has {
+				t.Label = s
+			} else {
+				templates[i] = &TemplateData{Label: s}
 			}
-			smsConfig = new(database.SMSConfig)
+		}
+		if strings.HasPrefix(k, templatePrefix) {
+			i := k[len(templatePrefix):]
+			if t, has := templates[i]; has {
+				t.Value = s
+			} else {
+				templates[i] = &TemplateData{Value: s}
+			}
 		}
 	}
-
-	if emailConfig == nil {
-		var err error
-		emailConfig, err = realm.EmailConfig(c.db)
-		if err != nil {
-			if !database.IsNotFound(err) {
-				controller.InternalError(w, r, c.h, err)
-				return
+	// Copy paired label/values to the alt templates
+	if len(templates) > 0 {
+		form.SMSTextAlternateTemplates = map[string]*string{}
+		for k, v := range templates {
+			if k == "0" {
+				form.SMSTextTemplate = v.Value
+			} else {
+				s := v.Value
+				form.SMSTextAlternateTemplates[v.Label] = &s
 			}
-			emailConfig = &database.EmailConfig{SMTPPort: "587"}
 		}
 	}
-
-	// Look up the sms from numbers.
-	smsFromNumbers, err := c.db.SMSFromNumbers()
-	if err != nil {
-		controller.InternalError(w, r, c.h, err)
-		return
-	}
-
-	// Don't pass through the system config to the template - we don't want to
-	// risk accidentally rendering its ID or values since the realm should never
-	// see these values. However, we have to go lookup the actual SMS config
-	// values if present so that if the user unchecks the form, they don't see
-	// blank values if they were previously using their own SMS configs.
-	if smsConfig.IsSystem {
-		var tmpRealm database.Realm
-		tmpRealm.ID = realm.ID
-		tmpRealm.UseSystemSMSConfig = false
-
-		var err error
-		smsConfig, err = tmpRealm.SMSConfig(c.db)
-		if err != nil {
-			if !database.IsNotFound(err) {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
-			smsConfig = new(database.SMSConfig)
-		}
-	}
-
-	if emailConfig.IsSystem {
-		var tmpRealm database.Realm
-		tmpRealm.ID = realm.ID
-		tmpRealm.UseSystemEmailConfig = false
-
-		var err error
-		emailConfig, err = tmpRealm.EmailConfig(c.db)
-		if err != nil {
-			if !database.IsNotFound(err) {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
-			emailConfig = new(database.EmailConfig)
-		}
-	}
-
-	m := controller.TemplateMapFromContext(ctx)
-	m.Title("Realm settings")
-	m["realm"] = realm
-	m["smsConfig"] = smsConfig
-	m["smsFromNumbers"] = smsFromNumbers
-	m["emailConfig"] = emailConfig
-	m["countries"] = database.Countries
-	m["testTypes"] = map[string]database.TestType{
-		"confirmed": database.TestTypeConfirmed,
-		"likely":    database.TestTypeConfirmed | database.TestTypeLikely,
-		"negative":  database.TestTypeConfirmed | database.TestTypeLikely | database.TestTypeNegative,
-	}
-	// Valid settings for pwd rotation.
-	m["mfaGracePeriod"] = mfaGracePeriod
-	m["passwordRotateDays"] = passwordRotationPeriodDays
-	m["passwordWarnDays"] = passwordRotationWarningDays
-	// Valid settings for code parameters.
-	m["shortCodeLengths"] = shortCodeLengths
-	m["shortCodeMinutes"] = shortCodeMinutes
-	m["longCodeLengths"] = longCodeLengths
-	m["longCodeHours"] = longCodeHours
-	m["enxRedirectDomain"] = c.config.GetENXRedirectDomain()
-
-	m["maxSMSTemplate"] = database.SMSTemplateMaxLength
-
-	m["quotaLimit"] = quotaLimit
-	m["quotaRemaining"] = quotaRemaining
-
-	c.h.RenderHTML(w, "realmadmin/edit", m)
 }

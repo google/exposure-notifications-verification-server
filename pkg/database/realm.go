@@ -34,6 +34,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/lib/pq"
 	"github.com/russross/blackfriday/v2"
 )
@@ -141,6 +142,8 @@ type Realm struct {
 
 	// SMS configuration
 	SMSTextTemplate string `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+
+	SMSTextAlternateTemplates postgres.Hstore `gorm:"column:alternate_sms_templates; type:hstore"`
 
 	// SMSCountry is an optional field to hint the default phone picker country
 	// code.
