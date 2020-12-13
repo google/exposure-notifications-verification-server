@@ -22,7 +22,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -33,32 +32,18 @@ func TestShowAdminRealms(t *testing.T) {
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	// Get the default realm
-	realm, err := harness.Database.FindRealm(1)
+	realm, _, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// Get the system admin
-	admin, err := harness.Database.FindUser(1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Log in the user.
-	session, err := harness.LoggedInSession(nil, admin.Email)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Set the current realm.
-	controller.StoreSessionRealm(session, realm)
+	_ = realm
 
 	// Mint a cookie for the session.
 	cookie, err := harness.SessionCookie(session)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	// Create a browser runner.
 	browserCtx := browser.New(t)
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
