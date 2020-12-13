@@ -1794,7 +1794,7 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					`INSERT INTO user_realms(user_id, realm_id, permissions)
 						SELECT user_id, realm_id, $1 FROM admin_realms
 						ON CONFLICT (user_id, realm_id) DO UPDATE SET permissions = $1`,
-					int64(rbac.LegacyRealmAdmin),
+					int64(rbac.LegacyRealmAdmin|rbac.LegacyRealmUser),
 				).Error; err != nil {
 					return err
 				}
