@@ -40,7 +40,7 @@ variable "https-forwarding-rule" {
 }
 
 variable "alert-notification-channels" {
-  type = map
+  type = map(any)
   default = {
     email = {
       labels = {
@@ -56,6 +56,17 @@ variable "alert-notification-channels" {
   }
   description = "Notification channels"
 }
+
+variable "slo_thresholds" {
+  type = map(any)
+  default = {
+    adminapi = {
+      availability = 0.995
+      latency      = 0
+    }
+  }
+}
+
 
 
 terraform {
