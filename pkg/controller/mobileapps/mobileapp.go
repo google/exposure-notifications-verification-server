@@ -30,10 +30,10 @@ type Controller struct {
 	config *config.ServerConfig
 	cacher cache.Cacher
 	db     *database.Database
-	h      *render.Renderer
+	h      render.Renderer
 }
 
-func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h render.Renderer) *Controller {
 	return &Controller{
 		config: config,
 		cacher: cacher,

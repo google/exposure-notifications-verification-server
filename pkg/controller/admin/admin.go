@@ -31,7 +31,7 @@ type Controller struct {
 	config       *config.ServerConfig
 	db           *database.Database
 	authProvider auth.Provider
-	h            *render.Renderer
+	h            render.Renderer
 	limiter      limiter.Store
 }
 
@@ -42,7 +42,7 @@ func New(
 	db *database.Database,
 	authProvider auth.Provider,
 	limiter limiter.Store,
-	h *render.Renderer,
+	h render.Renderer,
 ) *Controller {
 	return &Controller{
 		config:       config,

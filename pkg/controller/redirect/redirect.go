@@ -31,12 +31,12 @@ type Controller struct {
 	config           *config.RedirectConfig
 	cacher           cache.Cacher
 	db               *database.Database
-	h                *render.Renderer
+	h                render.Renderer
 	hostnameToRegion map[string]string
 }
 
 // New creates a new redirect controller.
-func New(ctx context.Context, db *database.Database, config *config.RedirectConfig, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
+func New(ctx context.Context, db *database.Database, config *config.RedirectConfig, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
 	logger := logging.FromContext(ctx).Named("redirect.New")
 
 	cfgMap, err := config.HostnameToRegion()

@@ -36,7 +36,7 @@ import (
 // RequireMembership to enforce membership.
 //
 // This must come after RequireAuth so that the user is loaded onto the context.
-func LoadCurrentMembership(cacher cache.Cacher, db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
+func LoadCurrentMembership(cacher cache.Cacher, db *database.Database, h render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -95,7 +95,7 @@ func LoadCurrentMembership(cacher cache.Cacher, db *database.Database, h *render
 //
 // This must come after LoadCurrentMembership so the membership is on the
 // context
-func RequireMembership(db *database.Database, h *render.Renderer) mux.MiddlewareFunc {
+func RequireMembership(db *database.Database, h render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
