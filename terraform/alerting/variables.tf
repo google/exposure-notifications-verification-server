@@ -57,14 +57,9 @@ variable "alert-notification-channels" {
   description = "Notification channels"
 }
 
-variable "slo_thresholds" {
-  type = map(any)
-  default = {
-    adminapi = {
-      availability = 0.995
-      latency      = 0
-    }
-  }
+variable "slo_thresholds_overrides" {
+  type    = map(any)
+  default = {}
 }
 
 
