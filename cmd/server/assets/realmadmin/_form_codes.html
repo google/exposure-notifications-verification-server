@@ -197,132 +197,143 @@
       </small>
     {{end}}
   </div>
-
-  <div class="btn-grou dropright pb-2">
-    <button type="button" id="sms-template-dropdown-title" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      Default SMS template
-    </button>
-    <div class="dropdown-menu" id="sms-template-menu">
-      {{range $i, $v := .smsTemplates}}
-      <a class="dropdown-item {{if eq $i 0}}active{{end}}" id="sms-template-{{$i}}" href="#">{{$v.Label}}</a>
-      {{end}}
-      <div id="sms-template-dropdown-divider" class="dropdown-divider"></div>
-      <a class="dropdown-item" id="sms-template-new" href="#">New SMS template</a>
-    </div>
-  </div>
-  {{range $i, $v := .smsTemplates}}
-  <div id="sms-template-{{$i}}-div" {{if ne $i 0}}class="d-none"{{end}}>
-    <div class="form-label-group">
-      <input type="form-control text-monospace" name="sms_text_label_{{$i}}" class="form-control" value="{{$v.Label}}" placeholder="Template label" {{if eq $i 0}}readonly{{end}}/>
-      <label for="sms-text-template">Template label</label>
-    </div>
-    <div class="form-label-group">
-      <textarea name="sms_text_template_{{$i}}" class="form-control text-monospace"
-        rows="5" placeholder="SMS text template">{{$v.Value}}</textarea>
-      <label for="sms-text-template">SMS text template</label>
-    </div>
-    {{if ne $i 0}}<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-{{$i}}');">Delete template</button>{{end}}
-  </div>
-  {{end}}
-  {{if $realm.ErrorsFor "SMSTextTemplate"}}
-  <div class="invalid-feedback">
-    {{joinStrings ($realm.ErrorsFor "SMSTextTemplate") ", "}}
-  </div>
-  {{end}}
-  <small class="form-text text-muted" id="sms-template-explain">
-    The SMS message will be constructed based on the template you provide. The overall
-    length of of the SMS message should not exceed 160 characters, or your message will need to be split
-    in transit and may not be joined correctly. There are some special strings that you can use
-    to substitute items.<br/>
-
-    If your choose to exceed 160 characters, your message will be broken up into
-    individual messages of 153 characters and reconstructed at the mobile device.  The user may be
-    charged for each individual message. The overall maximum length of an SMS Template is {{.maxSMSTemplate}}
-    characters before expansion.
-    <br/>
-    {{if $realm.EnableENExpress}}
-      Your SMS template <em>MUST</em> contain <code>[enslink]</code>.
-      <ul>
-        {{if eq "" .enxRedirectDomain}}
-        <li><code>[enslink]</code> Inserts the required EN Express link of: <code>ens://v?r=[region]&c=[longcode]</code></li>
-        {{else}}
-        <li><code>[enslink]</code> Inserts the EN Express link of: <code>https://{{toLower $realm.RegionCode}}.{{.enxRedirectDomain}}/v?c=[longcode]</code>
-          <ul>
-            <li>This domain should be registered as a universal link for both your Android and iOS applications.</li>
-            <li>Contact your server operator to verify the the verification EN Express redirect service is running and configurd correctly.</li>
-          </ul>
-        </li>
+  <div>
+    <div class="btn-grou dropright pb-2">
+      {{if $realm.ErrorsFor "SMSTextTemplate"}}<span class="text-danger oi oi-warning"></span>{{end}}
+      <button type="button" id="sms-template-dropdown-title" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Default SMS template
+      </button>
+      <div class="dropdown-menu" id="sms-template-menu">
+        {{range $i, $v := .smsTemplates}}
+        <a class="dropdown-item {{if eq $i 0}}active{{end}}" id="sms-template-{{$i}}" href="#">
+          {{if $realm.ErrorsFor $v.Label}}<span class="text-danger oi oi-warning"></span>{{end}}
+          {{$v.Label}}
+        </a>
         {{end}}
+        <div id="sms-template-dropdown-divider" class="dropdown-divider"></div>
+        <a class="dropdown-item" id="sms-template-new" href="#">New SMS template</a>
+      </div>
+    </div>
+    {{if $realm.ErrorsFor "SMSTextTemplate"}}
+    <div class="invalid-feedback d-block mt-n1 pb-2">
+      Errors found for one or more SMS templates
+    </div>
+    {{end}}
+    {{range $i, $v := .smsTemplates}}
+    <div id="sms-template-{{$i}}-div" {{if ne $i 0}}class="d-none"{{end}}>
+      <div class="form-label-group">
+        <input type="form-control text-monospace" name="sms_text_label_{{$i}}" class="form-control" value="{{$v.Label}}" placeholder="Template label" {{if eq $i 0}}readonly{{end}}/>
+        <label for="sms-text-template">Template label</label>
+      </div>
+      <div class="form-label-group">
+        <textarea name="sms_text_template_{{$i}}" class="form-control text-monospace {{if $realm.ErrorsFor $v.Label}}is-invalid{{end}}"
+          rows="5" placeholder="SMS text template">{{$v.Value}}</textarea>
+        <label for="sms-text-template">SMS text template</label>
+      </div>
+      {{if ne $i 0}}<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-{{$i}}');">Delete template</button>{{end}}
+      {{if $realm.ErrorsFor $v.Label}}
+      <div class="invalid-feedback d-block mt-n2 mb-3">
+        {{joinStrings ($realm.ErrorsFor $v.Label) ", "}}
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+    <span  id="templates-end"></span>
+    <small class="form-text text-muted">
+      The SMS message will be constructed based on the template you provide. The overall
+      length of of the SMS message should not exceed 160 characters, or your message will need to be split
+      in transit and may not be joined correctly. There are some special strings that you can use
+      to substitute items.<br/>
+
+      If your choose to exceed 160 characters, your message will be broken up into
+      individual messages of 153 characters and reconstructed at the mobile device.  The user may be
+      charged for each individual message. The overall maximum length of an SMS Template is {{.maxSMSTemplate}}
+      characters before expansion.
+      <br/>
+      {{if $realm.EnableENExpress}}
+        Your SMS template <em>MUST</em> contain <code>[enslink]</code>.
+        <ul>
+          {{if eq "" .enxRedirectDomain}}
+          <li><code>[enslink]</code> Inserts the required EN Express link of: <code>ens://v?r=[region]&c=[longcode]</code></li>
+          {{else}}
+          <li><code>[enslink]</code> Inserts the EN Express link of: <code>https://{{toLower $realm.RegionCode}}.{{.enxRedirectDomain}}/v?c=[longcode]</code>
+            <ul>
+              <li>This domain should be registered as a universal link for both your Android and iOS applications.</li>
+              <li>Contact your server operator to verify the the verification EN Express redirect service is running and configurd correctly.</li>
+            </ul>
+          </li>
+          {{end}}
+          <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
+          <li><code>[code]</code>The 'short' verification code can be optionally included here in the event the link isn't clickable for the user. Typically this is not needed.</li>
+          <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units). Should be included if <code>[code]</code> is used</li>
+        </ul>
+
+        Here is an example SMS template using EN Express.
+
+        <ul>
+          <li>
+            <p>Custom greeting before the EN Express link and showing expiration.</p>
+            <p>
+              <samp class="text-dark">
+                State of Wonder DOH. Click to share anonymous data for exposure notifications [enslink] (mobile only) Expires in [longexpires] hours
+              </samp>
+            </p>
+          </li>
+          <li>
+            <p>This results in a SMS message that looks like:</p>
+            <p>
+              <samp class="text-dark">
+                {{if eq "" .enxRedirectDomain}}
+                State of Wonder DOH. Click to share anonymous data for exposure notifications ens://v?r={{$realm.RegionCode}}&c=[longcode] (mobile only) Expires in 24 hours
+                {{else}}
+                State of Wonder DOH. Click to share anonymous data for exposure notifications https://{{toLower $realm.RegionCode}}.{{.enxRedirectDomain}}/v?c=[longcode] (mobile only) Expires in 24 hours
+                {{end}}
+              </samp>
+            </p>
+          </li>
+        </ul>
+
+      {{else}}
+      Your SMS template <em>MUST</em> contain either the <code>[code]</code> or
+      <code>[longcode]</code>.
+      <ul>
+        <li><code>[region]</code>The region setting (set on this page).</li>
+        <li><code>[code]</code>The 'short' verification code.</li>
+        <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units).</li>
+        <li><code>[longcode]</code>The 'long' verification code</li>
         <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
-        <li><code>[code]</code>The 'short' verification code can be optionally included here in the event the link isn't clickable for the user. Typically this is not needed.</li>
-        <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units). Should be included if <code>[code]</code> is used</li>
       </ul>
 
-      Here is an example SMS template using EN Express.
-
+      Here are some example SMS templates. The recommended usage is to include the long code in the SMS, and make
+      it clickable by registering a customer URI handler for your app.
       <ul>
         <li>
-          <p>Custom greeting before the EN Express link and showing expiration.</p>
+          <p>Send short code in SMS (<code>104</code> characters with 8 digit codes and 60 minute expiration):</p>
           <p>
             <samp class="text-dark">
-              State of Wonder DOH. Click to share anonymous data for exposure notifications [enslink] (mobile only) Expires in [longexpires] hours
+              State of Wonder Dept. of Health, your exposure
+              notifications code is [code] and expires in [expires]
+              minutes.
             </samp>
           </p>
         </li>
         <li>
-          <p>This results in a SMS message that looks like:</p>
+          <p>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration).
+            Here we assume that <code>verify.mypha.gov</code> is registred as a universal link for both your iOS
+            and Android applications.
+          </p>
           <p>
             <samp class="text-dark">
-              {{if eq "" .enxRedirectDomain}}
-              State of Wonder DOH. Click to share anonymous data for exposure notifications ens://v?r={{$realm.RegionCode}}&c=[longcode] (mobile only) Expires in 24 hours
-              {{else}}
-              State of Wonder DOH. Click to share anonymous data for exposure notifications https://{{toLower $realm.RegionCode}}.{{.enxRedirectDomain}}/v?c=[longcode] (mobile only) Expires in 24 hours
-              {{end}}
+              You have tested positive for COVID-19. Click here to
+              share anonymous data for exposure notifications
+              https://verify.mypha.gov/v?c=[longcode] (Expires in [longexpires] hours)
             </samp>
           </p>
         </li>
       </ul>
-
-    {{else}}
-    Your SMS template <em>MUST</em> contain either the <code>[code]</code> or
-    <code>[longcode]</code>.
-    <ul>
-      <li><code>[region]</code>The region setting (set on this page).</li>
-      <li><code>[code]</code>The 'short' verification code.</li>
-      <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units).</li>
-      <li><code>[longcode]</code>The 'long' verification code</li>
-      <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
-    </ul>
-
-    Here are some example SMS templates. The recommended usage is to include the long code in the SMS, and make
-    it clickable by registering a customer URI handler for your app.
-    <ul>
-      <li>
-        <p>Send short code in SMS (<code>104</code> characters with 8 digit codes and 60 minute expiration):</p>
-        <p>
-          <samp class="text-dark">
-            State of Wonder Dept. of Health, your exposure
-            notifications code is [code] and expires in [expires]
-            minutes.
-          </samp>
-        </p>
-      </li>
-      <li>
-        <p>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration).
-          Here we assume that <code>verify.mypha.gov</code> is registred as a universal link for both your iOS
-          and Android applications.
-        </p>
-        <p>
-          <samp class="text-dark">
-            You have tested positive for COVID-19. Click here to
-            share anonymous data for exposure notifications
-            https://verify.mypha.gov/v?c=[longcode] (Expires in [longexpires] hours)
-          </samp>
-        </p>
-      </li>
-    </ul>
-    {{end}}
-  </small>
+      {{end}}
+    </small>
+  </div>
 
   <div class="mt-4">
     <input type="submit" class="btn btn-primary btn-block"
@@ -335,7 +346,7 @@
       let $SMSDropdownTitle = $('#sms-template-dropdown-title');
       let $SMSDropdownMenu = $('#sms-template-menu');
       let $divider = $('#sms-template-dropdown-divider');
-      let $explain = $('#sms-template-explain');
+      let $end = $('#templates-end');
       let $lastActive = $('#sms-template-0');
 
       $SMSDropdownMenu.children('a').each(
@@ -384,7 +395,7 @@
           $in.append($textArea);
           let $delete = $(`<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-${next}');">Delete template</button>`);
           $in.append($delete);
-          $in.insertBefore($explain);
+          $in.insertBefore($end);
         }
 
         $elem.addClass('active');

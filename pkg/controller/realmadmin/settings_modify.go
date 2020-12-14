@@ -170,11 +170,11 @@ func (c *Controller) HandleSettings() http.Handler {
 		// Codes
 		if form.Codes {
 			parseSMSTextTemplates(r, &form)
-			realm.AllowedTestTypes = form.AllowedTestTypes
-			realm.RequireDate = form.RequireDate
-			realm.AllowBulkUpload = form.AllowBulkUpload
-			realm.SMSTextTemplate = form.SMSTextTemplate
-			realm.SMSTextAlternateTemplates = postgres.Hstore(form.SMSTextAlternateTemplates)
+			currentRealm.AllowedTestTypes = form.AllowedTestTypes
+			currentRealm.RequireDate = form.RequireDate
+			currentRealm.AllowBulkUpload = form.AllowBulkUpload
+			currentRealm.SMSTextTemplate = form.SMSTextTemplate
+			currentRealm.SMSTextAlternateTemplates = postgres.Hstore(form.SMSTextAlternateTemplates)
 
 			// These fields can only be set if ENX is disabled
 			if !currentRealm.EnableENExpress {
