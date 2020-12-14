@@ -82,13 +82,14 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	realm, err := db.CreateRealm("testRealm")
-	if err != nil {
-		t.Fatalf("failed to create realm: %v", err)
+	realm := NewRealmWithDefaults("testRealm")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
 	}
-	otherRealm, err := db.CreateRealm("notThetestRealm")
-	if err != nil {
-		t.Fatalf("failed to create realm: %v", err)
+
+	otherRealm := NewRealmWithDefaults("notThetestRealm")
+	if err := db.SaveRealm(otherRealm, SystemTest); err != nil {
+		t.Fatal(err)
 	}
 
 	vc := &VerificationCode{
@@ -338,9 +339,9 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	now := time.Now()
 	maxAge := time.Hour // not important to this test case
 
-	realm, err := db.CreateRealm("realmy")
-	if err != nil {
-		t.Fatalf("couldn't create test realm: %v", realm)
+	realm := NewRealmWithDefaults("realmy")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
 	}
 
 	cleanUpTo := 1

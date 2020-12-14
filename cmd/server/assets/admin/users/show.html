@@ -1,6 +1,7 @@
 {{define "admin/users/show"}}
+
 {{$user := .user}}
-{{$stats := .stats}}
+{{$memberships := .memberships}}
 
 <!doctype html>
 <html lang="en">
@@ -49,24 +50,20 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Member of realms</div>
-      {{if $user.Realms}}
+      {{if $memberships}}
         <ul class="list-group list-group-flush">
-          {{range $realm := $user.Realms}}
-          <li class="list-group-item d-flex justify-content-between">
-            <div>
-              {{$realm.Name}}
-              {{if $user.CanAdminRealm $realm.ID}}
-                <span class="badge badge-primary ml-2">Admin</span>
-              {{end}}
-            </div>
+          {{range $membership := $memberships}}
+            {{$realm := $membership.Realm}}
+            {{$user := $membership.User}}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>{{$realm.Name}}</span>
 
-            <a href="/admin/realms/{{$realm.ID}}/remove/{{$user.ID}}" class="text-danger"
-              data-toggle="tooltip" title="Remove from realm"
-              data-method="PATCH" data-confirm="Are you sure you want to remove {{$user.Name}} from {{$realm.Name}}?">
-              <span class="sr-only">Remove from realm</span>
-              <span class="oi oi-x" aria-hidden="true"></span>
-            </a>
-          </li>
+              <a href="/admin/realms/{{$realm.ID}}/remove/{{$user.ID}}" class="text-danger"
+                data-toggle="tooltip" title="Remove from realm"
+                data-method="PATCH" data-confirm="Are you sure you want to remove {{$membership.User.Name}} from {{$realm.Name}}?">
+                <span class="oi oi-x" aria-hidden="true"></span>
+              </a>
+            </li>
           {{end}}
         </ul>
       {{else}}

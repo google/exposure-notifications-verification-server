@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleSave() http.Handler {
@@ -37,34 +38,35 @@ func (c *Controller) HandleSave() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.SettingsWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, r, realm)
+			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
 
 		// Update settings.
-		realm.CertificateIssuer = form.Issuer
-		realm.CertificateAudience = form.Audience
+		currentRealm.CertificateIssuer = form.Issuer
+		currentRealm.CertificateAudience = form.Audience
 		// AsString delgates the duration parsing and validation to the model.
-		realm.CertificateDuration.AsString = form.DurationString
+		currentRealm.CertificateDuration.AsString = form.DurationString
 
-		if err := c.db.SaveRealm(realm, currentUser); err != nil {
+		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 			flash.Error("Failed to update realm: %v", err)
-			c.renderShow(ctx, w, r, realm)
+			c.renderShow(ctx, w, r, currentRealm)
 		}
 
 		flash.Alert("Updated realm certificate settings.")

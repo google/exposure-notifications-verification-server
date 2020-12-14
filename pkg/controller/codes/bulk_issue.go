@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 // HandleBulkIssue shows the page for bulk-issuing codes.
@@ -25,18 +26,24 @@ func (c *Controller) HandleBulkIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
-
-		if !realm.AllowBulkUpload {
+		if !membership.Can(rbac.CodeBulkIssue) {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		hasSMSConfig, err := realm.HasSMSConfig(c.db)
+		currentRealm := membership.Realm
+
+		if !currentRealm.AllowBulkUpload {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		hasSMSConfig, err := currentRealm.HasSMSConfig(c.db)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

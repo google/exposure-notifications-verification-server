@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
@@ -30,30 +31,30 @@ func (c *Controller) HandleShow() http.Handler {
 		ctx := r.Context()
 		vars := mux.Vars(r)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
-			return
-		}
-
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
-
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
-		retCode := Code{}
+
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.CodeRead) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		if vars["uuid"] == "" {
 			var code database.VerificationCode
 			code.AddError("uuid", "cannot be blank")
 
-			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
+			if err := c.renderStatus(ctx, w, currentRealm, currentUser, &code); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
@@ -66,7 +67,7 @@ func (c *Controller) HandleShow() http.Handler {
 			code.UUID = vars["uuid"]
 			code.AddError("uuid", apiErr.Error)
 
-			if err := c.renderStatus(ctx, w, realm, currentUser, &code); err != nil {
+			if err := c.renderStatus(ctx, w, currentRealm, currentUser, &code); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
@@ -81,21 +82,59 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		c.responseCode(ctx, r, code, &retCode)
+		retCode, err := c.responseCode(ctx, code)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		c.renderShow(ctx, w, retCode)
 	})
 }
 
-func (c *Controller) responseCode(ctx context.Context, r *http.Request, code *database.VerificationCode, retCode *Code) {
+func (c *Controller) responseCode(ctx context.Context, code *database.VerificationCode) (*Code, error) {
+	if code == nil {
+		return nil, fmt.Errorf("code is nil")
+	}
+
+	// Build initial code.
+	var retCode Code
 	retCode.UUID = code.UUID
 	retCode.TestType = strings.Title(code.TestType)
 
+	// Get realm from context.
+	_, _, realm, err := c.getAuthorizationFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return "best" status message but looking up issuer.
 	if code.IssuingUserID != 0 {
+		user, err := realm.FindUser(c.db, code.IssuingUserID)
+		if err != nil {
+			if !database.IsNotFound(err) {
+				return nil, err
+			}
+
+			// User has since been deleted.
+			user = &database.User{Name: "Unknown user"}
+		}
+
 		retCode.IssuerType = "Issuing user"
-		retCode.Issuer = c.getUserName(ctx, r, code.IssuingUserID)
+		retCode.Issuer = user.Name
 	} else if code.IssuingAppID != 0 {
+		authApp, err := realm.FindAuthorizedApp(c.db, code.IssuingAppID)
+		if err != nil {
+			if !database.IsNotFound(err) {
+				return nil, err
+			}
+
+			// App has since been deleted
+			authApp = &database.AuthorizedApp{Name: "Unknown app"}
+		}
+
 		retCode.IssuerType = "Issuing app"
-		retCode.Issuer = c.getAuthAppName(ctx, r, code.IssuingAppID)
+		retCode.Issuer = authApp.Name
 	}
 
 	retCode.Claimed = code.Claimed
@@ -104,65 +143,14 @@ func (c *Controller) responseCode(ctx context.Context, r *http.Request, code *da
 	} else {
 		retCode.Status = "Not yet claimed"
 	}
+
 	if !code.IsExpired() && !code.Claimed {
 		retCode.Expires = code.ExpiresAt.UTC().Unix()
 		retCode.LongExpires = code.LongExpiresAt.UTC().Unix()
 		retCode.HasLongExpires = retCode.LongExpires > retCode.Expires
 	}
-}
 
-func (c *Controller) getUserName(ctx context.Context, r *http.Request, id uint) (userName string) {
-	userName = "Unknown user"
-	_, user, err := c.getAuthorizationFromContext(r)
-	if err != nil {
-		return
-	}
-
-	// The current user is the issuer
-	if user != nil && user.ID == id {
-		return user.Name
-	}
-
-	// The current user is admin, issuer is someone else
-
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		return
-	}
-
-	user, err = realm.FindUser(c.db, id)
-	if err != nil {
-		return
-	}
-
-	return user.Name
-}
-
-func (c *Controller) getAuthAppName(ctx context.Context, r *http.Request, id uint) (appName string) {
-	appName = "Unknown app"
-	authApp, _, err := c.getAuthorizationFromContext(r)
-	if err != nil {
-		return
-	}
-
-	// The current app is the issuer
-	if authApp != nil && authApp.ID == id {
-		return authApp.Name
-	}
-
-	// The current app is admin, issuer is a different app
-
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		return
-	}
-
-	authApp, err = realm.FindAuthorizedApp(c.db, id)
-	if err != nil {
-		return
-	}
-
-	return authApp.Name
+	return &retCode, nil
 }
 
 type Code struct {
@@ -177,7 +165,7 @@ type Code struct {
 	HasLongExpires bool   `json:"hasLongExpires"`
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, code Code) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, code *Code) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Verification code status")
 	m["code"] = code

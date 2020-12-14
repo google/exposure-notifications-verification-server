@@ -27,6 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
@@ -45,20 +46,21 @@ func (c *Controller) HandleStats() http.Handler {
 			return
 		}
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !(membership.Can(rbac.APIKeyRead) || membership.Can(rbac.StatsRead)) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		// Pull the authorized app from the id.
-		authApp, err := c.findAuthorizedApp(currentUser, realm, vars["id"])
+		authApp, err := c.findAuthorizedApp(currentUser, currentRealm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				logger.Debugw("auth app does not exist", "id", vars["id"])
@@ -70,7 +72,7 @@ func (c *Controller) HandleStats() http.Handler {
 			return
 		}
 
-		stats, err := c.getStats(ctx, authApp, realm)
+		stats, err := c.getStats(ctx, authApp, currentRealm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func TestSMS(t *testing.T) {
@@ -222,16 +223,19 @@ func TestPerUserRealmStats(t *testing.T) {
 	users := []*User{}
 	for userIdx, name := range []string{"Rocky", "Bullwinkle", "Boris", "Natasha"} {
 		user := &User{
-			Realms:      []*Realm{realm},
 			Name:        name,
 			Email:       name + "@gmail.com",
 			SystemAdmin: false,
 		}
-
 		if err := db.SaveUser(user, SystemTest); err != nil {
 			t.Fatalf("[%v] error creating user: %v", name, err)
 		}
 		users = append(users, user)
+
+		// Add to realm
+		if err := user.AddToRealm(db, realm, rbac.CodeIssue, SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
 		// Add some stats per user.
 		for i := 0; i < numDays; i++ {

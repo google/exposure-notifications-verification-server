@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleUpgrade() http.Handler {
@@ -31,23 +32,23 @@ func (c *Controller) HandleUpgrade() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
-
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
+		if !membership.Can(rbac.SettingsWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
-		if realm.CanUpgradeToRealmSigningKeys() {
-			realm.UseRealmCertificateKey = true
-			if err := c.db.SaveRealm(realm, currentUser); err != nil {
+		if currentRealm.CanUpgradeToRealmSigningKeys() {
+			currentRealm.UseRealmCertificateKey = true
+			if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 				flash.Error("Error upgrading realm: %v", err)
-				c.renderShow(ctx, w, r, realm)
+				c.renderShow(ctx, w, r, currentRealm)
 				return
 			} else {
 				flash.Alert("Successfully switched to realm specific signing keys.")

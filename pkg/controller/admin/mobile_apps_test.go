@@ -38,15 +38,9 @@ func TestShowAdminMobileApps(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a system admin
-	admin := &database.User{
-		Email:       "admin@example.com",
-		Name:        "Admin",
-		SystemAdmin: true,
-		Realms:      []*database.Realm{realm},
-		AdminRealms: []*database.Realm{realm},
-	}
-	if err := harness.Database.SaveUser(admin, database.SystemTest); err != nil {
+	// Get the system admin
+	admin, err := harness.Database.FindUser(1)
+	if err != nil {
 		t.Fatal(err)
 	}
 

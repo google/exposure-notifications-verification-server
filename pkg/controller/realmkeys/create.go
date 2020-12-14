@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleCreateKey() http.Handler {
@@ -31,16 +32,21 @@ func (c *Controller) HandleCreateKey() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
+		if !membership.Can(rbac.SettingsWrite) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+		currentRealm := membership.Realm
 
-		kid, err := realm.CreateSigningKeyVersion(ctx, c.db)
+		kid, err := currentRealm.CreateSigningKeyVersion(ctx, c.db)
 		if err != nil {
 			flash.Error("Unable to create a new signing key: %v", err)
-			c.renderShow(ctx, w, r, realm)
+			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
 

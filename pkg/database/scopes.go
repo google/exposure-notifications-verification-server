@@ -31,15 +31,6 @@ func OnlySystemAdmins() Scope {
 	}
 }
 
-// OnlyRealmAdmins returns a scope that restricts the query to users that are
-// administrators of 1 or more realms. It's only applicable to functions that
-// query User.
-func OnlyRealmAdmins() Scope {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Joins("INNER JOIN (SELECT DISTINCT user_id FROM admin_realms) ar ON users.id = ar.user_id")
-	}
-}
-
 // WithUserSearch returns a scope that adds querying for users by email and
 // name, case-insensitive. It's only applicable to functions that query User.
 func WithUserSearch(q string) Scope {

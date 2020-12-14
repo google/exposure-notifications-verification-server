@@ -1,4 +1,7 @@
 {{define "login"}}
+
+{{$currentUser := .currentUser}}
+
 <!doctype html>
 <html lang="en">
 
@@ -8,8 +11,8 @@
 </head>
 
 <body id="login" class="tab-content">
-  {{if .currentUser}}
-  {{template "navbar" .}}
+  {{if $currentUser}}
+    {{template "navbar" .}}
   {{end}}
   <main role="main" class="container">
     {{template "flash" .}}
@@ -17,18 +20,18 @@
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center align-self-center">
         <div class="col-sm-6">
-
           <div class="card shadow-sm" id="login-div">
-            {{if .currentUser}}
-            <div class="card-header">Refresh authentication</div>
+            {{if $currentUser}}
+              <div class="card-header">Refresh authentication</div>
             {{else}}
-            <div class="card-header">COVID-19 test verification</div>
+              <div class="card-header">COVID-19 test verification</div>
             {{end}}
+
             <div class="card-body">
               <form id="login-form" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
                   <input type="email" id="email" name="email" class="form-control" placeholder="Email address"
-                  autocomplete="username" required autofocus {{if .currentUser}}disabled value="{{.currentUser.Email}}"{{end}}/>
+                  autocomplete="username" required autofocus {{if $currentUser}}disabled value="{{$currentUser.Email}}"{{end}}/>
                   <label for="email">Email address</label>
                 </div>
 
@@ -48,10 +51,11 @@
           {{template "login/factorsdiv" .}}
 
           {{if .loginRedirect}}
-          <div class="card-body">
-            <a class="card-link" href="/{{.loginRedirect}}">&larr; Back</a>
-          </div>
+            <div class="card-body">
+              <a class="card-link" href="/{{.loginRedirect}}">&larr; Back</a>
+            </div>
           {{end}}
+
           <div class="d-flex justify-content-center pt-2">
             <small><a class="text-muted" target="_blank" href="https://www.google.com/covid19/exposurenotifications">About exposure notifications</a></small>
           </div>
@@ -66,15 +70,15 @@
     $(function() {
       let fn = function loginSuccess() {
         {{if .loginRedirect}}
-        window.location.assign('{{.loginRedirect}}');
+          window.location.assign('{{.loginRedirect}}');
         {{else}}
-        {{if .currentUser}}
+        {{if $currentUser}}
           flash.alert('Successfully refreshed auth credentials.');
         {{end}}
         {{end}}
       }
 
-      let hasCurrentUser ={{if .currentUser}}true{{else}}false{{end}};
+      let hasCurrentUser ={{if $currentUser}}true{{else}}false{{end}};
       loginScripts(hasCurrentUser, fn);
     });
   </script>

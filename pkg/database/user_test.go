@@ -17,6 +17,8 @@ package database
 import (
 	"testing"
 	"time"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func TestUserLifecycle(t *testing.T) {
@@ -102,14 +104,18 @@ func TestPurgeUsers(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
+	realm := NewRealmWithDefaults("test")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
 	email := "purge@example.com"
-	user := User{
+	user := &User{
 		Email:       email,
 		Name:        "Dr Delete",
 		SystemAdmin: true,
 	}
-
-	if err := db.SaveUser(&user, System); err != nil {
+	if err := db.SaveUser(user, System); err != nil {
 		t.Fatalf("error creating user: %v", err)
 	}
 	expectExists(t, db, user.ID)
@@ -122,18 +128,20 @@ func TestPurgeUsers(t *testing.T) {
 
 	// Update an attribute
 	user.SystemAdmin = false
-	realm := NewRealmWithDefaults("test")
-	user.AddRealm(realm)
-	if err := db.SaveUser(&user, System); err != nil {
+	if err := db.SaveUser(user, SystemTest); err != nil {
 		t.Fatal(err)
 	}
+	if err := user.AddToRealm(db, realm, rbac.LegacyRealmAdmin, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
 	// has a realm
 	if _, err := db.PurgeUsers(time.Duration(0)); err != nil {
 		t.Fatal(err)
 	}
 
-	user.RemoveRealm(realm)
-	if err := db.SaveUser(&user, System); err != nil {
+	// remove realm
+	if err := user.DeleteFromRealm(db, realm, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,6 +151,7 @@ func TestPurgeUsers(t *testing.T) {
 	}
 	expectExists(t, db, user.ID)
 
+	// should delete now
 	if _, err := db.PurgeUsers(time.Duration(0)); err != nil {
 		t.Fatal(err)
 	}
@@ -151,10 +160,10 @@ func TestPurgeUsers(t *testing.T) {
 	{
 		got, err := db.FindUser(user.ID)
 		if err != nil && !IsNotFound(err) {
-			t.Fatalf("expected user to be deleted. got: %v", err)
+			t.Fatal(err)
 		}
 		if got != nil {
-			t.Fatalf("expected user to be deleted. got: %v", got)
+			t.Errorf("expected user to be deleted, got: %#v", got)
 		}
 	}
 }
@@ -165,17 +174,24 @@ func TestRemoveRealmUpdatesTime(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	realm := NewRealmWithDefaults("test")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
+	}
 
 	email := "purge@example.com"
-	user := User{
+	user := &User{
 		Email: email,
 		Name:  "Dr Delete",
 	}
-	user.AddRealm(realm)
-
-	if err := db.SaveUser(&user, System); err != nil {
-		t.Fatalf("error creating user: %v", err)
+	if err := db.SaveUser(user, SystemTest); err != nil {
+		t.Fatal(err)
 	}
+
+	// Add to realm
+	if err := user.AddToRealm(db, realm, rbac.LegacyRealmAdmin, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
 	got, err := db.FindUser(user.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -188,8 +204,7 @@ func TestRemoveRealmUpdatesTime(t *testing.T) {
 	time.Sleep(time.Second) // in case this executes in under a nanosecond.
 
 	originalTime := got.Model.UpdatedAt
-	user.RemoveRealm(realm)
-	if err := db.SaveUser(&user, System); err != nil {
+	if err := user.DeleteFromRealm(db, realm, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 

@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleActivate() http.Handler {
@@ -35,23 +36,29 @@ func (c *Controller) HandleActivate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
+		if !membership.Can(rbac.SettingsWrite) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		currentRealm := membership.Realm
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderShow(ctx, w, r, realm)
+			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
 
-		kid, err := realm.SetActiveSigningKey(c.db, form.SigningKeyID)
+		kid, err := currentRealm.SetActiveSigningKey(c.db, form.SigningKeyID)
 		if err != nil {
 			flash.Error("Unable to set active signing key: %v", err)
-			c.renderShow(ctx, w, r, realm)
+			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
 		flash.Alert("Updated active signing key to %q", kid)

@@ -1,8 +1,12 @@
 {{define "users/show"}}
 
-{{$currentRealm := .currentRealm}}
 {{$user := .user}}
+{{$userMembership := .userMembership}}
 {{$stats := .stats}}
+{{$permissions := .permissions}}
+
+{{$currentMembership := .currentMembership}}
+{{$canWrite := $currentMembership.Can rbac.UserWrite}}
 
 <!doctype html>
 <html lang="en">
@@ -23,9 +27,12 @@
       <div class="card-header">
         <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
         Details about {{$user.Name}}
-        <a href="/realm/users/{{$user.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this user">
-          <span class="oi oi-pencil" aria-hidden="true"></span>
-        </a>
+
+        {{if $canWrite}}
+          <a href="/realm/users/{{$user.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this user">
+            <span class="oi oi-pencil" aria-hidden="true"></span>
+          </a>
+        {{end}}
       </div>
       <div class="card-body mb-n3">
         <h6 class="card-title">Name</h6>
@@ -38,22 +45,31 @@
           {{$user.Email}}
         </div>
 
-        <h6 class="card-title">Password</h6>
-        <div class="mb-3 mt-n2">
-          <a href="/realm/users/{{$user.ID}}/reset-password"
-            data-method="POST"
-            data-confirm="Are you sure you want to reset this user's password?">
-            Send password reset
-          </a>
-        </div>
+        {{if $canWrite}}
+          <h6 class="card-title">Password</h6>
+          <div class="mb-3 mt-n2">
+            <a href="/realm/users/{{$user.ID}}/reset-password"
+              data-method="POST"
+              data-confirm="Are you sure you want to reset this user's password?">
+              Send password reset
+            </a>
+          </div>
+        {{end}}
 
-        <h6 class="card-title">Realm admin</h6>
+        <h6 class="card-title">Permissions</h6>
         <div class="mb-3 mt-n2">
-          {{if $user.CanAdminRealm $currentRealm.ID}}
-          <div class="card-text text-success mb-3 mt-n2">Enabled</div>
-          {{else}}
-          <div class="card-text mb-3 mt-n2">Disabled</div>
-          {{end}}
+          <ul class="list-unstyled">
+            {{range $name, $permission := $permissions}}
+              <li class="small">
+                {{if $userMembership.Can $permission}}
+                  <span class="oi oi-circle-check text-success mr-1" aria-hidden="true"></span>
+                {{else}}
+                  <span class="oi oi-circle-x text-muted mr-1" aria-hidden="true"></span>
+                {{end}}
+                {{$name}}
+              </li>
+            {{end}}
+          </ul>
         </div>
       </div>
     </div>
@@ -93,7 +109,8 @@
           <div class="modal-body mb-n3">
             <p>
               This chart reflects the number of codes issued each by
-              {{$user.Name}} ({{$user.Email}}) for {{$currentRealm.Name}}.
+              {{$user.Name}} ({{$user.Email}}) for
+              {{$currentMembership.Realm.Name}}.
             </p>
             <p>
               This chart does <u>not</u> include codes that were issued via the

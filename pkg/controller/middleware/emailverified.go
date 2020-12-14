@@ -45,26 +45,17 @@ func RequireVerified(authProvider auth.Provider, db *database.Database, h *rende
 				controller.MissingSession(w, r, h)
 				return
 			}
-			flash := controller.Flash(session)
 
-			currentUser := controller.UserFromContext(ctx)
-			if currentUser == nil {
-				authProvider.ClearSession(ctx, session)
-
-				flash.Error("Log in first to verify email.")
-				controller.MissingUser(w, r, h)
+			membership := controller.MembershipFromContext(ctx)
+			if membership == nil {
+				controller.MissingMembership(w, r, h)
 				return
 			}
-
-			realm := controller.RealmFromContext(ctx)
-			if realm == nil {
-				controller.MissingRealm(w, r, h)
-				return
-			}
+			currentRealm := membership.Realm
 
 			// Only try to verify email if the realm requires it.
-			if realm.EmailVerifiedMode == database.MFARequired ||
-				(realm.EmailVerifiedMode == database.MFAOptionalPrompt && !controller.EmailVerificationPromptedFromSession(session)) {
+			if currentRealm.EmailVerifiedMode == database.MFARequired ||
+				(currentRealm.EmailVerifiedMode == database.MFAOptionalPrompt && !controller.EmailVerificationPromptedFromSession(session)) {
 				verified, err := authProvider.EmailVerified(ctx, session)
 				if err != nil {
 					controller.InternalError(w, r, h, err)

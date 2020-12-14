@@ -20,10 +20,10 @@
     subsequently upload many fake keys to the system.
   </p>
 
-  <div class="form-group form-check">
-    <input type="checkbox" name="abuse_prevention_enabled" id="abuse-prevention-enabled" class="form-check-input" value="1" {{if $realm.AbusePreventionEnabled}} checked{{end}}
+  <div class="custom-control custom-checkbox mb-3">
+    <input type="checkbox" name="abuse_prevention_enabled" id="abuse-prevention-enabled" class="custom-control-input" value="1" {{checkedIf $realm.AbusePreventionEnabled}}
       data-toggle="collapse" data-target="#abuse-prevention-configuration">
-    <label class="form-check-label" for="abuse-prevention-enabled">
+    <label class="custom-control-label" for="abuse-prevention-enabled">
       Enable abuse prevention
     </label>
   </div>
@@ -43,7 +43,8 @@
     {{end}}
 
     <div class="form-label-group">
-      <input type="text" name="abuse_prevention_limit" id="abuse-prevention-limit" class="form-control" placeholder="Computed limit" value="{{$realm.AbusePreventionLimit}}" readonly />
+      <input type="text" name="abuse_prevention_limit" id="abuse-prevention-limit" class="form-control"
+        placeholder="Computed limit" value="{{$realm.AbusePreventionLimit}}" readonly />
       <label for="abuse-prevention-limit">Computed limit</label>
       <small class="form-text text-muted">
         This value is computed by the historical daily model and applies
@@ -52,7 +53,8 @@
     </div>
 
     <div class="form-label-group">
-      <input type="text" name="abuse_prevention_limit_factor" id="abuse-prevention-limit-factor" class="form-control" placeholder="Limit factor" value="{{printf "%.3f" $realm.AbusePreventionLimitFactor}}" />
+      <input type="text" name="abuse_prevention_limit_factor" id="abuse-prevention-limit-factor" class="form-control"
+        placeholder="Limit factor" value="{{printf "%.3f" $realm.AbusePreventionLimitFactor}}" />
       <label for="abuse-prevention-limit-factor">Limit factor</label>
       <small class="form-text text-muted">
         This value is factored against the predicted daily model to
@@ -67,7 +69,8 @@
     </div>
 
     <div class="form-label-group">
-      <input type="text" id="abuse-prevention-effective-limit" class="form-control" placeholder="Effective limit" value="{{$realm.AbusePreventionEffectiveLimit}}" readonly />
+      <input type="text" id="abuse-prevention-effective-limit" class="form-control"
+        placeholder="Effective limit" value="{{$realm.AbusePreventionEffectiveLimit}}" readonly />
       <label for="abuse-prevention-effective-limit">Effective limit</label>
       <small class="form-text text-muted">
         This is the effective daily limit for {{$realm.Name}} after
@@ -75,8 +78,9 @@
       </small>
     </div>
 
-    <div class="form-label-group">
-      <input type="text" name="abuse_prevention_burst" id="abuse-prevention-burst" class="form-control" placeholder="Temporary burst" value="0" />
+    <div class="form-label-group mb-0">
+      <input type="text" name="abuse_prevention_burst" id="abuse-prevention-burst" class="form-control"
+        placeholder="Temporary burst" value="0" />
       <label for="abuse-prevention-burst">Temporary burst</label>
       <small class="form-text text-muted">
         Set this value to temporarily add quota to your realm. You
@@ -88,7 +92,8 @@
   </div>
 
   <div class="mt-4">
-    <input type="submit" class="btn btn-primary btn-block" value="Update abuse prevention settings" />
+    <input type="submit" class="btn btn-primary btn-block"
+      value="Update abuse prevention settings" />
   </div>
 </form>
 

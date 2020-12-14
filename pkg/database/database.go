@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -326,8 +327,9 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 	}
 }
 
-// callbackPurgeCache purges the cache key for the given record.
-func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, table, column string) func(scope *gorm.Scope) {
+// callbackPurgeCache purges the cache key for the given record. If multiple
+// columns are provided, their values are combined with a pipe.
+func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, table string, columns ...string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {
 			return
@@ -337,25 +339,30 @@ func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, tab
 			return
 		}
 
-		field, ok := scope.FieldByName(column)
-		if !ok {
-			_ = scope.Err(fmt.Errorf("table %q has no column %q", table, column))
-			return
-		}
+		keys := make([]string, 0, len(columns))
+		for _, column := range columns {
+			field, ok := scope.FieldByName(column)
+			if !ok {
+				_ = scope.Err(fmt.Errorf("table %q has no column %q", table, column))
+				return
+			}
 
-		if !field.Field.CanInterface() {
-			_ = scope.Err(fmt.Errorf("%q.%q cannot interface", table, column))
-			return
-		}
+			if !field.Field.CanInterface() {
+				_ = scope.Err(fmt.Errorf("%q.%q cannot interface", table, column))
+				return
+			}
 
-		val := field.Field.Interface()
-		if val == nil {
-			return
+			val := field.Field.Interface()
+			if val == nil {
+				return
+			}
+
+			keys = append(keys, fmt.Sprintf("%v", val))
 		}
 
 		key := &cache.Key{
 			Namespace: namespace,
-			Key:       fmt.Sprintf("%v", val),
+			Key:       strings.Join(keys, "|"),
 		}
 		if err := cacher.Delete(ctx, key); err != nil {
 			scope.Log(fmt.Sprintf("failed to delete cache key: %v", err))
@@ -603,6 +610,42 @@ func stringDiff(old, new string) string {
 		fmt.Fprintf(&w, "+%s\n", line)
 	}
 
+	return w.String()
+}
+
+func stringSliceDiff(old, new []string) string {
+	oldMap := make(map[string]struct{}, len(old))
+	for _, k := range old {
+		oldMap[k] = struct{}{}
+	}
+	newMap := make(map[string]struct{}, len(new))
+	for _, k := range new {
+		newMap[k] = struct{}{}
+	}
+
+	added := make([]string, 0, len(new))
+	for k := range newMap {
+		if _, ok := oldMap[k]; !ok {
+			added = append(added, k)
+		}
+	}
+	sort.Strings(added)
+
+	removed := make([]string, 0, len(old))
+	for k := range oldMap {
+		if _, ok := newMap[k]; !ok {
+			removed = append(removed, k)
+		}
+	}
+	sort.Strings(removed)
+
+	var w strings.Builder
+	for _, line := range removed {
+		fmt.Fprintf(&w, "-%s\n", line)
+	}
+	for _, line := range added {
+		fmt.Fprintf(&w, "+%s\n", line)
+	}
 	return w.String()
 }
 

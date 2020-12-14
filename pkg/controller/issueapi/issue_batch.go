@@ -54,7 +54,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		_, _, err := c.getAuthorizationFromContext(r)
+		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
 		if err != nil {
 			result.obsBlame = observability.BlameClient
 			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
@@ -62,8 +62,8 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		// Add realm so that metrics are groupable on a per-realm basis.
-		if realm := controller.RealmFromContext(ctx); !realm.AllowBulkUpload {
+		// Ensure bulk upload is enabled on this realm.
+		if !realm.AllowBulkUpload {
 			result.obsBlame = observability.BlameClient
 			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
@@ -83,7 +83,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 
 		resp.Codes = make([]*api.IssueCodeResponse, l)
 		for i, singleIssue := range request.Codes {
-			result, resp.Codes[i] = c.issue(ctx, singleIssue)
+			result, resp.Codes[i] = c.issue(ctx, authApp, membership, realm, singleIssue)
 			if result.errorReturn != nil {
 				if result.httpCode == http.StatusInternalServerError {
 					controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))

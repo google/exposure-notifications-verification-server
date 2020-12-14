@@ -1,5 +1,8 @@
 {{define "login/register-phone"}}
 
+{{$mfaMode := .mfaMode}}
+{{$currentMembership := .currentMembership}}
+
 <!doctype html>
 <html lang="en">
 
@@ -15,35 +18,31 @@
 
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center">
-        <div class="col-sm-6">
+        <div class="col-sm-9">
           {{template "login/factorsdiv" .}}
 
           <div class="card shadow-sm" id="register-div">
             <div class="card-header">Multi-factor authentication</div>
             <div class="card-body">
-              {{if eq .mfaMode.String "required"}}
-              <div class="alert alert-warning">
-                <span class="oi oi-warning"></span>
-                This realm <strong>requires</strong> multi-factor authorization.
-              </div>
+              {{if $mfaMode}}
+                {{if eq $mfaMode.String "required"}}
+                  <div class="alert alert-danger" role="alert">
+                    This realm requires all users enable two-factor authentication.
+                  </div>
+                {{else if eq $mfaMode.String "prompt"}}
+                  <div class="alert alert-warning" role="alert">
+                    This realm recommends all users enable two-factor
+                    authentication. It may be required in the future.
+                  </div>
+                {{else}}
+                  <div class="alert alert-info" role="alert">
+                    This realm recommends all users enable two-factor
+                    authentication.
+                  </div>
+                {{end}}
               {{end}}
 
-              <p>
-                <strong>{{if .currentRealm}}{{.currentRealm.Name}}{{else}}System{{end}}</strong>
-                {{if eq .mfaMode.String "required"}}requires{{else}}recommends{{end}}
-                enhanced security via SMS-based 2-factor authentication. Please
-                provide your information below to enroll.
-              </p>
-
               <form id="register-form" class="floating-form" action="/" method="POST">
-                <div class="form-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" required autofocus />
-                  <small class="form-text text-muted">
-                    You will be asked to confirm a code using this phone number at login.
-                    Standard SMS rates may apply.
-                  </small>
-               </div>
-
                 <div class="form-label-group">
                   <input type="text" id="display" name="display" class="form-control" placeholder="Display name" />
                   <label for="display">Display name</label>
@@ -52,16 +51,28 @@
                   </small>
                 </div>
 
+                <div class="form-group">
+                  <input type="tel" id="phone" name="phone" class="form-control" required autofocus />
+                  <small class="form-text text-muted">
+                    You will be asked to confirm a code using this phone number at login.
+                    Standard SMS rates may apply.
+                  </small>
+               </div>
+
                 <button type="submit" id="submit-register" class="btn btn-primary btn-block">Register</button>
               </form>
             </div>
-            <div class="card-footer text-right">
-              <small>
-                <a id="skip" href="/codes/issue" class="text-secondary {{if eq .mfaMode.String "required"}}d-none{{end}}">
-                  Skip for now &rarr;
-                </a>
-              </small>
-            </div>
+            {{if $mfaMode}}
+              {{if ne $mfaMode.String "required"}}
+                <div class="card-footer text-right">
+                  <small>
+                    <a id="skip" href="/codes/issue" class="text-secondary">
+                      Skip for now &rarr;
+                    </a>
+                  </small>
+                </div>
+              {{end}}
+            {{end}}
           </div>
 
           {{template "login/pindiv" .}}
@@ -306,14 +317,10 @@
             headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
             contentType: 'application/x-www-form-urlencoded',
             success: function(returnData) {
-              {{if .isPrompt}}
-              window.location.assign('/codes/issue');
-              {{else}}
               flash.clear();
               flash.alert('SMS authentication enrolled successfully.');
               $skip.text('Continue');
               $skip.removeClass("d-none");
-              {{end}}
             },
             error: function(xhr, status, e) {
               window.location.assign("/signout");

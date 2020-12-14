@@ -316,10 +316,6 @@ func TestRoutes_systemAdminRoutes(t *testing.T) {
 			vars: map[string]string{"realm_id": "12345", "user_id": "67890"},
 		},
 		{
-			req:  httptest.NewRequest("GET", "/realms/12345/realmadmin", nil), // TODO: better route
-			vars: map[string]string{"id": "12345"},
-		},
-		{
 			req: httptest.NewRequest("GET", "/users", nil),
 		},
 		{

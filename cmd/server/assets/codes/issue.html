@@ -1,6 +1,7 @@
 {{define "codes/issue"}}
 
-{{$currentRealm := .currentRealm}}
+{{$currentMembership := .currentMembership}}
+{{$currentRealm := $currentMembership.Realm}}
 {{$hasSMSConfig := .hasSMSConfig}}
 
 <!doctype html>

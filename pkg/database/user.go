@@ -16,13 +16,13 @@ package database
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/jinzhu/gorm"
 )
 
@@ -43,9 +43,6 @@ type User struct {
 	Name        string `gorm:"type:varchar(100)"`
 	SystemAdmin bool   `gorm:"column:system_admin; default:false;"`
 
-	Realms      []*Realm `gorm:"many2many:user_realms"`
-	AdminRealms []*Realm `gorm:"many2many:admin_realms"`
-
 	LastRevokeCheck    time.Time
 	LastPasswordChange time.Time
 }
@@ -56,20 +53,6 @@ func (u *User) PasswordChanged() time.Time {
 		return u.CreatedAt
 	}
 	return u.LastPasswordChange
-}
-
-// AfterFind runs after the record is found.
-func (u *User) AfterFind(tx *gorm.DB) error {
-	// Sort Realms and Admin realms. Unfortunately gorm provides no way to do this
-	// via sql hooks or default scopes.
-	sort.Slice(u.Realms, func(i, j int) bool {
-		return strings.ToLower(u.Realms[i].Name) < strings.ToLower(u.Realms[j].Name)
-	})
-	sort.Slice(u.AdminRealms, func(i, j int) bool {
-		return strings.ToLower(u.AdminRealms[i].Name) < strings.ToLower(u.AdminRealms[j].Name)
-	})
-
-	return nil
 }
 
 // PasswordAgeString displays the age of the password in friendly text.
@@ -115,69 +98,6 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
-func (u *User) GetRealm(realmID uint) *Realm {
-	for _, r := range u.Realms {
-		if r.ID == realmID {
-			return r
-		}
-	}
-	return nil
-}
-
-func (u *User) CanViewRealm(realmID uint) bool {
-	for _, r := range u.Realms {
-		if r.ID == realmID {
-			return true
-		}
-	}
-	return false
-}
-
-func (u *User) IsRealmAdmin() bool {
-	return len(u.AdminRealms) > 0
-}
-
-func (u *User) CanAdminRealm(realmID uint) bool {
-	for _, r := range u.AdminRealms {
-		if r.ID == realmID {
-			return true
-		}
-	}
-	return false
-}
-
-// AddRealm adds the user to the realm.
-func (u *User) AddRealm(realm *Realm) {
-	u.Realms = append(u.Realms, realm)
-}
-
-// AddRealmAdmin adds the user to the realm as an admin.
-func (u *User) AddRealmAdmin(realm *Realm) {
-	u.AdminRealms = append(u.AdminRealms, realm)
-	u.AddRealm(realm)
-}
-
-// RemoveRealm removes the user from the realm. It also removes the user as an
-// admin of that realm. You must save the user to persist the changes.
-func (u *User) RemoveRealm(realm *Realm) {
-	for i, r := range u.Realms {
-		if r.ID == realm.ID {
-			u.Realms = append(u.Realms[:i], u.Realms[i+1:]...)
-		}
-	}
-	u.RemoveRealmAdmin(realm)
-}
-
-// RemoveRealmAdmin removes the user from the realm. You must save the user to
-// persist the changes.
-func (u *User) RemoveRealmAdmin(realm *Realm) {
-	for i, r := range u.AdminRealms {
-		if r.ID == realm.ID {
-			u.AdminRealms = append(u.AdminRealms[:i], u.AdminRealms[i+1:]...)
-		}
-	}
-}
-
 // FindUser finds a user by the given id, if one exists. The id can be a string
 // or integer value. It returns an error if the record is not found.
 func (db *Database) FindUser(id interface{}) (*User, error) {
@@ -202,6 +122,149 @@ func (db *Database) FindUserByEmail(email string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// ListMemberships lists the memberships for this user. Use
+// ListMembershipsCached where possible.
+func (u *User) ListMemberships(db *Database) ([]*Membership, error) {
+	var memberships []*Membership
+
+	if err := db.db.
+		Preload("Realm").
+		Preload("User").
+		Model(&Membership{}).
+		Where("user_id = ?", u.ID).
+		Joins("JOIN realms ON realms.id = memberships.realm_id").
+		Order("realms.name").
+		Find(&memberships).
+		Error; err != nil {
+		if IsNotFound(err) {
+			return memberships, nil
+		}
+		return nil, err
+	}
+	return memberships, nil
+}
+
+// FindMembership finds the corresponding membership for the given realm ID, if
+// one exists. If not does not exist, an error is returned that satisfies
+// IsNotFound.
+func (u *User) FindMembership(db *Database, realmID interface{}) (*Membership, error) {
+	var membership Membership
+	if err := db.db.
+		Model(&Membership{}).
+		Preload("Realm").
+		Preload("User").
+		Where("user_id = ? AND realm_id = ?", u.ID, realmID).
+		First(&membership).
+		Error; err != nil {
+		return nil, err
+	}
+	return &membership, nil
+}
+
+// AddToRealm adds the current user to the realm with the given permissions. If
+// a record already exists, the permissions are overwritten with the new
+// permissions.
+func (u *User) AddToRealm(db *Database, r *Realm, permissions rbac.Permission, actor Auditable) error {
+	if actor == nil {
+		return fmt.Errorf("auditable actor cannot be nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var existing Membership
+		if err := tx.
+			Model(&Membership{}).
+			Where("user_id = ? AND realm_id = ?", u.ID, r.ID).
+			First(&existing).
+			Error; err != nil {
+			if !IsNotFound(err) {
+				return err
+			}
+		}
+
+		conflict := fmt.Sprintf(`ON CONFLICT (user_id, realm_id) DO UPDATE
+			SET permissions = %d`, permissions)
+		if err := tx.
+			Set("gorm:insert_option", conflict).
+			Model(&Membership{}).
+			Create(&Membership{
+				UserID:      u.ID,
+				RealmID:     r.ID,
+				Permissions: permissions,
+			}).
+			Error; err != nil {
+			return err
+		}
+
+		// Brand new member?
+		if existing.UserID == 0 {
+			audit := BuildAuditEntry(actor, "added user to realm", u, r.ID)
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audit: %w", err)
+			}
+		}
+
+		// Audit if permissions were changed.
+		if old, new := existing.Permissions, permissions; old != new {
+			audit := BuildAuditEntry(actor, "updated user permissions", u, r.ID)
+			audit.Diff = stringSliceDiff(rbac.PermissionNames(old), rbac.PermissionNames(new))
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audit: %w", err)
+			}
+		}
+
+		// Cascade updated_at on user
+		if err := tx.
+			Model(&User{}).
+			Where("id = ?", u.ID).
+			UpdateColumn("updated_at", time.Now().UTC()).
+			Error; err != nil {
+			return fmt.Errorf("failed to update user updated_at: %w", err)
+		}
+
+		return nil
+	})
+}
+
+// DeleteFromRealm removes this user from the given realm. If the user does not
+// exist in the realm, no action is taken.
+func (u *User) DeleteFromRealm(db *Database, r *Realm, actor Auditable) error {
+	if actor == nil {
+		return fmt.Errorf("auditable actor cannot be nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Unscoped().
+			Model(&Membership{}).
+			Where("user_id = ? AND realm_id = ?", u.ID, r.ID).
+			Delete(&Membership{
+				UserID:  u.ID,
+				RealmID: r.ID,
+			}).
+			Error; err != nil {
+			if !IsNotFound(err) {
+				return err
+			}
+		}
+
+		// Generate audit
+		audit := BuildAuditEntry(actor, "removed user from realm", u, r.ID)
+		if err := tx.Save(audit).Error; err != nil {
+			return fmt.Errorf("failed to save audit: %w", err)
+		}
+
+		// Cascade updated_at on user
+		if err := tx.
+			Model(&User{}).
+			Where("id = ?", u.ID).
+			UpdateColumn("updated_at", time.Now().UTC()).
+			Error; err != nil {
+			return fmt.Errorf("failed to update user updated_at: %w", err)
+		}
+
+		return nil
+	})
 }
 
 // Stats returns the usage statistics for this user at the provided realm. If no
@@ -361,7 +424,7 @@ func (db *Database) PurgeUsers(maxAge time.Duration) (int64, error) {
 	// Delete users who were created/updated before the expiry time.
 	rtn := db.db.Unscoped().
 		Where("users.system_admin = false AND users.created_at < ? AND users.updated_at < ?", deleteBefore, deleteBefore).
-		Where("NOT EXISTS(SELECT 1 FROM user_realms WHERE user_realms.user_id = users.id)"). // delete where no realm association exists.
+		Where("NOT EXISTS(SELECT 1 FROM memberships WHERE memberships.user_id = users.id LIMIT 1)"). // delete where no realm association exists.
 		Delete(&User{})
 	return rtn.RowsAffected, rtn.Error
 }
@@ -388,10 +451,6 @@ func (db *Database) SaveUser(u *User, actor Auditable) error {
 			return fmt.Errorf("failed to get existing user")
 		}
 
-		// Force-update associations
-		tx.Model(u).Association("Realms").Replace(u.Realms)
-		tx.Model(u).Association("AdminRealms").Replace(u.AdminRealms)
-
 		// Save the user
 		if err := tx.Save(u).Error; err != nil {
 			return fmt.Errorf("failed to save user: %w", err)
@@ -417,53 +476,6 @@ func (db *Database) SaveUser(u *User, actor Auditable) error {
 			if existing.Email != u.Email {
 				audit := BuildAuditEntry(actor, "updated user's email", u, 0)
 				audit.Diff = stringDiff(existing.Email, u.Email)
-				audits = append(audits, audit)
-			}
-		}
-
-		// Diff realms - this intentionally happens for both new and existing users
-		existingRealms := make(map[uint]struct{}, len(existing.Realms))
-		for _, v := range existing.Realms {
-			existingRealms[v.ID] = struct{}{}
-		}
-		existingAdminRealms := make(map[uint]struct{}, len(existing.AdminRealms))
-		for _, v := range existing.AdminRealms {
-			existingAdminRealms[v.ID] = struct{}{}
-		}
-
-		newRealms := make(map[uint]struct{}, len(u.Realms))
-		for _, v := range u.Realms {
-			newRealms[v.ID] = struct{}{}
-		}
-		newAdminRealms := make(map[uint]struct{}, len(u.AdminRealms))
-		for _, v := range u.AdminRealms {
-			newAdminRealms[v.ID] = struct{}{}
-		}
-
-		for ear := range existingAdminRealms {
-			if _, ok := newAdminRealms[ear]; !ok {
-				audit := BuildAuditEntry(actor, "demoted user from realm admin", u, ear)
-				audits = append(audits, audit)
-			}
-		}
-
-		for er := range existingRealms {
-			if _, ok := newRealms[er]; !ok {
-				audit := BuildAuditEntry(actor, "removed user from realm", u, er)
-				audits = append(audits, audit)
-			}
-		}
-
-		for nr := range newRealms {
-			if _, ok := existingRealms[nr]; !ok {
-				audit := BuildAuditEntry(actor, "added user to realm", u, nr)
-				audits = append(audits, audit)
-			}
-		}
-
-		for nr := range newAdminRealms {
-			if _, ok := existingAdminRealms[nr]; !ok {
-				audit := BuildAuditEntry(actor, "promoted user to realm admin", u, nr)
 				audits = append(audits, audit)
 			}
 		}
