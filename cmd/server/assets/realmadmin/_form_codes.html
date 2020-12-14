@@ -235,7 +235,7 @@
         {{joinStrings ($realm.ErrorsFor $v.Label) ", "}}
       </div>
       {{end}}
-      {{if ne $i 0}}<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-{{$i}}');">Delete template</button>{{end}}
+      <button class="btn btn-danger mb-3 {{if eq $i 0}}d-none{{end}}" type="button" {{if ne $i 0}}onClick="removeTemplate('sms-template-{{$i}}');"{{end}}>Delete template</button>
     </div>
     {{end}}
     <span  id="templates-end"></span>
@@ -245,7 +245,7 @@
       in transit and may not be joined correctly. There are some special strings that you can use
       to substitute items.<br/>
 
-      If your choose to exceed 160 characters, your message will be broken up into
+      If your message exceeds 160 characters, it will be broken up into
       individual messages of 153 characters and reconstructed at the mobile device.  The user may be
       charged for each individual message. The overall maximum length of an SMS Template is {{.maxSMSTemplate}}
       characters before expansion.
@@ -347,18 +347,15 @@
       let $SMSDropdownMenu = $('#sms-template-menu');
       let $divider = $('#sms-template-dropdown-divider');
       let $end = $('#templates-end');
-      let $lastActive = $('#sms-template-0');
+      let $defaultTemplate = $('#sms-template-0');
+      let $defaultTemplateDiv = $('#sms-template-0-div');
+      let $lastActive = $defaultTemplate;
 
       $SMSDropdownMenu.children('a').each(
         function(i) {
           $(this).on('click', event => selectSMSTemplate($(this), event));
         }
       );
-      function removeTemplate(name) {
-        $("#"+name).remove();
-        $("#"+name+"-div").remove();
-        selectSMSTemplate($("sms-template-0"), nil);
-      }
 
       function selectSMSTemplate($elem, event) {
         event.preventDefault();
@@ -367,35 +364,34 @@
         }
         if ($elem.attr('id') == "sms-template-new") {
           let next = $SMSDropdownMenu.children().length - 2;
-          $elem = $(`<a class="dropdown-item active" id="sms-template-${next}" href="#">SMS template ${next}</a>`);
+          $elem = $defaultTemplate.clone();
+          $elem.attr('id',`sms-template-${next}`);
+          $elem.text(`SMS template ${next}`);
           $elem.on('click', event => selectSMSTemplate($elem, event));
           $elem.insertBefore($divider);
 
-          let $in = $(`<div id="sms-template-${next}-div"></div>`);
-          let $label = $(
-            `<div class="form-label-group">
-              <label for="sms-text-template">Template label</label>
-            </div>`);
-          let $labelIn = $(`<input type="form-control text-monospace" name="sms_text_label_${next}"
-          class="form-control" value="SMS template ${next}" placeholder="Template label"/>`);
-          $labelIn.on("change keyup paste", () => {
-            $elem.text($labelIn.val());
-            $SMSDropdownTitle.text($labelIn.val());
+
+          let $newNode = $defaultTemplateDiv.clone();
+          $newNode.attr('id', `sms-template-${next}-div`);
+
+          let $label = $newNode.find('input');
+          $label.attr('readonly', false);
+          $label.attr('name', `sms_text_label_${next}`);
+          $label.val($elem.text());
+          $label.on("change keyup paste", () => {
+            $elem.text($label.val());
+            $SMSDropdownTitle.text($label.val());
           });
-          $label.prepend($labelIn);
-          $in.append($label);
-          let $textArea = $(
-            `<div class="form-label-group">
-              <textarea name="sms_text_template_${next}" class="form-control text-monospace" rows="5" placeholder="SMS text template"
-              >Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)
-              </textarea>
-              <label for="sms-text-template">SMS text template</label>
-            </div>`
-          );
-          $in.append($textArea);
-          let $delete = $(`<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-${next}');">Delete template</button>`);
-          $in.append($delete);
-          $in.insertBefore($end);
+
+          let $textArea = $newNode.find('textarea');
+          $textArea.attr('name', `sms_text_template_${next}`);
+          $textArea.val('Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)');
+
+          let $deleteButton = $newNode.find('button');
+          $deleteButton.click(function() {removeTemplate(`sms-template-${next}`); });
+          $deleteButton.removeClass('d-none');
+
+          $newNode.insertBefore($end);
         }
 
         $elem.addClass('active');
@@ -408,9 +404,9 @@
   });
 
   function removeTemplate(name) {
-    $("#sms-template-0").trigger("click");
-    $("#"+name).remove();
-    $("#"+name+"-div").remove();
+    $('#sms-template-0').trigger("click");
+    $('#'+name).remove();
+    $('#'+name+'-div').remove();
   }
 </script>
 
