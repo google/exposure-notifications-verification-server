@@ -49,6 +49,7 @@ const (
 	TestTypeConfirmed
 	TestTypeLikely
 	TestTypeNegative
+	DefaultTemplateLabel = "Default SMS template"
 )
 
 func (t TestType) Display() string {
@@ -360,7 +361,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("longCodeDuration", "must be no more than 24 hours")
 	}
 
-	r.validateSMSTemplate("Default SMS template", r.SMSTextTemplate)
+	r.validateSMSTemplate(DefaultTemplateLabel, r.SMSTextTemplate)
 	if r.SMSTextAlternateTemplates != nil {
 		for l, t := range r.SMSTextAlternateTemplates {
 			if t == nil || *t == "" {

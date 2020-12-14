@@ -201,7 +201,7 @@
     <div class="btn-grou dropright pb-2">
       {{if $realm.ErrorsFor "SMSTextTemplate"}}<span class="text-danger oi oi-warning"></span>{{end}}
       <button type="button" id="sms-template-dropdown-title" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Default SMS template
+        {{(index .smsTemplates 0).Label}}
       </button>
       <div class="dropdown-menu" id="sms-template-menu">
         {{range $i, $v := .smsTemplates}}
