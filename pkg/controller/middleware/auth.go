@@ -31,7 +31,7 @@ import (
 
 // RequireAuth requires a user to be logged in. It also fetches and stores
 // information about the user on the request context.
-func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h *render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
+func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
 	cacheTTL := 30 * time.Minute
 
 	return func(next http.Handler) http.Handler {

@@ -106,7 +106,7 @@ func NotFound(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 // Unauthorized returns an error indicating the request was unauthorized. The
 // system always returns 401 (even with authentication is provided but
 // authorization fails).
-func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func Unauthorized(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
@@ -122,7 +122,7 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 
 // MissingMembership returns an error indicating that the request requires a
 // realm selection, but one was not present.
-func MissingMembership(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func MissingMembership(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 

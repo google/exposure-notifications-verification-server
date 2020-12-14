@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
@@ -39,6 +40,12 @@ func TestRenderBulkIssue(t *testing.T) {
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatalf("failed to save realm: %v", err)
 	}
+
+	ctx = controller.WithMembership(ctx, &database.Membership{
+		RealmID:     realm.ID,
+		Realm:       realm,
+		Permissions: rbac.CodeBulkIssue,
+	})
 
 	config := &config.ServerConfig{}
 	h, err := render.NewTest(ctx, project.Root()+"/cmd/server/assets", t)
