@@ -15,17 +15,16 @@
 resource "google_monitoring_custom_service" "verification-server" {
   service_id   = "verification-server"
   display_name = "Verification Server"
-  project      = var.monitoring-host-project
+  project      = var.project
 }
 
 module "availability-slos" {
   source = "./module.availability-slo"
 
-  custom-service-id           = google_monitoring_custom_service.verification-server.service_id
-  enabled                     = var.https-forwarding-rule != ""
-  monitoring-host-project     = var.monitoring-host-project
-  notification-channels       = google_monitoring_notification_channel.channels
-  verification-server-project = var.verification-server-project
+  project               = var.project
+  custom-service-id     = google_monitoring_custom_service.verification-server.service_id
+  enabled               = var.https-forwarding-rule != ""
+  notification-channels = google_monitoring_notification_channel.channels
 
   for_each = var.slo_thresholds
 

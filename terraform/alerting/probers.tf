@@ -13,7 +13,7 @@
 # limitations under the License.
 
 resource "google_monitoring_uptime_check_config" "https" {
-  project = var.monitoring-host-project
+  project = var.project
 
   for_each = toset(compact(concat(var.server_hosts, var.apiserver_hosts, var.adminapi_hosts, var.extra-hosts)))
 
@@ -31,7 +31,7 @@ resource "google_monitoring_uptime_check_config" "https" {
   monitored_resource {
     type = "uptime_url"
     labels = {
-      project_id = var.monitoring-host-project
+      project_id = var.project
       host       = each.key
     }
   }
