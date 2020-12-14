@@ -38,7 +38,8 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: initState,
 			Migrate: func(tx *gorm.DB) error {
-				return nil
+				// Create required extensions on new DB so AutoMigrate doesn't fail.
+				return tx.Exec("CREATE EXTENSION IF NOT EXISTS hstore").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil
@@ -1825,6 +1826,21 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Rollback: func(tx *gorm.DB) error {
 				// No rollback for this
 				return nil
+			},
+		},
+		{
+			ID: "00076-EnableExtension_hstore",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Exec("CREATE EXTENSION IF NOT EXISTS hstore").Error
+			},
+		},
+		{
+			ID: "00077-AddAlternateSMSTemplates",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Exec(`ALTER TABLE realms ADD COLUMN IF NOT EXISTS alternate_sms_templates hstore`).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec(`ALTER TABLE realms DROP COLUMN IF EXISTS alternate_sms_templates`).Error
 			},
 		},
 	})

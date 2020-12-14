@@ -36,6 +36,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/lib/pq"
 	"github.com/russross/blackfriday/v2"
 )
@@ -142,7 +143,8 @@ type Realm struct {
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
 
 	// SMS configuration
-	SMSTextTemplate string `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+	SMSTextTemplate           string          `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
+	SMSTextAlternateTemplates postgres.Hstore `gorm:"column:alternate_sms_templates; type:hstore"`
 
 	// SMSCountry is an optional field to hint the default phone picker country
 	// code.
@@ -358,28 +360,21 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("longCodeDuration", "must be no more than 24 hours")
 	}
 
-	if r.EnableENExpress {
-		if !strings.Contains(r.SMSTextTemplate, SMSENExpressLink) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
-		}
-		if strings.Contains(r.SMSTextTemplate, SMSRegion) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
-		}
-		if strings.Contains(r.SMSTextTemplate, SMSLongCode) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
-		}
-
-	} else {
-		// Check that we have exactly one of [code] or [longcode] as template substitutions.
-		if c, lc := strings.Contains(r.SMSTextTemplate, SMSCode), strings.Contains(r.SMSTextTemplate, SMSLongCode); !(c || lc) || (c && lc) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+	r.validateSMSTemplate(r.SMSTextTemplate)
+	if r.SMSTextAlternateTemplates != nil {
+		for l, t := range r.SMSTextAlternateTemplates {
+			if t == nil || *t == "" {
+				r.AddError("SMSTextTemplate", fmt.Sprintf("no template for label %s", l))
+				continue
+			}
+			if l == "" {
+				r.AddError("SMSTextTemplate", fmt.Sprintf("no label for template %s", *t))
+				continue
+			}
+			r.validateSMSTemplate(*t)
 		}
 	}
 
-	// Check template length.
-	if l := len(r.SMSTextTemplate); l > SMSTemplateMaxLength {
-		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %v characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
-	}
 	// Check expansion length based on settings.
 	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
 	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
@@ -432,6 +427,33 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		return fmt.Errorf("realm validation failed: %s", strings.Join(r.ErrorMessages(), ", "))
 	}
 	return nil
+}
+
+// validateSMSTemplate is a helper method to validate a single SMSTemplate.
+// Errors are returned by appending them to the realm's Errorable fields.
+func (r *Realm) validateSMSTemplate(t string) {
+	if r.EnableENExpress {
+		if !strings.Contains(t, SMSENExpressLink) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
+		}
+		if strings.Contains(t, SMSRegion) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
+		}
+		if strings.Contains(t, SMSLongCode) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
+		}
+
+	} else {
+		// Check that we have exactly one of [code] or [longcode] as template substitutions.
+		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
+			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+		}
+	}
+
+	// Check template length.
+	if l := len(t); l > SMSTemplateMaxLength {
+		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %d characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
+	}
 }
 
 // GetCodeDurationMinutes is a helper for the HTML rendering to get a round
