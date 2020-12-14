@@ -36,12 +36,12 @@ import (
 type Controller struct {
 	config  *config.Modeler
 	db      *database.Database
-	h       *render.Renderer
+	h       render.Renderer
 	limiter limiter.Store
 }
 
 // New creates a new modeler controller.
-func New(ctx context.Context, config *config.Modeler, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
+func New(ctx context.Context, config *config.Modeler, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
 	return &Controller{
 		config:  config,
 		db:      db,
@@ -59,13 +59,13 @@ func (c *Controller) HandleModel() http.Handler {
 
 		if err := c.db.ClaimModelerStatus(); err != nil {
 			logger.Errorw("failed to claim modeler status", "error", err)
-			c.h.JSON500(w, err)
+			c.h.RenderJSON500(w, err)
 			return
 		}
 
 		if err := c.rebuildModels(ctx); err != nil {
 			logger.Errorw("failed to build models", "error", err)
-			c.h.JSON500(w, err)
+			c.h.RenderJSON500(w, err)
 			return
 		}
 

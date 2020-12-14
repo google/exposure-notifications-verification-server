@@ -28,7 +28,7 @@ import (
 // RequireMFA checks the realm's MFA requirements and enforces them.
 // Use requireRealm before requireMFA to ensure the currently selected realm is on context.
 // If no realm is selected, this assumes MFA is required.
-func RequireMFA(authProvider auth.Provider, h *render.Renderer) mux.MiddlewareFunc {
+func RequireMFA(authProvider auth.Provider, h render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -39,11 +39,13 @@ func RequireMFA(authProvider auth.Provider, h *render.Renderer) mux.MiddlewareFu
 				return
 			}
 
-			currentUser := controller.UserFromContext(ctx)
-			if currentUser == nil {
-				controller.MissingUser(w, r, h)
+			membership := controller.MembershipFromContext(ctx)
+			if membership == nil {
+				controller.MissingMembership(w, r, h)
 				return
 			}
+			currentRealm := membership.Realm
+			currentUser := membership.User
 
 			mfaEnabled, err := authProvider.MFAEnabled(ctx, session)
 			if err != nil {
@@ -53,13 +55,7 @@ func RequireMFA(authProvider auth.Provider, h *render.Renderer) mux.MiddlewareFu
 
 			prompted := controller.MFAPromptedFromSession(session)
 			if !mfaEnabled {
-				realm := controller.RealmFromContext(ctx)
-				if realm == nil {
-					controller.MissingRealm(w, r, h)
-					return
-				}
-
-				if mode := realm.EffectiveMFAMode(currentUser); mode == database.MFARequired ||
+				if mode := currentRealm.EffectiveMFAMode(currentUser); mode == database.MFARequired ||
 					mode == database.MFAOptionalPrompt && !prompted {
 					controller.RedirectToMFA(w, r, h)
 					return

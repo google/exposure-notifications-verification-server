@@ -16,7 +16,8 @@
     <label>Bulk issue codes</label>
     <div class="form-group">
       <div class="form-check">
-        <input type="radio" name="allow_bulk" id="allow-bulk-true" class="form-check-input" value="true"{{if $realm.AllowBulkUpload }} checked{{end}}/>
+        <input type="radio" name="allow_bulk" id="allow-bulk-true" class="form-check-input"
+          value="true" {{checkedIf $realm.AllowBulkUpload}} />
         <label for="allow-bulk-true" class="form-check-label">
           Allow
           <small class="form-text text-muted mb-3">
@@ -26,7 +27,8 @@
       </div>
 
       <div class="form-check mb-3">
-        <input type="radio" name="allow_bulk" id="allow-bulk-false" class="form-check-input" value="false"{{if not $realm.AllowBulkUpload }} checked{{end}} />
+        <input type="radio" name="allow_bulk" id="allow-bulk-false" class="form-check-input"
+          value="false" {{checkedIf (not $realm.AllowBulkUpload)}} />
         <label for="allow-bulk-false" class="form-check-label">
           Disallow
           <small class="form-text text-muted mb-3">
@@ -40,40 +42,44 @@
   <div class="form-group">
     <label>Allowed test types</label>
     {{if not $realm.EnableENExpress}}
-    <div class="form-check mb-3">
-      <input type="radio" name="allowed_test_types" id="test-type-negative" class="form-check-input" value="{{$testTypes.negative}}"{{if eq $realm.AllowedTestTypes $testTypes.negative}} checked{{end}}/>
-      <label for="test-type-negative" class="form-check-label">
-        Positive + Likely + Negative
-        <small class="form-text text-muted">
-          Support confirmed positive tests from an official testing
-          source, clinical diagnoses without a test, and confirmed
-          negative test from an official testing source.
-        </small>
-      </label>
-    </div>
+      <div class="form-check mb-3">
+        <input type="radio" name="allowed_test_types" id="test-type-negative" class="form-check-input"
+          value="{{$testTypes.negative}}" {{checkedIf (eq $realm.AllowedTestTypes $testTypes.negative)}} />
+        <label for="test-type-negative" class="form-check-label">
+          Positive + Likely + Negative
+          <small class="form-text text-muted">
+            Support confirmed positive tests from an official testing
+            source, clinical diagnoses without a test, and confirmed
+            negative test from an official testing source.
+          </small>
+        </label>
+      </div>
 
-    <div class="form-check mb-3">
-      <input type="radio" name="allowed_test_types" id="test-type-likely" class="form-check-input" value="{{$testTypes.likely}}"{{if eq $realm.AllowedTestTypes $testTypes.likely}} checked{{end}} />
-      <label for="test-type-likely" class="form-check-label">
-        Positive + Likely
-        <small class="form-text text-muted">
-          Support confirmed positive tests from an official testing
-          source and clinical diagnoses without a test.
-        </small>
-      </label>
-    </div>
+      <div class="form-check mb-3">
+        <input type="radio" name="allowed_test_types" id="test-type-likely" class="form-check-input"
+          value="{{$testTypes.likely}}" {{checkedIf (eq $realm.AllowedTestTypes $testTypes.likely)}} />
+        <label for="test-type-likely" class="form-check-label">
+          Positive + Likely
+          <small class="form-text text-muted">
+            Support confirmed positive tests from an official testing
+            source and clinical diagnoses without a test.
+          </small>
+        </label>
+      </div>
     {{end}}
 
     <div class="form-check mb-3">
-      <input type="radio" name="allowed_test_types" id="test-type-confirmed" class="form-check-input" value="{{$testTypes.confirmed}}"{{if eq $realm.AllowedTestTypes $testTypes.confirmed}} checked{{end}} />
+      <input type="radio" name="allowed_test_types" id="test-type-confirmed"
+        class="form-check-input" value="{{$testTypes.confirmed}}" {{checkedIf (eq $realm.AllowedTestTypes $testTypes.confirmed)}} />
       <label for="test-type-confirmed" class="form-check-label">
         Positive
         <small class="form-text text-muted">
           Only permit confirmed positive tests from an official
           testing source.
-          {{if $realm.EnableENExpress}} <br />
-          You are enrolled in EN Express which only supports the sharing of
-          positive tests.
+          {{if $realm.EnableENExpress}}
+            <br />
+            You are enrolled in EN Express which only supports the sharing of
+            positive tests.
           {{end}}
         </small>
       </label>
@@ -84,7 +90,8 @@
     <label>Date configuration</label>
     <div class="form-group">
       <div class="form-check mb-3">
-        <input type="radio" name="require_date" id="require-date-false" class="form-check-input" value="false"{{if not $realm.RequireDate }} checked{{end}}/>
+        <input type="radio" name="require_date" id="require-date-false" class="form-check-input"
+          value="false" {{checkedIf (not $realm.RequireDate)}} />
         <label for="require-date-false" class="form-check-label">
           Optional date
           <small class="form-text text-muted">
@@ -95,7 +102,8 @@
       </div>
 
       <div class="form-check mb-3">
-        <input type="radio" name="require_date" id="require-date-true" class="form-check-input" value="true"{{if $realm.RequireDate }} checked{{end}} />
+        <input type="radio" name="require_date" id="require-date-true" class="form-check-input"
+          value="true" {{checkedIf $realm.RequireDate}} />
         <label for="require-date-true" class="form-check-label">
           Required date
           <small class="form-text text-muted">
@@ -204,7 +212,7 @@
       length of of the SMS message should not exceed 160 characters, or your message will need to be split
       in transit and may not be joined correctly. There are some special strings that you can use
       to substitute items.<br/>
-      
+
       If your choose to exceed 160 characters, your message will be broken up into
       individual messages of 153 characters and reconstructed at the mobile device.  The user may be
       charged for each individual message. The overall maximum length of an SMS Template is {{.maxSMSTemplate}}
@@ -224,6 +232,8 @@
           </li>
           {{end}}
           <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
+          <li><code>[code]</code>The 'short' verification code can be optionally included here in the event the link isn't clickable for the user. Typically this is not needed.</li>
+          <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units). Should be included if <code>[code]</code> is used</li>
         </ul>
 
         Here is an example SMS template using EN Express.
@@ -294,7 +304,8 @@
   </div>
 
   <div class="mt-4">
-    <input type="submit" class="btn btn-primary btn-block" value="Update verification codes settings" />
+    <input type="submit" class="btn btn-primary btn-block"
+      value="Update verification codes settings" />
   </div>
 </form>
 

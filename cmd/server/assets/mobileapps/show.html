@@ -2,6 +2,9 @@
 
 {{$app := .app}}
 
+{{$currentMembership := .currentMembership}}
+{{$canWrite := $currentMembership.Can rbac.MobileAppWrite}}
+
 <!doctype html>
 <html lang="en">
 
@@ -16,15 +19,19 @@
     {{template "flash" .}}
 
     <h1>{{$app.Name}}</h1>
-    <p class="float-right">
-      <a href="/realm/mobile-apps/{{$app.ID}}/edit">Edit</a>
-    </p>
     <p>
       Here is information about the mobile app.
     </p>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
+      <div class="card-header">
+        Details
+        {{if $canWrite}}
+          <a href="/realm/mobile-apps/{{$app.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this mobile app">
+            <span class="oi oi-pencil" aria-hidden="true"></span>
+          </a>
+        {{end}}
+      </div>
       <div class="card-body">
         <dl class="mb-n1">
           <dt>App name</dt>

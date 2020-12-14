@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 const (
@@ -35,11 +36,17 @@ func (c *Controller) HandleEvents() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
+		if !membership.Can(rbac.AuditRead) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		currentRealm := membership.Realm
 
 		var scopes []database.Scope
 		from := r.FormValue(QueryFromSearch)
@@ -52,13 +59,13 @@ func (c *Controller) HandleEvents() http.Handler {
 			return
 		}
 
-		events, paginator, err := realm.ListAudits(c.db, pageParams, scopes...)
+		events, paginator, err := currentRealm.ListAudits(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderEvents(ctx, w, realm, events, paginator, from, to)
+		c.renderEvents(ctx, w, currentRealm, events, paginator, from, to)
 	})
 }
 

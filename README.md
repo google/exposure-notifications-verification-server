@@ -73,7 +73,7 @@ for a verification system:
 
 -   [API guide](docs/api.md)
 -   [Exposure Notifications Express SMS / Deep Link Handling](docs/link_handling.md)
--   [Realm admin guide](docs/realm-admin-guide.md)
+-   [Realm administration guide](docs/realm-admin-guide.md)
 -   [Case worker guide](docs/case-worker-guide.md)
 -   [System admin guide](docs/system-admin-guide.md)
 -   [Development](docs/development.md)

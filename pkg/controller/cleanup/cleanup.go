@@ -35,11 +35,11 @@ import (
 type Controller struct {
 	config *config.CleanupConfig
 	db     *database.Database
-	h      *render.Renderer
+	h      render.Renderer
 }
 
 // New creates a new cleanup controller.
-func New(ctx context.Context, config *config.CleanupConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
+func New(ctx context.Context, config *config.CleanupConfig, db *database.Database, h render.Renderer) (*Controller, error) {
 	return &Controller{
 		config: config,
 		db:     db,

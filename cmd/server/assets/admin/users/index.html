@@ -30,7 +30,6 @@
             <span class="input-group-prepend">
               <select name="filter" id="filter" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
                 <option value="" selected>All users</option>
-                <option value="realmAdmins" {{selectedIf (eq .filter "realmAdmins")}}>Realm admins</option>
                 <option value="systemAdmins" {{selectedIf (eq .filter "systemAdmins")}}>System admins</option>
               </select>
             </span>
@@ -50,7 +49,6 @@
         <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0" id="results-table">
           <thead>
             <tr>
-              <th scope="col" width="40"></th>
               <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col" width="40"></th>
@@ -59,17 +57,11 @@
           <tbody>
           {{range $users}}
             <tr>
-              <td class="text-center">
-                {{if .SystemAdmin}}
-                <span class="oi oi-wrench" aria-hidden="true"
-                  data-toggle="tooltip" title="System admin"></span>
-                {{end}}
-              </td>
               <td class="text-truncate">
                 <a href="/admin/users/{{.ID}}">{{.Name}}</a>
-                {{if .IsRealmAdmin}}
-                <span class="oi oi-badge ml-2" aria-hidden="true"
-                  data-toggle="tooltip" title="Realm admin"></span>
+                {{if .SystemAdmin}}
+                  <span class="oi oi-wrench ml-1" aria-hidden="true"
+                    data-toggle="tooltip" title="System admin"></span>
                 {{end}}
               </td>
               <td class="text-truncate">{{.Email}}</td>

@@ -14,12 +14,26 @@
 
 locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts"
+  p99_latency_thresholds = {
+    adminapi = "5s"
+  }
+  p99_latency_thresholds_default = "2s"
+
+  p99_latency_condition = join("\n  || ", concat(
+    [
+      for k, v in local.p99_latency_thresholds :
+      "(resource.backend_target_name == '${k}' && val > ${replace(v, "/(\\d+)(.*)/", "$1 '$2'")})"
+    ],
+    [
+      "(val > ${replace(local.p99_latency_thresholds_default, "/(\\d+)(.*)/", "$1 '$2'")})"
+    ]
+  ))
 }
 
 resource "google_monitoring_alert_policy" "backend_latency" {
   count        = var.https-forwarding-rule == "" ? 0 : 1
   project      = var.verification-server-project
-  display_name = "ElevatedLatencyGreaterThan2s"
+  display_name = "LatencyTooHigh"
   combiner     = "OR"
   conditions {
     display_name = "/backend_latencies"
@@ -34,7 +48,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
       | align delta(1m)
       | every 1m
       | group_by [resource.backend_target_name], [val: percentile(value.backend_latencies, 99)]
-      | condition val > 2 's'
+      | condition ${local.p99_latency_condition}
       EOT
       trigger {
         count = 1
@@ -43,7 +57,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
   }
 
   documentation {
-    content   = "${local.playbook_prefix}/ElevatedLatencyGreaterThan2s.md"
+    content   = "${local.playbook_prefix}/LatencyTooHigh.md"
     mime_type = "text/markdown"
   }
 
@@ -205,13 +219,24 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
   conditions {
     display_name = "Stackdriver metric export error rate"
     condition_monitoring_query_language {
-      duration = "300s"
-      query    = <<-EOT
+      duration = "900s"
+      # NOTE: this query calculates the rate over a 5min window instead of
+      # usual 1min window. This is intentional:
+      # The rate window should be larger than the interval of the errors.
+      # Currently we export to stackdriver every 2min, meaning if the export is
+      # constantly failing, our calculated error rate with 1min window will
+      # have the number oscillating between 0 and 1, and we would never get an
+      # alert beacuase each time the value reaches 0 the timer to trigger the
+      # alert is reset.
+      #
+      # Changing this to 5min window means the condition is "on" as soon as
+      # there's a single export error and last at least 5min. The alert is
+      # firing if the condition is "on" for >15min.
+      query = <<-EOT
       fetch
       cloud_run_revision::logging.googleapis.com/user/stackdriver_export_error_count
-      | align rate(1m)
+      | align rate(5m)
       | group_by [resource.service_name], [val: sum(value.stackdriver_export_error_count)]
-      # Any export error for more than 5min should alert.
       | condition val > 0
       EOT
       trigger {

@@ -20,55 +20,55 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
 func (c *Controller) HandleShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c.Show(w, r, false /*resetPassword*/)
-	})
-}
+		ctx := r.Context()
+		vars := mux.Vars(r)
 
-func (c *Controller) Show(w http.ResponseWriter, r *http.Request, resetPassword bool) {
-	ctx := r.Context()
-	vars := mux.Vars(r)
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
 
-	session := controller.SessionFromContext(ctx)
-	if session == nil {
-		controller.MissingSession(w, r, c.h)
-		return
-	}
-
-	realm := controller.RealmFromContext(ctx)
-	if realm == nil {
-		controller.MissingRealm(w, r, c.h)
-		return
-	}
-
-	currentUser := controller.UserFromContext(ctx)
-	if currentUser == nil {
-		controller.MissingUser(w, r, c.h)
-		return
-	}
-
-	// Pull the user from the id.
-	user, err := c.findUser(currentUser, realm, vars["id"])
-	if err != nil {
-		if database.IsNotFound(err) {
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.UserRead) {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		controller.InternalError(w, r, c.h, err)
-		return
-	}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
-	c.renderShow(ctx, w, user)
+		// Pull the user from the id.
+		user, userMembership, err := c.findUser(currentUser, currentRealm, vars["id"])
+		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		c.renderShow(ctx, w, user, userMembership)
+	})
 }
 
-func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User) {
+func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user *database.User, membership *database.Membership) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("User: %s", user.Name)
 	m["user"] = user
+	m["userMembership"] = membership
+	m["permissions"] = rbac.PermissionMap()
 	c.h.RenderHTML(w, "users/show", m)
 }

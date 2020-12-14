@@ -16,6 +16,7 @@ package database
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func TestSMS(t *testing.T) {
@@ -46,6 +48,199 @@ func TestSMS(t *testing.T) {
 	}
 }
 
+func TestValidation(t *testing.T) {
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	os.Setenv("ENX_REDIRECT_DOMAIN", "https://en.express")
+
+	valid := "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
+
+	cases := []struct {
+		Name  string
+		Input *Realm
+		Error string
+	}{
+		{
+			Name: "empty_name",
+			Input: &Realm{
+				Name: " ",
+			},
+			Error: "name cannot be blank",
+		},
+		{
+			Name: "region_code_too_long",
+			Input: &Realm{
+				Name:       "foo",
+				RegionCode: "USA-IS-A-OK",
+			},
+			Error: "regionCode cannot be more than 10 characters",
+		},
+		{
+			Name: "enx_region_code_mismatch",
+			Input: &Realm{
+				Name:            "foo",
+				RegionCode:      " ",
+				EnableENExpress: true,
+			},
+			Error: "regionCode cannot be blank when using EN Express",
+		},
+		{
+			Name: "rotation_warning_too_big",
+			Input: &Realm{
+				Name:                        "a",
+				PasswordRotationPeriodDays:  42,
+				PasswordRotationWarningDays: 43,
+			},
+			Error: "passwordWarn may not be longer than password rotation period",
+		},
+		{
+			Name: "code_length_too_short",
+			Input: &Realm{
+				Name:       "a",
+				CodeLength: 5,
+			},
+			Error: "codeLength must be at least 6",
+		},
+		{
+			Name: "code_duration_too_long",
+			Input: &Realm{
+				Name:         "a",
+				CodeLength:   6,
+				CodeDuration: FromDuration(time.Hour + time.Minute),
+			},
+			Error: "codeDuration must be no more than 1 hour",
+		},
+		{
+			Name: "long_code_length_too_short",
+			Input: &Realm{
+				Name:           "a",
+				CodeLength:     6,
+				LongCodeLength: 11,
+			},
+			Error: "longCodeLength must be at least 12",
+		},
+		{
+			Name: "long_code_duration_too_long",
+			Input: &Realm{
+				Name:             "a",
+				CodeLength:       6,
+				LongCodeLength:   12,
+				LongCodeDuration: FromDuration(24*time.Hour + time.Second),
+			},
+			Error: "longCodeDuration must be no more than 24 hours",
+		},
+		{
+			Name: "missing_enx_link",
+			Input: &Realm{
+				Name:            "a",
+				EnableENExpress: true,
+				SMSTextTemplate: "call 1-800-555-1234",
+			},
+			Error: "SMSTextTemplate must contain \"[enslink]\"",
+		},
+		{
+			Name: "enx_link_contains_region",
+			Input: &Realm{
+				Name:            "a",
+				EnableENExpress: true,
+				SMSTextTemplate: "[enslink] [region]",
+			},
+			Error: "SMSTextTemplate cannot contain \"[region]\" - this is automatically included in \"[enslink]\"",
+		},
+		{
+			Name: "enx_link_contains_long_code",
+			Input: &Realm{
+				Name:            "a",
+				EnableENExpress: true,
+				SMSTextTemplate: "[enslink] [longcode]",
+			},
+			Error: "SMSTextTemplate cannot contain \"[longcode]\" - the long code is automatically included in \"[enslink]\"",
+		},
+		{
+			Name: "link_missing_code",
+			Input: &Realm{
+				Name:            "a",
+				EnableENExpress: false,
+				SMSTextTemplate: "call me",
+			},
+			Error: "SMSTextTemplate must contain exactly one of \"[code]\" or \"[longcode]\"",
+		},
+		{
+			Name: "link_both_codess",
+			Input: &Realm{
+				Name:            "a",
+				EnableENExpress: false,
+				SMSTextTemplate: "[code][longcode]",
+			},
+			Error: "SMSTextTemplate must contain exactly one of \"[code]\" or \"[longcode]\"",
+		},
+		{
+			Name: "text_too_long",
+			Input: &Realm{
+				Name:            "a",
+				EnableENExpress: false,
+				SMSTextTemplate: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus nisi erat, sollicitudin eget malesuada vitae, lacinia eget justo. Nunc luctus tincidunt purus vel blandit. Suspendisse eget sapien elit. Vivamus scelerisque, quam vel vestibulum semper, tortor arcu ullamcorper lorem, efficitur imperdiet tellus arcu id lacus. Donec sit amet orci sed dolor interdum venenatis. Nam turpis lectus, pharetra sed lobortis id, aliquam ut neque. Quisque placerat arcu eu blandit finibus. Mauris eleifend nulla et orci vehicula mollis. Quisque ut ante id ante facilisis dignissim.
+
+				Curabitur non massa urna. Phasellus sit amet nisi ut quam dapibus pretium eget in turpis. Phasellus et justo odio. In auctor, felis a tincidunt maximus, nunc erat vehicula ligula, ac posuere felis odio eget mauris. Nulla gravida.`,
+			},
+			Error: "SMSTextTemplate must be 800 characters or less, current message is 807 characters long",
+		},
+		{
+			Name: "text_too_long",
+			Input: &Realm{
+				Name:            "a",
+				EnableENExpress: false,
+				SMSTextTemplate: strings.Repeat("[enslink]", 88),
+			},
+			Error: "SMSTextTemplate when expanded, the result message is too long (3168 characters). The max expanded message is 918 characters",
+		},
+		{
+			Name: "valid",
+			Input: &Realm{
+				Name:            "a",
+				CodeLength:      6,
+				LongCodeLength:  12,
+				EnableENExpress: false,
+				SMSTextTemplate: valid,
+			},
+		},
+		{
+			Name: "alternate_sms_template",
+			Input: &Realm{
+				Name:                      "a",
+				EnableENExpress:           false,
+				SMSTextTemplate:           valid,
+				SMSTextAlternateTemplates: map[string]*string{"alternate1": nil},
+			},
+			Error: "no template for label alternate1",
+		},
+		{
+			Name: "alternate_sms_template valid",
+			Input: &Realm{
+				Name:                      "b",
+				CodeLength:                6,
+				LongCodeLength:            12,
+				EnableENExpress:           false,
+				SMSTextTemplate:           valid,
+				SMSTextAlternateTemplates: map[string]*string{"alternate1": &valid},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			if err := db.SaveRealm(tc.Input, SystemTest); err == nil {
+				if tc.Error != "" {
+					t.Fatalf("expected error: %q got: nil", tc.Error)
+				}
+			} else if tc.Error == "" {
+				t.Fatalf("expected no error, got %q", err.Error())
+			} else if !strings.Contains(err.Error(), tc.Error) {
+				t.Fatalf("wrong error, want: %q got: %q", tc.Error, err.Error())
+			}
+		})
+	}
+}
+
 func TestPerUserRealmStats(t *testing.T) {
 	t.Parallel()
 
@@ -65,16 +260,19 @@ func TestPerUserRealmStats(t *testing.T) {
 	users := []*User{}
 	for userIdx, name := range []string{"Rocky", "Bullwinkle", "Boris", "Natasha"} {
 		user := &User{
-			Realms:      []*Realm{realm},
 			Name:        name,
 			Email:       name + "@gmail.com",
 			SystemAdmin: false,
 		}
-
 		if err := db.SaveUser(user, SystemTest); err != nil {
 			t.Fatalf("[%v] error creating user: %v", name, err)
 		}
 		users = append(users, user)
+
+		// Add to realm
+		if err := user.AddToRealm(db, realm, rbac.CodeIssue, SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
 		// Add some stats per user.
 		for i := 0; i < numDays; i++ {

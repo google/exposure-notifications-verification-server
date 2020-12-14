@@ -31,6 +31,8 @@ type contextKey string
 const (
 	contextKeyAuthorizedApp = contextKey("authorizedApp")
 	contextKeyFirebaseUser  = contextKey("firebaseUser")
+	contextKeyMembership    = contextKey("membership")
+	contextKeyMemberships   = contextKey("memberships")
 	contextKeyRealm         = contextKey("realm")
 	contextKeyRequestID     = contextKey("requestID")
 	contextKeySession       = contextKey("session")
@@ -196,6 +198,54 @@ func UserFromContext(ctx context.Context) *database.User {
 	}
 
 	t, ok := v.(*database.User)
+	if !ok {
+		return nil
+	}
+	return t
+}
+
+// WithMemberships stores the user's available memberships on the context.
+func WithMemberships(ctx context.Context, u []*database.Membership) context.Context {
+	m := TemplateMapFromContext(ctx)
+	m["currentMemberships"] = u
+	ctx = WithTemplateMap(ctx, m)
+
+	return context.WithValue(ctx, contextKeyMemberships, u)
+}
+
+// MembershipsFromContext retrieves the membership from the context. If no value
+// exists, it returns nil.
+func MembershipsFromContext(ctx context.Context) []*database.Membership {
+	v := ctx.Value(contextKeyMemberships)
+	if v == nil {
+		return nil
+	}
+
+	t, ok := v.([]*database.Membership)
+	if !ok {
+		return nil
+	}
+	return t
+}
+
+// WithMembership stores the current membership on the context.
+func WithMembership(ctx context.Context, u *database.Membership) context.Context {
+	m := TemplateMapFromContext(ctx)
+	m["currentMembership"] = u
+	ctx = WithTemplateMap(ctx, m)
+
+	return context.WithValue(ctx, contextKeyMembership, u)
+}
+
+// MembershipFromContext retrieves the membership from the context. If no value
+// exists, it returns nil.
+func MembershipFromContext(ctx context.Context) *database.Membership {
+	v := ctx.Value(contextKeyMembership)
+	if v == nil {
+		return nil
+	}
+
+	t, ok := v.(*database.Membership)
 	if !ok {
 		return nil
 	}

@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -42,17 +43,18 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.MobileAppWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
@@ -79,7 +81,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		// Build the authorized app struct
 		app := &database.MobileApp{
 			Name:    form.Name,
-			RealmID: realm.ID,
+			RealmID: currentRealm.ID,
 			URL:     form.URL,
 			OS:      form.OS,
 			AppID:   form.AppID,

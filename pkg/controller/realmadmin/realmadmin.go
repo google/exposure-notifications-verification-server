@@ -29,11 +29,11 @@ type Controller struct {
 	cacher  cache.Cacher
 	config  *config.ServerConfig
 	db      *database.Database
-	h       *render.Renderer
+	h       render.Renderer
 	limiter limiter.Store
 }
 
-func New(ctx context.Context, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
+func New(ctx context.Context, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
 	return &Controller{
 		cacher:  cacher,
 		config:  config,

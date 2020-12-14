@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 const (
@@ -32,11 +33,17 @@ func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
+		if !membership.Can(rbac.UserRead) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		currentRealm := membership.Realm
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
@@ -48,22 +55,22 @@ func (c *Controller) HandleIndex() http.Handler {
 		q := r.FormValue(QueryKeySearch)
 		scopes = append(scopes, database.WithUserSearch(q))
 
-		users, paginator, err := realm.ListUsers(c.db, pageParams, scopes...)
+		memberships, paginator, err := currentRealm.ListMemberships(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		c.renderIndex(ctx, w, users, paginator, q)
+		c.renderIndex(ctx, w, memberships, paginator, q)
 	})
 }
 
 func (c *Controller) renderIndex(
 	ctx context.Context, w http.ResponseWriter,
-	users []*database.User, paginator *pagination.Paginator, query string) {
+	memberships []*database.Membership, paginator *pagination.Paginator, query string) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Users")
-	m["users"] = users
+	m["memberships"] = memberships
 	m["paginator"] = paginator
 	m["query"] = query
 	c.h.RenderHTML(w, "users/index", m)

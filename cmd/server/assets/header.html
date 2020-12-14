@@ -40,16 +40,19 @@
 
 {{/* defines the top navigation bar */}}
 {{define "navbar"}}
+{{$currentMembership := .currentMembership}}
 <header class="mb-3">
-  {{if .currentRealm}}
-  <div href="/" class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
-    {{.currentRealm.Name}}{{if .currentRealm.RegionCode}} - {{.currentRealm.RegionCode}}{{end}}
-  </div>
+  {{if $currentMembership}}
+    {{$currentRealm := $currentMembership.Realm}}
+    <div href="/" class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
+      {{$currentRealm.Name}}{{if $currentRealm.RegionCode}} - {{$currentRealm.RegionCode}}{{end}}
+    </div>
   {{end}}
+
   {{if .maintenanceMode}}
-  <div class="alert alert-danger" role="alert">
-    The server is undergoing maintenance and is read-only. Requests to issue new codes will fail.
-  </div>
+    <div class="alert alert-danger" role="alert">
+      The server is undergoing maintenance and is read-only. Requests to issue new codes will fail.
+    </div>
   {{end}}
 
   <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
@@ -57,21 +60,30 @@
       {{template "navtoggle" .}}
 
       <div class="collapse navbar-collapse mt-2" id="navbar">
-        {{if .currentRealm}}
         <ul class="nav mr-auto flex-column flex-md-row">
-          <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsDir "/codes/issue"}}active{{end}}" href="/codes/issue">{{t $.locale "nav.issue-code"}}</a>
-          </li>
-          {{if .currentRealm}}{{if .currentRealm.AllowBulkUpload}}
-          <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsDir "/codes/bulk-issue"}}active{{end}}" href="/codes/bulk-issue">{{t $.locale "nav.bulk-issue-codes"}}</a>
-          </li>
-          {{end}}{{end}}
-          <li class="nav-item">
-            <a class="nav-link {{if .currentPath.IsDir "/codes/status"}}active{{end}}" href="/codes/status">{{t $.locale "nav.check-code-status"}}</a>
-          </li>
+          {{if $currentMembership.Can rbac.CodeIssue}}
+            <li class="nav-item">
+              <a class="nav-link {{if .currentPath.IsDir "/codes/issue"}}active{{end}}" href="/codes/issue">
+                {{t $.locale "nav.issue-code"}}
+              </a>
+            </li>
+          {{end}}
+          {{if and $currentMembership.Realm.AllowBulkUpload ($currentMembership.Can rbac.CodeBulkIssue)}}
+            <li class="nav-item">
+              <a class="nav-link {{if .currentPath.IsDir "/codes/bulk-issue"}}active{{end}}" href="/codes/bulk-issue">
+                {{t $.locale "nav.bulk-issue-codes"}}
+              </a>
+            </li>
+          {{end}}
+          {{if $currentMembership.Can rbac.CodeRead}}
+            <li class="nav-item">
+              <a class="nav-link {{if .currentPath.IsDir "/codes/status"}}active{{end}}" href="/codes/status">
+                {{t $.locale "nav.check-code-status"}}
+              </a>
+            </li>
+          {{end}}
         </ul>
-        {{end}}
+
         {{template "navdropdown" .}}
       </div>
     </div>
@@ -89,48 +101,88 @@ aria-expanded="false" aria-label="Toggle navigation">
 
 {{/* defines the user dropdown menu */}}
 {{define "navdropdown"}}
+{{$currentUser := .currentUser}}
+{{$currentMembership := .currentMembership}}
+{{$currentMemberships := .currentMemberships}}
 <ul class="navbar-nav ml-3">
-  {{if .currentUser}}
-  <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="profile-menu" data-toggle="dropdown" aria-haspopup="true"
-      aria-expanded="false">
-      {{.currentUser.Name}}
-    </a>
-
-    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profile-menu">
-      {{if .currentRealm }}
-      {{if .currentUser.CanAdminRealm .currentRealm.ID}}
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/apikeys"}}active{{end}}" href="/realm/apikeys">{{t $.locale "nav.api-keys"}}</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/mobile-apps"}}active{{end}}" href="/realm/mobile-apps">{{t $.locale "nav.mobile-apps"}}</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/events"}}active{{end}}" href="/realm/events">{{t $.locale "nav.event-log"}}</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/keys"}}active{{end}}" href="/realm/keys">{{t $.locale "nav.signing-keys"}}</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/stats"}}active{{end}}" href="/realm/stats">{{t $.locale "nav.statistics"}}</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/users"}}active{{end}}" href="/realm/users">{{t $.locale "nav.users"}}</a>
-      <a class="dropdown-item {{if .currentPath.IsDir "/realm/settings"}}active{{end}}" href="/realm/settings#general">{{t $.locale "nav.settings"}}</a>
-      <div class="dropdown-divider"></div>
-      {{end}}
-      {{end}}
-
-      {{if gt (len .currentUser.Realms) 1}}
-      <a class="dropdown-item {{if .currentPath.IsDir "/login/select-realm"}}active{{end}}" href="/login/select-realm">
-        {{if .currentRealm}}{{t $.locale "nav.change-realm"}}{{else}}{{t $.locale "nav.select-realm"}}{{end}}
+  {{if $currentUser}}
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" id="profile-menu"
+        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="oi oi-person"></span>
       </a>
-      <div class="dropdown-divider"></div>
-      {{end}}
 
-      {{if .currentUser.SystemAdmin}}
-      <a class="dropdown-item {{if .currentPath.IsDir "/admin"}}active{{end}}" href="/admin/realms">{{t $.locale "nav.system-admin"}}</a>
-      <div class="dropdown-divider"></div>
-      {{end}}
+      <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profile-menu">
+        {{if $currentMembership}}
+          {{$showRealmMenu := false}}
+          {{if $currentMembership.Can rbac.APIKeyRead}}
+            {{$showRealmMenu = true}}
+            <a class="dropdown-item {{if .currentPath.IsDir "/realm/apikeys"}}active{{end}}" href="/realm/apikeys">
+              {{t $.locale "nav.api-keys"}}
+            </a>
+          {{end}}
+          {{if $currentMembership.Can rbac.MobileAppRead}}
+            {{$showRealmMenu = true}}
+            <a class="dropdown-item {{if .currentPath.IsDir "/realm/mobile-apps"}}active{{end}}" href="/realm/mobile-apps">
+              {{t $.locale "nav.mobile-apps"}}
+            </a>
+          {{end}}
+          {{if $currentMembership.Can rbac.AuditRead}}
+            {{$showRealmMenu = true}}
+            <a class="dropdown-item {{if .currentPath.IsDir "/realm/events"}}active{{end}}" href="/realm/events">
+              {{t $.locale "nav.event-log"}}
+            </a>
+          {{end}}
+          {{if $currentMembership.Can rbac.SettingsRead}}
+            {{$showRealmMenu = true}}
+            <a class="dropdown-item {{if .currentPath.IsDir "/realm/keys"}}active{{end}}" href="/realm/keys">
+              {{t $.locale "nav.signing-keys"}}
+            </a>
+          {{end}}
+          {{if $currentMembership.Can rbac.StatsRead}}
+            {{$showRealmMenu = true}}
+            <a class="dropdown-item {{if .currentPath.IsDir "/realm/stats"}}active{{end}}" href="/realm/stats">
+              {{t $.locale "nav.statistics"}}
+            </a>
+          {{end}}
+          {{if $currentMembership.Can rbac.UserRead}}
+            {{$showRealmMenu = true}}
+            <a class="dropdown-item {{if .currentPath.IsDir "/realm/users"}}active{{end}}" href="/realm/users">
+              {{t $.locale "nav.users"}}
+            </a>
+          {{end}}
+          {{if $currentMembership.Can rbac.SettingsRead}}
+            {{$showRealmMenu = true}}
+            <a class="dropdown-item {{if .currentPath.IsDir "/realm/settings"}}active{{end}}" href="/realm/settings#general">
+              {{t $.locale "nav.settings"}}
+            </a>
+          {{end}}
+          {{if $showRealmMenu}}
+            <div class="dropdown-divider"></div>
+          {{end}}
+        {{end}}
 
-      <a class="dropdown-item {{if .currentPath.IsDir "/account"}}active{{end}}" href="/account">{{t $.locale "nav.my-account"}}</a>
-      <a class="dropdown-item" href="/signout">{{t $.locale "nav.sign-out"}}</a>
-    </div>
-  </li>
+        {{if gt (len $currentMemberships) 1}}
+          <a class="dropdown-item {{if .currentPath.IsDir "/login/select-realm"}}active{{end}}" href="/login/select-realm">
+            {{t $.locale "nav.change-realm"}}
+          </a>
+          <div class="dropdown-divider"></div>
+        {{end}}
+
+        {{if $currentUser.SystemAdmin}}
+          <a class="dropdown-item {{if .currentPath.IsDir "/admin"}}active{{end}}" href="/admin/realms">{{t $.locale "nav.system-admin"}}</a>
+          <div class="dropdown-divider"></div>
+        {{end}}
+
+        <h6 class="dropdown-header">{{$currentUser.Name}}</h6>
+        <a class="dropdown-item {{if .currentPath.IsDir "/account"}}active{{end}}" href="/account">{{t $.locale "nav.my-account"}}</a>
+        <a class="dropdown-item" href="/signout">{{t $.locale "nav.sign-out"}}</a>
+      </div>
+    </li>
   {{else}}
-  <li class="nav-item">
-    <a class="nav-link" href="/">Sign in</a>
-  </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/">Sign in</a>
+    </li>
   {{end}}
 </ul>
 {{end}}

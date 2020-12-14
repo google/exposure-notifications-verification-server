@@ -1,5 +1,8 @@
 {{define "users/import"}}
 
+{{$currentMembership := .currentMembership}}
+{{$permissions := .permissions}}
+
 <!doctype html>
 <html lang="en">
 
@@ -14,7 +17,7 @@
     {{template "flash" .}}
 
     <h1>Import users</h1>
-    <p>Bulk import a list of users to <strong>{{.currentRealm.Name}}</strong>.</p>
+    <p>Bulk import a list of users to <strong>{{$currentMembership.Realm.Name}}</strong>.</p>
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Import</div>
@@ -26,7 +29,10 @@
         </div>
 
         <p>
-          Use this form to import a list of users. The server will create them in batches.
+          Use this form to import a list of users. The server will create them
+          in batches. The users will be imported with permissions to issue and
+          lookup codes. You can promote individual users to administrators in
+          the UI after uploading.
         </p>
 
         <pre>Example file contents:
@@ -35,18 +41,20 @@
           another@example.com, Bob
           </code>
         </pre>
+
         <form id="form">
-          <div class="custom-file">
+          <div class="custom-file mb-3">
             <input type="file" class="custom-file-input" id="csv" accept=".csv" required>
             <label class="custom-file-label" for="csv" id="fileLabel">Select a CSV file</label>
           </div>
+
+          <div class="custom-control custom-checkbox mb-3">
+            <input type="checkbox" class="custom-control-input" name="sendInvites" id="sendInvites" checked>
+            <label class="custom-control-label" for="sendInvites">Send email invitations</label>
+          </div>
+
           <button class="btn btn-primary" type="submit" id="import" disabled>Import users</button>
           <button class="btn btn-danger" id="cancel" disabled>Cancel</button>
-
-          <div class="form-group form-check">
-            <input type="checkbox" class="form-check-input" name="sendInvites" id="sendInvites" checked>
-            <label class="form-check-label" for="sendInvites">Send invitations</label>
-          </div>
         </form>
       </div>
 

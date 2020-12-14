@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
@@ -34,19 +35,20 @@ func (c *Controller) HandleDelete() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.UserWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
-		user, err := c.findUser(currentUser, realm, vars["id"])
+		user, _, err := c.findUser(currentUser, currentRealm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -65,9 +67,7 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		user.RemoveRealm(realm)
-
-		if err := c.db.SaveUser(user, currentUser); err != nil {
+		if err := user.DeleteFromRealm(c.db, currentRealm, currentUser); err != nil {
 			flash.Error("Failed to remove user from realm: %v", err)
 			http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 			return

@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
@@ -39,17 +40,18 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.APIKeyWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
@@ -77,7 +79,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			APIKeyType: form.Type,
 		}
 
-		apiKey, err := realm.CreateAuthorizedApp(c.db, authApp, currentUser)
+		apiKey, err := currentRealm.CreateAuthorizedApp(c.db, authApp, currentUser)
 		if err != nil {
 			flash.Error("Failed to create API Key: %v", err)
 			c.renderNew(ctx, w, authApp)

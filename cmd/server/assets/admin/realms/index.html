@@ -1,6 +1,7 @@
 {{define "admin/realms/index"}}
 
 {{$realms := .realms}}
+{{$memberships := .memberships}}
 
 <!doctype html>
 <html lang="en">
@@ -53,7 +54,13 @@
             <tr>
               <td class="text-center">{{.ID}}</td>
               <td>
-                <a href="/admin/realms/{{.ID}}/edit">{{.Name}}</a>
+                <a href="/admin/realms/{{.ID}}/edit">
+                  {{.Name}}
+                </a>
+                {{if (index $memberships .ID)}}
+                  <span class="small oi oi-circle-check text-success ml-1" aria-hidden="true"
+                    data-toggle="tooltip" title="You have permissions on this realm"></span>
+                {{end}}
               </td>
               <td class="text-center">{{.RegionCode}}</td>
               <td class="text-center">

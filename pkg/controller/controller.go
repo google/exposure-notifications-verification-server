@@ -43,7 +43,7 @@ func init() {
 // Back goes back to the referrer. If the referrer is missing, or if the
 // referrer base URL does not match the request base URL, the redirect is to the
 // homepage.
-func Back(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func Back(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	logger := logging.FromContext(r.Context()).Named("controller.Back")
 
 	ref := r.Header.Get("Referer")
@@ -71,7 +71,7 @@ func Back(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 
 // InternalError handles an internal error, returning the right response to the
 // client.
-func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, err error) {
+func InternalError(w http.ResponseWriter, r *http.Request, h render.Renderer, err error) {
 	logger := logging.FromContext(r.Context())
 	logger.Errorw("internal error", "error", err)
 
@@ -80,39 +80,39 @@ func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, e
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
-		h.HTML500(w, err)
+		h.RenderHTML500(w, err)
 	case prefixInList(accept, ContentTypeJSON):
-		h.JSON500(w, err)
+		h.RenderJSON500(w, err)
 	default:
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 }
 
 // NotFound returns an error indicating the URL was not found.
-func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func NotFound(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
-		h.RenderHTMLStatus(w, http.StatusNotFound, "400", nil)
+		h.RenderHTMLStatus(w, http.StatusNotFound, "404", nil)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 	default:
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
 }
 
-// Unauthorized returns an error indicating the request was unauthorized.
-func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+// Unauthorized returns an error indicating the request was unauthorized. The
+// system always returns 401 (even with authentication is provided but
+// authorization fails).
+func Unauthorized(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
-		flash := Flash(SessionFromContext(r.Context()))
-		flash.Error("You are not authorized to perform that action!")
-		http.Redirect(w, r, "/signout", http.StatusSeeOther)
+		h.RenderHTMLStatus(w, http.StatusUnauthorized, "401", nil)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusUnauthorized, apiErrorUnauthorized)
 	default:
@@ -120,9 +120,9 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	}
 }
 
-// MissingRealm returns an error indicating that the request requires a realm
-// selection, but one was not present.
-func MissingRealm(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+// MissingMembership returns an error indicating that the request requires a
+// realm selection, but one was not present.
+func MissingMembership(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
@@ -140,31 +140,31 @@ func MissingRealm(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 
 // MissingAuthorizedApp returns an internal error when the authorized app does
 // not exist.
-func MissingAuthorizedApp(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func MissingAuthorizedApp(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	InternalError(w, r, h, errMissingAuthorizedApp)
 	return
 }
 
 // MissingSession returns an internal error when the session does not exist.
-func MissingSession(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func MissingSession(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	InternalError(w, r, h, errMissingSession)
 	return
 }
 
 // MissingUser returns an internal error when the user does not exist.
-func MissingUser(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func MissingUser(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	InternalError(w, r, h, errMissingUser)
 	return
 }
 
 // RedirectToMFA redirects to the MFA registration.
-func RedirectToMFA(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func RedirectToMFA(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	http.Redirect(w, r, "/login/register-phone", http.StatusSeeOther)
 	return
 }
 
 // RedirectToChangePassword redirects to the password reset page.
-func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	http.Redirect(w, r, "/login/change-password", http.StatusSeeOther)
 	return
 }

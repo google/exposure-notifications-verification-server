@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -32,15 +33,13 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 		logger := logging.FromContext(ctx).Named("user.HandleImportBatch")
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
-
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
+		if !membership.Can(rbac.UserWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
@@ -51,7 +50,13 @@ func (c *Controller) HandleImportBatch() http.Handler {
 			return
 		}
 
-		newUsers, batchErr := c.importUsers(ctx, request.Users, request.SendInvites)
+		realmMemberships, err := membership.Realm.MembershipPermissionMap(c.db)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		newUsers, batchErr := c.importUsers(ctx, membership.Realm, realmMemberships, membership.User, request.Users, request.SendInvites)
 
 		response := &api.UserBatchResponse{
 			NewUsers: newUsers,
@@ -71,10 +76,10 @@ func (c *Controller) HandleImportBatch() http.Handler {
 	})
 }
 
-func (c *Controller) importUsers(ctx context.Context, users []api.BatchUser, sendInvites bool) ([]*api.BatchUser, *multierror.Error) {
+func (c *Controller) importUsers(ctx context.Context,
+	realm *database.Realm, realmMemberships map[uint]rbac.Permission, actor database.Auditable,
+	users []api.BatchUser, sendInvites bool) ([]*api.BatchUser, *multierror.Error) {
 	logger := logging.FromContext(ctx).Named("user.importUsers")
-	realm := controller.RealmFromContext(ctx)
-	currentUser := controller.UserFromContext(ctx)
 
 	newUsers := make([]*api.BatchUser, 0, len(users))
 	var batchErr *multierror.Error
@@ -94,11 +99,21 @@ func (c *Controller) importUsers(ctx context.Context, users []api.BatchUser, sen
 			user.Email = batchUser.Email
 			user.Name = batchUser.Name
 		}
-		user.Realms = append(user.Realms, realm)
-
-		// Save the user in the database.
-		if err := c.db.SaveUser(user, currentUser); err != nil {
+		if err := c.db.SaveUser(user, actor); err != nil {
 			logger.Errorw("error saving user", "error", err)
+			batchErr = multierror.Append(batchErr, err)
+			continue
+		}
+
+		// Create the user's membership in the realm.
+		var permission rbac.Permission
+		if existing, ok := realmMemberships[user.ID]; ok {
+			permission = existing
+		}
+		permission = permission | rbac.CodeIssue | rbac.CodeBulkIssue | rbac.CodeRead | rbac.CodeExpire
+		if err := user.AddToRealm(c.db, realm, permission, actor); err != nil {
+			logger.Errorw("failed to add user to realm",
+				"user_id", user.ID, "realm_id", realm.ID, "error", err)
 			batchErr = multierror.Append(batchErr, err)
 			continue
 		}

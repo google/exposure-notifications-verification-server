@@ -29,7 +29,7 @@ import (
 //
 // The buffers are fetched via a sync.Pool to reduce allocations and improve
 // performance.
-func (r *Renderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
+func (r *ProdRenderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 	if r.templates == nil {
 		return nil, errors.New("no templates found")
 	}

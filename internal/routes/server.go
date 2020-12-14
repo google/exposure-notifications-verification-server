@@ -132,9 +132,8 @@ func Server(
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
 	requireVerified := middleware.RequireVerified(authProvider, db, h, cfg.SessionDuration)
-	requireAdmin := middleware.RequireRealmAdmin(h)
-	loadCurrentRealm := middleware.LoadCurrentRealm(cacher, db, h)
-	requireRealm := middleware.RequireRealm(h)
+	loadCurrentMembership := middleware.LoadCurrentMembership(cacher, db, h)
+	requireMembership := middleware.RequireMembership(db, h)
 	requireSystemAdmin := middleware.RequireSystemAdmin(h)
 	requireMFA := middleware.RequireMFA(authProvider, h)
 	processFirewall := middleware.ProcessFirewall(h, "server")
@@ -158,7 +157,7 @@ func Server(
 	}
 
 	{
-		loginController := login.New(ctx, authProvider, cfg, db, h)
+		loginController := login.New(ctx, authProvider, cacher, cfg, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
@@ -179,7 +178,7 @@ func Server(
 			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
-			sub.Use(loadCurrentRealm)
+			sub.Use(loadCurrentMembership)
 			sub.Handle("/login", loginController.HandleReauth()).Methods("GET")
 			sub.Handle("/login", loginController.HandleReauth()).Queries("redir", "").Methods("GET")
 			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
@@ -194,25 +193,12 @@ func Server(
 		}
 	}
 
-	// Redirect old /home path to /codes/issue. This route is no longer in use,
-	// but the redirect is preserved in case people have their browser open to the
-	// old page.
-	//
-	// TODO: remove in 0.18+.
-	{
-		sub := r.PathPrefix("/home").Subrouter()
-
-		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("GET")
-		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("GET")
-		sub.Handle("/issue", http.RedirectHandler("/codes/issue", http.StatusPermanentRedirect)).Methods("POST")
-	}
-
 	// codes
 	{
 		sub := r.PathPrefix("/codes").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
+		sub.Use(loadCurrentMembership)
+		sub.Use(requireMembership)
 		sub.Use(processFirewall)
 		sub.Use(requireVerified)
 		sub.Use(requireMFA)
@@ -234,10 +220,9 @@ func Server(
 	{
 		sub := r.PathPrefix("/realm/mobile-apps").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
+		sub.Use(loadCurrentMembership)
+		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireAdmin)
 		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
@@ -250,10 +235,9 @@ func Server(
 	{
 		sub := r.PathPrefix("/realm/apikeys").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
+		sub.Use(loadCurrentMembership)
+		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireAdmin)
 		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
@@ -266,10 +250,9 @@ func Server(
 	{
 		sub := r.PathPrefix("/realm/users").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
+		sub.Use(loadCurrentMembership)
+		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireAdmin)
 		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
@@ -282,10 +265,9 @@ func Server(
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
-		sub.Use(requireRealm)
+		sub.Use(loadCurrentMembership)
+		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireAdmin)
 		sub.Use(requireVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
@@ -316,7 +298,7 @@ func Server(
 	{
 		sub := r.PathPrefix("/admin").Subrouter()
 		sub.Use(requireAuth)
-		sub.Use(loadCurrentRealm)
+		sub.Use(loadCurrentMembership)
 		sub.Use(requireSystemAdmin)
 		sub.Use(rateLimit)
 
@@ -422,7 +404,6 @@ func systemAdminRoutes(r *mux.Router, c *admin.Controller) {
 	r.Handle("/realms/{id:[0-9]+}/edit", c.HandleRealmsUpdate()).Methods("GET")
 	r.Handle("/realms/{realm_id:[0-9]+}/add/{user_id:[0-9]+}", c.HandleRealmsAdd()).Methods("PATCH")
 	r.Handle("/realms/{realm_id:[0-9]+}/remove/{user_id:[0-9]+}", c.HandleRealmsRemove()).Methods("PATCH")
-	r.Handle("/realms/{id:[0-9]+}/realmadmin", c.HandleRealmsSelectAndAdmin()).Methods("GET")
 	r.Handle("/realms/{id:[0-9]+}", c.HandleRealmsUpdate()).Methods("PATCH")
 
 	r.Handle("/users", c.HandleUsersIndex()).Methods("GET")
