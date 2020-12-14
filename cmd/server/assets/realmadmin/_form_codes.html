@@ -197,23 +197,55 @@
       </small>
     {{end}}
   </div>
-
-  <div class="form-label-group">
-    <textarea name="sms_text_template" id="sms-text-template" class="form-control text-monospace{{if $realm.ErrorsFor "SMSTextTemplate"}} is-invalid{{end}}"
-      rows="5" placeholder="SMS text template">{{$realm.SMSTextTemplate}}</textarea>
-    <label for="sms-text-template">SMS text template</label>
+  <div>
+    <div class="btn-grou dropright pb-2">
+      {{if $realm.ErrorsFor "SMSTextTemplate"}}<span class="text-danger oi oi-warning"></span>{{end}}
+      <button type="button" id="sms-template-dropdown-title" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        {{(index .smsTemplates 0).Label}}
+      </button>
+      <div class="dropdown-menu" id="sms-template-menu">
+        {{range $i, $v := .smsTemplates}}
+        <a class="dropdown-item {{if eq $i 0}}active{{end}}" id="sms-template-{{$i}}" href="#">
+          {{if $realm.ErrorsFor $v.Label}}<span class="text-danger oi oi-warning"></span>{{end}}
+          {{$v.Label}}
+        </a>
+        {{end}}
+        <div id="sms-template-dropdown-divider" class="dropdown-divider"></div>
+        <a class="dropdown-item" id="sms-template-new" href="#">New SMS template</a>
+      </div>
+    </div>
     {{if $realm.ErrorsFor "SMSTextTemplate"}}
-    <div class="invalid-feedback">
-      {{joinStrings ($realm.ErrorsFor "SMSTextTemplate") ", "}}
+    <div class="invalid-feedback d-block mt-n1 pb-2">
+      Errors found for one or more SMS templates
     </div>
     {{end}}
+    {{range $i, $v := .smsTemplates}}
+    <div id="sms-template-{{$i}}-div" {{if ne $i 0}}class="d-none"{{end}}>
+      <div class="form-label-group">
+        <input type="form-control text-monospace" name="sms_text_label_{{$i}}" class="form-control" value="{{$v.Label}}" placeholder="Template label" {{if eq $i 0}}readonly{{end}}/>
+        <label for="sms-text-template">Template label</label>
+      </div>
+      <div class="form-label-group">
+        <textarea name="sms_text_template_{{$i}}" class="form-control text-monospace {{if $realm.ErrorsFor $v.Label}}is-invalid{{end}}"
+          rows="5" placeholder="SMS text template">{{$v.Value}}</textarea>
+        <label for="sms-text-template">SMS text template</label>
+      </div>
+      {{if $realm.ErrorsFor $v.Label}}
+      <div class="invalid-feedback d-block mt-n2 mb-3">
+        {{joinStrings ($realm.ErrorsFor $v.Label) ", "}}
+      </div>
+      {{end}}
+      <button class="btn btn-danger mb-3 {{if eq $i 0}}d-none{{end}}" type="button" {{if ne $i 0}}onClick="removeTemplate('sms-template-{{$i}}');"{{end}}>Delete template</button>
+    </div>
+    {{end}}
+    <span  id="templates-end"></span>
     <small class="form-text text-muted">
       The SMS message will be constructed based on the template you provide. The overall
       length of of the SMS message should not exceed 160 characters, or your message will need to be split
       in transit and may not be joined correctly. There are some special strings that you can use
       to substitute items.<br/>
 
-      If your choose to exceed 160 characters, your message will be broken up into
+      If your message exceeds 160 characters, it will be broken up into
       individual messages of 153 characters and reconstructed at the mobile device.  The user may be
       charged for each individual message. The overall maximum length of an SMS Template is {{.maxSMSTemplate}}
       characters before expansion.
@@ -289,7 +321,7 @@
           <p>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration).
             Here we assume that <code>verify.mypha.gov</code> is registred as a universal link for both your iOS
             and Android applications.
-         </p>
+          </p>
           <p>
             <samp class="text-dark">
               You have tested positive for COVID-19. Click here to
@@ -308,5 +340,79 @@
       value="Update verification codes settings" />
   </div>
 </form>
+
+<script type="text/javascript">
+  $(function() {
+      let $SMSDropdownTitle = $('#sms-template-dropdown-title');
+      let $SMSDropdownMenu = $('#sms-template-menu');
+      let $divider = $('#sms-template-dropdown-divider');
+      let $end = $('#templates-end');
+      let $defaultTemplate = $('#sms-template-0');
+      let $defaultTemplateDiv = $('#sms-template-0-div');
+      let $lastActive = $defaultTemplate;
+
+      $SMSDropdownMenu.children('a').each(
+        function(i) {
+          $(this).on('click', event => selectSMSTemplate($(this), event));
+        }
+      );
+
+      function selectSMSTemplate($elem, event) {
+        event.preventDefault();
+        if ($lastActive == $elem) {
+          return;
+        }
+        if ($elem.attr('id') == "sms-template-new") {
+          $elem  = newTemplate();
+        }
+
+        $elem.addClass('active');
+        $lastActive.removeClass('active');
+        $SMSDropdownTitle.text($elem.text());
+        $('#'+$lastActive.attr('id')+'-div').addClass('d-none');
+        $('#'+$elem.attr('id')+'-div').removeClass('d-none');
+        $lastActive = $elem;
+      }
+
+      function newTemplate() {
+        let next = $SMSDropdownMenu.children().length - 2;
+        let $newTemplate = $defaultTemplate.clone();
+        $newTemplate.attr('id',`sms-template-${next}`);
+        $newTemplate.text(`SMS template ${next}`);
+        $newTemplate.on('click', event => selectSMSTemplate($newTemplate, event));
+        $newTemplate.insertBefore($divider);
+
+
+        let $newNode = $defaultTemplateDiv.clone();
+        $newNode.attr('id', `sms-template-${next}-div`);
+
+        let $label = $newNode.find('input');
+        $label.attr('readonly', false);
+        $label.attr('name', `sms_text_label_${next}`);
+        $label.val($newTemplate.text());
+        $label.on("change keyup paste", () => {
+          $$newTemplate.text($label.val());
+          $SMSDropdownTitle.text($label.val());
+        });
+
+        let $textArea = $newNode.find('textarea');
+        $textArea.attr('name', `sms_text_template_${next}`);
+        $textArea.val('Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)');
+
+        let $deleteButton = $newNode.find('button');
+        $deleteButton.click(() => removeTemplate(`sms-template-${next}`));
+        $deleteButton.removeClass('d-none');
+
+        $newNode.insertBefore($end);
+        return $newTemplate;
+      }
+  });
+
+  function removeTemplate(name) {
+    $('#sms-template-0').trigger("click");
+    $('#'+name).remove();
+    $('#'+name+'-div').remove();
+  }
+</script>
 
 {{end}}
