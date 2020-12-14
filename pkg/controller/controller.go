@@ -95,24 +95,24 @@ func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
-		h.RenderHTMLStatus(w, http.StatusNotFound, "400", nil)
+		h.RenderHTMLStatus(w, http.StatusNotFound, "404", nil)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 	default:
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
 }
 
-// Unauthorized returns an error indicating the request was unauthorized.
+// Unauthorized returns an error indicating the request was unauthorized. The
+// system always returns 401 (even with authentication is provided but
+// authorization fails).
 func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
-		flash := Flash(SessionFromContext(r.Context()))
-		flash.Error("You are not authorized to perform that action!")
-		http.Redirect(w, r, "/signout", http.StatusSeeOther)
+		h.RenderHTMLStatus(w, http.StatusUnauthorized, "401", nil)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusUnauthorized, apiErrorUnauthorized)
 	default:
@@ -120,9 +120,9 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	}
 }
 
-// MissingRealm returns an error indicating that the request requires a realm
-// selection, but one was not present.
-func MissingRealm(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+// MissingMembership returns an error indicating that the request requires a
+// realm selection, but one was not present.
+func MissingMembership(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 

@@ -42,8 +42,9 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 			controller.MissingUser(w, r, c.h)
 			return
 		}
+		memberships := controller.MembershipsFromContext(ctx)
 
-		switch len(currentUser.Realms) {
+		switch len(memberships) {
 		case 0:
 			// If the user is a member of zero realms, it's possible they are an
 			// admin. If so, redirect them to the admin page.
@@ -53,7 +54,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 			}
 		case 1:
 			// If the user is only a member of one realm, set that and bypass selection.
-			realm := currentUser.Realms[0]
+			realm := memberships[0].Realm
 
 			// The user is already logged in and the current realm matches the
 			// expected realm - just redirect.
@@ -81,40 +82,38 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderSelect(ctx, w, currentUser.Realms)
+			c.renderSelect(ctx, w, memberships)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error(err.Error())
-			c.renderSelect(ctx, w, currentUser.Realms)
+			c.renderSelect(ctx, w, memberships)
 			return
 		}
 
-		realm := currentUser.GetRealm(form.RealmID)
-		if realm == nil {
-			flash.Error("Please select a realm to continue.")
-			c.renderSelect(ctx, w, currentUser.Realms)
+		membership, err := currentUser.FindMembership(c.db, form.RealmID)
+		if err != nil {
+			if database.IsNotFound(err) {
+				flash.Error("Invalid realm selection.")
+				c.renderSelect(ctx, w, memberships)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		// Verify that the user has access to the realm.
-		if !currentUser.CanViewRealm(realm.ID) {
-			flash.Error("Invalid realm selection.")
-			c.renderSelect(ctx, w, currentUser.Realms)
-			return
-		}
-
-		controller.StoreSessionRealm(session, realm)
+		controller.StoreSessionRealm(session, membership.Realm)
 		http.Redirect(w, r, "/codes/issue", http.StatusSeeOther)
 	})
 }
 
 // renderSelect renders the realm selection page.
-func (c *Controller) renderSelect(ctx context.Context, w http.ResponseWriter, realms []*database.Realm) {
+func (c *Controller) renderSelect(ctx context.Context, w http.ResponseWriter, memberships []*database.Membership) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm selector")
-	m["realms"] = realms
+	m["memberships"] = memberships
 	c.h.RenderHTML(w, "login/select-realm", m)
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
@@ -41,20 +42,21 @@ func (c *Controller) HandleUserStats() http.Handler {
 			return
 		}
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.UserRead) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		// Pull the user from the id.
-		user, err := c.findUser(currentUser, realm, vars["id"])
+		user, _, err := c.findUser(currentUser, currentRealm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -65,7 +67,7 @@ func (c *Controller) HandleUserStats() http.Handler {
 			return
 		}
 
-		stats, err := c.getStats(ctx, user, realm)
+		stats, err := c.getStats(ctx, user, currentRealm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

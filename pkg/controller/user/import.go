@@ -19,11 +19,22 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleImport() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.UserWrite) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
 
 		c.renderImport(ctx, w)
 	})

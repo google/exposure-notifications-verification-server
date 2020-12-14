@@ -33,10 +33,8 @@ import (
 	"go.opencensus.io/stats"
 )
 
-func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
+func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm, request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
 	logger := logging.FromContext(ctx).Named("issueapi.issue")
-	realm := controller.RealmFromContext(ctx)
-	var err error
 
 	// If this realm requires a date but no date was specified, return an error.
 	if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
@@ -72,6 +70,7 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 	// Verify SMS configuration if phone was provided
 	var smsProvider sms.Provider
 	if request.Phone != "" {
+		var err error
 		smsProvider, err = realm.SMSProvider(c.db)
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
@@ -191,7 +190,7 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 					obsBlame:    observability.BlameClient,
 					obsResult:   observability.ResultError("QUOTA_EXCEEDED"),
 					httpCode:    http.StatusTooManyRequests,
-					errorReturn: api.Errorf("exceeded realm quota, please contact the realm admin.").WithCode(api.ErrQuotaExceeded),
+					errorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
 				}, nil
 			}
 		}
@@ -204,6 +203,12 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 		// If this isn't going to be send via SMS, make the long code expiration time same as short.
 		// This is because the long code will never be shown or sent.
 		longExpiryTime = expiryTime
+	}
+
+	// Compute issuing user - the membership will be nil when called via the API.
+	var user *database.User
+	if membership != nil {
+		user = membership.User
 	}
 
 	// Generate verification code
@@ -220,8 +225,8 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 		RealmID:        realm.ID,
 		UUID:           rUUID,
 
-		IssuingUser:       controller.UserFromContext(ctx),
-		IssuingApp:        controller.AuthorizedAppFromContext(ctx),
+		IssuingUser:       user,
+		IssuingApp:        authApp,
 		IssuingExternalID: request.ExternalIssuerID,
 	}
 
@@ -287,17 +292,26 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 	}
 }
 
-func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User, error) {
-	ctx := r.Context()
-
+// getAuthorizationFromContext pulls the authorization from the context. If an
+// API key is provided, it's used to lookup the realm. If a membership exists,
+// it's used to provide the realm.
+func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database.AuthorizedApp, *database.Membership, *database.Realm, error) {
 	authorizedApp := controller.AuthorizedAppFromContext(ctx)
-	currentUser := controller.UserFromContext(ctx)
-
-	if authorizedApp == nil && currentUser == nil {
-		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
+	if authorizedApp != nil {
+		realm, err := authorizedApp.Realm(c.db)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return authorizedApp, nil, realm, nil
 	}
 
-	return authorizedApp, currentUser, nil
+	membership := controller.MembershipFromContext(ctx)
+	if membership != nil {
+		realm := membership.Realm
+		return nil, membership, realm, nil
+	}
+
+	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
 }
 
 func recordObservability(ctx context.Context, result *issueResult) {

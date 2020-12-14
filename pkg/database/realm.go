@@ -21,6 +21,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -30,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -242,19 +244,13 @@ type Realm struct {
 	// before triggering abuse protections.
 	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0"`
 
-	// These are here for gorm to setup the association. You should NOT call them
-	// directly, ever. Use the ListUsers function instead. The have to be public
-	// for reflection.
-	RealmUsers  []*User `gorm:"many2many:user_realms; PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
-	RealmAdmins []*User `gorm:"many2many:admin_realms; PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
-
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 }
 
 // EffectiveMFAMode returns the realm's default MFAMode but first
-// checks if the user is in the grace-period (if so, required becomes promp).
+// checks if the user is in the grace-period (if so, required becomes prompt).
 func (r *Realm) EffectiveMFAMode(user *User) AuthRequirement {
 	if r == nil {
 		return MFARequired
@@ -824,13 +820,65 @@ func (r *Realm) FindMobileApp(db *Database, id interface{}) (*MobileApp, error) 
 	return &app, nil
 }
 
-// ListUsers returns the list of users which match the given criteria.
-func (r *Realm) ListUsers(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*User, *pagination.Paginator, error) {
-	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
-		return db.Joins("INNER JOIN user_realms ON realm_id = ? AND user_id = users.id", r.ID)
-	})
+// ListMemberships lists the realm's memberships.
+func (r *Realm) ListMemberships(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*Membership, *pagination.Paginator, error) {
+	var memberships []*Membership
+	query := db.db.
+		Preload("Realm").
+		Preload("User").
+		Model(&Membership{}).
+		Scopes(scopes...).
+		Where("realm_id = ?", r.ID).
+		Joins("JOIN users ON users.id = memberships.user_id").
+		Order("LOWER(users.name)")
 
-	return db.ListUsers(p, scopes...)
+	if p == nil {
+		p = new(pagination.PageParams)
+	}
+
+	paginator, err := Paginate(query, &memberships, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return memberships, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	return memberships, paginator, nil
+}
+
+// FindMembership finds the membership with the given id, if it exists.
+func (r *Realm) FindMembership(db *Database, userID interface{}) (*Membership, error) {
+	var membership Membership
+	if err := db.db.
+		Preload("User").
+		Preload("Realm").
+		Model(&Membership{}).
+		Where("realm_id = ? AND user_id = ?", r.ID, userID).
+		First(&membership).
+		Error; err != nil {
+		return nil, err
+	}
+	return &membership, nil
+}
+
+// MembershipPermissionMap returns a map where the key is the ID of a user and
+// the value is the permissions for that user.
+func (r *Realm) MembershipPermissionMap(db *Database) (map[uint]rbac.Permission, error) {
+	var memberships []*Membership
+	if err := db.db.
+		Model(&Membership{}).
+		Find(&memberships).Error; err != nil {
+		if !IsNotFound(err) {
+			return nil, err
+		}
+	}
+
+	m := make(map[uint]rbac.Permission, len(memberships))
+	for _, v := range memberships {
+		m[v.UserID] = v.Permissions
+	}
+	return m, nil
 }
 
 // FindUser finds the given user in the realm by ID.
@@ -838,7 +886,7 @@ func (r *Realm) FindUser(db *Database, id interface{}) (*User, error) {
 	var user User
 	if err := db.db.
 		Table("users").
-		Joins("INNER JOIN user_realms ON user_id = ? AND realm_id = ?", id, r.ID).
+		Joins("INNER JOIN memberships ON user_id = ? AND realm_id = ?", id, r.ID).
 		Find(&user, "users.id = ?", id).
 		Error; err != nil {
 		return nil, err
@@ -859,15 +907,6 @@ func (r *Realm) ValidTestType(typ string) bool {
 	default:
 		return false
 	}
-}
-
-func (db *Database) CreateRealm(name string) (*Realm, error) {
-	realm := NewRealmWithDefaults(name)
-
-	if err := db.db.Create(realm).Error; err != nil {
-		return nil, fmt.Errorf("unable to save realm: %w", err)
-	}
-	return realm, nil
 }
 
 func (db *Database) FindRealmByRegion(region string) (*Realm, error) {
@@ -1087,7 +1126,23 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 				audits = append(audits, audit)
 			}
 
-			// TODO(sethvargo): diff allowed CIDRs
+			if old, new := existing.AllowedCIDRsAdminAPI, r.AllowedCIDRsAdminAPI; !reflect.DeepEqual(old, new) {
+				audit := BuildAuditEntry(actor, "updated adminapi allowed cidrs", r, r.ID)
+				audit.Diff = stringSliceDiff(old, new)
+				audits = append(audits, audit)
+			}
+
+			if old, new := existing.AllowedCIDRsAPIServer, r.AllowedCIDRsAPIServer; !reflect.DeepEqual(old, new) {
+				audit := BuildAuditEntry(actor, "updated apiserver allowed cidrs", r, r.ID)
+				audit.Diff = stringSliceDiff(old, new)
+				audits = append(audits, audit)
+			}
+
+			if old, new := existing.AllowedCIDRsServer, r.AllowedCIDRsServer; !reflect.DeepEqual(old, new) {
+				audit := BuildAuditEntry(actor, "updated server allowed cidrs", r, r.ID)
+				audit.Diff = stringSliceDiff(old, new)
+				audits = append(audits, audit)
+			}
 
 			if existing.AllowedTestTypes != r.AllowedTestTypes {
 				audit := BuildAuditEntry(actor, "updated allowed test types", r, r.ID)

@@ -22,8 +22,8 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 
 	"github.com/chromedp/chromedp"
 )
@@ -33,31 +33,10 @@ func TestHandleSearch(t *testing.T) {
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	// Get the default realm
-	realm, err := harness.Database.FindRealm(1)
+	realm, _, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// Create a user.
-	admin := &database.User{
-		Email:       "admin@example.com",
-		Name:        "Admin",
-		Realms:      []*database.Realm{realm},
-		AdminRealms: []*database.Realm{realm},
-	}
-	if err := harness.Database.SaveUser(admin, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-
-	// Log in the user.
-	session, err := harness.LoggedInSession(nil, admin.Email)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Set the current realm.
-	controller.StoreSessionRealm(session, realm)
 
 	// Mint a cookie for the session.
 	cookie, err := harness.SessionCookie(session)
@@ -67,11 +46,13 @@ func TestHandleSearch(t *testing.T) {
 
 	// Create another user.
 	user := &database.User{
-		Email:  "user@example.com",
-		Name:   "User",
-		Realms: []*database.Realm{realm},
+		Email: "user@example.com",
+		Name:  "User",
 	}
 	if err := harness.Database.SaveUser(user, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.AddToRealm(harness.Database, realm, rbac.LegacyRealmUser, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 

@@ -1,10 +1,6 @@
 {{define "users/new"}}
-
-{{$user := .user}}
-
 <!doctype html>
 <html lang="en">
-
 <head>
   {{template "head" .}}
 </head>
@@ -26,6 +22,7 @@
         {{template "users/_form" .}}
       </div>
     </div>
+
     <a class="card-link" href="/realm/users" id="all-users">&larr; All users</a>
   </main>
 </body>

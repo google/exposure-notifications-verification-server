@@ -16,17 +16,19 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleCreate() http.Handler {
 	type FormData struct {
-		Email string `form:"email"`
-		Name  string `form:"name"`
-		Admin bool   `form:"admin"`
+		Email       string            `form:"email"`
+		Name        string            `form:"name"`
+		Permissions []rbac.Permission `form:"permissions"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,17 +41,18 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.UserWrite) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
@@ -77,15 +80,21 @@ func (c *Controller) HandleCreate() http.Handler {
 			user.Email = form.Email
 			user.Name = form.Name
 		}
-
-		// Build the user struct
-		user.Realms = append(user.Realms, realm)
-		if form.Admin {
-			user.AdminRealms = append(user.AdminRealms, realm)
-		}
-
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to create user: %v", err)
+			c.renderNew(ctx, w)
+			return
+		}
+
+		// Create membership properties.
+		permission, err := rbac.CompileAndAuthorize(membership.Permissions, form.Permissions)
+		if err != nil {
+			flash.Error("Failed to update user permissions: %s", err)
+			c.renderNew(ctx, w)
+			return
+		}
+		if err := user.AddToRealm(c.db, currentRealm, permission, currentUser); err != nil {
+			flash.Error("Failed to update user in realm: %v", err)
 			c.renderNew(ctx, w)
 			return
 		}
@@ -103,11 +112,17 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		flash.Alert("Successfully created user %v.", user.Name)
+		http.Redirect(w, r, fmt.Sprintf("/realm/users/%d", user.ID), http.StatusSeeOther)
+		return
 
-		c.renderShow(ctx, w, user)
 	})
 }
 
 func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter) {
-	c.renderUpdate(ctx, w, &database.User{})
+	m := controller.TemplateMapFromContext(ctx)
+	m.Title("New user")
+	m["user"] = &database.User{}
+	m["userMembership"] = &database.Membership{}
+	m["permissions"] = rbac.PermissionMap()
+	c.h.RenderHTML(w, "users/new", m)
 }

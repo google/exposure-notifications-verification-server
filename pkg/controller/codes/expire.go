@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
@@ -56,17 +57,18 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		ctx := r.Context()
 		vars := mux.Vars(r)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.CodeExpire) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -79,7 +81,7 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
 			flash.Error("Failed to expire code: %v.", apiErr.Error)
-			if err := c.renderStatus(ctx, w, realm, currentUser, code); err != nil {
+			if err := c.renderStatus(ctx, w, currentRealm, currentUser, code); err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
@@ -94,8 +96,12 @@ func (c *Controller) HandleExpirePage() http.Handler {
 			flash.Alert("Expired code.")
 		}
 
-		retCode := Code{}
-		c.responseCode(ctx, r, expiredCode, &retCode)
+		retCode, err := c.responseCode(ctx, expiredCode)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		c.renderShow(ctx, w, retCode)
 	})
 }

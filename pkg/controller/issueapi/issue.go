@@ -39,6 +39,7 @@ func (c *Controller) HandleIssue() http.Handler {
 				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
 			return
 		}
+
 		ctx := r.Context()
 		result := &issueResult{
 			httpCode:  http.StatusOK,
@@ -55,7 +56,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		_, _, err := c.getAuthorizationFromContext(r)
+		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
 		if err != nil {
 			result.obsBlame = observability.BlameClient
 			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
@@ -64,7 +65,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
-		result, resp := c.issue(ctx, &request)
+		result, resp := c.issue(ctx, authApp, membership, realm, &request)
 		if result.errorReturn != nil {
 			if result.httpCode == http.StatusInternalServerError {
 				controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))

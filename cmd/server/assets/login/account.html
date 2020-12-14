@@ -1,6 +1,7 @@
 {{define "account"}}
 
 {{$user := .currentUser}}
+{{$currentMemberships := .currentMemberships}}
 
 <!doctype html>
 <html lang="en">
@@ -10,7 +11,7 @@
   {{template "firebase" .}}
 </head>
 
-<body class="bg-light">
+<body>
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -58,31 +59,23 @@
     </div>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card">
-        <div class="card-header">Member of realms</div>
-        <ul class="list-group list-group-flush">
-          {{range $realm := $user.Realms}}
-          <li class="list-group-item">
-            {{$realm.Name}}
+      <div class="card-header">Member of realms</div>
+      <ul class="list-group list-group-flush">
+        {{range $membership := $currentMemberships}}
+        <li class="list-group-item">
+          {{$membership.Realm.Name}}
 
-            {{range $admin := $user.AdminRealms}}
-            {{if eq $admin.ID $realm.ID}}
-            <span class="badge badge-primary">Admin</span>
-            {{end}}
-            {{end}}
-
-            {{- /* system admins can remove themselves from realms */ -}}
-            {{if $user.SystemAdmin}}
-            <a href="/realm/users/{{.ID}}" class="d-block text-danger float-right" data-method="DELETE"
-              data-confirm="Are you sure you want to leave {{.Name}}?">
+          {{- /* system admins can remove themselves from realms */ -}}
+          {{if $user.SystemAdmin}}
+            <a href="/realm/users/{{$membership.Realm.ID}}" class="d-block text-danger float-right" data-method="DELETE"
+              data-confirm="Are you sure you want to leave {{$membership.Realm.Name}}?">
               <span class="oi oi-account-logout" aria-hidden="true"></span>
               Leave realm
             </a>
-            {{end}}
-          </li>
           {{end}}
-        </ul>
-      </div>
+        </li>
+        {{end}}
+      </ul>
     </div>
   </main>
 
