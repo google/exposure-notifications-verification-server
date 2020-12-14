@@ -34,7 +34,7 @@ var _ Renderer = (*TestRenderer)(nil) // ensure interface satisfied
 
 // NewTest creates a new renderer with the given details.
 func NewTest(ctx context.Context, root string, t *testing.T) (Renderer, error) {
-	i, err := newImpl(ctx, root, true)
+	i, err := newProdRenderer(ctx, root, true)
 	if err != nil {
 		return nil, err
 	}

@@ -77,10 +77,10 @@ var _ Renderer = (*ProdRenderer)(nil) // ensure interface satisfied
 
 // New creates a new renderer with the given details.
 func New(ctx context.Context, root string, debug bool) (Renderer, error) {
-	return newImpl(ctx, root, debug)
+	return newProdRenderer(ctx, root, debug)
 }
 
-func newImpl(ctx context.Context, root string, debug bool) (*ProdRenderer, error) {
+func newProdRenderer(ctx context.Context, root string, debug bool) (*ProdRenderer, error) {
 	logger := logging.FromContext(ctx)
 
 	r := &ProdRenderer{
