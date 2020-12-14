@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 
 	"github.com/gorilla/mux"
 )
@@ -39,17 +40,18 @@ func (c *Controller) HandleShow() http.Handler {
 			return
 		}
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.APIKeyRead) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
 		// If the API key is present, add it to the variables map and then delete it
 		// from the session.
@@ -61,7 +63,7 @@ func (c *Controller) HandleShow() http.Handler {
 		}
 
 		// Pull the authorized app from the id.
-		authApp, err := c.findAuthorizedApp(currentUser, realm, vars["id"])
+		authApp, err := c.findAuthorizedApp(currentUser, currentRealm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				logger.Debugw("auth app does not exist", "id", vars["id"])

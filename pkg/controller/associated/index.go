@@ -41,7 +41,7 @@ type Controller struct {
 	hostnameToRegion map[string]string
 	cacher           cache.Cacher
 	db               *database.Database
-	h                *render.Renderer
+	h                render.Renderer
 }
 
 func (c *Controller) getRegion(r *http.Request) string {
@@ -125,7 +125,7 @@ func (c *Controller) HandleAndroid() http.Handler {
 	})
 }
 
-func New(ctx context.Context, config *config.RedirectConfig, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
+func New(ctx context.Context, config *config.RedirectConfig, db *database.Database, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
 	cfgMap, err := config.HostnameToRegion()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)

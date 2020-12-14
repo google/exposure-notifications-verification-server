@@ -30,6 +30,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/jinzhu/gorm"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -127,12 +128,16 @@ func realMain(ctx context.Context) error {
 	// Create users
 	user := &database.User{Email: "user@example.com", Name: "Demo User"}
 	if _, err := db.FindUserByEmail(user.Email); database.IsNotFound(err) {
-		user.AddRealm(realm1)
-		user.AddRealm(realm2)
 		if err := db.SaveUser(user, database.System); err != nil {
 			return fmt.Errorf("failed to create user: %w: %v", err, user.ErrorMessages())
 		}
 		logger.Infow("created user", "user", user)
+	}
+	if err := user.AddToRealm(db, realm1, rbac.LegacyRealmUser, database.System); err != nil {
+		return fmt.Errorf("failed to add user to realm 1: %w", err)
+	}
+	if err := user.AddToRealm(db, realm2, rbac.LegacyRealmUser, database.System); err != nil {
+		return fmt.Errorf("failed to add user to realm 2: %w", err)
 	}
 
 	if err := createFirebaseUser(ctx, firebaseAuth, user); err != nil {
@@ -142,21 +147,24 @@ func realMain(ctx context.Context) error {
 
 	unverified := &database.User{Email: "unverified@example.com", Name: "Unverified User"}
 	if _, err := db.FindUserByEmail(unverified.Email); database.IsNotFound(err) {
-		unverified.AddRealm(realm1)
 		if err := db.SaveUser(unverified, database.System); err != nil {
 			return fmt.Errorf("failed to create unverified: %w: %v", err, unverified.ErrorMessages())
 		}
 		logger.Infow("created user", "user", unverified)
 	}
+	if err := unverified.AddToRealm(db, realm1, rbac.LegacyRealmUser, database.System); err != nil {
+		return fmt.Errorf("failed to add user to realm 1: %w", err)
+	}
 
 	admin := &database.User{Email: "admin@example.com", Name: "Admin User"}
 	if _, err := db.FindUserByEmail(admin.Email); database.IsNotFound(err) {
-		admin.AddRealm(realm1)
-		admin.AddRealmAdmin(realm1)
 		if err := db.SaveUser(admin, database.System); err != nil {
 			return fmt.Errorf("failed to create admin: %w: %v", err, admin.ErrorMessages())
 		}
 		logger.Infow("created admin", "admin", admin)
+	}
+	if err := admin.AddToRealm(db, realm1, rbac.LegacyRealmAdmin, database.System); err != nil {
+		return fmt.Errorf("failed to add user to realm 1: %w", err)
 	}
 
 	if err := createFirebaseUser(ctx, firebaseAuth, admin); err != nil {

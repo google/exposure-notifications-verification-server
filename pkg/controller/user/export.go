@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleExport() http.Handler {
@@ -28,17 +29,23 @@ func (c *Controller) HandleExport() http.Handler {
 		ctx := r.Context()
 		logger := logging.FromContext(ctx)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
+		if !membership.Can(rbac.UserRead) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		currentRealm := membership.Realm
 
 		pageParams := &pagination.PageParams{
 			Page:  0,
 			Limit: 10000,
 		}
-		users, _, err := realm.ListUsers(c.db, pageParams)
+		memberships, _, err := currentRealm.ListMemberships(c.db, pageParams)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -48,7 +55,8 @@ func (c *Controller) HandleExport() http.Handler {
 		w.Header().Add("Content-Type", "text/CSV")
 
 		csvWriter := csv.NewWriter(w)
-		for _, user := range users {
+		for _, membership := range memberships {
+			user := membership.User
 			if err := csvWriter.Write([]string{user.Email, user.Name}); err != nil {
 				logger.Errorw("error writing record to csv:", "error", err)
 				break

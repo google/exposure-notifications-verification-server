@@ -171,8 +171,6 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 }
 
 // TODO(mikehelmick) - Add method to soft delete expired codes
-// TODO(mikehelmick) - Add method to purge verification codes that are > XX hours old
-//   Keeping expired codes prevents a code from being regenerated during that period of time.
 
 // FormatSymptomDate returns YYYY-MM-DD formatted test date, or "" if nil.
 func (v *VerificationCode) FormatSymptomDate() string {

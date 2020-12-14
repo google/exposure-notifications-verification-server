@@ -33,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -57,6 +58,36 @@ type TestServerResponse struct {
 	KeyManager   keys.KeyManager
 	RateLimiter  limiter.Store
 	Server       *server.Server
+}
+
+// ProvisionAndLogin provisions and authenticates the initial user, realm,
+// permissions on the realm, and session cookie.
+func (r *TestServerResponse) ProvisionAndLogin() (*database.Realm, *database.User, *sessions.Session, error) {
+	// The migrations scripts create an initial realm and user, fetch them.
+	realm, err := r.Database.FindRealm(1)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	user, err := r.Database.FindUser(1)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Grant user permission on the realm.
+	if err := user.AddToRealm(r.Database, realm, rbac.LegacyRealmAdmin, database.SystemTest); err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Build the session.
+	session, err := r.LoggedInSession(nil, user.Email)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Save the current realm on the session.
+	controller.StoreSessionRealm(session, realm)
+
+	return realm, user, session, nil
 }
 
 // SessionCookie returns an encrypted cookie for the given session information,
@@ -264,7 +295,6 @@ func newServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		CookieKeys:  config.Base64ByteSlice{RandomBytes(tb, 64), RandomBytes(tb, 32)},
 		CSRFAuthKey: RandomBytes(tb, 32),
 		CertificateSigning: config.CertificateSigningConfig{
-			// TODO(sethvargo): configure this when the first test requires it
 			CertificateSigningKey: "UPDATE_ME",
 			Keys: keys.Config{
 				KeyManagerType: keys.KeyManagerTypeFilesystem,

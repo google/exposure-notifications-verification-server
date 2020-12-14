@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 const cacheTimeout = 30 * time.Minute
@@ -36,11 +37,17 @@ func (c *Controller) HandleStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
+		if !membership.Can(rbac.StatsRead) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+
+		currentRealm := membership.Realm
 
 		now := time.Now().UTC()
 		past := now.Add(-30 * 24 * time.Hour)
@@ -57,13 +64,13 @@ func (c *Controller) HandleStats() http.Handler {
 			switch r.URL.Query().Get("scope") {
 			case "external":
 				filename = fmt.Sprintf("%s-external-issuer-stats.csv", nowFormatted)
-				stats, err = c.getExternalIssuerStats(ctx, realm, now, past)
+				stats, err = c.getExternalIssuerStats(ctx, currentRealm, now, past)
 			case "user":
 				filename = fmt.Sprintf("%s-user-stats.csv", nowFormatted)
-				stats, err = c.getUserStats(ctx, realm, now, past)
+				stats, err = c.getUserStats(ctx, currentRealm, now, past)
 			default:
 				filename = fmt.Sprintf("%s-realm-stats.csv", nowFormatted)
-				stats, err = c.getRealmStats(ctx, realm, now, past)
+				stats, err = c.getRealmStats(ctx, currentRealm, now, past)
 			}
 
 			if err != nil {
@@ -78,11 +85,11 @@ func (c *Controller) HandleStats() http.Handler {
 
 			switch r.URL.Query().Get("scope") {
 			case "external":
-				stats, err = c.getExternalIssuerStats(ctx, realm, now, past)
+				stats, err = c.getExternalIssuerStats(ctx, currentRealm, now, past)
 			case "user":
-				stats, err = c.getUserStats(ctx, realm, now, past)
+				stats, err = c.getUserStats(ctx, currentRealm, now, past)
 			default:
-				stats, err = c.getRealmStats(ctx, realm, now, past)
+				stats, err = c.getRealmStats(ctx, currentRealm, now, past)
 			}
 
 			if err != nil {
@@ -93,7 +100,7 @@ func (c *Controller) HandleStats() http.Handler {
 			c.h.RenderJSON(w, http.StatusOK, stats)
 		default:
 			// Fallback to HTML
-			c.renderHTML(ctx, w, realm)
+			c.renderHTML(ctx, w, currentRealm)
 			return
 		}
 	})

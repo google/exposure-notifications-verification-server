@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func TestSMS(t *testing.T) {
@@ -50,6 +51,8 @@ func TestSMS(t *testing.T) {
 func TestValidation(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	os.Setenv("ENX_REDIRECT_DOMAIN", "https://en.express")
+
+	valid := "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
 
 	cases := []struct {
 		Name  string
@@ -190,12 +193,47 @@ func TestValidation(t *testing.T) {
 			},
 			Error: "SMSTextTemplate when expanded, the result message is too long (3168 characters). The max expanded message is 918 characters",
 		},
+		{
+			Name: "valid",
+			Input: &Realm{
+				Name:            "a",
+				CodeLength:      6,
+				LongCodeLength:  12,
+				EnableENExpress: false,
+				SMSTextTemplate: valid,
+			},
+		},
+		{
+			Name: "alternate_sms_template",
+			Input: &Realm{
+				Name:                      "a",
+				EnableENExpress:           false,
+				SMSTextTemplate:           valid,
+				SMSTextAlternateTemplates: map[string]*string{"alternate1": nil},
+			},
+			Error: "no template for label alternate1",
+		},
+		{
+			Name: "alternate_sms_template valid",
+			Input: &Realm{
+				Name:                      "b",
+				CodeLength:                6,
+				LongCodeLength:            12,
+				EnableENExpress:           false,
+				SMSTextTemplate:           valid,
+				SMSTextAlternateTemplates: map[string]*string{"alternate1": &valid},
+			},
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			if err := db.SaveRealm(tc.Input, SystemTest); err == nil {
-				t.Fatalf("expected error: %q got: nil", tc.Error)
+				if tc.Error != "" {
+					t.Fatalf("expected error: %q got: nil", tc.Error)
+				}
+			} else if tc.Error == "" {
+				t.Fatalf("expected no error, got %q", err.Error())
 			} else if !strings.Contains(err.Error(), tc.Error) {
 				t.Fatalf("wrong error, want: %q got: %q", tc.Error, err.Error())
 			}
@@ -222,16 +260,19 @@ func TestPerUserRealmStats(t *testing.T) {
 	users := []*User{}
 	for userIdx, name := range []string{"Rocky", "Bullwinkle", "Boris", "Natasha"} {
 		user := &User{
-			Realms:      []*Realm{realm},
 			Name:        name,
 			Email:       name + "@gmail.com",
 			SystemAdmin: false,
 		}
-
 		if err := db.SaveUser(user, SystemTest); err != nil {
 			t.Fatalf("[%v] error creating user: %v", name, err)
 		}
 		users = append(users, user)
+
+		// Add to realm
+		if err := user.AddToRealm(db, realm, rbac.CodeIssue, SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
 		// Add some stats per user.
 		for i := 0; i < numDays; i++ {

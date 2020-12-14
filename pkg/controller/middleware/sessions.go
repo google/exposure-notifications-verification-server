@@ -36,7 +36,7 @@ const (
 // request's context for future retrieval. It also ensures the flash data is
 // populated in the template map. Any handler that wants to utilize sessions
 // should use this middleware.
-func RequireSession(store sessions.Store, h *render.Renderer) func(http.Handler) http.Handler {
+func RequireSession(store sessions.Store, h render.Renderer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

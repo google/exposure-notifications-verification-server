@@ -15,6 +15,7 @@
 package codes
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.VerificationCode, int, *api.ErrorReturn) {
@@ -29,24 +31,9 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 
 	logger := logging.FromContext(ctx).Named("codes.CheckCodeStatus")
 
-	authApp, user, err := c.getAuthorizationFromContext(r)
+	authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
 	if err != nil {
 		return nil, http.StatusUnauthorized, api.Error(err)
-	}
-
-	var realm *database.Realm
-	if authApp != nil {
-		realm, err = authApp.Realm(c.db)
-		if err != nil {
-			logger.Errorw("internal error", "error", err)
-			return nil, http.StatusInternalServerError, api.InternalError()
-		}
-	} else {
-		// if it's a user logged in, we can pull realm from the context.
-		realm = controller.RealmFromContext(ctx)
-	}
-	if realm == nil {
-		return nil, http.StatusBadRequest, api.Errorf("missing realm")
 	}
 
 	code, err := realm.FindVerificationCodeByUUID(c.db, uuid)
@@ -70,30 +57,37 @@ func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.Ve
 	}
 
 	// The current user must have issued the code or be a realm admin.
-	if user != nil && !(code.IssuingUserID == user.ID || user.CanAdminRealm(realm.ID)) {
-		logger.Errorw("failed to check otp code status", "error", "user email does not match issuing user")
+	if membership != nil && !membership.Can(rbac.CodeRead) {
 		return nil, http.StatusUnauthorized,
-			api.Errorf("failed to check otp code status: user does not match issuing user").WithCode(api.ErrVerifyCodeUserUnauth)
+			api.Errorf("user does not have permission to check code statuses").WithCode(api.ErrVerifyCodeUserUnauth)
 	}
 
 	// The current app must have issued the code or be a realm admin.
 	if authApp != nil && !(code.IssuingAppID == authApp.ID || authApp.IsAdminType()) {
-		logger.Errorw("failed to check otp code status", "error", "auth app does not match issuing app")
 		return nil, http.StatusUnauthorized,
-			api.Errorf("failed to check otp code status: auth app does not match issuing app").WithCode(api.ErrVerifyCodeUserUnauth)
+			api.Errorf("API key does not match issuer").WithCode(api.ErrVerifyCodeUserUnauth)
 	}
 	return code, 0, nil
 }
 
-func (c *Controller) getAuthorizationFromContext(r *http.Request) (*database.AuthorizedApp, *database.User, error) {
-	ctx := r.Context()
-
+// getAuthorizationFromContext pulls the authorization from the context. If an
+// API key is provided, it's used to lookup the realm. If a membership exists,
+// it's used to provide the realm.
+func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database.AuthorizedApp, *database.Membership, *database.Realm, error) {
 	authorizedApp := controller.AuthorizedAppFromContext(ctx)
-	currentUser := controller.UserFromContext(ctx)
-
-	if authorizedApp == nil && currentUser == nil {
-		return nil, nil, fmt.Errorf("unable to identify authorized requestor")
+	if authorizedApp != nil {
+		realm, err := authorizedApp.Realm(c.db)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return authorizedApp, nil, realm, nil
 	}
 
-	return authorizedApp, currentUser, nil
+	membership := controller.MembershipFromContext(ctx)
+	if membership != nil {
+		realm := membership.Realm
+		return nil, membership, realm, nil
+	}
+
+	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
 }

@@ -31,14 +31,14 @@ import (
 type Controller struct {
 	config  config.IssueAPIConfig
 	db      *database.Database
-	h       *render.Renderer
+	h       render.Renderer
 	limiter limiter.Store
 
 	validTestType map[string]struct{}
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
+func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
 	return &Controller{
 		config:  config,
 		db:      db,

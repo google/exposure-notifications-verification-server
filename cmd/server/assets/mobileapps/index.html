@@ -2,6 +2,9 @@
 
 {{$apps := .apps}}
 
+{{$currentMembership := .currentMembership}}
+{{$canWrite := $currentMembership.Can rbac.MobileAppWrite}}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -14,13 +17,15 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <div class="card mt-4 mb-3">
+    <div class="card shadow-sm mt-4 mb-3">
       <div class="card-header">
         <span class="oi oi-phone mr-2 ml-n1" aria-hidden="true"></span>
         Mobile apps
-        <a href="/realm/mobile-apps/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New mobile app">
-          <span class="oi oi-plus small" aria-hidden="true"></span>
-        </a>
+        {{if $canWrite}}
+          <a href="/realm/mobile-apps/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New mobile app">
+            <span class="oi oi-plus small" aria-hidden="true"></span>
+          </a>
+        {{end}}
       </div>
 
       <div class="card-body">
@@ -44,7 +49,9 @@
             <tr>
               <th scope="col" width="40"></th>
               <th scope="col">Mobile app</th>
-              <th scope="col" width="40"></th>
+              {{if $canWrite}}
+                <th scope="col" width="40"></th>
+              {{end}}
             </tr>
           </thead>
           <tbody>
@@ -62,25 +69,27 @@
               <td class="text-truncate">
                 <a href="/realm/mobile-apps/{{.ID}}">{{.Name}}</a>
               </td>
-              <td class="text-center">
-                {{if .DeletedAt}}
-                <a href="/realm/mobile-apps/{{.ID}}/enable" class="d-block text-danger"
-                  data-method="patch"
-                  data-confirm="Are you sure you want to restore '{{.Name}}'?"
-                  data-toggle="tooltip"
-                  title="Restore this mobile app">
-                  <span class="oi oi-loop-circular" aria-hidden="true"></span>
-                </a>
-                {{else}}
-                <a href="/realm/mobile-apps/{{.ID}}/disable" class="d-block text-danger"
-                  data-method="patch"
-                  data-confirm="Are you sure you want to disable '{{.Name}}'?"
-                  data-toggle="tooltip"
-                  title="Disable this mobile app">
-                  <span class="oi oi-trash" aria-hidden="true"></span>
-                </a>
-                {{end}}
-              </td>
+              {{if $canWrite}}
+                <td class="text-center">
+                  {{if .DeletedAt}}
+                  <a href="/realm/mobile-apps/{{.ID}}/enable" class="d-block text-danger"
+                    data-method="patch"
+                    data-confirm="Are you sure you want to restore '{{.Name}}'?"
+                    data-toggle="tooltip"
+                    title="Restore this mobile app">
+                    <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                  </a>
+                  {{else}}
+                  <a href="/realm/mobile-apps/{{.ID}}/disable" class="d-block text-danger"
+                    data-method="patch"
+                    data-confirm="Are you sure you want to disable '{{.Name}}'?"
+                    data-toggle="tooltip"
+                    title="Disable this mobile app">
+                    <span class="oi oi-trash" aria-hidden="true"></span>
+                  </a>
+                  {{end}}
+                </td>
+              {{end}}
             </tr>
           {{end}}
           </tbody>

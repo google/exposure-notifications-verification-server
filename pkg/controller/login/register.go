@@ -16,9 +16,11 @@
 package login
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 func (c *Controller) HandleRegisterPhone() http.Handler {
@@ -31,27 +33,30 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 			return
 		}
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
+		// Mark that the user was prompted.
+		controller.StoreSessionMFAPrompted(session, true)
+
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			// The user landed on this page but does not have a realm selected. They
+			// could have navigated here from their profile page, or they could be a
+			// system admin and were redirected here.
+			c.renderRegisterPhone(ctx, w, nil)
 			return
 		}
-		realm := controller.RealmFromContext(ctx)
 
-		m := controller.TemplateMapFromContext(ctx)
-		m.Title("Multi-factor authentication registration")
-
-		mode := realm.EffectiveMFAMode(currentUser)
-		m["mfaMode"] = &mode
-
-		if controller.MFAPromptedFromSession(session) {
-			m["isPrompt"] = true
-		} else {
-			// Mark prompted so we only prompt once.
-			controller.StoreSessionMFAPrompted(session, true)
-		}
-
-		m["firebase"] = c.config.Firebase
-		c.h.RenderHTML(w, "login/register-phone", m)
+		currentRealm := membership.Realm
+		currentUser := membership.User
+		mode := currentRealm.EffectiveMFAMode(currentUser)
+		c.renderRegisterPhone(ctx, w, &mode)
 	})
+}
+
+func (c *Controller) renderRegisterPhone(ctx context.Context, w http.ResponseWriter,
+	mode *database.AuthRequirement) {
+	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Multi-factor authentication registration")
+	m["mfaMode"] = mode
+	m["firebase"] = c.config.Firebase
+	c.h.RenderHTML(w, "login/register-phone", m)
 }

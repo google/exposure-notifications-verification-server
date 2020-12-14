@@ -1,4 +1,7 @@
 {{define "admin/navbar"}}
+
+{{$currentMemberships := .currentMemberships}}
+
 <header class="mb-3">
   <div href="/" class="d-block px-3 py-2 text-center text-bold text-white admin-header">
     System admin
@@ -7,14 +10,22 @@
   <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
     <div class="container">
       {{template "navtoggle" .}}
+
       <div class="collapse navbar-collapse mt-2" id="navbar">
-        {{if .currentRealm}}
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
-            <a class="nav-link" href="/codes/issue">&larr; Back to {{.currentRealm.Name}} </a>
+            {{if eq (len $currentMemberships) 1}}
+              <a class="nav-link" href="/codes/issue">
+                &larr; Back to {{(index $currentMemberships 0).Realm.Name}}
+              </a>
+            {{else if gt (len $currentMemberships) 1}}
+              <a class="nav-link" href="/login/select-realm">
+                &larr; Back to realm selection
+              </a>
+            {{end}}
           </li>
         </ul>
-        {{end}}
+
         {{template "navdropdown" .}}
       </div>
     </div>

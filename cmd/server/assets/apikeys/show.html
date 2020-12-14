@@ -4,6 +4,9 @@
 {{$authApp := .authApp}}
 {{$stats := .stats}}
 
+{{$currentMembership := .currentMembership}}
+{{$canWrite := $currentMembership.Can rbac.APIKeyWrite}}
+
 <!doctype html>
 <html lang="en">
 
@@ -40,9 +43,11 @@
       <div class="card-header">
         <span class="oi oi-key mr-2 ml-n1" aria-hidden="true"></span>
         Details about {{$authApp.Name}}
-        <a href="/realm/apikeys/{{$authApp.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this API key">
-          <span class="oi oi-pencil" aria-hidden="true"></span>
-        </a>
+        {{if $canWrite}}
+          <a href="/realm/apikeys/{{$authApp.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this API key">
+            <span class="oi oi-pencil" aria-hidden="true"></span>
+          </a>
+        {{end}}
       </div>
       <div class="card-body">
         <strong>App name</strong>
@@ -150,7 +155,7 @@
         let options = {
           colors: ['#007bff'],
           chartArea: {
-            left: 30, // leave room for y-axis labels
+            left: 60, // leave room for y-axis labels
             top: 20,
             bottom: 20,
             width: '100%',
