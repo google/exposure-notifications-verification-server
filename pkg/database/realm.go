@@ -363,8 +363,12 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	r.validateSMSTemplate(r.SMSTextTemplate)
 	if r.SMSTextAlternateTemplates != nil {
 		for l, t := range r.SMSTextAlternateTemplates {
-			if t == nil {
-				r.AddError("SMSTextAlternateTemplates", fmt.Sprintf("no template for label %s", l))
+			if t == nil || *t == "" {
+				r.AddError("SMSTextTemplate", fmt.Sprintf("no template for label %s", l))
+				continue
+			}
+			if l == "" {
+				r.AddError("SMSTextTemplate", fmt.Sprintf("no label for template %s", *t))
 				continue
 			}
 			r.validateSMSTemplate(*t)
@@ -425,6 +429,8 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
+// validateSMSTemplate is a helper method to validate a single SMSTemplate.
+// Errors are returned by appending them to the realm's Errorable fields.
 func (r *Realm) validateSMSTemplate(t string) {
 	if r.EnableENExpress {
 		if !strings.Contains(t, SMSENExpressLink) {
@@ -446,7 +452,7 @@ func (r *Realm) validateSMSTemplate(t string) {
 
 	// Check template length.
 	if l := len(t); l > SMSTemplateMaxLength {
-		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %v characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
+		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %d characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
 	}
 }
 
