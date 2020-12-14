@@ -13,7 +13,7 @@
 # limitations under the License.
 
 locals {
-  playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts"
+  playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/slo"
 }
 
 resource "google_monitoring_slo" "availability-slo" {
