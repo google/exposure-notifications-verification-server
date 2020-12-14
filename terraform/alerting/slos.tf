@@ -13,40 +13,22 @@
 # limitations under the License.
 
 resource "google_monitoring_custom_service" "verification-server" {
-  service_id = "verification-server"
+  service_id   = "verification-server"
   display_name = "Verification Server"
-  project = var.monitoring-host-project
+  project      = var.monitoring-host-project
 }
 
-resource "google_monitoring_slo" "availability-slo" {
-  # the basics
-  service = google_monitoring_custom_service.verification-server.service_id
-  slo_id = "availability-slo"
-  display_name = "99.5% of requests are successful over rolling 28 days"
-  project = var.monitoring-host-project
-  # create if GCLB is used
-  count = var.https-forwarding-rule == "" ? 0 : 1
+module "availability-slos" {
+  source = "./module.availability-slo"
 
+  custom-service-id           = google_monitoring_custom_service.verification-server.service_id
+  enabled                     = var.https-forwarding-rule != ""
+  monitoring-host-project     = var.monitoring-host-project
+  notification-channels       = google_monitoring_notification_channel.channels
+  verification-server-project = var.verification-server-project
 
-  # the SLI
-  request_based_sli {
-    good_total_ratio {
-      good_service_filter =<<-EOT
-        metric.type="loadbalancing.googleapis.com/https/request_count"
-        resource.type="https_lb_rule"
-        resource.label.backend_name="apiserver"
-        metric.label.response_code_class=200
-      EOT
-      bad_service_filter = <<-EOT
-        metric.type="loadbalancing.googleapis.com/https/request_count"
-        resource.type="https_lb_rule"
-        resource.label.backend_name="apiserver"
-        metric.label.response_code_class=500
-      EOT
-    }
-  }
+  for_each = var.slo_thresholds
 
-  # the goal
-  goal = 0.995
-  rolling_period_days = 28
+  service-name = each.key
+  goal         = each.value.availability
 }
