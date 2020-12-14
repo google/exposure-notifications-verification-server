@@ -14,12 +14,26 @@
 
 locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts"
+  p99_latency_thresholds = {
+    adminapi = "5s"
+  }
+  p99_latency_thresholds_default = "2s"
+
+  p99_latency_condition = join("\n  || ", concat(
+    [
+      for k, v in local.p99_latency_thresholds :
+      "(resource.backend_target_name == '${k}' && val > ${replace(v, "/(\\d+)(.*)/", "$1 '$2'")})"
+    ],
+    [
+      "(val > ${replace(local.p99_latency_thresholds_default, "/(\\d+)(.*)/", "$1 '$2'")})"
+    ]
+  ))
 }
 
 resource "google_monitoring_alert_policy" "backend_latency" {
   count        = var.https-forwarding-rule == "" ? 0 : 1
   project      = var.verification-server-project
-  display_name = "ElevatedLatencyGreaterThan2s"
+  display_name = "LatencyTooHigh"
   combiner     = "OR"
   conditions {
     display_name = "/backend_latencies"
@@ -34,7 +48,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
       | align delta(1m)
       | every 1m
       | group_by [resource.backend_target_name], [val: percentile(value.backend_latencies, 99)]
-      | condition val > 2 's'
+      | condition ${local.p99_latency_condition}
       EOT
       trigger {
         count = 1
@@ -43,7 +57,7 @@ resource "google_monitoring_alert_policy" "backend_latency" {
   }
 
   documentation {
-    content   = "${local.playbook_prefix}/ElevatedLatencyGreaterThan2s.md"
+    content   = "${local.playbook_prefix}/LatencyTooHigh.md"
     mime_type = "text/markdown"
   }
 
@@ -241,7 +255,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
-  
+
   conditions {
     display_name = "Fast burn over last hour"
     condition_threshold {
@@ -294,7 +308,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
   enabled      = "true"
   # create only if using GCLB, which means there's an SLO created
   count = var.https-forwarding-rule == "" ? 0 : 1
-  
+
   conditions {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
@@ -311,7 +325,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     }
   }
 
-    conditions {
+  conditions {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
