@@ -53,7 +53,7 @@ func init() {
 	}
 }
 
-type FormData struct {
+type formData struct {
 	General        bool   `form:"general"`
 	Name           string `form:"name"`
 	RegionCode     string `form:"region_code"`
@@ -153,7 +153,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			return
 		}
 
-		var form FormData
+		var form formData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
 			c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
@@ -386,7 +386,7 @@ func (c *Controller) HandleSettings() http.Handler {
 	})
 }
 
-func parseSMSTextTemplates(r *http.Request, form *FormData) {
+func parseSMSTextTemplates(r *http.Request, form *formData) {
 	// Associate by index
 	templates := map[string]*TemplateData{}
 	for k, v := range r.PostForm {
