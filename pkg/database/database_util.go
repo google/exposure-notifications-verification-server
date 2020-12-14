@@ -343,7 +343,7 @@ func runMigrations(db *Database) error {
 	}()
 
 	// Run migrations.
-	if err := db.RunMigrations(ctx); err != nil {
+	if err := db.MigrateTo(ctx, "", false); err != nil {
 		return fmt.Errorf("failed to migrate database: %v", err)
 	}
 

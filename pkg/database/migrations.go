@@ -30,11 +30,10 @@ import (
 const initState = "00000-Init"
 const VercodeUUIDUniqueIndex = "idx_vercode_uuid_unique"
 
-func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
+func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 	logger := logging.FromContext(ctx)
-	options := gormigrate.DefaultOptions
 
-	return gormigrate.New(db.db, options, []*gormigrate.Migration{
+	return []*gormigrate.Migration{
 		{
 			ID: initState,
 			Migrate: func(tx *gorm.DB) error {
@@ -1843,39 +1842,24 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return tx.Exec(`ALTER TABLE realms DROP COLUMN IF EXISTS alternate_sms_templates`).Error
 			},
 		},
-	})
+	}
 }
 
 // MigrateTo migrates the database to a specific target migration ID.
 func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool) error {
-	m := db.getMigrations(ctx)
+	options := gormigrate.DefaultOptions
+	migrations := db.Migrations(ctx)
+	m := gormigrate.New(db.db, options, migrations)
 
-	var err error
-	if target == "" {
-		if rollback {
-			err = m.RollbackTo(initState)
-		} else {
-			err = m.Migrate() // run all remaining migrations.
+	if rollback {
+		if target == "" {
+			return fmt.Errorf("rollback requires a target")
 		}
-	} else {
-		if rollback {
-			err = m.RollbackTo(target)
-		} else {
-			err = m.MigrateTo(target)
-		}
+		return m.RollbackTo(target)
 	}
 
-	if err != nil {
-		return err
+	if target != "" {
+		return m.MigrateTo(target)
 	}
-	return nil
-}
-
-// RunMigrations will apply sequential, transactional migrations to the database
-func (db *Database) RunMigrations(ctx context.Context) error {
-	m := db.getMigrations(ctx)
-	if err := m.Migrate(); err != nil {
-		return err
-	}
-	return nil
+	return m.Migrate()
 }
