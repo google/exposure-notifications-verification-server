@@ -363,35 +363,7 @@
           return;
         }
         if ($elem.attr('id') == "sms-template-new") {
-          let next = $SMSDropdownMenu.children().length - 2;
-          $elem = $defaultTemplate.clone();
-          $elem.attr('id',`sms-template-${next}`);
-          $elem.text(`SMS template ${next}`);
-          $elem.on('click', event => selectSMSTemplate($elem, event));
-          $elem.insertBefore($divider);
-
-
-          let $newNode = $defaultTemplateDiv.clone();
-          $newNode.attr('id', `sms-template-${next}-div`);
-
-          let $label = $newNode.find('input');
-          $label.attr('readonly', false);
-          $label.attr('name', `sms_text_label_${next}`);
-          $label.val($elem.text());
-          $label.on("change keyup paste", () => {
-            $elem.text($label.val());
-            $SMSDropdownTitle.text($label.val());
-          });
-
-          let $textArea = $newNode.find('textarea');
-          $textArea.attr('name', `sms_text_template_${next}`);
-          $textArea.val('Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)');
-
-          let $deleteButton = $newNode.find('button');
-          $deleteButton.click(() => removeTemplate(`sms-template-${next}`));
-          $deleteButton.removeClass('d-none');
-
-          $newNode.insertBefore($end);
+          $elem  = newTemplate();
         }
 
         $elem.addClass('active');
@@ -400,6 +372,39 @@
         $('#'+$lastActive.attr('id')+'-div').addClass('d-none');
         $('#'+$elem.attr('id')+'-div').removeClass('d-none');
         $lastActive = $elem;
+      }
+
+      function newTemplate() {
+        let next = $SMSDropdownMenu.children().length - 2;
+        let $newTemplate = $defaultTemplate.clone();
+        $newTemplate.attr('id',`sms-template-${next}`);
+        $newTemplate.text(`SMS template ${next}`);
+        $newTemplate.on('click', event => selectSMSTemplate($newTemplate, event));
+        $newTemplate.insertBefore($divider);
+
+
+        let $newNode = $defaultTemplateDiv.clone();
+        $newNode.attr('id', `sms-template-${next}-div`);
+
+        let $label = $newNode.find('input');
+        $label.attr('readonly', false);
+        $label.attr('name', `sms_text_label_${next}`);
+        $label.val($newTemplate.text());
+        $label.on("change keyup paste", () => {
+          $$newTemplate.text($label.val());
+          $SMSDropdownTitle.text($label.val());
+        });
+
+        let $textArea = $newNode.find('textarea');
+        $textArea.attr('name', `sms_text_template_${next}`);
+        $textArea.val('Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)');
+
+        let $deleteButton = $newNode.find('button');
+        $deleteButton.click(() => removeTemplate(`sms-template-${next}`));
+        $deleteButton.removeClass('d-none');
+
+        $newNode.insertBefore($end);
+        return $newTemplate;
       }
   });
 
