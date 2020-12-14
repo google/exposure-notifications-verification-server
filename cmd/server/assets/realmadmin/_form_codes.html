@@ -388,7 +388,7 @@
           $textArea.val('Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)');
 
           let $deleteButton = $newNode.find('button');
-          $deleteButton.click(function() {removeTemplate(`sms-template-${next}`); });
+          $deleteButton.click(() => removeTemplate(`sms-template-${next}`));
           $deleteButton.removeClass('d-none');
 
           $newNode.insertBefore($end);
