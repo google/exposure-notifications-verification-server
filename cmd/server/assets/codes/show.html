@@ -1,5 +1,8 @@
 {{define "codes/show"}}
 
+{{$currentMembership := .currentMembership}}
+{{$canWrite := $currentMembership.Can rbac.CodeExpire}}
+
 <!doctype html>
 <html lang="en">
 
@@ -40,27 +43,28 @@
           <p class="mb-1">{{.code.Status}}</p>
         </div>
         {{if not .code.Claimed}}
-        <div class="list-group-item">
-          <h5 class="mb-1">Short code expiry</h5>
-          <span id="code-expires-at" class="sm text-danger"
-            data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
-            data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}">&nbsp;</span>
-        </div>
-        {{if .code.HasLongExpires}}
-        <div class="list-group-item">
-          <h5 class="mb-1">SMS link expiry</h5>
-          <span id="long-code-expires-at" class="sm text-danger"
-            data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
-            data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}">&nbsp;</span>
-        </div>
+          <div class="list-group-item">
+            <h5 class="mb-1">Short code expiry</h5>
+            <span id="code-expires-at" class="sm text-danger"
+              data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
+              data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}">&nbsp;</span>
+          </div>
+          {{if .code.HasLongExpires}}
+            <div class="list-group-item">
+              <h5 class="mb-1">SMS link expiry</h5>
+              <span id="long-code-expires-at" class="sm text-danger"
+                data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
+                data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}">&nbsp;</span>
+            </div>
+          {{end}}
         {{end}}
-        {{end}}
-        {{if .code.Expires}}
-        <div class="list-group-item">
-          <a href="/codes/{{.code.UUID}}/expire" class="btn btn-danger d-block" data-method="PATCH" data-confirm="Are you sure you want to expire this code?">
-            Invalidate code now
-          </a>
-        </div>
+        {{if and $canWrite .code.Expires}}
+          <div class="list-group-item">
+            <a href="/codes/{{.code.UUID}}/expire" class="btn btn-danger d-block"
+              data-method="PATCH" data-confirm="Are you sure you want to expire this code?">
+              Invalidate code now
+            </a>
+          </div>
         {{end}}
       </div>
     </div>

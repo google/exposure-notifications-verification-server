@@ -26,8 +26,8 @@ func TestDatabase_CreateFindAPIKey(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	realm, err := db.CreateRealm("foo")
-	if err != nil {
+	realm := NewRealmWithDefaults("foo")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,8 +79,8 @@ func TestDatabase_GenerateAPIKey(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	realm, err := db.CreateRealm("bar")
-	if err != nil {
+	realm := NewRealmWithDefaults("bar")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 

@@ -1,0 +1,20 @@
+{{define "404"}}
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+</head>
+
+<body>
+  <main role="main" class="container mt-5">
+    <h1>Not Found</h1>
+    <p>
+      The resource you attempted to access does not exist.
+    </p>
+    <p>
+      <a href="#" onclick="history.go(-1); return false;">&larr; Go back</a>
+    </p>
+  </main>
+</body>
+</html>
+{{end}}

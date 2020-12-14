@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleIssue() http.Handler {
@@ -34,13 +35,19 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
+		if !membership.Can(rbac.CodeIssue) {
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		hasSMSConfig, err := realm.HasSMSConfig(c.db)
+		currentRealm := membership.Realm
+
+		hasSMSConfig, err := currentRealm.HasSMSConfig(c.db)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -56,18 +63,18 @@ func (c *Controller) HandleIssue() http.Handler {
 		m["maxDate"] = now.Format(project.RFC3339Date)
 		m["minDate"] = now.Add(pastDaysDuration).Format(project.RFC3339Date)
 		m["maxSymptomDays"] = displayAllowedDays
-		m["duration"] = realm.CodeDuration.Duration.String()
+		m["duration"] = currentRealm.CodeDuration.Duration.String()
 		m["hasSMSConfig"] = hasSMSConfig
 
 		// If the realm has a welcome message and it has not been displayed this
 		// session, display it.
-		if realm.WelcomeMessage != "" && !controller.WelcomeMessageDisplayedFromSession(session) {
+		if currentRealm.WelcomeMessage != "" && !controller.WelcomeMessageDisplayedFromSession(session) {
 			// Don't display it again.
 			controller.StoreSessionWelcomeMessageDisplayed(session, true)
 
 			// This is marked as HTML safe because it's run through bluemonday during
 			// parsing. Also, realm admins are mostly trusted to not XSS themselves.
-			m["welcomeMessage"] = template.HTML(realm.RenderWelcomeMessage())
+			m["welcomeMessage"] = template.HTML(currentRealm.RenderWelcomeMessage())
 		}
 
 		// Render

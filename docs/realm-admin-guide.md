@@ -33,7 +33,8 @@ We provide a base level of account protection measures that we urge you to share
 * Users should not share logins to the verification system.
 * Users should only issue codes to people who have a verified COVID-19 diagnosis.
 
-Realm administrators should monitor the number of codes issued and take corrective action if needed (suspend a user's access to issue codes)
+A member of the realm should be responsible for monitoring the number of codes issued and take corrective action (including user account suspension) for abuse. Realm administrators can also enable Abuse Prevention.
+
 
 ### API key protection
 
@@ -137,14 +138,19 @@ Go to realm users admin by selecting 'Users' from the drop-down menu (shown unde
 
 ![settings](images/admin/menu_users.png "Click on your name and select 'Users'")
 
-Add users, by clicking on `create a new user`.
-
-![users](images/admin/users01.png "User listing")
+Add users, by clicking on the `+` in the header. If you do not see the `+`, you
+do not have permission to add users.
 
 Enter the name of the user and the email address to add. The email address will need to be verified on the person's first login.
 
-The admin checkbox indicates if this person should be made a realm admin (same powers that you have).
-If a user only needs to be able to issue verification codes, they do not need to be a realm admin.
+Choose the permissions the new user should have. Since permissions are
+constantly evolving, your list might be different than the one shown here. In
+general, permissions take the format: `<Entity><Action>` like `UserRead` and
+`UserWrite`. Read permissions are read-only and Write permissions include
+create, update, and delete permissions. Always practice the Principle of Least
+Privilege and only grant the most minimal set of permissions.
+
+Note, you can only grant permissions at or below your current level.
 
 ![users](images/admin/users02.png "User listing")
 

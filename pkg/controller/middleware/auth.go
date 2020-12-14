@@ -29,11 +29,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// RequireAuth requires a user to be logged in. It also ensures that currentUser
-// is set in the template map. It fetches a user from the session and stores the
-// full record in the request context.
-func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
-	cacheTTL := 15 * time.Minute
+// RequireAuth requires a user to be logged in. It also fetches and stores
+// information about the user on the request context.
+func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.Database, h *render.Renderer, sessionIdleTTL, expiryCheckTTL time.Duration) mux.MiddlewareFunc {
+	cacheTTL := 30 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,11 +75,11 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 			// Load the user by using the cache to alleviate pressure on the database
 			// layer.
 			var user database.User
-			cacheKey := &cache.Key{
+			userCacheKey := &cache.Key{
 				Namespace: "users:by_email",
 				Key:       email,
 			}
-			if err := cacher.Fetch(ctx, cacheKey, &user, cacheTTL, func() (interface{}, error) {
+			if err := cacher.Fetch(ctx, userCacheKey, &user, cacheTTL, func() (interface{}, error) {
 				return db.FindUserByEmail(email)
 			}); err != nil {
 				authProvider.ClearSession(ctx, session)
@@ -115,15 +114,23 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 				}
 
 				// Update the user in the cache so it has the new revoke check time.
-				if err := cacher.Write(ctx, cacheKey, &user, cacheTTL); err != nil {
-					logger.Errorw("failed to cached user revocation check time", "error", err)
+				if err := cacher.Write(ctx, userCacheKey, &user, cacheTTL); err != nil {
+					logger.Errorw("failed to cache user revocation check time", "error", err)
 					controller.InternalError(w, r, h, err)
 					return
 				}
 			}
 
+			// Look up the user's memberships.
+			memberships, err := user.ListMemberships(db)
+			if err != nil {
+				controller.InternalError(w, r, h, err)
+				return
+			}
+
 			// Save the user on the context.
 			ctx = controller.WithUser(ctx, &user)
+			ctx = controller.WithMemberships(ctx, memberships)
 			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)

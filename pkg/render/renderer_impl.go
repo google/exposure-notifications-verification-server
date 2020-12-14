@@ -29,6 +29,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/leonelquinteros/gotext"
 
 	"go.uber.org/zap"
@@ -152,23 +153,30 @@ func safeHTML(s string) htmltemplate.HTML {
 	return htmltemplate.HTML(s)
 }
 
-func selectedIf(v bool) htmltemplate.HTML {
+func selectedIf(v bool) htmltemplate.HTMLAttr {
 	if v {
-		return htmltemplate.HTML("selected")
+		return "selected"
 	}
 	return ""
 }
 
-func readonlyIf(v bool) htmltemplate.HTML {
+func readonlyIf(v bool) htmltemplate.HTMLAttr {
 	if v {
-		return htmltemplate.HTML("readonly")
+		return "readonly"
 	}
 	return ""
 }
 
-func disabledIf(v bool) htmltemplate.HTML {
+func checkedIf(v bool) htmltemplate.HTMLAttr {
 	if v {
-		return htmltemplate.HTML("disabled")
+		return "checked"
+	}
+	return ""
+}
+
+func disabledIf(v bool) htmltemplate.HTMLAttr {
+	if v {
+		return "disabled"
 	}
 	return ""
 }
@@ -198,11 +206,14 @@ func templateFuncs() htmltemplate.FuncMap {
 		"toJSON":           json.Marshal,
 		"toBase64":         base64.StdEncoding.EncodeToString,
 		"safeHTML":         safeHTML,
+		"checkedIf":        checkedIf,
 		"selectedIf":       selectedIf,
 		"readonlyIf":       readonlyIf,
 		"disabledIf":       disabledIf,
 		"t":                translate,
 		"passwordSentinel": pwdSentinel,
+
+		"rbac": rbac.PermissionMap,
 	}
 }
 

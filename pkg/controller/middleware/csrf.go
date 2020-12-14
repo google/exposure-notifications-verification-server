@@ -30,9 +30,7 @@ import (
 
 // ConfigureCSRF injects the CSRF handling and populates the global template map
 // with the csrfToken and csrfTemplate.
-func ConfigureCSRF(ctx context.Context, config *config.ServerConfig, h render.Renderer) mux.MiddlewareFunc {
-	// TODO(mikehelmick) - there are more configuration options for CSRF
-	// protection.
+func ConfigureCSRF(ctx context.Context, config *config.ServerConfig, h *render.Renderer) mux.MiddlewareFunc {
 	protect := csrf.Protect(config.CSRFAuthKey,
 		csrf.Secure(!config.DevMode),
 		csrf.ErrorHandler(handleCSRFError(ctx, h)),

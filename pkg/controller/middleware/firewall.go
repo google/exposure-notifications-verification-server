@@ -37,20 +37,21 @@ func ProcessFirewall(h render.Renderer, typ string) mux.MiddlewareFunc {
 
 			logger := logging.FromContext(ctx).Named("middleware.ProcessFirewall")
 
-			realm := controller.RealmFromContext(ctx)
-			if realm == nil {
-				controller.MissingRealm(w, r, h)
+			membership := controller.MembershipFromContext(ctx)
+			if membership == nil {
+				controller.MissingMembership(w, r, h)
 				return
 			}
+			currentRealm := membership.Realm
 
 			var allowedCIDRs []string
 			switch typ {
 			case "adminapi":
-				allowedCIDRs = realm.AllowedCIDRsAdminAPI
+				allowedCIDRs = currentRealm.AllowedCIDRsAdminAPI
 			case "apiserver":
-				allowedCIDRs = realm.AllowedCIDRsAPIServer
+				allowedCIDRs = currentRealm.AllowedCIDRsAPIServer
 			case "server":
-				allowedCIDRs = realm.AllowedCIDRsServer
+				allowedCIDRs = currentRealm.AllowedCIDRsServer
 			default:
 				logger.Errorw("unknown firewall type", "type", typ)
 			}

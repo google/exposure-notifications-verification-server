@@ -26,10 +26,9 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	// Create realm
-	realmName := t.Name()
-	realm, err := db.CreateRealm(realmName)
-	if err != nil {
-		t.Fatalf("unable to cerate test realm: %v", err)
+	realm := NewRealmWithDefaults(t.Name())
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
 	}
 
 	// Initial config should be nil
@@ -56,7 +55,7 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 	}
 
 	// Get the realm to verify SMS configs are NOT preloaded
-	realm, err = db.FindRealm(realm.ID)
+	realm, err := db.FindRealm(realm.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,9 +117,9 @@ func TestSMSProvider(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	realm, err := db.CreateRealm("test-sms-realm-1")
-	if err != nil {
-		t.Fatalf("realm create failed: %v", err)
+	realm := NewRealmWithDefaults("test-sms-realm-1")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
 	}
 
 	provider, err := realm.SMSProvider(db)

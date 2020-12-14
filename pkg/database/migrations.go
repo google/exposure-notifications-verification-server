@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 
 	"github.com/jinzhu/gorm"
 	"gopkg.in/gormigrate.v1"
@@ -48,12 +49,9 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 			Migrate: func(tx *gorm.DB) error {
 				// This is "out of order" as it were, but is needed to bootstrap fresh systems.
 				// Also in migration 8
-				logger.Debugw("creating realms table")
 				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
 					return err
 				}
-
-				logger.Debugw("creating users table")
 				return tx.AutoMigrate(&User{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -66,7 +64,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00002-CreateVerificationCodes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating verification codes table")
 				return tx.AutoMigrate(&VerificationCode{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -76,7 +73,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00003-CreateAuthorizedApps",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating authorized apps table")
 				return tx.AutoMigrate(&AuthorizedApp{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -86,7 +82,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00004-CreateTokens",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating tokens table")
 				return tx.AutoMigrate(&Token{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -96,7 +91,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00005-CreateCleanups",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating cleanup status table")
 				if err := tx.AutoMigrate(&CleanupStatus{}).Error; err != nil {
 					return err
 				}
@@ -113,30 +107,24 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00006-AddIndexes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("add users purge index")
 				if err := tx.Model(&User{}).AddIndex("users_purge_index", "updated_at").Error; err != nil {
 					return err
 				}
-				logger.Debugw("add verification code purge index")
 				if err := tx.Model(&VerificationCode{}).AddIndex("ver_code_purge_index", "expires_at").Error; err != nil {
 					return err
 				}
-				logger.Debugw("add tokens purge index")
 				if err := tx.Model(&VerificationCode{}).AddIndex("token_purge_index", "expires_at").Error; err != nil {
 					return err
 				}
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				logger.Debugw("drop users purge index")
 				if err := tx.Model(&User{}).RemoveIndex("users_purge_index").Error; err != nil {
 					return err
 				}
-				logger.Debugw("drop verification code purge index")
 				if err := tx.Model(&VerificationCode{}).RemoveIndex("ver_code_purge_index").Error; err != nil {
 					return err
 				}
-				logger.Debugw("drop tokens purge index")
 				if err := tx.Model(&VerificationCode{}).RemoveIndex("token_purge_index").Error; err != nil {
 					return err
 				}
@@ -146,7 +134,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00007-AddSymptomOnset",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("rename test_date to symptom_date")
 				// AutoMigrate will add missing fields.
 				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
 					return err
@@ -170,7 +157,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				logger.Debugw("rename symptom_date to test_date")
 				if err := tx.Model(&VerificationCode{}).DropColumn("symptom_date").Error; err != nil {
 					return err
 				}
@@ -183,7 +169,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00008-AddKeyTypes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("upgrading authorized_apps table.")
 				return tx.AutoMigrate(&AuthorizedApp{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -196,7 +181,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00009-AddIssuerColumns",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding issuer columns to issued codes")
 				return tx.AutoMigrate(&VerificationCode{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -212,7 +196,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00010-AddSMSConfig",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding sms_configs table")
 				return tx.AutoMigrate(&SMSConfig{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -222,12 +205,10 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00011-AddRealms",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating realms table")
 				// Add the realms table.
 				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
 					return err
 				}
-				logger.Debugw("creating default realm")
 				// Create the default realm with all of the default settings.
 				defaultRealm := NewRealmWithDefaults("Default")
 				defaultRealm.RequireDate = false
@@ -236,29 +217,23 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				}
 
 				// Add realm relations to the rest of the tables.
-				logger.Debugw("adding RealmID to users")
 				if err := tx.AutoMigrate(&User{}).Error; err != nil {
 					return err
 				}
-				logger.Debugw("joining users to the default realm")
 				var users []*User
 				if err := tx.Find(&users).Error; err != nil {
 					return err
 				}
 				for _, u := range users {
-					logger.Debugw("adding user to default realm", "user", u.ID)
-
-					u.AddRealm(defaultRealm)
+					permission := rbac.LegacyRealmUser
 					if u.SystemAdmin {
-						u.AddRealmAdmin(defaultRealm)
+						permission = rbac.LegacyRealmAdmin
 					}
-
-					if err := tx.Save(u).Error; err != nil {
+					if err := u.AddToRealm(db, defaultRealm, permission, System); err != nil {
 						return err
 					}
 				}
 
-				logger.Debugw("adding RealmID to authorized_apps")
 				if err := tx.AutoMigrate(&AuthorizedApp{}).Error; err != nil {
 					return err
 				}
@@ -267,36 +242,29 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					return err
 				}
 				for _, a := range authApps {
-					logger.Debugw("added auth app to default realm", "app", a.Name)
 					a.RealmID = defaultRealm.ID
 					if err := tx.Save(a).Error; err != nil {
 						return err
 					}
 				}
 
-				logger.Debugw("adding RealmID to VerificationCodes")
 				if err := tx.AutoMigrate(&VerificationCode{}).Error; err != nil {
 					return err
 				}
-				logger.Debugw("joining existing VerificationCodes to default realm")
 				if err := tx.Exec("UPDATE verification_codes SET realm_id=?", defaultRealm.ID).Error; err != nil {
 					return err
 				}
 
-				logger.Debugw("adding RealmID to Tokens")
 				if err := tx.AutoMigrate(&Token{}).Error; err != nil {
 					return err
 				}
-				logger.Debugw("joining existing tokens to default realm")
 				if err := tx.Exec("UPDATE tokens SET realm_id=?", defaultRealm.ID).Error; err != nil {
 					return err
 				}
 
-				logger.Debugw("adding RealmID to SMSConfig")
 				if err := tx.AutoMigrate(&SMSConfig{}).Error; err != nil {
 					return err
 				}
-				logger.Debugw("joining existing SMS config to default realm")
 				if err := tx.Exec("UPDATE sms_configs SET realm_id=?", defaultRealm.ID).Error; err != nil {
 					return err
 				}
@@ -324,7 +292,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00012-DropAuthorizedAppUniqueNameIndex",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("dropping authorized apps unique name index")
 				sql := "DROP INDEX IF EXISTS uix_authorized_apps_name"
 				if err := tx.Exec(sql).Error; err != nil {
 					return err
@@ -338,7 +305,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00013-AddCompositeIndexOnAuthorizedApp",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding authorized apps realm/name composite index")
 				if err := tx.AutoMigrate(&AuthorizedApp{}).Error; err != nil {
 					return err
 				}
@@ -351,7 +317,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00014-DropUserPurgeIndex",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("dropping user purge index")
 				sql := "DROP INDEX IF EXISTS users_purge_index"
 				return tx.Exec(sql).Error
 			},
@@ -362,7 +327,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00015-DropUserDisabled",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("dropping user disabled column")
 				sql := "ALTER TABLE users DROP COLUMN IF EXISTS disabled"
 				return tx.Exec(sql).Error
 			},
@@ -374,7 +338,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00016-MigrateSMSConfigs",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("migrating sms configs")
 
 				var sms SMSConfig
 				rows, err := tx.Model(&SMSConfig{}).Rows()
@@ -414,7 +377,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00017-AddIssuerIDColumns",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding issuer id columns to verification codes")
 				err := tx.AutoMigrate(&VerificationCode{}, &UserStat{}, &AuthorizedAppStat{}).Error
 				return err
 
@@ -439,7 +401,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00018-IncreaseAPIKeySize",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("increasing API key size")
 				sql := "ALTER TABLE authorized_apps ALTER COLUMN api_key TYPE varchar(512)"
 				return tx.Exec(sql).Error
 			},
@@ -451,7 +412,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00019-AddAPIKeyPreviewAuthApp",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("migrating authapp")
 				return tx.AutoMigrate(AuthorizedApp{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -461,7 +421,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00020-HMACAPIKeys",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("HMACing existing api keys")
 
 				var apps []AuthorizedApp
 				if err := tx.Model(AuthorizedApp{}).Find(&apps).Error; err != nil {
@@ -496,7 +455,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00021-AddUUIDExtension",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding uuid extension")
 				return tx.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -506,7 +464,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00022-AddUUIDToVerificationCodes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("migrating verification code uuid")
 
 				if err := tx.AutoMigrate(VerificationCode{}).Error; err != nil {
 					return fmt.Errorf("failed to auto migrate: %w", err)
@@ -533,7 +490,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00023-MakeUUIDVerificationCodesNotNull",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("making verification code uuid not null")
 
 				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid SET NOT NULL").Error; err != nil {
 					return fmt.Errorf("failed to set null: %w", err)
@@ -552,7 +508,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00024-AddTestTypesToRealms",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding test types to realm")
 
 				sql := fmt.Sprintf("ALTER TABLE realms ADD COLUMN IF NOT EXISTS allowed_test_types INTEGER DEFAULT %d",
 					TestTypeConfirmed|TestTypeLikely|TestTypeNegative)
@@ -573,7 +528,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00025-SetTestTypesNotNull",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("setting test types to not-null")
 
 				if err := tx.Exec("ALTER TABLE realms ALTER COLUMN allowed_test_types SET NOT NULL").Error; err != nil {
 					return err
@@ -592,7 +546,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00026-EnableExtension_citext",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("enabling citext extension")
 				return tx.Exec("CREATE EXTENSION citext").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -602,7 +555,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00027-AlterColumns_citext",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("setting columns to case insensitive")
 				sqls := []string{
 					"ALTER TABLE authorized_apps ALTER COLUMN name TYPE CITEXT",
 					"ALTER TABLE realms ALTER COLUMN name TYPE CITEXT",
@@ -634,7 +586,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00028-AddSMSDeeplinkFields",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding long_code and SMS deeplink settings")
 				// long_code cannot be auto migrated because of unique index.
 				// manually create long_code and long_expires_at and backfill with existing data.
 				sqls := []string{
@@ -658,7 +609,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					return err
 				}
 
-				logger.Debugw("add verification code purge index")
 				if err := tx.Model(&VerificationCode{}).AddIndex("ver_code_long_purge_index", "long_expires_at").Error; err != nil {
 					return err
 				}
@@ -686,7 +636,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00029-IncreaseVerificationCodeSizes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("increasing verification code sizes")
 				sqls := []string{
 					"ALTER TABLE verification_codes ALTER COLUMN code TYPE varchar(512)",
 					"ALTER TABLE verification_codes ALTER COLUMN long_code TYPE varchar(512)",
@@ -716,7 +665,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00030-HMACCodes",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("HMACing existing tokens")
 				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
 					return err
 				}
@@ -764,7 +712,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00031-AlterStatsColumns",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("changing stats columns")
 
 				sqls := []string{
 					// AuthorizedApps
@@ -816,7 +763,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00032-RegionCodeSize",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("increasing region code sizes")
 				sqls := []string{
 					"ALTER TABLE realms ALTER COLUMN region_code TYPE varchar(10)",
 				}
@@ -835,7 +781,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00033-PerlRealmSigningKeys",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding signing_keys table")
 				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
 					return err
 				}
@@ -853,7 +798,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00034-AddENExpressSettings",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding EN Express settings")
 				if err := tx.AutoMigrate(&Realm{}).Error; err != nil {
 					return err
 				}
@@ -867,7 +811,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00035-AddMFARequiredToRealms",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding MFA required to realm")
 				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_mode INTEGER DEFAULT 0").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -877,7 +820,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00036-AddRealmStats",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: adding realm stats")
 				if err := tx.AutoMigrate(&RealmStat{}).Error; err != nil {
 					return err
 				}
@@ -902,7 +844,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00037-AddRealmRequireDate",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: adding require_date to realms")
 				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS require_date bool DEFAULT false").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -912,7 +853,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00038-AddRealmRequireDateNotNull",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: adding not null requirement to require_date on realms")
 				return tx.Exec("ALTER TABLE realms ALTER COLUMN require_date SET NOT NULL").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -922,7 +862,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00039-RealmStatsToDate",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: changing realm stats to date")
 				return tx.Exec("ALTER TABLE realm_stats ALTER COLUMN date TYPE date").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -932,7 +871,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00040-BackfillRealmStats",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: back-filling realm stats")
 				sqls := []string{
 					`
 					INSERT INTO realm_stats (
@@ -1050,7 +988,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00044-AddEmailVerifiedRequiredToRealms",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding email verification required to realm")
 				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS email_verified_mode INTEGER DEFAULT 0").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -1077,7 +1014,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 					Email:       "super@example.com",
 					SystemAdmin: true,
 				}
-
 				if err := tx.Save(&user).Error; err != nil {
 					return err
 				}
@@ -1099,7 +1035,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00047-AddPasswordLastChangedToUsers",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding email verification required to realm")
 				return tx.Exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_password_change DATE DEFAULT CURRENT_DATE").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -1231,7 +1166,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00050-CreateMobileApps",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("creating authorized apps table")
 				return tx.AutoMigrate(&MobileApp{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -1426,7 +1360,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00057-AddMFARequiredGracePeriod",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding email verification required to realm")
 				return tx.Exec("ALTER TABLE realms ADD COLUMN IF NOT EXISTS mfa_required_grace_period BIGINT DEFAULT 0").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -1472,7 +1405,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00060-AddEmailConfig",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding email_configs table")
 				return tx.AutoMigrate(&EmailConfig{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -1551,7 +1483,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00062-AddTestDate",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding verification code test date")
 				return tx.AutoMigrate(&VerificationCode{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -1561,7 +1492,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00063-AddTokenTestDate",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("adding token test date")
 				return tx.AutoMigrate(&Token{}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -1571,7 +1501,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00064-RescopeVerificationCodeIndices",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("realm enable verification_code index")
 				sqls := []string{
 					"ALTER TABLE verification_codes ALTER COLUMN long_code DROP NOT NULL",
 					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_code ON verification_codes (realm_id,code) WHERE code != ''",
@@ -1589,7 +1518,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				logger.Debugw("partial verification code cleanup")
 				sqls := []string{
 					"DELETE FROM verification_codes WHERE code = '' or long_code = ''",
 				}
@@ -1675,7 +1603,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00067-AddRealmAllowBulkUpload",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("db migrations: adding allow_bulk_upload to realms")
 
 				sqls := []string{
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload BOOL`,
@@ -1739,7 +1666,6 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 		{
 			ID: "00072-ChangeSMSTemplateType",
 			Migrate: func(tx *gorm.DB) error {
-				logger.Debugw("changing type of SMS Template text")
 				return tx.Exec("ALTER TABLE realms ALTER COLUMN sms_text_template TYPE text").Error
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -1801,16 +1727,112 @@ func (db *Database) getMigrations(ctx context.Context) *gormigrate.Gormigrate {
 				return nil
 			},
 		},
+		{
+			ID: "00075-CreateRBAC",
+			Migrate: func(tx *gorm.DB) error {
+				// These tables will already exist for existing apps, but it will NOT
+				// exist for apps running migrations for the first time. The reason is
+				// because Gorm's automigrate created the join tables automagically in
+				// the past because the models were annotated. But the models are no
+				// longer annotated, so the join table is not created.
+				if err := tx.Exec(`CREATE TABLE IF NOT EXISTS user_realms (
+					realm_id INTEGER,
+					user_id INTEGER,
+					PRIMARY KEY (realm_id, user_id)
+				)`).Error; err != nil {
+					return err
+				}
+				if err := tx.Exec(`CREATE TABLE IF NOT EXISTS admin_realms (
+					realm_id INTEGER,
+					user_id INTEGER,
+					PRIMARY KEY (realm_id, user_id)
+				)`).Error; err != nil {
+					return err
+				}
+
+				// Update existing columns defaults.
+				if err := tx.Exec(`ALTER TABLE user_realms ALTER COLUMN realm_id SET NOT NULL`).Error; err != nil {
+					return err
+				}
+				if err := tx.Exec(`ALTER TABLE user_realms ALTER COLUMN user_id SET NOT NULL`).Error; err != nil {
+					return err
+				}
+
+				// Convert realm and user into real foreign keys. If the parent record
+				// is deleted, also delete the membership record.
+				if err := tx.Exec(`ALTER TABLE user_realms ADD CONSTRAINT fk_realm FOREIGN KEY (realm_id) REFERENCES realms(id) ON DELETE CASCADE`).Error; err != nil {
+					return err
+				}
+				if err := tx.Exec(`ALTER TABLE user_realms ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`).Error; err != nil {
+					return err
+				}
+
+				// Create new column in user_realms.
+				if err := tx.Exec(`ALTER TABLE user_realms ADD COLUMN IF NOT EXISTS permissions BIGINT`).Error; err != nil {
+					return err
+				}
+
+				// Update all existing permissions to be RealmUser.
+				if err := tx.Exec(
+					`UPDATE user_realms SET permissions = $1`,
+					int64(rbac.LegacyRealmUser),
+				).Error; err != nil {
+					return err
+				}
+
+				// Set the default for new permissions to 0 (none) and disallow NULL.
+				if err := tx.Exec(`ALTER TABLE user_realms ALTER COLUMN permissions SET DEFAULT 0`).Error; err != nil {
+					return err
+				}
+				if err := tx.Exec(`ALTER TABLE user_realms ALTER COLUMN permissions SET NOT NULL`).Error; err != nil {
+					return err
+				}
+
+				// Migrate existing admin_realms permissions into user_realms with the
+				// legacy realm admin permission.
+				if err := tx.Exec(
+					`INSERT INTO user_realms(user_id, realm_id, permissions)
+						SELECT user_id, realm_id, $1 FROM admin_realms
+						ON CONFLICT (user_id, realm_id) DO UPDATE SET permissions = $1`,
+					int64(rbac.LegacyRealmAdmin|rbac.LegacyRealmUser),
+				).Error; err != nil {
+					return err
+				}
+
+				// Rename user_realms.
+				if err := tx.Exec(`ALTER TABLE user_realms RENAME TO memberships`).Error; err != nil {
+					return err
+				}
+				if err := tx.Exec(`ALTER INDEX user_realms_pkey RENAME TO memberships_pkey`).Error; err != nil {
+					return err
+				}
+
+				// Add indexes on realm_id and user_id individually for lookups.
+				if err := tx.Exec(`CREATE INDEX IF NOT EXISTS idx_memberships_realm_id ON memberships(realm_id)`).Error; err != nil {
+					return err
+				}
+				if err := tx.Exec(`CREATE INDEX IF NOT EXISTS idx_memberships_user_id ON memberships(user_id)`).Error; err != nil {
+					return err
+				}
+
+				// Drop admin_realms.
+				if err := tx.Exec(`DROP TABLE IF EXISTS admin_realms`).Error; err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				// No rollback for this
+				return nil
+			},
+		},
 	})
 }
 
 // MigrateTo migrates the database to a specific target migration ID.
 func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool) error {
-	logger := logging.FromContext(ctx).Named("migrate")
-	ctx = logging.WithLogger(ctx, logger)
-
 	m := db.getMigrations(ctx)
-	logger.Debugw("migrations starting")
 
 	var err error
 	if target == "" {
@@ -1828,24 +1850,16 @@ func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool)
 	}
 
 	if err != nil {
-		logger.Errorw("failed to migrate", "error", err)
 		return err
 	}
-	logger.Debugw("migrations complete")
 	return nil
 }
 
 // RunMigrations will apply sequential, transactional migrations to the database
 func (db *Database) RunMigrations(ctx context.Context) error {
-	logger := logging.FromContext(ctx).Named("migrate")
-	ctx = logging.WithLogger(ctx, logger)
-
 	m := db.getMigrations(ctx)
-	logger.Debugw("migrations starting")
 	if err := m.Migrate(); err != nil {
-		logger.Errorw("failed to migrate", "error", err)
 		return err
 	}
-	logger.Debugw("migrations complete")
 	return nil
 }

@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
 
@@ -33,15 +34,20 @@ func (c *Controller) HandleDestroy() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		realm := controller.RealmFromContext(ctx)
-		if realm == nil {
-			controller.MissingRealm(w, r, c.h)
+		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
 			return
 		}
+		if !membership.Can(rbac.SettingsWrite) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+		currentRealm := membership.Realm
 
-		if err := realm.DestroySigningKeyVersion(ctx, c.db, vars["id"]); err != nil {
+		if err := currentRealm.DestroySigningKeyVersion(ctx, c.db, vars["id"]); err != nil {
 			flash.Error("Failed to destroy signing key version: %v", err)
-			c.renderShow(ctx, w, r, realm)
+			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
 
