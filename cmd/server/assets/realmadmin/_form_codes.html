@@ -230,12 +230,12 @@
           rows="5" placeholder="SMS text template">{{$v.Value}}</textarea>
         <label for="sms-text-template">SMS text template</label>
       </div>
-      {{if ne $i 0}}<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-{{$i}}');">Delete template</button>{{end}}
       {{if $realm.ErrorsFor $v.Label}}
       <div class="invalid-feedback d-block mt-n2 mb-3">
         {{joinStrings ($realm.ErrorsFor $v.Label) ", "}}
       </div>
       {{end}}
+      {{if ne $i 0}}<button class="btn btn-danger mb-3" type="button" onClick="removeTemplate('sms-template-{{$i}}');">Delete template</button>{{end}}
     </div>
     {{end}}
     <span  id="templates-end"></span>
