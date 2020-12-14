@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package render defines rendering functionality.
 package render
 
 import (
@@ -52,9 +51,9 @@ var allowedResponseCodes = map[int]struct{}{
 	500: {},
 }
 
-// Renderer is responsible for rendering various content and templates like HTML
-// and JSON responses.
-type Renderer struct {
+// ProdRenderer is responsible for rendering various content and templates like HTML
+// and JSON responses. This implementation caches templates and uses a pool of buffers.
+type ProdRenderer struct {
 	// debug indicates templates should be reloaded on each invocation and real
 	// error responses should be rendered. Do not enable in production.
 	debug bool
@@ -74,11 +73,17 @@ type Renderer struct {
 	templatesRoot string
 }
 
+var _ Renderer = (*ProdRenderer)(nil) // ensure interface satisfied
+
 // New creates a new renderer with the given details.
-func New(ctx context.Context, root string, debug bool) (*Renderer, error) {
+func New(ctx context.Context, root string, debug bool) (Renderer, error) {
+	return newProdRenderer(ctx, root, debug)
+}
+
+func newProdRenderer(ctx context.Context, root string, debug bool) (*ProdRenderer, error) {
 	logger := logging.FromContext(ctx)
 
-	r := &Renderer{
+	r := &ProdRenderer{
 		debug:  debug,
 		logger: logger,
 		rendererPool: &sync.Pool{
@@ -98,7 +103,7 @@ func New(ctx context.Context, root string, debug bool) (*Renderer, error) {
 }
 
 // loadTemplates loads or reloads all templates.
-func (r *Renderer) loadTemplates() error {
+func (r *ProdRenderer) loadTemplates() error {
 	if r.templatesRoot == "" {
 		return nil
 	}
@@ -224,7 +229,7 @@ func textFuncs() texttemplate.FuncMap {
 
 // AllowedResponseCode returns true if the code is a permitted response code,
 // false otherwise.
-func (r *Renderer) AllowedResponseCode(code int) bool {
+func (r *ProdRenderer) AllowedResponseCode(code int) bool {
 	_, ok := allowedResponseCodes[code]
 	return ok
 }

@@ -24,7 +24,7 @@ import (
 )
 
 // SendInviteEmailFunc returns a function capable of sending a new user invitation.
-func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.Renderer, email string) (auth.InviteUserEmailFunc, error) {
+func SendInviteEmailFunc(ctx context.Context, db *database.Database, h render.Renderer, email string) (auth.InviteUserEmailFunc, error) {
 	// Lookup the realm to get the email provider
 	realm := RealmFromContext(ctx)
 	if realm == nil {
@@ -77,7 +77,7 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.R
 
 // SendPasswordResetEmailFunc returns a function capable of sending a password
 // reset for the given user.
-func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *render.Renderer, email string) (auth.ResetPasswordEmailFunc, error) {
+func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h render.Renderer, email string) (auth.ResetPasswordEmailFunc, error) {
 	// Lookup the realm to get the email provider
 	realm := RealmFromContext(ctx)
 	if realm == nil {
@@ -129,7 +129,7 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *r
 
 // SendEmailVerificationEmailFunc returns a function capable of sending an email
 // verification email.
-func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, h *render.Renderer, email string) (auth.EmailVerificationEmailFunc, error) {
+func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, h render.Renderer, email string) (auth.EmailVerificationEmailFunc, error) {
 	// Lookup the realm to get the email provider
 	realm := RealmFromContext(ctx)
 	if realm == nil {

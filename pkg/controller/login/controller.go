@@ -30,7 +30,7 @@ type Controller struct {
 	cacher       cache.Cacher
 	config       *config.ServerConfig
 	db           *database.Database
-	h            *render.Renderer
+	h            render.Renderer
 }
 
 // New creates a new login controller.
@@ -40,7 +40,7 @@ func New(
 	cacher cache.Cacher,
 	config *config.ServerConfig,
 	db *database.Database,
-	h *render.Renderer) *Controller {
+	h render.Renderer) *Controller {
 
 	return &Controller{
 		authProvider: authProvider,

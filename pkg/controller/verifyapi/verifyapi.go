@@ -27,11 +27,11 @@ import (
 type Controller struct {
 	config *config.APIServerConfig
 	db     *database.Database
-	h      *render.Renderer
+	h      render.Renderer
 	kms    keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h *render.Renderer, kms keys.KeyManager) (*Controller, error) {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h render.Renderer, kms keys.KeyManager) (*Controller, error) {
 	return &Controller{
 		config: config,
 		db:     db,

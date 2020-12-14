@@ -27,7 +27,7 @@ import (
 
 // RequireHeader requires that the request have a certain header present. The
 // header just needs to exist - it does not need to have a specific value.
-func RequireHeader(h *render.Renderer, header string) mux.MiddlewareFunc {
+func RequireHeader(h render.Renderer, header string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -47,7 +47,7 @@ func RequireHeader(h *render.Renderer, header string) mux.MiddlewareFunc {
 
 // RequireHeaderValues requires that the request have a certain header present
 // and that the value be one of the supplied entries.
-func RequireHeaderValues(ctx context.Context, h *render.Renderer, header string, allowed []string) mux.MiddlewareFunc {
+func RequireHeaderValues(ctx context.Context, h render.Renderer, header string, allowed []string) mux.MiddlewareFunc {
 	logger := logging.FromContext(ctx).Named("middleware.RequireHeaderValue")
 
 	return func(next http.Handler) http.Handler {
