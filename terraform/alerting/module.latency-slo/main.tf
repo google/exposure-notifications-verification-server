@@ -15,7 +15,8 @@
 locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/slo"
 
-  latency_threshold = 10
+  # Unit: ms
+  latency_threshold = 60000
 }
 
 resource "google_monitoring_slo" "latency-slo" {
