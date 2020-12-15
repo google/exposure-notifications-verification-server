@@ -43,6 +43,10 @@ var (
 			prefix: "phone number: ",
 			suffix: ", ",
 		},
+		{
+			prefix: "'To' number ",
+			suffix: " is not",
+		},
 	}
 )
 
