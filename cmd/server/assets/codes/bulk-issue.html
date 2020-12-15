@@ -236,6 +236,7 @@
 
         let start = async function(e) {
           let retryCode = $retryCode.val();
+          let template = $inputSMSTemplate.val();
           let rows = e.target.result.split('\n');
           let batch = [];
           total = 0;
@@ -249,7 +250,7 @@
             }
 
             // Add to batch if the next row is valid.
-            let request = buildRequest(rows[i], retryCode);
+            let request = buildRequest(rows[i], retryCode, template);
             if (request != "") {
               batch.push(request);
             }
@@ -300,7 +301,7 @@
         return { start, cancel };
       }
 
-      function buildRequest(thisRow, retryCode) {
+      function buildRequest(thisRow, retryCode, template) {
         thisRow = thisRow.trim();
         if (thisRow == "") {
           return "";
@@ -326,7 +327,7 @@
         let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36);
         request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
 
-        request["smsTemplateLabel"] = $inputSMSTemplate.val();
+        request["smsTemplateLabel"] = template;
         request["testType"] = "confirmed";
         request["tzOffset"] = tzOffset;
         return request
