@@ -102,6 +102,12 @@ msgstr "SMSテキストメッセージ(推奨)"
 msgid "codes.issue.sms-text-message-label"
 msgstr "患者の電話番号"
 
+msgid "codes.issue.sms-template-label"
+msgstr "SMSテンプレート"
+
+msgid "codes.issue.sms-template-detail"
+msgstr "患者は、選択したメッセージテンプレートを含むSMSを受信します"
+
 msgid "codes.issue.sms-text-message-detail"
 msgstr "電話番号が提供されれば、システムは患者にコードを記述したテキストメッセージを送信します。SMSテキストメッセージを受信できる電話番号が必要です。"
 
