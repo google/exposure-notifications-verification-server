@@ -33,6 +33,38 @@ import (
 	"go.opencensus.io/stats"
 )
 
+var (
+	// scrubbers is a list of known twilio error messages that contain the send to phone number.
+	scrubbers = []struct {
+		prefix string
+		suffix string
+	}{
+		{
+			prefix: "phone number: ",
+			suffix: ", ",
+		},
+	}
+)
+
+// scrubPhoneNumbers checks for phone numbers in known Twilio error strings that contains
+// user phone numbers.
+func scrubPhoneNumbers(s string) string {
+	noScrubs := s
+	for _, scrub := range scrubbers {
+		pi := strings.Index(noScrubs, scrub.prefix)
+		si := strings.Index(noScrubs, scrub.suffix)
+
+		// if prefix is in the string and suffix is in the sting after the prefix
+		if pi >= 0 && si > pi+len(scrub.prefix) {
+			noScrubs = strings.Join([]string{
+				noScrubs[0 : pi+len(scrub.prefix)],
+				noScrubs[si:],
+			}, "REDACTED")
+		}
+	}
+	return noScrubs
+}
+
 func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
 	logger := logging.FromContext(ctx).Named("issueapi.issue")
 	realm := controller.RealmFromContext(ctx)
@@ -264,7 +296,7 @@ func (c *Controller) issue(ctx context.Context, request *api.IssueCodeRequest) (
 					// fallthrough to the error
 				}
 
-				logger.Errorw("failed to send sms", "error", err)
+				logger.Errorw("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
 				result.obsBlame = observability.BlameClient
 				result.obsResult = observability.ResultError("FAILED_TO_SEND_SMS")
 				return err
