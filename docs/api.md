@@ -8,6 +8,7 @@
 - [Admin APIs](#admin-apis)
   - [`/api/issue`](#apiissue)
   - [`/api/batch-issue`](#apibatch-issue)
+    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
   - [`/api/checkcodestatus`](#apicheckcodestatus)
   - [`/api/expirecode`](#apiexpirecode)
 - [Chaffing requests](#chaffing-requests)
@@ -268,6 +269,39 @@ Request a batch of verification codes to be issued. Accepts a list of IssueCodeR
 array response.
 
 This API currently supports a limit of up 10 codes per request.
+
+### Handling batch partial success/failure
+This API is *not atomic* and does not follow the [typical guidelines for a batch API](https://google.aip.dev/233) due to the sending of SMS
+messages.
+
+The server attempts to issue every code in the batch. If errors are encountered, each item in 'codes' will contain error details for
+the corresponding code. The overall request will get the error status code and message of the first seen error.
+
+eg.
+```
+{
+  codes: [
+    {
+      "error": "the first code failed",
+      "errorCode": "missing_date",
+    },
+    {
+      "uuid": "string UUID",
+      "code": "short verification code",
+      "expiresAt": "RFC1123 formatted string timestamp",
+      "expiresAtTimestamp": 0,
+      "expiresAt": "RFC1123 UTC timestamp",
+      "expiresAtTimestamp": 0,
+    },
+    {
+      "error": "the third code failed",
+      "errorCode": "unparsable_request",
+    },
+  ],
+  error: "the first code failed",
+  errorCode: "missing_date",
+}
+``
 
 **BatchIssueCodeRequest**
 
