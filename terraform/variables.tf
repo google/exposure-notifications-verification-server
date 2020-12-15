@@ -212,6 +212,15 @@ variable "db_verification_code_hmac_count" {
   description = "Number of HMAC keys to create for HMACing verification codes in the database. Increase by 1 to force a rotation."
 }
 
+variable "enable_lb_logging" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+  Whether to enable load balancer logging. This is useful for debugging Cloud
+  Armor issues.
+  EOT
+}
+
 terraform {
   required_version = ">= 0.13.1"
 

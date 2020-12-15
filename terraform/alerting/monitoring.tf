@@ -13,7 +13,7 @@
 # limitations under the License.
 
 resource "google_monitoring_dashboard" "verification-server" {
-  project        = var.monitoring-host-project
+  project        = var.project
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/verification-server.yaml")))
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -21,7 +21,7 @@ resource "google_monitoring_dashboard" "verification-server" {
 }
 
 resource "google_monitoring_dashboard" "e2e" {
-  project        = var.monitoring-host-project
+  project        = var.project
   dashboard_json = jsonencode(yamldecode(file("${path.module}/dashboards/e2e.yaml")))
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -30,10 +30,10 @@ resource "google_monitoring_dashboard" "e2e" {
 
 resource "google_logging_metric" "requests_by_host" {
   name    = "requests_by_host"
-  project = var.verification-server-project
+  project = var.project
 
   filter = <<-EOT
-resource.type=cloud_run_revision 
+resource.type=cloud_run_revision
 httpRequest.requestUrl!=""
 EOT
 
@@ -52,7 +52,7 @@ EOT
 }
 
 resource "google_logging_metric" "stackdriver_export_error_count" {
-  project     = var.verification-server-project
+  project     = var.project
   name        = "stackdriver_export_error_count"
   description = "Error occurred trying to export metrics to stackdriver"
 

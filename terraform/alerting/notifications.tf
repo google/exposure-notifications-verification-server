@@ -1,6 +1,6 @@
 resource "google_monitoring_notification_channel" "channels" {
   provider     = google-beta
-  project      = var.monitoring-host-project
+  project      = var.project
   display_name = "${each.key} Notification Channel"
   type         = each.key
   labels       = each.value.labels

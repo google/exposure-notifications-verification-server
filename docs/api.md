@@ -8,6 +8,7 @@
 - [Admin APIs](#admin-apis)
   - [`/api/issue`](#apiissue)
   - [`/api/batch-issue`](#apibatch-issue)
+    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
   - [`/api/checkcodestatus`](#apicheckcodestatus)
   - [`/api/expirecode`](#apiexpirecode)
 - [Chaffing requests](#chaffing-requests)
@@ -107,19 +108,16 @@ Exchange a verification code for a long term verification token.
 
 Possible error code responses. New error codes may be added in future releases.
 
-| ErrorCode               | HTTP Status | Retry | Meaning                                                                                                         |
-| ----------------------- | ----------- | ----- | --------------------------------------------------------------------------------------------------------------- |
-| `unparsable_request`    | 400         | No    | Client sent an request the sever cannot parse                                                                   |
-| `code_invalid`          | 400         | No    | Code invalid or used, user may need to obtain a new code.                                                       |
-| `code_expired`          | 400         | No    | Code has expired, user may need to obtain a new code.                                                           |
-| `code_not_found`        | 400         | No    | The server has no record of that code.                                                                          |
-| `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecognized test type                                                          |
-| `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided.                                        |
-| `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code                                                               |
-| `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.                                           |
-| `quota_exceeded`        | 429         | Yes   | The realm has run out of its daily quota allocation for issuing codes. Wait and retry later.                    |
-| `unsupported_test_type` | 412         | No    | The code may be valid, but represents a test type the client cannot process. User may need to upgrade software. |
-|                         | 500         | Yes   | Internal processing error, may be successful on retry.                                                          |
+| ErrorCode             | HTTP Status | Retry | Meaning                                                                                      |
+| --------------------- | ----------- | ----- | -------------------------------------------------------------------------------------------- |
+| `unparsable_request`  | 400         | No    | Client sent an request the sever cannot parse                                                |
+| `code_invalid`        | 400         | No    | Code invalid or used, user may need to obtain a new code.                                    |
+| `code_expired`        | 400         | No    | Code has expired, user may need to obtain a new code.                                        |
+| `code_not_found`      | 400         | No    | The server has no record of that code.                                                       |
+| `invalid_test_type`   | 400         | No    | The client sent an accept of an unrecognized test type                                       |
+| `maintenance_mode   ` | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.                        |
+| `quota_exceeded`      | 429         | Yes   | The realm has run out of its daily quota allocation for issuing codes. Wait and retry later. |
+|                       | 500         | Yes   | Internal processing error, may be successful on retry.                                       |
 
 ## `/api/certificate`
 
@@ -266,6 +264,20 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   base64-encoded bytes into this field. The client should not process the
   padding.
 
+Possible error code responses. New error codes may be added in future releases.
+
+| ErrorCode               | HTTP Status | Retry | Meaning                                                                                                         |
+| ----------------------- | ----------- | ----- | --------------------------------------------------------------------------------------------------------------- |
+| `unparsable_request`    | 400         | No    | Client sent an request the sever cannot parse                                                                   |
+| `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecognized test type                                                          |
+| `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided.                                        |
+| `invalid_test_type`     | 400         | No    | The test type is not a valid test type (a string that is unknown to the server).                                |
+| `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code                                                               |
+| `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.                                           |
+| `quota_exceeded`        | 429         | Yes   | The realm has run out of its daily quota allocation for issuing codes. Wait and retry later.                    |
+| `unsupported_test_type` | 412         | No    | The code may be valid, but represents a test type the client cannot process. User may need to upgrade software. |
+|                         | 500         | Yes   | Internal processing error, may be successful on retry.                                                          |
+
 ## `/api/batch-issue`
 
 Request a batch of verification codes to be issued. Accepts a list of IssueCodeRequest. See [`/api/issue`](#apiissue) for details of the fields of a single issue request and response. The indices of the respective
@@ -273,6 +285,40 @@ Request a batch of verification codes to be issued. Accepts a list of IssueCodeR
 array response.
 
 This API currently supports a limit of up 10 codes per request.
+
+### Handling batch partial success/failure
+This API is *not atomic* and does not follow the [typical guidelines for a batch API](https://google.aip.dev/233) due to the sending of SMS
+messages.
+
+The server attempts to issue every code in the batch. If errors are encountered, each item in `codes` will contain the error details for
+the corresponding code. The overall request will get the error status code of the first seen error, although some codes may have
+succeeded.
+
+eg.
+```
+{
+  codes: [
+    {
+      "error": "the first code failed",
+      "errorCode": "missing_date",
+    },
+    {
+      "uuid": "string UUID",
+      "code": "short verification code",
+      "expiresAt": "RFC1123 formatted string timestamp",
+      "expiresAtTimestamp": 0,
+      "expiresAt": "RFC1123 UTC timestamp",
+      "expiresAtTimestamp": 0,
+    },
+    {
+      "error": "the third code failed",
+      "errorCode": "unparsable_request",
+    },
+  ],
+  error: "the first code failed",
+  errorCode: "missing_date",
+}
+``
 
 **BatchIssueCodeRequest**
 
@@ -370,7 +416,7 @@ Checks the status of a previous issued code, looking up by UUID.
 
 ## `/api/expirecode`
 
-Expires an unclaimed code. IF the code has been claimed an error is returned.
+Expires an unclaimed code. If the code has been claimed an error is returned.
 
 **ExpireCodeRequest**
 

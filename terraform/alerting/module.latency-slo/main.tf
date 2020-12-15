@@ -14,32 +14,31 @@
 
 locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/slo"
+
+  # Unit: ms
+  latency_threshold = 60000
 }
 
-resource "google_monitoring_slo" "availability-slo" {
+resource "google_monitoring_slo" "latency-slo" {
   # the basics
   service      = var.custom-service-id
-  slo_id       = "availability-slo-${var.service-name}"
-  display_name = "${var.goal * 100}% of requests are successful over rolling 28 days (service=${var.service-name})"
+  slo_id       = "latency-slo-${var.service-name}"
+  display_name = "${var.goal * 100}% of requests are responded in <${local.latency_threshold / 1000}s over rolling 28 days (service=${var.service-name})"
   project      = var.project
   count        = var.enabled ? 1 : 0
 
 
   # the SLI
   request_based_sli {
-    good_total_ratio {
-      good_service_filter = <<-EOT
-        metric.type="loadbalancing.googleapis.com/https/request_count"
+    distribution_cut {
+      distribution_filter = <<-EOT
+        metric.type="loadbalancing.googleapis.com/https/total_latencies"
         resource.type="https_lb_rule"
         resource.label.backend_name="${var.service-name}"
-        metric.label.response_code_class=200
       EOT
-      bad_service_filter  = <<-EOT
-        metric.type="loadbalancing.googleapis.com/https/request_count"
-        resource.type="https_lb_rule"
-        resource.label.backend_name="${var.service-name}"
-        metric.label.response_code_class=500
-      EOT
+      range {
+        max = local.latency_threshold
+      }
     }
   }
 
@@ -51,7 +50,7 @@ resource "google_monitoring_slo" "availability-slo" {
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
   project      = var.project
-  display_name = "FastErrorBudgetBurn-${var.service-name}"
+  display_name = "FastLatencyBudgetBurn-${var.service-name}"
   combiner     = "AND"
   enabled      = "true"
   count        = var.enabled ? 1 : 0
@@ -60,7 +59,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last hour"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "3600s")
+      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/latency-slo-${var.service-name}", "3600s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -76,7 +75,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last 5 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "300s")
+      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/latency-slo-${var.service-name}", "300s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -89,21 +88,21 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   }
 
   documentation {
-    content   = "${local.playbook_prefix}/FastErrorBudgetBurn.md"
+    content   = "${local.playbook_prefix}/FastLatencyBudgetBurn.md"
     mime_type = "text/markdown"
   }
 
   notification_channels = [for x in values(var.notification-channels) : x.id]
 
   depends_on = [
-    google_monitoring_slo.availability-slo,
+    google_monitoring_slo.latency-slo,
   ]
 }
 
 # slow error budget burn alert
 resource "google_monitoring_alert_policy" "slow_burn" {
   project      = var.project
-  display_name = "SlowErrorBudgetBurn-${var.service-name}"
+  display_name = "SlowLatencyBudgetBurn-${var.service-name}"
   combiner     = "AND"
   enabled      = "true"
   count        = var.enabled ? 1 : 0
@@ -112,7 +111,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "21600s")
+      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/latency-slo-${var.service-name}", "21600s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -128,7 +127,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "1800s")
+      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/latency-slo-${var.service-name}", "1800s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -141,13 +140,13 @@ resource "google_monitoring_alert_policy" "slow_burn" {
   }
 
   documentation {
-    content   = "${local.playbook_prefix}/SlowErrorBudgetBurn.md"
+    content   = "${local.playbook_prefix}/SlowLatencyBudgetBurn.md"
     mime_type = "text/markdown"
   }
 
   notification_channels = [for x in values(var.notification-channels) : x.id]
 
   depends_on = [
-    google_monitoring_slo.availability-slo,
+    google_monitoring_slo.latency-slo,
   ]
 }

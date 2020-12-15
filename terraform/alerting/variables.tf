@@ -1,13 +1,4 @@
-variable "monitoring-host-project" {
-  type        = string
-  description = <<-EOT
-  The host project for multi-project workspace. See also:
-  http://cloud/monitoring/workspaces/create#first-multi-project-workspace If
-  empty, will use var.verificatin-server-project by default
-  EOT
-}
-
-variable "verification-server-project" {
+variable "project" {
   type        = string
   description = "GCP project for verification server. Required."
 }
