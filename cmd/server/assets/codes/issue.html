@@ -324,7 +324,7 @@
         data.tzOffset = new Date().getTimezoneOffset();
 
         {{if $hasSMSConfig}}
-        data['SMSTemplateLabel'] = $inputSMSTemplate.val();
+        data['smsTemplateLabel'] = $inputSMSTemplate.val();
         data['phone'] = iti.getNumber();
         {{end}}
 

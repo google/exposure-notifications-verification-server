@@ -262,7 +262,6 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 
 			message, err := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 			if err != nil {
-				logger.Warnw("failed to compose SMS", "error", err)
 				return err
 			}
 
