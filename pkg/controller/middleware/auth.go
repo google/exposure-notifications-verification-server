@@ -51,12 +51,12 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 			// Check session idle timeout.
 			if t := controller.LastActivityFromSession(session); !t.IsZero() {
 				// If it's been more than the TTL since we've seen this session,
-				// "expire" it by creating a new empty session. Note that we don't force
-				// the user back to a login page or anything - other middlewares will
-				// handle that if needed.
+				// expire it by creating a new empty session.
 				if time.Since(t) > sessionIdleTTL {
-					logger.Debug("session is expired")
-					controller.Unauthorized(w, r, h)
+					authProvider.ClearSession(ctx, session)
+
+					flash.Error("Your session has expired due to inactivity.")
+					controller.RedirectToLogout(w, r, h)
 					return
 				}
 			}
@@ -68,7 +68,7 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 
 				logger.Debugw("failed to get email from session", "error", err)
 				flash.Error("An error occurred trying to verify your credentials.")
-				controller.Unauthorized(w, r, h)
+				controller.RedirectToLogout(w, r, h)
 				return
 			}
 
@@ -85,7 +85,6 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 				authProvider.ClearSession(ctx, session)
 
 				if database.IsNotFound(err) {
-					logger.Debugw("user does not exist")
 					controller.Unauthorized(w, r, h)
 					return
 				}
@@ -102,7 +101,7 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 					authProvider.ClearSession(ctx, session)
 
 					logger.Debugw("session revoked", "error", err)
-					controller.Unauthorized(w, r, h)
+					controller.RedirectToLogout(w, r, h)
 					return
 				}
 
