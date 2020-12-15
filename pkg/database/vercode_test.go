@@ -16,6 +16,8 @@ package database
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,6 +27,47 @@ import (
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 )
+
+func TestCodeType(t *testing.T) {
+	t.Parallel()
+
+	// This test might seem like it's redundant, but it's designed to ensure that
+	// the exact values for existing types remain unchanged.
+	cases := []struct {
+		t   CodeType
+		exp int
+	}{
+		{CodeTypeShort, 1},
+		{CodeTypeLong, 2},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("%d", tc.t), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := int(tc.t), tc.exp; got != want {
+				t.Errorf("expected %d to be %d", got, want)
+			}
+		})
+	}
+}
+
+func TestVerificationCode_BeforeSave(t *testing.T) {
+	t.Parallel()
+
+	t.Run("issuingExternalID", func(t *testing.T) {
+		t.Parallel()
+
+		var v VerificationCode
+		v.IssuingExternalID = strings.Repeat("*", 256)
+		_ = v.BeforeSave(&gorm.DB{})
+		if errs := v.ErrorsFor("issuingExternalID"); len(errs) < 1 {
+			t.Errorf("expected errors for %s", "issuingExternalID")
+		}
+	})
+}
 
 func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	t.Parallel()

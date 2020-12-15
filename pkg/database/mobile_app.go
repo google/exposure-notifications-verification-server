@@ -130,10 +130,14 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	}
 	a.SHA = strings.Join(shas, "\n")
 
-	if len(a.Errors()) > 0 {
-		return fmt.Errorf("validation failed: %v", a.Errors())
+	if msgs := a.ErrorMessages(); len(msgs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
 	}
+	return nil
+}
 
+func (a *MobileApp) AfterFind(tx *gorm.DB) error {
+	a.URL = stringValue(a.URLPtr)
 	return nil
 }
 
@@ -288,11 +292,6 @@ func (a *MobileApp) AuditID() string {
 
 func (a *MobileApp) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", a.Name, a.OS.Display())
-}
-
-func (a *MobileApp) AfterFind(tx *gorm.DB) error {
-	a.URL = stringValue(a.URLPtr)
-	return nil
 }
 
 // PurgeMobileApps will delete mobile apps that have been deleted for more than

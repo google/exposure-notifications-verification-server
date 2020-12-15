@@ -15,82 +15,94 @@
 package database
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/jinzhu/gorm"
 )
+
+func TestOSType(t *testing.T) {
+	t.Parallel()
+
+	// This test might seem like it's redundant, but it's designed to ensure that
+	// the exact values for existing types remain unchanged.
+	cases := []struct {
+		t   OSType
+		exp int
+	}{
+		{OSTypeInvalid, 0},
+		{OSTypeIOS, 1},
+		{OSTypeAndroid, 2},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.t.Display(), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := int(tc.t), tc.exp; got != want {
+				t.Errorf("expected %d to be %d", got, want)
+			}
+		})
+	}
+}
+
+func TestOSType_Display(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		t   OSType
+		exp string
+	}{
+		{OSTypeInvalid, "Unknown"},
+		{OSTypeIOS, "iOS"},
+		{OSTypeAndroid, "Android"},
+		{1991, "Unknown"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("%d", tc.t), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := tc.t.Display(), tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
 
 func TestMobileApp_Validation(t *testing.T) {
 	t.Parallel()
 
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	cases := []struct {
+		structField string
+		field       string
+	}{
+		{"Name", "name"},
+		{"AppID", "app_id"},
+		{"OS", "os"},
+	}
 
-	t.Run("name", func(t *testing.T) {
-		t.Parallel()
+	for _, tc := range cases {
+		tc := tc
 
-		var m MobileApp
-		m.Name = ""
-		_ = m.BeforeSave(db.RawDB())
-
-		nameErrs := m.ErrorsFor("name")
-		if len(nameErrs) < 1 {
-			t.Fatal("expected error")
-		}
-	})
-
-	t.Run("app_id", func(t *testing.T) {
-		t.Parallel()
-
-		var m MobileApp
-		m.AppID = ""
-		_ = m.BeforeSave(db.RawDB())
-
-		appIDErrs := m.ErrorsFor("app_id")
-		if len(appIDErrs) < 1 {
-			t.Fatal("expected error")
-		}
-	})
-
-	t.Run("os", func(t *testing.T) {
-		t.Parallel()
-
-		var m MobileApp
-		m.OS = 0
-		_ = m.BeforeSave(db.RawDB())
-
-		osErrs := m.ErrorsFor("os")
-		if len(osErrs) < 1 {
-			t.Fatal("expected error")
-		}
-
-		m.OS = 4
-		_ = m.BeforeSave(db.RawDB())
-
-		osErrs = m.ErrorsFor("os")
-		if len(osErrs) < 1 {
-			t.Fatal("expected error")
-		}
-	})
-
-	t.Run("url", func(t *testing.T) {
-		t.Parallel()
-
-		var m MobileApp
-		m.URL = ""
-		_ = m.BeforeSave(db.RawDB())
-
-		urlErrors := m.ErrorsFor("url")
-		if len(urlErrors) != 0 {
-			t.Fatal("no xpected error")
-		}
-	})
+		t.Run(tc.field, func(t *testing.T) {
+			t.Parallel()
+			exerciseValidation(t, &MobileApp{}, tc.structField, tc.field)
+		})
+	}
 
 	t.Run("sha", func(t *testing.T) {
 		t.Parallel()
 
 		var m MobileApp
 		m.OS = OSTypeIOS
-		_ = m.BeforeSave(db.RawDB())
+		_ = m.BeforeSave(&gorm.DB{})
 
 		shaErrs := m.ErrorsFor("sha")
 		if len(shaErrs) > 0 {
@@ -98,7 +110,7 @@ func TestMobileApp_Validation(t *testing.T) {
 		}
 
 		m.OS = OSTypeAndroid
-		_ = m.BeforeSave(db.RawDB())
+		_ = m.BeforeSave(&gorm.DB{})
 
 		shaErrs = m.ErrorsFor("sha")
 		if len(shaErrs) < 1 {
@@ -136,7 +148,7 @@ func TestMobileApp_Validation(t *testing.T) {
 
 				var m MobileApp
 				m.SHA = tc.sha
-				_ = m.BeforeSave(db.RawDB())
+				_ = m.BeforeSave(&gorm.DB{})
 
 				shaErrs := m.ErrorsFor("sha")
 				if !tc.err && len(shaErrs) > 0 {
@@ -147,7 +159,7 @@ func TestMobileApp_Validation(t *testing.T) {
 	})
 }
 
-func TestMobileApp_List(t *testing.T) {
+func TestDatabase_ListActiveApps(t *testing.T) {
 	t.Parallel()
 
 	t.Run("access_mobileapps_and_realms", func(t *testing.T) {
@@ -210,4 +222,48 @@ func TestMobileApp_List(t *testing.T) {
 			t.Errorf("got %v apps, wanted: 1", len(apps))
 		}
 	})
+}
+
+func TestDatabase_PurgeMobileApps(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	now := time.Now().UTC()
+	for i := 0; i < 5; i++ {
+		if err := db.SaveMobileApp(&MobileApp{
+			RealmID: 1,
+			Name:    fmt.Sprintf("Appy%d", i),
+			OS:      OSTypeIOS,
+			URL:     fmt.Sprintf("https://%d.example.com", i),
+			AppID:   fmt.Sprintf("app.%d.com", i),
+			Model: gorm.Model{
+				DeletedAt: &now,
+			},
+		}, SystemTest); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Should not purge entries (too young).
+	{
+		n, err := db.PurgeMobileApps(24 * time.Hour)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := n, int64(0); got != want {
+			t.Errorf("expected %d to purge, got %d", want, got)
+		}
+	}
+
+	// Purges entries.
+	{
+		n, err := db.PurgeMobileApps(1 * time.Nanosecond)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := n, int64(5); got != want {
+			t.Errorf("expected %d to purge, got %d", want, got)
+		}
+	}
 }

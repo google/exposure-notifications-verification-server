@@ -95,8 +95,8 @@ func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("type", "is invalid")
 	}
 
-	if len(a.Errors()) > 0 {
-		return fmt.Errorf("validation failed")
+	if msgs := a.ErrorMessages(); len(msgs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
 	}
 	return nil
 }
@@ -109,49 +109,18 @@ func (a *AuthorizedApp) IsDeviceType() bool {
 	return a.APIKeyType == APIKeyTypeDevice
 }
 
-// Realm returns the associated realm for this app.
+// Realm returns the associated realm for this app. If you only need the ID,
+// call .RealmID instead of a full database lookup.
 func (a *AuthorizedApp) Realm(db *Database) (*Realm, error) {
 	var realm Realm
-	if err := db.db.Model(a).Related(&realm).Error; err != nil {
+	if err := db.db.
+		Model(&Realm{}).
+		Where("id = ?", a.RealmID).
+		First(&realm).
+		Error; err != nil {
 		return nil, err
 	}
 	return &realm, nil
-}
-
-// TableName definition for the authorized apps relation.
-func (AuthorizedApp) TableName() string {
-	return "authorized_apps"
-}
-
-// CreateAuthorizedApp generates a new API key and assigns it to the specified
-// app. Note that the API key is NOT stored in the database, only a hash. The
-// only time the API key is available is as the string return parameter from
-// invoking this function.
-func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp, actor Auditable) (string, error) {
-	fullAPIKey, err := db.GenerateAPIKey(r.ID)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate API key: %w", err)
-	}
-
-	parts := strings.SplitN(fullAPIKey, ".", 3)
-	if len(parts) != 3 {
-		return "", fmt.Errorf("internal error, key is invalid")
-	}
-	apiKey := parts[0]
-
-	hmacedKey, err := db.GenerateAPIKeyHMAC(apiKey)
-	if err != nil {
-		return "", fmt.Errorf("failed to create hmac: %w", err)
-	}
-
-	app.RealmID = r.ID
-	app.APIKey = hmacedKey
-	app.APIKeyPreview = apiKey[:6]
-
-	if err := db.SaveAuthorizedApp(app, actor); err != nil {
-		return "", err
-	}
-	return fullAPIKey, nil
 }
 
 // FindAuthorizedApp finds the authorized app by the given id.

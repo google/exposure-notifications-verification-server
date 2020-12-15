@@ -16,6 +16,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,38 +25,115 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/jinzhu/gorm"
 )
 
-func TestSMS(t *testing.T) {
+func TestTestType(t *testing.T) {
 	t.Parallel()
 
-	realm := NewRealmWithDefaults("test")
-	realm.SMSTextTemplate = "This is your Exposure Notifications Verification code: [enslink] Expires in [longexpires] hours"
-	realm.RegionCode = "US-WA"
-
-	got, err := realm.BuildSMSText("12345678", "abcdefgh12345678", "en.express", "")
-	if err != nil {
-		t.Fatalf("failed to buildSMS, %v", err)
-	}
-	want := "This is your Exposure Notifications Verification code: https://us-wa.en.express/v?c=abcdefgh12345678 Expires in 24 hours"
-	if got != want {
-		t.Errorf("SMS text wrong, want: %q got %q", want, got)
+	// This test might seem like it's redundant, but it's designed to ensure that
+	// the exact values for existing types remain unchanged.
+	cases := []struct {
+		t   TestType
+		exp int
+	}{
+		{TestTypeConfirmed, 2},
+		{TestTypeLikely, 4},
+		{TestTypeNegative, 8},
 	}
 
-	realm.SMSTextTemplate = "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
-	got, err = realm.BuildSMSText("654321", "asdflkjasdlkfjl", "", "")
-	if err != nil {
-		t.Fatalf("failed to buildSMS, %v", err)
-	}
-	want = "State of Wonder, COVID-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
-	if got != want {
-		t.Errorf("SMS text wrong, want: %q got %q", want, got)
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.t.Display(), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := int(tc.t), tc.exp; got != want {
+				t.Errorf("expected %d to be %d", got, want)
+			}
+		})
 	}
 }
 
-func TestValidation(t *testing.T) {
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+func TestTestType_Display(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		t   TestType
+		exp string
+	}{
+		{TestTypeConfirmed, "confirmed"},
+		{TestTypeConfirmed | TestTypeLikely, "confirmed, likely"},
+		{TestTypeLikely, "likely"},
+		{TestTypeNegative, "negative"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("%d", tc.t), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := tc.t.Display(), tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestAuthRequirement(t *testing.T) {
+	t.Parallel()
+
+	// This test might seem like it's redundant, but it's designed to ensure that
+	// the exact values for existing types remain unchanged.
+	cases := []struct {
+		t   AuthRequirement
+		exp int
+	}{
+		{MFAOptionalPrompt, 0},
+		{MFARequired, 1},
+		{MFAOptional, 2},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.t.String(), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := int(tc.t), tc.exp; got != want {
+				t.Errorf("expected %d to be %d", got, want)
+			}
+		})
+	}
+}
+
+func TestAuthRequirement_String(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		t   AuthRequirement
+		exp string
+	}{
+		{MFAOptionalPrompt, "prompt"},
+		{MFARequired, "required"},
+		{MFAOptional, "optional"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("%d", tc.t), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := tc.t.String(), tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestRealm_BeforeSave(t *testing.T) {
 	os.Setenv("ENX_REDIRECT_DOMAIN", "https://en.express")
 
 	valid := "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
@@ -75,7 +153,6 @@ func TestValidation(t *testing.T) {
 		{
 			Name: "region_code_too_long",
 			Input: &Realm{
-				Name:       "foo",
 				RegionCode: "USA-IS-A-OK",
 			},
 			Error: "regionCode cannot be more than 10 characters",
@@ -83,11 +160,27 @@ func TestValidation(t *testing.T) {
 		{
 			Name: "enx_region_code_mismatch",
 			Input: &Realm{
-				Name:            "foo",
 				RegionCode:      " ",
 				EnableENExpress: true,
 			},
 			Error: "regionCode cannot be blank when using EN Express",
+		},
+		{
+			Name: "system_sms_forbidden",
+			Input: &Realm{
+				UseSystemSMSConfig:    true,
+				CanUseSystemSMSConfig: false,
+			},
+			Error: "useSystemSMSConfig is not allowed on this realm",
+		},
+		{
+			Name: "system_sms_missing_from",
+			Input: &Realm{
+				UseSystemSMSConfig:    true,
+				CanUseSystemSMSConfig: true,
+				SMSFromNumberID:       0,
+			},
+			Error: "smsFromNumber is required to use the system config",
 		},
 		{
 			Name: "rotation_warning_too_big",
@@ -141,7 +234,7 @@ func TestValidation(t *testing.T) {
 				EnableENExpress: true,
 				SMSTextTemplate: "call 1-800-555-1234",
 			},
-			Error: "SMSTextTemplate must contain \"[enslink]\"",
+			Error: "smsTextTemplate must contain \"[enslink]\"",
 		},
 		{
 			Name: "enx_link_contains_region",
@@ -150,7 +243,7 @@ func TestValidation(t *testing.T) {
 				EnableENExpress: true,
 				SMSTextTemplate: "[enslink] [region]",
 			},
-			Error: "SMSTextTemplate cannot contain \"[region]\" - this is automatically included in \"[enslink]\"",
+			Error: "smsTextTemplate cannot contain \"[region]\" - this is automatically included in \"[enslink]\"",
 		},
 		{
 			Name: "enx_link_contains_long_code",
@@ -159,7 +252,7 @@ func TestValidation(t *testing.T) {
 				EnableENExpress: true,
 				SMSTextTemplate: "[enslink] [longcode]",
 			},
-			Error: "SMSTextTemplate cannot contain \"[longcode]\" - the long code is automatically included in \"[enslink]\"",
+			Error: "smsTextTemplate cannot contain \"[longcode]\" - the long code is automatically included in \"[enslink]\"",
 		},
 		{
 			Name: "link_missing_code",
@@ -168,7 +261,7 @@ func TestValidation(t *testing.T) {
 				EnableENExpress: false,
 				SMSTextTemplate: "call me",
 			},
-			Error: "SMSTextTemplate must contain exactly one of \"[code]\" or \"[longcode]\"",
+			Error: "smsTextTemplate must contain exactly one of \"[code]\" or \"[longcode]\"",
 		},
 		{
 			Name: "link_both_codess",
@@ -177,7 +270,7 @@ func TestValidation(t *testing.T) {
 				EnableENExpress: false,
 				SMSTextTemplate: "[code][longcode]",
 			},
-			Error: "SMSTextTemplate must contain exactly one of \"[code]\" or \"[longcode]\"",
+			Error: "smsTextTemplate must contain exactly one of \"[code]\" or \"[longcode]\"",
 		},
 		{
 			Name: "text_too_long",
@@ -188,7 +281,7 @@ func TestValidation(t *testing.T) {
 
 				Curabitur non massa urna. Phasellus sit amet nisi ut quam dapibus pretium eget in turpis. Phasellus et justo odio. In auctor, felis a tincidunt maximus, nunc erat vehicula ligula, ac posuere felis odio eget mauris. Nulla gravida.`,
 			},
-			Error: "SMSTextTemplate must be 800 characters or less, current message is 807 characters long",
+			Error: "smsTextTemplate must be 800 characters or less, current message is 807 characters long",
 		},
 		{
 			Name: "text_too_long",
@@ -197,7 +290,7 @@ func TestValidation(t *testing.T) {
 				EnableENExpress: false,
 				SMSTextTemplate: strings.Repeat("[enslink]", 88),
 			},
-			Error: "SMSTextTemplate when expanded, the result message is too long (3168 characters). The max expanded message is 918 characters",
+			Error: "smsTextTemplate when expanded, the result message is too long (3168 characters). The max expanded message is 918 characters",
 		},
 		{
 			Name: "valid",
@@ -220,7 +313,7 @@ func TestValidation(t *testing.T) {
 			Error: "no template for label alternate1",
 		},
 		{
-			Name: "alternate_sms_template valid",
+			Name: "alternate_sms_template_valid",
 			Input: &Realm{
 				Name:                      "b",
 				CodeLength:                6,
@@ -230,54 +323,154 @@ func TestValidation(t *testing.T) {
 				SMSTextAlternateTemplates: map[string]*string{"alternate1": &valid},
 			},
 		},
+		{
+			Name: "system_email_forbidden",
+			Input: &Realm{
+				UseSystemEmailConfig:    true,
+				CanUseSystemEmailConfig: false,
+			},
+			Error: "useSystemEmailConfig is not allowed on this realm",
+		},
+		{
+			Name: "email_invite_template_missing_link",
+			Input: &Realm{
+				EmailInviteTemplate: "banana",
+			},
+			Error: "emailInviteLink must contain \"[invitelink]\"",
+		},
+		{
+			Name: "email_password_reset_template_missing_link",
+			Input: &Realm{
+				EmailPasswordResetTemplate: "banana",
+			},
+			Error: "emailPasswordResetTemplate must contain \"[passwordresetlink]\"",
+		},
+		{
+			Name: "email_verify_template_missing_link",
+			Input: &Realm{
+				EmailVerifyTemplate: "banana",
+			},
+			Error: "emailVerifyTemplate must contain \"[verifylink]\"",
+		},
+		{
+			Name: "certificate_issuer_blank",
+			Input: &Realm{
+				UseRealmCertificateKey: true,
+				CertificateIssuer:      "",
+			},
+			Error: "certificateIssuer cannot be blank",
+		},
+		{
+			Name: "certificate_audience_blank",
+			Input: &Realm{
+				UseRealmCertificateKey: true,
+				CertificateAudience:    "",
+			},
+			Error: "certificateAudience cannot be blank",
+		},
 	}
 
 	for _, tc := range cases {
+		tc := tc
+
 		t.Run(tc.Name, func(t *testing.T) {
-			if err := db.SaveRealm(tc.Input, SystemTest); err == nil {
+			t.Parallel()
+
+			if err := tc.Input.BeforeSave(&gorm.DB{}); err != nil {
 				if tc.Error != "" {
-					t.Fatalf("expected error: %q got: nil", tc.Error)
+					if got, want := err.Error(), tc.Error; !strings.Contains(got, want) {
+						t.Errorf("expected %q to be %q", got, want)
+					}
+				} else {
+					t.Errorf("bad error: %s", err)
 				}
-			} else if tc.Error == "" {
-				t.Fatalf("expected no error, got %q", err.Error())
-			} else if !strings.Contains(err.Error(), tc.Error) {
-				t.Fatalf("wrong error, want: %q got: %q", tc.Error, err.Error())
 			}
 		})
 	}
 }
 
-func TestPerUserRealmStats(t *testing.T) {
+func TestRealm_BuildSMSText(t *testing.T) {
+	t.Parallel()
+
+	realm := NewRealmWithDefaults("test")
+	realm.SMSTextTemplate = "This is your Exposure Notifications Verification code: [enslink] Expires in [longexpires] hours"
+	realm.RegionCode = "US-WA"
+
+	got, err := realm.BuildSMSText("12345678", "abcdefgh12345678", "en.express", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "This is your Exposure Notifications Verification code: https://us-wa.en.express/v?c=abcdefgh12345678 Expires in 24 hours"
+	if got != want {
+		t.Errorf("SMS text wrong, want: %q got %q", want, got)
+	}
+
+	realm.SMSTextTemplate = "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
+	got, err = realm.BuildSMSText("654321", "asdflkjasdlkfjl", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = "State of Wonder, COVID-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
+	if got != want {
+		t.Errorf("SMS text wrong, want: %q got %q", want, got)
+	}
+}
+
+func TestRealm_BuildInviteEmail(t *testing.T) {
+	t.Parallel()
+
+	realm := NewRealmWithDefaults("test")
+	realm.EmailInviteTemplate = "Welcome to [realmname] [invitelink]."
+
+	if got, want := realm.BuildInviteEmail("https://join.now"), "Welcome to test https://join.now."; got != want {
+		t.Errorf("expected %q to be %q", got, want)
+	}
+}
+
+func TestRealm_BuildPasswordResetEmail(t *testing.T) {
+	t.Parallel()
+
+	realm := NewRealmWithDefaults("test")
+	realm.EmailPasswordResetTemplate = "Hey [realmname] reset [passwordresetlink]."
+
+	if got, want := realm.BuildPasswordResetEmail("https://reset.now"), "Hey test reset https://reset.now."; got != want {
+		t.Errorf("expected %q to be %q", got, want)
+	}
+}
+
+func TestRealm_BuildVerifyEmail(t *testing.T) {
+	t.Parallel()
+
+	realm := NewRealmWithDefaults("test")
+	realm.EmailVerifyTemplate = "Hey [realmname] verify [verifylink]."
+
+	if got, want := realm.BuildVerifyEmail("https://verify.now"), "Hey test verify https://verify.now."; got != want {
+		t.Errorf("expected %q to be %q", got, want)
+	}
+}
+
+func TestRealm_UserStats(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	numDays := 7
 	endDate := timeutils.Midnight(time.Now())
 	startDate := timeutils.Midnight(endDate.Add(time.Duration(numDays) * -24 * time.Hour))
 
-	// Create a new realm
-	realm := NewRealmWithDefaults("test")
-	if err := db.SaveRealm(realm, SystemTest); err != nil {
-		t.Fatalf("error saving realm: %v", err)
-	}
-
-	// Create the users.
-	users := []*User{}
+	// Create users.
 	for userIdx, name := range []string{"Rocky", "Bullwinkle", "Boris", "Natasha"} {
 		user := &User{
-			Name:        name,
-			Email:       name + "@gmail.com",
-			SystemAdmin: false,
+			Name:  name,
+			Email: name + "@example.com",
 		}
 		if err := db.SaveUser(user, SystemTest); err != nil {
-			t.Fatalf("[%v] error creating user: %v", name, err)
-		}
-		users = append(users, user)
-
-		// Add to realm
-		if err := user.AddToRealm(db, realm, rbac.CodeIssue, SystemTest); err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to create user %q: %s", name, err)
 		}
 
 		// Add some stats per user.
@@ -292,10 +485,6 @@ func TestPerUserRealmStats(t *testing.T) {
 				t.Fatalf("error saving user stats %v", err)
 			}
 		}
-	}
-
-	if len(users) == 0 { // sanity check
-		t.Error("len(users) = 0, expected ≠ 0")
 	}
 
 	stats, err := realm.UserStats(db, startDate, endDate)
@@ -505,6 +694,85 @@ func TestRealm_SMSConfig(t *testing.T) {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 		if got, want := smsConfig.TwilioFromNumber, "222-222-2222"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+	}
+}
+
+func TestRealm_EmailConfig(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Initial realm should have no config
+	if _, err := realm.EmailConfig(db); err == nil {
+		t.Fatalf("expected error")
+	}
+
+	// Create config
+	if err := db.SaveEmailConfig(&EmailConfig{
+		RealmID:      realm.ID,
+		SMTPAccount:  "account",
+		SMTPHost:     "host",
+		SMTPPort:     "port",
+		SMTPPassword: "password",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		// Now the realm should have a config
+		EmailConfig, err := realm.EmailConfig(db)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := EmailConfig.SMTPAccount, "account"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := EmailConfig.SMTPHost, "host"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := EmailConfig.SMTPPort, "port"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+	}
+
+	// Create system config
+	if err := db.SaveEmailConfig(&EmailConfig{
+		SMTPAccount:  "system-account",
+		SMTPHost:     "system-host",
+		SMTPPort:     "system-port",
+		SMTPPassword: "system-password",
+		IsSystem:     true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Update to use system config
+	realm.CanUseSystemEmailConfig = true
+	realm.UseSystemEmailConfig = true
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	// The realm should use the system config.
+	{
+		emailConfig, err := realm.EmailConfig(db)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := emailConfig.SMTPAccount, "system-account"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := emailConfig.SMTPHost, "system-host"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := emailConfig.SMTPPort, "system-port"; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	}

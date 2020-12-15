@@ -49,7 +49,6 @@ const (
 	TestTypeConfirmed
 	TestTypeLikely
 	TestTypeNegative
-	DefaultTemplateLabel = "Default SMS template"
 )
 
 func (t TestType) Display() string {
@@ -68,6 +67,30 @@ func (t TestType) Display() string {
 	}
 
 	return strings.Join(types, ", ")
+}
+
+// AuthRequirement represents authentication requirements for the realm
+type AuthRequirement int16
+
+const (
+	// MFAOptionalPrompt will prompt users for MFA on login.
+	MFAOptionalPrompt AuthRequirement = iota
+	// MFARequired will not allow users to proceed without MFA on their account.
+	MFARequired
+	// MFAOptional will not prompt users to enable MFA.
+	MFAOptional
+)
+
+func (r AuthRequirement) String() string {
+	switch r {
+	case MFAOptionalPrompt:
+		return "prompt"
+	case MFARequired:
+		return "required"
+	case MFAOptional:
+		return "optional"
+	}
+	return ""
 }
 
 var (
@@ -89,22 +112,12 @@ const (
 	SMSTemplateMaxLength    = 800
 	SMSTemplateExpansionMax = 918
 
+	DefaultTemplateLabel = "Default SMS template"
+
 	EmailInviteLink        = "[invitelink]"
 	EmailPasswordResetLink = "[passwordresetlink]"
 	EmailVerifyLink        = "[verifylink]"
 	RealmName              = "[realmname]"
-)
-
-// AuthRequirement represents authentication requirements for the realm
-type AuthRequirement int16
-
-const (
-	// MFAOptionalPrompt will prompt users for MFA on login.
-	MFAOptionalPrompt = iota
-	// MFARequired will not allow users to proceed without MFA on their account.
-	MFARequired
-	// MFAOptional will not prompt users to enable MFA.
-	MFAOptional
 
 	// MaxPageSize is the maximum allowed page size for a list query.
 	MaxPageSize = 1000
@@ -250,31 +263,6 @@ type Realm struct {
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 }
 
-// EffectiveMFAMode returns the realm's default MFAMode but first
-// checks if the user is in the grace-period (if so, required becomes prompt).
-func (r *Realm) EffectiveMFAMode(user *User) AuthRequirement {
-	if r == nil {
-		return MFARequired
-	}
-
-	if time.Since(user.CreatedAt) <= r.MFARequiredGracePeriod.Duration {
-		return MFAOptionalPrompt
-	}
-	return r.MFAMode
-}
-
-func (mode *AuthRequirement) String() string {
-	switch *mode {
-	case MFAOptionalPrompt:
-		return "prompt"
-	case MFARequired:
-		return "required"
-	case MFAOptional:
-		return "optional"
-	}
-	return ""
-}
-
 // NewRealmWithDefaults initializes a new Realm with the default settings populated,
 // and the provided name. It does NOT save the Realm to the database.
 func NewRealmWithDefaults(name string) *Realm {
@@ -289,14 +277,6 @@ func NewRealmWithDefaults(name string) *Realm {
 		CertificateDuration: FromDuration(15 * time.Minute),
 		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
 	}
-}
-
-func (r *Realm) CanUpgradeToRealmSigningKeys() bool {
-	return r.CertificateIssuer != "" && r.CertificateAudience != ""
-}
-
-func (r *Realm) SigningKeyID() string {
-	return fmt.Sprintf("realm-%d", r.ID)
 }
 
 // AfterFind runs after a realm is found.
@@ -365,12 +345,12 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	if r.SMSTextAlternateTemplates != nil {
 		for l, t := range r.SMSTextAlternateTemplates {
 			if t == nil || *t == "" {
-				r.AddError("SMSTextTemplate", fmt.Sprintf("no template for label %s", l))
+				r.AddError("smsTextTemplate", fmt.Sprintf("no template for label %s", l))
 				r.AddError(l, fmt.Sprintf("no template for label %s", l))
 				continue
 			}
 			if l == "" {
-				r.AddError("SMSTextTemplate", fmt.Sprintf("no label for template %s", *t))
+				r.AddError("smsTextTemplate", fmt.Sprintf("no label for template %s", *t))
 				continue
 			}
 			if l == DefaultTemplateLabel {
@@ -388,19 +368,19 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 
 	if r.EmailInviteTemplate != "" {
 		if !strings.Contains(r.EmailInviteTemplate, EmailInviteLink) {
-			r.AddError("EmailInviteLink", fmt.Sprintf("must contain %q", EmailInviteLink))
+			r.AddError("emailInviteLink", fmt.Sprintf("must contain %q", EmailInviteLink))
 		}
 	}
 
 	if r.EmailPasswordResetTemplate != "" {
 		if !strings.Contains(r.EmailPasswordResetTemplate, EmailPasswordResetLink) {
-			r.AddError("EmailPasswordResetTemplate", fmt.Sprintf("must contain %q", EmailPasswordResetLink))
+			r.AddError("emailPasswordResetTemplate", fmt.Sprintf("must contain %q", EmailPasswordResetLink))
 		}
 	}
 
 	if r.EmailVerifyTemplate != "" {
 		if !strings.Contains(r.EmailVerifyTemplate, EmailVerifyLink) {
-			r.AddError("EmailVerifyTemplate", fmt.Sprintf("must contain %q", EmailVerifyLink))
+			r.AddError("emailVerifyTemplate", fmt.Sprintf("must contain %q", EmailVerifyLink))
 		}
 	}
 
@@ -421,8 +401,8 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
-	if len(r.Errors()) > 0 {
-		return fmt.Errorf("realm validation failed: %s", strings.Join(r.ErrorMessages(), ", "))
+	if msgs := r.ErrorMessages(); len(msgs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
 	}
 	return nil
 }
@@ -432,29 +412,29 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 func (r *Realm) validateSMSTemplate(label, t string) {
 	if r.EnableENExpress {
 		if !strings.Contains(t, SMSENExpressLink) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
+			r.AddError("smsTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
 			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 		if strings.Contains(t, SMSRegion) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
+			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
 			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 		if strings.Contains(t, SMSLongCode) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
+			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
 			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 
 	} else {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
 		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
-			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+			r.AddError("smsTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
 			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 	}
 
 	// Check template length.
 	if l := len(t); l > SMSTemplateMaxLength {
-		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %d characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
+		r.AddError("smsTextTemplate", fmt.Sprintf("must be %d characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
 		r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 	}
 
@@ -464,11 +444,11 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 	enxDomain := os.Getenv("ENX_REDIRECT_DOMAIN")
 	expandedSMSText, err := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain, label)
 	if err != nil {
-		r.AddError("SMSTextTemplate", fmt.Sprintf("SMS template expansion failed: %s", err))
+		r.AddError("smsTextTemplate", fmt.Sprintf("SMS template expansion failed: %s", err))
 		r.AddError(label, fmt.Sprintf("SMS template expansion failed: %s", err))
 	}
 	if l := len(expandedSMSText); l > SMSTemplateExpansionMax {
-		r.AddError("SMSTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
+		r.AddError("smsTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 		r.AddError(label, fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 	}
 
@@ -484,6 +464,19 @@ func (r *Realm) GetCodeDurationMinutes() int {
 // hours value.
 func (r *Realm) GetLongCodeDurationHours() int {
 	return int(r.LongCodeDuration.Duration.Hours())
+}
+
+// EffectiveMFAMode returns the realm's default MFAMode but first
+// checks if the user is in the grace-period (if so, required becomes prompt).
+func (r *Realm) EffectiveMFAMode(user *User) AuthRequirement {
+	if r == nil {
+		return MFARequired
+	}
+
+	if time.Since(user.CreatedAt) <= r.MFARequiredGracePeriod.Duration {
+		return MFAOptionalPrompt
+	}
+	return r.MFAMode
 }
 
 // FindVerificationCodeByUUID find a verification codes by UUID.
@@ -1245,6 +1238,45 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 
 		return nil
 	})
+}
+
+// CreateAuthorizedApp generates a new API key and assigns it to the specified
+// app. Note that the API key is NOT stored in the database, only a hash. The
+// only time the API key is available is as the string return parameter from
+// invoking this function.
+func (r *Realm) CreateAuthorizedApp(db *Database, app *AuthorizedApp, actor Auditable) (string, error) {
+	fullAPIKey, err := db.GenerateAPIKey(r.ID)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate API key: %w", err)
+	}
+
+	parts := strings.SplitN(fullAPIKey, ".", 3)
+	if len(parts) != 3 {
+		return "", fmt.Errorf("internal error, key is invalid")
+	}
+	apiKey := parts[0]
+
+	hmacedKey, err := db.GenerateAPIKeyHMAC(apiKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to create hmac: %w", err)
+	}
+
+	app.RealmID = r.ID
+	app.APIKey = hmacedKey
+	app.APIKeyPreview = apiKey[:6]
+
+	if err := db.SaveAuthorizedApp(app, actor); err != nil {
+		return "", err
+	}
+	return fullAPIKey, nil
+}
+
+func (r *Realm) CanUpgradeToRealmSigningKeys() bool {
+	return r.CertificateIssuer != "" && r.CertificateAudience != ""
+}
+
+func (r *Realm) SigningKeyID() string {
+	return fmt.Sprintf("realm-%d", r.ID)
 }
 
 // CreateSigningKeyVersion creates a new signing key version on the key manager

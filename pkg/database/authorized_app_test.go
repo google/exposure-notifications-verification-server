@@ -19,7 +19,159 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/jinzhu/gorm"
 )
+
+func TestAPIKeyType(t *testing.T) {
+	t.Parallel()
+
+	// This test might seem like it's redundant, but it's designed to ensure that
+	// the exact values for existing types remain unchanged.
+	cases := []struct {
+		t   APIKeyType
+		exp int
+	}{
+		{APIKeyTypeInvalid, -1},
+		{APIKeyTypeDevice, 0},
+		{APIKeyTypeAdmin, 1},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.t.Display(), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := int(tc.t), tc.exp; got != want {
+				t.Errorf("expected %d to be %d", got, want)
+			}
+		})
+	}
+}
+
+func TestAPIKeyType_Display(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		t   APIKeyType
+		exp string
+	}{
+		{APIKeyTypeInvalid, "invalid"},
+		{APIKeyTypeDevice, "device"},
+		{APIKeyTypeAdmin, "admin"},
+		{1991, "invalid"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("%d", tc.t), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := tc.t.Display(), tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestAuthorizedApp_BeforeSave(t *testing.T) {
+	t.Parallel()
+
+	t.Run("name", func(t *testing.T) {
+		t.Parallel()
+		exerciseValidation(t, &AuthorizedApp{}, "Name", "name")
+	})
+
+	t.Run("type", func(t *testing.T) {
+		t.Parallel()
+
+		{
+			var m AuthorizedApp
+			m.APIKeyType = -1
+			_ = m.BeforeSave(&gorm.DB{})
+			if errs := m.ErrorsFor("type"); len(errs) < 1 {
+				t.Errorf("expected errors for type")
+			}
+		}
+
+		{
+			var m AuthorizedApp
+			m.APIKeyType = 55
+			_ = m.BeforeSave(&gorm.DB{})
+			if errs := m.ErrorsFor("type"); len(errs) < 1 {
+				t.Errorf("expected errors for type")
+			}
+		}
+
+		{
+			var m AuthorizedApp
+			m.APIKeyType = 0
+			_ = m.BeforeSave(&gorm.DB{})
+			if errs := m.ErrorsFor("type"); len(errs) != 0 {
+				t.Errorf("expected no errors for type, got %v", errs)
+			}
+		}
+	})
+}
+
+func TestAuthorizedApp_Realm(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authorizedApp := &AuthorizedApp{
+		Name: "Appy",
+	}
+	if _, err := realm.CreateAuthorizedApp(db, authorizedApp, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	gotRealm, err := authorizedApp.Realm(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := gotRealm.ID, realm.ID; got != want {
+		t.Errorf("expected %d to be %d", got, want)
+	}
+}
+
+func TestAuthorizedApp_Stats(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authorizedApp := &AuthorizedApp{
+		Name: "Appy",
+	}
+	if _, err := realm.CreateAuthorizedApp(db, authorizedApp, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure graph is contiguous.
+	{
+		stop := timeutils.Midnight(time.Now().UTC())
+		start := stop.Add(6 * -24 * time.Hour)
+		stats, err := authorizedApp.Stats(db, start, stop)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := len(stats), 7; got != want {
+			t.Errorf("expected stats for %d days, got %d", want, got)
+		}
+	}
+}
 
 func TestDatabase_CreateFindAPIKey(t *testing.T) {
 	t.Parallel()
@@ -124,5 +276,47 @@ func TestDatabase_GenerateVerifyAPIKeySignature(t *testing.T) {
 
 	if got, want := gotRealmID, realmID; got != want {
 		t.Errorf("expected %v to be %v", got, want)
+	}
+}
+
+func TestDatabase_PurgeAuthorizedApps(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	now := time.Now().UTC()
+	for i := 0; i < 5; i++ {
+		if err := db.SaveAuthorizedApp(&AuthorizedApp{
+			RealmID: 1,
+			Name:    fmt.Sprintf("appy%d", i),
+			APIKey:  fmt.Sprintf("%d", i),
+			Model: gorm.Model{
+				DeletedAt: &now,
+			},
+		}, SystemTest); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Should not purge entries (too young).
+	{
+		n, err := db.PurgeAuthorizedApps(24 * time.Hour)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := n, int64(0); got != want {
+			t.Errorf("expected %d to purge, got %d", want, got)
+		}
+	}
+
+	// Purges entries.
+	{
+		n, err := db.PurgeAuthorizedApps(1 * time.Nanosecond)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := n, int64(5); got != want {
+			t.Errorf("expected %d to purge, got %d", want, got)
+		}
 	}
 }
