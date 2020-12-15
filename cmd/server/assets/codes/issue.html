@@ -128,7 +128,7 @@
               <label for="sms-template" class="col-sm-6 col-md-4 col-lg-3">{{t $.locale "codes.issue.sms-template-label"}}</label>
               <div class="col-sm-6 col-md-8 col-lg-9">
                 <div class="input-group">
-                  <select class="form-control" name="sms-template">
+                  <select class="form-control" id="sms-template">
                     <option value="Default SMS template">Default SMS template</option>
                     {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
                     <option value="{{$k}}">{{$k}}</option>
