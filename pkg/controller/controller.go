@@ -103,6 +103,19 @@ func NotFound(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 	}
 }
 
+// RedirectToLogout redirects the user to the logout page to terminate the session.
+func RedirectToLogout(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+	accept := strings.Split(r.Header.Get("Accept"), ",")
+	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+
+	if prefixInList(accept, ContentTypeHTML) {
+		http.Redirect(w, r, "/signout", http.StatusSeeOther)
+		return
+	}
+
+	Unauthorized(w, r, h)
+}
+
 // Unauthorized returns an error indicating the request was unauthorized. The
 // system always returns 401 (even with authentication is provided but
 // authorization fails).
