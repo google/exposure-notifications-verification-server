@@ -31,19 +31,13 @@ type IOSData struct {
 }
 
 type Applinks struct {
+	Apps    []string `json:"apps"`
 	Details []Detail `json:"details,omitempty"`
 }
 
 type Detail struct {
-	AppIds     []string    `json:"appIDs,omitempty"`
-	Components []Component `json:"components,omitempty"`
-}
-
-type Component struct {
-	Path    string `json:"/,omitempty"`
-	Param   string `json:"?,omitempty"`
-	Exclude *bool  `json:"exclude,omitempty"`
-	Comment string `json:"comment,omitempty"`
+	AppID string   `json:"appID,omitempty"`
+	Paths []string `json:"paths,omitempty"`
 }
 
 type Appstrings struct {
