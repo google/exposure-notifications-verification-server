@@ -260,7 +260,7 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 		if err := func() error {
 			defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
 
-			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain())
+			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token

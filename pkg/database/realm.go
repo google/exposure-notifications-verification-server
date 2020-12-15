@@ -381,7 +381,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
 	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
 	enxDomain := os.Getenv("ENX_REDIRECT_DOMAIN")
-	expandedSMSText := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain)
+	expandedSMSText := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain) //TODO(whaught): what about with multiple templates.
 	if l := len(expandedSMSText); l > SMSTemplateExpansionMax {
 		r.AddError("SMSTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 	}
@@ -487,8 +487,13 @@ func (r *Realm) FindVerificationCodeByUUID(db *Database, uuid string) (*Verifica
 }
 
 // BuildSMSText replaces certain strings with the right values.
-func (r *Realm) BuildSMSText(code, longCode string, enxDomain string) string {
+func (r *Realm) BuildSMSText(code, longCode string, enxDomain, templateLabel string) string {
 	text := r.SMSTextTemplate
+	if r.SMSTextAlternateTemplates != nil {
+		if t, has := r.SMSTextAlternateTemplates[templateLabel]; has && t != nil && *t != "" {
+			text = *t
+		}
+	}
 
 	if enxDomain == "" {
 		// preserves legacy behavior.

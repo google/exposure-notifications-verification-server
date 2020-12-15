@@ -249,6 +249,7 @@
     let $form;
       let $inputTestDate;
       let $inputSymptomDate;
+      let $inputSMSTemplate;
       let $inputPhone;
       let $buttonSubmit;
       let $buttonReset;
@@ -271,6 +272,7 @@
       $form = $('form#issue');
         $inputTestDate = $('input#test-date');
         $inputSymptomDate = $('input#symptom-date');
+        $inputSMSTemplate = $('select#sms-template');
         $inputPhone = $('input#phone');
         $buttonSubmit = $('button#submit');
         $buttonReset = $('button#reset');
@@ -322,6 +324,7 @@
         data.tzOffset = new Date().getTimezoneOffset();
 
         {{if $hasSMSConfig}}
+        data['SMSTemplateLabel'] = $inputSMSTemplate.val();
         data['phone'] = iti.getNumber();
         {{end}}
 

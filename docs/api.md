@@ -190,6 +190,7 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   "testType": "<valid test type>",
   "tzOffset": 0,
   "phone": "+CC Phone number",
+  "SMSTemplateLabel": "my sms template",
   "padding": "<bytes>",
   "uuid": "string UUID",
   "externalIssuerID": "external-ID",
@@ -207,6 +208,10 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
 * `phone`
   * Phone number to send the SMS to. If a phone number is provided, but the SMS text
     message fails to send, the API will return a 4xx client error.
+* `SMSTemplateLabel`
+  * If the realm has more than one SMS template defined, this may be optionally specify
+    the label of the message template which the server should compose. If omitted, the
+    default template will be used.
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
   number of base64-encoded bytes into this field. The server does not process
