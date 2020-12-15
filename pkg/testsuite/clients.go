@@ -37,7 +37,7 @@ type AdminClient struct {
 
 // BatchIssueCode calls the issue-batch API call.
 func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.BatchIssueCodeResponse, error) {
-	url := "/api/issue-batch"
+	url := "/api/batch-issue"
 
 	j, err := json.Marshal(req)
 	if err != nil {
