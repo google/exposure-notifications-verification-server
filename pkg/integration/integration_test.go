@@ -43,19 +43,19 @@ var (
 func TestIntegration(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		Name    string
+		name    string
 		expire  bool
-		ErrMsg  string
-		SkipE2E bool
+		errMsg  string
+		skipE2E bool
 	}{
 		{
-			Name: "valid token",
+			name: "valid token",
 		},
 		{
-			Name:    "expired token",
+			name:    "expired token",
 			expire:  true,
-			ErrMsg:  "verification token expired",
-			SkipE2E: true,
+			errMsg:  "verification token expired",
+			skipE2E: true,
 		},
 	}
 
@@ -72,10 +72,10 @@ func TestIntegration(t *testing.T) {
 
 	for _, tc := range cases {
 		tc := tc
-		t.Run(tc.Name, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if *isE2E && tc.SkipE2E {
+			if *isE2E && tc.skipE2E {
 				t.Skip("Skip in E2E test mode.")
 			}
 
@@ -140,8 +140,8 @@ func TestIntegration(t *testing.T) {
 			}
 			_, err = apiClient.GetCertificate(certRequest)
 			if tc.expire {
-				if err == nil || !strings.Contains(err.Error(), tc.ErrMsg) {
-					t.Errorf("apiClient.GetCertificate(%+v) = expected %v, got err %v", certRequest, tc.ErrMsg, err)
+				if err == nil || !strings.Contains(err.Error(), tc.errMsg) {
+					t.Errorf("apiClient.GetCertificate(%+v) = expected %v, got err %v", certRequest, tc.errMsg, err)
 				}
 				return
 			}
@@ -156,19 +156,19 @@ func TestIntegration(t *testing.T) {
 func TestIntegrationBulk(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		Name    string
+		name    string
 		expire  bool
-		ErrMsg  string
-		SkipE2E bool
+		errMsg  string
+		skipE2E bool
 	}{
 		{
-			Name: "valid token",
+			name: "valid token",
 		},
 		{
-			Name:    "expired token",
+			name:    "expired token",
 			expire:  true,
-			ErrMsg:  "verification token expired",
-			SkipE2E: true,
+			errMsg:  "verification token expired",
+			skipE2E: true,
 		},
 	}
 
@@ -185,10 +185,10 @@ func TestIntegrationBulk(t *testing.T) {
 
 	for _, tc := range cases {
 		tc := tc
-		t.Run(tc.Name, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if *isE2E && tc.SkipE2E {
+			if *isE2E && tc.skipE2E {
 				t.Skip("Skip in E2E test mode.")
 			}
 
@@ -258,8 +258,8 @@ func TestIntegrationBulk(t *testing.T) {
 				}
 				_, err = apiClient.GetCertificate(certRequest)
 				if tc.expire {
-					if err == nil || !strings.Contains(err.Error(), tc.ErrMsg) {
-						t.Errorf("apiClient.GetCertificate(%+v) = expected %v, got err %v", certRequest, tc.ErrMsg, err)
+					if err == nil || !strings.Contains(err.Error(), tc.errMsg) {
+						t.Errorf("apiClient.GetCertificate(%+v) = expected %v, got err %v", certRequest, tc.errMsg, err)
 					}
 					return
 				}

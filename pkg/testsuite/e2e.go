@@ -92,6 +92,7 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
+		realm.AllowBulkUpload = true
 		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 			tb.Fatalf("failed to create realm %+v: %v: %v", realm, err, realm.ErrorMessages())
 		}
