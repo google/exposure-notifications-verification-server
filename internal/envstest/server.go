@@ -189,8 +189,9 @@ func NewServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *Test
 		tb.Fatalf("failed to create listener: %v", err)
 	}
 	tb.Cleanup(func() {
-		err := listener.Close()
-		tb.Errorf("failed to close test server listener: %v", err)
+		if err := listener.Close(); err != nil {
+			tb.Errorf("failed to close test server listener: %v", err)
+		}
 	})
 
 	// Start the server on a random port. Closing doneCtx will stop the server
