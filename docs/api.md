@@ -291,7 +291,7 @@ This API is *not atomic* and does not follow the [typical guidelines for a batch
 messages.
 
 The server attempts to issue every code in the batch. If errors are encountered, each item in `codes` will contain the error details for
-the corresponding code. The overall request will get the error status code and message of the first seen error, although some codes may have
+the corresponding code. The overall request will get the error status code of the first seen error, although some codes may have
 succeeded.
 
 eg.
