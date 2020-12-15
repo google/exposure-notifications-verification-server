@@ -72,7 +72,7 @@ module "availability-slos" {
 module "latency-slos" {
   source = "./module.latency-slo"
 
-  project = var.verification-server-project
+  project = var.project
 
   custom-service-id     = google_monitoring_custom_service.verification-server.service_id
   enabled               = var.https-forwarding-rule != ""
