@@ -154,24 +154,6 @@ func TestIntegration(t *testing.T) {
 
 	// Bulk issue cases
 
-	t.Parallel()
-	cases := []struct {
-		name    string
-		expire  bool
-		errMsg  string
-		skipE2E bool
-	}{
-		{
-			name: "valid token",
-		},
-		{
-			name:    "expired token",
-			expire:  true,
-			errMsg:  "verification token expired",
-			skipE2E: true,
-		},
-	}
-
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
