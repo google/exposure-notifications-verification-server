@@ -30,44 +30,6 @@ locals {
   ))
 }
 
-resource "google_monitoring_alert_policy" "backend_latency" {
-  count        = var.https-forwarding-rule == "" ? 0 : 1
-  project      = var.project
-  display_name = "LatencyTooHigh"
-  combiner     = "OR"
-  conditions {
-    display_name = "/backend_latencies"
-    condition_monitoring_query_language {
-      duration = "300s"
-      query    = <<-EOT
-      fetch
-      https_lb_rule :: loadbalancing.googleapis.com/https/backend_latencies
-      | filter
-      (resource.backend_name != 'NO_BACKEND_SELECTED'
-      && resource.forwarding_rule_name == '${var.https-forwarding-rule}')
-      | align delta(1m)
-      | every 1m
-      | group_by [resource.backend_target_name], [val: percentile(value.backend_latencies, 99)]
-      | condition ${local.p99_latency_condition}
-      EOT
-      trigger {
-        count = 1
-      }
-    }
-  }
-
-  documentation {
-    content   = "${local.playbook_prefix}/LatencyTooHigh.md"
-    mime_type = "text/markdown"
-  }
-
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
-
-  depends_on = [
-    null_resource.manual-step-to-enable-workspace,
-  ]
-}
-
 resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
   project      = var.project
   combiner     = "OR"
