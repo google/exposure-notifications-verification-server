@@ -400,7 +400,7 @@ Checks the status of a previous issued code, looking up by UUID.
 
 ## `/api/expirecode`
 
-Expires an unclaimed code. IF the code has been claimed an error is returned.
+Expires an unclaimed code. If the code has been claimed an error is returned.
 
 **ExpireCodeRequest**
 
