@@ -102,6 +102,12 @@ msgstr "Messaggio di testo SMS (consigliato)"
 msgid "codes.issue.sms-text-message-label"
 msgstr "Numero di telefono del paziente"
 
+msgid "codes.issue.sms-template-label"
+msgstr "Modello SMS"
+
+msgid "codes.issue.sms-template-detail"
+msgstr "Il paziente riceverà un SMS con il modello di messaggio selezionato."
+
 msgid "codes.issue.sms-text-message-detail"
 msgstr "Se fornito, il sistema inviera' un messaggio di testo con il codice al paziente. Il telefono deve essere in grado di ricevere messaggi di testo SMS."
 

@@ -56,7 +56,7 @@ func ConfigureCSRF(ctx context.Context, config *config.ServerConfig, h render.Re
 	}
 }
 
-// handleCSRFError is an http.HandlerFunc that can be installed inthe gorilla csrf
+// handleCSRFError is an http.HandlerFunc that can be installed in the gorilla csrf
 // protect middleware. It will respond w/ a JSON object containing error: on API
 // requests and a signout redirect to other requests.
 func handleCSRFError(ctx context.Context, h render.Renderer) http.Handler {

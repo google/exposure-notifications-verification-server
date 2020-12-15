@@ -123,8 +123,26 @@
         <div class="card mb-3 shadow-sm">
           <div class="card-header">{{t $.locale "codes.issue.sms-text-message-header"}}</div>
           <div class="card-body">
+            {{if $currentRealm.SMSTextAlternateTemplates}}
             <div class="row form-group">
-              <label for="symptomDate" class="col-sm-6 col-md-4 col-lg-3">{{t $.locale "codes.issue.sms-text-message-label"}}</label>
+              <label for="sms-template" class="col-sm-6 col-md-4 col-lg-3">{{t $.locale "codes.issue.sms-template-label"}}</label>
+              <div class="col-sm-6 col-md-8 col-lg-9">
+                <div class="input-group">
+                  <select class="form-control" id="sms-template">
+                    <option value="Default SMS template">Default SMS template</option>
+                    {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
+                    <option value="{{$k}}">{{$k}}</option>
+                    {{end}}
+                  </select>
+                </div>
+                <small class="form-text text-muted">
+                  {{t $.locale "codes.issue.sms-template-detail"}}
+                </small>
+              </div>
+            </div>
+            {{end}}
+            <div class="row form-group">
+              <label for="phone" class="col-sm-6 col-md-4 col-lg-3">{{t $.locale "codes.issue.sms-text-message-label"}}</label>
               <div class="col-sm-6 col-md-8 col-lg-9">
                 <div class="input-group">
                   <input type="tel" id="phone" name="phone" class="form-control" autocomplete="off" class="w-100" />
@@ -231,6 +249,7 @@
     let $form;
       let $inputTestDate;
       let $inputSymptomDate;
+      let $inputSMSTemplate;
       let $inputPhone;
       let $buttonSubmit;
       let $buttonReset;
@@ -253,6 +272,7 @@
       $form = $('form#issue');
         $inputTestDate = $('input#test-date');
         $inputSymptomDate = $('input#symptom-date');
+        $inputSMSTemplate = $('select#sms-template');
         $inputPhone = $('input#phone');
         $buttonSubmit = $('button#submit');
         $buttonReset = $('button#reset');
@@ -304,6 +324,7 @@
         data.tzOffset = new Date().getTimezoneOffset();
 
         {{if $hasSMSConfig}}
+        data['smsTemplateLabel'] = $inputSMSTemplate.val();
         data['phone'] = iti.getNumber();
         {{end}}
 

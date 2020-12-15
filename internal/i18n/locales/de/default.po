@@ -102,6 +102,12 @@ msgstr "SMS Textnachricht (empfohlen)"
 msgid "codes.issue.sms-text-message-label"
 msgstr "Patienten Telefonnummer"
 
+msgid "codes.issue.sms-template-label"
+msgstr "SMS Vorlage"
+
+msgid "codes.issue.sms-template-detail"
+msgstr "Der Patient erhält eine SMS mit der ausgewählten Nachrichtenvorlage."
+
 msgid "codes.issue.sms-text-message-detail"
 msgstr "Das System sendet dem Patienten eine Textnachricht mit dem Verifizierungscode. Die eingetragene Telefonnummer muss Textnachrichten erhalten können."
 

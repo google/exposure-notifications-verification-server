@@ -102,6 +102,12 @@ msgstr "SMS kısa mesaj (önerilen)"
 msgid "codes.issue.sms-text-message-label"
 msgstr "Hastanın telefon numarası"
 
+msgid "codes.issue.sms-template-label"
+msgstr "SMS şablonu"
+
+msgid "codes.issue.sms-template-detail"
+msgstr "Hasta, seçilen mesaj şablonunu içeren bir SMS alacaktır."
+
 msgid "codes.issue.sms-text-message-detail"
 msgstr "Bu alan doldurulursa, sistem üretilen kodu hastaya kısa mesaj (SMS) olarak atacaktır. O yüzden bu numara SMS alabilen bir numara olmalıdır."
 
