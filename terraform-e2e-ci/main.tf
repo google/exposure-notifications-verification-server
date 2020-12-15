@@ -58,8 +58,7 @@ module "en" {
 module "en-alerting" {
   source = "../terraform/alerting"
 
-  monitoring-host-project     = var.project
-  verification-server-project = var.project
+  project = var.project
 
   adminapi_hosts  = ["adminapi.notexistdomain.notexist"]
   apiserver_hosts = ["apiserver.notexistdomain.notexist"]

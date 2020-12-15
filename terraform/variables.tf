@@ -213,7 +213,7 @@ variable "db_verification_code_hmac_count" {
 }
 
 terraform {
-  required_version = ">= 0.13.1"
+  required_version = ">= 0.14.2"
 
   required_providers {
     google = {
