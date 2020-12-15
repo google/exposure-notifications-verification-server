@@ -21,7 +21,7 @@ resource "google_monitoring_slo" "availability-slo" {
   service      = var.custom-service-id
   slo_id       = "availability-slo-${var.service-name}"
   display_name = "${var.goal * 100}% of requests are successful over rolling 28 days (service=${var.service-name})"
-  project      = var.monitoring-host-project
+  project      = var.project
   count        = var.enabled ? 1 : 0
 
 
@@ -50,7 +50,7 @@ resource "google_monitoring_slo" "availability-slo" {
 
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
-  project      = var.verification-server-project
+  project      = var.project
   display_name = "FastErrorBudgetBurn-${var.service-name}"
   combiner     = "AND"
   enabled      = "true"
@@ -60,7 +60,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last hour"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "3600s")
+      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "3600s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -76,7 +76,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last 5 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "300s")
+      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "300s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -102,7 +102,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 
 # slow error budget burn alert
 resource "google_monitoring_alert_policy" "slow_burn" {
-  project      = var.verification-server-project
+  project      = var.project
   display_name = "SlowErrorBudgetBurn-${var.service-name}"
   combiner     = "AND"
   enabled      = "true"
@@ -112,7 +112,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "21600s")
+      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "21600s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -128,7 +128,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.verification-server-project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "1800s")
+      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "1800s")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"

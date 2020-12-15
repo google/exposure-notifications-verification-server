@@ -31,7 +31,7 @@ locals {
 }
 
 resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
-  project      = var.verification-server-project
+  project      = var.project
   combiner     = "OR"
   display_name = "E2ETestErrorRatioHigh"
   conditions {
@@ -68,7 +68,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
 }
 
 resource "google_monitoring_alert_policy" "five_xx" {
-  project      = var.monitoring-host-project
+  project      = var.project
   display_name = "Elevated500s"
   combiner     = "OR"
   conditions {
@@ -105,7 +105,7 @@ resource "google_monitoring_alert_policy" "five_xx" {
 }
 
 resource "google_monitoring_alert_policy" "probers" {
-  project = var.monitoring-host-project
+  project = var.project
 
   display_name = "HostDown"
   combiner     = "OR"
@@ -140,7 +140,7 @@ resource "google_monitoring_alert_policy" "probers" {
 }
 
 resource "google_monitoring_alert_policy" "rate_limited_count" {
-  project      = var.monitoring-host-project
+  project      = var.project
   display_name = "ElevatedRateLimitedCount"
   combiner     = "OR"
   conditions {
@@ -175,7 +175,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
 }
 
 resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
-  project      = var.monitoring-host-project
+  project      = var.project
   display_name = "StackdriverExportFailed"
   combiner     = "OR"
   conditions {

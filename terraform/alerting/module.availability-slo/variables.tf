@@ -6,15 +6,6 @@ variable "service-name" {
   type = string
 }
 
-variable "monitoring-host-project" {
-  type        = string
-  description = <<-EOT
-  The host project for multi-project workspace. See also:
-  http://cloud/monitoring/workspaces/create#first-multi-project-workspace If
-  empty, will use var.verificatin-server-project by default
-  EOT
-}
-
 variable "enabled" {
   type        = bool
   description = "Whether to enable this availability SLO."
@@ -30,6 +21,6 @@ variable "notification-channels" {
   description = "Notification channels"
 }
 
-variable "verification-server-project" {
+variable "project" {
   type = string
 }
