@@ -34,14 +34,20 @@ func TestSMS(t *testing.T) {
 	realm.SMSTextTemplate = "This is your Exposure Notifications Verification code: [enslink] Expires in [longexpires] hours"
 	realm.RegionCode = "US-WA"
 
-	got, _ := realm.BuildSMSText("12345678", "abcdefgh12345678", "en.express", "")
+	got, err := realm.BuildSMSText("12345678", "abcdefgh12345678", "en.express", "")
+	if err != nil {
+		t.Fatalf("failed to buildSMS, %v", err)
+	}
 	want := "This is your Exposure Notifications Verification code: https://us-wa.en.express/v?c=abcdefgh12345678 Expires in 24 hours"
 	if got != want {
 		t.Errorf("SMS text wrong, want: %q got %q", want, got)
 	}
 
 	realm.SMSTextTemplate = "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
-	got, _ = realm.BuildSMSText("654321", "asdflkjasdlkfjl", "", "")
+	got, err = realm.BuildSMSText("654321", "asdflkjasdlkfjl", "", "")
+	if err != nil {
+		t.Fatalf("failed to buildSMS, %v", err)
+	}
 	want = "State of Wonder, COVID-19 Exposure Verification code 654321. Expires in 15 minutes. Act now!"
 	if got != want {
 		t.Errorf("SMS text wrong, want: %q got %q", want, got)
