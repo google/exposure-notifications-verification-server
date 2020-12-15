@@ -1,5 +1,7 @@
 {{define "codes/issue-bulk"}}
 
+{{$currentMembership := .currentMembership}}
+{{$currentRealm := $currentMembership.Realm}}
 {{$hasSMSConfig := .hasSMSConfig}}
 
 <!doctype html>
@@ -90,6 +92,22 @@
             </small>
           </div>
 
+          {{if $currentRealm.SMSTextAlternateTemplates}}
+          <div class="form-group">
+            <div class="input-group">
+              <select class="form-control" id="sms-template">
+                <option value="Default SMS template">Default SMS template</option>
+                {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
+                <option value="{{$k}}">{{$k}}</option>
+                {{end}}
+              </select>
+            </div>
+            <small class="form-text text-muted">
+              {{t $.locale "codes.issue.sms-template-detail"}}
+            </small>
+          </div>
+          {{end}}
+
           <button class="btn btn-primary btn-block" type="submit" id="import" disabled>Issue codes</button>
           <button class="btn btn-danger btn-block d-none" id="cancel" disabled>Cancel</button>
         </form>
@@ -144,6 +162,7 @@
       let $progress = $('#progress');
       let $retryCode = $('#retry-code');
       let $rememberCode = $('#remember-code');
+      let $inputSMSTemplate = $('select#sms-template');
       let $newCode = $('#new-code');
       let $startAt = $('#start-at');
 
@@ -307,6 +326,7 @@
         let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36);
         request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
 
+        request["smsTemplateLabel"] = $inputSMSTemplate.val();
         request["testType"] = "confirmed";
         request["tzOffset"] = tzOffset;
         return request
