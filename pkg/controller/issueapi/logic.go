@@ -41,7 +41,7 @@ var (
 	}{
 		{
 			prefix: "phone number: ",
-			suffix: ", is not currently",
+			suffix: ", ",
 		},
 	}
 )
