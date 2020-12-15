@@ -16,12 +16,15 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 // Membership represents a user's membership in a realm.
 type Membership struct {
+	Errorable
+
 	UserID uint
 	User   *User
 
@@ -35,13 +38,16 @@ type Membership struct {
 // preloaded and the referenced values exist.
 func (m *Membership) AfterFind() error {
 	if m.User == nil {
-		return fmt.Errorf("membership user does not exist")
+		m.AddError("user", "does not exist")
 	}
 
 	if m.Realm == nil {
-		return fmt.Errorf("membership realm does not exist")
+		m.AddError("realm", "does not exist")
 	}
 
+	if msgs := m.ErrorMessages(); len(msgs) > 0 {
+		return fmt.Errorf("lookup failed: %s", strings.Join(msgs, ", "))
+	}
 	return nil
 }
 

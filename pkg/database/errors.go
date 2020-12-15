@@ -17,6 +17,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"sort"
 )
 
 var (
@@ -47,8 +48,16 @@ func (e *Errorable) Errors() map[string][]string {
 func (e *Errorable) ErrorMessages() []string {
 	e.init()
 
+	// Sort keys so the response is in predictable ordering.
+	keys := make([]string, 0, len(e.errors))
+	for k := range e.errors {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	l := make([]string, 0, len(e.errors))
-	for k, v := range e.errors {
+	for _, k := range keys {
+		v := e.errors[k]
 		for _, msg := range v {
 			l = append(l, fmt.Sprintf("%s %s", k, msg))
 		}

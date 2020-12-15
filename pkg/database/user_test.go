@@ -21,7 +21,28 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
-func TestUserLifecycle(t *testing.T) {
+func TestUser_BeforeSave(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		structField string
+		field       string
+	}{
+		{"Email", "email"},
+		{"Name", "name"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.field, func(t *testing.T) {
+			t.Parallel()
+			exerciseValidation(t, &User{}, tc.structField, tc.field)
+		})
+	}
+}
+
+func TestUser_Lifecycle(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
@@ -99,13 +120,13 @@ func TestUserLifecycle(t *testing.T) {
 	}
 }
 
-func TestPurgeUsers(t *testing.T) {
+func TestDatabase_PurgeUsers(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	realm := NewRealmWithDefaults("test")
-	if err := db.SaveRealm(realm, SystemTest); err != nil {
+	realm, err := db.FindRealm(1)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -168,58 +189,60 @@ func TestPurgeUsers(t *testing.T) {
 	}
 }
 
-func TestRemoveRealmUpdatesTime(t *testing.T) {
+func TestUser_DeleteFromRealm(t *testing.T) {
 	t.Parallel()
 
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	t.Run("updates_time", func(t *testing.T) {
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	realm := NewRealmWithDefaults("test")
-	if err := db.SaveRealm(realm, SystemTest); err != nil {
-		t.Fatal(err)
-	}
+		realm := NewRealmWithDefaults("test")
+		if err := db.SaveRealm(realm, SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
-	email := "purge@example.com"
-	user := &User{
-		Email: email,
-		Name:  "Dr Delete",
-	}
-	if err := db.SaveUser(user, SystemTest); err != nil {
-		t.Fatal(err)
-	}
+		email := "purge@example.com"
+		user := &User{
+			Email: email,
+			Name:  "Dr Delete",
+		}
+		if err := db.SaveUser(user, SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
-	// Add to realm
-	if err := user.AddToRealm(db, realm, rbac.LegacyRealmAdmin, SystemTest); err != nil {
-		t.Fatal(err)
-	}
+		// Add to realm
+		if err := user.AddToRealm(db, realm, rbac.LegacyRealmAdmin, SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
-	got, err := db.FindUser(user.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+		got, err := db.FindUser(user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if got, want := got.ID, user.ID; got != want {
-		t.Errorf("expected %#v to be %#v", got, want)
-	}
+		if got, want := got.ID, user.ID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
 
-	time.Sleep(time.Second) // in case this executes in under a nanosecond.
+		time.Sleep(time.Second) // in case this executes in under a nanosecond.
 
-	originalTime := got.Model.UpdatedAt
-	if err := user.DeleteFromRealm(db, realm, SystemTest); err != nil {
-		t.Fatal(err)
-	}
+		originalTime := got.Model.UpdatedAt
+		if err := user.DeleteFromRealm(db, realm, SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
-	got, err = db.FindUser(user.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+		got, err = db.FindUser(user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if got, want := got.ID, user.ID; got != want {
-		t.Errorf("expected %#v to be %#v", got, want)
-	}
-	// Assert that the user time was updated.
-	if originalTime == got.Model.UpdatedAt {
-		t.Errorf("expected user time to be updated. Got %#v", originalTime.Format(time.RFC3339))
-	}
+		if got, want := got.ID, user.ID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		// Assert that the user time was updated.
+		if originalTime == got.Model.UpdatedAt {
+			t.Errorf("expected user time to be updated. Got %#v", originalTime.Format(time.RFC3339))
+		}
+	})
 }
 
 func expectExists(t *testing.T, db *Database, id uint) {

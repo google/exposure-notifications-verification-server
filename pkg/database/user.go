@@ -47,6 +47,27 @@ type User struct {
 	LastPasswordChange time.Time
 }
 
+// BeforeSave runs validations. If there are errors, the save fails.
+func (u *User) BeforeSave(tx *gorm.DB) error {
+	u.Email = project.TrimSpace(u.Email)
+	if u.Email == "" {
+		u.AddError("email", "cannot be blank")
+	}
+	if !strings.Contains(u.Email, "@") {
+		u.AddError("email", "appears to be invalid")
+	}
+
+	u.Name = project.TrimSpace(u.Name)
+	if u.Name == "" {
+		u.AddError("name", "cannot be blank")
+	}
+
+	if msgs := u.ErrorMessages(); len(msgs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
+	}
+	return nil
+}
+
 // PasswordChanged returns password change time or account creation time if unset.
 func (u *User) PasswordChanged() time.Time {
 	if u.LastPasswordChange.Before(launched) {
@@ -73,29 +94,6 @@ func (u *User) PasswordAgeString() string {
 		return fmt.Sprintf("%d minutes", int(ago.Minutes()))
 	}
 	return fmt.Sprintf("%d seconds", int(ago.Seconds()))
-}
-
-// BeforeSave runs validations. If there are errors, the save fails.
-func (u *User) BeforeSave(tx *gorm.DB) error {
-	// Validation
-	u.Email = project.TrimSpace(u.Email)
-	if u.Email == "" {
-		u.AddError("email", "cannot be blank")
-	}
-	if !strings.Contains(u.Email, "@") {
-		u.AddError("email", "appears to be invalid")
-	}
-
-	u.Name = project.TrimSpace(u.Name)
-	if u.Name == "" {
-		u.AddError("name", "cannot be blank")
-	}
-
-	if len(u.Errors()) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(u.ErrorMessages(), ", "))
-	}
-
-	return nil
 }
 
 // FindUser finds a user by the given id, if one exists. The id can be a string

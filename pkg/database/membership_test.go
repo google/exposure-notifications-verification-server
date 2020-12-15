@@ -15,26 +15,29 @@
 package database
 
 import (
-	"fmt"
-
-	"github.com/jinzhu/gorm"
+	"testing"
 )
 
-// SigningKey represents a reference to a KMS backed signing key
-// version for verification certificate signing.
-type SigningKey struct {
-	gorm.Model
-	Errorable
+func TestMembership_AfterFind(t *testing.T) {
+	t.Parallel()
 
-	// A signing key belongs to exactly one realm.
-	RealmID uint `gorm:"index:realm"`
+	t.Run("user", func(t *testing.T) {
+		t.Parallel()
 
-	// Reference to an exact version of a key in the KMS
-	KeyID  string
-	Active bool
-}
+		var m Membership
+		_ = m.AfterFind()
+		if errs := m.ErrorsFor("user"); len(errs) < 1 {
+			t.Errorf("expected errors for %s", "user")
+		}
+	})
 
-// GetKID returns the 'kid' field value to use in signing JWTs.
-func (s *SigningKey) GetKID() string {
-	return fmt.Sprintf("r%dv%d", s.RealmID, s.ID)
+	t.Run("realm", func(t *testing.T) {
+		t.Parallel()
+
+		var m Membership
+		_ = m.AfterFind()
+		if errs := m.ErrorsFor("realm"); len(errs) < 1 {
+			t.Errorf("expected errors for %s", "realm")
+		}
+	})
 }
