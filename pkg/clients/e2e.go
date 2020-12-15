@@ -257,34 +257,63 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 	}
 
 	// Bulk issue
-	code, err := func() (*api.IssueCodeResponse, error) {
-		defer recordLatency(ctx, time.Now(), "/api/issue")
-
-		// Issue the verification code.
-		codeRequest := &api.IssueCodeRequest{
-			TestType:         testType,
-			SymptomDate:      symptomDate,
-			TZOffset:         0,
-			ExternalIssuerID: adminID,
+	{
+		codesRequest := &api.BatchIssueCodeRequest{
+			Codes: []*api.IssueCodeRequest{
+				{
+					TestType:         testType,
+					SymptomDate:      symptomDate,
+					TZOffset:         0,
+					ExternalIssuerID: adminID,
+				},
+				{
+					TestType:         testType,
+					SymptomDate:      symptomDate,
+					TZOffset:         0,
+					ExternalIssuerID: adminID,
+				},
+				{
+					TestType:         testType,
+					SymptomDate:      symptomDate,
+					TZOffset:         0,
+					ExternalIssuerID: adminID,
+				},
+			},
 		}
 
-		code, err := IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codeRequest)
+		codes, err := func() (*api.BatchIssueCodeResponse, error) {
+			defer recordLatency(ctx, time.Now(), "/api/issue")
+
+			codes, err := BatchIssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codesRequest)
+			if err != nil {
+				result = observability.ResultNotOK()
+				return nil, fmt.Errorf("error issuing verification code: %w", err)
+			} else if codes.Error != "" {
+				result = observability.ResultNotOK()
+				return nil, fmt.Errorf("issue API Error: %+v", codes)
+			}
+
+			logger.Debugw("Issue Code",
+				"request", codesRequest,
+				"response", codes,
+			)
+			return codes, nil
+		}()
 		if err != nil {
-			result = observability.ResultNotOK()
-			return nil, fmt.Errorf("error issuing verification code: %w", err)
-		} else if code.Error != "" {
-			result = observability.ResultNotOK()
-			return nil, fmt.Errorf("issue API Error: %+v", code)
+			return err
 		}
 
-		logger.Debugw("Issue Code",
-			"request", codeRequest,
-			"response", code,
-		)
-		return code, nil
-	}()
-	if err != nil {
-		return err
+		// Check the resulting issued codes
+		if len(codes.Codes) != len(codesRequest.Codes) {
+			result = observability.ResultNotOK()
+			return fmt.Errorf("batch response length should match request: got %d, want %d", len(codes.Codes), len(codesRequest.Codes))
+		}
+		for _, c := range codes.Codes {
+			if c.Error != "" {
+				result = observability.ResultNotOK()
+				return fmt.Errorf("expected successfully issued codes, got %s", c.Error)
+			}
+		}
 	}
 
 	return nil
