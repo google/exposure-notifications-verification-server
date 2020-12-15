@@ -49,6 +49,7 @@ const (
 	TestTypeConfirmed
 	TestTypeLikely
 	TestTypeNegative
+	DefaultTemplateLabel = "Default SMS template"
 )
 
 func (t TestType) Display() string {
@@ -360,18 +361,19 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("longCodeDuration", "must be no more than 24 hours")
 	}
 
-	r.validateSMSTemplate(r.SMSTextTemplate)
+	r.validateSMSTemplate(DefaultTemplateLabel, r.SMSTextTemplate)
 	if r.SMSTextAlternateTemplates != nil {
 		for l, t := range r.SMSTextAlternateTemplates {
 			if t == nil || *t == "" {
 				r.AddError("SMSTextTemplate", fmt.Sprintf("no template for label %s", l))
+				r.AddError(l, fmt.Sprintf("no template for label %s", l))
 				continue
 			}
 			if l == "" {
 				r.AddError("SMSTextTemplate", fmt.Sprintf("no label for template %s", *t))
 				continue
 			}
-			r.validateSMSTemplate(*t)
+			r.validateSMSTemplate(l, *t)
 		}
 	}
 
@@ -431,28 +433,33 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 
 // validateSMSTemplate is a helper method to validate a single SMSTemplate.
 // Errors are returned by appending them to the realm's Errorable fields.
-func (r *Realm) validateSMSTemplate(t string) {
+func (r *Realm) validateSMSTemplate(label, t string) {
 	if r.EnableENExpress {
 		if !strings.Contains(t, SMSENExpressLink) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
+			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 		if strings.Contains(t, SMSRegion) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
+			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 		if strings.Contains(t, SMSLongCode) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
+			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 
 	} else {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
 		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
 			r.AddError("SMSTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 	}
 
 	// Check template length.
 	if l := len(t); l > SMSTemplateMaxLength {
 		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %d characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
+		r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 	}
 }
 

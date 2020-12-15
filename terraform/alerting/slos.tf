@@ -12,6 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  default_slo_thresholds = {
+    adminapi = {
+      availability = 0.995
+      latency      = 0
+    }
+    apiserver = {
+      availability = 0.995
+      latency      = 0
+    }
+    appsync = {
+      availability = 0.995
+      latency      = 0
+    }
+    cleanup = {
+      availability = 0.995
+      latency      = 0
+    }
+    e2e-runner = {
+      availability = 0.995
+      latency      = 0
+    }
+    enx-redirect = {
+      availability = 0.995
+      latency      = 0
+    }
+    modeler = {
+      availability = 0.995
+      latency      = 0
+    }
+    server = {
+      availability = 0.995
+      latency      = 0
+    }
+  }
+}
+
 resource "google_monitoring_custom_service" "verification-server" {
   service_id   = "verification-server"
   display_name = "Verification Server"
@@ -26,7 +63,7 @@ module "availability-slos" {
   enabled               = var.https-forwarding-rule != ""
   notification-channels = google_monitoring_notification_channel.channels
 
-  for_each = var.slo_thresholds
+  for_each = merge(local.default_slo_thresholds, var.slo_thresholds_overrides)
 
   service-name = each.key
   goal         = each.value.availability

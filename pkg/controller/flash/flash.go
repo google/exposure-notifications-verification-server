@@ -85,6 +85,13 @@ func (f *Flash) Clear() {
 	delete(f.values, flashKeyWarning)
 }
 
+// Clone makes a copy of this flash data into the new target.
+func (f *Flash) Clone(values map[interface{}]interface{}) {
+	for k, v := range f.values {
+		values[k] = v
+	}
+}
+
 // add inserts the message into the upcoming flash for the given key.
 func (f *Flash) add(key flashKey, msg string, vars ...interface{}) {
 	var data []string
