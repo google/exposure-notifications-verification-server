@@ -16,13 +16,14 @@ package issueapi
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
-	"github.com/hashicorp/go-multierror"
 )
 
 const maxBatchSize = 10
@@ -79,7 +80,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 
 		httpCode := http.StatusOK
-		var merr *multierror.Error
+		errCount := 0
 
 		resp.Codes = make([]*api.IssueCodeResponse, l)
 		for i, singleIssue := range request.Codes {
@@ -92,7 +93,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				// continue processing if when a single code issuance fails.
 				// if any issuance fails, the returned code is the code of the first failure.
 				logger.Warnw("single code issuance failed", "error", result.errorReturn)
-				merr = multierror.Append(merr, errors.New(result.errorReturn.Error))
+				errCount++
 				if resp.Codes[i] == nil {
 					resp.Codes[i] = &api.IssueCodeResponse{}
 				}
@@ -100,13 +101,20 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				resp.Codes[i].Error = result.errorReturn.Error
 				if httpCode == http.StatusOK {
 					httpCode = result.httpCode
+					resp.ErrorCode = result.errorReturn.ErrorCode
 				}
 				continue
 			}
 		}
 
-		if err := merr.ErrorOrNil(); err != nil {
-			resp.Error = err.Error()
+		if errCount > 0 {
+			var sb strings.Builder
+			sb.WriteString(fmt.Sprintf("Failed to issue %d codes.", errCount))
+			if succeeded := len(request.Codes) - errCount; succeeded > 0 {
+				sb.WriteString(fmt.Sprintf(" Issued %d codes successfully.", succeeded))
+			}
+			sb.WriteString("See each error status in the codes array.")
+			resp.Error = sb.String()
 		}
 
 		c.h.RenderJSON(w, httpCode, resp)
