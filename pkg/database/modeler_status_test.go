@@ -15,26 +15,28 @@
 package database
 
 import (
-	"fmt"
-
-	"github.com/jinzhu/gorm"
+	"testing"
+	"time"
 )
 
-// SigningKey represents a reference to a KMS backed signing key
-// version for verification certificate signing.
-type SigningKey struct {
-	gorm.Model
-	Errorable
+func TestDatabase_ClaimModelerStatus(t *testing.T) {
+	t.Parallel()
 
-	// A signing key belongs to exactly one realm.
-	RealmID uint `gorm:"index:realm"`
+	// Create this now so we don't get clock skew
+	later := time.Now().UTC().Add(modelerLockTime)
 
-	// Reference to an exact version of a key in the KMS
-	KeyID  string
-	Active bool
-}
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-// GetKID returns the 'kid' field value to use in signing JWTs.
-func (s *SigningKey) GetKID() string {
-	return fmt.Sprintf("r%dv%d", s.RealmID, s.ID)
+	if err := db.ClaimModelerStatus(); err != nil {
+		t.Fatal(err)
+	}
+
+	var status ModelerStatus
+	if err := db.db.Model(&ModelerStatus{}).First(&status).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if got, now := status.NotBefore, later; !got.After(now) {
+		t.Errorf("expected %q to be after %q", got, now)
+	}
 }

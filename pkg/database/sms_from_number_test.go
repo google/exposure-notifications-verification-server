@@ -22,33 +22,22 @@ import (
 func TestSMSFromNumber_BeforeSave(t *testing.T) {
 	t.Parallel()
 
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	cases := []struct {
+		structField string
+		field       string
+	}{
+		{"Label", "label"},
+		{"Value", "value"},
+	}
 
-	t.Run("label", func(t *testing.T) {
-		t.Parallel()
+	for _, tc := range cases {
+		tc := tc
 
-		var n SMSFromNumber
-		n.Label = ""
-		_ = n.BeforeSave(db.RawDB())
-
-		errs := n.ErrorsFor("label")
-		if len(errs) < 1 {
-			t.Fatal("expected error")
-		}
-	})
-
-	t.Run("value", func(t *testing.T) {
-		t.Parallel()
-
-		var n SMSFromNumber
-		n.Value = ""
-		_ = n.BeforeSave(db.RawDB())
-
-		errs := n.ErrorsFor("value")
-		if len(errs) < 1 {
-			t.Fatal("expected error")
-		}
-	})
+		t.Run(tc.field, func(t *testing.T) {
+			t.Parallel()
+			exerciseValidation(t, &SMSFromNumber{}, tc.structField, tc.field)
+		})
+	}
 }
 
 func TestSMSFromNumbers(t *testing.T) {

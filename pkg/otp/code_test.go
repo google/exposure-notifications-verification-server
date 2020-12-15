@@ -114,8 +114,8 @@ func TestIssue(t *testing.T) {
 		}
 		if exp, codeType, err := db.IsCodeExpired(verCode, code); exp || err != nil {
 			t.Fatalf("loaded code doesn't match requested code, %v %v", exp, err)
-		} else if codeType != database.ShortCode {
-			t.Errorf("wrong code type, want: %v got: %v", database.ShortCode, codeType)
+		} else if codeType != database.CodeTypeShort {
+			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeShort, codeType)
 		}
 	}
 
@@ -126,8 +126,8 @@ func TestIssue(t *testing.T) {
 		}
 		if exp, codeType, err := db.IsCodeExpired(verCode, code); exp || err != nil {
 			t.Fatalf("loaded code doesn't match requested code")
-		} else if codeType != database.LongCode {
-			t.Errorf("wrong code type, want: %v got: %v", database.LongCode, codeType)
+		} else if codeType != database.CodeTypeLong {
+			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeLong, codeType)
 		}
 	}
 }

@@ -34,25 +34,22 @@ type CleanupStatus struct {
 	NotBefore  time.Time
 }
 
-// TableName sets the CleanupStatus table name
-func (CleanupStatus) TableName() string {
-	return "cleanup_statuses"
-}
-
 // CreateCleanup is used to create a new 'cleanup' type/row in the database.
 func (db *Database) CreateCleanup(cType string) (*CleanupStatus, error) {
-	cstat := &CleanupStatus{
-		Type:       cType,
-		Generation: 1,
-		NotBefore:  time.Now().UTC(),
-	}
+	var cstat CleanupStatus
+
+	sql := `INSERT INTO cleanup_statuses (type, generation, not_before)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (type) DO UPDATE SET type = EXCLUDED.type
+		RETURNING *`
+
+	now := time.Now().UTC()
 	if err := db.db.
-		Set("gorm:insert_option", "ON CONFLICT (type) DO NOTHING").
-		FirstOrCreate(cstat).
-		Error; err != nil {
+		Raw(sql, cType, 1, now).
+		Scan(&cstat).Error; err != nil {
 		return nil, err
 	}
-	return cstat, nil
+	return &cstat, nil
 }
 
 // FindCleanupStatus looks up the current cleanup state in the database by cleanup type.
@@ -64,13 +61,14 @@ func (db *Database) FindCleanupStatus(cType string) (*CleanupStatus, error) {
 	return &cstat, nil
 }
 
-// ClaimCleanup attempts to obtain a lock for the specified `lockTime` so that that type of
-// cleanup can be perofmed exclusively by the owner.
+// ClaimCleanup attempts to obtain a lock for the specified `lockTime` so that
+// that type of cleanup can be performed exclusively by the owner.
 func (db *Database) ClaimCleanup(current *CleanupStatus, lockTime time.Duration) (*CleanupStatus, error) {
 	var cstat CleanupStatus
-	err := db.db.Transaction(func(tx *gorm.DB) error {
+	if err := db.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
+			Model(&CleanupStatus{}).
 			Where("type = ?", current.Type).
 			First(&cstat).
 			Error; err != nil {
@@ -83,8 +81,7 @@ func (db *Database) ClaimCleanup(current *CleanupStatus, lockTime time.Duration)
 		cstat.Generation++
 		cstat.NotBefore = time.Now().UTC().Add(lockTime)
 		return tx.Save(&cstat).Error
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 	return &cstat, nil

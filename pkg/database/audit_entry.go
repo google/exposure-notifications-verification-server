@@ -15,9 +15,12 @@
 package database
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/jinzhu/gorm"
 )
 
 // AuditEntry represents an event in the system. These records are purged after
@@ -61,6 +64,32 @@ type AuditEntry struct {
 
 	// CreatedAt is when the entry was created.
 	CreatedAt time.Time
+}
+
+// BeforeSave runs validations. If there are errors, the save fails.
+func (a *AuditEntry) BeforeSave(tx *gorm.DB) error {
+	if a.ActorID == "" {
+		a.AddError("actor_id", "cannot be blank")
+	}
+	if a.ActorDisplay == "" {
+		a.AddError("actor_display", "cannot be blank")
+	}
+
+	if a.Action == "" {
+		a.AddError("action", "cannot be blank")
+	}
+
+	if a.TargetID == "" {
+		a.AddError("target_id", "cannot be blank")
+	}
+	if a.TargetDisplay == "" {
+		a.AddError("target_display", "cannot be blank")
+	}
+
+	if msgs := a.ErrorMessages(); len(msgs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
+	}
+	return nil
 }
 
 // SaveAuditEntry saves the audit entry.

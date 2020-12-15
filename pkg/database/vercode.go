@@ -30,6 +30,7 @@ import (
 
 const (
 	oneDay = 24 * time.Hour
+
 	// MinCodeLength defines the minimum number of digits in a code.
 	MinCodeLength = 6
 )
@@ -37,9 +38,9 @@ const (
 type CodeType int
 
 const (
-	InvalidCode CodeType = iota
-	ShortCode
-	LongCode
+	_ CodeType = iota
+	CodeTypeShort
+	CodeTypeLong
 )
 
 var (
@@ -90,19 +91,14 @@ type VerificationCode struct {
 	IssuingExternalID string `gorm:"column:issuing_external_id; type:varchar(255);"`
 }
 
-// TableName sets the VerificationCode table name
-func (VerificationCode) TableName() string {
-	return "verification_codes"
-}
-
 // BeforeSave is used by callbacks.
-func (v *VerificationCode) BeforeSave(scope *gorm.Scope) error {
+func (v *VerificationCode) BeforeSave(tx *gorm.DB) error {
 	if len(v.IssuingExternalID) > 255 {
 		v.AddError("issuingExternalID", "cannot exceed 255 characters")
 	}
 
-	if len(v.Errors()) > 0 {
-		return fmt.Errorf("email config validation failed: %s", strings.Join(v.ErrorMessages(), ", "))
+	if msgs := v.ErrorMessages(); len(msgs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
 	}
 	return nil
 }
@@ -170,8 +166,6 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 	}
 }
 
-// TODO(mikehelmick) - Add method to soft delete expired codes
-
 // FormatSymptomDate returns YYYY-MM-DD formatted test date, or "" if nil.
 func (v *VerificationCode) FormatSymptomDate() string {
 	if v.SymptomDate == nil {
@@ -184,13 +178,13 @@ func (v *VerificationCode) FormatSymptomDate() string {
 // code, and determines if it is expired based on that.
 func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, CodeType, error) {
 	if v == nil {
-		return false, InvalidCode, fmt.Errorf("provided code is nil")
+		return false, 0, fmt.Errorf("provided code is nil")
 	}
 
 	// It's possible that this could be called with the already HMACd version.
 	possibles, err := db.generateVerificationCodeHMACs(code)
 	if err != nil {
-		return false, InvalidCode, fmt.Errorf("failed to create hmac: %w", err)
+		return false, 0, fmt.Errorf("failed to create hmac: %w", err)
 	}
 	possibles = append(possibles, code)
 
@@ -206,11 +200,11 @@ func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, CodeT
 	now := time.Now().UTC()
 	switch {
 	case inList(v.Code, possibles):
-		return !v.ExpiresAt.After(now), ShortCode, nil
+		return !v.ExpiresAt.After(now), CodeTypeShort, nil
 	case inList(v.LongCode, possibles):
-		return !v.LongExpiresAt.After(now), LongCode, nil
+		return !v.LongExpiresAt.After(now), CodeTypeLong, nil
 	default:
-		return true, InvalidCode, fmt.Errorf("not found")
+		return true, 0, fmt.Errorf("not found")
 	}
 }
 

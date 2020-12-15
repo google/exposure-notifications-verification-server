@@ -199,7 +199,7 @@
   </div>
   <div>
     <div class="btn-grou dropright pb-2">
-      {{if $realm.ErrorsFor "SMSTextTemplate"}}<span class="text-danger oi oi-warning"></span>{{end}}
+      {{if $realm.ErrorsFor "smsTextTemplate"}}<span class="text-danger oi oi-warning"></span>{{end}}
       <button type="button" id="sms-template-dropdown-title" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         {{(index .smsTemplates 0).Label}}
       </button>
@@ -214,7 +214,7 @@
         <a class="dropdown-item" id="sms-template-new" href="#">New SMS template</a>
       </div>
     </div>
-    {{if $realm.ErrorsFor "SMSTextTemplate"}}
+    {{if $realm.ErrorsFor "smsTextTemplate"}}
     <div class="invalid-feedback d-block mt-n1 pb-2">
       Errors found for one or more SMS templates
     </div>
