@@ -17,6 +17,7 @@ package codes_test
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -68,6 +69,8 @@ func TestRenderBulkIssue(t *testing.T) {
 	r := &http.Request{}
 	r = r.WithContext(ctx)
 
+	w := httptest.NewRecorder()
+
 	handleFunc := c.HandleBulkIssue()
-	handleFunc.ServeHTTP(nil, r)
+	handleFunc.ServeHTTP(w, r)
 }

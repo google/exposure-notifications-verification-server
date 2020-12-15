@@ -37,12 +37,15 @@ func ProcessFirewall(h render.Renderer, typ string) mux.MiddlewareFunc {
 
 			logger := logging.FromContext(ctx).Named("middleware.ProcessFirewall")
 
-			membership := controller.MembershipFromContext(ctx)
-			if membership == nil {
-				controller.MissingMembership(w, r, h)
-				return
+			currentRealm := controller.RealmFromContext(ctx)
+			if currentRealm == nil {
+				membership := controller.MembershipFromContext(ctx)
+				if membership == nil {
+					controller.MissingMembership(w, r, h)
+					return
+				}
+				currentRealm = membership.Realm
 			}
-			currentRealm := membership.Realm
 
 			var allowedCIDRs []string
 			switch typ {

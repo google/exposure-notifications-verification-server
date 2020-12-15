@@ -35,6 +35,7 @@ func (c *Controller) HandleSignOut() http.Handler {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
 
 		// If a user is currently logged in, update their last revoked check time.
 		email, err := c.authProvider.EmailAddress(ctx, session)
@@ -65,9 +66,9 @@ func (c *Controller) HandleSignOut() http.Handler {
 			logger.Debugw("failed to revoke session", "error", err)
 		}
 
-		// Set MaxAge to -1 to expire the session.
-		session.Options.MaxAge = -1
-		controller.ClearMFAPrompted(session)
+		// Clear all session data, but copy over flashes.
+		session.Values = make(map[interface{}]interface{})
+		flash.Clone(session.Values)
 
 		m := controller.TemplateMapFromContext(ctx)
 		m.Title("Logging out...")
