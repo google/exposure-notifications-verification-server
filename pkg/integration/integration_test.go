@@ -151,9 +151,9 @@ func TestIntegration(t *testing.T) {
 			}
 		})
 	}
-}
 
-func TestIntegrationBulk(t *testing.T) {
+	// Bulk issue cases
+
 	t.Parallel()
 	cases := []struct {
 		name    string
@@ -170,17 +170,6 @@ func TestIntegrationBulk(t *testing.T) {
 			errMsg:  "verification token expired",
 			skipE2E: true,
 		},
-	}
-
-	ctx := context.Background()
-	testSuite := testsuite.NewTestSuite(t, ctx, *isE2E)
-	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
-	if err != nil {
-		t.Fatalf("failed to create admin API client, err: %v", err)
-	}
-	apiClient, err := testSuite.NewAPIClient(ctx, t)
-	if err != nil {
-		t.Fatalf("failed to create API client, err: %v", err)
 	}
 
 	for _, tc := range cases {
