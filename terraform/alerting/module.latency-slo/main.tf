@@ -23,7 +23,7 @@ resource "google_monitoring_slo" "latency-slo" {
   # the basics
   service      = var.custom-service-id
   slo_id       = "latency-slo-${var.service-name}"
-  display_name = "${var.goal * 100}% of requests are responded in <${local.latency_threshold}s over rolling 28 days (service=${var.service-name})"
+  display_name = "${var.goal * 100}% of requests are responded in <${local.latency_threshold / 1000}s over rolling 28 days (service=${var.service-name})"
   project      = var.project
   count        = var.enabled ? 1 : 0
 
