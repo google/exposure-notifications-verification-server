@@ -69,6 +69,7 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create API client, err: %v", err)
 	}
+
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.Name, func(t *testing.T) {
@@ -147,6 +148,125 @@ func TestIntegration(t *testing.T) {
 
 			if err != nil {
 				t.Errorf("apiClient.GetCertificate(%+v) = expected nil, got err %v", certRequest, err)
+			}
+		})
+	}
+}
+
+func TestIntegrationBulk(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		Name    string
+		expire  bool
+		ErrMsg  string
+		SkipE2E bool
+	}{
+		{
+			Name: "valid token",
+		},
+		{
+			Name:    "expired token",
+			expire:  true,
+			ErrMsg:  "verification token expired",
+			SkipE2E: true,
+		},
+	}
+
+	ctx := context.Background()
+	testSuite := testsuite.NewTestSuite(t, ctx, *isE2E)
+	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
+	if err != nil {
+		t.Fatalf("failed to create admin API client, err: %v", err)
+	}
+	apiClient, err := testSuite.NewAPIClient(ctx, t)
+	if err != nil {
+		t.Fatalf("failed to create API client, err: %v", err)
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
+			if *isE2E && tc.SkipE2E {
+				t.Skip("Skip in E2E test mode.")
+			}
+
+			now := time.Now().UTC()
+			curDayInterval := timeToInterval(now)
+			nextInterval := curDayInterval
+			symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
+			testType := "confirmed"
+			tzMinOffset := 0
+
+			teks := make([]verifyapi.ExposureKey, 14)
+			for i := 0; i < len(teks); i++ {
+				key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
+				if err != nil {
+					t.Fatalf("not enough entropy: %v", err)
+				}
+				teks[i] = key
+				nextInterval -= maxInterval
+			}
+
+			hmacSecret := make([]byte, 32)
+			hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
+			if err != nil {
+				t.Fatalf("error calculating tek HMAC: %v", err)
+			}
+			hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
+
+			// Issue 2 codes
+			issueRequest := api.BatchIssueCodeRequest{
+				Codes: []*api.IssueCodeRequest{
+					{
+						TestType:    testType,
+						SymptomDate: symptomDate,
+						TZOffset:    float32(tzMinOffset),
+					},
+					{
+						TestType:    testType,
+						SymptomDate: symptomDate,
+						TZOffset:    float32(tzMinOffset),
+					},
+				},
+			}
+
+			batchResp, err := adminClient.BatchIssueCode(issueRequest)
+			if batchResp == nil || err != nil {
+				t.Fatalf("adminClient.IssueCode(%+v) = expected nil, got resp %+v, err %v", issueRequest, batchResp, err)
+			}
+
+			for _, issueResp := range batchResp.Codes {
+				verifyRequest := api.VerifyCodeRequest{
+					VerificationCode: issueResp.VerificationCode,
+					AcceptTestTypes:  []string{testType},
+				}
+
+				verifyResp, err := apiClient.GetToken(verifyRequest)
+				if err != nil {
+					t.Fatalf("apiClient.GetToken(%+v) = expected nil, got resp %+v, err %v", verifyRequest, verifyResp, err)
+				}
+
+				if tc.expire {
+					time.Sleep(testsuite.VerificationTokenDuration)
+				}
+
+				certRequest := api.VerificationCertificateRequest{
+					VerificationToken: verifyResp.VerificationToken,
+					ExposureKeyHMAC:   hmacB64,
+				}
+				_, err = apiClient.GetCertificate(certRequest)
+				if tc.expire {
+					if err == nil || !strings.Contains(err.Error(), tc.ErrMsg) {
+						t.Errorf("apiClient.GetCertificate(%+v) = expected %v, got err %v", certRequest, tc.ErrMsg, err)
+					}
+					return
+				}
+
+				if err != nil {
+					t.Errorf("apiClient.GetCertificate(%+v) = expected nil, got err %v", certRequest, err)
+				}
 			}
 		})
 	}

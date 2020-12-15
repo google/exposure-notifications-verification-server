@@ -36,7 +36,7 @@ type AdminClient struct {
 }
 
 // BatchIssueCode calls the issue-batch API call.
-func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.IssueCodeResponse, error) {
+func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.BatchIssueCodeResponse, error) {
 	url := "/api/issue-batch"
 
 	j, err := json.Marshal(req)
@@ -62,7 +62,7 @@ func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.IssueC
 		return nil, fmt.Errorf("failed to POST /api/issue: %w: %s", err, body)
 	}
 
-	var pubResponse api.IssueCodeResponse
+	var pubResponse api.BatchIssueCodeResponse
 	if err := json.Unmarshal(body, &pubResponse); err != nil {
 		return nil, fmt.Errorf("bad publish response")
 	}
