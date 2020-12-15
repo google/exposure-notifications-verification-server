@@ -457,7 +457,11 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
 	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
 	enxDomain := os.Getenv("ENX_REDIRECT_DOMAIN")
-	expandedSMSText := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain, label)
+	expandedSMSText, err := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain, label)
+	if err != nil {
+		r.AddError("SMSTextTemplate", fmt.Sprintf("SMS template expansion failed: %s", err))
+		r.AddError(label, fmt.Sprintf("SMS template expansion failed: %s", err))
+	}
 	if l := len(expandedSMSText); l > SMSTemplateExpansionMax {
 		r.AddError("SMSTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 		r.AddError(label, fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
@@ -489,11 +493,13 @@ func (r *Realm) FindVerificationCodeByUUID(db *Database, uuid string) (*Verifica
 }
 
 // BuildSMSText replaces certain strings with the right values.
-func (r *Realm) BuildSMSText(code, longCode string, enxDomain, templateLabel string) string {
+func (r *Realm) BuildSMSText(code, longCode string, enxDomain, templateLabel string) (string, error) {
 	text := r.SMSTextTemplate
-	if r.SMSTextAlternateTemplates != nil {
+	if templateLabel != "" && templateLabel != DefaultTemplateLabel && r.SMSTextAlternateTemplates != nil {
 		if t, has := r.SMSTextAlternateTemplates[templateLabel]; has && t != nil && *t != "" {
 			text = *t
+		} else {
+			return "", fmt.Errorf("no template found for label %s", templateLabel)
 		}
 	}
 
@@ -513,7 +519,7 @@ func (r *Realm) BuildSMSText(code, longCode string, enxDomain, templateLabel str
 	text = strings.ReplaceAll(text, SMSLongCode, longCode)
 	text = strings.ReplaceAll(text, SMSLongExpires, fmt.Sprintf("%d", r.GetLongCodeDurationHours()))
 
-	return text
+	return text, nil
 }
 
 // BuildInviteEmail replaces certain strings with the right values for invitations.

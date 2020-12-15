@@ -260,7 +260,11 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 		if err := func() error {
 			defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
 
-			message := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+			message, err := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+			if err != nil {
+				logger.Errorw("failed to compose SMS", "error", err)
+				return err
+			}
 
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 				// Delete the token
