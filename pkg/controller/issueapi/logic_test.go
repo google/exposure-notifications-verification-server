@@ -23,9 +23,16 @@ import (
 func TestScrubPhoneNumber(t *testing.T) {
 	t.Parallel()
 
+	unreachable := "unreachable"
+	invalid := "invalid"
+
+	patterns := map[string]string{
+		unreachable: "The 'To' phone number: %s, is not currently reachable using the 'From' phone number: 12345 via SMS.",
+		invalid:     "The 'To' number %s is not a valid phone number.",
+	}
+
 	cases := []struct {
 		input string
-		not   string
 	}{
 		{input: "+11235550098"},
 		{input: "+44 123 555 123"},
@@ -33,15 +40,17 @@ func TestScrubPhoneNumber(t *testing.T) {
 		{input: "whatever"},
 	}
 
-	for i, tc := range cases {
-		t.Run(fmt.Sprintf("case_%2d", i), func(t *testing.T) {
-			t.Parallel()
+	for k, pattern := range patterns {
+		for i, tc := range cases {
+			t.Run(fmt.Sprintf("case_%s_%2d", k, i), func(t *testing.T) {
+				t.Parallel()
 
-			errMsg := fmt.Sprintf("The 'To' phone number: %s, is not currently reachable using the 'From' phone number: 12345 via SMS.", tc.input)
-			got := scrubPhoneNumbers(errMsg)
-			if strings.Contains(got, tc.input) {
-				t.Errorf("phone number was not scrubbed")
-			}
-		})
+				errMsg := fmt.Sprintf(pattern, tc.input)
+				got := scrubPhoneNumbers(errMsg)
+				if strings.Contains(got, tc.input) {
+					t.Errorf("phone number was not scrubbed, %v", got)
+				}
+			})
+		}
 	}
 }
