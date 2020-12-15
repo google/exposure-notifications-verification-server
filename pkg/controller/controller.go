@@ -114,6 +114,7 @@ func RedirectToLogout(w http.ResponseWriter, r *http.Request, h render.Renderer)
 	}
 
 	Unauthorized(w, r, h)
+	return
 }
 
 // Unauthorized returns an error indicating the request was unauthorized. The
