@@ -377,15 +377,6 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
-	// Check expansion length based on settings.
-	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
-	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
-	enxDomain := os.Getenv("ENX_REDIRECT_DOMAIN")
-	expandedSMSText := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain) //TODO(whaught): what about with multiple templates.
-	if l := len(expandedSMSText); l > SMSTemplateExpansionMax {
-		r.AddError("SMSTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
-	}
-
 	if r.UseSystemEmailConfig && !r.CanUseSystemEmailConfig {
 		r.AddError("useSystemEmailConfig", "is not allowed on this realm")
 	}
@@ -461,6 +452,17 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 		r.AddError("SMSTextTemplate", fmt.Sprintf("must be %d characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
 		r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 	}
+
+	// Check expansion length based on settings.
+	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
+	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
+	enxDomain := os.Getenv("ENX_REDIRECT_DOMAIN")
+	expandedSMSText := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain, label)
+	if l := len(expandedSMSText); l > SMSTemplateExpansionMax {
+		r.AddError("SMSTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
+		r.AddError(label, fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
+	}
+
 }
 
 // GetCodeDurationMinutes is a helper for the HTML rendering to get a round
