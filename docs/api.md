@@ -274,8 +274,9 @@ This API currently supports a limit of up 10 codes per request.
 This API is *not atomic* and does not follow the [typical guidelines for a batch API](https://google.aip.dev/233) due to the sending of SMS
 messages.
 
-The server attempts to issue every code in the batch. If errors are encountered, each item in 'codes' will contain error details for
-the corresponding code. The overall request will get the error status code and message of the first seen error.
+The server attempts to issue every code in the batch. If errors are encountered, each item in `codes` will contain the error details for
+the corresponding code. The overall request will get the error status code and message of the first seen error, although some codes may have
+succeeded.
 
 eg.
 ```
