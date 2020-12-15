@@ -39,7 +39,7 @@ type Applinks struct {
 
 type Detail struct {
 	AppID string   `json:"appID,omitempty"`
-	Paths []string `json:"components,omitempty"`
+	Paths []string `json:"paths,omitempty"`
 }
 
 type Appstrings struct {
