@@ -35,6 +35,41 @@ type AdminClient struct {
 	retryInterval time.Duration
 }
 
+// BatchIssueCode calls the issue-batch API call.
+func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.IssueCodeResponse, error) {
+	url := "/api/issue-batch"
+
+	j, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal json: %w", err)
+	}
+
+	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal json: %w", err)
+	}
+
+	httpReq.Header.Add("content-type", "application/json")
+	httpReq.Header.Add("X-API-Key", c.key)
+
+	httpResp, err := c.client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to POST /api/issue: %w", err)
+	}
+
+	body, err := checkResp(httpResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to POST /api/issue: %w: %s", err, body)
+	}
+
+	var pubResponse api.IssueCodeResponse
+	if err := json.Unmarshal(body, &pubResponse); err != nil {
+		return nil, fmt.Errorf("bad publish response")
+	}
+
+	return &pubResponse, nil
+}
+
 // IssueCode wraps the IssueCode API call.
 func (c *AdminClient) IssueCode(req api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
 	var resp *api.IssueCodeResponse

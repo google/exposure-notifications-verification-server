@@ -373,6 +373,11 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 				r.AddError("SMSTextTemplate", fmt.Sprintf("no label for template %s", *t))
 				continue
 			}
+			if l == DefaultTemplateLabel {
+				r.AddError("SMSTextTemplate", fmt.Sprintf("no label for template %s", *t))
+				r.AddError(l, fmt.Sprintf("label %s reserved for the default template", l))
+				continue
+			}
 			r.validateSMSTemplate(l, *t)
 		}
 	}

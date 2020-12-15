@@ -256,5 +256,36 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		}
 	}
 
+	// Bulk issue
+	code, err := func() (*api.IssueCodeResponse, error) {
+		defer recordLatency(ctx, time.Now(), "/api/issue")
+
+		// Issue the verification code.
+		codeRequest := &api.IssueCodeRequest{
+			TestType:         testType,
+			SymptomDate:      symptomDate,
+			TZOffset:         0,
+			ExternalIssuerID: adminID,
+		}
+
+		code, err := IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codeRequest)
+		if err != nil {
+			result = observability.ResultNotOK()
+			return nil, fmt.Errorf("error issuing verification code: %w", err)
+		} else if code.Error != "" {
+			result = observability.ResultNotOK()
+			return nil, fmt.Errorf("issue API Error: %+v", code)
+		}
+
+		logger.Debugw("Issue Code",
+			"request", codeRequest,
+			"response", code,
+		)
+		return code, nil
+	}()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
