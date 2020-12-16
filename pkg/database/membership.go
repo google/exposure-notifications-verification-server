@@ -19,10 +19,12 @@ import (
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/jinzhu/gorm"
 )
 
 // Membership represents a user's membership in a realm.
 type Membership struct {
+	gorm.Model
 	Errorable
 
 	UserID uint
@@ -31,7 +33,57 @@ type Membership struct {
 	RealmID uint
 	Realm   *Realm
 
+	DefaultSMSTemplateLabel string `gorm:"type:varchar(255);"`
+
 	Permissions rbac.Permission
+}
+
+func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
+	if m == nil {
+		return fmt.Errorf("provided membership is nil")
+	}
+
+	if actor == nil {
+		return fmt.Errorf("auditing actor is nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var audits []*AuditEntry
+
+		var existing Membership
+		if err := tx.
+			Model(&Realm{}).
+			Where("id = ?", m.ID).
+			First(&existing).
+			Error; err != nil && !IsNotFound(err) {
+			return fmt.Errorf("failed to get existing membership")
+		}
+
+		// Brand new realm?
+		if existing.ID == 0 {
+			return fmt.Errorf("memberships may not be directly created - need to addToRealm")
+		}
+
+		// Save the realm
+		if err := tx.Save(m).Error; err != nil {
+			return fmt.Errorf("failed to save membership: %w", err)
+		}
+
+		if existing.DefaultSMSTemplateLabel != m.DefaultSMSTemplateLabel {
+			audit := BuildAuditEntry(actor, "updated membership default template", m.User, m.ID)
+			audit.Diff = stringDiff(existing.DefaultSMSTemplateLabel, m.DefaultSMSTemplateLabel)
+			audits = append(audits, audit)
+		}
+
+		// Save all audits
+		for _, audit := range audits {
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audits: %w", err)
+			}
+		}
+
+		return nil
+	})
 }
 
 // AfterFind does a sanity check to ensure the User and Realm properties were

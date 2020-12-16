@@ -43,9 +43,6 @@ type User struct {
 	Name        string `gorm:"type:varchar(100)"`
 	SystemAdmin bool   `gorm:"column:system_admin; default:false;"`
 
-	RememberLastUsedSMSTemplate bool   `gorm:"type:boolean; not null; default:true;"`
-	DefaultSMSTemplateLabel     string `gorm:"type:varchar(255);"`
-
 	LastRevokeCheck    time.Time
 	LastPasswordChange time.Time
 }

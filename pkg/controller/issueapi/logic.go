@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	// scrubbers is a list of known twilio error messages that contain the send to phone number.
+	// scrubbers is a list of known Twilio error messages that contain the send to phone number.
 	scrubbers = []struct {
 		prefix string
 		suffix string
@@ -301,10 +301,9 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 				return err
 			}
 
-			if request.SMSTemplateLabel != "" && currentUser != nil &&
-				currentUser.RememberLastUsedSMSTemplate && currentUser.DefaultSMSTemplateLabel != request.SMSTemplateLabel {
-				currentUser.DefaultSMSTemplateLabel = request.SMSTemplateLabel
-				if err := c.db.SaveUser(currentUser, currentUser); err != nil {
+			if request.SMSTemplateLabel != "" && membership.DefaultSMSTemplateLabel != request.SMSTemplateLabel {
+				membership.DefaultSMSTemplateLabel = request.SMSTemplateLabel
+				if err := c.db.SaveMembership(membership, currentUser); err != nil {
 					logger.Warnw("failed to save user template preference", "error", err)
 				}
 			}
