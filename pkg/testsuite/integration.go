@@ -193,6 +193,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 		}
 		realm = database.NewRealmWithDefaults(realmName)
 		realm.RegionCode = realmRegionCode
+		realm.AllowBulkUpload = true
 		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 			tb.Fatalf("failed to create realm %+v: %v: %v", realm, err, realm.ErrorMessages())
 		}

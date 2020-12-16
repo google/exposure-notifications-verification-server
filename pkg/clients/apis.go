@@ -46,6 +46,24 @@ func IssueCode(ctx context.Context, hostname, apiKey string, request *api.IssueC
 	return &response, nil
 }
 
+// BatchIssueCode uses the ADMIN API to issue multiple verification codes.
+func BatchIssueCode(ctx context.Context, hostname, apiKey string, request *api.BatchIssueCodeRequest) (*api.BatchIssueCodeResponse, error) {
+	url := hostname + "/api/issue"
+	client := &http.Client{
+		Timeout: timeout,
+	}
+
+	var response api.BatchIssueCodeResponse
+
+	headers := http.Header{}
+	headers.Add("X-API-Key", apiKey)
+
+	if err := jsonclient.MakeRequest(ctx, client, url, headers, request, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
 // CheckCodeStatus uses the ADMIN API to retrieve the status of an OTP code.
 func CheckCodeStatus(ctx context.Context, hostname string, apiKey, uuid string, timeout time.Duration) (*api.CheckCodeStatusRequest, *api.CheckCodeStatusResponse, error) {
 	url := hostname + "/api/checkcodestatus"
