@@ -930,8 +930,11 @@ func (r *Realm) ValidTestType(typ string) bool {
 
 func (db *Database) FindRealmByRegion(region string) (*Realm, error) {
 	var realm Realm
-
-	if err := db.db.Where("region_code = ?", strings.ToUpper(region)).First(&realm).Error; err != nil {
+	if err := db.db.
+		Model(&Realm{}).
+		Where("region_code = ?", strings.ToUpper(region)).
+		First(&realm).
+		Error; err != nil {
 		return nil, err
 	}
 	return &realm, nil

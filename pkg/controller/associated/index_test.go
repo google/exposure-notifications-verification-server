@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package redirect_test
+package associated_test
 
 import (
 	"context"
@@ -59,8 +59,9 @@ func TestIndex(t *testing.T) {
 		AssetsPath: filepath.Join(project.Root(), "cmd", "enx-redirect", "assets"),
 		DevMode:    true,
 		HostnameConfig: map[string]string{
-			"bad":  "nope",
-			"okay": "bb",
+			"bad":   "nope",
+			"empty": "aa",
+			"okay":  "bb",
 		},
 	}
 
@@ -119,16 +120,57 @@ func TestIndex(t *testing.T) {
 	})
 	client := srv.Client()
 
-	// Don't follow redirects.
-	client.CheckRedirect = func(r *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-
-	// No matching region returns a 404
-	t.Run("no_matching_region", func(t *testing.T) {
+	// The .well-known directory is a 404 and not a 500.
+	t.Run("well-known_root_404", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL, nil)
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 404; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+	})
+
+	// Missing region is a 400
+	t.Run("well-known_apple-app-site-association_missing_region", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 404; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+	})
+
+	// Unregistered region is a 400
+	t.Run("well-known_apple-app-site-association_invalid_region", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
 		req.Host = "not-real"
 		if err != nil {
 			t.Fatal(err)
@@ -148,11 +190,12 @@ func TestIndex(t *testing.T) {
 		}
 	})
 
-	// A matching region that doesn't point to a realm returns 404
-	t.Run("matching_region_no_realm", func(t *testing.T) {
+	// Region in config that maps to a non-existent realm. In this test, "bad" is
+	// in the config and points to a region code that isn't registered.
+	t.Run("well-known_apple-app-site-association_misconfigured", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL, nil)
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
 		req.Host = "bad"
 		if err != nil {
 			t.Fatal(err)
@@ -172,13 +215,12 @@ func TestIndex(t *testing.T) {
 		}
 	})
 
-	// Not a mobile user agent returns a 404
-	t.Run("not_mobile_user_agent", func(t *testing.T) {
+	// Valid region with no apps is 404
+	t.Run("well-known_apple-app-site-association_no_data", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL, nil)
-		req.Host = "okay"
-		req.Header.Set("User-Agent", "bananarama")
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
+		req.Host = "empty"
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -197,13 +239,12 @@ func TestIndex(t *testing.T) {
 		}
 	})
 
-	// Android redirects
-	t.Run("android_redirect", func(t *testing.T) {
+	// Valid region with apps is 200
+	t.Run("well-known_apple-app-site-association_result", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL, nil)
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
 		req.Host = "okay"
-		req.Header.Set("User-Agent", "android")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -213,27 +254,20 @@ func TestIndex(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		if got, want := resp.StatusCode, 303; got != want {
+		if got, want := resp.StatusCode, 200; got != want {
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
 			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
-
-		exp := "intent:?r=BB#Intent;scheme=ens;package=com.example.app2;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=https%3A%2F%2Fapp2.example.com%2F;end"
-		if got, want := resp.Header.Get("Location"), exp; got != want {
-			t.Errorf("expected %q to be %q", got, want)
-		}
 	})
 
-	// iOS redirects
-	t.Run("ios_redirect", func(t *testing.T) {
+	// Missing region is a 400
+	t.Run("well-known_assetlinksjson_missing_region", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL, nil)
-		req.Host = "okay"
-		req.Header.Set("User-Agent", "iphone")
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -243,16 +277,110 @@ func TestIndex(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		if got, want := resp.StatusCode, 303; got != want {
+		if got, want := resp.StatusCode, 404; got != want {
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
 			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
+	})
 
-		if got, want := resp.Header.Get("Location"), "https://app1.example.com/"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+	// Unregistered region is a 400
+	t.Run("well-known_assetlinksjson_invalid_region", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req.Host = "not-real"
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 404; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
 	})
+
+	// Region in config that maps to a non-existent realm. In this test, "bad" is
+	// in the config and points to a region code that isn't registered.
+	t.Run("well-known_assetlinksjson_misconfigured", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req.Host = "bad"
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 404; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+	})
+
+	// Valid region with no apps is 404
+	t.Run("well-known_assetlinksjson_no_data", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req.Host = "empty"
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 404; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+	})
+
+	// Valid region with apps is 200
+	t.Run("well-known_assetlinksjson_result", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req.Host = "okay"
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 200; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+	})
+
 }
