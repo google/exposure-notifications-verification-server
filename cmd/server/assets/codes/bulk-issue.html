@@ -2,6 +2,7 @@
 
 {{$currentMembership := .currentMembership}}
 {{$currentRealm := $currentMembership.Realm}}
+{{$currentUser := .currentUser}}
 {{$hasSMSConfig := .hasSMSConfig}}
 
 <!doctype html>
@@ -98,7 +99,7 @@
               <select class="form-control" id="sms-template">
                 <option value="Default SMS template">Default SMS template</option>
                 {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
-                <option value="{{$k}}">{{$k}}</option>
+                <option value="{{$k}}" {{if eq $k $currentUser.DefaultSMSTemplateLabel}}selected{end}}>{{$k}}</option>
                 {{end}}
               </select>
             </div>

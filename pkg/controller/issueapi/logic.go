@@ -302,8 +302,8 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 			}
 
 			if request.SMSTemplateLabel != "" && currentUser != nil &&
-				currentUser.RememberLastUsedTemplate && currentUser.DefaultTemplateLabel != request.SMSTemplateLabel {
-				currentUser.DefaultTemplateLabel = request.SMSTemplateLabel
+				currentUser.RememberLastUsedSMSTemplate && currentUser.DefaultSMSTemplateLabel != request.SMSTemplateLabel {
+				currentUser.DefaultSMSTemplateLabel = request.SMSTemplateLabel
 				if err := c.db.SaveUser(currentUser, currentUser); err != nil {
 					logger.Warnw("failed to save user template preference", "error", err)
 				}
