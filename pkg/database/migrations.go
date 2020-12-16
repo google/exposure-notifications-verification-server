@@ -1847,8 +1847,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`ALTER TABLE users ADD COLUMN IF NOT EXISTS remember_last_used_template BOOL`,
-					`UPDATE users SET remember_last_used_template = FALSE WHERE remember_last_used_template IS NULL`,
-					`ALTER TABLE users ALTER COLUMN remember_last_used_template SET DEFAULT FALSE`,
+					`UPDATE users SET remember_last_used_template = TRUE WHERE remember_last_used_template IS NULL`,
+					`ALTER TABLE users ALTER COLUMN remember_last_used_template SET DEFAULT TRUE`,
 					`ALTER TABLE users ALTER COLUMN remember_last_used_template SET NOT NULL`,
 					`ALTER TABLE users ADD COLUMN IF NOT EXISTS default_template_label VARCHAR(255)`,
 				}
