@@ -33,13 +33,8 @@ type Target struct {
 }
 
 // getAndroidData finds all the android data apps.
-func (c *Controller) getAndroidData(region string) ([]AndroidData, error) {
-	realm, err := c.db.FindRealmByRegion(region)
-	if err != nil {
-		return nil, fmt.Errorf("unable to lookup realm: %w", err)
-	}
-
-	apps, err := c.db.ListActiveApps(realm.ID, database.WithAppOS(database.OSTypeAndroid))
+func (c *Controller) getAndroidData(realmID uint) ([]AndroidData, error) {
+	apps, err := c.db.ListActiveApps(realmID, database.WithAppOS(database.OSTypeAndroid))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get android data: %w", err)
 	}

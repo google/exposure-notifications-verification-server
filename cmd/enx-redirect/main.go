@@ -18,24 +18,18 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/associated"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/redirect"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
-	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-signalcontext"
 )
 
@@ -77,7 +71,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
-	ctx, obs := middleware.WithObservability(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
@@ -97,68 +90,13 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	// Create the router
-	r := mux.NewRouter()
-
-	// Common observability context
-	r.Use(obs)
-
-	// Create the renderer
-	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)
+	// Setup routes
+	mux, err := routes.ENXRedirect(ctx, cfg, db, cacher)
 	if err != nil {
-		return fmt.Errorf("failed to create renderer: %w", err)
+		return fmt.Errorf("failed to setup routes: %w", err)
 	}
 
-	// Request ID injection
-	populateRequestID := middleware.PopulateRequestID(h)
-	r.Use(populateRequestID)
-
-	// Logger injection
-	populateLogger := middleware.PopulateLogger(logger)
-	r.Use(populateLogger)
-
-	// Install common security headers
-	r.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
-
-	// Enable debug headers
-	processDebug := middleware.ProcessDebug()
-	r.Use(processDebug)
-
-	// iOS and Android include functionality to associate data between web-apps
-	// and device apps. Things like handoff between websites and apps, or
-	// shared credentials are the common usecases. The redirect server
-	// publishes the metadata needed to share data between the two domains to
-	// offer a more seemless experience between the website and apps. iOS and
-	// Android publish specs as to what this format looks like, and both live
-	// under the /.well-known directory on the server.
-	//
-	//   Android Specs:
-	//     https://developer.android.com/training/app-links/verify-site-associations
-	//   iOS Specs:
-	//     https://developer.apple.com/documentation/safariservices/supporting_associated_domains
-	{ // .well-known directory
-		wk := r.PathPrefix("/.well-known").Subrouter()
-
-		// Enable the iOS and Android redirect handler.
-		assocHandler, err := associated.New(ctx, cfg, db, cacher, h)
-		if err != nil {
-			return fmt.Errorf("failed to create associated links handler %w", err)
-		}
-		wk.PathPrefix("/apple-app-site-association").Handler(assocHandler.HandleIos()).Methods("GET")
-		wk.PathPrefix("/assetlinks.json").Handler(assocHandler.HandleAndroid()).Methods("GET")
-	}
-
-	r.Handle("/health", controller.HandleHealthz(ctx, nil, h)).Methods("GET")
-
-	redirectController, err := redirect.New(ctx, db, cfg, cacher, h)
-	if err != nil {
-		return err
-	}
-	r.PathPrefix("/").Handler(redirectController.HandleIndex()).Methods("GET")
-
-	mux := http.NewServeMux()
-	mux.Handle("/", r)
-
+	// Run server
 	srv, err := server.New(cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
