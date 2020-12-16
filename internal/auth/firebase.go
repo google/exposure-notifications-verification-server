@@ -142,23 +142,25 @@ func (f *firebaseAuth) CreateUser(ctx context.Context, name, email, pass string,
 		return false, fmt.Errorf("failed lookup firebase user: %w", err)
 	}
 
-	if user == nil {
-		// If the password is empty, generate one.
-		if pass == "" {
-			pass, err = password.Generate(24, 8, 8, false, true)
-			if err != nil {
-				return false, fmt.Errorf("failed to generate password: %w", err)
-			}
-		}
+	if user != nil {
+		return false, nil
+	}
 
-		// Create the user.
-		userToCreate := (&auth.UserToCreate{}).
-			Email(email).
-			Password(pass).
-			DisplayName(name)
-		if _, err = f.firebaseAuth.CreateUser(ctx, userToCreate); err != nil {
-			return false, fmt.Errorf("failed to create firebase user: %w", err)
+	// If the password is empty, generate one.
+	if pass == "" {
+		pass, err = password.Generate(24, 8, 8, false, true)
+		if err != nil {
+			return false, fmt.Errorf("failed to generate password: %w", err)
 		}
+	}
+
+	// Create the user.
+	userToCreate := (&auth.UserToCreate{}).
+		Email(email).
+		Password(pass).
+		DisplayName(name)
+	if _, err = f.firebaseAuth.CreateUser(ctx, userToCreate); err != nil {
+		return false, fmt.Errorf("failed to create firebase user: %w", err)
 	}
 
 	// Send the welcome email. Use the defined mailer if given, otherwise fallback

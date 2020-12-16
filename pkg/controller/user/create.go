@@ -114,7 +114,6 @@ func (c *Controller) HandleCreate() http.Handler {
 		flash.Alert("Successfully created user %v.", user.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/users/%d", user.ID), http.StatusSeeOther)
 		return
-
 	})
 }
 
