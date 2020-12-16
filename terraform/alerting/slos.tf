@@ -44,13 +44,13 @@ module "availability-slos" {
 
   project               = var.project
   custom_service_id     = google_monitoring_custom_service.verification-server.service_id
+  enabled               = var.https-forwarding-rule != ""
   notification_channels = google_monitoring_notification_channel.channels
 
   for_each = merge(local.default_slo_thresholds, var.slo_thresholds_overrides)
 
   service_name = each.key
   goal         = each.value.availability_goal
-  enable       = var.https-forwarding-rule != ""
   enable_alert = each.value.enable_alert
 }
 
@@ -60,6 +60,7 @@ module "latency-slos" {
   project = var.project
 
   custom_service_id     = google_monitoring_custom_service.verification-server.service_id
+  enabled               = var.https-forwarding-rule != ""
   notification_channels = google_monitoring_notification_channel.channels
 
   for_each = merge(local.default_slo_thresholds, var.slo_thresholds_overrides)
@@ -67,6 +68,5 @@ module "latency-slos" {
   service_name = each.key
   goal         = each.value.latency.goal
   threshold    = each.value.latency.threshold
-  enable       = var.https-forwarding-rule != ""
   enable_alert = each.value.enable_alert
 }
