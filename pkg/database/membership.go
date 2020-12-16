@@ -64,6 +64,10 @@ func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 			return fmt.Errorf("memberships may not be directly created - need to addToRealm")
 		}
 
+		if err := existing.AfterFind(); err != nil {
+			return err
+		}
+
 		// Save the realm
 		if err := tx.Save(m).Error; err != nil {
 			return fmt.Errorf("failed to save membership: %w", err)
