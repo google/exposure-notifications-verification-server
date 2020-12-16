@@ -1,0 +1,107 @@
+{{define "realmadmin/_stats_codes"}}
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    Codes issued &amp; claimed
+  </div>
+  <div id="realm_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
+    <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+  </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-toggle="modal" data-target="#realm-modal">Learn more about this chart</a>
+    <span>
+      <span class="mr-1">Export as:</span>
+      <a href="/realm/stats.csv" class="mr-1">CSV</a>
+      <a href="/realm/stats.json">JSON</a>
+    </span>
+  </small>
+</div>
+
+<div class="modal fade" id="realm-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Codes issued &amp; claimed</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph reflects the total number of codes issued and claimed
+          for this realm, grouped by UTC day.
+        </p>
+
+        <strong>Issued</strong>
+        <p>
+          This line tracks the total number of codes issued. Codes can be
+          issued via the web interface or via the API. Both types of codes
+          are included in this count.
+        </p>
+
+        <strong>Claimed</strong>
+        <p>
+          This line tracks the total number of codes claimed. Codes can only
+          be claimed by the end user using the API. Typically the iOS or
+          Android application is responsible for claiming the code.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  google.charts.load('current', {
+    packages: ['corechart'],
+    callback: drawRealmCharts,
+  });
+
+  function drawRealmCharts() {
+    $.ajax({
+      url: '/realm/stats.json',
+      dataType: 'json',
+    })
+    .done(function(data, status, xhr) {
+      let $realmChartDiv = $('#realm_chart');
+
+      if (!data.statistics) {
+        $realmChartDiv.find('p').text('No data yet.');
+        return;
+      }
+
+      var dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('date', 'Date');
+      dataTable.addColumn('number', 'Issued');
+      dataTable.addColumn('number', 'Claimed');
+
+      data.statistics.reverse().forEach(function(row) {
+        dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed]);
+      });
+
+      let dateFormatter = new google.visualization.DateFormat({
+        pattern: 'MMM dd',
+      });
+      dateFormatter.format(dataTable, 0);
+
+      let options = {
+        colors: ['#007bff', '#ff7b00'],
+        chartArea: {
+          left: 60, // leave room for y-axis labels
+          width: '100%'
+        },
+        hAxis: { format: 'M/d' },
+        legend: { position: 'top' },
+        width: '100%'
+      };
+
+      let chart = new google.visualization.LineChart($realmChartDiv.get(0));
+      chart.draw(dataTable, options);
+    })
+    .fail(function(xhr, status, err) {
+      flash.error('Failed to render realm stats: ' + err);
+    });
+  }
+</script>
+
+{{end}}

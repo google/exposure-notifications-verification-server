@@ -1,0 +1,148 @@
+{{define "realmadmin/_stats_external_issuers"}}
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    Codes issued by external issuers
+  </div>
+  <div id="per_external_issuer_table" class="overflow-auto" style="height:400px">
+    <div class="container d-flex h-100 w-100">
+      <p class="justify-content-center align-self-center text-center font-italic w-100">Loading data...</p>
+    </div>
+  </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-toggle="modal" data-target="#per-external-issuer-table-modal">Learn more about this table</a>
+    <span>
+      <span class="mr-1">Export as:</span>
+      <a href="/realm/stats.csv?scope=external" class="mr-1">CSV</a>
+      <a href="/realm/stats.json?scope=external">JSON</a>
+    </span>
+  </small>
+</div>
+
+<div class="modal fade" id="per-external-issuer-table-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Codes issued by external issuers by day</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This table reflects the number of codes issued each day, broken
+          down by external issuer. An external issuer is an optional
+          client-supplied string when issuing a code via the Admin API.
+          See the <a
+          href="https://github.com/google/exposure-notifications-verification-server/blob/main/docs/api.md#apiissue"
+          target="_BLANK" rel="noopener">API documentation</a> for
+          information on how to populate this value when issuing codes.
+        </p>
+
+        <p>
+          To see per external issuer statistics for a given date, click on
+          that date in the table. The row will expand to include
+          information about the external issuers that issued codes on that
+          date.
+        </p>
+
+        <p>
+          This graph does <u>not</u> include codes that were issued via
+          users who have logged into the web interface or codes that were
+          issued via the API without an <code>external_issuer</code>
+          value.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  let $perExternalIssuerTable = $('#per_external_issuer_table');
+
+  google.charts.load('current', {
+    packages: ['corechart'],
+    callback: drawExternalIssuersTable,
+  });
+
+  function drawExternalIssuersTable() {
+    $.ajax({
+      url: '/realm/stats.json',
+      data: { scope: 'external' },
+      dataType: 'json',
+    })
+    .done(function(data, status, xhr) {
+      if (!data.statistics) {
+        $perExternalIssuerTable.find('p').text('There is no external issuing data yet.')
+        return;
+      }
+
+      $perExternalIssuerTable.empty();
+
+      let $listGroup = $('<div>');
+        $listGroup.addClass('list-group');
+        $listGroup.addClass('list-group-flush');
+      $perExternalIssuerTable.append($listGroup);
+
+      data.statistics.forEach(function(row) {
+        let date = utcDate(row.date);
+        let id = `collapse-external-${date.getTime()}`;
+
+        let $dateRow = $('<div>');
+          $dateRow.addClass('list-group-item');
+          $dateRow.addClass('list-group-item-action');
+          $dateRow.attr('data-toggle', 'collapse');
+          $dateRow.attr('data-target', `#${id}`);
+          $dateRow.attr('aria-expanded', false);
+          $dateRow.attr('aria-controls', id);
+          $dateRow.text(date.toLocaleDateString());
+        $listGroup.append($dateRow);
+
+        let $issuerData = $('<div>');
+          $issuerData.attr('id', id);
+          $issuerData.addClass('collapse');
+          $issuerData.addClass('list-group-item');
+          $issuerData.addClass('p-0 pl-3');
+          $issuerData.data('parent', '#per_user_table');
+        $listGroup.append($issuerData);
+
+        let $table = $('<table>');
+          $table.addClass('table');
+          $table.addClass('table-bordered');
+          $table.addClass('table-striped');
+          $table.addClass('table-fixed');
+          $table.addClass('table-inner-border-only');
+          $table.addClass('border-left');
+          $table.addClass('mb-0');
+        $issuerData.append($table);
+
+        let $thead = $('<thead>');
+        $table.append($thead)
+
+        let $trhead = $('<tr>');
+          $trhead.append(
+            $('<th>').text('ID'),
+            $('<th width="80">').text('Issued'));
+        $thead.append($trhead);
+
+        let $tbody = $('<tbody>');
+        $table.append($tbody);
+
+        row.issuer_data.forEach(function(issuer) {
+          let $name = $('<td>').text(issuer.issuer_id);
+          let $codes_issued = $('<td align="right">').text(issuer.codes_issued);
+
+          let $tr = $('<tr>');
+            $tr.append($name, $codes_issued);
+            $tbody.append($tr);
+        });
+      });
+    })
+    .fail(function(xhr, status, err) {
+      flash.error('Failed to render external issuer stats: ' + err);
+    });
+  }
+</script>
+
+{{end}}
