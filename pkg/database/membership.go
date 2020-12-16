@@ -65,6 +65,12 @@ func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 		}
 
 		// Save the membership
+		user, realm := m.User, m.Realm
+		m.User, m.Realm = nil, nil
+		defer func() {
+			m.Realm = realm
+			m.User = user
+		}()
 		if err := tx.Update(m).Error; err != nil {
 			return fmt.Errorf("failed to save membership: %w", err)
 		}
