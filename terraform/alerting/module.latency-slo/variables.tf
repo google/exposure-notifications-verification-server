@@ -13,7 +13,7 @@ variable "enabled" {
 
 variable "goal" {
   type        = number
-  description = "Availability SLO goal."
+  description = "Latency SLO goal."
 }
 
 variable "notification_channels" {
@@ -24,3 +24,14 @@ variable "notification_channels" {
 variable "project" {
   type = string
 }
+
+variable "threshold" {
+  type        = number
+  description = "Latency SLO threshold (in ms)."
+}
+
+variable "enable_alert" {
+  type        = bool
+  description = "Whether to enable the alerts."
+}
+

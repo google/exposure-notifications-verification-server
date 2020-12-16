@@ -24,3 +24,9 @@ variable "notification_channels" {
 variable "project" {
   type = string
 }
+
+variable "enable_alert" {
+  type        = bool
+  description = "Whether to enable the alerts."
+}
+

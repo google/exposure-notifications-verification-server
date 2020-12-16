@@ -14,18 +14,15 @@
 
 locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/slo"
-
-  # Unit: ms
-  latency_threshold = 60000
 }
 
 resource "google_monitoring_slo" "slo" {
+  count = var.enabled ? 1 : 0
   # the basics
   service      = var.custom_service_id
   slo_id       = "latency-slo-${var.service_name}"
-  display_name = "${var.goal * 100}% of requests are responded in <${local.latency_threshold / 1000}s over rolling 28 days (service=${var.service_name})"
+  display_name = "${var.goal * 100}% of requests are responded in <${var.threshold / 1000}s over rolling 28 days (service=${var.service_name})"
   project      = var.project
-  count        = var.enabled ? 1 : 0
 
 
   # the SLI
@@ -37,7 +34,7 @@ resource "google_monitoring_slo" "slo" {
         resource.label.backend_name="${var.service_name}"
       EOT
       range {
-        max = local.latency_threshold
+        max = var.threshold
       }
     }
   }
@@ -49,11 +46,11 @@ resource "google_monitoring_slo" "slo" {
 
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
+  count        = var.enabled ? 1 : 0
   project      = var.project
   display_name = "FastLatencyBudgetBurn-${var.service_name}"
   combiner     = "AND"
-  enabled      = "true"
-  count        = var.enabled ? 1 : 0
+  enabled      = var.enable_alert
 
   conditions {
     display_name = "Fast burn over last hour"
@@ -101,11 +98,11 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 
 # slow error budget burn alert
 resource "google_monitoring_alert_policy" "slow_burn" {
+  count        = var.enabled ? 1 : 0
   project      = var.project
   display_name = "SlowLatencyBudgetBurn-${var.service_name}"
   combiner     = "AND"
-  enabled      = "true"
-  count        = var.enabled ? 1 : 0
+  enabled      = var.enable_alert
 
   conditions {
     display_name = "Slow burn over last 6 hours"
