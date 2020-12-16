@@ -1847,7 +1847,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`ALTER TABLE users ADD COLUMN IF NOT EXISTS remember_last_used_sms_template BOOL`,
-					`UPDATE users SET remember_last_used__smstemplate = TRUE WHERE remember_last_used_sms_template IS NULL`,
+					`UPDATE users SET remember_last_used_sms_template = TRUE WHERE remember_last_used_sms_template IS NULL`,
 					`ALTER TABLE users ALTER COLUMN remember_last_used_sms_template SET DEFAULT TRUE`,
 					`ALTER TABLE users ALTER COLUMN remember_last_used_sms_template SET NOT NULL`,
 					`ALTER TABLE users ADD COLUMN IF NOT EXISTS default_sms_template_label VARCHAR(255)`,
