@@ -7,6 +7,7 @@
   - [`/api/certificate`](#apicertificate)
 - [Admin APIs](#admin-apis)
   - [`/api/issue`](#apiissue)
+    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
   - [`/api/batch-issue`](#apibatch-issue)
     - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
   - [`/api/checkcodestatus`](#apicheckcodestatus)
@@ -190,7 +191,7 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   "phone": "+CC Phone number",
   "smsTemplateLabel": "my sms template",
   "padding": "<bytes>",
-  "uuid": "string UUID",
+  "uuid": "optional string UUID",
   "externalIssuerID": "external-ID",
 }
 ```
@@ -278,6 +279,14 @@ Possible error code responses. New error codes may be added in future releases.
 | `unsupported_test_type` | 412         | No    | The code may be valid, but represents a test type the client cannot process. User may need to upgrade software. |
 |                         | 500         | Yes   | Internal processing error, may be successful on retry.                                                          |
 
+### Client provided UUID to prevent duplicate SMS
+
+Every response includes `uuid` to track the status of an issued code. Optionally `IssueCodeRequest` may also take in a `uuid` from the client. This can be useful when implementing retry logic to ensure the same request does not send more than one SMS to the same patient. Once successful, subsequent requests with the same `uuid` will give status `409` `uuid_already_exists`.
+
+The `uuid` field is stored on the server for tracking. It is therefore important that this field remains meaningless to the server. The client may generate them randomly and store them locally, or use a one-way hash of `phone` using a locally known HMAC key.
+
+This may also be used as an external handle to coordinate among multiple external issuers. For example, a testing lab which issues codes might attach a `uuid` to case information before handing off data to the state or other agencies to prevent multiple notifications to the patient.
+
 ## `/api/batch-issue`
 
 Request a batch of verification codes to be issued. Accepts a list of IssueCodeRequest. See [`/api/issue`](#apiissue) for details of the fields of a single issue request and response. The indices of the respective
@@ -332,7 +341,7 @@ eg.
       "tzOffset": 0,
       "phone": "+CC Phone number",
       "padding": "<bytes>",
-      "uuid": "string UUID",
+      "uuid": "optional string UUID",
       "externalIssuerID": "external-ID",
     },
     {
