@@ -301,7 +301,7 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 				return err
 			}
 
-			if request.SMSTemplateLabel != "" && membership.DefaultSMSTemplateLabel != request.SMSTemplateLabel {
+			if currentUser != nil && request.SMSTemplateLabel != "" && membership.DefaultSMSTemplateLabel != request.SMSTemplateLabel {
 				membership.DefaultSMSTemplateLabel = request.SMSTemplateLabel
 				if err := c.db.SaveMembership(membership, currentUser); err != nil {
 					logger.Warnw("failed to save user template preference", "error", err)
