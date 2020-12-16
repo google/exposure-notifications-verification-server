@@ -21,9 +21,9 @@ locals {
 
 resource "google_monitoring_slo" "slo" {
   # the basics
-  service      = var.custom-service-id
-  slo_id       = "latency-slo-${var.service-name}"
-  display_name = "${var.goal * 100}% of requests are responded in <${local.latency_threshold / 1000}s over rolling 28 days (service=${var.service-name})"
+  service      = var.custom_service_id
+  slo_id       = "latency-slo-${var.service_name}"
+  display_name = "${var.goal * 100}% of requests are responded in <${local.latency_threshold / 1000}s over rolling 28 days (service=${var.service_name})"
   project      = var.project
   count        = var.enabled ? 1 : 0
 
@@ -34,7 +34,7 @@ resource "google_monitoring_slo" "slo" {
       distribution_filter = <<-EOT
         metric.type="loadbalancing.googleapis.com/https/total_latencies"
         resource.type="https_lb_rule"
-        resource.label.backend_name="${var.service-name}"
+        resource.label.backend_name="${var.service_name}"
       EOT
       range {
         max = local.latency_threshold
@@ -50,7 +50,7 @@ resource "google_monitoring_slo" "slo" {
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
   project      = var.project
-  display_name = "FastLatencyBudgetBurn-${var.service-name}"
+  display_name = "FastLatencyBudgetBurn-${var.service_name}"
   combiner     = "AND"
   enabled      = "true"
   count        = var.enabled ? 1 : 0
@@ -92,7 +92,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(var.notification-channels) : x.id]
+  notification_channels = [for x in values(var.notification_channels) : x.id]
 
   depends_on = [
     google_monitoring_slo.slo,
@@ -102,7 +102,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 # slow error budget burn alert
 resource "google_monitoring_alert_policy" "slow_burn" {
   project      = var.project
-  display_name = "SlowLatencyBudgetBurn-${var.service-name}"
+  display_name = "SlowLatencyBudgetBurn-${var.service_name}"
   combiner     = "AND"
   enabled      = "true"
   count        = var.enabled ? 1 : 0
@@ -144,7 +144,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(var.notification-channels) : x.id]
+  notification_channels = [for x in values(var.notification_channels) : x.id]
 
   depends_on = [
     google_monitoring_slo.slo,

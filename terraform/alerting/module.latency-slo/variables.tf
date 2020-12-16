@@ -1,8 +1,8 @@
-variable "custom-service-id" {
+variable "custom_service_id" {
   type = string
 }
 
-variable "service-name" {
+variable "service_name" {
   type = string
 }
 
@@ -16,7 +16,7 @@ variable "goal" {
   description = "Availability SLO goal."
 }
 
-variable "notification-channels" {
+variable "notification_channels" {
   type        = map(any)
   description = "Notification channels"
 }
