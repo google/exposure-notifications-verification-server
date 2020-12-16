@@ -133,7 +133,7 @@ type Realm struct {
 	Errorable
 
 	// Name is the name of the realm.
-	Name string `gorm:"type:varchar(200);unique_index"`
+	Name string `gorm:"type:varchar(200);unique_index;"`
 
 	// RegionCode is both a display attribute and required field for ENX. To
 	// handle NULL and uniqueness, the field is converted from it's ptr type to a
@@ -151,14 +151,14 @@ type Realm struct {
 	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false;"`
 
 	// Code configuration
-	CodeLength       uint            `gorm:"type:smallint; not null; default: 8"`
-	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900"` // default 15m (in seconds)
-	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16"`
-	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400"` // default 24h
+	CodeLength       uint            `gorm:"type:smallint; not null; default: 8;"`
+	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900;"` // default 15m (in seconds)
+	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16;"`
+	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400;"` // default 24h
 
 	// SMS configuration
-	SMSTextTemplate           string          `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours'"`
-	SMSTextAlternateTemplates postgres.Hstore `gorm:"column:alternate_sms_templates; type:hstore"`
+	SMSTextTemplate           string          `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours';"`
+	SMSTextAlternateTemplates postgres.Hstore `gorm:"column:alternate_sms_templates; type:hstore;"`
 
 	// SMSCountry is an optional field to hint the default phone picker country
 	// code.
@@ -203,22 +203,22 @@ type Realm struct {
 	UseSystemEmailConfig bool `gorm:"column:use_system_email_config; type:bool; not null; default:false;"`
 
 	// MFAMode represents the mode for Multi-Factor-Authorization requirements for the realm.
-	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
+	MFAMode AuthRequirement `gorm:"type:smallint; not null; default: 0;"`
 
 	// MFARequiredGracePeriod defines how long after creation a user may skip adding
 	// a second auth factor before the server requires it.
-	MFARequiredGracePeriod DurationSeconds `gorm:"type:bigint; not null; default: 0"`
+	MFARequiredGracePeriod DurationSeconds `gorm:"type:bigint; not null; default: 0;"`
 
 	// EmailVerifiedMode represents the mode for email verification requirements for the realm.
-	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0"`
+	EmailVerifiedMode AuthRequirement `gorm:"type:smallint; not null; default: 0;"`
 
 	// PasswordRotationPeriodDays is the number of days before the user must
 	// rotate their password.
-	PasswordRotationPeriodDays uint `gorm:"type:smallint; not null; default: 0"`
+	PasswordRotationPeriodDays uint `gorm:"type:smallint; not null; default: 0;"`
 
 	// PasswordRotationWarningDays is the number of days before Password expiry
 	// that the user should receive a warning.
-	PasswordRotationWarningDays uint `gorm:"type:smallint; not null; default: 0"`
+	PasswordRotationWarningDays uint `gorm:"type:smallint; not null; default: 0;"`
 
 	// AllowedCIDRs is the list of allowed IPs to the various services.
 	AllowedCIDRsAdminAPI  pq.StringArray `gorm:"column:allowed_cidrs_adminapi; type:varchar(50)[];"`
@@ -227,7 +227,7 @@ type Realm struct {
 
 	// AllowedTestTypes is the type of tests that this realm permits. The default
 	// value is to allow all test types.
-	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14"`
+	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14;"`
 
 	// RequireDate requires that verifications on this realm require a test or
 	// symptom date (either). The default behavior is to not require a date.
@@ -235,9 +235,9 @@ type Realm struct {
 
 	// Signing Key Settings
 	UseRealmCertificateKey bool            `gorm:"type:boolean; default: false;"`
-	CertificateIssuer      string          `gorm:"type:varchar(150); default: ''"`
-	CertificateAudience    string          `gorm:"type:varchar(150); default: ''"`
-	CertificateDuration    DurationSeconds `gorm:"type:bigint; default: 900"` // 15m
+	CertificateIssuer      string          `gorm:"type:varchar(150); default: '';"`
+	CertificateAudience    string          `gorm:"type:varchar(150); default: '';"`
+	CertificateDuration    DurationSeconds `gorm:"type:bigint; default: 900;"` // 15m
 
 	// EN Express
 	EnableENExpress bool `gorm:"type:boolean; default: false;"`
@@ -248,7 +248,7 @@ type Realm struct {
 	// AbusePreventionLimit is the configured daily limit for the realm. This value is populated
 	// by the nightly aggregation job and is based on a statistical model from
 	// historical code issuance data.
-	AbusePreventionLimit uint `gorm:"type:integer; not null; default:10"`
+	AbusePreventionLimit uint `gorm:"type:integer; not null; default:10;"`
 
 	// AbusePreventionLimitFactor is the factor against the predicted model for the day which
 	// determines the total number of codes that can be issued for the realm on
@@ -256,11 +256,11 @@ type Realm struct {
 	// the realm could generate 75 codes today before triggering abuse prevention.
 	// Similarly, if this value was 0.5, the realm could only generate 25 codes
 	// before triggering abuse protections.
-	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0"`
+	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0;"`
 
 	// Relations to items that belong to a realm.
-	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
-	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
+	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
+	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
 }
 
 // NewRealmWithDefaults initializes a new Realm with the default settings populated,
