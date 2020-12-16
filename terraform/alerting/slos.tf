@@ -27,7 +27,7 @@ locals {
     appsync      = local.default_per_service_slo
     cleanup      = local.default_per_service_slo
     e2e-runner   = local.default_per_service_slo
-    enx-redirect = local.default_per_service_slo
+    enx-redirect = merge(local.default_per_service_slo, { enable_alert = true })
     modeler      = local.default_per_service_slo
     server       = merge(local.default_per_service_slo, { enable_alert = true })
   }
