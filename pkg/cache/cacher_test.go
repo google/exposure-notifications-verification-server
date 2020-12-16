@@ -94,6 +94,14 @@ func exerciseCacher(t *testing.T, cacher Cacher) {
 				exerciseType(tb, cacher, in, &out)
 			},
 		},
+		{
+			name: "nil struct",
+			do: func(tb testing.TB) {
+				var in testStruct
+				var out testStruct
+				exerciseType(tb, cacher, in, &out)
+			},
+		},
 	}
 
 	t.Run("exercise", func(t *testing.T) {
