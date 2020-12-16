@@ -283,8 +283,9 @@ Possible error code responses. New error codes may be added in future releases.
 
 Every response includes `uuid` to track the status of an issued code. Optionally `IssueCodeRequest` may also take in a `uuid` from the client. This can be useful when implementing retry logic to ensure the same request does not send more than one SMS to the same patient. Once successful, subsequent requests with the same `uuid` will give status `409` `uuid_already_exists`.
 
-The `uuid` field is stored on the server for tracking. It is therefore important that this field remains meaningless to the server. The client may
-generate them randomly and store them locally, or use a one-way hash of `phone` using a locally known HMAC key.
+The `uuid` field is stored on the server for tracking. It is therefore important that this field remains meaningless to the server. The client may generate them randomly and store them locally, or use a one-way hash of `phone` using a locally known HMAC key.
+
+This may also be used as an external handle to coordinate among multiple external issuers. For example, a testing lab which issues codes might attach a `uuid` to case information before handing off data to the state or other agencies to prevent multiple notifications to the patient.
 
 ## `/api/batch-issue`
 
