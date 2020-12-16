@@ -64,7 +64,7 @@ func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 			return err
 		}
 
-		// Save the realm
+		// Save the membership
 		if err := tx.Update(m).Error; err != nil {
 			return fmt.Errorf("failed to save membership: %w", err)
 		}
