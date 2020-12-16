@@ -81,7 +81,7 @@ func (c *Controller) importUsers(ctx context.Context,
 	users []api.BatchUser, sendInvites bool) ([]*api.BatchUser, *multierror.Error) {
 	logger := logging.FromContext(ctx).Named("user.importUsers")
 
-	newUsers := make([]*api.BatchUser, 0, len(users))
+	addedUsers := make([]*api.BatchUser, 0, len(users))
 	var batchErr *multierror.Error
 
 	for i, batchUser := range users {
@@ -98,6 +98,8 @@ func (c *Controller) importUsers(ctx context.Context,
 			user = new(database.User)
 			user.Email = batchUser.Email
 			user.Name = batchUser.Name
+		} else {
+			addedUsers = append(addedUsers, &users[i])
 		}
 		if err := c.db.SaveUser(user, actor); err != nil {
 			logger.Errorw("error saving user", "error", err)
@@ -127,16 +129,11 @@ func (c *Controller) importUsers(ctx context.Context,
 
 		// Create the user in the auth provider. This could be a noop depending on
 		// the auth provider.
-		created, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", sendInvites, inviteComposer)
-		if err != nil {
+		if _, err = c.authProvider.CreateUser(ctx, user.Name, user.Email, "", sendInvites, inviteComposer); err != nil {
 			logger.Errorw("failed to import user", "user", user.Email, "error", err)
 			batchErr = multierror.Append(batchErr, err)
 			continue
 		}
-
-		if created {
-			newUsers = append(newUsers, &users[i])
-		}
 	}
-	return newUsers, batchErr
+	return addedUsers, batchErr
 }
