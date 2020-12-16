@@ -54,10 +54,11 @@ func init() {
 }
 
 type formData struct {
-	General        bool   `form:"general"`
-	Name           string `form:"name"`
-	RegionCode     string `form:"region_code"`
-	WelcomeMessage string `form:"welcome_message"`
+	General                 bool   `form:"general"`
+	Name                    string `form:"name"`
+	RegionCode              string `form:"region_code"`
+	WelcomeMessage          string `form:"welcome_message"`
+	DailyActiveUsersEnabled bool   `form:"daily_active_users_enabled"`
 
 	Codes                     bool               `form:"codes"`
 	AllowedTestTypes          database.TestType  `form:"allowed_test_types"`
@@ -165,6 +166,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			currentRealm.Name = form.Name
 			currentRealm.RegionCode = form.RegionCode
 			currentRealm.WelcomeMessage = form.WelcomeMessage
+			currentRealm.DailyActiveUsersEnabled = form.DailyActiveUsersEnabled
 		}
 
 		// Codes

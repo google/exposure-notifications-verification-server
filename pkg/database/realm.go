@@ -258,6 +258,10 @@ type Realm struct {
 	// before triggering abuse protections.
 	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0"`
 
+	// DailyActiveUsersEnabled determines if the realm collects and displays daily
+	// active user metrics.
+	DailyActiveUsersEnabled bool `gorm:"type:boolean; not null; default: false;"`
+
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false"`

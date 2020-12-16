@@ -57,7 +57,7 @@ func ProcessChaff(db *database.Database, t *chaff.Tracker) mux.MiddlewareFunc {
 				currentRealm := controller.RealmFromContext(ctx)
 				if currentRealm == nil {
 					logger.Error("missing current realm in context")
-				} else {
+				} else if currentRealm.DailyActiveUsersEnabled {
 					// Increment DAU asynchronously and out-of-band for the request. These
 					// statistics are best-effort and we don't want to block or delay
 					// rendering to populate stats.
