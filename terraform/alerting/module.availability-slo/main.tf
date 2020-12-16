@@ -16,7 +16,7 @@ locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/slo"
 }
 
-resource "google_monitoring_slo" "availability-slo" {
+resource "google_monitoring_slo" "slo" {
   # the basics
   service      = var.custom-service-id
   slo_id       = "availability-slo-${var.service-name}"
@@ -60,7 +60,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last hour"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "3600s")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "1h")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -76,7 +76,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last 5 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "300s")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "5m")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -96,7 +96,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   notification_channels = [for x in values(var.notification-channels) : x.id]
 
   depends_on = [
-    google_monitoring_slo.availability-slo,
+    google_monitoring_slo.slo,
   ]
 }
 
@@ -112,7 +112,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "21600s")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "6h")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -128,7 +128,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/availability-slo-${var.service-name}", "1800s")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "30m")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -148,6 +148,6 @@ resource "google_monitoring_alert_policy" "slow_burn" {
   notification_channels = [for x in values(var.notification-channels) : x.id]
 
   depends_on = [
-    google_monitoring_slo.availability-slo,
+    google_monitoring_slo.slo,
   ]
 }
