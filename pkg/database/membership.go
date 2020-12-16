@@ -25,7 +25,6 @@ import (
 
 // Membership represents a user's membership in a realm.
 type Membership struct {
-	gorm.Model
 	Errorable
 
 	UserID uint
@@ -39,6 +38,7 @@ type Membership struct {
 	Permissions rbac.Permission
 }
 
+// SaveMembership saves the membership details. Should have a userID and a realmID to identify it.
 func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 	if m == nil {
 		return fmt.Errorf("provided membership is nil")
@@ -53,16 +53,11 @@ func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 
 		var existing Membership
 		if err := tx.
-			Model(&Realm{}).
-			Where("id = ?", m.ID).
+			Model(&Membership{}).
+			Where("user_id = ? AND realm_id = ?", m.UserID, m.RealmID).
 			First(&existing).
 			Error; err != nil && !IsNotFound(err) {
 			return fmt.Errorf("failed to get existing membership")
-		}
-
-		// Brand new realm?
-		if existing.ID == 0 {
-			return fmt.Errorf("memberships may not be directly created - need to addToRealm")
 		}
 
 		if err := existing.AfterFind(); err != nil {
@@ -70,12 +65,12 @@ func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 		}
 
 		// Save the realm
-		if err := tx.Save(m).Error; err != nil {
+		if err := tx.Update(m).Error; err != nil {
 			return fmt.Errorf("failed to save membership: %w", err)
 		}
 
 		if existing.DefaultSMSTemplateLabel != m.DefaultSMSTemplateLabel {
-			audit := BuildAuditEntry(actor, "updated membership default template", m.User, m.ID)
+			audit := BuildAuditEntry(actor, "updated membership default template", m.User, m.RealmID)
 			audit.Diff = stringDiff(existing.DefaultSMSTemplateLabel, m.DefaultSMSTemplateLabel)
 			audits = append(audits, audit)
 		}
