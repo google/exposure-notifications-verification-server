@@ -72,7 +72,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		if membership.User != nil && !membership.Can(rbac.CodeBulkIssue) {
+		if membership != nil && !membership.Can(rbac.CodeBulkIssue) {
 			result.obsBlame = observability.BlameClient
 			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
 			controller.Unauthorized(w, r, c.h)
