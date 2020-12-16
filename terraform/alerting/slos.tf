@@ -50,6 +50,7 @@ module "availability-slos" {
 
   service_name = each.key
   goal         = each.value.availability_goal
+  enable       = var.https-forwarding-rule != ""
   enable_alert = each.value.enable_alert
 }
 
@@ -66,5 +67,6 @@ module "latency-slos" {
   service_name = each.key
   goal         = each.value.latency.goal
   threshold    = each.value.latency.threshold
+  enable       = var.https-forwarding-rule != ""
   enable_alert = each.value.enable_alert
 }

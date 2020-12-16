@@ -22,6 +22,7 @@ resource "google_monitoring_slo" "slo" {
   slo_id       = "availability-slo-${var.service_name}"
   display_name = "${var.goal * 100}% of requests are successful over rolling 28 days (service=${var.service_name})"
   project      = var.project
+  count        = var.enabled ? 1 : 0
 
 
   # the SLI
@@ -53,6 +54,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
   display_name = "FastErrorBudgetBurn-${var.service_name}"
   combiner     = "AND"
   enabled      = var.enable_alert
+  count        = var.enabled ? 1 : 0
 
   conditions {
     display_name = "Fast burn over last hour"
@@ -101,6 +103,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 # slow error budget burn alert
 resource "google_monitoring_alert_policy" "slow_burn" {
   project      = var.project
+  count        = var.enabled ? 1 : 0
   display_name = "SlowErrorBudgetBurn-${var.service_name}"
   combiner     = "AND"
   enabled      = var.enable_alert
