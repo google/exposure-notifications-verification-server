@@ -6,14 +6,14 @@ variable "service_name" {
   type = string
 }
 
+variable "enabled" {
+  type        = bool
+  description = "Whether to enable this availability SLO."
+}
+
 variable "goal" {
   type        = number
   description = "Latency SLO goal."
-}
-
-variable "threshold" {
-  type        = number
-  description = "Latency SLO threshold (in ms)."
 }
 
 variable "notification_channels" {
@@ -21,11 +21,17 @@ variable "notification_channels" {
   description = "Notification channels"
 }
 
+variable "project" {
+  type = string
+}
+
+variable "threshold" {
+  type        = number
+  description = "Latency SLO threshold (in ms)."
+}
+
 variable "enable_alert" {
   type        = bool
   description = "Whether to enable the alerts."
 }
 
-variable "project" {
-  type = string
-}

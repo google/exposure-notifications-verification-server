@@ -60,7 +60,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last hour"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("${google_monitoring_slo.slo.id}", "1h")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "1h")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -76,7 +76,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last 5 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("${google_monitoring_slo.slo.id}", "5m")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "5m")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -112,7 +112,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("${google_monitoring_slo.slo.id}", "6h")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "6h")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -128,7 +128,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("${google_monitoring_slo.slo.id}", "30m")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "30m")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
