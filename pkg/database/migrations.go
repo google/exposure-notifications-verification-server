@@ -273,10 +273,10 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				ddl := []string{
-					"ALTER TABLE sms_configs DROP COLUMN realm_id",
-					"ALTER TABLE tokens DROP COLUMN realm_id",
-					"ALTER TABLE verification_codes DROP COLUMN realm_id",
-					"ALTER TABLE authorized_apps DROP COLUMN realm_id",
+					"ALTER TABLE sms_configs DROP COLUMN IF EXISTS realm_id",
+					"ALTER TABLE tokens DROP COLUMN IF EXISTS realm_id",
+					"ALTER TABLE verification_codes DROP COLUMN IF EXISTS realm_id",
+					"ALTER TABLE authorized_apps DROP COLUMN IF EXISTS realm_id",
 					"DROP TABLE admin_realms",
 					"DROP TABLE user_realms",
 					"DROP TABLE realms",
@@ -625,7 +625,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					"sms_text_template",
 				}
 				for _, col := range dropColumns {
-					stmt := fmt.Sprintf("ALTER TABLE realms DROP COLUMN %s", col)
+					stmt := fmt.Sprintf("ALTER TABLE realms DROP COLUMN IF EXISTS %s", col)
 					if err := tx.Exec(stmt).Error; err != nil {
 						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
 					}
@@ -1840,6 +1840,38 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return tx.Exec(`ALTER TABLE realms DROP COLUMN IF EXISTS alternate_sms_templates`).Error
+			},
+		},
+		{
+			ID: "00078-AddUserDefaultSMSTemplate",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE users ADD COLUMN IF NOT EXISTS remember_last_used_template BOOL`,
+					`UPDATE users SET remember_last_used_template = FALSE WHERE remember_last_used_template IS NULL`,
+					`ALTER TABLE users ALTER COLUMN remember_last_used_template SET DEFAULT FALSE`,
+					`ALTER TABLE users ALTER COLUMN remember_last_used_template SET NOT NULL`,
+					`ALTER TABLE users ADD COLUMN IF NOT EXISTS default_template_label VARCHAR(255)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE users DROP COLUMN IF EXISTS remember_last_used_template`,
+					`ALTER TABLE users DROP COLUMN IF EXISTS default_template_label`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
 			},
 		},
 	}

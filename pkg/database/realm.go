@@ -148,7 +148,7 @@ type Realm struct {
 	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
 
 	// AllowBulkUpload allows users to issue codes from a batch file of test results.
-	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false"`
+	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false;"`
 
 	// Code configuration
 	CodeLength       uint            `gorm:"type:smallint; not null; default: 8"`
@@ -231,19 +231,19 @@ type Realm struct {
 
 	// RequireDate requires that verifications on this realm require a test or
 	// symptom date (either). The default behavior is to not require a date.
-	RequireDate bool `gorm:"type:boolean; not null; default:false"`
+	RequireDate bool `gorm:"type:boolean; not null; default:false;"`
 
 	// Signing Key Settings
-	UseRealmCertificateKey bool            `gorm:"type:boolean; default: false"`
+	UseRealmCertificateKey bool            `gorm:"type:boolean; default: false;"`
 	CertificateIssuer      string          `gorm:"type:varchar(150); default: ''"`
 	CertificateAudience    string          `gorm:"type:varchar(150); default: ''"`
 	CertificateDuration    DurationSeconds `gorm:"type:bigint; default: 900"` // 15m
 
 	// EN Express
-	EnableENExpress bool `gorm:"type:boolean; default: false"`
+	EnableENExpress bool `gorm:"type:boolean; default: false;"`
 
 	// AbusePreventionEnabled determines if abuse protection is enabled.
-	AbusePreventionEnabled bool `gorm:"type:boolean; not null; default:false"`
+	AbusePreventionEnabled bool `gorm:"type:boolean; not null; default:false;"`
 
 	// AbusePreventionLimit is the configured daily limit for the realm. This value is populated
 	// by the nightly aggregation job and is based on a statistical model from
