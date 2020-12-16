@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -37,13 +36,10 @@ type Controller struct {
 
 // New creates a new redirect controller.
 func New(ctx context.Context, db *database.Database, config *config.RedirectConfig, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
-	logger := logging.FromContext(ctx).Named("redirect.New")
-
 	cfgMap, err := config.HostnameToRegion()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-	logger.Infow("redirect configuration", "hostnameToRegion", cfgMap)
 
 	return &Controller{
 		config:           config,

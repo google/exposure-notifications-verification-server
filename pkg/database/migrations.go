@@ -1843,7 +1843,16 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 		},
 		{
-			ID: "00078-AddMembershipsDefaultSMSTemplate",
+			ID: "00078-AddEnableDailyActiveUsersToRealm",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.Exec(`ALTER TABLE realms ADD COLUMN IF NOT EXISTS daily_active_users_enabled BOOL DEFAULT false NOT NULL`).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Exec(`ALTER TABLE realms DROP COLUMN IF EXISTS daily_active_users_enabled`).Error
+			},
+		},
+		{
+			ID: "00079-AddMembershipsDefaultSMSTemplate",
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`ALTER TABLE memberships ADD COLUMN IF NOT EXISTS default_sms_template_label VARCHAR(255)`,

@@ -1,8 +1,8 @@
-variable "custom-service-id" {
+variable "custom_service_id" {
   type = string
 }
 
-variable "service-name" {
+variable "service_name" {
   type = string
 }
 
@@ -13,10 +13,10 @@ variable "enabled" {
 
 variable "goal" {
   type        = number
-  description = "Availability SLO goal."
+  description = "Latency SLO goal."
 }
 
-variable "notification-channels" {
+variable "notification_channels" {
   type        = map(any)
   description = "Notification channels"
 }
@@ -24,3 +24,14 @@ variable "notification-channels" {
 variable "project" {
   type = string
 }
+
+variable "threshold" {
+  type        = number
+  description = "Latency SLO threshold (in ms)."
+}
+
+variable "enable_alert" {
+  type        = bool
+  description = "Whether to enable the alerts."
+}
+

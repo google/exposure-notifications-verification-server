@@ -14,18 +14,15 @@
 
 locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/slo"
-
-  # Unit: ms
-  latency_threshold = 60000
 }
 
-resource "google_monitoring_slo" "latency-slo" {
+resource "google_monitoring_slo" "slo" {
+  count = var.enabled ? 1 : 0
   # the basics
-  service      = var.custom-service-id
-  slo_id       = "latency-slo-${var.service-name}"
-  display_name = "${var.goal * 100}% of requests are responded in <${local.latency_threshold / 1000}s over rolling 28 days (service=${var.service-name})"
+  service      = var.custom_service_id
+  slo_id       = "latency-slo-${var.service_name}"
+  display_name = "${var.goal * 100}% of requests are responded in <${var.threshold / 1000}s over rolling 28 days (service=${var.service_name})"
   project      = var.project
-  count        = var.enabled ? 1 : 0
 
 
   # the SLI
@@ -34,10 +31,10 @@ resource "google_monitoring_slo" "latency-slo" {
       distribution_filter = <<-EOT
         metric.type="loadbalancing.googleapis.com/https/total_latencies"
         resource.type="https_lb_rule"
-        resource.label.backend_name="${var.service-name}"
+        resource.label.backend_name="${var.service_name}"
       EOT
       range {
-        max = local.latency_threshold
+        max = var.threshold
       }
     }
   }
@@ -49,17 +46,17 @@ resource "google_monitoring_slo" "latency-slo" {
 
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
-  project      = var.project
-  display_name = "FastLatencyBudgetBurn-${var.service-name}"
-  combiner     = "AND"
-  enabled      = "true"
   count        = var.enabled ? 1 : 0
+  project      = var.project
+  display_name = "FastLatencyBudgetBurn-${var.service_name}"
+  combiner     = "AND"
+  enabled      = var.enable_alert
 
   conditions {
     display_name = "Fast burn over last hour"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/latency-slo-${var.service-name}", "3600s")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "1h")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -75,7 +72,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last 5 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/latency-slo-${var.service-name}", "300s")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "5m")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -92,26 +89,26 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(var.notification-channels) : x.id]
+  notification_channels = [for x in values(var.notification_channels) : x.id]
 
   depends_on = [
-    google_monitoring_slo.latency-slo,
+    google_monitoring_slo.slo,
   ]
 }
 
 # slow error budget burn alert
 resource "google_monitoring_alert_policy" "slow_burn" {
-  project      = var.project
-  display_name = "SlowLatencyBudgetBurn-${var.service-name}"
-  combiner     = "AND"
-  enabled      = "true"
   count        = var.enabled ? 1 : 0
+  project      = var.project
+  display_name = "SlowLatencyBudgetBurn-${var.service_name}"
+  combiner     = "AND"
+  enabled      = var.enable_alert
 
   conditions {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/latency-slo-${var.service-name}", "21600s")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "6h")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -127,7 +124,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("projects/${var.project}/services/verification-server/serviceLevelObjectives/latency-slo-${var.service-name}", "1800s")
+      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "30m")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -144,9 +141,9 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(var.notification-channels) : x.id]
+  notification_channels = [for x in values(var.notification_channels) : x.id]
 
   depends_on = [
-    google_monitoring_slo.latency-slo,
+    google_monitoring_slo.slo,
   ]
 }

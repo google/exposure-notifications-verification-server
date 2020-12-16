@@ -13,39 +13,23 @@
 # limitations under the License.
 
 locals {
+  default_per_service_slo = {
+    availability_goal = 0.995
+    latency = {
+      goal      = 0.9
+      threshold = 60000
+    }
+    enable_alert = false
+  }
   default_slo_thresholds = {
-    adminapi = {
-      availability = 0.995
-      latency      = 0.9
-    }
-    apiserver = {
-      availability = 0.995
-      latency      = 0.9
-    }
-    appsync = {
-      availability = 0.995
-      latency      = 0.9
-    }
-    cleanup = {
-      availability = 0.995
-      latency      = 0.9
-    }
-    e2e-runner = {
-      availability = 0.995
-      latency      = 0.9
-    }
-    enx-redirect = {
-      availability = 0.995
-      latency      = 0.9
-    }
-    modeler = {
-      availability = 0.995
-      latency      = 0.9
-    }
-    server = {
-      availability = 0.995
-      latency      = 0.9
-    }
+    adminapi     = merge(local.default_per_service_slo, { enable_alert = true })
+    apiserver    = merge(local.default_per_service_slo, { enable_alert = true })
+    appsync      = local.default_per_service_slo
+    cleanup      = local.default_per_service_slo
+    e2e-runner   = local.default_per_service_slo
+    enx-redirect = local.default_per_service_slo
+    modeler      = local.default_per_service_slo
+    server       = merge(local.default_per_service_slo, { enable_alert = true })
   }
 }
 
@@ -59,14 +43,15 @@ module "availability-slos" {
   source = "./module.availability-slo"
 
   project               = var.project
-  custom-service-id     = google_monitoring_custom_service.verification-server.service_id
+  custom_service_id     = google_monitoring_custom_service.verification-server.service_id
   enabled               = var.https-forwarding-rule != ""
-  notification-channels = google_monitoring_notification_channel.channels
+  notification_channels = google_monitoring_notification_channel.channels
 
   for_each = merge(local.default_slo_thresholds, var.slo_thresholds_overrides)
 
-  service-name = each.key
-  goal         = each.value.availability
+  service_name = each.key
+  goal         = each.value.availability_goal
+  enable_alert = each.value.enable_alert
 }
 
 module "latency-slos" {
@@ -74,12 +59,14 @@ module "latency-slos" {
 
   project = var.project
 
-  custom-service-id     = google_monitoring_custom_service.verification-server.service_id
+  custom_service_id     = google_monitoring_custom_service.verification-server.service_id
   enabled               = var.https-forwarding-rule != ""
-  notification-channels = google_monitoring_notification_channel.channels
+  notification_channels = google_monitoring_notification_channel.channels
 
   for_each = merge(local.default_slo_thresholds, var.slo_thresholds_overrides)
 
-  service-name = each.key
-  goal         = each.value.latency
+  service_name = each.key
+  goal         = each.value.latency.goal
+  threshold    = each.value.latency.threshold
+  enable_alert = each.value.enable_alert
 }
