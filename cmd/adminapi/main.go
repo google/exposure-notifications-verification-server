@@ -23,24 +23,17 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
-	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-signalcontext"
 )
 
@@ -82,7 +75,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
-	ctx, obs := middleware.WithObservability(ctx)
 	logger.Infow("observability exporter", "config", oeConfig)
 
 	// Setup cacher
@@ -102,77 +94,24 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	// Create the router
-	r := mux.NewRouter()
-
-	// Common observability context
-	r.Use(obs)
-
-	// Rate limiting
+	// Setup rate limiter
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)
 	if err != nil {
 		return fmt.Errorf("failed to create limiter: %w", err)
 	}
 	defer limiterStore.Close(ctx)
 
-	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
-		limitware.APIKeyFunc(ctx, db, "adminapi:ratelimit:", cfg.RateLimit.HMACKey),
-		limitware.AllowOnError(false))
+	// Setup routes
+	mux, err := routes.AdminAPI(ctx, cfg, db, cacher, limiterStore)
 	if err != nil {
-		return fmt.Errorf("failed to create limiter middleware: %w", err)
-	}
-	rateLimit := httplimiter.Handle
-
-	// Install common security headers
-	r.Use(middleware.SecureHeaders(cfg.DevMode, "json"))
-
-	// Enable debug headers
-	processDebug := middleware.ProcessDebug()
-	r.Use(processDebug)
-
-	// Create the renderer
-	h, err := render.New(ctx, "", cfg.DevMode)
-	if err != nil {
-		return fmt.Errorf("failed to create renderer: %w", err)
+		return fmt.Errorf("failed to setup routes: %w", err)
 	}
 
-	// Request ID injection
-	populateRequestID := middleware.PopulateRequestID(h)
-	r.Use(populateRequestID)
-
-	// Logger injection
-	populateLogger := middleware.PopulateLogger(logger)
-	r.Use(populateLogger)
-
-	// Install the rate limiting first. In this case, we want to limit by key
-	// first to reduce the chance of a database lookup.
-	r.Use(rateLimit)
-
-	// Other common middlewares
-	requireAPIKey := middleware.RequireAPIKey(cacher, db, h, []database.APIKeyType{
-		database.APIKeyTypeAdmin,
-	})
-	processFirewall := middleware.ProcessFirewall(h, "adminapi")
-
-	r.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
-	{
-		sub := r.PathPrefix("/api").Subrouter()
-		sub.Use(requireAPIKey)
-		sub.Use(processFirewall)
-
-		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
-		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
-		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
-
-		codesController := codes.NewAPI(ctx, cfg, db, h)
-		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")
-		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods("POST")
-	}
-
+	// Run server
 	srv, err := server.New(cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 	logger.Infow("server listening", "port", cfg.Port)
-	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
+	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
 }

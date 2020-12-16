@@ -62,6 +62,7 @@ func TestUpdate(t *testing.T) {
 	defer done()
 
 	for _, permission := range rbac.PermissionMap() {
+		permission := permission
 		target := fmt.Sprintf(`input#permission-%d`, permission)
 
 		if err := chromedp.Run(taskCtx,
@@ -75,7 +76,7 @@ func TestUpdate(t *testing.T) {
 			chromedp.WaitVisible(`body#users-edit`, chromedp.ByQuery),
 
 			// Fill out the form.
-			chromedp.Click(target, chromedp.ByQuery),
+			chromedp.RemoveAttribute(target, "checked", chromedp.ByQuery),
 			chromedp.Submit(`form#user-form`, chromedp.ByQuery),
 
 			// Wait for render.
@@ -105,6 +106,7 @@ func TestUpdate(t *testing.T) {
 
 	// Now add permissions back
 	for _, permission := range rbac.PermissionMap() {
+		permission := permission
 		target := fmt.Sprintf(`input#permission-%d`, permission)
 
 		if err := chromedp.Run(taskCtx,
@@ -118,7 +120,7 @@ func TestUpdate(t *testing.T) {
 			chromedp.WaitVisible(`body#users-edit`, chromedp.ByQuery),
 
 			// Fill out the form.
-			chromedp.Click(target, chromedp.ByQuery),
+			chromedp.SetAttributeValue(target, "checked", "true", chromedp.ByQuery),
 			chromedp.Submit(`form#user-form`, chromedp.ByQuery),
 
 			// Wait for render.
