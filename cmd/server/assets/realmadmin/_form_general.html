@@ -15,11 +15,7 @@
     <input type="text" name="name" id="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}"
       value="{{$realm.Name}}" placeholder="Name" required autofocus />
     <label for="name">Name</label>
-    {{if $realm.ErrorsFor "name"}}
-    <div class="invalid-feedback">
-      {{joinStrings ($realm.ErrorsFor "name") ", "}}
-    </div>
-    {{end}}
+    {{template "errorable" $realm.ErrorsFor "name"}}
     <small class="form-text text-muted">
       The realm name is displayed on the realm selection page and in the header
       when selected. Choose a descriptive name that your team will recognize.
@@ -31,11 +27,7 @@
     <input type="text" name="region_code" id="region-code" class="form-control text-uppercase{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}"
       value="{{$realm.RegionCode}}" placeholder="Region code" />
     <label for="region-code">Region code</label>
-    {{if $realm.ErrorsFor "regionCode"}}
-    <div class="invalid-feedback">
-      {{joinStrings ($realm.ErrorsFor "regionCode") ", "}}
-    </div>
-    {{end}}
+    {{template "errorable" $realm.ErrorsFor "regionCode"}}
     <small class="form-text text-muted">
       The region code is displayed on the realm selection page and in the header
       when selection. It is also used when the creating deep link SMS for
@@ -54,16 +46,27 @@
     <textarea name="welcome_message" id="welcome-message" class="form-control text-monospace{{if $realm.ErrorsFor "welcomeMessage"}} is-invalid{{end}}"
       rows="5" placeholder="Welcome message">{{$realm.WelcomeMessage}}</textarea>
     <label for="welcome-message">Welcome message</label>
-    {{if $realm.ErrorsFor "welcomeMessage"}}
-    <div class="invalid-feedback">
-      {{joinStrings ($realm.ErrorsFor "welcomeMessage") ", "}}
-    </div>
-    {{end}}
+    {{template "errorable" $realm.ErrorsFor "welcomeMessage"}}
     <small class="form-text text-muted">
       The welcome message is displayed to your team after selecting this realm.
       This field supports the common <a
       href="https://daringfireball.net/projects/markdown/syntax">markdown</a>
-      stanard.
+      standard.
+    </small>
+  </div>
+
+  <div class="custom-control custom-checkbox">
+    <input type="checkbox" name="daily_active_users_enabled" id="daily-active-users-enabled"
+      class="custom-control-input" {{checkedIf $realm.DailyActiveUsersEnabled}}>
+    <label class="custom-control-label" for="daily-active-users-enabled">Enable daily active user counting</label>
+    {{template "errorable" $realm.ErrorsFor "dailyActiveUsersEnabled"}}
+    <small class="form-text text-muted">
+      Enable server-side collection of reported daily active users. You must
+      also <a
+      href="https://github.com/google/exposure-notifications-verification-server/blob/main/docs/api.md#chaffing-requests"
+      target="_BLANK" rel="noopener">enable this functionality</a> on your iOS
+      and Android applications. This will also add a new dashboard to the
+      statistics page.
     </small>
   </div>
 
