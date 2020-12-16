@@ -215,6 +215,41 @@ func TestRoutes_realmkeysRoutes(t *testing.T) {
 	}
 }
 
+func TestRoutes_statsRoutes(t *testing.T) {
+	t.Parallel()
+
+	m := mux.NewRouter()
+	statsRoutes(m, nil)
+
+	cases := []struct {
+		req  *http.Request
+		vars map[string]string
+	}{
+		{
+			req: httptest.NewRequest("GET", "/realm.csv", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm.json", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm-user.csv", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm-user.json", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm-external-issuer.csv", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm-external-issuer.json", nil),
+		},
+	}
+
+	for _, tc := range cases {
+		testRoute(t, m, tc.req, tc.vars)
+	}
+}
+
 func TestRoutes_realmadminRoutes(t *testing.T) {
 	t.Parallel()
 
@@ -239,12 +274,6 @@ func TestRoutes_realmadminRoutes(t *testing.T) {
 		},
 		{
 			req: httptest.NewRequest("GET", "/stats", nil),
-		},
-		{
-			req: httptest.NewRequest("GET", "/stats.json", nil),
-		},
-		{
-			req: httptest.NewRequest("GET", "/stats.csv", nil),
 		},
 		{
 			req: httptest.NewRequest("GET", "/events", nil),

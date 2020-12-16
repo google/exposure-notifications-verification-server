@@ -487,7 +487,7 @@ func TestRealm_UserStats(t *testing.T) {
 		}
 	}
 
-	stats, err := realm.UserStats(db, startDate, endDate)
+	stats, err := realm.UserStats(db)
 	if err != nil {
 		t.Fatalf("error getting stats: %v", err)
 	}
