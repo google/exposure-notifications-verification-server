@@ -19,7 +19,9 @@
 *.terraform/
 *.tfvars
 terraform/state.tf
+terraform/.terraform.lock.hcl
 terraform-e2e-ci/state.tf
+terraform-e2e-ci/.terraform.lock.hcl
 */crash.log
 
 # Local things
