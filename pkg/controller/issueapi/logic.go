@@ -242,9 +242,9 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 	}
 
 	// Compute issuing user - the membership will be nil when called via the API.
-	var user *database.User
+	var currentUser *database.User
 	if membership != nil {
-		user = membership.User
+		currentUser = membership.User
 	}
 
 	// Generate verification code
@@ -261,7 +261,7 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 		RealmID:        realm.ID,
 		UUID:           rUUID,
 
-		IssuingUser:       user,
+		IssuingUser:       currentUser,
 		IssuingApp:        authApp,
 		IssuingExternalID: request.ExternalIssuerID,
 	}
@@ -299,6 +299,14 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 			message, err := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 			if err != nil {
 				return err
+			}
+
+			if request.SMSTemplateLabel != "" && currentUser != nil &&
+				currentUser.RememberLastUsedTemplate && currentUser.DefaultTemplateLabel != request.SMSTemplateLabel {
+				currentUser.DefaultTemplateLabel = request.SMSTemplateLabel
+				if err := c.db.SaveUser(currentUser, currentUser); err != nil {
+					logger.Warnw("failed to save user template preference", "error", err)
+				}
 			}
 
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
