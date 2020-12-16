@@ -18,11 +18,10 @@ locals {
 
 resource "google_monitoring_slo" "slo" {
   # the basics
-  service      = var.custom-service-id
-  slo_id       = "availability-slo-${var.service-name}"
-  display_name = "${var.goal * 100}% of requests are successful over rolling 28 days (service=${var.service-name})"
+  service      = var.custom_service_id
+  slo_id       = "availability-slo-${var.service_name}"
+  display_name = "${var.goal * 100}% of requests are successful over rolling 28 days (service=${var.service_name})"
   project      = var.project
-  count        = var.enabled ? 1 : 0
 
 
   # the SLI
@@ -31,13 +30,13 @@ resource "google_monitoring_slo" "slo" {
       good_service_filter = <<-EOT
         metric.type="loadbalancing.googleapis.com/https/request_count"
         resource.type="https_lb_rule"
-        resource.label.backend_name="${var.service-name}"
+        resource.label.backend_name="${var.service_name}"
         metric.label.response_code_class=200
       EOT
       bad_service_filter  = <<-EOT
         metric.type="loadbalancing.googleapis.com/https/request_count"
         resource.type="https_lb_rule"
-        resource.label.backend_name="${var.service-name}"
+        resource.label.backend_name="${var.service_name}"
         metric.label.response_code_class=500
       EOT
     }
@@ -51,16 +50,15 @@ resource "google_monitoring_slo" "slo" {
 # fast error budget burn alert
 resource "google_monitoring_alert_policy" "fast_burn" {
   project      = var.project
-  display_name = "FastErrorBudgetBurn-${var.service-name}"
+  display_name = "FastErrorBudgetBurn-${var.service_name}"
   combiner     = "AND"
-  enabled      = "true"
-  count        = var.enabled ? 1 : 0
+  enabled      = var.enable_alert
 
   conditions {
     display_name = "Fast burn over last hour"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "1h")
+      select_slo_burn_rate("${google_monitoring_slo.slo.id}", "1h")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -76,7 +74,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     display_name = "Fast burn over last 5 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "5m")
+      select_slo_burn_rate("${google_monitoring_slo.slo.id}", "5m")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -93,7 +91,7 @@ resource "google_monitoring_alert_policy" "fast_burn" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(var.notification-channels) : x.id]
+  notification_channels = [for x in values(var.notification_channels) : x.id]
 
   depends_on = [
     google_monitoring_slo.slo,
@@ -103,16 +101,15 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 # slow error budget burn alert
 resource "google_monitoring_alert_policy" "slow_burn" {
   project      = var.project
-  display_name = "SlowErrorBudgetBurn-${var.service-name}"
+  display_name = "SlowErrorBudgetBurn-${var.service_name}"
   combiner     = "AND"
-  enabled      = "true"
-  count        = var.enabled ? 1 : 0
+  enabled      = var.enable_alert
 
   conditions {
     display_name = "Slow burn over last 6 hours"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "6h")
+      select_slo_burn_rate("${google_monitoring_slo.slo.id}", "6h")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -128,7 +125,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     display_name = "Slow burn over last 30 minutes"
     condition_threshold {
       filter     = <<-EOT
-      select_slo_burn_rate("${google_monitoring_slo.slo[0].id}", "30m")
+      select_slo_burn_rate("${google_monitoring_slo.slo.id}", "30m")
       EOT
       duration   = "0s"
       comparison = "COMPARISON_GT"
@@ -145,7 +142,7 @@ resource "google_monitoring_alert_policy" "slow_burn" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(var.notification-channels) : x.id]
+  notification_channels = [for x in values(var.notification_channels) : x.id]
 
   depends_on = [
     google_monitoring_slo.slo,
