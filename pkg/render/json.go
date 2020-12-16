@@ -70,6 +70,13 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 		return
 	}
 
+	// If the provided value was an error, marshall accordingly.
+	if typ, ok := data.(error); ok {
+		data = map[string]string{
+			"error": typ.Error(),
+		}
+	}
+
 	// Acquire a renderer
 	b := r.rendererPool.Get().(*bytes.Buffer)
 	b.Reset()

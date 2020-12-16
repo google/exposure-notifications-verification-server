@@ -113,11 +113,13 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create firebase auth provider: %w", err)
 	}
 
+	// Setup routes
 	mux, err := routes.Server(ctx, cfg, db, authProvider, cacher, certificateSigner, limiterStore)
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
 	}
 
+	// Run server
 	srv, err := server.New(cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)

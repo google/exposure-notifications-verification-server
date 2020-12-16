@@ -28,7 +28,6 @@ import (
 	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -56,7 +55,6 @@ func (c *Controller) getRegion(r *http.Request) string {
 }
 
 func (c *Controller) HandleIos() http.Handler {
-	notFound := api.Errorf("not found")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -64,34 +62,45 @@ func (c *Controller) HandleIos() http.Handler {
 
 		region := c.getRegion(r)
 		if region == "" {
-			c.h.RenderJSON(w, http.StatusNotFound, notFound)
+			c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("request is missing region"))
 			return
 		}
 
+		// Lookup the realm with the region code.
+		realm, err := c.db.FindRealmByRegion(region)
+		if err != nil {
+			if database.IsNotFound(err) {
+				c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no realm exists for region %q", region))
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		var data *IOSData
 		cacheKey := &cache.Key{
 			Namespace: "apps:ios:by_region",
 			Key:       region,
 		}
-		var iosData *IOSData
-		if err := c.cacher.Fetch(ctx, cacheKey, &iosData, c.config.AppCacheTTL, func() (interface{}, error) {
+		if err := c.cacher.Fetch(ctx, cacheKey, &data, c.config.AppCacheTTL, func() (interface{}, error) {
 			logger.Debug("fetching new ios data")
-			return c.getIosData(region)
+			return c.getIosData(realm.ID)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		if iosData == nil {
-			c.h.RenderJSON(w, http.StatusNotFound, notFound)
+		if data == nil {
+			c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no apps are registered"))
 			return
 		}
 
-		c.h.RenderJSON(w, http.StatusOK, iosData)
+		c.h.RenderJSON(w, http.StatusOK, data)
 	})
 }
 
 func (c *Controller) HandleAndroid() http.Handler {
-	notFound := api.Errorf("not found")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -99,29 +108,41 @@ func (c *Controller) HandleAndroid() http.Handler {
 
 		region := c.getRegion(r)
 		if region == "" {
-			c.h.RenderJSON(w, http.StatusNotFound, notFound)
+			c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("request is missing region"))
 			return
 		}
 
+		// Lookup the realm with the region code.
+		realm, err := c.db.FindRealmByRegion(region)
+		if err != nil {
+			if database.IsNotFound(err) {
+				c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no realm exists for region %q", region))
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		var data []AndroidData
 		cacheKey := &cache.Key{
 			Namespace: "apps:android:by_region",
 			Key:       region,
 		}
-		var androidData []AndroidData
-		if err := c.cacher.Fetch(ctx, cacheKey, &androidData, c.config.AppCacheTTL, func() (interface{}, error) {
+		if err := c.cacher.Fetch(ctx, cacheKey, &data, c.config.AppCacheTTL, func() (interface{}, error) {
 			logger.Debug("fetching new android data")
-			return c.getAndroidData(region)
+			return c.getAndroidData(realm.ID)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		if len(androidData) == 0 {
-			c.h.RenderJSON(w, http.StatusNotFound, notFound)
+		if len(data) == 0 {
+			c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no apps are registered"))
 			return
 		}
 
-		c.h.RenderJSON(w, http.StatusOK, androidData)
+		c.h.RenderJSON(w, http.StatusOK, data)
 	})
 }
 

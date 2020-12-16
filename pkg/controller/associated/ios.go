@@ -18,8 +18,6 @@ package associated
 //   https://developer.apple.com/documentation/safariservices/supporting_associated_domains
 
 import (
-	"fmt"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -66,13 +64,8 @@ func (c *Controller) getAppIds(realmID uint) ([]string, error) {
 }
 
 // getIosData gets the iOS app data.
-func (c *Controller) getIosData(region string) (*IOSData, error) {
-	realm, err := c.db.FindRealmByRegion(region)
-	if err != nil {
-		return nil, fmt.Errorf("unable to lookup realm: %w", err)
-	}
-
-	ids, err := c.getAppIds(realm.ID)
+func (c *Controller) getIosData(realmID uint) (*IOSData, error) {
+	ids, err := c.getAppIds(realmID)
 	if err != nil {
 		return nil, err
 	}
