@@ -103,10 +103,10 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 # slow error budget burn alert
 resource "google_monitoring_alert_policy" "slow_burn" {
   project      = var.project
-  count        = var.enabled ? 1 : 0
   display_name = "SlowErrorBudgetBurn-${var.service_name}"
   combiner     = "AND"
   enabled      = var.enable_alert
+  count        = var.enabled ? 1 : 0
 
   conditions {
     display_name = "Slow burn over last 6 hours"
