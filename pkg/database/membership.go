@@ -53,7 +53,7 @@ func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 
 		var existing Membership
 		if err := tx.
-			Model(&Membership{}).
+			Model(m).
 			Where("user_id = ? AND realm_id = ?", m.UserID, m.RealmID).
 			First(&existing).
 			Error; err != nil && !IsNotFound(err) {
@@ -65,13 +65,7 @@ func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 		}
 
 		// Save the membership
-		user, realm := m.User, m.Realm
-		m.User, m.Realm = nil, nil
-		defer func() {
-			m.Realm = realm
-			m.User = user
-		}()
-		if err := tx.Update(m).Error; err != nil {
+		if err := tx.Model(m).Update(m).Error; err != nil {
 			return fmt.Errorf("failed to save membership: %w", err)
 		}
 
