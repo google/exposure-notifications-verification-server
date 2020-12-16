@@ -61,11 +61,11 @@ func TestIntegration(t *testing.T) {
 			skipE2E: true,
 		},
 		{
-			name:  "valid token",
+			name:  "valid token batch",
 			batch: true,
 		},
 		{
-			name:    "expired token",
+			name:    "expired token batch",
 			expire:  true,
 			errMsg:  "verification token expired",
 			skipE2E: true,
