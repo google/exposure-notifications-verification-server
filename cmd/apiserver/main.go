@@ -113,7 +113,8 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Setup routes
-	mux, err := routes.APIServer(ctx, cfg, db, cacher, limiterStore, tokenSigner, certificateSigner)
+	mux, closer, err := routes.APIServer(ctx, cfg, db, cacher, limiterStore, tokenSigner, certificateSigner)
+	defer closer()
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
 	}
