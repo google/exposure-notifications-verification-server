@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -31,7 +30,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -110,10 +108,5 @@ func ENXRedirect(
 	// middleware.
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod()(r))
-
-	// Also log requests in local dev.
-	if cfg.DevMode {
-		return handlers.LoggingHandler(os.Stdout, mux), nil
-	}
 	return mux, nil
 }

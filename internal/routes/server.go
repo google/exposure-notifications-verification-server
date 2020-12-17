@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
@@ -46,7 +45,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
@@ -329,11 +327,6 @@ func Server(
 	// middleware.
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod()(r))
-
-	// Also log requests in local dev.
-	if cfg.DevMode {
-		return handlers.LoggingHandler(os.Stdout, mux), nil
-	}
 	return mux, nil
 }
 
