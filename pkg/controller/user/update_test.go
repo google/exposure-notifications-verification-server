@@ -63,9 +63,14 @@ func TestUpdate(t *testing.T) {
 
 	for _, permission := range rbac.NamePermissionMap {
 		permission := permission
-		target := fmt.Sprintf(`input#permission-%d`, permission)
+		targets := []string{fmt.Sprintf(`input#permission-%d`, permission)}
+		// We also ned to remove permissions that imply this permission, or it will be added back in.
+		for _, superPerm := range rbac.ImpliedBy(permission) {
+			targets = append(targets, fmt.Sprintf(`input#permission-%d`, superPerm))
+		}
 
-		if err := chromedp.Run(taskCtx,
+		// Build the actions as an array prior to run since super-permissions actions aren't known until runtime.
+		actions := []chromedp.Action{
 			// Pre-authenticate the user.
 			browser.SetCookie(cookie),
 
@@ -74,14 +79,18 @@ func TestUpdate(t *testing.T) {
 
 			// Wait for render.
 			chromedp.WaitVisible(`body#users-edit`, chromedp.ByQuery),
+		}
 
-			// Fill out the form.
-			chromedp.RemoveAttribute(target, "checked", chromedp.ByQuery),
-			chromedp.Submit(`form#user-form`, chromedp.ByQuery),
+		// Fill out the form.
+		for _, target := range targets {
+			actions = append(actions, chromedp.RemoveAttribute(target, "checked", chromedp.ByQuery))
+		}
+		actions = append(actions, chromedp.Submit(`form#user-form`, chromedp.ByQuery))
 
-			// Wait for render.
-			chromedp.WaitVisible(`body#users-show`, chromedp.ByQuery),
-		); err != nil {
+		// Wait for render.
+		actions = append(actions, chromedp.WaitVisible(`body#users-show`, chromedp.ByQuery))
+
+		if err := chromedp.Run(taskCtx, actions...); err != nil {
 			t.Fatal(err)
 		}
 	}

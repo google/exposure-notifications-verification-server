@@ -83,6 +83,11 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 	return permission, nil
 }
 
+// ImpliedBy returns any permissions that
+func ImpliedBy(permission Permission) []Permission {
+	return impliedBy[permission]
+}
+
 // PermissionNames returns the list of permissions included in the given
 // permission.
 func PermissionNames(p Permission) []string {
@@ -166,7 +171,22 @@ var (
 		MobileAppWrite: {MobileAppRead},
 		UserWrite:      {UserRead},
 	}
+
+	// This is the inverse of the above map, set by the init() func.
+	// Done in code to ensure it always stays in sync with requiredPermission.
+	impliedBy = make(map[Permission][]Permission)
 )
+
+func init() {
+	for has, needs := range requiredPermission {
+		for _, perm := range needs {
+			if _, ok := impliedBy[perm]; !ok {
+				impliedBy[perm] = make([]Permission, 0, 1)
+			}
+			impliedBy[perm] = append(impliedBy[perm], has)
+		}
+	}
+}
 
 // --
 // Legacy permissions
