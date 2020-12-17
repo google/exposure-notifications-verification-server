@@ -72,6 +72,14 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 		}
 		permission = permission | update
 	}
+	// Ensure impled permissions. The actor must also have the impled permissions by definition.
+	for has, needs := range requiredPermission {
+		if Can(permission, has) {
+			for _, required := range needs {
+				permission = permission | required
+			}
+		}
+	}
 	return permission, nil
 }
 
@@ -143,6 +151,21 @@ const (
 	// Users
 	UserRead  = 1 << iota
 	UserWrite = 1 << iota
+)
+
+// --
+// Required / Implied permissions.
+// Write permissions require subordinate read.
+// --
+
+var (
+	// requiredPermissions is not exported since maps cannot be constant.
+	requiredPermission = map[Permission][]Permission{
+		APIKeyWrite:    {APIKeyRead},
+		SettingsWrite:  {SettingsRead},
+		MobileAppWrite: {MobileAppRead},
+		UserWrite:      {UserRead},
+	}
 )
 
 // --
