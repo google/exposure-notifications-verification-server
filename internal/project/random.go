@@ -38,3 +38,16 @@ func RandomBase64String(len int) (string, error) {
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
 }
+
+// RandomBytes returns a byte slice of random values of the given length.
+func RandomBytes(length int) ([]byte, error) {
+	buf := make([]byte, length)
+	n, err := rand.Read(buf)
+	if err != nil {
+		return nil, err
+	}
+	if n < length {
+		return nil, fmt.Errorf("insufficient bytes read: %v, expected %v", n, length)
+	}
+	return buf, nil
+}

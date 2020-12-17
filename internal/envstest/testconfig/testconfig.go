@@ -159,3 +159,19 @@ func ServerAssetsPath() string {
 func LocalesPath() string {
 	return filepath.Join(project.Root(), "internal", "i18n", "locales")
 }
+
+func randomBytes(tb testing.TB, length int) []byte {
+	b, err := project.RandomBytes(length)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return b
+}
+
+func randomString(tb testing.TB, length int) string {
+	s, err := project.RandomBase64String(length)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return s
+}
