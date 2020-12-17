@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -33,7 +32,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-limiter"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -90,7 +88,6 @@ func AdminAPI(
 		database.APIKeyTypeAdmin,
 	})
 	requireStatsAPIKey := middleware.RequireAPIKey(cacher, db, h, []database.APIKeyType{
-		database.APIKeyTypeAdmin,
 		database.APIKeyTypeStats,
 	})
 	processFirewall := middleware.ProcessFirewall(h, "adminapi")
@@ -133,10 +130,5 @@ func AdminAPI(
 	// middleware.
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod()(r))
-
-	// Also log requests in local dev.
-	if cfg.DevMode {
-		return handlers.LoggingHandler(os.Stdout, mux), nil
-	}
 	return mux, nil
 }

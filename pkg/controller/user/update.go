@@ -113,6 +113,6 @@ func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user
 	m.Title("Edit user: %s", user.Name)
 	m["user"] = user
 	m["userMembership"] = membership
-	m["permissions"] = rbac.PermissionMap()
+	m["permissions"] = rbac.NamePermissionMap
 	c.h.RenderHTML(w, "users/edit", m)
 }
