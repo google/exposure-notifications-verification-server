@@ -209,7 +209,7 @@ func Server(
 		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
-		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
+		issueapiController := issueapi.New(cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
 

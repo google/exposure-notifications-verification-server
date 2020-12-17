@@ -157,8 +157,8 @@ func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationT
 type IntegrationSuite struct {
 	cfg *IntegrationTestConfig
 
-	db    *database.Database
-	realm *database.Realm
+	DB    *database.Database
+	Realm *database.Realm
 
 	adminKey, deviceKey string
 
@@ -222,8 +222,8 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 
 	return &IntegrationSuite{
 		cfg:       cfg,
-		db:        db,
-		realm:     realm,
+		DB:        db,
+		Realm:     realm,
 		adminKey:  adminKey,
 		deviceKey: deviceKey,
 	}
@@ -282,17 +282,17 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 		sub := adminRouter.PathPrefix("/api").Subrouter()
 
 		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(cacher, s.db, h, []database.APIKeyType{
+		requireAPIKey := middleware.RequireAPIKey(cacher, s.DB, h, []database.APIKeyType{
 			database.APIKeyTypeAdmin,
 		})
 		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
 
-		issueapiController := issueapi.New(ctx, &s.cfg.AdminAPISrvConfig, s.db, limiterStore, h)
+		issueapiController := issueapi.New(&s.cfg.AdminAPISrvConfig, s.DB, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
 
-		codesController := codes.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.db, h)
+		codesController := codes.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.DB, h)
 		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")
 		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods("POST")
 	}
@@ -352,7 +352,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 		sub := apiRouter.PathPrefix("/api").Subrouter()
 
 		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(cacher, s.db, h, []database.APIKeyType{
+		requireAPIKey := middleware.RequireAPIKey(cacher, s.DB, h, []database.APIKeyType{
 			database.APIKeyTypeDevice,
 		})
 		// Install the APIKey Auth Middleware
@@ -360,7 +360,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 
 		verifyChaff := chaff.New()
 		defer verifyChaff.Close()
-		verifyapiController, err := verifyapi.New(ctx, &s.cfg.APISrvConfig, s.db, h, tokenSigner)
+		verifyapiController, err := verifyapi.New(ctx, &s.cfg.APISrvConfig, s.DB, h, tokenSigner)
 		if err != nil {
 			tb.Fatalf("failed to create verify api controller: %v", err)
 		}
@@ -368,7 +368,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 
 		certChaff := chaff.New()
 		defer certChaff.Close()
-		certapiController, err := certapi.New(ctx, &s.cfg.APISrvConfig, s.db, cacher, certificateSigner, h)
+		certapiController, err := certapi.New(ctx, &s.cfg.APISrvConfig, s.DB, cacher, certificateSigner, h)
 		if err != nil {
 			tb.Fatalf("failed to create cert api controller: %v", err)
 		}

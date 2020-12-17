@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"flag"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -216,9 +217,11 @@ func (tc testCase) batchIssue(t *testing.T, adminClient *testsuite.AdminClient, 
 		},
 	}
 
-	batchResp, err := adminClient.BatchIssueCode(issueRequest)
+	httpCode, batchResp, err := adminClient.BatchIssueCode(issueRequest)
 	if batchResp == nil || err != nil {
 		t.Fatalf("adminClient.IssueCode(%+v) = expected nil, got resp %+v, err %v", issueRequest, batchResp, err)
+	} else if httpCode != http.StatusOK {
+		t.Errorf("got http status %d, expected 200", httpCode)
 	}
 
 	for _, issueResp := range batchResp.Codes {

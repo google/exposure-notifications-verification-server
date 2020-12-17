@@ -101,7 +101,7 @@ func AdminAPI(
 		sub.Use(requireAdminAPIKey)
 		sub.Use(processFirewall)
 
-		issueapiController := issueapi.New(ctx, cfg, db, limiterStore, h)
+		issueapiController := issueapi.New(cfg, db, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
 
