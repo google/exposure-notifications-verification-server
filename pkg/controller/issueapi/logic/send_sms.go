@@ -62,11 +62,11 @@ func scrubPhoneNumbers(s string) string {
 	return noScrubs
 }
 
-func (c *Controller) sendSMS(ctx context.Context, realm *database.Realm, request *api.IssueCodeRequest, result *issueResult) error {
+func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest, result *issueResult) error {
 	if request.Phone == "" {
 		return nil
 	}
-	smsProvider, err := realm.SMSProvider(c.db)
+	smsProvider, err := c.realm.SMSProvider(c.db)
 	if smsProvider == nil {
 		return nil
 	}
@@ -79,7 +79,7 @@ func (c *Controller) sendSMS(ctx context.Context, realm *database.Realm, request
 	if err := func() error {
 		defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
 
-		message, err := realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+		message, err := c.realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
 			return err
 		}

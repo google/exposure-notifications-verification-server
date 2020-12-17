@@ -90,7 +90,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		errCount := 0
 		var results []*issueResult
 
-		logic := issuelogic.New(c.db, c.Limiter, authApp, membership, realm)
+		logic := issuelogic.New(c.db, c.limiter, authApp, membership, realm)
 		results, resp.Codes = logic.IssueMany(ctx, request.Codes)
 		for _, result := range results {
 			if result.errorReturn == nil {
