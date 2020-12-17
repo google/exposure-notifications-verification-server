@@ -37,7 +37,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/mikehelmick/go-chaff"
 )
@@ -308,7 +307,7 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 	tb.Cleanup(stop)
 
 	go func() {
-		if err := srv.ServeHTTPHandler(stopCtx, handlers.CombinedLoggingHandler(os.Stdout, adminRouter)); err != nil {
+		if err := srv.ServeHTTPHandler(stopCtx, adminRouter); err != nil {
 			tb.Fatalf("failed to serve HTTP handler: %v", err)
 		}
 	}()
@@ -386,7 +385,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 	tb.Cleanup(stop)
 
 	go func() {
-		if err := srv.ServeHTTPHandler(stopCtx, handlers.CombinedLoggingHandler(os.Stdout, apiRouter)); err != nil {
+		if err := srv.ServeHTTPHandler(stopCtx, apiRouter); err != nil {
 			tb.Fatalf("failed to serve HTTP handler: %v", err)
 		}
 	}()

@@ -1,3 +1,5 @@
+<!-- TOC depthFrom:1 -->
+
 - [API access](#api-access)
 - [API usage](#api-usage)
   - [Authenticating](#authenticating)
@@ -5,15 +7,13 @@
 - [API Methods](#api-methods)
   - [`/api/verify`](#apiverify)
   - [`/api/certificate`](#apicertificate)
-- [Admin APIs](#admin-apis)
-  - [`/api/issue`](#apiissue)
-    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
-  - [`/api/batch-issue`](#apibatch-issue)
-    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
   - [`/api/checkcodestatus`](#apicheckcodestatus)
   - [`/api/expirecode`](#apiexpirecode)
+  - [`/api/stats/*` (preview)](#apistats-preview)
 - [Chaffing requests](#chaffing-requests)
 - [Response codes overview](#response-codes-overview)
+
+<!-- /TOC -->
 
 # API access
 
@@ -27,8 +27,12 @@ two types of API keys:
     _certificates_.
 
 -   `ADMIN` - Intended for public health authority internal applications to
-    integrate with this server. **We strongly advise putting additional
-    protections in place such as an external proxy authentication.**
+    integrate with this server. This API key type can also retrieve statistics
+    about the realm. **We strongly advise putting additional protections in
+    place such as an external proxy authentication.**
+
+-   `STATS` - Intended for public health authorities to gather automated
+    statistics.
 
 
 # API usage
@@ -447,6 +451,27 @@ Expires an unclaimed code. If the code has been claimed an error is returned.
 
 The timestamps are updated to the new expiration time (which will be in the
 past).
+
+
+## `/api/stats/*` (preview)
+
+**The statistics API are currently in preview. They are not covered by our
+backwards-compatibility promise and the APIs are subject to change without
+notice!**
+
+This path includes realm-level statistics for the past 30 days.
+
+-   `/api/stats/realm.{csv,json}` - Daily statistics for the realm, including
+    codes issued, codes claimed, and daily active users (if enabled).
+
+-   `/api/stats/realm-user.{csv,json}` - Daily statistics for codes issued by
+    realm user. These statistics only include codes issued by humans logged into
+    the verification system.
+
+-   `/api/stats/realm-external-issuser.{csv,json}` - Daily statistics for codes
+    issued by external issuers. These statistics only include codes issued by
+    the API where an `externalIssuer` field was provided.
+
 
 # Chaffing requests
 

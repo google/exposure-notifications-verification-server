@@ -75,8 +75,9 @@
                 {{.APIKeyPreview}}
               </td>
               <td class="text-center">
-                {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" title="Can be used to issue verification codes">Admin</span>{{end}}
+                {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" title="For issuing verification codes">Admin</span>{{end}}
                 {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
+                {{if .IsStatsType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="For retrieving realm statistics">Stats</span>{{end}}
               </td>
               {{if $canWrite}}
                 <td class="text-center">

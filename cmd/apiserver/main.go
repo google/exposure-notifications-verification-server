@@ -34,7 +34,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
-	"github.com/gorilla/handlers"
 	"github.com/sethvargo/go-signalcontext"
 )
 
@@ -124,5 +123,5 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 	logger.Infow("server listening", "port", cfg.Port)
-	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, mux))
+	return srv.ServeHTTPHandler(ctx, mux)
 }

@@ -229,6 +229,10 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create admin api key: %w", err)
 	}
 	logger.Infow("created device api key", "key", adminAPIKey)
+	adminAuthorizedApp, err := db.FindAuthorizedAppByAPIKey(adminAPIKey)
+	if err != nil {
+		return fmt.Errorf("failed to lookup admin api id: %w", err)
+	}
 
 	// Generate some codes
 	now := time.Now().UTC()
@@ -253,7 +257,7 @@ func realMain(ctx context.Context) error {
 
 			// Random determine if this was issued by an app (60% chance).
 			if rand.Intn(10) <= 6 {
-				issuingAppID = apps[rand.Intn(len(apps))].ID
+				issuingAppID = adminAuthorizedApp.ID
 
 				// Random determine if the code had an external audit.
 				if rand.Intn(2) == 0 {
