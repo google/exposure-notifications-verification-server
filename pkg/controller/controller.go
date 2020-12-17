@@ -61,7 +61,7 @@ func Back(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	}
 
 	if got, want := refURL.Host, r.Host; got != want {
-		logger.Warnw("referrer host mismatch (+%q, -%q)", got, want)
+		logger.Warnw("referrer host mismatch", "got", got, "want", want)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
