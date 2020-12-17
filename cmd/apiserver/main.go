@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/gorilla/handlers"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -115,6 +116,11 @@ func realMain(ctx context.Context) error {
 	mux, err := routes.APIServer(ctx, cfg, db, cacher, limiterStore, tokenSigner, certificateSigner)
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
+	}
+
+	// Also log requests in local dev.
+	if cfg.DevMode {
+		mux = handlers.LoggingHandler(os.Stdout, mux)
 	}
 
 	// Run server
