@@ -25,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
@@ -33,44 +32,21 @@ import (
 	"go.opencensus.io/stats"
 )
 
-var (
-	// scrubbers is a list of known twilio error messages that contain the send to phone number.
-	scrubbers = []struct {
-		prefix string
-		suffix string
-	}{
-		{
-			prefix: "phone number: ",
-			suffix: ", ",
-		},
-		{
-			prefix: "'To' number ",
-			suffix: " is not",
-		},
+func (c *Controller) issueMany(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
+	request []*api.IssueCodeRequest) ([]*issueResult, []*api.IssueCodeResponse) {
+	results := make([]*issueResult, len(request))
+	responses := make([]*api.IssueCodeResponse, len(request))
+	for i, singleReq := range request {
+		results[i], responses[i] = generateCode(ctx, authApp, membership, realm, singleReq)
 	}
-)
 
-// scrubPhoneNumbers checks for phone numbers in known Twilio error strings that contains
-// user phone numbers.
-func scrubPhoneNumbers(s string) string {
-	noScrubs := s
-	for _, scrub := range scrubbers {
-		pi := strings.Index(noScrubs, scrub.prefix)
-		si := strings.Index(noScrubs, scrub.suffix)
-
-		// if prefix is in the string and suffix is in the sting after the prefix
-		if pi >= 0 && si > pi+len(scrub.prefix) {
-			noScrubs = strings.Join([]string{
-				noScrubs[0 : pi+len(scrub.prefix)],
-				noScrubs[si:],
-			}, "REDACTED")
-		}
-	}
-	return noScrubs
+	return results, responses
 }
 
-func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm, request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
-	logger := logging.FromContext(ctx).Named("issueapi.issue")
+// generateCode issues a code. Footgun: Does not send SMS
+func (c *Controller) generateCode(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
+	request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
+	logger := logging.FromContext(ctx).Named("issueapi.generateCode")
 
 	// If this realm requires a date but no date was specified, return an error.
 	if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
@@ -286,73 +262,16 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 		}, nil
 	}
 
-	result := &issueResult{
-		httpCode:  http.StatusOK,
-		obsBlame:  observability.BlameNone,
-		obsResult: observability.ResultOK(),
-	}
-
-	if request.Phone != "" && smsProvider != nil {
-		if err := func() error {
-			defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
-
-			message, err := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
-			if err != nil {
-				return err
-			}
-
-			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
-				// Delete the token
-				if err := c.db.DeleteVerificationCode(code); err != nil {
-					logger.Errorw("failed to delete verification code", "error", err)
-					// fallthrough to the error
-				}
-
-				logger.Errorw("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
-				result.obsBlame = observability.BlameClient
-				result.obsResult = observability.ResultError("FAILED_TO_SEND_SMS")
-				return err
-			}
-			return nil
-		}(); err != nil {
-			result.httpCode = http.StatusBadRequest
-			result.errorReturn = api.Errorf("failed to send sms: %s", err)
-			return result, nil
+	return &issueResult{
+			httpCode:  http.StatusOK,
+			obsBlame:  observability.BlameNone,
+			obsResult: observability.ResultOK(),
+		}, &api.IssueCodeResponse{
+			UUID:                   uuid,
+			VerificationCode:       code,
+			ExpiresAt:              expiryTime.Format(time.RFC1123),
+			ExpiresAtTimestamp:     expiryTime.UTC().Unix(),
+			LongExpiresAt:          longExpiryTime.Format(time.RFC1123),
+			LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
 		}
-	}
-
-	return result, &api.IssueCodeResponse{
-		UUID:                   uuid,
-		VerificationCode:       code,
-		ExpiresAt:              expiryTime.Format(time.RFC1123),
-		ExpiresAtTimestamp:     expiryTime.UTC().Unix(),
-		LongExpiresAt:          longExpiryTime.Format(time.RFC1123),
-		LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
-	}
-}
-
-// getAuthorizationFromContext pulls the authorization from the context. If an
-// API key is provided, it's used to lookup the realm. If a membership exists,
-// it's used to provide the realm.
-func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database.AuthorizedApp, *database.Membership, *database.Realm, error) {
-	authorizedApp := controller.AuthorizedAppFromContext(ctx)
-	if authorizedApp != nil {
-		realm, err := authorizedApp.Realm(c.db)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		return authorizedApp, nil, realm, nil
-	}
-
-	membership := controller.MembershipFromContext(ctx)
-	if membership != nil {
-		realm := membership.Realm
-		return nil, membership, realm, nil
-	}
-
-	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
-}
-
-func recordObservability(ctx context.Context, result *issueResult) {
-	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 }
