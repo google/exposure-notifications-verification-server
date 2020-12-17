@@ -32,8 +32,40 @@ import (
 	"go.opencensus.io/stats"
 )
 
+func (c *Controller) issueOne(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
+	request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
+	logger := logging.FromContext(ctx).Named("issueapi.issueOne")
+
+	// Generate code
+	result := c.generateCode(ctx, authApp, membership, realm, request)
+
+	// Send SMS messages
+	if err := c.sendSMS(ctx, realm, request, result); err != nil {
+		logger.Warnw("failed to send SMS", "error", err)
+	}
+
+	if result.errorReturn != nil {
+		return result, &api.IssueCodeResponse{
+			ErrorCode: result.errorReturn.ErrorCode,
+			Error:     result.errorReturn.Error,
+		}
+	}
+
+	// Convert to API response
+	v := result.verCode
+	return result, &api.IssueCodeResponse{
+		UUID:                   v.UUID,
+		VerificationCode:       v.Code,
+		ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
+		ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
+		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
+		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
+	}
+}
+
 func (c *Controller) issueMany(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
-	requests []*api.IssueCodeRequest) []*api.IssueCodeResponse {
+	requests []*api.IssueCodeRequest) ([]*issueResult, []*api.IssueCodeResponse) {
+	logger := logging.FromContext(ctx).Named("issueapi.issueMany")
 
 	// Generate codes
 	results := make([]*issueResult, len(requests))
@@ -43,26 +75,40 @@ func (c *Controller) issueMany(ctx context.Context, authApp *database.Authorized
 
 	// Send SMS messages
 	for i, result := range results {
-		c.sendSMS(ctx, realm, requests[i], result)
+		if result.errorReturn != nil {
+			continue
+		}
+
+		if err := c.sendSMS(ctx, realm, requests[i], result); err != nil {
+			logger.Warnw("failed to send SMS", "error", err)
+		}
 	}
 
 	// Convert to API response
 	responses := make([]*api.IssueCodeResponse, len(requests))
 	for i, result := range results {
-		v := result.verCode
-		responses[i] = &api.IssueCodeResponse{
-			UUID:                   v.UUID,
-			VerificationCode:       v.Code,
-			ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
-			ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
-			LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
-			LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
+		if result.errorReturn != nil {
+			responses[i] = &api.IssueCodeResponse{
+				ErrorCode: result.errorReturn.ErrorCode,
+				Error:     result.errorReturn.Error,
+			}
+		} else {
+			v := result.verCode
+			responses[i] = &api.IssueCodeResponse{
+				UUID:                   v.UUID,
+				VerificationCode:       v.Code,
+				ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
+				ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
+				LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
+				LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
+			}
 		}
 	}
-	return responses
+	return results, responses
 }
 
-// generateCode issues a code. Footgun: Does not send SMS
+// generateCode issues a code.
+// Footgun: Does not send SMS messages
 func (c *Controller) generateCode(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
 	request *api.IssueCodeRequest) *issueResult {
 	logger := logging.FromContext(ctx).Named("issueapi.generateCode")

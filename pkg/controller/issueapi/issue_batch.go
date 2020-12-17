@@ -15,7 +15,6 @@
 package issueapi
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -82,28 +81,20 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		httpCode := http.StatusOK
 		errCount := 0
 
-		resp.Codes = make([]*api.IssueCodeResponse, l)
-		for i, singleIssue := range request.Codes {
-			result, resp.Codes[i] = c.issue(ctx, authApp, membership, realm, singleIssue)
-			if result.errorReturn != nil {
-				if result.httpCode == http.StatusInternalServerError {
-					controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))
-					return
-				}
-				// continue processing if when a single code issuance fails.
-				// if any issuance fails, the returned code is the code of the first failure.
-				logger.Warnw("single code issuance failed", "error", result.errorReturn)
-				errCount++
-				if resp.Codes[i] == nil {
-					resp.Codes[i] = &api.IssueCodeResponse{}
-				}
-				resp.Codes[i].ErrorCode = result.errorReturn.ErrorCode
-				resp.Codes[i].Error = result.errorReturn.Error
-				if httpCode == http.StatusOK {
-					httpCode = result.httpCode
-					resp.ErrorCode = result.errorReturn.ErrorCode
-				}
+		var results []*issueResult
+		results, resp.Codes = c.issueMany(ctx, authApp, membership, realm, request.Codes)
+		for _, result := range results {
+			if result.errorReturn == nil {
 				continue
+			}
+
+			// if any issuance fails, the returned code is the code of the first failure
+			// and  continue processing all codes.
+			logger.Warnw("single code issuance failed", "error", result.errorReturn)
+			errCount++
+			if httpCode == http.StatusOK {
+				httpCode = result.httpCode
+				resp.ErrorCode = result.errorReturn.ErrorCode
 			}
 		}
 
