@@ -24,7 +24,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
-	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
 var (
@@ -63,9 +62,16 @@ func scrubPhoneNumbers(s string) string {
 	return noScrubs
 }
 
-func (c *Controller) sendSMS(ctx context.Context, smsProvider sms.Provider, realm *database.Realm, request *api.IssueCodeRequest, result *issueResult) error {
-	if request.Phone == "" || smsProvider == nil {
+func (c *Controller) sendSMS(ctx context.Context, realm *database.Realm, request *api.IssueCodeRequest, result *issueResult) error {
+	if request.Phone == "" {
 		return nil
+	}
+	smsProvider, err := realm.SMSProvider(c.db)
+	if smsProvider == nil {
+		return nil
+	}
+	if err != nil {
+		return err
 	}
 
 	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
@@ -73,14 +79,14 @@ func (c *Controller) sendSMS(ctx context.Context, smsProvider sms.Provider, real
 	if err := func() error {
 		defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
 
-		message, err := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+		message, err := realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
 			return err
 		}
 
 		if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 			// Delete the token
-			if err := c.db.DeleteVerificationCode(code); err != nil {
+			if err := c.db.DeleteVerificationCode(result.verCode.Code); err != nil {
 				logger.Errorw("failed to delete verification code", "error", err)
 				// fallthrough to the error
 			}

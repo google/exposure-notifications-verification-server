@@ -20,12 +20,15 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"go.opencensus.io/tag"
 )
 
 type issueResult struct {
+	verCode *database.VerificationCode
+
 	httpCode    int
 	errorReturn *api.ErrorReturn
 	obsBlame    tag.Mutator

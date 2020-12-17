@@ -92,15 +92,15 @@ func TestIssue(t *testing.T) {
 			LongExpiresAt:  time.Now().Add(24 * time.Hour),
 			TestType:       "confirmed",
 		}
-		code, longCode, uuid, err := otp.Issue(ctx, 10)
+		verCode, err := otp.Issue(ctx, 10)
 		if err != nil {
 			t.Fatalf("error generating code: %v", err)
 		}
-		if uuid == "" {
+		if verCode.UUID == "" {
 			t.Fatal("expected uuid from db, was empty")
 		}
-		codes = append(codes, code)
-		longCodes = append(longCodes, longCode)
+		codes = append(codes, verCode.Code)
+		longCodes = append(longCodes, verCode.LongCode)
 	}
 
 	if got := len(codes); got != numCodes {

@@ -97,7 +97,7 @@ type Request struct {
 // Issue will generate a verification code and save it to the database, based on
 // the paremters provided. It returns the short code, long code, a UUID for
 // accessing the code, and any errors.
-func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, string, error) {
+func (o *Request) Issue(ctx context.Context, retryCount uint) (*database.VerificationCode, error) {
 	logger := logging.FromContext(ctx)
 	var verificationCode database.VerificationCode
 	var err error
@@ -152,7 +152,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, s
 		}
 	}
 	if err != nil {
-		return "", "", "", err
+		return &verificationCode, err
 	}
-	return code, longCode, verificationCode.UUID, nil
+	return &verificationCode, nil
 }

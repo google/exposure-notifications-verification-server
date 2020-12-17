@@ -33,19 +33,38 @@ import (
 )
 
 func (c *Controller) issueMany(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
-	request []*api.IssueCodeRequest) ([]*issueResult, []*api.IssueCodeResponse) {
-	results := make([]*issueResult, len(request))
-	responses := make([]*api.IssueCodeResponse, len(request))
-	for i, singleReq := range request {
-		results[i], responses[i] = generateCode(ctx, authApp, membership, realm, singleReq)
+	requests []*api.IssueCodeRequest) []*api.IssueCodeResponse {
+
+	// Generate codes
+	results := make([]*issueResult, len(requests))
+	for i, singleReq := range requests {
+		results[i] = c.generateCode(ctx, authApp, membership, realm, singleReq)
 	}
 
-	return results, responses
+	// Send SMS messages
+	for i, result := range results {
+		c.sendSMS(ctx, realm, requests[i], result)
+	}
+
+	// Convert to API response
+	responses := make([]*api.IssueCodeResponse, len(requests))
+	for i, result := range results {
+		v := result.verCode
+		responses[i] = &api.IssueCodeResponse{
+			UUID:                   v.UUID,
+			VerificationCode:       v.Code,
+			ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
+			ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
+			LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
+			LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
+		}
+	}
+	return responses
 }
 
 // generateCode issues a code. Footgun: Does not send SMS
 func (c *Controller) generateCode(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
-	request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
+	request *api.IssueCodeRequest) *issueResult {
 	logger := logging.FromContext(ctx).Named("issueapi.generateCode")
 
 	// If this realm requires a date but no date was specified, return an error.
@@ -55,7 +74,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 			obsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
 			httpCode:    http.StatusBadRequest,
 			errorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
-		}, nil
+		}
 	}
 
 	// Validate that the request with the provided test type is valid for this realm.
@@ -65,7 +84,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 			obsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
 			httpCode:    http.StatusBadRequest,
 			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
-		}, nil
+		}
 	}
 
 	// Verify the test type
@@ -76,14 +95,13 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 			obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
 			httpCode:    http.StatusBadRequest,
 			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrUnsupportedTestType),
-		}, nil
+		}
 	}
 
 	// Verify SMS configuration if phone was provided
 	var smsProvider sms.Provider
 	if request.Phone != "" {
-		var err error
-		smsProvider, err = realm.SMSProvider(c.db)
+		smsProvider, err := realm.SMSProvider(c.db)
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
 			return &issueResult{
@@ -91,7 +109,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
 				httpCode:    http.StatusInternalServerError,
 				errorReturn: api.Errorf("failed to get sms provider"),
-			}, nil
+			}
 		}
 		if smsProvider == nil {
 			err := fmt.Errorf("phone provided, but no sms provider is configured")
@@ -100,7 +118,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
 				httpCode:    http.StatusBadRequest,
 				errorReturn: api.Error(err),
-			}, nil
+			}
 		}
 	}
 
@@ -118,7 +136,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 					obsResult:   observability.ResultError(dateSettings[i].ParseError),
 					httpCode:    http.StatusBadRequest,
 					errorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
-				}, nil
+				}
 			}
 			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
 			maxDate := timeutils.UTCMidnight(time.Now())
@@ -137,7 +155,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 					obsResult:   observability.ResultError(dateSettings[i].ValidateError),
 					httpCode:    http.StatusBadRequest,
 					errorReturn: api.Error(err),
-				}, nil
+				}
 			}
 			parsedDates[i] = validatedDate
 		}
@@ -154,7 +172,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 					obsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
 					httpCode:    http.StatusInternalServerError,
 					errorReturn: api.Error(err),
-				}, nil
+				}
 			}
 		} else if code != nil {
 			return &issueResult{
@@ -162,7 +180,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 				obsResult:   observability.ResultError("UUID_CONFLICT"),
 				httpCode:    http.StatusConflict,
 				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
-			}, nil
+			}
 		}
 	}
 
@@ -176,7 +194,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 				obsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
 				httpCode:    http.StatusInternalServerError,
 				errorReturn: api.Error(err),
-			}, nil
+			}
 		}
 		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
 		if err != nil {
@@ -186,7 +204,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 				obsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
 				httpCode:    http.StatusInternalServerError,
 				errorReturn: api.Errorf("failed to verify realm stats, please try again"),
-			}, nil
+			}
 		}
 
 		stats.Record(ctx, mRealmTokenUsed.M(1))
@@ -203,7 +221,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 					obsResult:   observability.ResultError("QUOTA_EXCEEDED"),
 					httpCode:    http.StatusTooManyRequests,
 					errorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
-				}, nil
+				}
 			}
 		}
 	}
@@ -242,7 +260,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 		IssuingExternalID: request.ExternalIssuerID,
 	}
 
-	code, longCode, uuid, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
+	verCode, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
 	if err != nil {
 		logger.Errorw("failed to issue code", "error", err)
 		// GormV1 doesn't have a good way to match db errors
@@ -252,26 +270,20 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 				obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
 				httpCode:    http.StatusConflict,
 				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
-			}, nil
+			}
 		}
 		return &issueResult{
 			obsBlame:    observability.BlameServer,
 			obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
 			httpCode:    http.StatusInternalServerError,
 			errorReturn: api.Errorf("failed to generate otp code, please try again"),
-		}, nil
+		}
 	}
 
 	return &issueResult{
-			httpCode:  http.StatusOK,
-			obsBlame:  observability.BlameNone,
-			obsResult: observability.ResultOK(),
-		}, &api.IssueCodeResponse{
-			UUID:                   uuid,
-			VerificationCode:       code,
-			ExpiresAt:              expiryTime.Format(time.RFC1123),
-			ExpiresAtTimestamp:     expiryTime.UTC().Unix(),
-			LongExpiresAt:          longExpiryTime.Format(time.RFC1123),
-			LongExpiresAtTimestamp: longExpiryTime.UTC().Unix(),
-		}
+		verCode:   verCode,
+		httpCode:  http.StatusOK,
+		obsBlame:  observability.BlameNone,
+		obsResult: observability.ResultOK(),
+	}
 }
