@@ -40,6 +40,8 @@ type redisCacher struct {
 	pool    *redigo.Pool
 	keyFunc KeyFunc
 
+	waitTimeout time.Duration
+
 	stopped uint32
 	stopCh  chan struct{}
 }
@@ -58,6 +60,10 @@ type RedisConfig struct {
 
 	// KeyFunc is the key function.
 	KeyFunc KeyFunc
+
+	// WaitTimeout is the maximum amount of time to wait for a connection to
+	// become available.
+	WaitTimeout time.Duration
 }
 
 // NewRedis creates a new in-memory cache.
@@ -85,9 +91,11 @@ func NewRedis(i *RedisConfig) (Cacher, error) {
 			IdleTimeout: i.IdleTimeout,
 			MaxIdle:     i.MaxIdle,
 			MaxActive:   i.MaxActive,
+			Wait:        true,
 		},
-		keyFunc: i.KeyFunc,
-		stopCh:  make(chan struct{}),
+		keyFunc:     i.KeyFunc,
+		waitTimeout: i.WaitTimeout,
+		stopCh:      make(chan struct{}),
 	}
 
 	if err := view.Register(redigo.ObservabilityMetricViews...); err != nil {
@@ -292,7 +300,8 @@ func (c *redisCacher) withConn(f func(conn redigo.ConnWithContext) error) error 
 		return fmt.Errorf("missing function")
 	}
 
-	ctx := context.Background()
+	ctx, done := context.WithTimeout(context.Background(), c.waitTimeout)
+	defer done()
 
 	conn, ok := c.pool.GetWithContext(ctx).(redigo.ConnWithContext)
 	if !ok {
