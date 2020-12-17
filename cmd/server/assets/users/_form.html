@@ -49,6 +49,9 @@
             {{$name}}
             <small class="form-text text-muted">
               Can {{$permission.Description}}.
+              {{if $implied := $permission.Implied}}
+                Granting this permission will also grant {{toSentence $implied "and"}}.
+              {{end}}
             </small>
           </label>
         </div>
@@ -63,4 +66,20 @@
       {{end}}
     </button>
   </form>
+
+  <script type="text/javascript">
+    $(function() {
+      {{range $name, $permission := $permissions}}
+        {{if $implied := $permission.Implied}}
+          $('input#permission-{{$permission.Value}}').change(function() {
+            if($(this).prop('checked')) {
+              {{range $implied}}
+                $('input#permission-{{.Value}}').prop('checked', true);
+              {{end}}
+            }
+          });
+        {{end}}
+      {{end}}
+    });
+  </script>
 {{end}}
