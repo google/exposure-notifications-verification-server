@@ -16,6 +16,8 @@ package database
 
 import (
 	"testing"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func TestMembership_AfterFind(t *testing.T) {
@@ -40,4 +42,47 @@ func TestMembership_AfterFind(t *testing.T) {
 			t.Errorf("expected errors for %s", "realm")
 		}
 	})
+}
+
+func TestMembership_SaveMembership(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm := NewRealmWithDefaults("test")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("error saving realm: %v", err)
+	}
+
+	user := &User{
+		Email:       "user@example.com",
+		Name:        "Dr User",
+		SystemAdmin: true,
+	}
+	if err := db.SaveUser(user, System); err != nil {
+		t.Fatalf("error creating user: %v", err)
+	}
+
+	if err := user.AddToRealm(db, realm, rbac.LegacyRealmAdmin, SystemTest); err != nil {
+		t.Fatalf("failed adding user to realm %v", err)
+	}
+
+	m, err := user.FindMembership(db, realm.ID)
+	if err != nil {
+		t.Fatalf("failed finding membership %v", err)
+	}
+
+	m.DefaultSMSTemplateLabel = "This one"
+	if err = db.SaveMembership(m, SystemTest); err != nil {
+		t.Fatalf("failed saving membership %v", err)
+	}
+
+	m, err = user.FindMembership(db, realm.ID)
+	if err != nil {
+		t.Fatalf("failed finding membership %v", err)
+	}
+
+	if m.DefaultSMSTemplateLabel != "This one" {
+		t.Fatalf("Expected default template saved. got %s, want \"This one\"", m.DefaultSMSTemplateLabel)
+	}
 }

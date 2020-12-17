@@ -131,7 +131,7 @@
                   <select class="form-control" id="sms-template">
                     <option value="Default SMS template">Default SMS template</option>
                     {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
-                    <option value="{{$k}}">{{$k}}</option>
+                    <option value="{{$k}}" {{selectedIf (eq $k $currentMembership.DefaultSMSTemplateLabel)}}>{{$k}}</option>
                     {{end}}
                   </select>
                 </div>

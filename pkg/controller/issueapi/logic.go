@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	// scrubbers is a list of known twilio error messages that contain the send to phone number.
+	// scrubbers is a list of known Twilio error messages that contain the send to phone number.
 	scrubbers = []struct {
 		prefix string
 		suffix string
@@ -242,9 +242,9 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 	}
 
 	// Compute issuing user - the membership will be nil when called via the API.
-	var user *database.User
+	var currentUser *database.User
 	if membership != nil {
-		user = membership.User
+		currentUser = membership.User
 	}
 
 	// Generate verification code
@@ -261,7 +261,7 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 		RealmID:        realm.ID,
 		UUID:           rUUID,
 
-		IssuingUser:       user,
+		IssuingUser:       currentUser,
 		IssuingApp:        authApp,
 		IssuingExternalID: request.ExternalIssuerID,
 	}
@@ -299,6 +299,13 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 			message, err := realm.BuildSMSText(code, longCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 			if err != nil {
 				return err
+			}
+
+			if currentUser != nil && request.SMSTemplateLabel != "" && membership.DefaultSMSTemplateLabel != request.SMSTemplateLabel {
+				membership.DefaultSMSTemplateLabel = request.SMSTemplateLabel
+				if err := c.db.SaveMembership(membership, currentUser); err != nil {
+					logger.Warnw("failed to save user template preference", "error", err)
+				}
 			}
 
 			if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
