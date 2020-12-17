@@ -23,6 +23,8 @@ import (
 	htmltemplate "html/template"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	texttemplate "text/template"
@@ -196,9 +198,89 @@ func translate(l *gotext.Locale, key string, vars ...interface{}) (string, error
 	return v, nil
 }
 
+// toStringSlice converts the input slice to strings. The values must be
+// primitive or implement the fmt.Stringer interface.
+func toStringSlice(i interface{}) ([]string, error) {
+	t := reflect.TypeOf(i)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Slice && t.Kind() != reflect.Array {
+		return nil, fmt.Errorf("value is not a slice: %T", i)
+	}
+
+	s := reflect.ValueOf(i)
+	for s.Kind() == reflect.Ptr {
+		s = s.Elem()
+	}
+
+	l := make([]string, 0, s.Len())
+	for i := 0; i < s.Len(); i++ {
+		val := s.Index(i).Interface()
+		switch t := val.(type) {
+		case fmt.Stringer:
+			l = append(l, t.String())
+		case string:
+			l = append(l, t)
+		case int:
+			l = append(l, strconv.FormatInt(int64(t), 10))
+		case int8:
+			l = append(l, strconv.FormatInt(int64(t), 10))
+		case int16:
+			l = append(l, strconv.FormatInt(int64(t), 10))
+		case int32:
+			l = append(l, strconv.FormatInt(int64(t), 10))
+		case int64:
+			l = append(l, strconv.FormatInt(t, 10))
+		case uint:
+			l = append(l, strconv.FormatUint(uint64(t), 10))
+		case uint8:
+			l = append(l, strconv.FormatUint(uint64(t), 10))
+		case uint16:
+			l = append(l, strconv.FormatUint(uint64(t), 10))
+		case uint32:
+			l = append(l, strconv.FormatUint(uint64(t), 10))
+		case uint64:
+			l = append(l, strconv.FormatUint(t, 10))
+		}
+	}
+
+	return l, nil
+}
+
+// joinStrings joins a list of strings or string-like things.
+func joinStrings(i interface{}, sep string) (string, error) {
+	l, err := toStringSlice(i)
+	if err != nil {
+		return "", nil
+	}
+	return strings.Join(l, sep), nil
+}
+
+// toSentence joins a list of string like things into a human-friendly sentence.
+func toSentence(i interface{}, joiner string) (string, error) {
+	l, err := toStringSlice(i)
+	if err != nil {
+		return "", nil
+	}
+
+	switch len(l) {
+	case 0:
+		return "", nil
+	case 1:
+		return l[0], nil
+	case 2:
+		return l[0] + " " + joiner + " " + l[1], nil
+	default:
+		parts, last := l[0:len(l)-1], l[len(l)-1]
+		return strings.Join(parts, ", ") + " " + joiner + ", " + last, nil
+	}
+}
+
 func templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
-		"joinStrings":      strings.Join,
+		"joinStrings":      joinStrings,
+		"toSentence":       toSentence,
 		"trimSpace":        project.TrimSpace,
 		"stringContains":   strings.Contains,
 		"toLower":          strings.ToLower,

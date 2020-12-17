@@ -273,10 +273,10 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				ddl := []string{
-					"ALTER TABLE sms_configs DROP COLUMN realm_id",
-					"ALTER TABLE tokens DROP COLUMN realm_id",
-					"ALTER TABLE verification_codes DROP COLUMN realm_id",
-					"ALTER TABLE authorized_apps DROP COLUMN realm_id",
+					"ALTER TABLE sms_configs DROP COLUMN IF EXISTS realm_id",
+					"ALTER TABLE tokens DROP COLUMN IF EXISTS realm_id",
+					"ALTER TABLE verification_codes DROP COLUMN IF EXISTS realm_id",
+					"ALTER TABLE authorized_apps DROP COLUMN IF EXISTS realm_id",
 					"DROP TABLE admin_realms",
 					"DROP TABLE user_realms",
 					"DROP TABLE realms",
@@ -625,7 +625,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					"sms_text_template",
 				}
 				for _, col := range dropColumns {
-					stmt := fmt.Sprintf("ALTER TABLE realms DROP COLUMN %s", col)
+					stmt := fmt.Sprintf("ALTER TABLE realms DROP COLUMN IF EXISTS %s", col)
 					if err := tx.Exec(stmt).Error; err != nil {
 						return fmt.Errorf("unable to execute '%v': %w", stmt, err)
 					}
@@ -1849,6 +1849,33 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return tx.Exec(`ALTER TABLE realms DROP COLUMN IF EXISTS daily_active_users_enabled`).Error
+			},
+		},
+		{
+			ID: "00079-AddMembershipsDefaultSMSTemplate",
+			Migrate: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE memberships ADD COLUMN IF NOT EXISTS default_sms_template_label VARCHAR(255)`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sqls := []string{
+					`ALTER TABLE memberships DROP COLUMN IF EXISTS default_sms_template_label`,
+				}
+
+				for _, sql := range sqls {
+					if err := tx.Exec(sql).Error; err != nil {
+						return err
+					}
+				}
+				return nil
 			},
 		},
 	}

@@ -12,8 +12,16 @@ The error budget start burning when 5xx error are returned.
 
 First thing first, communicate to the internal chat to raise awareness.
 
-Use the following MQL queries to see which service is returning 5xx
-errors:
+We currently have Error Burdget Burn SLO defined for the following services:
+* `apiserver`
+* `adminapi`
+* `server`
+* `enx-redirect`
+
+Confirm which service is firing the alert by looking at the alert name. It should be in the format of `FastErrorBudgetBurn-SERVICE_NAME` or `SlowErrorBudgetBurn-SERVICE_NAME`.
+
+Next, on Cloud Console you can click on the Navigation Menu -> `Monitoring` -> `Metrics Explorer`. 
+Select `Query Editor` and  use the following Metrics Query Language (MQL) queries to see the 5xx errors:
 
 ```
 fetch cloud_run_revision
@@ -23,12 +31,8 @@ fetch cloud_run_revision
 | every 1m
 ```
 
-(NB: we currently only have SLO defined for `apiserver` service so this
-step may not be necessary)
-
-While at this, you can also add a "group by" to check whether the error
-is correlated to a new release.
-
+You have confirmed the system is having 500 errors, now you can go check the logs. 
+To do so you have to click on Navigation Menu -> `Logging` -> `Logs Explorer`
 Use the following log filter to determine what went wrong:
 
 ```
@@ -36,3 +40,4 @@ resource.type="cloud_run_revision"
 resource.labels.service_name="${SERVICE_NAME}"
 severity=ERROR
 ```
+You will find relevant error messages under the `jsonPayload` field. Assess the message to analyze what component of the system could be failing. 
