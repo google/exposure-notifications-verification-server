@@ -74,6 +74,7 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 	}
 	// Ensure impled permissions. The actor must also have the impled permissions by definition.
 	for has, needs := range requiredPermission {
+		// If granted has, ensure that we have all needs.
 		if Can(permission, has) {
 			for _, required := range needs {
 				permission = permission | required
