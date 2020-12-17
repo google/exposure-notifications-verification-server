@@ -34,14 +34,14 @@ func TestIssueBatch(t *testing.T) {
 	testSuite := testsuite.NewIntegrationSuite(t, ctx)
 	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
 	if err != nil {
-		t.Fatalf("failed to create admin API client, err: %v", err)
+		t.Fatal(err)
 	}
 	db := testSuite.DB
 	realm := testSuite.Realm
 
 	realm.AllowedTestTypes = database.TestTypeConfirmed
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatalf("error saving realm: %v", err)
+		t.Fatal(err)
 	}
 
 	smsConfig := &database.SMSConfig{

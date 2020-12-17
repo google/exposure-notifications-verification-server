@@ -118,6 +118,7 @@ resource "google_cloud_run_service" "modeler" {
             local.database_config,
             local.gcp_config,
             local.rate_limit_config,
+            local.observability_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "modeler", {}),

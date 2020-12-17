@@ -18,13 +18,13 @@ import (
 	"context"
 	"crypto/sha1"
 	"io/ioutil"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -161,9 +161,6 @@ type IntegrationSuite struct {
 	Realm *database.Realm
 
 	adminKey, deviceKey string
-
-	adminSrv *server.Server
-	apiSrv   *server.Server
 }
 
 // NewIntegrationSuite creates a IntegrationSuite for integration tests.
@@ -232,18 +229,24 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 // NewAdminAPIClient runs an Admin API Server and returns a corresponding client.
 func (s *IntegrationSuite) NewAdminAPIClient(ctx context.Context, tb testing.TB) (*AdminClient, error) {
 	srv := s.newAdminAPIServer(ctx, tb)
-	s.adminSrv = srv
-	return NewAdminClient("http://"+srv.Addr(), s.adminKey)
+	return &AdminClient{
+		urlBase: srv.URL,
+		client:  srv.Client(),
+		key:     s.adminKey,
+	}, nil
 }
 
 // NewAPIClient runs an API Server and returns a corresponding client.
 func (s *IntegrationSuite) NewAPIClient(ctx context.Context, tb testing.TB) (*APIClient, error) {
 	srv := s.newAPIServer(ctx, tb)
-	s.apiSrv = srv
-	return NewAPIClient("http://"+srv.Addr(), s.deviceKey)
+	return &APIClient{
+		urlBase: srv.URL,
+		client:  srv.Client(),
+		key:     s.deviceKey,
+	}, nil
 }
 
-func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Server {
+func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB) *httptest.Server {
 	// Create the router
 	adminRouter := mux.NewRouter()
 	// Install common security headers
@@ -297,24 +300,14 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods("POST")
 	}
 
-	srv, err := server.New(s.cfg.AdminAPISrvConfig.Port)
-	if err != nil {
-		tb.Fatalf("failed to create server: %v", err)
-	}
-
-	// Stop the server on cleanup
-	stopCtx, stop := context.WithCancel(ctx)
-	tb.Cleanup(stop)
-
-	go func() {
-		if err := srv.ServeHTTPHandler(stopCtx, adminRouter); err != nil {
-			tb.Fatalf("failed to serve HTTP handler: %v", err)
-		}
-	}()
+	srv := httptest.NewServer(adminRouter)
+	tb.Cleanup(func() {
+		srv.Close()
+	})
 	return srv
 }
 
-func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server {
+func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *httptest.Server {
 	// Create the renderer
 	h, err := render.New(ctx, "", s.cfg.APISrvConfig.DevMode)
 	if err != nil {
@@ -375,19 +368,9 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 		sub.Handle("/certificate", certapiController.HandleCertificate()).Methods("POST")
 	}
 
-	srv, err := server.New(s.cfg.APISrvConfig.Port)
-	if err != nil {
-		tb.Fatalf("failed to create server: %v", err)
-	}
-
-	// Stop the server on cleanup
-	stopCtx, stop := context.WithCancel(ctx)
-	tb.Cleanup(stop)
-
-	go func() {
-		if err := srv.ServeHTTPHandler(stopCtx, apiRouter); err != nil {
-			tb.Fatalf("failed to serve HTTP handler: %v", err)
-		}
-	}()
+	srv := httptest.NewServer(apiRouter)
+	tb.Cleanup(func() {
+		srv.Close()
+	})
 	return srv
 }
