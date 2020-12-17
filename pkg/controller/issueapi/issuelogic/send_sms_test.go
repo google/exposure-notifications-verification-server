@@ -82,11 +82,8 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 
 	smsConfig := &database.SMSConfig{
-		RealmID:          realm.ID,
-		ProviderType:     sms.ProviderType(sms.ProviderTypeNoop),
-		TwilioAccountSid: "abc123",
-		TwilioAuthToken:  "my-secret-ref",
-		TwilioFromNumber: "+11234567890",
+		RealmID:      realm.ID,
+		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
 	}
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
@@ -114,6 +111,7 @@ func TestSMS_sendSMS(t *testing.T) {
 		ObsBlame:  observability.BlameNone,
 		ObsResult: observability.ResultOK(),
 		verCode: &database.VerificationCode{
+			RealmID:       realm.ID,
 			Code:          "00000001",
 			LongCode:      "00000001ABC",
 			Claimed:       true,
@@ -122,8 +120,32 @@ func TestSMS_sendSMS(t *testing.T) {
 			LongExpiresAt: time.Now().Add(time.Hour),
 		},
 	}
-	err := c.sendSMS(ctx, request, result)
-	if err != nil {
+	if err := db.SaveVerificationCode(result.verCode, c.config.GetAllowedSymptomAge()); err != nil {
 		t.Fatal(err)
+	}
+	// un-hmac the codes so rollback can find them.
+	result.verCode.Code = "00000001"
+	result.verCode.LongCode = "00000001ABC"
+
+	// Successful SMS send
+
+	if err := c.sendSMS(ctx, request, result); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := realm.FindVerificationCodeByUUID(db, result.verCode.UUID); err != nil {
+		t.Errorf("couldn't find code got %s: %v", result.verCode.UUID, err)
+	}
+
+	// Failed SMS send
+
+	smsConfig.ProviderType = sms.ProviderType(sms.ProviderTypeNoopFail)
+	if err := db.SaveSMSConfig(smsConfig); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.sendSMS(ctx, request, result); err != sms.ErrNoop {
+		t.Errorf("expected sms failure. got %v want %v", err, sms.ErrNoop)
+	}
+	if _, err := realm.FindVerificationCodeByUUID(db, result.verCode.UUID); !database.IsNotFound(err) {
+		t.Errorf("expected SMS failure to roll-back and delete code. got %v", err)
 	}
 }
