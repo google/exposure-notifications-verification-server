@@ -88,9 +88,10 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 
 		httpCode := http.StatusOK
 		errCount := 0
-
 		var results []*issueResult
-		results, resp.Codes = c.issueMany(ctx, authApp, membership, realm, request.Codes)
+
+		logic := issuelogic.New(c.db, c.Limiter, authApp, membership, realm)
+		results, resp.Codes = logic.IssueMany(ctx, request.Codes)
 		for _, result := range results {
 			if result.errorReturn == nil {
 				continue

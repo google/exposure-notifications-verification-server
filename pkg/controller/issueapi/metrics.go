@@ -15,6 +15,9 @@
 package issueapi
 
 import (
+	"context"
+	"time"
+
 	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
@@ -71,4 +74,8 @@ func init() {
 			Aggregation: view.Count(),
 		},
 	}...)
+}
+
+func recordObservability(ctx context.Context, result *issueResult) {
+	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 }

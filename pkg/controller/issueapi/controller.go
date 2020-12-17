@@ -20,13 +20,10 @@ package issueapi
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-limiter"
@@ -37,8 +34,6 @@ type Controller struct {
 	db      *database.Database
 	h       render.Renderer
 	limiter limiter.Store
-
-	validTestType map[string]struct{}
 }
 
 // New creates a new IssueAPI controller.
@@ -48,11 +43,6 @@ func New(ctx context.Context, config config.IssueAPIConfig, db *database.Databas
 		db:      db,
 		h:       h,
 		limiter: limiter,
-		validTestType: map[string]struct{}{
-			api.TestTypeConfirmed: {},
-			api.TestTypeLikely:    {},
-			api.TestTypeNegative:  {},
-		},
 	}
 }
 
@@ -76,8 +66,4 @@ func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database
 	}
 
 	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
-}
-
-func recordObservability(ctx context.Context, result *issueResult) {
-	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.obsBlame, &result.obsResult)
 }

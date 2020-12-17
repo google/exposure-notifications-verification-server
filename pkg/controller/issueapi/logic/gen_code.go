@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issuelogic
 
 import (
 	"context"
@@ -32,12 +32,26 @@ import (
 	"go.opencensus.io/stats"
 )
 
-func (c *Controller) issueOne(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
+var (
+	validTestType = map[string]struct{}{
+		api.TestTypeConfirmed: {},
+		api.TestTypeLikely:    {},
+		api.TestTypeNegative:  {},
+	}
+)
+
+func (c *Controller) IssueOne(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
 	request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
 	logger := logging.FromContext(ctx).Named("issueapi.issueOne")
 
 	// Generate code
 	result := c.generateCode(ctx, authApp, membership, realm, request)
+	if result.errorReturn != nil {
+		return result, &api.IssueCodeResponse{
+			ErrorCode: result.errorReturn.ErrorCode,
+			Error:     result.errorReturn.Error,
+		}
+	}
 
 	// Send SMS messages
 	if err := c.sendSMS(ctx, realm, request, result); err != nil {
@@ -63,8 +77,7 @@ func (c *Controller) issueOne(ctx context.Context, authApp *database.AuthorizedA
 	}
 }
 
-func (c *Controller) issueMany(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
-	requests []*api.IssueCodeRequest) ([]*issueResult, []*api.IssueCodeResponse) {
+func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) ([]*issueResult, []*api.IssueCodeResponse) {
 	logger := logging.FromContext(ctx).Named("issueapi.issueMany")
 
 	// Generate codes
@@ -109,8 +122,7 @@ func (c *Controller) issueMany(ctx context.Context, authApp *database.Authorized
 
 // generateCode issues a code.
 // Footgun: Does not send SMS messages
-func (c *Controller) generateCode(ctx context.Context, authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm,
-	request *api.IssueCodeRequest) *issueResult {
+func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeRequest) *issueResult {
 	logger := logging.FromContext(ctx).Named("issueapi.generateCode")
 
 	// If this realm requires a date but no date was specified, return an error.
@@ -135,7 +147,7 @@ func (c *Controller) generateCode(ctx context.Context, authApp *database.Authori
 
 	// Verify the test type
 	request.TestType = strings.ToLower(request.TestType)
-	if _, ok := c.validTestType[request.TestType]; !ok {
+	if _, ok := validTestType[request.TestType]; !ok {
 		return &issueResult{
 			obsBlame:    observability.BlameClient,
 			obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
