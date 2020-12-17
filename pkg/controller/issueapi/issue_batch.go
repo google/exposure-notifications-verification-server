@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 const maxBatchSize = 10
@@ -68,6 +69,13 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			result.obsBlame = observability.BlameClient
 			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
+			return
+		}
+
+		if membership != nil && !membership.Can(rbac.CodeBulkIssue) {
+			result.obsBlame = observability.BlameClient
+			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
