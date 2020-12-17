@@ -14,7 +14,35 @@
 
 package rbac
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
+
+func TestRequiredPermissions(t *testing.T) {
+	t.Parallel()
+
+	for perm, needs := range requiredPermission {
+		name := fmt.Sprintf("implied_by_%s", PermissionMap[perm][0])
+		t.Run(name, func(t *testing.T) {
+			actorPermission := perm
+			for _, n := range needs {
+				actorPermission |= n
+			}
+
+			got, err := CompileAndAuthorize(actorPermission, []Permission{perm})
+			if err != nil {
+				t.Fatalf("missing all required permissions for %v", PermissionNames(perm))
+			}
+
+			for _, n := range needs {
+				if !Can(got, n) {
+					t.Errorf("%v did not imply %v as expected", PermissionNames(perm), PermissionNames(n))
+				}
+			}
+		})
+	}
+}
 
 func TestRBAC_Permissions(t *testing.T) {
 	t.Parallel()

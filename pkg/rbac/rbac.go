@@ -177,6 +177,9 @@ var (
 	impliedBy = make(map[Permission][]Permission)
 )
 
+// Note: there are multiple init functions in this file. They are organized to be
+// near the thing they are initializing.
+// Yes, go allows multiple init functions in the same module.
 func init() {
 	for has, needs := range requiredPermission {
 		for _, perm := range needs {
