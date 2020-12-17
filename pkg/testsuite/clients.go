@@ -36,17 +36,17 @@ type AdminClient struct {
 }
 
 // BatchIssueCode calls the issue-batch API call.
-func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.BatchIssueCodeResponse, error) {
+func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (int, *api.BatchIssueCodeResponse, error) {
 	url := "/api/batch-issue"
 
 	j, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal json: %w", err)
+		return 0, nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
 	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal json: %w", err)
+		return 0, nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
 	httpReq.Header.Add("content-type", "application/json")
@@ -54,20 +54,21 @@ func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.BatchI
 
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to POST /api/issue: %w", err)
+		return 0, nil, fmt.Errorf("failed to POST /api/batch-issue: %w", err)
 	}
 
-	body, err := checkResp(httpResp)
+	defer httpResp.Body.Close()
+	body, err := ioutil.ReadAll(httpResp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to POST /api/issue: %w: %s", err, body)
+		return 0, nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	var pubResponse api.BatchIssueCodeResponse
 	if err := json.Unmarshal(body, &pubResponse); err != nil {
-		return nil, fmt.Errorf("bad publish response")
+		return 0, nil, fmt.Errorf("bad publish response")
 	}
 
-	return &pubResponse, nil
+	return httpResp.StatusCode, &pubResponse, nil
 }
 
 // IssueCode wraps the IssueCode API call.
