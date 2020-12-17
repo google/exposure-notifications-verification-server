@@ -59,6 +59,7 @@ func CacherFor(ctx context.Context, c *Config, keyFunc KeyFunc) (Cacher, error) 
 			IdleTimeout: c.Redis.IdleTimeout,
 			MaxIdle:     c.Redis.MaxIdle,
 			MaxActive:   c.Redis.MaxActive,
+			WaitTimeout: c.Redis.WaitTimeout,
 		})
 	default:
 		return nil, fmt.Errorf("unknown cacher type: %v", typ)

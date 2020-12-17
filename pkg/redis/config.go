@@ -29,4 +29,8 @@ type Config struct {
 	IdleTimeout time.Duration `env:"REDIS_IDLE_TIMEOUT, default=1m"`
 	MaxIdle     int           `env:"REDIS_MAX_IDLE, default=16"`
 	MaxActive   int           `env:"REDIS_MAX_ACTIVE, default=64"`
+
+	// WaitTimeout is the maximum amount of time to wait for a connection to
+	// become available.
+	WaitTimeout time.Duration `env:"REDIS_WAIT_TIMEOUT, default=1s"`
 }
