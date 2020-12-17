@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate stringer -output=rbac_gen.go -type=Permission
-
 // Package rbac implements authorization.
 package rbac
 
@@ -23,8 +21,39 @@ import (
 	"sort"
 )
 
-// Can returns true if the given resource has permission to perform ALL of the
-// provided permissions.
+// PermissionsMap is the list of permissions mapped to their name and
+// description.
+var (
+	PermissionMap = map[Permission][2]string{
+		AuditRead:      {"AuditRead", "read event and audit logs"},
+		APIKeyRead:     {"APIKeyRead", "view information about API keys, including statistics"},
+		APIKeyWrite:    {"APIKeyWrite", "create, update, and delete API keys"},
+		CodeIssue:      {"CodeIssue", "issue codes"},
+		CodeBulkIssue:  {"CodeBulkIssue", "issue codes in bulk, if bulk issue is enabled on the realm"},
+		CodeRead:       {"CodeRead", "lookup code status"},
+		CodeExpire:     {"CodeExpire", "expire codes"},
+		SettingsRead:   {"SettingsRead", "read realm settings"},
+		SettingsWrite:  {"SettingsWrite", "update realm settings"},
+		StatsRead:      {"StatsRead", "view realm statistics"},
+		MobileAppRead:  {"MobileAppRead", "view mobile app information"},
+		MobileAppWrite: {"MobileAppWrite", "create, update, and delete mobile apps"},
+		UserRead:       {"UserRead", "view user information"},
+		UserWrite:      {"UserWrite", "create, update, and delete users"},
+	}
+
+	// NamePermissionMap is the map of permission names to their value.
+	NamePermissionMap map[string]Permission
+)
+
+func init() {
+	NamePermissionMap = make(map[string]Permission, len(PermissionMap))
+	for k, v := range PermissionMap {
+		NamePermissionMap[v[0]] = k
+	}
+}
+
+// Can returns true if the given resource has permission to perform the provided
+// permissions.
 func Can(given Permission, target Permission) bool {
 	return int64(given)&int64(target) != 0
 }
@@ -46,23 +75,13 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 	return permission, nil
 }
 
-// PermissionMap is a map of permissions to their names. It requires the
-// stringer generation.
-func PermissionMap() map[string]Permission {
-	m := make(map[string]Permission, len(_Permission_map)+2)
-	for k, v := range _Permission_map {
-		m[v] = k
-	}
-	return m
-}
-
 // PermissionNames returns the list of permissions included in the given
 // permission.
 func PermissionNames(p Permission) []string {
-	names := make([]string, 0, len(_Permission_map))
-	for v, k := range _Permission_map {
+	names := make([]string, 0, len(PermissionMap))
+	for v, k := range PermissionMap {
 		if Can(p, v) {
-			names = append(names, k)
+			names = append(names, k[0])
 		}
 	}
 	sort.Strings(names)
@@ -73,41 +92,57 @@ func PermissionNames(p Permission) []string {
 // because most database systems lack unsigned integer types.
 type Permission int64
 
+// String implements stringer.
+func (p Permission) String() string {
+	if v, ok := PermissionMap[p]; ok {
+		return v[0]
+	}
+	return fmt.Sprintf("Permission(%d)", int64(p))
+}
+
 // Value returns the permissions value as an integer for sql drivers.
 func (p Permission) Value() (driver.Value, error) {
 	return int64(p), nil
+}
+
+// Description returns the description
+func (p Permission) Description() (string, error) {
+	if v, ok := PermissionMap[p]; ok {
+		return v[1], nil
+	}
+	return "", fmt.Errorf("missing description for %s", p)
 }
 
 const (
 	_ Permission = 1 << iota
 
 	// Audit
-	AuditRead
+	AuditRead = 1 << iota
 
 	// API keys
-	APIKeyRead
-	APIKeyWrite
+	APIKeyRead  = 1 << iota
+	APIKeyWrite = 1 << iota
 
 	// Codes
-	CodeIssue
-	CodeBulkIssue
-	CodeRead
-	CodeExpire
+	CodeIssue     = 1 << iota
+	CodeBulkIssue = 1 << iota
+	CodeRead      = 1 << iota
+	CodeExpire    = 1 << iota
 
 	// Realm settings
-	SettingsRead
-	SettingsWrite
+	SettingsRead  = 1 << iota
+	SettingsWrite = 1 << iota
 
 	// Realm statistics
-	StatsRead
+	StatsRead = 1 << iota
 
 	// Mobile apps
-	MobileAppRead
-	MobileAppWrite
+	MobileAppRead  = 1 << iota
+	MobileAppWrite = 1 << iota
 
 	// Users
-	UserRead
-	UserWrite
+	UserRead  = 1 << iota
+	UserWrite = 1 << iota
 )
 
 // --
@@ -116,10 +151,10 @@ const (
 
 const (
 	// LegacyRealmUser is a quick reference to the old "user" permissions.
-	LegacyRealmUser = CodeIssue | CodeBulkIssue | CodeRead | CodeExpire
+	LegacyRealmUser Permission = CodeIssue | CodeBulkIssue | CodeRead | CodeExpire
 
 	// LegacyRealmAdmin is a quick reference to the old "realm admin" permissions.
-	LegacyRealmAdmin = AuditRead |
+	LegacyRealmAdmin Permission = AuditRead |
 		APIKeyRead | APIKeyWrite |
 		CodeIssue | CodeBulkIssue | CodeRead | CodeExpire |
 		SettingsRead | SettingsWrite |

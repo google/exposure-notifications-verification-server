@@ -213,7 +213,9 @@ func templateFuncs() htmltemplate.FuncMap {
 		"t":                translate,
 		"passwordSentinel": pwdSentinel,
 
-		"rbac": rbac.PermissionMap,
+		"rbac": func() map[string]rbac.Permission {
+			return rbac.NamePermissionMap
+		},
 	}
 }
 

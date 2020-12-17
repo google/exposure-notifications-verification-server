@@ -60,7 +60,7 @@
         <div class="mb-3 mt-n2">
           <ul class="list-unstyled">
             {{range $name, $permission := $permissions}}
-              <li class="small">
+              <li class="small py-1">
                 {{if $userMembership.Can $permission}}
                   <span class="sr-only">{{$user.Name}} can {{$name}}</span>
                   <span class="oi oi-circle-check text-success mr-1" aria-hidden="true"></span>
@@ -68,7 +68,10 @@
                   <span class="sr-only">{{$user.Name}} cannot {{$name}}</span>
                   <span class="oi oi-circle-x text-muted mr-1" aria-hidden="true"></span>
                 {{end}}
-                {{$name}}
+                {{$name}} -
+                <span class="text-muted">
+                  {{$permission.Description}}
+                </span>
               </li>
             {{end}}
           </ul>

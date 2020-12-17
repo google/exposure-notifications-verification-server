@@ -69,6 +69,6 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, user
 	m.Title("User: %s", user.Name)
 	m["user"] = user
 	m["userMembership"] = membership
-	m["permissions"] = rbac.PermissionMap()
+	m["permissions"] = rbac.NamePermissionMap
 	c.h.RenderHTML(w, "users/show", m)
 }

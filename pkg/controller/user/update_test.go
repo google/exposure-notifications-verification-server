@@ -61,7 +61,7 @@ func TestUpdate(t *testing.T) {
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
-	for _, permission := range rbac.PermissionMap() {
+	for _, permission := range rbac.NamePermissionMap {
 		permission := permission
 		target := fmt.Sprintf(`input#permission-%d`, permission)
 
@@ -84,15 +84,6 @@ func TestUpdate(t *testing.T) {
 		); err != nil {
 			t.Fatal(err)
 		}
-
-		membership, err := user.FindMembership(harness.Database, realm.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if membership.Can(permission) {
-			t.Errorf("expected %s to be removed", permission)
-		}
 	}
 
 	// Assert the user has no permissions left
@@ -105,7 +96,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	// Now add permissions back
-	for _, permission := range rbac.PermissionMap() {
+	for _, permission := range rbac.NamePermissionMap {
 		permission := permission
 		target := fmt.Sprintf(`input#permission-%d`, permission)
 
@@ -128,14 +119,14 @@ func TestUpdate(t *testing.T) {
 		); err != nil {
 			t.Fatal(err)
 		}
+	}
 
-		membership, err := user.FindMembership(harness.Database, realm.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if !membership.Can(permission) {
-			t.Errorf("expected %s to be added", permission)
-		}
+	// Permissions should be back
+	membership, err = user.FindMembership(harness.Database, realm.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := int64(membership.Permissions), int64(32766); got != want {
+		t.Errorf("expected %v to be %v", got, want)
 	}
 }
