@@ -25,11 +25,13 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuemetric"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/otp"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 )
 
 var (
@@ -40,15 +42,24 @@ var (
 	}
 )
 
-func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) (*issueResult, *api.IssueCodeResponse) {
+type IssueResult struct {
+	verCode *database.VerificationCode
+
+	HttpCode    int
+	ErrorReturn *api.ErrorReturn
+	ObsBlame    tag.Mutator
+	ObsResult   tag.Mutator
+}
+
+func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) (*IssueResult, *api.IssueCodeResponse) {
 	logger := logging.FromContext(ctx).Named("issueapi.issueOne")
 
 	// Generate code
 	result := c.generateCode(ctx, request)
-	if result.errorReturn != nil {
+	if result.ErrorReturn != nil {
 		return result, &api.IssueCodeResponse{
-			ErrorCode: result.errorReturn.ErrorCode,
-			Error:     result.errorReturn.Error,
+			ErrorCode: result.ErrorReturn.ErrorCode,
+			Error:     result.ErrorReturn.Error,
 		}
 	}
 
@@ -57,10 +68,10 @@ func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest
 		logger.Warnw("failed to send SMS", "error", err)
 	}
 
-	if result.errorReturn != nil {
+	if result.ErrorReturn != nil {
 		return result, &api.IssueCodeResponse{
-			ErrorCode: result.errorReturn.ErrorCode,
-			Error:     result.errorReturn.Error,
+			ErrorCode: result.ErrorReturn.ErrorCode,
+			Error:     result.ErrorReturn.Error,
 		}
 	}
 
@@ -76,18 +87,18 @@ func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest
 	}
 }
 
-func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) ([]*issueResult, []*api.IssueCodeResponse) {
+func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) ([]*IssueResult, []*api.IssueCodeResponse) {
 	logger := logging.FromContext(ctx).Named("issueapi.issueMany")
 
 	// Generate codes
-	results := make([]*issueResult, len(requests))
+	results := make([]*IssueResult, len(requests))
 	for i, singleReq := range requests {
 		results[i] = c.generateCode(ctx, singleReq)
 	}
 
 	// Send SMS messages
 	for i, result := range results {
-		if result.errorReturn != nil {
+		if result.ErrorReturn != nil {
 			continue
 		}
 
@@ -99,10 +110,10 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 	// Convert to API response
 	responses := make([]*api.IssueCodeResponse, len(requests))
 	for i, result := range results {
-		if result.errorReturn != nil {
+		if result.ErrorReturn != nil {
 			responses[i] = &api.IssueCodeResponse{
-				ErrorCode: result.errorReturn.ErrorCode,
-				Error:     result.errorReturn.Error,
+				ErrorCode: result.ErrorReturn.ErrorCode,
+				Error:     result.ErrorReturn.Error,
 			}
 		} else {
 			v := result.verCode
@@ -121,37 +132,37 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 
 // generateCode issues a code.
 // Footgun: Does not send SMS messages
-func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeRequest) *issueResult {
+func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
 	logger := logging.FromContext(ctx).Named("issueapi.generateCode")
 
 	// If this realm requires a date but no date was specified, return an error.
 	if c.realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
-		return &issueResult{
-			obsBlame:    observability.BlameClient,
-			obsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
+		return &IssueResult{
+			ObsBlame:    observability.BlameClient,
+			ObsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
+			HttpCode:    http.StatusBadRequest,
+			ErrorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
 		}
 	}
 
 	// Validate that the request with the provided test type is valid for this realm.
 	if !c.realm.ValidTestType(request.TestType) {
-		return &issueResult{
-			obsBlame:    observability.BlameClient,
-			obsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
+		return &IssueResult{
+			ObsBlame:    observability.BlameClient,
+			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
+			HttpCode:    http.StatusBadRequest,
+			ErrorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
 		}
 	}
 
 	// Verify the test type
 	request.TestType = strings.ToLower(request.TestType)
 	if _, ok := validTestType[request.TestType]; !ok {
-		return &issueResult{
-			obsBlame:    observability.BlameClient,
-			obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrUnsupportedTestType),
+		return &IssueResult{
+			ObsBlame:    observability.BlameClient,
+			ObsResult:   observability.ResultError("INVALID_TEST_TYPE"),
+			HttpCode:    http.StatusBadRequest,
+			ErrorReturn: api.Errorf("invalid test type").WithCode(api.ErrUnsupportedTestType),
 		}
 	}
 
@@ -161,20 +172,20 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 		smsProvider, err := c.realm.SMSProvider(c.db)
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
-			return &issueResult{
-				obsBlame:    observability.BlameServer,
-				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to get sms provider"),
+			return &IssueResult{
+				ObsBlame:    observability.BlameServer,
+				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
+				HttpCode:    http.StatusInternalServerError,
+				ErrorReturn: api.Errorf("failed to get sms provider"),
 			}
 		}
 		if smsProvider == nil {
 			err := fmt.Errorf("phone provided, but no sms provider is configured")
-			return &issueResult{
-				obsBlame:    observability.BlameServer,
-				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				httpCode:    http.StatusBadRequest,
-				errorReturn: api.Error(err),
+			return &IssueResult{
+				ObsBlame:    observability.BlameServer,
+				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
+				HttpCode:    http.StatusBadRequest,
+				ErrorReturn: api.Error(err),
 			}
 		}
 	}
@@ -188,11 +199,11 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 		if d != "" {
 			parsed, err := time.Parse(project.RFC3339Date, d)
 			if err != nil {
-				return &issueResult{
-					obsBlame:    observability.BlameClient,
-					obsResult:   observability.ResultError(dateSettings[i].ParseError),
-					httpCode:    http.StatusBadRequest,
-					errorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
+				return &IssueResult{
+					ObsBlame:    observability.BlameClient,
+					ObsResult:   observability.ResultError(dateSettings[i].ParseError),
+					HttpCode:    http.StatusBadRequest,
+					ErrorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
 				}
 			}
 			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
@@ -207,11 +218,11 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 					maxDate.Format(project.RFC3339Date),
 					parsed.Format(project.RFC3339Date),
 				)
-				return &issueResult{
-					obsBlame:    observability.BlameClient,
-					obsResult:   observability.ResultError(dateSettings[i].ValidateError),
-					httpCode:    http.StatusBadRequest,
-					errorReturn: api.Error(err),
+				return &IssueResult{
+					ObsBlame:    observability.BlameClient,
+					ObsResult:   observability.ResultError(dateSettings[i].ValidateError),
+					HttpCode:    http.StatusBadRequest,
+					ErrorReturn: api.Error(err),
 				}
 			}
 			parsedDates[i] = validatedDate
@@ -224,19 +235,19 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 	if rUUID != "" {
 		if code, err := c.realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
 			if !database.IsNotFound(err) {
-				return &issueResult{
-					obsBlame:    observability.BlameServer,
-					obsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
-					httpCode:    http.StatusInternalServerError,
-					errorReturn: api.Error(err),
+				return &IssueResult{
+					ObsBlame:    observability.BlameServer,
+					ObsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
+					HttpCode:    http.StatusInternalServerError,
+					ErrorReturn: api.Error(err),
 				}
 			}
 		} else if code != nil {
-			return &issueResult{
-				obsBlame:    observability.BlameClient,
-				obsResult:   observability.ResultError("UUID_CONFLICT"),
-				httpCode:    http.StatusConflict,
-				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
+			return &IssueResult{
+				ObsBlame:    observability.BlameClient,
+				ObsResult:   observability.ResultError("UUID_CONFLICT"),
+				HttpCode:    http.StatusConflict,
+				ErrorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
 	}
@@ -246,25 +257,25 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 	if c.realm.AbusePreventionEnabled {
 		key, err := c.realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
 		if err != nil {
-			return &issueResult{
-				obsBlame:    observability.BlameServer,
-				obsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
-				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Error(err),
+			return &IssueResult{
+				ObsBlame:    observability.BlameServer,
+				ObsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
+				HttpCode:    http.StatusInternalServerError,
+				ErrorReturn: api.Error(err),
 			}
 		}
 		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
 		if err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
-			return &issueResult{
-				obsBlame:    observability.BlameServer,
-				obsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
-				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to verify realm stats, please try again"),
+			return &IssueResult{
+				ObsBlame:    observability.BlameServer,
+				ObsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
+				HttpCode:    http.StatusInternalServerError,
+				ErrorReturn: api.Errorf("failed to verify realm stats, please try again"),
 			}
 		}
 
-		stats.Record(ctx, mRealmTokenUsed.M(1))
+		stats.Record(ctx, issuemetric.RealmTokenUsed.M(1))
 
 		if !ok {
 			logger.Warnw("realm has exceeded daily quota",
@@ -273,11 +284,11 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				"reset", reset)
 
 			if c.config.GetEnforceRealmQuotas() {
-				return &issueResult{
-					obsBlame:    observability.BlameClient,
-					obsResult:   observability.ResultError("QUOTA_EXCEEDED"),
-					httpCode:    http.StatusTooManyRequests,
-					errorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
+				return &IssueResult{
+					ObsBlame:    observability.BlameClient,
+					ObsResult:   observability.ResultError("QUOTA_EXCEEDED"),
+					HttpCode:    http.StatusTooManyRequests,
+					ErrorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
 				}
 			}
 		}
@@ -322,25 +333,25 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 		logger.Errorw("failed to issue code", "error", err)
 		// GormV1 doesn't have a good way to match db errors
 		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
-			return &issueResult{
-				obsBlame:    observability.BlameServer,
-				obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-				httpCode:    http.StatusConflict,
-				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
+			return &IssueResult{
+				ObsBlame:    observability.BlameServer,
+				ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
+				HttpCode:    http.StatusConflict,
+				ErrorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
-		return &issueResult{
-			obsBlame:    observability.BlameServer,
-			obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-			httpCode:    http.StatusInternalServerError,
-			errorReturn: api.Errorf("failed to generate otp code, please try again"),
+		return &IssueResult{
+			ObsBlame:    observability.BlameServer,
+			ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
+			HttpCode:    http.StatusInternalServerError,
+			ErrorReturn: api.Errorf("failed to generate otp code, please try again"),
 		}
 	}
 
-	return &issueResult{
+	return &IssueResult{
 		verCode:   verCode,
-		httpCode:  http.StatusOK,
-		obsBlame:  observability.BlameNone,
-		obsResult: observability.ResultOK(),
+		HttpCode:  http.StatusOK,
+		ObsBlame:  observability.BlameNone,
+		ObsResult: observability.ResultOK(),
 	}
 }

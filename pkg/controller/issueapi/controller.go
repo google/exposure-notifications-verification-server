@@ -20,10 +20,14 @@ package issueapi
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuelogic"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuemetric"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-limiter"
@@ -66,4 +70,8 @@ func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database
 	}
 
 	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
+}
+
+func recordObservability(ctx context.Context, result *issuelogic.IssueResult) {
+	observability.RecordLatency(ctx, time.Now(), issuemetric.LatencyMs, &result.ObsBlame, &result.ObsResult)
 }

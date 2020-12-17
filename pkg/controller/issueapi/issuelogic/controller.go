@@ -15,11 +15,13 @@
 package issuelogic
 
 import (
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/sethvargo/go-limiter"
 )
 
 type Controller struct {
+	config     config.IssueAPIConfig
 	db         *database.Database
 	limiter    limiter.Store
 	authApp    *database.AuthorizedApp
@@ -28,9 +30,10 @@ type Controller struct {
 }
 
 // New creates a new issue logic controller.
-func New(db *database.Database, limiter limiter.Store,
+func New(config config.IssueAPIConfig, db *database.Database, limiter limiter.Store,
 	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *Controller {
 	return &Controller{
+		config:     config,
 		db:         db,
 		limiter:    limiter,
 		authApp:    authApp,

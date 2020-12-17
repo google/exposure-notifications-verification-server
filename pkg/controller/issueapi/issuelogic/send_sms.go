@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuemetric"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
@@ -62,7 +62,7 @@ func scrubPhoneNumbers(s string) string {
 	return noScrubs
 }
 
-func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest, result *issueResult) error {
+func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest, result *IssueResult) error {
 	if request.Phone == "" {
 		return nil
 	}
@@ -77,7 +77,7 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
 
 	if err := func() error {
-		defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsBlame, &result.obsResult)
+		defer observability.RecordLatency(ctx, time.Now(), issuemetric.SMSLatencyMs, &result.ObsBlame, &result.ObsResult)
 
 		message, err := c.realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
@@ -92,14 +92,14 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 			}
 
 			logger.Errorw("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
-			result.obsBlame = observability.BlameClient
-			result.obsResult = observability.ResultError("FAILED_TO_SEND_SMS")
+			result.ObsBlame = observability.BlameClient
+			result.ObsResult = observability.ResultError("FAILED_TO_SEND_SMS")
 			return err
 		}
 		return nil
 	}(); err != nil {
-		result.httpCode = http.StatusBadRequest
-		result.errorReturn = api.Errorf("failed to send sms: %s", err)
+		result.HttpCode = http.StatusBadRequest
+		result.ErrorReturn = api.Errorf("failed to send sms: %s", err)
 		return err
 	}
 	return nil
