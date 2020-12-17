@@ -12,29 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envstest
+package issuelogic
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"fmt"
 	"testing"
+
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-// RandomBytes returns a byte slice of random values of the given length.
-func RandomBytes(tb testing.TB, length int) []byte {
-	buf := make([]byte, length)
-	n, err := rand.Read(buf)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	if n < length {
-		tb.Fatal(fmt.Errorf("insufficient bytes read: %v, expected %v", n, length))
-	}
-	return buf
-}
+var testDatabaseInstance *database.TestInstance
 
-// RandomString returns a random hex-encoded string of the given length.
-func RandomString(tb testing.TB, length int) string {
-	return hex.EncodeToString(RandomBytes(tb, length/2))
+func TestMain(m *testing.M) {
+	testDatabaseInstance = database.MustTestInstance()
+	defer testDatabaseInstance.MustClose()
+	m.Run()
 }

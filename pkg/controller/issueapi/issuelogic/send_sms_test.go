@@ -15,12 +15,24 @@
 package issuelogic
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
-func TestScrubPhoneNumber(t *testing.T) {
+func TestSMS_scrubPhoneNumber(t *testing.T) {
 	t.Parallel()
 
 	unreachable := "unreachable"
@@ -52,5 +64,66 @@ func TestScrubPhoneNumber(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestSMS_sendSMS(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	tc := testconfig.NewServerConfig(t, testDatabaseInstance)
+	db := tc.Database
+
+	realm := database.NewRealmWithDefaults("Test Realm")
+	realm.AllowBulkUpload = true
+	ctx = controller.WithRealm(ctx, realm)
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatalf("failed to save realm: %v", err)
+	}
+
+	smsConfig := &database.SMSConfig{
+		RealmID:          realm.ID,
+		ProviderType:     sms.ProviderType(sms.ProviderTypeNoop),
+		TwilioAccountSid: "abc123",
+		TwilioAuthToken:  "my-secret-ref",
+		TwilioFromNumber: "+11234567890",
+	}
+	if err := db.SaveSMSConfig(smsConfig); err != nil {
+		t.Fatal(err)
+	}
+
+	membership := &database.Membership{
+		RealmID:     realm.ID,
+		Realm:       realm,
+		Permissions: rbac.CodeBulkIssue,
+	}
+
+	ctx = controller.WithMembership(ctx, membership)
+
+	var authApp *database.AuthorizedApp
+	c := New(tc.Config, db, tc.RateLimiter, authApp, membership, realm)
+
+	request := &api.IssueCodeRequest{
+		TestType:    "confirmed",
+		SymptomDate: time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date),
+		TZOffset:    0,
+		Phone:       "+15005550006",
+	}
+	result := &IssueResult{
+		HTTPCode:  http.StatusOK,
+		ObsBlame:  observability.BlameNone,
+		ObsResult: observability.ResultOK(),
+		verCode: &database.VerificationCode{
+			Code:          "00000001",
+			LongCode:      "00000001ABC",
+			Claimed:       true,
+			TestType:      "confirmed",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			LongExpiresAt: time.Now().Add(time.Hour),
+		},
+	}
+	err := c.sendSMS(ctx, request, result)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
