@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-// RandomBytes returns a byte slice of random values of the given length.
+//randomBytes returns a byte slice of random values of the given length.
 func randomBytes(tb testing.TB, length int) []byte {
 	buf := make([]byte, length)
 	n, err := rand.Read(buf)
@@ -34,7 +34,7 @@ func randomBytes(tb testing.TB, length int) []byte {
 	return buf
 }
 
-// RandomString returns a random hex-encoded string of the given length.
+// randomString returns a random hex-encoded string of the given length.
 func randomString(tb testing.TB, length int) string {
 	return hex.EncodeToString(randomBytes(tb, length/2))
 }
