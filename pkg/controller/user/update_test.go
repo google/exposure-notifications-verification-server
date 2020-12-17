@@ -64,7 +64,9 @@ func TestUpdate(t *testing.T) {
 	for _, permission := range rbac.NamePermissionMap {
 		permission := permission
 		targets := []string{fmt.Sprintf(`input#permission-%d`, permission)}
-		// We also ned to remove permissions that imply this permission, or it will be added back in.
+
+		// We also need to remove permissions that imply this permission, or it will
+		// be added back in.
 		for _, superPerm := range rbac.ImpliedBy(permission) {
 			targets = append(targets, fmt.Sprintf(`input#permission-%d`, superPerm))
 		}

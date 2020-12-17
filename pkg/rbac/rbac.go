@@ -21,9 +21,9 @@ import (
 	"sort"
 )
 
-// PermissionsMap is the list of permissions mapped to their name and
-// description.
 var (
+	// PermissionsMap is the list of permissions mapped to their name and
+	// description.
 	PermissionMap = map[Permission][2]string{
 		AuditRead:      {"AuditRead", "read event and audit logs"},
 		APIKeyRead:     {"APIKeyRead", "view information about API keys, including statistics"},
@@ -72,7 +72,9 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 		}
 		permission = permission | update
 	}
-	// Ensure implied permissions. The actor must also have the implied permissions by definition.
+
+	// Ensure implied permissions. The actor must also have the implied
+	// permissions by definition.
 	for has, needs := range requiredPermission {
 		// If granted has, ensure that we have all needs.
 		if Can(permission, has) {
@@ -84,8 +86,8 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 	return permission, nil
 }
 
-// ImpliedBy returns any permissions that cause this permission to be added automatically.
-// The return may be nil.
+// ImpliedBy returns any permissions that cause this permission to be added
+// automatically. The return may be nil.
 func ImpliedBy(permission Permission) []Permission {
 	return impliedBy[permission]
 }
@@ -128,36 +130,41 @@ func (p Permission) Description() (string, error) {
 	return "", fmt.Errorf("missing description for %s", p)
 }
 
+// Implied returns the additional implied permissions, if any.
+func (p Permission) Implied() []Permission {
+	return requiredPermission[p]
+}
+
 const (
 	_ Permission = 1 << iota
 
 	// Audit
-	AuditRead = 1 << iota
+	AuditRead
 
 	// API keys
-	APIKeyRead  = 1 << iota
-	APIKeyWrite = 1 << iota
+	APIKeyRead
+	APIKeyWrite
 
 	// Codes
-	CodeIssue     = 1 << iota
-	CodeBulkIssue = 1 << iota
-	CodeRead      = 1 << iota
-	CodeExpire    = 1 << iota
+	CodeIssue
+	CodeBulkIssue
+	CodeRead
+	CodeExpire
 
 	// Realm settings
-	SettingsRead  = 1 << iota
-	SettingsWrite = 1 << iota
+	SettingsRead
+	SettingsWrite
 
 	// Realm statistics
-	StatsRead = 1 << iota
+	StatsRead
 
 	// Mobile apps
-	MobileAppRead  = 1 << iota
-	MobileAppWrite = 1 << iota
+	MobileAppRead
+	MobileAppWrite
 
 	// Users
-	UserRead  = 1 << iota
-	UserWrite = 1 << iota
+	UserRead
+	UserWrite
 )
 
 // --
@@ -169,6 +176,7 @@ var (
 	// requiredPermissions is not exported since maps cannot be constant.
 	requiredPermission = map[Permission][]Permission{
 		APIKeyWrite:    {APIKeyRead},
+		CodeBulkIssue:  {CodeIssue},
 		SettingsWrite:  {SettingsRead},
 		MobileAppWrite: {MobileAppRead},
 		UserWrite:      {UserRead},
