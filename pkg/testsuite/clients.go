@@ -37,6 +37,8 @@ type AdminClient struct {
 }
 
 // BatchIssueCode calls the issue-batch API call.
+// returns the http status code, response.
+// The caller may get a non-200 code even if the response contains some successful codes.
 func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (int, *api.BatchIssueCodeResponse, error) {
 	url := c.urlBase + "/api/batch-issue"
 
