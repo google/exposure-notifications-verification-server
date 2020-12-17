@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -97,15 +98,22 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 	}
 
 	// Send SMS messages
+	var wg sync.WaitGroup
 	for i, result := range results {
 		if result.ErrorReturn != nil {
 			continue
 		}
 
-		if err := c.sendSMS(ctx, requests[i], result); err != nil {
-			logger.Warnw("failed to send SMS", "error", err)
-		}
+		wg.Add(1)
+		go func(request *api.IssueCodeRequest, r *IssueResult) {
+			defer wg.Done()
+			if err := c.sendSMS(ctx, request, r); err != nil {
+				logger.Warnw("failed to send SMS", "error", err)
+			}
+		}(requests[i], result)
 	}
+
+	wg.Wait() // wait the SMS work group to finish
 
 	// Convert to API response
 	responses := make([]*api.IssueCodeResponse, len(requests))
