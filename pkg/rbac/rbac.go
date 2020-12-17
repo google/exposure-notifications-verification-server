@@ -84,7 +84,8 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 	return permission, nil
 }
 
-// ImpliedBy returns any permissions that
+// ImpliedBy returns any permissions that cause this permission to be added automatically.
+// The return may be nil.
 func ImpliedBy(permission Permission) []Permission {
 	return impliedBy[permission]
 }
