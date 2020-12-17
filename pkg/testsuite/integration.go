@@ -18,13 +18,13 @@ import (
 	"context"
 	"crypto/sha1"
 	"io/ioutil"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -157,13 +157,10 @@ func NewIntegrationTestConfig(ctx context.Context, tb testing.TB) (*IntegrationT
 type IntegrationSuite struct {
 	cfg *IntegrationTestConfig
 
-	db    *database.Database
-	realm *database.Realm
+	DB    *database.Database
+	Realm *database.Realm
 
 	adminKey, deviceKey string
-
-	adminSrv *server.Server
-	apiSrv   *server.Server
 }
 
 // NewIntegrationSuite creates a IntegrationSuite for integration tests.
@@ -222,8 +219,8 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 
 	return &IntegrationSuite{
 		cfg:       cfg,
-		db:        db,
-		realm:     realm,
+		DB:        db,
+		Realm:     realm,
 		adminKey:  adminKey,
 		deviceKey: deviceKey,
 	}
@@ -232,18 +229,24 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 // NewAdminAPIClient runs an Admin API Server and returns a corresponding client.
 func (s *IntegrationSuite) NewAdminAPIClient(ctx context.Context, tb testing.TB) (*AdminClient, error) {
 	srv := s.newAdminAPIServer(ctx, tb)
-	s.adminSrv = srv
-	return NewAdminClient("http://"+srv.Addr(), s.adminKey)
+	return &AdminClient{
+		urlBase: srv.URL,
+		client:  srv.Client(),
+		key:     s.adminKey,
+	}, nil
 }
 
 // NewAPIClient runs an API Server and returns a corresponding client.
 func (s *IntegrationSuite) NewAPIClient(ctx context.Context, tb testing.TB) (*APIClient, error) {
 	srv := s.newAPIServer(ctx, tb)
-	s.apiSrv = srv
-	return NewAPIClient("http://"+srv.Addr(), s.deviceKey)
+	return &APIClient{
+		urlBase: srv.URL,
+		client:  srv.Client(),
+		key:     s.deviceKey,
+	}, nil
 }
 
-func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB) *server.Server {
+func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB) *httptest.Server {
 	// Create the router
 	adminRouter := mux.NewRouter()
 	// Install common security headers
@@ -282,39 +285,29 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 		sub := adminRouter.PathPrefix("/api").Subrouter()
 
 		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(cacher, s.db, h, []database.APIKeyType{
+		requireAPIKey := middleware.RequireAPIKey(cacher, s.DB, h, []database.APIKeyType{
 			database.APIKeyTypeAdmin,
 		})
 		// Install the APIKey Auth Middleware
 		sub.Use(requireAPIKey)
 
-		issueapiController := issueapi.New(ctx, &s.cfg.AdminAPISrvConfig, s.db, limiterStore, h)
+		issueapiController := issueapi.New(&s.cfg.AdminAPISrvConfig, s.DB, limiterStore, h)
 		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
 
-		codesController := codes.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.db, h)
+		codesController := codes.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.DB, h)
 		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")
 		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods("POST")
 	}
 
-	srv, err := server.New(s.cfg.AdminAPISrvConfig.Port)
-	if err != nil {
-		tb.Fatalf("failed to create server: %v", err)
-	}
-
-	// Stop the server on cleanup
-	stopCtx, stop := context.WithCancel(ctx)
-	tb.Cleanup(stop)
-
-	go func() {
-		if err := srv.ServeHTTPHandler(stopCtx, adminRouter); err != nil {
-			tb.Fatalf("failed to serve HTTP handler: %v", err)
-		}
-	}()
+	srv := httptest.NewServer(adminRouter)
+	tb.Cleanup(func() {
+		srv.Close()
+	})
 	return srv
 }
 
-func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *server.Server {
+func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *httptest.Server {
 	// Create the renderer
 	h, err := render.New(ctx, "", s.cfg.APISrvConfig.DevMode)
 	if err != nil {
@@ -352,7 +345,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 		sub := apiRouter.PathPrefix("/api").Subrouter()
 
 		// Setup API auth
-		requireAPIKey := middleware.RequireAPIKey(cacher, s.db, h, []database.APIKeyType{
+		requireAPIKey := middleware.RequireAPIKey(cacher, s.DB, h, []database.APIKeyType{
 			database.APIKeyTypeDevice,
 		})
 		// Install the APIKey Auth Middleware
@@ -360,7 +353,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 
 		verifyChaff := chaff.New()
 		defer verifyChaff.Close()
-		verifyapiController, err := verifyapi.New(ctx, &s.cfg.APISrvConfig, s.db, h, tokenSigner)
+		verifyapiController, err := verifyapi.New(ctx, &s.cfg.APISrvConfig, s.DB, h, tokenSigner)
 		if err != nil {
 			tb.Fatalf("failed to create verify api controller: %v", err)
 		}
@@ -368,26 +361,16 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *ser
 
 		certChaff := chaff.New()
 		defer certChaff.Close()
-		certapiController, err := certapi.New(ctx, &s.cfg.APISrvConfig, s.db, cacher, certificateSigner, h)
+		certapiController, err := certapi.New(ctx, &s.cfg.APISrvConfig, s.DB, cacher, certificateSigner, h)
 		if err != nil {
 			tb.Fatalf("failed to create cert api controller: %v", err)
 		}
 		sub.Handle("/certificate", certapiController.HandleCertificate()).Methods("POST")
 	}
 
-	srv, err := server.New(s.cfg.APISrvConfig.Port)
-	if err != nil {
-		tb.Fatalf("failed to create server: %v", err)
-	}
-
-	// Stop the server on cleanup
-	stopCtx, stop := context.WithCancel(ctx)
-	tb.Cleanup(stop)
-
-	go func() {
-		if err := srv.ServeHTTPHandler(stopCtx, apiRouter); err != nil {
-			tb.Fatalf("failed to serve HTTP handler: %v", err)
-		}
-	}()
+	srv := httptest.NewServer(apiRouter)
+	tb.Cleanup(func() {
+		srv.Close()
+	})
 	return srv
 }

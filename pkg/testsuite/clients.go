@@ -29,6 +29,7 @@ import (
 // AdminClient is a test client for admin API.
 type AdminClient struct {
 	client        *http.Client
+	urlBase       string
 	key           string
 	retry         bool
 	retryTimes    uint64
@@ -36,17 +37,19 @@ type AdminClient struct {
 }
 
 // BatchIssueCode calls the issue-batch API call.
-func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.BatchIssueCodeResponse, error) {
-	url := "/api/batch-issue"
+// returns the http status code, response.
+// The caller may get a non-200 code even if the response contains some successful codes.
+func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (int, *api.BatchIssueCodeResponse, error) {
+	url := c.urlBase + "/api/batch-issue"
 
 	j, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal json: %w", err)
+		return 0, nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
 	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal json: %w", err)
+		return 0, nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
 	httpReq.Header.Add("content-type", "application/json")
@@ -54,20 +57,21 @@ func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (*api.BatchI
 
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to POST /api/issue: %w", err)
+		return 0, nil, fmt.Errorf("failed to POST /api/batch-issue: %w", err)
 	}
 
-	body, err := checkResp(httpResp)
+	defer httpResp.Body.Close()
+	body, err := ioutil.ReadAll(httpResp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to POST /api/issue: %w: %s", err, body)
+		return 0, nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	var pubResponse api.BatchIssueCodeResponse
 	if err := json.Unmarshal(body, &pubResponse); err != nil {
-		return nil, fmt.Errorf("bad publish response")
+		return 0, nil, fmt.Errorf("bad publish response")
 	}
 
-	return &pubResponse, nil
+	return httpResp.StatusCode, &pubResponse, nil
 }
 
 // IssueCode wraps the IssueCode API call.
@@ -88,7 +92,7 @@ func (c *AdminClient) IssueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 }
 
 func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
-	url := "/api/issue"
+	url := c.urlBase + "/api/issue"
 
 	j, err := json.Marshal(req)
 	if err != nil {
@@ -123,13 +127,14 @@ func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 
 // APIClient is a test client for verification API.
 type APIClient struct {
-	client *http.Client
-	key    string
+	urlBase string
+	client  *http.Client
+	key     string
 }
 
 // GetToken wraps the VerifyCode API call.
 func (c *APIClient) GetToken(req api.VerifyCodeRequest) (*api.VerifyCodeResponse, error) {
-	url := "/api/verify"
+	url := c.urlBase + "/api/verify"
 
 	j, err := json.Marshal(req)
 	if err != nil {
@@ -164,7 +169,7 @@ func (c *APIClient) GetToken(req api.VerifyCodeRequest) (*api.VerifyCodeResponse
 
 // GetCertificate wraps the VerificationCertificate API call.
 func (c *APIClient) GetCertificate(req api.VerificationCertificateRequest) (*api.VerificationCertificateResponse, error) {
-	url := "/api/certificate"
+	url := c.urlBase + "/api/certificate"
 
 	j, err := json.Marshal(req)
 	if err != nil {
