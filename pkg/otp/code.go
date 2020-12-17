@@ -101,14 +101,13 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (*database.Verific
 	logger := logging.FromContext(ctx)
 	var verificationCode database.VerificationCode
 	var err error
-	var code, longCode string
 	for i := uint(0); i < retryCount; i++ {
-		code, err = GenerateCode(o.ShortLength)
+		code, err := GenerateCode(o.ShortLength)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
 			continue
 		}
-		longCode = code
+		longCode := code
 		if o.LongLength > 0 {
 			longCode, err = GenerateAlphanumericCode(o.LongLength)
 			if err != nil {
