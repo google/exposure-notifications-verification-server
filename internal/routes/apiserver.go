@@ -46,7 +46,9 @@ func APIServer(
 	limiterStore limiter.Store,
 	tokenSigner keys.KeyManager,
 	certificateSigner keys.KeyManager,
-) (http.Handler, error) {
+) (http.Handler, func(), error) {
+	closer := func() {}
+
 	// Create the router
 	r := mux.NewRouter()
 
@@ -57,7 +59,7 @@ func APIServer(
 	// Create the renderer
 	h, err := render.New(ctx, "", cfg.DevMode)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create renderer: %w", err)
+		return nil, closer, fmt.Errorf("failed to create renderer: %w", err)
 	}
 
 	// Request ID injection
@@ -74,7 +76,7 @@ func APIServer(
 		limitware.APIKeyFunc(ctx, db, "apiserver:ratelimit:", cfg.RateLimit.HMACKey),
 		limitware.AllowOnError(false))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create limiter middleware: %w", err)
+		return nil, closer, fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
 	rateLimit := httplimiter.Handle
 
@@ -97,16 +99,21 @@ func APIServer(
 	// Make verify chaff tracker.
 	verifyChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyResponse), chaff.DefaultCapacity)
 	if err != nil {
-		return nil, fmt.Errorf("error creating verify chaffer: %v", err)
+		return nil, closer, fmt.Errorf("error creating verify chaffer: %v", err)
 	}
-	defer verifyChaffTracker.Close()
+	closer = func() {
+		verifyChaffTracker.Close()
+	}
 
 	// Make cert chaff tracker.
 	certChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeCertificateResponse), chaff.DefaultCapacity)
 	if err != nil {
-		return nil, fmt.Errorf("error creating cert chaffer: %v", err)
+		return nil, closer, fmt.Errorf("error creating cert chaffer: %v", err)
 	}
-	defer certChaffTracker.Close()
+	closer = func() {
+		verifyChaffTracker.Close()
+		certChaffTracker.Close()
+	}
 
 	{
 		sub := r.PathPrefix("/api/verify").Subrouter()
@@ -118,7 +125,7 @@ func APIServer(
 		// POST /api/verify
 		verifyapiController, err := verifyapi.New(ctx, cfg, db, h, tokenSigner)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create verify api controller: %w", err)
+			return nil, closer, fmt.Errorf("failed to create verify api controller: %w", err)
 		}
 		sub.Handle("", verifyapiController.HandleVerify()).Methods("POST")
 	}
@@ -133,7 +140,7 @@ func APIServer(
 		// POST /api/certificate
 		certapiController, err := certapi.New(ctx, cfg, db, cacher, certificateSigner, h)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create certapi controller: %w", err)
+			return nil, closer, fmt.Errorf("failed to create certapi controller: %w", err)
 		}
 		sub.Handle("", certapiController.HandleCertificate()).Methods("POST")
 	}
@@ -143,7 +150,7 @@ func APIServer(
 	// middleware.
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod()(r))
-	return mux, nil
+	return mux, closer, nil
 }
 
 // makePadFromChaff makes a Padding structure from chaff data.
