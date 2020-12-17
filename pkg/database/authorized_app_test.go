@@ -37,6 +37,7 @@ func TestAPIKeyType(t *testing.T) {
 		{APIKeyTypeInvalid, -1},
 		{APIKeyTypeDevice, 0},
 		{APIKeyTypeAdmin, 1},
+		{APIKeyTypeStats, 2},
 	}
 
 	for _, tc := range cases {
@@ -62,6 +63,7 @@ func TestAPIKeyType_Display(t *testing.T) {
 		{APIKeyTypeInvalid, "invalid"},
 		{APIKeyTypeDevice, "device"},
 		{APIKeyTypeAdmin, "admin"},
+		{APIKeyTypeStats, "stats"},
 		{1991, "invalid"},
 	}
 

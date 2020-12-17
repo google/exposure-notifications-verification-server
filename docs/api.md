@@ -1,3 +1,5 @@
+<!-- TOC depthFrom:1 -->
+
 - [API access](#api-access)
 - [API usage](#api-usage)
   - [Authenticating](#authenticating)
@@ -5,15 +7,13 @@
 - [API Methods](#api-methods)
   - [`/api/verify`](#apiverify)
   - [`/api/certificate`](#apicertificate)
-- [Admin APIs](#admin-apis)
-  - [`/api/issue`](#apiissue)
-    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
-  - [`/api/batch-issue`](#apibatch-issue)
-    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
   - [`/api/checkcodestatus`](#apicheckcodestatus)
   - [`/api/expirecode`](#apiexpirecode)
+  - [`/api/stats/*` (preview)](#apistats-preview)
 - [Chaffing requests](#chaffing-requests)
 - [Response codes overview](#response-codes-overview)
+
+<!-- /TOC -->
 
 # API access
 
@@ -27,8 +27,12 @@ two types of API keys:
     _certificates_.
 
 -   `ADMIN` - Intended for public health authority internal applications to
-    integrate with this server. **We strongly advise putting additional
-    protections in place such as an external proxy authentication.**
+    integrate with this server. This API key type can also retrieve statistics
+    about the realm. **We strongly advise putting additional protections in
+    place such as an external proxy authentication.**
+
+-   `STATS` - Intended for public health authorities to gather automated
+    statistics.
 
 
 # API usage
