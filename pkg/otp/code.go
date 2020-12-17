@@ -155,7 +155,7 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (*database.Verific
 		}
 	}
 	if err != nil {
-		return &verificationCode, err
+		return nil, err
 	}
 	return &verificationCode, nil
 }
