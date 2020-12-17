@@ -28,8 +28,9 @@ import (
 type ProviderType string
 
 const (
-	ProviderTypeNoop   ProviderType = "NOOP"
-	ProviderTypeTwilio ProviderType = "TWILIO"
+	ProviderTypeNoop     ProviderType = "NOOP"
+	ProviderTypeNoopFail ProviderType = "NOOP_FAIL"
+	ProviderTypeTwilio   ProviderType = "TWILIO"
 )
 
 // Config represents configuration for an SMS provider.
@@ -52,6 +53,8 @@ func ProviderFor(ctx context.Context, c *Config) (Provider, error) {
 	switch typ := c.ProviderType; typ {
 	case ProviderTypeNoop:
 		return NewNoop(ctx)
+	case ProviderTypeNoopFail:
+		return NewNoopFail(ctx)
 	case ProviderTypeTwilio:
 		return NewTwilio(ctx, c.TwilioAccountSid, c.TwilioAuthToken, c.TwilioFromNumber)
 	default:
