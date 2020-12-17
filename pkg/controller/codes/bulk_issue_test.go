@@ -20,8 +20,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -34,7 +34,9 @@ func TestRenderBulkIssue(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	tc := testconfig.NewServerConfig(t, testDatabaseInstance)
+	db := tc.Database
+
 	realm := database.NewRealmWithDefaults("Test Realm")
 	realm.AllowBulkUpload = true
 	ctx = controller.WithRealm(ctx, realm)
@@ -48,12 +50,11 @@ func TestRenderBulkIssue(t *testing.T) {
 		Permissions: rbac.CodeBulkIssue,
 	})
 
-	config := &config.ServerConfig{}
 	h, err := render.NewTest(ctx, project.Root()+"/cmd/server/assets", t)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
-	c := codes.NewServer(ctx, config, db, h)
+	c := codes.NewServer(ctx, tc.Config, db, h)
 
 	sms := &database.SMSConfig{
 		RealmID:          realm.ID,
