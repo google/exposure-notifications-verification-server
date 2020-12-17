@@ -29,6 +29,7 @@ import (
 // AdminClient is a test client for admin API.
 type AdminClient struct {
 	client        *http.Client
+	urlBase       string
 	key           string
 	retry         bool
 	retryTimes    uint64
@@ -37,7 +38,7 @@ type AdminClient struct {
 
 // BatchIssueCode calls the issue-batch API call.
 func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (int, *api.BatchIssueCodeResponse, error) {
-	url := "/api/batch-issue"
+	url := c.urlBase + "/api/batch-issue"
 
 	j, err := json.Marshal(req)
 	if err != nil {
@@ -89,7 +90,7 @@ func (c *AdminClient) IssueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 }
 
 func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
-	url := "/api/issue"
+	url := c.urlBase + "/api/issue"
 
 	j, err := json.Marshal(req)
 	if err != nil {
@@ -124,13 +125,14 @@ func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 
 // APIClient is a test client for verification API.
 type APIClient struct {
-	client *http.Client
-	key    string
+	urlBase string
+	client  *http.Client
+	key     string
 }
 
 // GetToken wraps the VerifyCode API call.
 func (c *APIClient) GetToken(req api.VerifyCodeRequest) (*api.VerifyCodeResponse, error) {
-	url := "/api/verify"
+	url := c.urlBase + "/api/verify"
 
 	j, err := json.Marshal(req)
 	if err != nil {
@@ -165,7 +167,7 @@ func (c *APIClient) GetToken(req api.VerifyCodeRequest) (*api.VerifyCodeResponse
 
 // GetCertificate wraps the VerificationCertificate API call.
 func (c *APIClient) GetCertificate(req api.VerificationCertificateRequest) (*api.VerificationCertificateResponse, error) {
-	url := "/api/certificate"
+	url := c.urlBase + "/api/certificate"
 
 	j, err := json.Marshal(req)
 	if err != nil {

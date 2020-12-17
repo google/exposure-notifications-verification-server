@@ -234,8 +234,9 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 func (s *IntegrationSuite) NewAdminAPIClient(ctx context.Context, tb testing.TB) (*AdminClient, error) {
 	srv := s.newAdminAPIServer(ctx, tb)
 	return &AdminClient{
-		client: srv.Client(),
-		key:    s.adminKey,
+		urlBase: srv.URL,
+		client:  srv.Client(),
+		key:     s.adminKey,
 	}, nil
 }
 
@@ -243,8 +244,9 @@ func (s *IntegrationSuite) NewAdminAPIClient(ctx context.Context, tb testing.TB)
 func (s *IntegrationSuite) NewAPIClient(ctx context.Context, tb testing.TB) (*APIClient, error) {
 	srv := s.newAPIServer(ctx, tb)
 	return &APIClient{
-		client: srv.Client(),
-		key:    s.deviceKey,
+		urlBase: srv.URL,
+		client:  srv.Client(),
+		key:     s.deviceKey,
 	}, nil
 }
 
