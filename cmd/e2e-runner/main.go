@@ -185,12 +185,18 @@ func realMain(ctx context.Context) error {
 	r.HandleFunc("/default", defaultHandler(ctx, e2eConfig.TestConfig))
 	r.HandleFunc("/revise", reviseHandler(ctx, e2eConfig.TestConfig))
 
+	mux := http.Handler(r)
+	if e2eConfig.DevMode {
+		// Also log requests in local dev.
+		mux = handlers.LoggingHandler(os.Stdout, r)
+	}
+
 	srv, err := server.New(e2eConfig.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 	logger.Infow("server listening", "port", e2eConfig.Port)
-	return srv.ServeHTTPHandler(ctx, handlers.CombinedLoggingHandler(os.Stdout, r))
+	return srv.ServeHTTPHandler(ctx, mux)
 }
 
 // Config is passed by value so that each http handler has a separate copy (since they are changing one of the)
