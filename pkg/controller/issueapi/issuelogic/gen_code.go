@@ -52,6 +52,18 @@ type IssueResult struct {
 	ObsResult   tag.Mutator
 }
 
+func (result *IssueResult) issueCodeResponse() *api.IssueCodeResponse {
+	v := result.verCode
+	return &api.IssueCodeResponse{
+		UUID:                   v.UUID,
+		VerificationCode:       v.Code,
+		ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
+		ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
+		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
+		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
+	}
+}
+
 func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) (*IssueResult, *api.IssueCodeResponse) {
 	logger := logging.FromContext(ctx).Named("issueapi.issueOne")
 
@@ -77,15 +89,7 @@ func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest
 	}
 
 	// Convert to API response
-	v := result.verCode
-	return result, &api.IssueCodeResponse{
-		UUID:                   v.UUID,
-		VerificationCode:       v.Code,
-		ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
-		ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
-		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
-		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
-	}
+	return result, result.issueCodeResponse()
 }
 
 func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) ([]*IssueResult, []*api.IssueCodeResponse) {
@@ -124,15 +128,7 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 				Error:     result.ErrorReturn.Error,
 			}
 		} else {
-			v := result.verCode
-			responses[i] = &api.IssueCodeResponse{
-				UUID:                   v.UUID,
-				VerificationCode:       v.Code,
-				ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
-				ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
-				LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
-				LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
-			}
+			responses[i] = result.issueCodeResponse()
 		}
 	}
 	return results, responses

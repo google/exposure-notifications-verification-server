@@ -148,6 +148,9 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (*database.Verific
 			}
 			continue
 		} else {
+			// These are stored encrypted, but here we need to tell the user about them.
+			verificationCode.Code = code
+			verificationCode.LongCode = longCode
 			break // successful save, nil error, break out.
 		}
 	}
