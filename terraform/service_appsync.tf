@@ -121,6 +121,7 @@ resource "google_cloud_run_service" "appsync" {
             local.firebase_config,
             local.gcp_config,
             local.signing_config,
+            local.observability_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "appsync", {}),

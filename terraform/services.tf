@@ -96,6 +96,13 @@ locals {
     ASSETS_PATH        = "/assets"
     HOSTNAME_TO_REGION = join(",", [for o in var.enx_redirect_domain_map : format("%s:%s", o.host, o.region)])
   }
+
+  // TODO: remove once
+  // https://github.com/google/exposure-notifications-server/commit/379eda4deec703ab3744525470281a519af18e9b
+  // is released.
+  observability_config = {
+    STACKDRIVER_TIMEOUT = "1m"
+  }
 }
 
 output "cookie_keys" {
