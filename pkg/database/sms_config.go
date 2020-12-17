@@ -83,7 +83,8 @@ func (db *Database) SystemSMSConfig() (*SMSConfig, error) {
 
 // SaveSMSConfig creates or updates an SMS configuration record.
 func (db *Database) SaveSMSConfig(s *SMSConfig) error {
-	if s.TwilioAccountSid == "" && s.TwilioAuthToken == "" && s.TwilioFromNumber == "" {
+	if s.ProviderType == sms.ProviderTypeTwilio &&
+		s.TwilioAccountSid == "" && s.TwilioAuthToken == "" && s.TwilioFromNumber == "" {
 		if db.db.NewRecord(s) {
 			// The fields are all blank, do not create the record.
 			return nil

@@ -16,12 +16,13 @@ package sms
 
 import (
 	"context"
+	"errors"
 )
-
-var _ Provider = (*Noop)(nil)
 
 // Noop does nothing.
 type Noop struct{}
+
+var _ Provider = (*Noop)(nil)
 
 // NewNoop creates a new SMS sender that does nothing.
 func NewNoop(_ context.Context) (Provider, error) {
@@ -31,4 +32,22 @@ func NewNoop(_ context.Context) (Provider, error) {
 // SendSMS does nothing.
 func (p *Noop) SendSMS(_ context.Context, _, _ string) error {
 	return nil
+}
+
+// ErrNoop is the error NoopFail always returns.
+var ErrNoop error = errors.New("noop always fails")
+
+// NoopFail always fails.
+type NoopFail struct{}
+
+var _ Provider = (*NoopFail)(nil)
+
+// NewNoopFail creates a new SMS sender that only returns ErrNoop.
+func NewNoopFail(_ context.Context) (Provider, error) {
+	return &NoopFail{}, nil
+}
+
+// SendSMS does nothing.
+func (p *NoopFail) SendSMS(_ context.Context, _, _ string) error {
+	return ErrNoop
 }
