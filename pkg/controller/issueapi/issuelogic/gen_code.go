@@ -45,7 +45,7 @@ var (
 type IssueResult struct {
 	verCode *database.VerificationCode
 
-	HttpCode    int
+	HTTPCode    int
 	ErrorReturn *api.ErrorReturn
 	ObsBlame    tag.Mutator
 	ObsResult   tag.Mutator
@@ -140,7 +140,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 		return &IssueResult{
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
-			HttpCode:    http.StatusBadRequest,
+			HTTPCode:    http.StatusBadRequest,
 			ErrorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
 		}
 	}
@@ -150,7 +150,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 		return &IssueResult{
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
-			HttpCode:    http.StatusBadRequest,
+			HTTPCode:    http.StatusBadRequest,
 			ErrorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
 		}
 	}
@@ -161,7 +161,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 		return &IssueResult{
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("INVALID_TEST_TYPE"),
-			HttpCode:    http.StatusBadRequest,
+			HTTPCode:    http.StatusBadRequest,
 			ErrorReturn: api.Errorf("invalid test type").WithCode(api.ErrUnsupportedTestType),
 		}
 	}
@@ -175,7 +175,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			return &IssueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				HttpCode:    http.StatusInternalServerError,
+				HTTPCode:    http.StatusInternalServerError,
 				ErrorReturn: api.Errorf("failed to get sms provider"),
 			}
 		}
@@ -184,7 +184,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			return &IssueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				HttpCode:    http.StatusBadRequest,
+				HTTPCode:    http.StatusBadRequest,
 				ErrorReturn: api.Error(err),
 			}
 		}
@@ -202,7 +202,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				return &IssueResult{
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError(dateSettings[i].ParseError),
-					HttpCode:    http.StatusBadRequest,
+					HTTPCode:    http.StatusBadRequest,
 					ErrorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
 				}
 			}
@@ -221,7 +221,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				return &IssueResult{
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError(dateSettings[i].ValidateError),
-					HttpCode:    http.StatusBadRequest,
+					HTTPCode:    http.StatusBadRequest,
 					ErrorReturn: api.Error(err),
 				}
 			}
@@ -238,7 +238,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				return &IssueResult{
 					ObsBlame:    observability.BlameServer,
 					ObsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
-					HttpCode:    http.StatusInternalServerError,
+					HTTPCode:    http.StatusInternalServerError,
 					ErrorReturn: api.Error(err),
 				}
 			}
@@ -246,7 +246,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			return &IssueResult{
 				ObsBlame:    observability.BlameClient,
 				ObsResult:   observability.ResultError("UUID_CONFLICT"),
-				HttpCode:    http.StatusConflict,
+				HTTPCode:    http.StatusConflict,
 				ErrorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
@@ -260,7 +260,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			return &IssueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
-				HttpCode:    http.StatusInternalServerError,
+				HTTPCode:    http.StatusInternalServerError,
 				ErrorReturn: api.Error(err),
 			}
 		}
@@ -270,7 +270,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			return &IssueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
-				HttpCode:    http.StatusInternalServerError,
+				HTTPCode:    http.StatusInternalServerError,
 				ErrorReturn: api.Errorf("failed to verify realm stats, please try again"),
 			}
 		}
@@ -287,7 +287,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				return &IssueResult{
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError("QUOTA_EXCEEDED"),
-					HttpCode:    http.StatusTooManyRequests,
+					HTTPCode:    http.StatusTooManyRequests,
 					ErrorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
 				}
 			}
@@ -336,21 +336,21 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			return &IssueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-				HttpCode:    http.StatusConflict,
+				HTTPCode:    http.StatusConflict,
 				ErrorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
 		return &IssueResult{
 			ObsBlame:    observability.BlameServer,
 			ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-			HttpCode:    http.StatusInternalServerError,
+			HTTPCode:    http.StatusInternalServerError,
 			ErrorReturn: api.Errorf("failed to generate otp code, please try again"),
 		}
 	}
 
 	return &IssueResult{
 		verCode:   verCode,
-		HttpCode:  http.StatusOK,
+		HTTPCode:  http.StatusOK,
 		ObsBlame:  observability.BlameNone,
 		ObsResult: observability.ResultOK(),
 	}

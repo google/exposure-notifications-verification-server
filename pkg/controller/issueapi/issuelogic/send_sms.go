@@ -98,7 +98,7 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 		}
 		return nil
 	}(); err != nil {
-		result.HttpCode = http.StatusBadRequest
+		result.HTTPCode = http.StatusBadRequest
 		result.ErrorReturn = api.Errorf("failed to send sms: %s", err)
 		return err
 	}

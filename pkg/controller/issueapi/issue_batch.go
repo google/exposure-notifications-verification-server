@@ -42,7 +42,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 
 		resp := &api.BatchIssueCodeResponse{}
 		result := &issuelogic.IssueResult{
-			HttpCode:  http.StatusOK,
+			HTTPCode:  http.StatusOK,
 			ObsBlame:  observability.BlameNone,
 			ObsResult: observability.ResultOK(),
 		}
@@ -87,7 +87,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		httpCode := http.StatusOK
+		HTTPCode := http.StatusOK
 		errCount := 0
 		var results []*issuelogic.IssueResult
 
@@ -98,12 +98,12 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				continue
 			}
 
-			// if any issuance fails, the returned code is the code of the first failure
-			// and  continue processing all codes.
+			// If any issuance fails, the returned code is the code of the first failure
+			// and continue processing all codes.
 			logger.Warnw("single code issuance failed", "error", result.ErrorReturn)
 			errCount++
-			if httpCode == http.StatusOK {
-				httpCode = result.HttpCode
+			if HTTPCode == http.StatusOK {
+				HTTPCode = result.HTTPCode
 				resp.ErrorCode = result.ErrorReturn.ErrorCode
 			}
 		}
@@ -118,7 +118,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			resp.Error = sb.String()
 		}
 
-		c.h.RenderJSON(w, httpCode, resp)
+		c.h.RenderJSON(w, HTTPCode, resp)
 		return
 	})
 }

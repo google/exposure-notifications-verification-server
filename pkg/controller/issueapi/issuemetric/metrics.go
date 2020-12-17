@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package issuemetric implements the metrics for code issuance
 package issuemetric
 
 import (

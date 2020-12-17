@@ -34,7 +34,7 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		ctx := r.Context()
 		result := &issuelogic.IssueResult{
-			HttpCode:  http.StatusOK,
+			HTTPCode:  http.StatusOK,
 			ObsBlame:  observability.BlameNone,
 			ObsResult: observability.ResultOK(),
 		}
@@ -60,11 +60,11 @@ func (c *Controller) HandleIssue() http.Handler {
 		logic := issuelogic.New(c.config, c.db, c.limiter, authApp, membership, realm)
 		result, resp := logic.IssueOne(ctx, &request)
 		if result.ErrorReturn != nil {
-			if result.HttpCode == http.StatusInternalServerError {
+			if result.HTTPCode == http.StatusInternalServerError {
 				controller.InternalError(w, r, c.h, errors.New(result.ErrorReturn.Error))
 				return
 			}
-			c.h.RenderJSON(w, result.HttpCode, result.ErrorReturn)
+			c.h.RenderJSON(w, result.HTTPCode, result.ErrorReturn)
 			return
 		}
 

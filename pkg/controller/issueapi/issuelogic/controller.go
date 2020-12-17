@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package issuelogic contains the core logic for validating an issue request,
+// validating the request, sending SMS messages, and converting to a response.
+// It's expected that the caller handles rendering etc.
 package issuelogic
 
 import (
