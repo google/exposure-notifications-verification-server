@@ -27,9 +27,8 @@ two types of API keys:
     _certificates_.
 
 -   `ADMIN` - Intended for public health authority internal applications to
-    integrate with this server. This API key type can also retrieve statistics
-    about the realm. **We strongly advise putting additional protections in
-    place such as an external proxy authentication.**
+    integrate with this server. **We strongly advise putting additional
+    protections in place such as an external proxy authentication.**
 
 -   `STATS` - Intended for public health authorities to gather automated
     statistics.

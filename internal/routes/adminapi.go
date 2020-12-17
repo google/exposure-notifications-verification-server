@@ -88,7 +88,6 @@ func AdminAPI(
 		database.APIKeyTypeAdmin,
 	})
 	requireStatsAPIKey := middleware.RequireAPIKey(cacher, db, h, []database.APIKeyType{
-		database.APIKeyTypeAdmin,
 		database.APIKeyTypeStats,
 	})
 	processFirewall := middleware.ProcessFirewall(h, "adminapi")
