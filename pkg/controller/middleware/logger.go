@@ -15,7 +15,10 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -23,6 +26,19 @@ import (
 
 	"github.com/gorilla/mux"
 )
+
+const (
+	// googleCloudTraceHeader is the header with trace data.
+	googleCloudTraceHeader = "X-Cloud-Trace-Context"
+
+	// googleCloudTraceKey is the key in the structured log where trace information
+	// is expected to be present.
+	googleCloudTraceKey = "logging.googleapis.com/trace"
+)
+
+// googleCloudProjectID is the project id, populated by Terraform during service
+// deployment.
+var googleCloudProjectID = os.Getenv("PROJECT_ID")
 
 // PopulateLogger populates the logger onto the context.
 func PopulateLogger(originalLogger *zap.SugaredLogger) mux.MiddlewareFunc {
@@ -35,6 +51,15 @@ func PopulateLogger(originalLogger *zap.SugaredLogger) mux.MiddlewareFunc {
 			// If there's a request ID, set that on the logger.
 			if id := controller.RequestIDFromContext(ctx); id != "" {
 				logger = logger.With("request_id", id)
+			}
+
+			// On Google Cloud, extract the trace context and add it to the logger.
+			if v := r.Header.Get(googleCloudTraceHeader); v != "" && googleCloudProjectID != "" {
+				parts := strings.Split(v, "/")
+				if len(parts) > 0 && len(parts[0]) > 0 {
+					val := fmt.Sprintf("projects/%s/traces/%s", googleCloudProjectID, parts[0])
+					logger = logger.With(googleCloudTraceKey, val)
+				}
 			}
 
 			ctx = logging.WithLogger(ctx, logger)
