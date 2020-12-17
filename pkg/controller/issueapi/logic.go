@@ -308,7 +308,7 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 					// fallthrough to the error
 				}
 
-				logger.Errorw("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
+				logger.Infow("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
 				result.obsBlame = observability.BlameClient
 				result.obsResult = observability.ResultError("FAILED_TO_SEND_SMS")
 				return err
