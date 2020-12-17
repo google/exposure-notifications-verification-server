@@ -58,13 +58,15 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		// Add realm so that metrics are groupable on a per-realm basis.
 		logic := issuelogic.New(c.config, c.db, c.limiter, authApp, membership, realm)
-		result, resp := logic.IssueOne(ctx, &request)
-		if result.ErrorReturn != nil {
+		result = logic.IssueOne(ctx, &request)
+
+		resp := result.IssueCodeResponse()
+		if resp.Error != "" {
 			if result.HTTPCode == http.StatusInternalServerError {
-				controller.InternalError(w, r, c.h, errors.New(result.ErrorReturn.Error))
+				controller.InternalError(w, r, c.h, errors.New(resp.Error))
 				return
 			}
-			c.h.RenderJSON(w, result.HTTPCode, result.ErrorReturn)
+			c.h.RenderJSON(w, result.HTTPCode, resp)
 			return
 		}
 

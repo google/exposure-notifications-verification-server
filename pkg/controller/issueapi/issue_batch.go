@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuelogic"
@@ -38,9 +37,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 		ctx := r.Context()
-		logger := logging.FromContext(ctx).Named("issueapi.HandleBatchIssue")
 
-		resp := &api.BatchIssueCodeResponse{}
 		result := &issuelogic.IssueResult{
 			HTTPCode:  http.StatusOK,
 			ObsBlame:  observability.BlameNone,
@@ -87,24 +84,27 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		HTTPCode := http.StatusOK
-		errCount := 0
-		var results []*issuelogic.IssueResult
-
 		logic := issuelogic.New(c.config, c.db, c.limiter, authApp, membership, realm)
-		results, resp.Codes = logic.IssueMany(ctx, request.Codes)
-		for _, result := range results {
-			if result.ErrorReturn == nil {
+		results := logic.IssueMany(ctx, request.Codes)
+
+		HTTPCode := http.StatusOK
+		batchResp := &api.BatchIssueCodeResponse{}
+		batchResp.Codes = make([]*api.IssueCodeResponse, len(results))
+		errCount := 0
+
+		for i, result := range results {
+			singleResponse := result.IssueCodeResponse()
+			batchResp.Codes[i] = singleResponse
+			if singleResponse.Error == "" {
 				continue
 			}
 
 			// If any issuance fails, the returned code is the code of the first failure
 			// and continue processing all codes.
-			logger.Warnw("single code issuance failed", "error", result.ErrorReturn)
 			errCount++
 			if HTTPCode == http.StatusOK {
 				HTTPCode = result.HTTPCode
-				resp.ErrorCode = result.ErrorReturn.ErrorCode
+				batchResp.ErrorCode = singleResponse.ErrorCode
 			}
 		}
 
@@ -115,10 +115,10 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				sb.WriteString(fmt.Sprintf(" Issued %d codes successfully.", succeeded))
 			}
 			sb.WriteString("See each error status in the codes array.")
-			resp.Error = sb.String()
+			batchResp.Error = sb.String()
 		}
 
-		c.h.RenderJSON(w, HTTPCode, resp)
+		c.h.RenderJSON(w, HTTPCode, batchResp)
 		return
 	})
 }

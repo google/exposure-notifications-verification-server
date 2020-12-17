@@ -91,7 +91,7 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 				// fallthrough to the error
 			}
 
-			logger.Errorw("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
+			logger.Infow("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
 			result.ObsBlame = observability.BlameClient
 			result.ObsResult = observability.ResultError("FAILED_TO_SEND_SMS")
 			return err
@@ -99,7 +99,7 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 		return nil
 	}(); err != nil {
 		result.HTTPCode = http.StatusBadRequest
-		result.ErrorReturn = api.Errorf("failed to send sms: %s", err)
+		result.errorReturn = api.Errorf("failed to send sms: %s", err)
 		return err
 	}
 	return nil

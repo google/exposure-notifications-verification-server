@@ -44,15 +44,22 @@ var (
 )
 
 type IssueResult struct {
-	verCode *database.VerificationCode
+	verCode     *database.VerificationCode
+	errorReturn *api.ErrorReturn
 
-	HTTPCode    int
-	ErrorReturn *api.ErrorReturn
-	ObsBlame    tag.Mutator
-	ObsResult   tag.Mutator
+	HTTPCode  int
+	ObsBlame  tag.Mutator
+	ObsResult tag.Mutator
 }
 
-func (result *IssueResult) issueCodeResponse() *api.IssueCodeResponse {
+func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
+	if result.errorReturn != nil {
+		return &api.IssueCodeResponse{
+			ErrorCode: result.errorReturn.ErrorCode,
+			Error:     result.errorReturn.Error,
+		}
+	}
+
 	v := result.verCode
 	return &api.IssueCodeResponse{
 		UUID:                   v.UUID,
@@ -64,37 +71,12 @@ func (result *IssueResult) issueCodeResponse() *api.IssueCodeResponse {
 	}
 }
 
-func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) (*IssueResult, *api.IssueCodeResponse) {
-	logger := logging.FromContext(ctx).Named("issueapi.issueOne")
-
-	// Generate code
-	result := c.generateCode(ctx, request)
-	if result.ErrorReturn != nil {
-		return result, &api.IssueCodeResponse{
-			ErrorCode: result.ErrorReturn.ErrorCode,
-			Error:     result.ErrorReturn.Error,
-		}
-	}
-
-	// Send SMS messages
-	if err := c.sendSMS(ctx, request, result); err != nil {
-		logger.Warnw("failed to send SMS", "error", err)
-	}
-
-	if result.ErrorReturn != nil {
-		return result, &api.IssueCodeResponse{
-			ErrorCode: result.ErrorReturn.ErrorCode,
-			Error:     result.ErrorReturn.Error,
-		}
-	}
-
-	// Convert to API response
-	return result, result.issueCodeResponse()
+func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
+	results := c.IssueMany(ctx, []*api.IssueCodeRequest{request})
+	return results[0]
 }
 
-func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) ([]*IssueResult, []*api.IssueCodeResponse) {
-	logger := logging.FromContext(ctx).Named("issueapi.issueMany")
-
+func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, singleReq := range requests {
@@ -104,34 +86,20 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 	// Send SMS messages
 	var wg sync.WaitGroup
 	for i, result := range results {
-		if result.ErrorReturn != nil {
+		if result.errorReturn != nil {
 			continue
 		}
 
 		wg.Add(1)
 		go func(request *api.IssueCodeRequest, r *IssueResult) {
 			defer wg.Done()
-			if err := c.sendSMS(ctx, request, r); err != nil {
-				logger.Warnw("failed to send SMS", "error", err)
-			}
+			c.sendSMS(ctx, request, r)
 		}(requests[i], result)
 	}
 
 	wg.Wait() // wait the SMS work group to finish
 
-	// Convert to API response
-	responses := make([]*api.IssueCodeResponse, len(requests))
-	for i, result := range results {
-		if result.ErrorReturn != nil {
-			responses[i] = &api.IssueCodeResponse{
-				ErrorCode: result.ErrorReturn.ErrorCode,
-				Error:     result.ErrorReturn.Error,
-			}
-		} else {
-			responses[i] = result.issueCodeResponse()
-		}
-	}
-	return results, responses
+	return results
 }
 
 // generateCode issues a code.
@@ -145,7 +113,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
 			HTTPCode:    http.StatusBadRequest,
-			ErrorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
+			errorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
 		}
 	}
 
@@ -155,7 +123,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
 			HTTPCode:    http.StatusBadRequest,
-			ErrorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
+			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
 		}
 	}
 
@@ -166,7 +134,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("INVALID_TEST_TYPE"),
 			HTTPCode:    http.StatusBadRequest,
-			ErrorReturn: api.Errorf("invalid test type").WithCode(api.ErrUnsupportedTestType),
+			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrUnsupportedTestType),
 		}
 	}
 
@@ -180,7 +148,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
 				HTTPCode:    http.StatusInternalServerError,
-				ErrorReturn: api.Errorf("failed to get sms provider"),
+				errorReturn: api.Errorf("failed to get sms provider"),
 			}
 		}
 		if smsProvider == nil {
@@ -189,7 +157,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
 				HTTPCode:    http.StatusBadRequest,
-				ErrorReturn: api.Error(err),
+				errorReturn: api.Error(err),
 			}
 		}
 	}
@@ -207,7 +175,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError(dateSettings[i].ParseError),
 					HTTPCode:    http.StatusBadRequest,
-					ErrorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
+					errorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
 				}
 			}
 			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
@@ -226,7 +194,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError(dateSettings[i].ValidateError),
 					HTTPCode:    http.StatusBadRequest,
-					ErrorReturn: api.Error(err),
+					errorReturn: api.Error(err),
 				}
 			}
 			parsedDates[i] = validatedDate
@@ -243,7 +211,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 					ObsBlame:    observability.BlameServer,
 					ObsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
 					HTTPCode:    http.StatusInternalServerError,
-					ErrorReturn: api.Error(err),
+					errorReturn: api.Error(err),
 				}
 			}
 		} else if code != nil {
@@ -251,7 +219,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				ObsBlame:    observability.BlameClient,
 				ObsResult:   observability.ResultError("UUID_CONFLICT"),
 				HTTPCode:    http.StatusConflict,
-				ErrorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
+				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
 	}
@@ -265,7 +233,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
 				HTTPCode:    http.StatusInternalServerError,
-				ErrorReturn: api.Error(err),
+				errorReturn: api.Error(err),
 			}
 		}
 		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
@@ -275,7 +243,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
 				HTTPCode:    http.StatusInternalServerError,
-				ErrorReturn: api.Errorf("failed to verify realm stats, please try again"),
+				errorReturn: api.Errorf("failed to verify realm stats, please try again"),
 			}
 		}
 
@@ -292,7 +260,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError("QUOTA_EXCEEDED"),
 					HTTPCode:    http.StatusTooManyRequests,
-					ErrorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
+					errorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
 				}
 			}
 		}
@@ -341,14 +309,14 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
 				HTTPCode:    http.StatusConflict,
-				ErrorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
+				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
 		return &IssueResult{
 			ObsBlame:    observability.BlameServer,
 			ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
 			HTTPCode:    http.StatusInternalServerError,
-			ErrorReturn: api.Errorf("failed to generate otp code, please try again"),
+			errorReturn: api.Errorf("failed to generate otp code, please try again"),
 		}
 	}
 
