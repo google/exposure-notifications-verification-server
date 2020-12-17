@@ -20,10 +20,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-var testDatabaseInstance *database.TestInstance
+var TestDatabaseInstance *database.TestInstance
 
 func TestMain(m *testing.M) {
-	testDatabaseInstance = database.MustTestInstance()
-	defer testDatabaseInstance.MustClose()
+	TestDatabaseInstance = database.MustTestInstance()
+	defer TestDatabaseInstance.MustClose()
 	m.Run()
 }

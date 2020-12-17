@@ -28,7 +28,7 @@ func TestGetAndroidData(t *testing.T) {
 	t.Run("no_active_apps", func(t *testing.T) {
 		t.Parallel()
 
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+		db, _ := TestDatabaseInstance.NewDatabase(t, nil)
 
 		realm, err := db.FindRealm(1)
 		if err != nil {
@@ -49,7 +49,7 @@ func TestGetAndroidData(t *testing.T) {
 	t.Run("active_apps", func(t *testing.T) {
 		t.Parallel()
 
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+		db, _ := TestDatabaseInstance.NewDatabase(t, nil)
 
 		realm, err := db.FindRealm(1)
 		if err != nil {

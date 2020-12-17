@@ -22,10 +22,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/associated"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -34,25 +35,8 @@ func TestIndex(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create cacher.
-	cacher, err := cache.NewInMemory(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := cacher.Close(); err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	// Create database.
-	testDatabaseInstance := database.MustTestInstance()
-	t.Cleanup(func() {
-		if err := testDatabaseInstance.Close(); err != nil {
-			t.Fatal(err)
-		}
-	})
-	db, _ := testDatabaseInstance.NewDatabase(t, cacher)
+	tc := testconfig.NewServerConfig(t, associated.TestDatabaseInstance)
+	db := tc.Database
 
 	// Create config.
 	cfg := &config.RedirectConfig{
@@ -108,7 +92,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	// Build routes.
-	mux, err := routes.ENXRedirect(ctx, cfg, db, cacher)
+	mux, err := routes.ENXRedirect(ctx, cfg, db, tc.Cacher)
 	if err != nil {
 		t.Fatal(err)
 	}
