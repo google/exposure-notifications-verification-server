@@ -22,7 +22,7 @@ import (
 )
 
 // RandomBytes returns a byte slice of random values of the given length.
-func RandomBytes(tb testing.TB, length int) []byte {
+func randomBytes(tb testing.TB, length int) []byte {
 	buf := make([]byte, length)
 	n, err := rand.Read(buf)
 	if err != nil {
@@ -35,6 +35,6 @@ func RandomBytes(tb testing.TB, length int) []byte {
 }
 
 // RandomString returns a random hex-encoded string of the given length.
-func RandomString(tb testing.TB, length int) string {
-	return hex.EncodeToString(RandomBytes(tb, length/2))
+func randomString(tb testing.TB, length int) string {
+	return hex.EncodeToString(randomBytes(tb, length/2))
 }

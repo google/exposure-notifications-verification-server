@@ -101,7 +101,7 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		LocalesPath: LocalesPath(),
 		Cache: cache.Config{
 			Type:    cache.TypeInMemory,
-			HMACKey: RandomBytes(tb, 64),
+			HMACKey: randomBytes(tb, 64),
 		},
 		Database: *dbConfig,
 		// Firebase is not used for browser tests.
@@ -115,18 +115,18 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 			AppID:           "1:test:web:test",
 			MeasurementID:   "G-TEST",
 		},
-		CookieKeys:  config.Base64ByteSlice{RandomBytes(tb, 64), RandomBytes(tb, 32)},
-		CSRFAuthKey: RandomBytes(tb, 32),
+		CookieKeys:  config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
+		CSRFAuthKey: randomBytes(tb, 32),
 		CertificateSigning: config.CertificateSigningConfig{
 			CertificateSigningKey: "UPDATE_ME",
 			Keys: keys.Config{
 				KeyManagerType: keys.KeyManagerTypeFilesystem,
-				FilesystemRoot: filepath.Join(project.Root(), "local", "test", RandomString(tb, 8)),
+				FilesystemRoot: filepath.Join(project.Root(), "local", "test", randomString(tb, 8)),
 			},
 		},
 		RateLimit: ratelimit.Config{
 			Type:    ratelimit.RateLimiterTypeMemory,
-			HMACKey: RandomBytes(tb, 64),
+			HMACKey: randomBytes(tb, 64),
 		},
 
 		// DevMode has to be enabled for tests. Otherwise the cookies fail.
