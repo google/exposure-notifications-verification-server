@@ -72,7 +72,22 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 		}
 		permission = permission | update
 	}
+	// Ensure implied permissions. The actor must also have the implied permissions by definition.
+	for has, needs := range requiredPermission {
+		// If granted has, ensure that we have all needs.
+		if Can(permission, has) {
+			for _, required := range needs {
+				permission = permission | required
+			}
+		}
+	}
 	return permission, nil
+}
+
+// ImpliedBy returns any permissions that cause this permission to be added automatically.
+// The return may be nil.
+func ImpliedBy(permission Permission) []Permission {
+	return impliedBy[permission]
 }
 
 // PermissionNames returns the list of permissions included in the given
@@ -144,6 +159,39 @@ const (
 	UserRead  = 1 << iota
 	UserWrite = 1 << iota
 )
+
+// --
+// Required / Implied permissions.
+// Write permissions require subordinate read.
+// --
+
+var (
+	// requiredPermissions is not exported since maps cannot be constant.
+	requiredPermission = map[Permission][]Permission{
+		APIKeyWrite:    {APIKeyRead},
+		SettingsWrite:  {SettingsRead},
+		MobileAppWrite: {MobileAppRead},
+		UserWrite:      {UserRead},
+	}
+
+	// This is the inverse of the above map, set by the init() func.
+	// Done in code to ensure it always stays in sync with requiredPermission.
+	impliedBy = make(map[Permission][]Permission)
+)
+
+// Note: there are multiple init functions in this file. They are organized to be
+// near the thing they are initializing.
+// Yes, go allows multiple init functions in the same module.
+func init() {
+	for has, needs := range requiredPermission {
+		for _, perm := range needs {
+			if _, ok := impliedBy[perm]; !ok {
+				impliedBy[perm] = make([]Permission, 0, 1)
+			}
+			impliedBy[perm] = append(impliedBy[perm], has)
+		}
+	}
+}
 
 // --
 // Legacy permissions
