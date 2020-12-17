@@ -32,7 +32,7 @@ resource "google_monitoring_slo" "slo" {
         metric.type="loadbalancing.googleapis.com/https/request_count"
         resource.type="https_lb_rule"
         resource.label.backend_name="${var.service_name}"
-        metric.label.response_code_class=200
+        (metric.label.response_code_class=200 OR metric.label.response_code_class=300)
       EOT
       bad_service_filter  = <<-EOT
         metric.type="loadbalancing.googleapis.com/https/request_count"
