@@ -102,5 +102,6 @@ func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, authA
 	m["authApp"] = authApp
 	m["typeAdmin"] = database.APIKeyTypeAdmin
 	m["typeDevice"] = database.APIKeyTypeDevice
+	m["typeStats"] = database.APIKeyTypeStats
 	c.h.RenderHTML(w, "apikeys/new", m)
 }

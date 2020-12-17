@@ -42,7 +42,7 @@ func RequireAPIKey(cacher cache.Cacher, db *database.Database, h render.Renderer
 		allowedTypesMap[t] = struct{}{}
 	}
 
-	cacheTTL := 5 * time.Minute
+	cacheTTL := 30 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

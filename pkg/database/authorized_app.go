@@ -40,6 +40,7 @@ const (
 	APIKeyTypeInvalid APIKeyType = iota - 1
 	APIKeyTypeDevice
 	APIKeyTypeAdmin
+	APIKeyTypeStats
 )
 
 func (a APIKeyType) Display() string {
@@ -48,6 +49,8 @@ func (a APIKeyType) Display() string {
 		return "device"
 	case APIKeyTypeAdmin:
 		return "admin"
+	case APIKeyTypeStats:
+		return "stats"
 	default:
 		return "invalid"
 	}
@@ -91,7 +94,7 @@ func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("name", "cannot be blank")
 	}
 
-	if !(a.APIKeyType == APIKeyTypeDevice || a.APIKeyType == APIKeyTypeAdmin) {
+	if !(a.APIKeyType == APIKeyTypeDevice || a.APIKeyType == APIKeyTypeAdmin || a.APIKeyType == APIKeyTypeStats) {
 		a.AddError("type", "is invalid")
 	}
 
@@ -107,6 +110,10 @@ func (a *AuthorizedApp) IsAdminType() bool {
 
 func (a *AuthorizedApp) IsDeviceType() bool {
 	return a.APIKeyType == APIKeyTypeDevice
+}
+
+func (a *AuthorizedApp) IsStatsType() bool {
+	return a.APIKeyType == APIKeyTypeStats
 }
 
 // Realm returns the associated realm for this app. If you only need the ID,
