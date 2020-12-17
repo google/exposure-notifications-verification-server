@@ -19,15 +19,9 @@ package issueapi
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuelogic"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuemetric"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-limiter"
@@ -48,30 +42,4 @@ func New(ctx context.Context, config config.IssueAPIConfig, db *database.Databas
 		h:       h,
 		limiter: limiter,
 	}
-}
-
-// getAuthorizationFromContext pulls the authorization from the context. If an
-// API key is provided, it's used to lookup the realm. If a membership exists,
-// it's used to provide the realm.
-func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database.AuthorizedApp, *database.Membership, *database.Realm, error) {
-	authorizedApp := controller.AuthorizedAppFromContext(ctx)
-	if authorizedApp != nil {
-		realm, err := authorizedApp.Realm(c.db)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		return authorizedApp, nil, realm, nil
-	}
-
-	membership := controller.MembershipFromContext(ctx)
-	if membership != nil {
-		realm := membership.Realm
-		return nil, membership, realm, nil
-	}
-
-	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
-}
-
-func recordObservability(ctx context.Context, result *issuelogic.IssueResult) {
-	observability.RecordLatency(ctx, time.Now(), issuemetric.LatencyMs, &result.ObsBlame, &result.ObsResult)
 }
