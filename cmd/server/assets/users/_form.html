@@ -39,13 +39,18 @@
         </small>
       {{end}}
       {{range $name, $permission := $permissions}}
-        <div class="custom-control custom-checkbox py-1">
+        <div class="custom-control custom-checkbox py-3">
           <input type="checkbox" name="permissions" id="permission-{{$permission.Value}}"
             class="custom-control-input" value="{{$permission.Value}}"
             {{checkedIf ($userMembership.Can $permission)}}
             {{disabledIf (eq $currentMembership.UserID $userMembership.UserID)}}
             {{readonlyIf (eq $currentMembership.UserID $userMembership.UserID)}}>
-          <label class="custom-control-label" for="permission-{{$permission.Value}}">{{$name}}</label>
+          <label class="custom-control-label w-100" for="permission-{{$permission.Value}}">
+            {{$name}}
+            <small class="form-text text-muted">
+              Can {{$permission.Description}}.
+            </small>
+          </label>
         </div>
       {{end}}
     </div>

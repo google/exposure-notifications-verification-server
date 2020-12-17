@@ -122,6 +122,6 @@ func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter) {
 	m.Title("New user")
 	m["user"] = &database.User{}
 	m["userMembership"] = &database.Membership{}
-	m["permissions"] = rbac.PermissionMap()
+	m["permissions"] = rbac.NamePermissionMap
 	c.h.RenderHTML(w, "users/new", m)
 }
