@@ -25,7 +25,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -162,9 +161,6 @@ type IntegrationSuite struct {
 	Realm *database.Realm
 
 	adminKey, deviceKey string
-
-	adminSrv *server.Server
-	apiSrv   *server.Server
 }
 
 // NewIntegrationSuite creates a IntegrationSuite for integration tests.
