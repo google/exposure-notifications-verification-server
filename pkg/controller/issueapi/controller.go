@@ -18,8 +18,6 @@
 package issueapi
 
 import (
-	"context"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -35,7 +33,7 @@ type Controller struct {
 }
 
 // New creates a new IssueAPI controller.
-func New(ctx context.Context, config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
+func New(config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
 	return &Controller{
 		config:  config,
 		db:      db,

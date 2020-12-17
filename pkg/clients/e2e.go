@@ -284,13 +284,16 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		codes, err := func() (*api.BatchIssueCodeResponse, error) {
 			defer recordLatency(ctx, time.Now(), "/api/issue")
 
-			codes, err := BatchIssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codesRequest)
+			httpCode, codes, err := BatchIssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codesRequest)
 			if err != nil {
 				result = observability.ResultNotOK()
 				return nil, fmt.Errorf("error issuing verification code: %w", err)
 			} else if codes.Error != "" {
 				result = observability.ResultNotOK()
 				return nil, fmt.Errorf("issue API Error: %+v", codes)
+			} else if httpCode != http.StatusOK {
+				result = observability.ResultNotOK()
+				return nil, fmt.Errorf("issue API Error: http status %d", httpCode)
 			}
 
 			logger.Debugw("Issue Code",

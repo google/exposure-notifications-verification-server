@@ -117,16 +117,6 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 		}
 	}
 
-	// Validate that the request with the provided test type is valid for this realm.
-	if !c.realm.ValidTestType(request.TestType) {
-		return &IssueResult{
-			ObsBlame:    observability.BlameClient,
-			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
-			HTTPCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
-		}
-	}
-
 	// Verify the test type
 	request.TestType = strings.ToLower(request.TestType)
 	if _, ok := validTestType[request.TestType]; !ok {
@@ -134,7 +124,17 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("INVALID_TEST_TYPE"),
 			HTTPCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrUnsupportedTestType),
+			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrInvalidTestType),
+		}
+	}
+
+	// Validate that the request with the provided test type is valid for this realm.
+	if !c.realm.ValidTestType(request.TestType) {
+		return &IssueResult{
+			ObsBlame:    observability.BlameClient,
+			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
+			HTTPCode:    http.StatusBadRequest,
+			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
 		}
 	}
 
