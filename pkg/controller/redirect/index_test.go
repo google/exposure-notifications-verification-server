@@ -124,6 +124,29 @@ func TestIndex(t *testing.T) {
 		return http.ErrUseLastResponse
 	}
 
+	// Bad path
+	t.Run("bad_path", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/css/view/main/gift.css", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 404; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+	})
+
 	// No matching region returns a 404
 	t.Run("no_matching_region", func(t *testing.T) {
 		t.Parallel()
