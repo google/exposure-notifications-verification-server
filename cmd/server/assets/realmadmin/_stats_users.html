@@ -14,8 +14,8 @@
     <a href="#" data-toggle="modal" data-target="#per-user-table-modal">Learn more about this table</a>
     <span>
       <span class="mr-1">Export as:</span>
-      <a href="/realm/stats.csv?scope=user" class="mr-1">CSV</a>
-      <a href="/realm/stats.json?scope=user">JSON</a>
+      <a href="/stats/realm-user.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm-user.json">JSON</a>
     </span>
   </small>
 </div>
@@ -60,7 +60,7 @@
 
   function drawUsersTable() {
     $.ajax({
-      url: '/realm/stats.json',
+      url: '/stats/realm-user.json',
       data: { scope: 'user' },
       dataType: 'json',
     })

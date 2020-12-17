@@ -12,31 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realmadmin
+// Package stats produces statistics.
+package stats
 
 import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
-func (c *Controller) HandleStats() http.Handler {
+// HandleRealmExternalIssuerStats renders statistics for the current realm.
+func (c *Controller) HandleRealmExternalIssuerStats(typ StatsType) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		membership := controller.MembershipFromContext(ctx)
-		if membership == nil {
-			controller.MissingMembership(w, r, c.h)
-			return
-		}
-		if !membership.Can(rbac.StatsRead) {
+		currentRealm, ok := authorizeFromContext(ctx)
+		if !ok {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		m := controller.TemplateMapFromContext(ctx)
-		m.Title("Realm stats")
-		c.h.RenderHTML(w, "realmadmin/stats", m)
+		stats, err := currentRealm.ExternalIssuerStatsCached(ctx, c.db, c.cacher)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		switch typ {
+		case StatsTypeCSV:
+			c.h.RenderCSV(w, http.StatusOK, csvFilename("external-issuer-stats"), stats)
+			return
+		case StatsTypeJSON:
+			c.h.RenderJSON(w, http.StatusOK, stats)
+			return
+		default:
+			controller.NotFound(w, r, c.h)
+			return
+		}
 	})
 }

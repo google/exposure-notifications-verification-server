@@ -36,6 +36,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/stats"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
@@ -263,6 +264,21 @@ func Server(
 		userRoutes(sub, userController)
 	}
 
+	// stats
+	{
+		sub := r.PathPrefix("/stats").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(loadCurrentMembership)
+		sub.Use(requireMembership)
+		sub.Use(processFirewall)
+		sub.Use(requireVerified)
+		sub.Use(requireMFA)
+		sub.Use(rateLimit)
+
+		statsController := stats.New(ctx, cacher, db, h)
+		statsRoutes(sub, statsController)
+	}
+
 	// realms
 	{
 		sub := r.PathPrefix("/realm").Subrouter()
@@ -383,14 +399,22 @@ func realmkeysRoutes(r *mux.Router, c *realmkeys.Controller) {
 	r.Handle("/keys/activate", c.HandleActivate()).Methods("POST")
 }
 
+// statsRoutes are the statistics routes, rooted at /stats.
+func statsRoutes(r *mux.Router, c *stats.Controller) {
+	r.Handle("/realm.csv", c.HandleRealmStats(stats.StatsTypeCSV)).Methods("GET")
+	r.Handle("/realm.json", c.HandleRealmStats(stats.StatsTypeJSON)).Methods("GET")
+	r.Handle("/realm-user.csv", c.HandleRealmUserStats(stats.StatsTypeCSV)).Methods("GET")
+	r.Handle("/realm-user.json", c.HandleRealmUserStats(stats.StatsTypeJSON)).Methods("GET")
+	r.Handle("/realm-external-issuer.csv", c.HandleRealmExternalIssuerStats(stats.StatsTypeCSV)).Methods("GET")
+	r.Handle("/realm-external-issuer.json", c.HandleRealmExternalIssuerStats(stats.StatsTypeJSON)).Methods("GET")
+}
+
 // realmadminRoutes are the realm admin routes.
 func realmadminRoutes(r *mux.Router, c *realmadmin.Controller) {
 	r.Handle("/settings", c.HandleSettings()).Methods("GET", "POST")
 	r.Handle("/settings/enable-express", c.HandleEnableExpress()).Methods("POST")
 	r.Handle("/settings/disable-express", c.HandleDisableExpress()).Methods("POST")
 	r.Handle("/stats", c.HandleStats()).Methods("GET")
-	r.Handle("/stats.csv", c.HandleStats()).Methods("GET")
-	r.Handle("/stats.json", c.HandleStats()).Methods("GET")
 	r.Handle("/events", c.HandleEvents()).Methods("GET")
 }
 

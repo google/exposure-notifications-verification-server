@@ -23,11 +23,13 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
@@ -1428,11 +1430,11 @@ func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id i
 	return nil
 }
 
-// Stats returns the usage statistics for this realm. If no stats exist,
+// Stats returns the 30-day usage statistics for this realm. If no stats exist,
 // returns an empty array.
-func (r *Realm) Stats(db *Database, start, stop time.Time) (RealmStats, error) {
-	start = timeutils.Midnight(start)
-	stop = timeutils.Midnight(stop)
+func (r *Realm) Stats(db *Database) (RealmStats, error) {
+	stop := timeutils.Midnight(time.Now().UTC())
+	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
@@ -1460,11 +1462,30 @@ func (r *Realm) Stats(db *Database, start, stop time.Time) (RealmStats, error) {
 	return stats, nil
 }
 
-// ExternalIssuerStats returns the external issuer stats for this realm. If no
-// stats exist, returns an empty slice.
-func (r *Realm) ExternalIssuerStats(db *Database, start, stop time.Time) (ExternalIssuerStats, error) {
-	start = timeutils.UTCMidnight(start)
-	stop = timeutils.UTCMidnight(stop)
+// StatsCached is stats, but cached.
+func (r *Realm) StatsCached(ctx context.Context, db *Database, cacher cache.Cacher) (RealmStats, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var stats RealmStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm",
+		Key:       strconv.FormatUint(uint64(r.ID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return r.Stats(db)
+	}); err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
+// ExternalIssuerStats returns the 30-day external issuer stats for this realm.
+// If no stats exist, returns an empty slice.
+func (r *Realm) ExternalIssuerStats(db *Database) (ExternalIssuerStats, error) {
+	stop := timeutils.Midnight(time.Now().UTC())
+	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
@@ -1503,11 +1524,29 @@ func (r *Realm) ExternalIssuerStats(db *Database, start, stop time.Time) (Extern
 	return stats, nil
 }
 
-// UserStats returns a set of UserStats for a given date range.
-func (r *Realm) UserStats(db *Database, start, stop time.Time) (RealmUserStats, error) {
-	start = timeutils.UTCMidnight(start)
-	stop = timeutils.UTCMidnight(stop)
+// ExternalIssuerStatsCached is stats, but cached.
+func (r *Realm) ExternalIssuerStatsCached(ctx context.Context, db *Database, cacher cache.Cacher) (ExternalIssuerStats, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
 
+	var stats ExternalIssuerStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:per_external_issuer",
+		Key:       strconv.FormatUint(uint64(r.ID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return r.ExternalIssuerStats(db)
+	}); err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
+// UserStats returns the 30-day stats by user.
+func (r *Realm) UserStats(db *Database) (RealmUserStats, error) {
+	stop := timeutils.Midnight(time.Now().UTC())
+	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
@@ -1544,6 +1583,25 @@ func (r *Realm) UserStats(db *Database, start, stop time.Time) (RealmUserStats, 
 		if IsNotFound(err) {
 			return stats, nil
 		}
+		return nil, err
+	}
+	return stats, nil
+}
+
+// UserStatsCached is stats, but cached.
+func (r *Realm) UserStatsCached(ctx context.Context, db *Database, cacher cache.Cacher) (RealmUserStats, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var stats RealmUserStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:per_user",
+		Key:       strconv.FormatUint(uint64(r.ID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return r.UserStats(db)
+	}); err != nil {
 		return nil, err
 	}
 	return stats, nil

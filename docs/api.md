@@ -448,6 +448,27 @@ Expires an unclaimed code. If the code has been claimed an error is returned.
 The timestamps are updated to the new expiration time (which will be in the
 past).
 
+
+## `/api/stats/*` (preview)
+
+**The statistics API are currently in preview. They are not covered by our
+backwards-compatibility promise and the APIs are subject to change without
+notice!**
+
+This path includes realm-level statistics for the past 30 days.
+
+-   `/api/stats/realm.{csv,json}` - Daily statistics for the realm, including
+    codes issued, codes claimed, and daily active users (if enabled).
+
+-   `/api/stats/realm-user.{csv,json}` - Daily statistics for codes issued by
+    realm user. These statistics only include codes issued by humans logged into
+    the verification system.
+
+-   `/api/stats/realm-external-issuser.{csv,json}` - Daily statistics for codes
+    issued by external issuers. These statistics only include codes issued by
+    the API where an `externalIssuer` field was provided.
+
+
 # Chaffing requests
 
 In addition to "real" requests, the server also accepts chaff (fake) requests.
