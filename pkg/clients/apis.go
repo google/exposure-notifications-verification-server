@@ -48,7 +48,7 @@ func IssueCode(ctx context.Context, hostname, apiKey string, request *api.IssueC
 
 // BatchIssueCode uses the ADMIN API to issue multiple verification codes.
 func BatchIssueCode(ctx context.Context, hostname, apiKey string, request *api.BatchIssueCodeRequest) (*api.BatchIssueCodeResponse, error) {
-	url := hostname + "/api/issue"
+	url := hostname + "/api/batch-issue"
 	client := &http.Client{
 		Timeout: timeout,
 	}
