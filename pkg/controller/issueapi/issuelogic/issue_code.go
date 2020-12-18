@@ -194,7 +194,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError(dateSettings[i].ValidateError),
 					HTTPCode:    http.StatusBadRequest,
-					errorReturn: api.Error(err),
+					errorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
 				}
 			}
 			parsedDates[i] = validatedDate
