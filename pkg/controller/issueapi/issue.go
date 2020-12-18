@@ -20,17 +20,9 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuelogic"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
-
-	"go.opencensus.io/tag"
 )
-
-type issueResult struct {
-	httpCode    int
-	errorReturn *api.ErrorReturn
-	obsBlame    tag.Mutator
-	obsResult   tag.Mutator
-}
 
 func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,37 +33,40 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		ctx := r.Context()
-		result := &issueResult{
-			httpCode:  http.StatusOK,
-			obsBlame:  observability.BlameNone,
-			obsResult: observability.ResultOK(),
+		result := &issuelogic.IssueResult{
+			HTTPCode:  http.StatusOK,
+			ObsBlame:  observability.BlameNone,
+			ObsResult: observability.ResultOK(),
 		}
 		defer recordObservability(ctx, result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.obsBlame = observability.BlameClient
-			result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result.ObsBlame = observability.BlameClient
+			result.ObsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
 		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
 		if err != nil {
-			result.obsBlame = observability.BlameClient
-			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+			result.ObsBlame = observability.BlameClient
+			result.ObsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
 
 		// Add realm so that metrics are groupable on a per-realm basis.
-		result, resp := c.issue(ctx, authApp, membership, realm, &request)
-		if result.errorReturn != nil {
-			if result.httpCode == http.StatusInternalServerError {
-				controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))
+		logic := issuelogic.New(c.config, c.db, c.limiter, authApp, membership, realm)
+		result = logic.Issue(ctx, &request)
+
+		resp := result.IssueCodeResponse()
+		if resp.Error != "" {
+			if result.HTTPCode == http.StatusInternalServerError {
+				controller.InternalError(w, r, c.h, errors.New(resp.Error))
 				return
 			}
-			c.h.RenderJSON(w, result.httpCode, result.errorReturn)
+			c.h.RenderJSON(w, result.HTTPCode, resp)
 			return
 		}
 

@@ -97,18 +97,17 @@ type Request struct {
 // Issue will generate a verification code and save it to the database, based on
 // the paremters provided. It returns the short code, long code, a UUID for
 // accessing the code, and any errors.
-func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, string, error) {
+func (o *Request) Issue(ctx context.Context, retryCount uint) (*database.VerificationCode, error) {
 	logger := logging.FromContext(ctx)
 	var verificationCode database.VerificationCode
 	var err error
-	var code, longCode string
 	for i := uint(0); i < retryCount; i++ {
-		code, err = GenerateCode(o.ShortLength)
+		code, err := GenerateCode(o.ShortLength)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
 			continue
 		}
-		longCode = code
+		longCode := code
 		if o.LongLength > 0 {
 			longCode, err = GenerateAlphanumericCode(o.LongLength)
 			if err != nil {
@@ -148,11 +147,14 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (string, string, s
 			}
 			continue
 		} else {
+			// These are stored encrypted, but here we need to tell the user about them.
+			verificationCode.Code = code
+			verificationCode.LongCode = longCode
 			break // successful save, nil error, break out.
 		}
 	}
 	if err != nil {
-		return "", "", "", err
+		return nil, err
 	}
-	return code, longCode, verificationCode.UUID, nil
+	return &verificationCode, nil
 }

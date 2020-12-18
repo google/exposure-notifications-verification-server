@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issuelogic
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ import (
 	"testing"
 )
 
-func TestScrubPhoneNumber(t *testing.T) {
+func TestSMS_scrubPhoneNumber(t *testing.T) {
 	t.Parallel()
 
 	unreachable := "unreachable"

@@ -15,14 +15,13 @@
 package issueapi
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuelogic"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
@@ -38,80 +37,74 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 		ctx := r.Context()
-		logger := logging.FromContext(ctx).Named("issueapi.HandleBatchIssue")
 
-		resp := &api.BatchIssueCodeResponse{}
-		result := &issueResult{
-			httpCode:  http.StatusOK,
-			obsBlame:  observability.BlameNone,
-			obsResult: observability.ResultOK(),
+		result := &issuelogic.IssueResult{
+			HTTPCode:  http.StatusOK,
+			ObsBlame:  observability.BlameNone,
+			ObsResult: observability.ResultOK(),
 		}
 		defer recordObservability(ctx, result)
 
 		var request api.BatchIssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.obsBlame = observability.BlameClient
-			result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result.ObsBlame = observability.BlameClient
+			result.ObsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}
 
 		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
 		if err != nil {
-			result.obsBlame = observability.BlameClient
-			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+			result.ObsBlame = observability.BlameClient
+			result.ObsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
 
 		// Ensure bulk upload is enabled on this realm.
 		if !realm.AllowBulkUpload {
-			result.obsBlame = observability.BlameClient
-			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+			result.ObsBlame = observability.BlameClient
+			result.ObsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
 			return
 		}
 
 		if membership != nil && !membership.Can(rbac.CodeBulkIssue) {
-			result.obsBlame = observability.BlameClient
-			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+			result.ObsBlame = observability.BlameClient
+			result.ObsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
 		l := len(request.Codes)
 		if l > maxBatchSize {
-			result.obsBlame = observability.BlameClient
-			result.obsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
+			result.ObsBlame = observability.BlameClient
+			result.ObsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit [%d] exceeded", maxBatchSize))
 			return
 		}
 
+		logic := issuelogic.New(c.config, c.db, c.limiter, authApp, membership, realm)
 		httpCode := http.StatusOK
 		errCount := 0
 
-		resp.Codes = make([]*api.IssueCodeResponse, l)
+		HTTPCode := http.StatusOK
+		batchResp := &api.BatchIssueCodeResponse{}
+		batchResp.Codes = make([]*api.IssueCodeResponse, len(request.Codes))
 		for i, singleIssue := range request.Codes {
-			result, resp.Codes[i] = c.issue(ctx, authApp, membership, realm, singleIssue)
-			if result.errorReturn != nil {
-				if result.httpCode == http.StatusInternalServerError {
-					controller.InternalError(w, r, c.h, errors.New(result.errorReturn.Error))
-					return
-				}
-				// continue processing if when a single code issuance fails.
-				// if any issuance fails, the returned code is the code of the first failure.
-				logger.Warnw("single code issuance failed", "error", result.errorReturn)
-				errCount++
-				if resp.Codes[i] == nil {
-					resp.Codes[i] = &api.IssueCodeResponse{}
-				}
-				resp.Codes[i].ErrorCode = result.errorReturn.ErrorCode
-				resp.Codes[i].Error = result.errorReturn.Error
-				if httpCode == http.StatusOK {
-					httpCode = result.httpCode
-					resp.ErrorCode = result.errorReturn.ErrorCode
-				}
+			result = logic.Issue(ctx, singleIssue)
+			singleResponse := result.IssueCodeResponse()
+			batchResp.Codes[i] = singleResponse
+			if singleResponse.Error == "" {
 				continue
+			}
+
+			// If any issuance fails, the returned code is the code of the first failure
+			// and continue processing all codes.
+			errCount++
+			if HTTPCode == http.StatusOK {
+				HTTPCode = result.HTTPCode
+				batchResp.ErrorCode = singleResponse.ErrorCode
 			}
 		}
 
@@ -122,10 +115,10 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 				sb.WriteString(fmt.Sprintf(" Issued %d codes successfully.", succeeded))
 			}
 			sb.WriteString("See each error status in the codes array.")
-			resp.Error = sb.String()
+			batchResp.Error = sb.String()
 		}
 
-		c.h.RenderJSON(w, httpCode, resp)
+		c.h.RenderJSON(w, httpCode, batchResp)
 		return
 	})
 }

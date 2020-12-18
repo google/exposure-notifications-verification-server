@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+// Package issuemetric implements the metrics for code issuance
+package issuemetric
 
 import (
 	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
@@ -26,39 +27,37 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/issue"
 
 var (
-	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
-
-	mSMSLatencyMs = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
-
-	mRealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
+	RealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
+	SMSLatencyMs   = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
+	LatencyMs      = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
 )
 
 func init() {
 	enobservability.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/request_count",
-			Measure:     mLatencyMs,
+			Measure:     LatencyMs,
 			Description: "Count of code issue requests",
 			TagKeys:     observability.APITagKeys(),
 			Aggregation: view.Count(),
 		},
 		{
 			Name:        metricPrefix + "/request_latency",
-			Measure:     mLatencyMs,
+			Measure:     LatencyMs,
 			Description: "The latency distribution of code issue requests",
 			TagKeys:     observability.APITagKeys(),
 			Aggregation: ochttp.DefaultLatencyDistribution,
 		},
 		{
 			Name:        metricPrefix + "/sms_request_count",
-			Measure:     mSMSLatencyMs,
+			Measure:     SMSLatencyMs,
 			Description: "The # of SMS requests",
 			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
 			Aggregation: view.Count(),
 		},
 		{
 			Name:        metricPrefix + "/sms_request_latency",
-			Measure:     mSMSLatencyMs,
+			Measure:     SMSLatencyMs,
 			Description: "The # of SMS requests",
 			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
 			Aggregation: ochttp.DefaultLatencyDistribution,
@@ -67,7 +66,7 @@ func init() {
 			Name:        metricPrefix + "/realm_token_used_count",
 			Description: "The count of # of realm token used.",
 			TagKeys:     observability.CommonTagKeys(),
-			Measure:     mRealmTokenUsed,
+			Measure:     RealmTokenUsed,
 			Aggregation: view.Count(),
 		},
 	}...)
