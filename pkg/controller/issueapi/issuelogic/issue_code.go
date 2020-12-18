@@ -132,7 +132,7 @@ func (i *IssueLogic) Issue(ctx context.Context, request *api.IssueCodeRequest) *
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError(dateSettings[j].ValidateError),
 					HTTPCode:    http.StatusBadRequest,
-					errorReturn: api.Error(err),
+					errorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
 				}
 			}
 			parsedDates[j] = validatedDate
