@@ -23,7 +23,7 @@ import (
 	"github.com/sethvargo/go-limiter"
 )
 
-type Controller struct {
+type IssueLogic struct {
 	config     config.IssueAPIConfig
 	db         *database.Database
 	limiter    limiter.Store
@@ -34,8 +34,8 @@ type Controller struct {
 
 // New creates a new issue logic controller.
 func New(config config.IssueAPIConfig, db *database.Database, limiter limiter.Store,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *Controller {
-	return &Controller{
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *IssueLogic {
+	return &IssueLogic{
 		config:     config,
 		db:         db,
 		limiter:    limiter,

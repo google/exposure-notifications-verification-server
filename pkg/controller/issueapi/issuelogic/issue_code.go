@@ -71,16 +71,16 @@ func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
 	}
 }
 
-func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
-	results := c.IssueMany(ctx, []*api.IssueCodeRequest{request})
+func (il *IssueLogic) IssueOne(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
+	results := il.IssueMany(ctx, []*api.IssueCodeRequest{request})
 	return results[0]
 }
 
-func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
+func (il *IssueLogic) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, singleReq := range requests {
-		results[i] = c.generateCode(ctx, singleReq)
+		results[i] = il.generateCode(ctx, singleReq)
 	}
 
 	// Send SMS messages
@@ -93,7 +93,7 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 		wg.Add(1)
 		go func(request *api.IssueCodeRequest, r *IssueResult) {
 			defer wg.Done()
-			c.sendSMS(ctx, request, r)
+			il.sendSMS(ctx, request, r)
 		}(requests[i], result)
 	}
 
@@ -102,13 +102,12 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 	return results
 }
 
-// generateCode issues a code.
-// Footgun: Does not send SMS messages
-func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
+// generateCode issues a code. Does not send SMS messages.
+func (il *IssueLogic) generateCode(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
 	logger := logging.FromContext(ctx).Named("issueapi.generateCode")
 
 	// If this realm requires a date but no date was specified, return an error.
-	if c.realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
+	if il.realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
 		return &IssueResult{
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
@@ -129,7 +128,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 	}
 
 	// Validate that the request with the provided test type is valid for this realm.
-	if !c.realm.ValidTestType(request.TestType) {
+	if !il.realm.ValidTestType(request.TestType) {
 		return &IssueResult{
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
@@ -141,7 +140,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 	// Verify SMS configuration if phone was provided
 	var smsProvider sms.Provider
 	if request.Phone != "" {
-		smsProvider, err := c.realm.SMSProvider(c.db)
+		smsProvider, err := il.realm.SMSProvider(il.db)
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
 			return &IssueResult{
@@ -180,7 +179,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 			}
 			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
 			maxDate := timeutils.UTCMidnight(time.Now())
-			minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+			minDate := timeutils.Midnight(maxDate.Add(-1 * il.config.GetAllowedSymptomAge()))
 
 			validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
 			if err != nil {
@@ -205,7 +204,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 	// this prevents us from consuming quota on conflict.
 	rUUID := project.TrimSpaceAndNonPrintable(request.UUID)
 	if rUUID != "" {
-		if code, err := c.realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
+		if code, err := il.realm.FindVerificationCodeByUUID(il.db, request.UUID); err != nil {
 			if !database.IsNotFound(err) {
 				return &IssueResult{
 					ObsBlame:    observability.BlameServer,
@@ -226,8 +225,8 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 
 	// If we got this far, we're about to issue a code - take from the limiter
 	// to ensure this is permitted.
-	if c.realm.AbusePreventionEnabled {
-		key, err := c.realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
+	if il.realm.AbusePreventionEnabled {
+		key, err := il.realm.QuotaKey(il.config.GetRateLimitConfig().HMACKey)
 		if err != nil {
 			return &IssueResult{
 				ObsBlame:    observability.BlameServer,
@@ -236,7 +235,7 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 				errorReturn: api.Error(err),
 			}
 		}
-		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
+		limit, _, reset, ok, err := il.limiter.Take(ctx, key)
 		if err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
 			return &IssueResult{
@@ -251,11 +250,11 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 
 		if !ok {
 			logger.Warnw("realm has exceeded daily quota",
-				"realm", c.realm.ID,
+				"realm", il.realm.ID,
 				"limit", limit,
 				"reset", reset)
 
-			if c.config.GetEnforceRealmQuotas() {
+			if il.config.GetEnforceRealmQuotas() {
 				return &IssueResult{
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError("QUOTA_EXCEEDED"),
@@ -267,8 +266,8 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 	}
 
 	now := time.Now().UTC()
-	expiryTime := now.Add(c.realm.CodeDuration.Duration)
-	longExpiryTime := now.Add(c.realm.LongCodeDuration.Duration)
+	expiryTime := now.Add(il.realm.CodeDuration.Duration)
+	longExpiryTime := now.Add(il.realm.LongCodeDuration.Duration)
 	if request.Phone == "" || smsProvider == nil {
 		// If this isn't going to be send via SMS, make the long code expiration time same as short.
 		// This is because the long code will never be shown or sent.
@@ -277,30 +276,30 @@ func (c *Controller) generateCode(ctx context.Context, request *api.IssueCodeReq
 
 	// Compute issuing user - the membership will be nil when called via the API.
 	var user *database.User
-	if c.membership != nil {
-		user = c.membership.User
+	if il.membership != nil {
+		user = il.membership.User
 	}
 
 	// Generate verification code
 	codeRequest := otp.Request{
-		DB:             c.db,
-		ShortLength:    c.realm.CodeLength,
+		DB:             il.db,
+		ShortLength:    il.realm.CodeLength,
 		ShortExpiresAt: expiryTime,
-		LongLength:     c.realm.LongCodeLength,
+		LongLength:     il.realm.LongCodeLength,
 		LongExpiresAt:  longExpiryTime,
 		TestType:       request.TestType,
 		SymptomDate:    parsedDates[0],
 		TestDate:       parsedDates[1],
-		MaxSymptomAge:  c.config.GetAllowedSymptomAge(),
-		RealmID:        c.realm.ID,
+		MaxSymptomAge:  il.config.GetAllowedSymptomAge(),
+		RealmID:        il.realm.ID,
 		UUID:           rUUID,
 
 		IssuingUser:       user,
-		IssuingApp:        c.authApp,
+		IssuingApp:        il.authApp,
 		IssuingExternalID: request.ExternalIssuerID,
 	}
 
-	verCode, err := codeRequest.Issue(ctx, c.config.GetCollisionRetryCount())
+	verCode, err := codeRequest.Issue(ctx, il.config.GetCollisionRetryCount())
 	if err != nil {
 		logger.Errorw("failed to issue code", "error", err)
 		// GormV1 doesn't have a good way to match db errors

@@ -74,7 +74,7 @@ func TestIssueCode(t *testing.T) {
 	ctx = controller.WithMembership(ctx, membership)
 
 	var authApp *database.AuthorizedApp
-	c := New(tc.Config, db, tc.RateLimiter, authApp, membership, realm)
+	i := New(tc.Config, db, tc.RateLimiter, authApp, membership, realm)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 
@@ -145,7 +145,7 @@ func TestIssueCode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := c.IssueOne(ctx, &tc.request)
+			result := i.IssueOne(ctx, &tc.request)
 			resp := result.IssueCodeResponse()
 
 			if result.HTTPCode != tc.httpStatusCode {
