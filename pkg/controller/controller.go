@@ -95,7 +95,7 @@ func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
-		h.RenderHTMLStatus(w, http.StatusNotFound, "400", nil)
+		h.RenderHTMLStatus(w, http.StatusNotFound, "404", nil)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 	default:
