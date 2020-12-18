@@ -63,12 +63,12 @@ func TestUpdate(t *testing.T) {
 
 	for _, permission := range rbac.NamePermissionMap {
 		permission := permission
-		targets := []string{fmt.Sprintf(`input#permission-%d`, permission)}
+		targets := []string{fmt.Sprintf(`input#permission-%s`, permission)}
 
 		// We also need to remove permissions that imply this permission, or it will
 		// be added back in.
 		for _, superPerm := range rbac.ImpliedBy(permission) {
-			targets = append(targets, fmt.Sprintf(`input#permission-%d`, superPerm))
+			targets = append(targets, fmt.Sprintf(`input#permission-%s`, superPerm))
 		}
 
 		// Build the actions as an array prior to run since super-permissions actions aren't known until runtime.
@@ -87,6 +87,7 @@ func TestUpdate(t *testing.T) {
 		for _, target := range targets {
 			actions = append(actions, chromedp.RemoveAttribute(target, "checked", chromedp.ByQuery))
 		}
+
 		actions = append(actions, chromedp.Submit(`form#user-form`, chromedp.ByQuery))
 
 		// Wait for render.
@@ -109,7 +110,7 @@ func TestUpdate(t *testing.T) {
 	// Now add permissions back
 	for _, permission := range rbac.NamePermissionMap {
 		permission := permission
-		target := fmt.Sprintf(`input#permission-%d`, permission)
+		target := fmt.Sprintf(`input#permission-%s`, permission)
 
 		if err := chromedp.Run(taskCtx,
 			// Pre-authenticate the user.
