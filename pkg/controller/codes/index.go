@@ -24,6 +24,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
+// these UI elements are large, so half the default of 14
+const recentCodesPageSize = 7
+
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -46,6 +49,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
+		pageParams.Limit = recentCodesPageSize
 
 		recentCodes, paginator, err := c.db.ListRecentCodes(currentRealm, currentUser, pageParams)
 		if err != nil {

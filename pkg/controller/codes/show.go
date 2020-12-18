@@ -56,7 +56,7 @@ func (c *Controller) HandleShow() http.Handler {
 			code.AddError("uuid", "cannot be blank")
 
 			recentCodes, paginator, err := c.db.ListRecentCodes(currentRealm, currentUser,
-				&pagination.PageParams{Limit: pagination.DefaultLimit})
+				&pagination.PageParams{Limit: recentCodesPageSize})
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
@@ -73,7 +73,7 @@ func (c *Controller) HandleShow() http.Handler {
 			code.AddError("uuid", apiErr.Error)
 
 			recentCodes, paginator, err := c.db.ListRecentCodes(currentRealm, currentUser,
-				&pagination.PageParams{Limit: pagination.DefaultLimit})
+				&pagination.PageParams{Limit: recentCodesPageSize})
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
