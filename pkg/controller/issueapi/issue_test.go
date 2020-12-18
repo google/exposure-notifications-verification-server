@@ -71,7 +71,7 @@ func TestIssue(t *testing.T) {
 	cases := []struct {
 		name           string
 		request        api.IssueCodeRequest
-		response       api.IssueCodeResponse
+		responseErr    string
 		httpStatusCode int
 	}{
 		{
@@ -80,9 +80,6 @@ func TestIssue(t *testing.T) {
 				TestType:    "confirmed",
 				SymptomDate: symptomDate,
 				TZOffset:    float32(tzMinOffset),
-			},
-			response: api.IssueCodeResponse{
-				// success
 			},
 			httpStatusCode: http.StatusOK,
 		},
@@ -93,10 +90,48 @@ func TestIssue(t *testing.T) {
 				SymptomDate: symptomDate,
 				TZOffset:    float32(tzMinOffset),
 			},
-			response: api.IssueCodeResponse{
-				ErrorCode: api.ErrUnsupportedTestType,
-			},
+			responseErr:    api.ErrUnsupportedTestType,
 			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "no test date",
+			request: api.IssueCodeRequest{
+				TestType: "confirmed",
+				TZOffset: float32(tzMinOffset),
+			},
+			responseErr:    api.ErrMissingDate,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "unparsable test date",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: "invalid date",
+				TZOffset:    float32(tzMinOffset),
+			},
+			responseErr:    api.ErrUnparsableRequest,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "really old test date",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: "1988-09-14",
+				TZOffset:    float32(tzMinOffset),
+			},
+			// fails, but no code
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "conflict",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: symptomDate,
+				TZOffset:    float32(tzMinOffset),
+				UUID:        existingCode.UUID,
+			},
+			responseErr:    api.ErrUUIDAlreadyExists,
+			httpStatusCode: http.StatusConflict,
 		},
 	}
 
@@ -115,8 +150,8 @@ func TestIssue(t *testing.T) {
 			if statusCode != tc.httpStatusCode {
 				t.Errorf("incorrect error code. got %d, want %d", statusCode, tc.httpStatusCode)
 			}
-			if resp.ErrorCode != tc.response.ErrorCode {
-				t.Errorf("did not receive expected errorCode. got %s, want %v", resp.ErrorCode, tc.response.ErrorCode)
+			if resp.ErrorCode != tc.responseErr {
+				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)
 			}
 		})
 	}
