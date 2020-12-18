@@ -124,7 +124,7 @@ func TestIssueCode(t *testing.T) {
 				TestType:    "confirmed",
 				SymptomDate: "1988-09-14",
 			},
-			// fails, but no code
+			responseErr:    api.ErrInvalidDate,
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
