@@ -119,7 +119,7 @@ func TestIssue(t *testing.T) {
 				SymptomDate: "1988-09-14",
 				TZOffset:    float32(tzMinOffset),
 			},
-			responseErr:    api.ErrUUIDAlreadyExists,
+			responseErr:    api.ErrInvalidDate,
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
