@@ -7,6 +7,11 @@
 - [API Methods](#api-methods)
   - [`/api/verify`](#apiverify)
   - [`/api/certificate`](#apicertificate)
+- [Admin APIs](#admin-apis)
+  - [`/api/issue`](#apiissue)
+    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
+  - [`/api/batch-issue`](#apibatch-issue)
+    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
   - [`/api/checkcodestatus`](#apicheckcodestatus)
   - [`/api/expirecode`](#apiexpirecode)
   - [`/api/stats/*` (preview)](#apistats-preview)
@@ -275,6 +280,7 @@ Possible error code responses. New error codes may be added in future releases.
 | `unparsable_request`    | 400         | No    | Client sent an request the sever cannot parse                                                                   |
 | `invalid_test_type`     | 400         | No    | The client sent an accept of an unrecognized test type                                                          |
 | `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided.                                        |
+| `invalid_date`          | 400         | No    | The provided test or symptom date, was older or newer than the realm allows.                                    |
 | `invalid_test_type`     | 400         | No    | The test type is not a valid test type (a string that is unknown to the server).                                |
 | `uuid_already_exists`   | 409         | No    | The UUID has already been used for an issued code                                                               |
 | `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.                                           |

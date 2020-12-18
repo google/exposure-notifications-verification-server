@@ -48,7 +48,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		var request api.BatchIssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			result.ObsBlame = observability.BlameClient
-			result.ObsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result.ObsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST").WithCode(api.ErrUnparsableRequest))
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
 			return
 		}

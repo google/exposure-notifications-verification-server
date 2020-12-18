@@ -41,7 +41,7 @@ const (
 	// this could mean a database or RPC connection drop or some other internal outage.
 	ErrInternal = "internal_server_error"
 
-	// Verify API responses
+	// Verify & Issue API responses
 
 	// ErrVerifyCodeInvalid indicates the code entered is unknown or already used.
 	ErrVerifyCodeInvalid = "code_invalid"
@@ -60,6 +60,9 @@ const (
 	ErrInvalidTestType = "invalid_test_type"
 	// ErrMissingDate indicates the realm requires a date, but none was supplied.
 	ErrMissingDate = "missing_date"
+	// ErrInvalidDate indicates the realm requires a date, but the supplied date
+	// was older or newer than the allowed date ramge.
+	ErrInvalidDate = "invalid_date"
 	// ErrUUIDAlreadyExists indicates that the UUID has already been used for an issued code.
 	ErrUUIDAlreadyExists = "uuid_already_exists"
 	// ErrMaintenanceMode indicates that the server is read-only for maintenance.
