@@ -34,6 +34,12 @@ func TestIssue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := db.SaveVerificationCode(existingCode, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+
+	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
+	tzMinOffset := 0
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 

@@ -109,3 +109,8 @@ func (m *Membership) Can(p rbac.Permission) bool {
 	}
 	return rbac.Can(m.Permissions, p)
 }
+
+// Cannot returns the opposite of Can
+func (m *Membership) Cannot(p rbac.Permission) bool {
+	return !m.Can(p)
+}

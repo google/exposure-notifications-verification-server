@@ -256,33 +256,44 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		}
 	}
 
-	// Bulk issue
+	return nil
+}
+
+// RunBatchIssue is the prober for the batch issue API
+func RunBatchIssue(ctx context.Context, config *config.E2ETestConfig) error {
+	logger := logging.FromContext(ctx)
+
+	result := observability.ResultOK()
+	recordLatency := func(ctx context.Context, start time.Time, step string) {
+		stepMutator := tag.Upsert(stepTagKey, step)
+		observability.RecordLatency(ctx, start, mLatencyMs, &stepMutator, &result)
+	}
+
+	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
+	// Run the batch issue w/ all test types
 	{
 		codesRequest := &api.BatchIssueCodeRequest{
 			Codes: []*api.IssueCodeRequest{
 				{
-					TestType:         testType,
-					SymptomDate:      symptomDate,
-					TZOffset:         0,
-					ExternalIssuerID: adminID,
+					TestType:    api.TestTypeConfirmed,
+					SymptomDate: symptomDate,
+					TZOffset:    0,
 				},
 				{
-					TestType:         testType,
-					SymptomDate:      symptomDate,
-					TZOffset:         0,
-					ExternalIssuerID: adminID,
+					TestType:    api.TestTypeLikely,
+					SymptomDate: symptomDate,
+					TZOffset:    0,
 				},
 				{
-					TestType:         testType,
-					SymptomDate:      symptomDate,
-					TZOffset:         0,
-					ExternalIssuerID: adminID,
+					TestType: api.TestTypeNegative,
+					TestDate: symptomDate,
+					TZOffset: 0,
 				},
 			},
 		}
 
 		codes, err := func() (*api.BatchIssueCodeResponse, error) {
-			defer recordLatency(ctx, time.Now(), "/api/issue")
+			defer recordLatency(ctx, time.Now(), "/api/issue-batch")
 
 			codes, err := BatchIssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codesRequest)
 			if err != nil {
