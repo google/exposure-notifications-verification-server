@@ -134,15 +134,17 @@ func (tc testCase) singleIssue(t *testing.T, adminClient *testsuite.AdminClient,
 		TZOffset:    float32(tzMinOffset),
 	}
 
-	issueResp, err := adminClient.IssueCode(issueRequest)
-	if issueResp == nil || err != nil || issueResp.UUID == "" {
+	httpCode, issueResp, err := adminClient.IssueCode(issueRequest)
+	if issueResp == nil || err != nil || issueResp.UUID == "" || httpCode != http.StatusOK {
 		t.Fatalf("adminClient.IssueCode(%+v) = expected nil, got resp %+v, err %v", issueRequest, issueResp, err)
 	}
 
 	// Try to issue the same code again (same UUID)
 	issueRequest.UUID = issueResp.UUID
-	if _, err = adminClient.IssueCode(issueRequest); err == nil {
-		t.Fatalf("Expected conflict, got %s", err)
+	if httpCode, _, err = adminClient.IssueCode(issueRequest); httpCode != http.StatusConflict {
+		t.Fatalf("Expected 409 conflict, got %d", httpCode)
+	} else if err != nil {
+		t.Fatal(err)
 	}
 
 	verifyRequest := api.VerifyCodeRequest{
