@@ -85,7 +85,6 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 
 		logic := issuelogic.New(c.config, c.db, c.limiter, authApp, membership, realm)
-		httpCode := http.StatusOK
 		errCount := 0
 
 		HTTPCode := http.StatusOK
@@ -118,7 +117,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			batchResp.Error = sb.String()
 		}
 
-		c.h.RenderJSON(w, httpCode, batchResp)
+		c.h.RenderJSON(w, HTTPCode, batchResp)
 		return
 	})
 }
