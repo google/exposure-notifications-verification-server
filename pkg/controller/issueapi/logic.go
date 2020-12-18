@@ -160,7 +160,7 @@ func (c *Controller) issue(ctx context.Context, authApp *database.AuthorizedApp,
 					obsBlame:    observability.BlameClient,
 					obsResult:   observability.ResultError(dateSettings[i].ValidateError),
 					httpCode:    http.StatusBadRequest,
-					errorReturn: api.Error(err),
+					errorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
 				}, nil
 			}
 			parsedDates[i] = validatedDate

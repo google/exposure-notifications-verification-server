@@ -52,7 +52,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			result.obsBlame = observability.BlameClient
 			result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
 		}
 

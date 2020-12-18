@@ -57,7 +57,7 @@ func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (int, *api.B
 
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
-		return 0, nil, fmt.Errorf("failed to POST /api/batch-issue: %w", err)
+		return 0, nil, fmt.Errorf("failed to POST %s: %w", url, err)
 	}
 
 	defer httpResp.Body.Close()
@@ -75,33 +75,36 @@ func (c *AdminClient) BatchIssueCode(req api.BatchIssueCodeRequest) (int, *api.B
 }
 
 // IssueCode wraps the IssueCode API call.
-func (c *AdminClient) IssueCode(req api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
+// returns the http status code, response.
+// The caller may get a non-200 code even if the response contains some successful codes.
+func (c *AdminClient) IssueCode(req api.IssueCodeRequest) (int, *api.IssueCodeResponse, error) {
 	var resp *api.IssueCodeResponse
 	var err error
+	httpCode := 0
 	if c.retry {
 		finalErr := Eventually(c.retryTimes, c.retryInterval, func() error {
-			resp, err = c.issueCode(req)
+			httpCode, resp, err = c.issueCode(req)
 			return err
 		})
 		if finalErr != nil {
-			return nil, finalErr
+			return httpCode, nil, finalErr
 		}
-		return resp, nil
+		return httpCode, resp, nil
 	}
 	return c.issueCode(req)
 }
 
-func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
+func (c *AdminClient) issueCode(req api.IssueCodeRequest) (int, *api.IssueCodeResponse, error) {
 	url := c.urlBase + "/api/issue"
 
 	j, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal json: %w", err)
+		return 0, nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
 	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(j))
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal json: %w", err)
+		return 0, nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
 	httpReq.Header.Add("content-type", "application/json")
@@ -109,20 +112,21 @@ func (c *AdminClient) issueCode(req api.IssueCodeRequest) (*api.IssueCodeRespons
 
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to POST /api/issue: %w", err)
+		return 0, nil, fmt.Errorf("failed to POST %s: %w", url, err)
 	}
 
-	body, err := checkResp(httpResp)
+	defer httpResp.Body.Close()
+	body, err := ioutil.ReadAll(httpResp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to POST /api/issue: %w: %s", err, body)
+		return 0, nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	var pubResponse api.IssueCodeResponse
 	if err := json.Unmarshal(body, &pubResponse); err != nil {
-		return nil, fmt.Errorf("bad publish response")
+		return 0, nil, fmt.Errorf("bad publish response")
 	}
 
-	return &pubResponse, nil
+	return httpResp.StatusCode, &pubResponse, nil
 }
 
 // APIClient is a test client for verification API.
@@ -151,12 +155,12 @@ func (c *APIClient) GetToken(req api.VerifyCodeRequest) (*api.VerifyCodeResponse
 
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to POST /api/issue: %w", err)
+		return nil, fmt.Errorf("failed to POST %s: %w", url, err)
 	}
 
 	body, err := checkResp(httpResp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to POST /api/issue: %w: %s", err, body)
+		return nil, fmt.Errorf("failed to POST %s: %w: %s", url, err, body)
 	}
 
 	var pubResponse api.VerifyCodeResponse
