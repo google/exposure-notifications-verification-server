@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -214,7 +215,7 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	{
 		r := &Realm{Model: gorm.Model{ID: realmID}}
 		u := &User{Model: gorm.Model{ID: userID}}
-		got, err := db.ListRecentCodes(r, u)
+		got, _, err := db.ListRecentCodes(r, u, &pagination.PageParams{Limit: pagination.DefaultLimit})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -25,6 +25,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
 )
 
@@ -269,16 +270,22 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 
 // ListRecentCodes shows the last 5 recently issued codes for a given issuing user.
 // The code and longCode are removed, this is only intended to show metadata.
-func (db *Database) ListRecentCodes(realm *Realm, user *User) ([]*VerificationCode, error) {
+func (db *Database) ListRecentCodes(realm *Realm, user *User, p *pagination.PageParams) ([]*VerificationCode, *pagination.Paginator, error) {
 	var codes []*VerificationCode
-	if err := db.db.
-		Model(&VerificationCode{}).
+	query := db.db.Model(&VerificationCode{}).
 		Where("realm_id = ? AND issuing_user_id = ?", realm.ID, user.ID).
-		Order("created_at DESC").
-		Limit(5).
-		Find(&codes).
-		Error; err != nil {
-		return nil, err
+		Order("created_at DESC")
+
+	if p == nil {
+		p = new(pagination.PageParams)
+	}
+
+	paginator, err := Paginate(query, &codes, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return codes, nil, nil
+		}
+		return nil, nil, err
 	}
 
 	// We're only showing meta details, not the encrypted codes.
@@ -291,7 +298,7 @@ func (db *Database) ListRecentCodes(realm *Realm, user *User) ([]*VerificationCo
 		}
 	}
 
-	return codes, nil
+	return codes, paginator, nil
 }
 
 // ExpireCode saves a verification code as expired.

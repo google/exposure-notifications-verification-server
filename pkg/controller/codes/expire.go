@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
@@ -81,10 +82,14 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
 			flash.Error("Failed to expire code: %v.", apiErr.Error)
-			if err := c.renderStatus(ctx, w, currentRealm, currentUser, code); err != nil {
+
+			recentCodes, paginator, err := c.db.ListRecentCodes(currentRealm, currentUser,
+				&pagination.PageParams{Limit: pagination.DefaultLimit})
+			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
+			c.renderStatus(ctx, w, code, recentCodes, paginator)
 			return
 		}
 

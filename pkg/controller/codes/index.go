@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -40,29 +41,34 @@ func (c *Controller) HandleIndex() http.Handler {
 		currentRealm := membership.Realm
 		currentUser := membership.User
 
-		var code database.VerificationCode
-		if err := c.renderStatus(ctx, w, currentRealm, currentUser, &code); err != nil {
+		pageParams, err := pagination.FromRequest(r)
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
+
+		recentCodes, paginator, err := c.db.ListRecentCodes(currentRealm, currentUser, pageParams)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		var code database.VerificationCode
+		c.renderStatus(ctx, w, &code, recentCodes, paginator)
 	})
 }
 
 func (c *Controller) renderStatus(
 	ctx context.Context,
 	w http.ResponseWriter,
-	realm *database.Realm,
-	user *database.User,
-	code *database.VerificationCode) error {
-	recentCodes, err := c.db.ListRecentCodes(realm, user)
-	if err != nil {
-		return err
-	}
-
+	code *database.VerificationCode,
+	recentCodes []*database.VerificationCode,
+	paginator *pagination.Paginator) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Verification code statuses")
 	m["code"] = code
 	m["recentCodes"] = recentCodes
+	m["paginator"] = paginator
 	c.h.RenderHTML(w, "codes/status", m)
-	return nil
+	return
 }

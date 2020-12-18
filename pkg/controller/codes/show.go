@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
@@ -54,10 +55,14 @@ func (c *Controller) HandleShow() http.Handler {
 			var code database.VerificationCode
 			code.AddError("uuid", "cannot be blank")
 
-			if err := c.renderStatus(ctx, w, currentRealm, currentUser, &code); err != nil {
+			recentCodes, paginator, err := c.db.ListRecentCodes(currentRealm, currentUser,
+				&pagination.PageParams{Limit: pagination.DefaultLimit})
+			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
+
+			c.renderStatus(ctx, w, &code, recentCodes, paginator)
 			return
 		}
 
@@ -67,10 +72,14 @@ func (c *Controller) HandleShow() http.Handler {
 			code.UUID = vars["uuid"]
 			code.AddError("uuid", apiErr.Error)
 
-			if err := c.renderStatus(ctx, w, currentRealm, currentUser, &code); err != nil {
+			recentCodes, paginator, err := c.db.ListRecentCodes(currentRealm, currentUser,
+				&pagination.PageParams{Limit: pagination.DefaultLimit})
+			if err != nil {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
+
+			c.renderStatus(ctx, w, &code, recentCodes, paginator)
 			return
 		}
 
