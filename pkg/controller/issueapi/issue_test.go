@@ -12,59 +12,147 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issueapi_test
 
 import (
+	"context"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
 )
 
-func TestDateValidation(t *testing.T) {
-	utc, err := time.LoadLocation("UTC")
+func TestIssue(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	testSuite := testsuite.NewIntegrationSuite(t, ctx)
+	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
 	if err != nil {
-		t.Fatalf("error loading utc")
+		t.Fatal(err)
 	}
-	var aug1 time.Time
-	aug1, err = time.ParseInLocation(project.RFC3339Date, "2020-08-01", utc)
-	if err != nil {
-		t.Fatalf("error parsing date")
+	db := testSuite.DB
+	realm := testSuite.Realm
+
+	realm.AllowedTestTypes = database.TestTypeConfirmed
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatal(err)
 	}
 
-	tests := []struct {
-		v         string
-		max       time.Time
-		tzOffset  int
-		shouldErr bool
-		expected  string
-	}{
-		{"2020-08-01", aug1, 0, false, "2020-08-01"},
-		{"2020-08-01", aug1, 60, false, "2020-08-01"},
-		{"2020-08-01", aug1, 60 * 12, false, "2020-08-01"},
-		{"2020-07-31", aug1, 60, false, "2020-07-31"},
-		{"2020-08-01", aug1, -60, false, "2020-08-01"},
-		{"2020-07-31", aug1, -60, false, "2020-07-31"},
-		{"2020-07-30", aug1, -60, false, "2020-07-30"},
-		{"2020-07-29", aug1, -60, true, "2020-07-30"},
+	smsConfig := &database.SMSConfig{
+		RealmID:      realm.ID,
+		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
 	}
-	for i, test := range tests {
-		date, err := time.ParseInLocation(project.RFC3339Date, test.v, utc)
-		if err != nil {
-			t.Fatalf("[%d] error parsing date %q", i, test.v)
-		}
-		min := test.max.Add(-24 * time.Hour)
-		var newDate *time.Time
-		if newDate, err = validateDate(date, min, test.max, test.tzOffset); newDate == nil {
+	if err := db.SaveSMSConfig(smsConfig); err != nil {
+		t.Fatal(err)
+	}
+
+	existingCode := &database.VerificationCode{
+		RealmID:       realm.ID,
+		Code:          "00000001",
+		LongCode:      "00000001ABC",
+		Claimed:       true,
+		TestType:      "confirmed",
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(time.Hour),
+	}
+	if err := db.SaveVerificationCode(existingCode, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+
+	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
+	tzMinOffset := 0
+
+	cases := []struct {
+		name           string
+		request        api.IssueCodeRequest
+		responseErr    string
+		httpStatusCode int
+	}{
+		{
+			name: "success",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: symptomDate,
+				TZOffset:    float32(tzMinOffset),
+			},
+			httpStatusCode: http.StatusOK,
+		},
+		{
+			name: "failure",
+			request: api.IssueCodeRequest{
+				TestType:    "negative", // this realm only supports confirmed
+				SymptomDate: symptomDate,
+				TZOffset:    float32(tzMinOffset),
+			},
+			responseErr:    api.ErrUnsupportedTestType,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "no test date",
+			request: api.IssueCodeRequest{
+				TestType: "confirmed",
+				TZOffset: float32(tzMinOffset),
+			},
+			responseErr:    api.ErrMissingDate,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "unparsable test date",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: "invalid date",
+				TZOffset:    float32(tzMinOffset),
+			},
+			responseErr:    api.ErrUnparsableRequest,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "really old test date",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: "1988-09-14",
+				TZOffset:    float32(tzMinOffset),
+			},
+			// fails, but no code
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "conflict",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: symptomDate,
+				TZOffset:    float32(tzMinOffset),
+				UUID:        existingCode.UUID,
+			},
+			responseErr:    api.ErrUUIDAlreadyExists,
+			httpStatusCode: http.StatusConflict,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			statusCode, resp, err := adminClient.IssueCode(tc.request)
 			if err != nil {
-				if !test.shouldErr {
-					t.Fatalf("[%d] validateDate returned an unexpected error: %q", i, err)
-				}
-			} else {
-				t.Fatalf("[%d] expected error", i)
+				t.Fatal(err)
 			}
-		} else if s := newDate.Format(project.RFC3339Date); s != test.expected {
-			t.Fatalf("[%d] validateDate returned a different date %q != %q", i, s, test.expected)
-		}
+
+			// Check outer error
+			if statusCode != tc.httpStatusCode {
+				t.Errorf("incorrect error code. got %d, want %d", statusCode, tc.httpStatusCode)
+			}
+			if resp.ErrorCode != tc.responseErr {
+				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)
+			}
+		})
 	}
 }

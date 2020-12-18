@@ -52,19 +52,6 @@ func TestIssueBatch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	existingCode := &database.VerificationCode{
-		RealmID:       realm.ID,
-		Code:          "00000001",
-		LongCode:      "00000001ABC",
-		Claimed:       true,
-		TestType:      "confirmed",
-		ExpiresAt:     time.Now().Add(time.Hour),
-		LongExpiresAt: time.Now().Add(time.Hour),
-	}
-	if err := db.SaveVerificationCode(existingCode, time.Hour); err != nil {
-		t.Fatal(err)
-	}
-
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 	tzMinOffset := 0
 
@@ -131,9 +118,8 @@ func TestIssueBatch(t *testing.T) {
 					},
 					{
 						TestType:    "confirmed",
-						SymptomDate: symptomDate,
+						SymptomDate: "unparsable date",
 						TZOffset:    float32(tzMinOffset),
-						UUID:        existingCode.UUID,
 					},
 				},
 			},
@@ -146,7 +132,7 @@ func TestIssueBatch(t *testing.T) {
 						ErrorCode: api.ErrInvalidTestType,
 					},
 					{
-						ErrorCode: api.ErrUUIDAlreadyExists,
+						ErrorCode: api.ErrUnparsableRequest,
 					},
 				},
 				ErrorCode: api.ErrInvalidTestType,
@@ -196,11 +182,7 @@ func TestIssueBatch(t *testing.T) {
 
 			for i, issuedCode := range resp.Codes {
 				if issuedCode.ErrorCode != tc.response.Codes[i].ErrorCode {
-					t.Errorf("did not receive expected inner errorCode. got %s, want %v", issuedCode.ErrorCode, tc.response.Codes[i].ErrorCode)
-				}
-
-				if tc.request.Codes[i].UUID != "" && tc.response.Codes[i].UUID != issuedCode.UUID {
-					t.Errorf("expected stable client-issued UUID. got %s, want %v", issuedCode.UUID, tc.response.Codes[i].UUID)
+					t.Errorf("did not receive expected inner errorCode. got %q, want %q", issuedCode.ErrorCode, tc.response.Codes[i].ErrorCode)
 				}
 			}
 		})
