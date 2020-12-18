@@ -53,7 +53,7 @@ func (r *TestRenderer) RenderEmail(tmpl string, data interface{}) ([]byte, error
 	if t == nil {
 		r.T.Fatalf("could not find template %q", tmpl)
 	}
-	err := templatecheck.CheckText(t, data, textFuncs())
+	err := templatecheck.CheckText(t, data)
 	if err != nil {
 		r.T.Fatalf("failed to render test template %v", err)
 	}
@@ -76,7 +76,7 @@ func (r *TestRenderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl st
 		r.T.Fatalf("could not find template %q", tmpl)
 		return
 	}
-	err := templatecheck.CheckHTML(t, data, templateFuncs())
+	err := templatecheck.CheckHTML(t, data)
 	if err != nil {
 		r.T.Fatalf("failed to render test template %v", err)
 		return
