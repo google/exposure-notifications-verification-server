@@ -176,7 +176,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 			tb.Errorf("failed to close db: %v", err)
 		}
 	})
-	randomStr, err := project.RandomString()
+	randomStr, err := project.RandomHexString(6)
 	if err != nil {
 		tb.Fatalf("failed to generate random string: %v", err)
 	}
@@ -196,7 +196,7 @@ func NewIntegrationSuite(tb testing.TB, ctx context.Context) *IntegrationSuite {
 	}
 
 	// Create new API keys
-	suffix, err := project.RandomString()
+	suffix, err := project.RandomHexString(6)
 	if err != nil {
 		tb.Fatalf("failed to create suffix string for API keys: %v", err)
 	}

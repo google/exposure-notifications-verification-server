@@ -49,9 +49,7 @@ func (c *Controller) HandleShow() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
-		currentUser := membership.User
 
 		// If the API key is present, add it to the variables map and then delete it
 		// from the session.
@@ -63,7 +61,7 @@ func (c *Controller) HandleShow() http.Handler {
 		}
 
 		// Pull the authorized app from the id.
-		authApp, err := c.findAuthorizedApp(currentUser, currentRealm, vars["id"])
+		authApp, err := currentRealm.FindAuthorizedApp(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				logger.Debugw("auth app does not exist", "id", vars["id"])

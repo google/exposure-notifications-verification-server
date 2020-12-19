@@ -21,9 +21,9 @@ import (
 	"fmt"
 )
 
-// RandomString generates a random string of 32 characters in length
-func RandomString() (string, error) {
-	b := make([]byte, 512)
+// RandomHexString generates a random string of the provided length.
+func RandomHexString(len int) (string, error) {
+	b := make([]byte, len)
 	if _, err := rand.Read(b[:]); err != nil {
 		return "", fmt.Errorf("failed to generate random: %w", err)
 	}
@@ -37,4 +37,17 @@ func RandomBase64String(len int) (string, error) {
 		return "", fmt.Errorf("failed to generate random: %w", err)
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+// RandomBytes returns a byte slice of random values of the given length.
+func RandomBytes(length int) ([]byte, error) {
+	buf := make([]byte, length)
+	n, err := rand.Read(buf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random: %w", err)
+	}
+	if n < length {
+		return nil, fmt.Errorf("insufficient bytes read: %v, expected %v", n, length)
+	}
+	return buf, nil
 }
