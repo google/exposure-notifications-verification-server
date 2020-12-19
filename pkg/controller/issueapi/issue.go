@@ -32,7 +32,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		ctx := r.Context()
-		result := &IssueResult{
+		result := &issueResult{
 			HTTPCode:  http.StatusOK,
 			ObsBlame:  observability.BlameNone,
 			ObsResult: observability.ResultOK(),
@@ -55,8 +55,8 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		result = c.IssueOne(ctx, &request, authApp, membership, realm)
-		resp := result.IssueCodeResponse()
+		result = c.issueOne(ctx, &request, authApp, membership, realm)
+		resp := result.issueCodeResponse()
 		if resp.Error != "" {
 			if result.HTTPCode == http.StatusInternalServerError {
 				controller.InternalError(w, r, c.h, errors.New(resp.Error))

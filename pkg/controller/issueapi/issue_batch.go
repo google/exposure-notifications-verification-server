@@ -37,7 +37,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 		ctx := r.Context()
 
-		result := &IssueResult{
+		result := &issueResult{
 			HTTPCode:  http.StatusOK,
 			ObsBlame:  observability.BlameNone,
 			ObsResult: observability.ResultOK(),
@@ -83,7 +83,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		results := c.IssueMany(ctx, request.Codes, authApp, membership, realm)
+		results := c.issueMany(ctx, request.Codes, authApp, membership, realm)
 
 		HTTPCode := http.StatusOK
 		batchResp := &api.BatchIssueCodeResponse{}
@@ -91,7 +91,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		errCount := 0
 
 		for i, result := range results {
-			singleResponse := result.IssueCodeResponse()
+			singleResponse := result.issueCodeResponse()
 			batchResp.Codes[i] = singleResponse
 			if singleResponse.Error == "" {
 				continue

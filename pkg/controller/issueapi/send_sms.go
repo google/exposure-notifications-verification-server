@@ -62,11 +62,11 @@ func scrubPhoneNumbers(s string) string {
 	return noScrubs
 }
 
-func (il *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest, result *IssueResult, realm *database.Realm) error {
+func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest, result *issueResult, realm *database.Realm) error {
 	if request.Phone == "" {
 		return nil
 	}
-	smsProvider, err := realm.SMSProvider(il.db)
+	smsProvider, err := realm.SMSProvider(c.db)
 	if smsProvider == nil {
 		return nil
 	}
@@ -79,14 +79,14 @@ func (il *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest
 	if err := func() error {
 		defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.ObsBlame, &result.ObsResult)
 
-		message, err := realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, il.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+		message, err := realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
 			return err
 		}
 
 		if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 			// Delete the token
-			if err := il.db.DeleteVerificationCode(result.verCode.Code); err != nil {
+			if err := c.db.DeleteVerificationCode(result.verCode.Code); err != nil {
 				logger.Errorw("failed to delete verification code", "error", err)
 				// fallthrough to the error
 			}

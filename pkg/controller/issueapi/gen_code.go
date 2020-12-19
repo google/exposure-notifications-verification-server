@@ -35,25 +35,25 @@ const (
 	charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
 
-func (il *Controller) issueCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm) *IssueResult {
+func (c *Controller) issueCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm) *issueResult {
 	logger := logging.FromContext(ctx).Named("issueapi.populateCode")
 
 	// If we got this far, we're about to issue a code - take from the limiter
 	// to ensure this is permitted.
 	if realm.AbusePreventionEnabled {
-		key, err := realm.QuotaKey(il.config.GetRateLimitConfig().HMACKey)
+		key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
 		if err != nil {
-			return &IssueResult{
+			return &issueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
 				HTTPCode:    http.StatusInternalServerError,
 				errorReturn: api.Error(err),
 			}
 		}
-		limit, _, reset, ok, err := il.limiter.Take(ctx, key)
+		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
 		if err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
-			return &IssueResult{
+			return &issueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
 				HTTPCode:    http.StatusInternalServerError,
@@ -69,8 +69,8 @@ func (il *Controller) issueCode(ctx context.Context, vCode *database.Verificatio
 				"limit", limit,
 				"reset", reset)
 
-			if il.config.GetEnforceRealmQuotas() {
-				return &IssueResult{
+			if c.config.GetEnforceRealmQuotas() {
+				return &issueResult{
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError("QUOTA_EXCEEDED"),
 					HTTPCode:    http.StatusTooManyRequests,
@@ -80,18 +80,18 @@ func (il *Controller) issueCode(ctx context.Context, vCode *database.Verificatio
 		}
 	}
 
-	if err := il.Issue(ctx, vCode, realm, il.config.GetCollisionRetryCount()); err != nil {
+	if err := c.Issue(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
 		logger.Errorw("failed to issue code", "error", err)
 		// GormV1 doesn't have a good way to match db errors
 		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
-			return &IssueResult{
+			return &issueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
 				HTTPCode:    http.StatusConflict,
 				errorReturn: api.Errorf("code for %s already exists", vCode.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
-		return &IssueResult{
+		return &issueResult{
 			ObsBlame:    observability.BlameServer,
 			ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
 			HTTPCode:    http.StatusInternalServerError,
@@ -99,7 +99,7 @@ func (il *Controller) issueCode(ctx context.Context, vCode *database.Verificatio
 		}
 	}
 
-	return &IssueResult{
+	return &issueResult{
 		verCode:   vCode,
 		HTTPCode:  http.StatusOK,
 		ObsBlame:  observability.BlameNone,
@@ -110,7 +110,7 @@ func (il *Controller) issueCode(ctx context.Context, vCode *database.Verificatio
 // Issue will generate a verification code and save it to the database, based on
 // the paremters provided. It returns the short code, long code, a UUID for
 // accessing the code, and any errors.
-func (il *Controller) Issue(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
+func (c *Controller) Issue(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
 	logger := logging.FromContext(ctx)
 	var err error
 	for i := uint(0); i < retryCount; i++ {
@@ -131,7 +131,7 @@ func (il *Controller) Issue(ctx context.Context, vCode *database.VerificationCod
 		vCode.LongCode = longCode
 
 		// If a verification code already exists, it will fail to save, and we retry.
-		if err = il.db.SaveVerificationCode(vCode, il.config.GetAllowedSymptomAge()); err != nil {
+		if err = c.db.SaveVerificationCode(vCode, c.config.GetAllowedSymptomAge()); err != nil {
 			logger.Warnf("duplicate OTP found: %v", err)
 			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
 				break // not retryable

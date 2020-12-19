@@ -17,6 +17,7 @@ package issueapi
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -26,8 +27,8 @@ import (
 	"go.opencensus.io/tag"
 )
 
-// IssueResult is the response returned from IssueLogic.IssueOne or IssueMany.
-type IssueResult struct {
+// issueResult is the response returned from IssueLogic.IssueOne or IssueMany.
+type issueResult struct {
 	verCode     *database.VerificationCode
 	errorReturn *api.ErrorReturn
 
@@ -36,7 +37,7 @@ type IssueResult struct {
 	ObsResult tag.Mutator
 }
 
-func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
+func (result *issueResult) issueCodeResponse() *api.IssueCodeResponse {
 	if result.errorReturn != nil {
 		return &api.IssueCodeResponse{
 			ErrorCode: result.errorReturn.ErrorCode,
@@ -53,6 +54,44 @@ func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
 		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
 		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
 	}
+}
+
+func (c *Controller) issueOne(ctx context.Context, request *api.IssueCodeRequest,
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *issueResult {
+	results := c.issueMany(ctx, []*api.IssueCodeRequest{request}, authApp, membership, realm)
+	return results[0]
+}
+
+func (c *Controller) issueMany(ctx context.Context, requests []*api.IssueCodeRequest,
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) []*issueResult {
+	// Generate codes
+	results := make([]*issueResult, len(requests))
+	for i, req := range requests {
+		vCode, result := c.populateCode(ctx, req, authApp, membership, realm)
+		if result != nil {
+			results[i] = result
+			continue
+		}
+		results[i] = c.issueCode(ctx, vCode, realm)
+	}
+
+	// Send SMS messages
+	var wg sync.WaitGroup
+	for i, result := range results {
+		if result.errorReturn != nil {
+			continue
+		}
+
+		wg.Add(1)
+		go func(request *api.IssueCodeRequest, r *issueResult) {
+			defer wg.Done()
+			c.sendSMS(ctx, request, r, realm)
+		}(requests[i], result)
+	}
+
+	wg.Wait() // wait the SMS work group to finish
+
+	return results
 }
 
 // getAuthorizationFromContext pulls the authorization from the context. If an
@@ -77,6 +116,6 @@ func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database
 	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
 }
 
-func recordObservability(ctx context.Context, result *IssueResult) {
+func recordObservability(ctx context.Context, result *issueResult) {
 	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.ObsBlame, &result.ObsResult)
 }

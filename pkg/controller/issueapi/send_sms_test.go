@@ -104,7 +104,7 @@ func TestSMS_sendSMS(t *testing.T) {
 		TZOffset:    0,
 		Phone:       "+15005550006",
 	}
-	result := &IssueResult{
+	result := &issueResult{
 		HTTPCode:  http.StatusOK,
 		ObsBlame:  observability.BlameNone,
 		ObsResult: observability.ResultOK(),

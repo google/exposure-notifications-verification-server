@@ -81,7 +81,7 @@ func TestIssue(t *testing.T) {
 		t.Fatalf("failed to save realm: %v", err)
 	}
 
-	il := New(tc.Config, db, tc.RateLimiter, nil)
+	c := New(tc.Config, db, tc.RateLimiter, nil)
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)
@@ -92,7 +92,7 @@ func TestIssue(t *testing.T) {
 			LongExpiresAt: time.Now().Add(24 * time.Hour),
 			TestType:      "confirmed",
 		}
-		if err := il.Issue(ctx, vCode, realm, 10); err != nil {
+		if err := c.Issue(ctx, vCode, realm, 10); err != nil {
 			t.Fatal(err)
 		}
 		if vCode.UUID == "" {

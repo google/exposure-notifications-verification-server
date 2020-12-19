@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -39,47 +38,9 @@ var (
 	}
 )
 
-func (il *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *IssueResult {
-	results := il.IssueMany(ctx, []*api.IssueCodeRequest{request}, authApp, membership, realm)
-	return results[0]
-}
-
-func (il *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) []*IssueResult {
-	// Generate codes
-	results := make([]*IssueResult, len(requests))
-	for i, req := range requests {
-		vCode, result := il.populateCode(ctx, req, authApp, membership, realm)
-		if result != nil {
-			results[i] = result
-			continue
-		}
-		results[i] = il.issueCode(ctx, vCode, realm)
-	}
-
-	// Send SMS messages
-	var wg sync.WaitGroup
-	for i, result := range results {
-		if result.errorReturn != nil {
-			continue
-		}
-
-		wg.Add(1)
-		go func(request *api.IssueCodeRequest, r *IssueResult) {
-			defer wg.Done()
-			il.sendSMS(ctx, request, r, realm)
-		}(requests[i], result)
-	}
-
-	wg.Wait() // wait the SMS work group to finish
-
-	return results
-}
-
 // populateCode populates a code from an issue request.
-func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *IssueResult) {
+func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeRequest,
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *issueResult) {
 	logger := logging.FromContext(ctx).Named("issueapi.populateCode")
 
 	vCode := &database.VerificationCode{
@@ -98,7 +59,7 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 
 	// If this realm requires a date but no date was specified, return an error.
 	if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
-		return nil, &IssueResult{
+		return nil, &issueResult{
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
 			HTTPCode:    http.StatusBadRequest,
@@ -114,7 +75,7 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 		if d != "" {
 			parsed, err := time.Parse(project.RFC3339Date, d)
 			if err != nil {
-				return nil, &IssueResult{
+				return nil, &issueResult{
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError(dateSettings[i].ParseError),
 					HTTPCode:    http.StatusBadRequest,
@@ -123,7 +84,7 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 			}
 			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
 			maxDate := timeutils.UTCMidnight(time.Now())
-			minDate := timeutils.Midnight(maxDate.Add(-1 * il.config.GetAllowedSymptomAge()))
+			minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
 
 			validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
 			if err != nil {
@@ -133,7 +94,7 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 					maxDate.Format(project.RFC3339Date),
 					parsed.Format(project.RFC3339Date),
 				)
-				return nil, &IssueResult{
+				return nil, &issueResult{
 					ObsBlame:    observability.BlameClient,
 					ObsResult:   observability.ResultError(dateSettings[i].ValidateError),
 					HTTPCode:    http.StatusBadRequest,
@@ -149,7 +110,7 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 	// Verify the test type
 	vCode.TestType = strings.ToLower(request.TestType)
 	if _, ok := validTestType[request.TestType]; !ok {
-		return nil, &IssueResult{
+		return nil, &issueResult{
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("INVALID_TEST_TYPE"),
 			HTTPCode:    http.StatusBadRequest,
@@ -159,7 +120,7 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 
 	// Validate that the request with the provided test type is valid for this realm.
 	if !realm.ValidTestType(vCode.TestType) {
-		return nil, &IssueResult{
+		return nil, &issueResult{
 			ObsBlame:    observability.BlameClient,
 			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
 			HTTPCode:    http.StatusBadRequest,
@@ -170,10 +131,10 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 	// Verify SMS configuration if phone was provided
 	var smsProvider sms.Provider
 	if request.Phone != "" {
-		smsProvider, err := realm.SMSProvider(il.db)
+		smsProvider, err := realm.SMSProvider(c.db)
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
-			return nil, &IssueResult{
+			return nil, &issueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
 				HTTPCode:    http.StatusInternalServerError,
@@ -182,7 +143,7 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 		}
 		if smsProvider == nil {
 			err := fmt.Errorf("phone provided, but no sms provider is configured")
-			return nil, &IssueResult{
+			return nil, &issueResult{
 				ObsBlame:    observability.BlameServer,
 				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
 				HTTPCode:    http.StatusBadRequest,
@@ -194,9 +155,9 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 	// If there is a client-provided UUID, check if a code has already been issued.
 	// this prevents us from consuming quota on conflict.
 	if rUUID := project.TrimSpaceAndNonPrintable(request.UUID); rUUID != "" {
-		if code, err := realm.FindVerificationCodeByUUID(il.db, request.UUID); err != nil {
+		if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
 			if !database.IsNotFound(err) {
-				return nil, &IssueResult{
+				return nil, &issueResult{
 					ObsBlame:    observability.BlameServer,
 					ObsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
 					HTTPCode:    http.StatusInternalServerError,
@@ -204,7 +165,7 @@ func (il *Controller) populateCode(ctx context.Context, request *api.IssueCodeRe
 				}
 			}
 		} else if code != nil {
-			return nil, &IssueResult{
+			return nil, &issueResult{
 				ObsBlame:    observability.BlameClient,
 				ObsResult:   observability.ResultError("UUID_CONFLICT"),
 				HTTPCode:    http.StatusConflict,

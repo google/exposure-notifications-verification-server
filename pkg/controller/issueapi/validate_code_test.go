@@ -72,7 +72,7 @@ func TestIssueCode(t *testing.T) {
 	}
 
 	ctx = controller.WithMembership(ctx, membership)
-	il := New(tc.Config, db, tc.RateLimiter, nil)
+	c := New(tc.Config, db, tc.RateLimiter, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 
@@ -152,8 +152,8 @@ func TestIssueCode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := il.IssueOne(ctx, &tc.request, nil, membership, realm)
-			resp := result.IssueCodeResponse()
+			result := c.issueOne(ctx, &tc.request, nil, membership, realm)
+			resp := result.issueCodeResponse()
 
 			if result.HTTPCode != tc.httpStatusCode {
 				t.Errorf("incorrect error code. got %d, want %d", result.HTTPCode, tc.httpStatusCode)
