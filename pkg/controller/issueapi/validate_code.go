@@ -42,11 +42,14 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *issueResult) {
 	logger := logging.FromContext(ctx).Named("issueapi.populateCode")
 
+	now := time.Now().UTC()
 	vCode := &database.VerificationCode{
 		RealmID:           realm.ID,
 		IssuingExternalID: request.ExternalIssuerID,
 		TestType:          strings.ToLower(request.TestType),
 		UUID:              project.TrimSpaceAndNonPrintable(request.UUID),
+		ExpiresAt:         now.Add(realm.CodeDuration.Duration),
+		LongExpiresAt:     now.Add(realm.LongCodeDuration.Duration),
 	}
 	if membership != nil {
 		vCode.IssuingUserID = membership.UserID
@@ -97,6 +100,12 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		}
 	}
 
+	if request.Phone == "" || smsProvider == nil {
+		// If this isn't going to be send via SMS, make the long code expiration time same as short.
+		// This is because the long code will never be shown or sent.
+		vCode.LongExpiresAt = vCode.ExpiresAt
+	}
+
 	// If there is a client-provided UUID, check if a code has already been issued.
 	// this prevents us from consuming quota on conflict.
 	if vCode.UUID != "" {
@@ -115,15 +124,6 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
-	}
-
-	now := time.Now().UTC()
-	vCode.ExpiresAt = now.Add(realm.CodeDuration.Duration)
-	vCode.LongExpiresAt = now.Add(realm.LongCodeDuration.Duration)
-	if request.Phone == "" || smsProvider == nil {
-		// If this isn't going to be send via SMS, make the long code expiration time same as short.
-		// This is because the long code will never be shown or sent.
-		vCode.LongExpiresAt = vCode.ExpiresAt
 	}
 
 	vCode.Code = "placeholder"
