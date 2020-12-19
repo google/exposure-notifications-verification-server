@@ -124,7 +124,8 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 
 	// If there is a client-provided UUID, check if a code has already been issued.
 	// this prevents us from consuming quota on conflict.
-	if rUUID := project.TrimSpaceAndNonPrintable(request.UUID); rUUID != "" {
+	rUUID := project.TrimSpaceAndNonPrintable(request.UUID)
+	if rUUID != "" {
 		if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
 			if !database.IsNotFound(err) {
 				return nil, &issueResult{
@@ -142,8 +143,8 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
-		vCode.UUID = rUUID
 	}
+	vCode.UUID = rUUID
 
 	now := time.Now().UTC()
 	vCode.ExpiresAt = now.Add(realm.CodeDuration.Duration)
