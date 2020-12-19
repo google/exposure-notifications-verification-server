@@ -269,27 +269,24 @@ func (il *IssueLogic) generateCode(ctx context.Context, request *api.IssueCodeRe
 		user = il.membership.User
 	}
 
-	// Generate verification code
-	codeRequest := Request{
-		DB:             il.db,
-		ShortLength:    il.realm.CodeLength,
-		ShortExpiresAt: expiryTime,
-		LongLength:     il.realm.LongCodeLength,
-		LongExpiresAt:  longExpiryTime,
-		TestType:       request.TestType,
-		SymptomDate:    parsedDates[0],
-		TestDate:       parsedDates[1],
-		MaxSymptomAge:  il.config.GetAllowedSymptomAge(),
-		RealmID:        il.realm.ID,
-		UUID:           rUUID,
-
-		IssuingUser:       user,
-		IssuingApp:        il.authApp,
+	vCode := &database.VerificationCode{
+		RealmID:           il.realm.ID,
+		TestType:          request.TestType,
+		SymptomDate:       parsedDates[0],
+		TestDate:          parsedDates[1],
+		ExpiresAt:         expiryTime,
+		LongExpiresAt:     longExpiryTime,
 		IssuingExternalID: request.ExternalIssuerID,
+		UUID:              rUUID,
+	}
+	if user != nil {
+		vCode.IssuingUserID = user.ID
+	}
+	if il.authApp != nil {
+		vCode.IssuingAppID = il.authApp.ID
 	}
 
-	verCode, err := codeRequest.Issue(ctx, il.config.GetCollisionRetryCount())
-	if err != nil {
+	if err := il.Issue(ctx, vCode, il.config.GetCollisionRetryCount()); err != nil {
 		logger.Errorw("failed to issue code", "error", err)
 		// GormV1 doesn't have a good way to match db errors
 		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
@@ -309,7 +306,7 @@ func (il *IssueLogic) generateCode(ctx context.Context, request *api.IssueCodeRe
 	}
 
 	return &IssueResult{
-		verCode:   verCode,
+		verCode:   vCode,
 		HTTPCode:  http.StatusOK,
 		ObsBlame:  observability.BlameNone,
 		ObsResult: observability.ResultOK(),

@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -70,29 +72,34 @@ func TestIssue(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	tc := testconfig.NewServerConfig(t, testDatabaseInstance)
+	db := tc.Database
+
+	realm := database.NewRealmWithDefaults("Test Realm")
+	ctx = controller.WithRealm(ctx, realm)
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatalf("failed to save realm: %v", err)
+	}
+
+	il := New(tc.Config, db, tc.RateLimiter, nil, nil, realm)
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)
 	longCodes := make([]string, 0, numCodes)
 	for i := 0; i < numCodes; i++ {
-		otp := Request{
-			DB:             db,
-			ShortLength:    8,
-			ShortExpiresAt: time.Now().Add(15 * time.Minute),
-			LongLength:     16,
-			LongExpiresAt:  time.Now().Add(24 * time.Hour),
-			TestType:       "confirmed",
+		vCode := &database.VerificationCode{
+			ExpiresAt:     time.Now().Add(15 * time.Minute),
+			LongExpiresAt: time.Now().Add(24 * time.Hour),
+			TestType:      "confirmed",
 		}
-		verCode, err := otp.Issue(ctx, 10)
-		if err != nil {
-			t.Fatalf("error generating code: %v", err)
+		if err := il.Issue(ctx, vCode, 10); err != nil {
+			t.Fatal(err)
 		}
-		if verCode.UUID == "" {
+		if vCode.UUID == "" {
 			t.Fatal("expected uuid from db, was empty")
 		}
-		codes = append(codes, verCode.Code)
-		longCodes = append(longCodes, verCode.LongCode)
+		codes = append(codes, vCode.Code)
+		longCodes = append(longCodes, vCode.LongCode)
 	}
 
 	if got := len(codes); got != numCodes {

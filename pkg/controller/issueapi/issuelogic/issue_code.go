@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -72,73 +71,31 @@ func randomFromCharset() (string, error) {
 	return string(charset[n.Int64()]), nil
 }
 
-// Request represents the parameters of a verification code request.
-type Request struct {
-	DB             *database.Database
-	RealmID        uint
-	ShortLength    uint
-	ShortExpiresAt time.Time
-	LongLength     uint
-	LongExpiresAt  time.Time
-	TestType       string
-	SymptomDate    *time.Time
-	TestDate       *time.Time
-	MaxSymptomAge  time.Duration
-	UUID           string
-
-	// Issuing includes information about the issuer.
-	IssuingUser       *database.User
-	IssuingApp        *database.AuthorizedApp
-	IssuingExternalID string
-}
-
 // Issue will generate a verification code and save it to the database, based on
 // the paremters provided. It returns the short code, long code, a UUID for
 // accessing the code, and any errors.
-func (o *Request) Issue(ctx context.Context, retryCount uint) (*database.VerificationCode, error) {
+func (il *IssueLogic) Issue(ctx context.Context, vCode *database.VerificationCode, retryCount uint) error {
 	logger := logging.FromContext(ctx)
-	var verificationCode database.VerificationCode
 	var err error
 	for i := uint(0); i < retryCount; i++ {
-		code, err := GenerateCode(o.ShortLength)
+		code, err := GenerateCode(il.realm.CodeLength)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
 			continue
 		}
 		longCode := code
-		if o.LongLength > 0 {
-			longCode, err = GenerateAlphanumericCode(o.LongLength)
+		if il.realm.LongCodeLength > 0 {
+			longCode, err = GenerateAlphanumericCode(il.realm.LongCodeLength)
 			if err != nil {
 				logger.Errorf("long code generation error: %v", err)
 				continue
 			}
 		}
+		vCode.Code = code
+		vCode.LongCode = longCode
 
-		issuingUserID := uint(0)
-		if o.IssuingUser != nil {
-			issuingUserID = o.IssuingUser.ID
-		}
-		issuingAppID := uint(0)
-		if o.IssuingApp != nil {
-			issuingAppID = o.IssuingApp.ID
-		}
-
-		verificationCode = database.VerificationCode{
-			RealmID:           o.RealmID,
-			Code:              code,
-			LongCode:          longCode,
-			TestType:          strings.ToLower(o.TestType),
-			SymptomDate:       o.SymptomDate,
-			TestDate:          o.TestDate,
-			ExpiresAt:         o.ShortExpiresAt,
-			LongExpiresAt:     o.LongExpiresAt,
-			IssuingUserID:     issuingUserID,
-			IssuingAppID:      issuingAppID,
-			IssuingExternalID: o.IssuingExternalID,
-			UUID:              o.UUID,
-		}
 		// If a verification code already exists, it will fail to save, and we retry.
-		if err = o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {
+		if err = il.db.SaveVerificationCode(vCode, il.config.GetAllowedSymptomAge()); err != nil {
 			logger.Warnf("duplicate OTP found: %v", err)
 			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
 				break // not retryable
@@ -146,13 +103,13 @@ func (o *Request) Issue(ctx context.Context, retryCount uint) (*database.Verific
 			continue
 		} else {
 			// These are stored encrypted, but here we need to tell the user about them.
-			verificationCode.Code = code
-			verificationCode.LongCode = longCode
+			vCode.Code = code
+			vCode.LongCode = longCode
 			break // successful save, nil error, break out.
 		}
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &verificationCode, nil
+	return nil
 }
