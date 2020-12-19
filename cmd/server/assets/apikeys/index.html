@@ -58,7 +58,7 @@
           </thead>
           <tbody>
           {{range .apps}}
-            <tr>
+            <tr id="apikey-{{.ID}}">
               <td class="text-center">
                 {{if .DeletedAt}}
                   <span class="oi oi-circle-x text-danger"
@@ -82,7 +82,8 @@
               {{if $canWrite}}
                 <td class="text-center">
                   {{if .DeletedAt}}
-                  <a href="/realm/apikeys/{{.ID}}/enable" class="d-block text-danger"
+                  <a href="/realm/apikeys/{{.ID}}/enable" id="enable-apikey-{{.ID}}"
+                    class="d-block text-danger"
                     data-method="patch"
                     data-confirm="Are you sure you want to restore '{{.Name}}'?"
                     data-toggle="tooltip"
@@ -90,7 +91,8 @@
                     <span class="oi oi-loop-circular" aria-hidden="true"></span>
                   </a>
                   {{else}}
-                  <a href="/realm/apikeys/{{.ID}}/disable" class="d-block text-danger"
+                  <a href="/realm/apikeys/{{.ID}}/disable" id="disable-apikey-{{.ID}}"
+                    class="d-block text-danger"
                     data-method="patch"
                     data-confirm="Are you sure you want to disable '{{.Name}}'?"
                     data-toggle="tooltip"

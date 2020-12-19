@@ -243,7 +243,7 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		apikeyController := apikey.New(ctx, cfg, cacher, db, h)
+		apikeyController := apikey.New(cacher, db, h)
 		apikeyRoutes(sub, apikeyController)
 	}
 

@@ -42,16 +42,11 @@ func (c *Controller) HandleIndex() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-		if !membership.Can(rbac.APIKeyRead) {
-			controller.Unauthorized(w, r, c.h)
-			return
-		}
-
 		currentRealm := membership.Realm
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
-			controller.InternalError(w, r, c.h, err)
+			controller.BadRequest(w, r, c.h)
 			return
 		}
 

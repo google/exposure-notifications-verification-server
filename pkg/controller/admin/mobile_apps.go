@@ -35,7 +35,7 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
-			controller.InternalError(w, r, c.h, err)
+			controller.BadRequest(w, r, c.h)
 			return
 		}
 

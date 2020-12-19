@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package testconfig defines global test helpers for the entire project.
-// this package does not depend directly on the rest of the project.
 package testconfig
 
 import (
@@ -22,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -100,7 +100,7 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		LocalesPath: LocalesPath(),
 		Cache: cache.Config{
 			Type:    cache.TypeInMemory,
-			HMACKey: RandomBytes(tb, 64),
+			HMACKey: randomBytes(tb, 64),
 		},
 		Database: *dbConfig,
 		// Firebase is not used for browser tests.
@@ -114,18 +114,18 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 			AppID:           "1:test:web:test",
 			MeasurementID:   "G-TEST",
 		},
-		CookieKeys:  config.Base64ByteSlice{RandomBytes(tb, 64), RandomBytes(tb, 32)},
-		CSRFAuthKey: RandomBytes(tb, 32),
+		CookieKeys:  config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
+		CSRFAuthKey: randomBytes(tb, 32),
 		CertificateSigning: config.CertificateSigningConfig{
 			CertificateSigningKey: "UPDATE_ME",
 			Keys: keys.Config{
 				KeyManagerType: keys.KeyManagerTypeFilesystem,
-				FilesystemRoot: filepath.Join(project.Root(), "local", "test", RandomString(tb, 8)),
+				FilesystemRoot: filepath.Join(project.Root(), "local", "test", randomString(tb, 8)),
 			},
 		},
 		RateLimit: ratelimit.Config{
 			Type:    ratelimit.RateLimiterTypeMemory,
-			HMACKey: RandomBytes(tb, 64),
+			HMACKey: randomBytes(tb, 64),
 		},
 
 		// DevMode has to be enabled for tests. Otherwise the cookies fail.
@@ -149,6 +149,22 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 	}
 }
 
+// AutoConfirmDialogs automatically clicks "confirm" on popup dialogs from
+// window.Confirm prompts.
+func AutoConfirmDialogs(ctx context.Context, b bool) <-chan error {
+	errCh := make(chan error, 1)
+
+	chromedp.ListenTarget(ctx, func(i interface{}) {
+		if _, ok := i.(*page.EventJavascriptDialogOpening); ok {
+			go func() {
+				errCh <- chromedp.Run(ctx, page.HandleJavaScriptDialog(b))
+			}()
+		}
+	})
+
+	return errCh
+}
+
 // ServerAssetsPath returns the path to the UI server assets.
 func ServerAssetsPath() string {
 	return filepath.Join(project.Root(), "cmd", "server", "assets")
@@ -157,4 +173,24 @@ func ServerAssetsPath() string {
 // LocalesPath returns the path to the i18n locales.
 func LocalesPath() string {
 	return filepath.Join(project.Root(), "internal", "i18n", "locales")
+}
+
+func randomBytes(tb testing.TB, len int) []byte {
+	tb.Helper()
+
+	b, err := project.RandomBytes(len)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return b
+}
+
+func randomString(tb testing.TB, len int) string {
+	tb.Helper()
+
+	s, err := project.RandomHexString(len)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return s
 }
