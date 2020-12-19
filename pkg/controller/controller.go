@@ -30,7 +30,6 @@ import (
 var (
 	apiErrorBadRequest   = api.Errorf("bad request")
 	apiErrorUnauthorized = api.Errorf("unauthorized")
-	apiErrorBadRequest   = api.Errorf("bad request")
 	apiErrorMissingRealm = api.Errorf("missing realm")
 
 	errMissingAuthorizedApp = fmt.Errorf("authorized app missing in request context")

@@ -39,7 +39,6 @@ func TestHandleCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Mint a cookie for the session.
 	cookie, err := harness.SessionCookie(session)
 	if err != nil {
 		t.Fatal(err)

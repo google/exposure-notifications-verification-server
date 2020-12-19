@@ -38,6 +38,11 @@ func TestHandleIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cookie, err := harness.SessionCookie(session)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
@@ -54,11 +59,6 @@ func TestHandleIndex(t *testing.T) {
 
 	t.Run("bad_query_params", func(t *testing.T) {
 		t.Parallel()
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		browserCtx := browser.New(t)
 		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
@@ -81,11 +81,6 @@ func TestHandleIndex(t *testing.T) {
 			Name:    "Appy",
 		}
 		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
 			t.Fatal(err)
 		}
 

@@ -39,17 +39,16 @@ func TestHandleUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cookie, err := harness.SessionCookie(session)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	authApp := &database.AuthorizedApp{
 		RealmID: realm.ID,
 		Name:    "Appy",
 	}
 	if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-
-	// Mint a cookie for the session.
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -101,11 +100,6 @@ func TestHandleUpdate(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		browserCtx := browser.New(t)
 		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)

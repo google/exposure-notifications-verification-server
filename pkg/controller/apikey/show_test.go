@@ -39,6 +39,11 @@ func TestHandleShow(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cookie, err := harness.SessionCookie(session)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
@@ -56,11 +61,6 @@ func TestHandleShow(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		browserCtx := browser.New(t)
 		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
@@ -83,11 +83,6 @@ func TestHandleShow(t *testing.T) {
 			Name:    "Appy",
 		}
 		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
 			t.Fatal(err)
 		}
 

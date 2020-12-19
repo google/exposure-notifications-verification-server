@@ -39,6 +39,11 @@ func TestHandleEnable(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cookie, err := harness.SessionCookie(session)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
@@ -66,11 +71,6 @@ func TestHandleEnable(t *testing.T) {
 			},
 		}
 		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -122,11 +122,6 @@ func TestHandleEnable(t *testing.T) {
 			},
 		}
 		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
 			t.Fatal(err)
 		}
 

@@ -25,7 +25,7 @@ import (
 
 // TestRenderer defines a test version of the renderer
 type TestRenderer struct {
-	ProdRenderer // the implementation under test
+	*ProdRenderer // the implementation under test
 
 	T *testing.T
 }
@@ -38,7 +38,7 @@ func NewTest(ctx context.Context, root string, t *testing.T) (Renderer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &TestRenderer{ProdRenderer: *i, T: t}, nil
+	return &TestRenderer{ProdRenderer: i, T: t}, nil
 }
 
 func (r *TestRenderer) RenderCSV(w http.ResponseWriter, code int, filename string, data icsv.Marshaler) {
