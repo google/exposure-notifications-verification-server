@@ -293,7 +293,7 @@ func realMain(ctx context.Context) error {
 				IssuingExternalID: issuingExternalID,
 			}
 			// If a verification code already exists, it will fail to save, and we retry.
-			if err := db.SaveVerificationCode(verificationCode, 672*time.Hour); err != nil {
+			if err := db.SaveVerificationCode(verificationCode, realm1); err != nil {
 				return fmt.Errorf("failed to create verification code: %w", err)
 			}
 
