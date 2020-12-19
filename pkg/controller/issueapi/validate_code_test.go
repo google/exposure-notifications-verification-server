@@ -147,7 +147,7 @@ func TestValidate(t *testing.T) {
 			name: "test older than minDate",
 			request: api.IssueCodeRequest{
 				TestType: "confirmed",
-				TestDate: minDate.Add(12 * time.Hour).Format(project.RFC3339Date),
+				TestDate: minDate.Add(-12 * time.Hour).Format(project.RFC3339Date),
 				TZOffset: -5, // we loosen an extra day for this
 			},
 			responseErr:    api.ErrInvalidDate,

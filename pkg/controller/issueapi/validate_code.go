@@ -146,9 +146,12 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		vCode.LongExpiresAt = vCode.ExpiresAt
 	}
 
-	// TODO: this validation duplicates things.
+	// TODO: this validation duplicates thing, but those depend on realm, config, etc.
 	// Depend on this where we've doubled up by matching received codes.
+	vCode.Code = "placeholder"
+	vCode.LongCode = "placeholder"
 	if err := vCode.Validate(c.config.GetAllowedSymptomAge()); err != nil {
+		logger.Infow("failed db validation", "error", err)
 		return nil, &issueResult{
 			obsResult:   observability.ResultError("DB_VALIDATION_REJECTED"),
 			httpCode:    http.StatusBadRequest,
