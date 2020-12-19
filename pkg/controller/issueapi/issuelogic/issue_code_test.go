@@ -16,144 +16,110 @@ package issuelogic
 
 import (
 	"context"
-	"net/http"
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
-func TestIssueCode(t *testing.T) {
+func TestGenerateCode(t *testing.T) {
 	t.Parallel()
+
+	// Run through a whole bunch of iterations.
+	for j := 0; j < 1000; j++ {
+		code, err := GenerateCode(8)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if got := len(code); got != 8 {
+			t.Fatalf("code is wrong length want 8, got %v", got)
+		}
+
+		for i, c := range code {
+			if c < '0' || c > '9' {
+				t.Errorf("code[%v]: %v outside expected range 0-9", i, c)
+			}
+		}
+	}
+}
+
+func TestGenerateAlphanumericCode(t *testing.T) {
+	t.Parallel()
+
+	// Run through a whole bunch of iterations.
+	for j := 0; j < 1000; j++ {
+		code, err := GenerateAlphanumericCode(16)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if got := len(code); got != 16 {
+			t.Fatalf("code is wrong length want 16, got %v", got)
+		}
+
+		for i, c := range code {
+			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z')) {
+				t.Errorf("code[%v]: %v outside expected range 0-9,a-z", i, c)
+			}
+		}
+	}
+}
+
+func TestIssue(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	tc := testconfig.NewServerConfig(t, testDatabaseInstance)
-	db := tc.Database
-
-	realm := database.NewRealmWithDefaults("Test Realm")
-	realm.AllowBulkUpload = true
-	realm.AllowedTestTypes = database.TestTypeConfirmed
-	ctx = controller.WithRealm(ctx, realm)
-	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatalf("failed to save realm: %v", err)
+	numCodes := 100
+	codes := make([]string, 0, numCodes)
+	longCodes := make([]string, 0, numCodes)
+	for i := 0; i < numCodes; i++ {
+		otp := Request{
+			DB:             db,
+			ShortLength:    8,
+			ShortExpiresAt: time.Now().Add(15 * time.Minute),
+			LongLength:     16,
+			LongExpiresAt:  time.Now().Add(24 * time.Hour),
+			TestType:       "confirmed",
+		}
+		verCode, err := otp.Issue(ctx, 10)
+		if err != nil {
+			t.Fatalf("error generating code: %v", err)
+		}
+		if verCode.UUID == "" {
+			t.Fatal("expected uuid from db, was empty")
+		}
+		codes = append(codes, verCode.Code)
+		longCodes = append(longCodes, verCode.LongCode)
 	}
 
-	smsConfig := &database.SMSConfig{
-		RealmID:      realm.ID,
-		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
-	}
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
-		t.Fatal(err)
+	if got := len(codes); got != numCodes {
+		t.Errorf("wrong number of codes, want: %v got %v", numCodes, got)
 	}
 
-	existingCode := &database.VerificationCode{
-		RealmID:       realm.ID,
-		Code:          "00000001",
-		LongCode:      "00000001ABC",
-		Claimed:       true,
-		TestType:      "confirmed",
-		ExpiresAt:     time.Now().Add(time.Hour),
-		LongExpiresAt: time.Now().Add(time.Hour),
-	}
-	if err := db.SaveVerificationCode(existingCode, time.Hour); err != nil {
-		t.Fatal(err)
-	}
-
-	membership := &database.Membership{
-		RealmID:     realm.ID,
-		Realm:       realm,
-		Permissions: rbac.CodeBulkIssue,
+	for _, code := range codes {
+		verCode, err := db.FindVerificationCode(code)
+		if err != nil {
+			t.Errorf("didn't find previously saved code")
+		}
+		if exp, codeType, err := db.IsCodeExpired(verCode, code); exp || err != nil {
+			t.Fatalf("loaded code doesn't match requested code, %v %v", exp, err)
+		} else if codeType != database.CodeTypeShort {
+			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeShort, codeType)
+		}
 	}
 
-	ctx = controller.WithMembership(ctx, membership)
-
-	var authApp *database.AuthorizedApp
-	i := New(tc.Config, db, tc.RateLimiter, authApp, membership, realm)
-
-	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
-
-	cases := []struct {
-		name           string
-		request        api.IssueCodeRequest
-		responseErr    string
-		httpStatusCode int
-	}{
-		{
-			name: "success",
-			request: api.IssueCodeRequest{
-				TestType:    "confirmed",
-				SymptomDate: symptomDate,
-			},
-			httpStatusCode: http.StatusOK,
-		},
-		{
-			name: "failure",
-			request: api.IssueCodeRequest{
-				TestType:    "negative", // this realm only supports confirmed
-				SymptomDate: symptomDate,
-			},
-			responseErr:    api.ErrUnsupportedTestType,
-			httpStatusCode: http.StatusBadRequest,
-		},
-		{
-			name: "no test date",
-			request: api.IssueCodeRequest{
-				TestType: "confirmed",
-			},
-			responseErr:    api.ErrMissingDate,
-			httpStatusCode: http.StatusBadRequest,
-		},
-		{
-			name: "unparsable test date",
-			request: api.IssueCodeRequest{
-				TestType:    "confirmed",
-				SymptomDate: "invalid date",
-			},
-			responseErr:    api.ErrUnparsableRequest,
-			httpStatusCode: http.StatusBadRequest,
-		},
-		{
-			name: "really old test date",
-			request: api.IssueCodeRequest{
-				TestType:    "confirmed",
-				SymptomDate: "1988-09-14",
-			},
-			responseErr:    api.ErrInvalidDate,
-			httpStatusCode: http.StatusBadRequest,
-		},
-		{
-			name: "conflict",
-			request: api.IssueCodeRequest{
-				TestType:    "confirmed",
-				SymptomDate: symptomDate,
-				UUID:        existingCode.UUID,
-			},
-			responseErr:    api.ErrUUIDAlreadyExists,
-			httpStatusCode: http.StatusConflict,
-		},
-	}
-
-	for _, tc := range cases {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			result := i.IssueOne(ctx, &tc.request)
-			resp := result.IssueCodeResponse()
-
-			if result.HTTPCode != tc.httpStatusCode {
-				t.Errorf("incorrect error code. got %d, want %d", result.HTTPCode, tc.httpStatusCode)
-			}
-			if resp.ErrorCode != tc.responseErr {
-				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)
-			}
-		})
+	for _, code := range longCodes {
+		verCode, err := db.FindVerificationCode(code)
+		if err != nil {
+			t.Errorf("didn't find previously saved code")
+		}
+		if exp, codeType, err := db.IsCodeExpired(verCode, code); exp || err != nil {
+			t.Fatalf("loaded code doesn't match requested code")
+		} else if codeType != database.CodeTypeLong {
+			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeLong, codeType)
+		}
 	}
 }

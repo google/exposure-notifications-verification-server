@@ -18,11 +18,14 @@
 package issuelogic
 
 import (
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/sethvargo/go-limiter"
+	"go.opencensus.io/tag"
 )
 
+// IssueLogic encapsulates the logic for issuing codes.
 type IssueLogic struct {
 	config     config.IssueAPIConfig
 	db         *database.Database
@@ -30,6 +33,16 @@ type IssueLogic struct {
 	authApp    *database.AuthorizedApp
 	membership *database.Membership
 	realm      *database.Realm
+}
+
+// IssueResult is the response returned from IssueLogic.IssueOne or IssueMany.
+type IssueResult struct {
+	verCode     *database.VerificationCode
+	errorReturn *api.ErrorReturn
+
+	HTTPCode  int
+	ObsBlame  tag.Mutator
+	ObsResult tag.Mutator
 }
 
 // New creates a new issue logic controller.

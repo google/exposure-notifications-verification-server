@@ -16,313 +16,143 @@ package issuelogic
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"net/http"
+	"math/big"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-server/pkg/timeutils"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuemetric"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
-	"github.com/google/exposure-notifications-verification-server/pkg/otp"
-	"github.com/google/exposure-notifications-verification-server/pkg/sms"
-	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
-var (
-	validTestType = map[string]struct{}{
-		api.TestTypeConfirmed: {},
-		api.TestTypeLikely:    {},
-		api.TestTypeNegative:  {},
+const (
+	// all lowercase characters plus 0-9
+	charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+)
+
+// GenerateCode creates a new OTP code.
+func GenerateCode(length uint) (string, error) {
+	limit := big.NewInt(0)
+	limit.Exp(big.NewInt(10), big.NewInt(int64(length)), nil)
+	digits, err := rand.Int(rand.Reader, limit)
+	if err != nil {
+		return "", err
 	}
-)
 
-type IssueResult struct {
-	verCode     *database.VerificationCode
-	errorReturn *api.ErrorReturn
+	// The zero pad format is variable length based on the length of the request code.
+	format := fmt.Sprint("%0", length, "d")
+	result := fmt.Sprintf(format, digits.Int64())
 
-	HTTPCode  int
-	ObsBlame  tag.Mutator
-	ObsResult tag.Mutator
+	return result, nil
 }
 
-func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
-	if result.errorReturn != nil {
-		return &api.IssueCodeResponse{
-			ErrorCode: result.errorReturn.ErrorCode,
-			Error:     result.errorReturn.Error,
+// GenerateAlphanumericCode will generate an alpha numberic code.
+// It uses the length to estimate how many bytes of randomness will
+// base64 encode to that length string.
+// For example 16 character string requires 12 bytes.
+func GenerateAlphanumericCode(length uint) (string, error) {
+	var result string
+	for i := uint(0); i < length; i++ {
+		ch, err := randomFromCharset()
+		if err != nil {
+			return "", err
 		}
+		result = result + ch
 	}
-
-	v := result.verCode
-	return &api.IssueCodeResponse{
-		UUID:                   v.UUID,
-		VerificationCode:       v.Code,
-		ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
-		ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
-		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
-		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
-	}
+	return result, nil
 }
 
-func (il *IssueLogic) IssueOne(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
-	results := il.IssueMany(ctx, []*api.IssueCodeRequest{request})
-	return results[0]
+func randomFromCharset() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+	if err != nil {
+		return "", err
+	}
+	return string(charset[n.Int64()]), nil
 }
 
-func (il *IssueLogic) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
-	// Generate codes
-	results := make([]*IssueResult, len(requests))
-	for i, singleReq := range requests {
-		results[i] = il.generateCode(ctx, singleReq)
-	}
+// Request represents the parameters of a verification code request.
+type Request struct {
+	DB             *database.Database
+	RealmID        uint
+	ShortLength    uint
+	ShortExpiresAt time.Time
+	LongLength     uint
+	LongExpiresAt  time.Time
+	TestType       string
+	SymptomDate    *time.Time
+	TestDate       *time.Time
+	MaxSymptomAge  time.Duration
+	UUID           string
 
-	// Send SMS messages
-	var wg sync.WaitGroup
-	for i, result := range results {
-		if result.errorReturn != nil {
+	// Issuing includes information about the issuer.
+	IssuingUser       *database.User
+	IssuingApp        *database.AuthorizedApp
+	IssuingExternalID string
+}
+
+// Issue will generate a verification code and save it to the database, based on
+// the paremters provided. It returns the short code, long code, a UUID for
+// accessing the code, and any errors.
+func (o *Request) Issue(ctx context.Context, retryCount uint) (*database.VerificationCode, error) {
+	logger := logging.FromContext(ctx)
+	var verificationCode database.VerificationCode
+	var err error
+	for i := uint(0); i < retryCount; i++ {
+		code, err := GenerateCode(o.ShortLength)
+		if err != nil {
+			logger.Errorf("code generation error: %v", err)
 			continue
 		}
-
-		wg.Add(1)
-		go func(request *api.IssueCodeRequest, r *IssueResult) {
-			defer wg.Done()
-			il.sendSMS(ctx, request, r)
-		}(requests[i], result)
-	}
-
-	wg.Wait() // wait the SMS work group to finish
-
-	return results
-}
-
-// generateCode issues a code. Does not send SMS messages.
-func (il *IssueLogic) generateCode(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
-	logger := logging.FromContext(ctx).Named("issueapi.generateCode")
-
-	// If this realm requires a date but no date was specified, return an error.
-	if il.realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
-		return &IssueResult{
-			ObsBlame:    observability.BlameClient,
-			ObsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
-			HTTPCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
-		}
-	}
-
-	// Verify the test type
-	request.TestType = strings.ToLower(request.TestType)
-	if _, ok := validTestType[request.TestType]; !ok {
-		return &IssueResult{
-			ObsBlame:    observability.BlameClient,
-			ObsResult:   observability.ResultError("INVALID_TEST_TYPE"),
-			HTTPCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrInvalidTestType),
-		}
-	}
-
-	// Validate that the request with the provided test type is valid for this realm.
-	if !il.realm.ValidTestType(request.TestType) {
-		return &IssueResult{
-			ObsBlame:    observability.BlameClient,
-			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
-			HTTPCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
-		}
-	}
-
-	// Verify SMS configuration if phone was provided
-	var smsProvider sms.Provider
-	if request.Phone != "" {
-		smsProvider, err := il.realm.SMSProvider(il.db)
-		if err != nil {
-			logger.Errorw("failed to get sms provider", "error", err)
-			return &IssueResult{
-				ObsBlame:    observability.BlameServer,
-				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				HTTPCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to get sms provider"),
-			}
-		}
-		if smsProvider == nil {
-			err := fmt.Errorf("phone provided, but no sms provider is configured")
-			return &IssueResult{
-				ObsBlame:    observability.BlameServer,
-				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				HTTPCode:    http.StatusBadRequest,
-				errorReturn: api.Error(err),
-			}
-		}
-	}
-
-	// Set up parallel arrays to leverage the observability reporting and connect the parse / validation errors
-	// to the correct date.
-	parsedDates := make([]*time.Time, 2)
-	input := []string{request.SymptomDate, request.TestDate}
-	dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
-	for i, d := range input {
-		if d != "" {
-			parsed, err := time.Parse(project.RFC3339Date, d)
+		longCode := code
+		if o.LongLength > 0 {
+			longCode, err = GenerateAlphanumericCode(o.LongLength)
 			if err != nil {
-				return &IssueResult{
-					ObsBlame:    observability.BlameClient,
-					ObsResult:   observability.ResultError(dateSettings[i].ParseError),
-					HTTPCode:    http.StatusBadRequest,
-					errorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
-				}
-			}
-			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
-			maxDate := timeutils.UTCMidnight(time.Now())
-			minDate := timeutils.Midnight(maxDate.Add(-1 * il.config.GetAllowedSymptomAge()))
-
-			validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
-			if err != nil {
-				err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
-					dateSettings[i].Name,
-					minDate.Format(project.RFC3339Date),
-					maxDate.Format(project.RFC3339Date),
-					parsed.Format(project.RFC3339Date),
-				)
-				return &IssueResult{
-					ObsBlame:    observability.BlameClient,
-					ObsResult:   observability.ResultError(dateSettings[i].ValidateError),
-					HTTPCode:    http.StatusBadRequest,
-					errorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
-				}
-			}
-			parsedDates[i] = validatedDate
-		}
-	}
-
-	// If there is a client-provided UUID, check if a code has already been issued.
-	// this prevents us from consuming quota on conflict.
-	rUUID := project.TrimSpaceAndNonPrintable(request.UUID)
-	if rUUID != "" {
-		if code, err := il.realm.FindVerificationCodeByUUID(il.db, request.UUID); err != nil {
-			if !database.IsNotFound(err) {
-				return &IssueResult{
-					ObsBlame:    observability.BlameServer,
-					ObsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
-					HTTPCode:    http.StatusInternalServerError,
-					errorReturn: api.Error(err),
-				}
-			}
-		} else if code != nil {
-			return &IssueResult{
-				ObsBlame:    observability.BlameClient,
-				ObsResult:   observability.ResultError("UUID_CONFLICT"),
-				HTTPCode:    http.StatusConflict,
-				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
-			}
-		}
-	}
-
-	// If we got this far, we're about to issue a code - take from the limiter
-	// to ensure this is permitted.
-	if il.realm.AbusePreventionEnabled {
-		key, err := il.realm.QuotaKey(il.config.GetRateLimitConfig().HMACKey)
-		if err != nil {
-			return &IssueResult{
-				ObsBlame:    observability.BlameServer,
-				ObsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
-				HTTPCode:    http.StatusInternalServerError,
-				errorReturn: api.Error(err),
-			}
-		}
-		limit, _, reset, ok, err := il.limiter.Take(ctx, key)
-		if err != nil {
-			logger.Errorw("failed to take from limiter", "error", err)
-			return &IssueResult{
-				ObsBlame:    observability.BlameServer,
-				ObsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
-				HTTPCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to verify realm stats, please try again"),
+				logger.Errorf("long code generation error: %v", err)
+				continue
 			}
 		}
 
-		stats.Record(ctx, issuemetric.RealmTokenUsed.M(1))
+		issuingUserID := uint(0)
+		if o.IssuingUser != nil {
+			issuingUserID = o.IssuingUser.ID
+		}
+		issuingAppID := uint(0)
+		if o.IssuingApp != nil {
+			issuingAppID = o.IssuingApp.ID
+		}
 
-		if !ok {
-			logger.Warnw("realm has exceeded daily quota",
-				"realm", il.realm.ID,
-				"limit", limit,
-				"reset", reset)
-
-			if il.config.GetEnforceRealmQuotas() {
-				return &IssueResult{
-					ObsBlame:    observability.BlameClient,
-					ObsResult:   observability.ResultError("QUOTA_EXCEEDED"),
-					HTTPCode:    http.StatusTooManyRequests,
-					errorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
-				}
+		verificationCode = database.VerificationCode{
+			RealmID:           o.RealmID,
+			Code:              code,
+			LongCode:          longCode,
+			TestType:          strings.ToLower(o.TestType),
+			SymptomDate:       o.SymptomDate,
+			TestDate:          o.TestDate,
+			ExpiresAt:         o.ShortExpiresAt,
+			LongExpiresAt:     o.LongExpiresAt,
+			IssuingUserID:     issuingUserID,
+			IssuingAppID:      issuingAppID,
+			IssuingExternalID: o.IssuingExternalID,
+			UUID:              o.UUID,
+		}
+		// If a verification code already exists, it will fail to save, and we retry.
+		if err = o.DB.SaveVerificationCode(&verificationCode, o.MaxSymptomAge); err != nil {
+			logger.Warnf("duplicate OTP found: %v", err)
+			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
+				break // not retryable
 			}
+			continue
+		} else {
+			// These are stored encrypted, but here we need to tell the user about them.
+			verificationCode.Code = code
+			verificationCode.LongCode = longCode
+			break // successful save, nil error, break out.
 		}
 	}
-
-	now := time.Now().UTC()
-	expiryTime := now.Add(il.realm.CodeDuration.Duration)
-	longExpiryTime := now.Add(il.realm.LongCodeDuration.Duration)
-	if request.Phone == "" || smsProvider == nil {
-		// If this isn't going to be send via SMS, make the long code expiration time same as short.
-		// This is because the long code will never be shown or sent.
-		longExpiryTime = expiryTime
-	}
-
-	// Compute issuing user - the membership will be nil when called via the API.
-	var user *database.User
-	if il.membership != nil {
-		user = il.membership.User
-	}
-
-	// Generate verification code
-	codeRequest := otp.Request{
-		DB:             il.db,
-		ShortLength:    il.realm.CodeLength,
-		ShortExpiresAt: expiryTime,
-		LongLength:     il.realm.LongCodeLength,
-		LongExpiresAt:  longExpiryTime,
-		TestType:       request.TestType,
-		SymptomDate:    parsedDates[0],
-		TestDate:       parsedDates[1],
-		MaxSymptomAge:  il.config.GetAllowedSymptomAge(),
-		RealmID:        il.realm.ID,
-		UUID:           rUUID,
-
-		IssuingUser:       user,
-		IssuingApp:        il.authApp,
-		IssuingExternalID: request.ExternalIssuerID,
-	}
-
-	verCode, err := codeRequest.Issue(ctx, il.config.GetCollisionRetryCount())
 	if err != nil {
-		logger.Errorw("failed to issue code", "error", err)
-		// GormV1 doesn't have a good way to match db errors
-		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
-			return &IssueResult{
-				ObsBlame:    observability.BlameServer,
-				ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-				HTTPCode:    http.StatusConflict,
-				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
-			}
-		}
-		return &IssueResult{
-			ObsBlame:    observability.BlameServer,
-			ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-			HTTPCode:    http.StatusInternalServerError,
-			errorReturn: api.Errorf("failed to generate otp code, please try again"),
-		}
+		return nil, err
 	}
-
-	return &IssueResult{
-		verCode:   verCode,
-		HTTPCode:  http.StatusOK,
-		ObsBlame:  observability.BlameNone,
-		ObsResult: observability.ResultOK(),
-	}
+	return &verificationCode, nil
 }
