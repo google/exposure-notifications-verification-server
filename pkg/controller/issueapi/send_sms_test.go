@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issuelogic
+package issueapi
 
 import (
 	"context"
@@ -71,7 +71,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	tc := testconfig.NewServerConfig(t, testDatabaseInstance)
+	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
 	db := tc.Database
 
 	realm := database.NewRealmWithDefaults("Test Realm")
@@ -96,9 +96,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 
 	ctx = controller.WithMembership(ctx, membership)
-
-	var authApp *database.AuthorizedApp
-	c := New(tc.Config, db, tc.RateLimiter, authApp, membership, realm)
+	c := New(tc.Config, db, tc.RateLimiter, nil)
 
 	request := &api.IssueCodeRequest{
 		TestType:    "confirmed",
@@ -129,7 +127,7 @@ func TestSMS_sendSMS(t *testing.T) {
 
 	// Successful SMS send
 
-	if err := c.sendSMS(ctx, request, result); err != nil {
+	if err := c.sendSMS(ctx, request, result, realm); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.verCode.UUID); err != nil {
@@ -142,7 +140,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
 	}
-	if err := c.sendSMS(ctx, request, result); err != sms.ErrNoop {
+	if err := c.sendSMS(ctx, request, result, realm); err != sms.ErrNoop {
 		t.Errorf("expected sms failure. got %v want %v", err, sms.ErrNoop)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.verCode.UUID); !database.IsNotFound(err) {

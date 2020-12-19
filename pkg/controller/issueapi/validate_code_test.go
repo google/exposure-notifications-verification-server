@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issuelogic
+package issueapi
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func TestIssueCode(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	tc := testconfig.NewServerConfig(t, testDatabaseInstance)
+	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
 	db := tc.Database
 
 	realm := database.NewRealmWithDefaults("Test Realm")
@@ -72,9 +72,7 @@ func TestIssueCode(t *testing.T) {
 	}
 
 	ctx = controller.WithMembership(ctx, membership)
-
-	var authApp *database.AuthorizedApp
-	i := New(tc.Config, db, tc.RateLimiter, authApp, membership, realm)
+	il := New(tc.Config, db, tc.RateLimiter, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 
@@ -93,12 +91,21 @@ func TestIssueCode(t *testing.T) {
 			httpStatusCode: http.StatusOK,
 		},
 		{
-			name: "failure",
+			name: "unsupported test type",
 			request: api.IssueCodeRequest{
 				TestType:    "negative", // this realm only supports confirmed
 				SymptomDate: symptomDate,
 			},
 			responseErr:    api.ErrUnsupportedTestType,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "invalid test type",
+			request: api.IssueCodeRequest{
+				TestType:    "invalid",
+				SymptomDate: symptomDate,
+			},
+			responseErr:    api.ErrInvalidTestType,
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
@@ -145,7 +152,7 @@ func TestIssueCode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := i.IssueOne(ctx, &tc.request)
+			result := il.IssueOne(ctx, &tc.request, nil, membership, realm)
 			resp := result.IssueCodeResponse()
 
 			if result.HTTPCode != tc.httpStatusCode {

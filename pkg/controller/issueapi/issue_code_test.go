@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issuelogic
+package issueapi
 
 import (
 	"context"
@@ -29,7 +29,7 @@ func TestGenerateCode(t *testing.T) {
 
 	// Run through a whole bunch of iterations.
 	for j := 0; j < 1000; j++ {
-		code, err := GenerateCode(8)
+		code, err := generateCode(8)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -51,7 +51,7 @@ func TestGenerateAlphanumericCode(t *testing.T) {
 
 	// Run through a whole bunch of iterations.
 	for j := 0; j < 1000; j++ {
-		code, err := GenerateAlphanumericCode(16)
+		code, err := generateAlphanumericCode(16)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -72,7 +72,7 @@ func TestIssue(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	tc := testconfig.NewServerConfig(t, testDatabaseInstance)
+	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
 	db := tc.Database
 
 	realm := database.NewRealmWithDefaults("Test Realm")
@@ -81,7 +81,7 @@ func TestIssue(t *testing.T) {
 		t.Fatalf("failed to save realm: %v", err)
 	}
 
-	il := New(tc.Config, db, tc.RateLimiter, nil, nil, realm)
+	il := New(tc.Config, db, tc.RateLimiter, nil)
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)
@@ -92,7 +92,7 @@ func TestIssue(t *testing.T) {
 			LongExpiresAt: time.Now().Add(24 * time.Hour),
 			TestType:      "confirmed",
 		}
-		if err := il.Issue(ctx, vCode, 10); err != nil {
+		if err := il.Issue(ctx, vCode, realm, 10); err != nil {
 			t.Fatal(err)
 		}
 		if vCode.UUID == "" {

@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuelogic"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
@@ -38,7 +37,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		}
 		ctx := r.Context()
 
-		result := &issuelogic.IssueResult{
+		result := &IssueResult{
 			HTTPCode:  http.StatusOK,
 			ObsBlame:  observability.BlameNone,
 			ObsResult: observability.ResultOK(),
@@ -84,8 +83,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			return
 		}
 
-		logic := issuelogic.New(c.config, c.db, c.limiter, authApp, membership, realm)
-		results := logic.IssueMany(ctx, request.Codes)
+		results := c.IssueMany(ctx, request.Codes, authApp, membership, realm)
 
 		HTTPCode := http.StatusOK
 		batchResp := &api.BatchIssueCodeResponse{}

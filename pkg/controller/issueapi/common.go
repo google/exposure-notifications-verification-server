@@ -19,12 +19,41 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuelogic"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuemetric"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"go.opencensus.io/tag"
 )
+
+// IssueResult is the response returned from IssueLogic.IssueOne or IssueMany.
+type IssueResult struct {
+	verCode     *database.VerificationCode
+	errorReturn *api.ErrorReturn
+
+	HTTPCode  int
+	ObsBlame  tag.Mutator
+	ObsResult tag.Mutator
+}
+
+func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
+	if result.errorReturn != nil {
+		return &api.IssueCodeResponse{
+			ErrorCode: result.errorReturn.ErrorCode,
+			Error:     result.errorReturn.Error,
+		}
+	}
+
+	v := result.verCode
+	return &api.IssueCodeResponse{
+		UUID:                   v.UUID,
+		VerificationCode:       v.Code,
+		ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
+		ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
+		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
+		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
+	}
+}
 
 // getAuthorizationFromContext pulls the authorization from the context. If an
 // API key is provided, it's used to lookup the realm. If a membership exists,
@@ -48,6 +77,6 @@ func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database
 	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
 }
 
-func recordObservability(ctx context.Context, result *issuelogic.IssueResult) {
-	observability.RecordLatency(ctx, time.Now(), issuemetric.LatencyMs, &result.ObsBlame, &result.ObsResult)
+func recordObservability(ctx context.Context, result *IssueResult) {
+	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.ObsBlame, &result.ObsResult)
 }

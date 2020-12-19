@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi_test
+package issueapi
 
 import (
 	"testing"
@@ -20,10 +20,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-var testDatabaseInstance *database.TestInstance
+var TestDatabaseInstance *database.TestInstance
 
 func TestMain(m *testing.M) {
-	testDatabaseInstance = database.MustTestInstance()
-	defer testDatabaseInstance.MustClose()
+	TestDatabaseInstance = database.MustTestInstance()
+	defer TestDatabaseInstance.MustClose()
 	m.Run()
 }

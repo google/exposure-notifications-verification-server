@@ -20,7 +20,6 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuelogic"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
@@ -33,7 +32,7 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		ctx := r.Context()
-		result := &issuelogic.IssueResult{
+		result := &IssueResult{
 			HTTPCode:  http.StatusOK,
 			ObsBlame:  observability.BlameNone,
 			ObsResult: observability.ResultOK(),
@@ -56,10 +55,7 @@ func (c *Controller) HandleIssue() http.Handler {
 			return
 		}
 
-		// Add realm so that metrics are groupable on a per-realm basis.
-		logic := issuelogic.New(c.config, c.db, c.limiter, authApp, membership, realm)
-		result = logic.IssueOne(ctx, &request)
-
+		result = c.IssueOne(ctx, &request, authApp, membership, realm)
 		resp := result.IssueCodeResponse()
 		if resp.Error != "" {
 			if result.HTTPCode == http.StatusInternalServerError {

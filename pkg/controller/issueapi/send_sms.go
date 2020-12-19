@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issuelogic
+package issueapi
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi/issuemetric"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
@@ -62,11 +62,11 @@ func scrubPhoneNumbers(s string) string {
 	return noScrubs
 }
 
-func (il *IssueLogic) sendSMS(ctx context.Context, request *api.IssueCodeRequest, result *IssueResult) error {
+func (il *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest, result *IssueResult, realm *database.Realm) error {
 	if request.Phone == "" {
 		return nil
 	}
-	smsProvider, err := il.realm.SMSProvider(il.db)
+	smsProvider, err := realm.SMSProvider(il.db)
 	if smsProvider == nil {
 		return nil
 	}
@@ -77,9 +77,9 @@ func (il *IssueLogic) sendSMS(ctx context.Context, request *api.IssueCodeRequest
 	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
 
 	if err := func() error {
-		defer observability.RecordLatency(ctx, time.Now(), issuemetric.SMSLatencyMs, &result.ObsBlame, &result.ObsResult)
+		defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.ObsBlame, &result.ObsResult)
 
-		message, err := il.realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, il.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+		message, err := realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, il.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
 			return err
 		}
