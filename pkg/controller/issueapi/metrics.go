@@ -26,9 +26,11 @@ import (
 const metricPrefix = observability.MetricRoot + "/api/issue"
 
 var (
+	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
+
+	mSMSLatencyMs = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
+
 	mRealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
-	mSMSLatencyMs   = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
-	mLatencyMs      = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
 )
 
 func init() {
