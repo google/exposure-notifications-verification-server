@@ -162,6 +162,12 @@ func TestValidate(t *testing.T) {
 				if tc.request.UUID != "" && tc.request.UUID != verCode.UUID {
 					t.Errorf("expecting stable client-provided uuid. got %s, want %s", verCode.UUID, tc.request.UUID)
 				}
+				if tc.request.TestDate != "" && verCode.TestDate == nil {
+					t.Errorf("No test date. got %s, want %s", verCode.TestDate, tc.request.TestDate)
+				}
+				if tc.request.SymptomDate != "" && verCode.SymptomDate == nil {
+					t.Errorf("No symptom date. got %s, want %s", verCode.TestDate, tc.request.TestDate)
+				}
 				return
 			}
 			resp := result.issueCodeResponse()
