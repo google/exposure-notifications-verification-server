@@ -105,8 +105,8 @@ func TestSMS_sendSMS(t *testing.T) {
 		Phone:       "+15005550006",
 	}
 	result := &issueResult{
-		HTTPCode:  http.StatusOK,
-		ObsResult: observability.ResultOK(),
+		httpCode:  http.StatusOK,
+		obsResult: observability.ResultOK(),
 		verCode: &database.VerificationCode{
 			RealmID:       realm.ID,
 			Code:          "00000001",

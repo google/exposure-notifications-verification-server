@@ -38,48 +38,48 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 		ctx := r.Context()
 
 		result := &issueResult{
-			HTTPCode:  http.StatusOK,
-			ObsResult: observability.ResultOK(),
+			httpCode:  http.StatusOK,
+			obsResult: observability.ResultOK(),
 		}
 		defer recordObservability(ctx, result)
 
 		var request api.BatchIssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.ObsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
 		}
 
 		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
 		if err != nil {
-			result.ObsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
 
 		// Ensure bulk upload is enabled on this realm.
 		if !realm.AllowBulkUpload {
-			result.ObsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
 			return
 		}
 
 		if membership != nil && !membership.Can(rbac.CodeBulkIssue) {
-			result.ObsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
 		l := len(request.Codes)
 		if l > maxBatchSize {
-			result.ObsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
+			result.obsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit [%d] exceeded", maxBatchSize))
 			return
 		}
 
 		results := c.issueMany(ctx, request.Codes, authApp, membership, realm)
 
-		HTTPCode := http.StatusOK
+		httpCode := http.StatusOK
 		batchResp := &api.BatchIssueCodeResponse{}
 		batchResp.Codes = make([]*api.IssueCodeResponse, len(results))
 		errCount := 0
@@ -94,8 +94,8 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			// If any issuance fails, the returned code is the code of the first failure
 			// and continue processing all codes.
 			errCount++
-			if HTTPCode == http.StatusOK {
-				HTTPCode = result.HTTPCode
+			if httpCode == http.StatusOK {
+				httpCode = result.httpCode
 				batchResp.ErrorCode = singleResponse.ErrorCode
 			}
 		}
@@ -110,7 +110,7 @@ func (c *Controller) HandleBatchIssue() http.Handler {
 			batchResp.Error = sb.String()
 		}
 
-		c.h.RenderJSON(w, HTTPCode, batchResp)
+		c.h.RenderJSON(w, httpCode, batchResp)
 		return
 	})
 }

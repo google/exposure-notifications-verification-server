@@ -74,7 +74,7 @@ func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database
 
 func recordObservability(ctx context.Context, result *issueResult) {
 	var blame tag.Mutator
-	switch result.HTTPCode {
+	switch result.httpCode {
 	case http.StatusOK:
 		blame = observability.BlameNone
 	case http.StatusInternalServerError:
@@ -83,5 +83,5 @@ func recordObservability(ctx context.Context, result *issueResult) {
 		blame = observability.BlameClient
 	}
 
-	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result.ObsResult)
+	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result.obsResult)
 }

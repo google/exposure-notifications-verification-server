@@ -44,8 +44,8 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 		key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
 		if err != nil {
 			return &issueResult{
-				ObsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
-				HTTPCode:    http.StatusInternalServerError,
+				obsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
+				httpCode:    http.StatusInternalServerError,
 				errorReturn: api.Error(err),
 			}
 		}
@@ -53,8 +53,8 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 		if err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
 			return &issueResult{
-				ObsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
-				HTTPCode:    http.StatusInternalServerError,
+				obsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
+				httpCode:    http.StatusInternalServerError,
 				errorReturn: api.Errorf("failed to verify realm stats, please try again"),
 			}
 		}
@@ -69,8 +69,8 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 
 			if c.config.GetEnforceRealmQuotas() {
 				return &issueResult{
-					ObsResult:   observability.ResultError("QUOTA_EXCEEDED"),
-					HTTPCode:    http.StatusTooManyRequests,
+					obsResult:   observability.ResultError("QUOTA_EXCEEDED"),
+					httpCode:    http.StatusTooManyRequests,
 					errorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
 				}
 			}
@@ -81,24 +81,24 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 		// GormV1 doesn't have a good way to match db errors
 		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
 			return &issueResult{
-				ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-				HTTPCode:    http.StatusConflict,
+				obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
+				httpCode:    http.StatusConflict,
 				errorReturn: api.Errorf("code for %s already exists", vCode.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
 
 		logger.Errorw("failed to issue code", "error", err)
 		return &issueResult{
-			ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-			HTTPCode:    http.StatusInternalServerError,
+			obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
+			httpCode:    http.StatusInternalServerError,
 			errorReturn: api.Errorf("failed to generate otp code, please try again"),
 		}
 	}
 
 	return &issueResult{
 		verCode:   vCode,
-		HTTPCode:  http.StatusOK,
-		ObsResult: observability.ResultOK(),
+		httpCode:  http.StatusOK,
+		obsResult: observability.ResultOK(),
 	}
 }
 

@@ -64,8 +64,8 @@ func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseS
 	parsed, err := time.Parse(project.RFC3339Date, d)
 	if err != nil {
 		return nil, &issueResult{
-			ObsResult:   observability.ResultError(parseSettings.ParseError),
-			HTTPCode:    http.StatusBadRequest,
+			obsResult:   observability.ResultError(parseSettings.ParseError),
+			httpCode:    http.StatusBadRequest,
 			errorReturn: api.Errorf("failed to process %s date: %v", parseSettings.Name, err).WithCode(api.ErrUnparsableRequest),
 		}
 	}
@@ -82,8 +82,8 @@ func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseS
 			parsed.Format(project.RFC3339Date),
 		)
 		return nil, &issueResult{
-			ObsResult:   observability.ResultError(parseSettings.ValidateError),
-			HTTPCode:    http.StatusBadRequest,
+			obsResult:   observability.ResultError(parseSettings.ValidateError),
+			httpCode:    http.StatusBadRequest,
 			errorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
 		}
 	}

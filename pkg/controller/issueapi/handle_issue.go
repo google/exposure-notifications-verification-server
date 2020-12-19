@@ -33,21 +33,21 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		ctx := r.Context()
 		result := &issueResult{
-			HTTPCode:  http.StatusOK,
-			ObsResult: observability.ResultOK(),
+			httpCode:  http.StatusOK,
+			obsResult: observability.ResultOK(),
 		}
 		defer recordObservability(ctx, result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.ObsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
 		}
 
 		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
 		if err != nil {
-			result.ObsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
 		}
@@ -55,11 +55,11 @@ func (c *Controller) HandleIssue() http.Handler {
 		result = c.issueOne(ctx, &request, authApp, membership, realm)
 		resp := result.issueCodeResponse()
 		if resp.Error != "" {
-			if result.HTTPCode == http.StatusInternalServerError {
+			if result.httpCode == http.StatusInternalServerError {
 				controller.InternalError(w, r, c.h, errors.New(resp.Error))
 				return
 			}
-			c.h.RenderJSON(w, result.HTTPCode, resp)
+			c.h.RenderJSON(w, result.httpCode, resp)
 			return
 		}
 

@@ -28,9 +28,8 @@ import (
 type issueResult struct {
 	verCode     *database.VerificationCode
 	errorReturn *api.ErrorReturn
-
-	HTTPCode  int
-	ObsResult tag.Mutator
+	httpCode    int
+	obsResult   tag.Mutator
 }
 
 func (result *issueResult) issueCodeResponse() *api.IssueCodeResponse {

@@ -48,9 +48,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		TestType:          request.TestType,
 	}
 	if membership != nil {
-		if user := membership.User; user != nil {
-			vCode.IssuingUserID = user.ID
-		}
+		vCode.IssuingUserID = membership.UserID
 	}
 	if authApp != nil {
 		vCode.IssuingAppID = authApp.ID
@@ -59,8 +57,8 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 	// If this realm requires a date but no date was specified, return an error.
 	if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
 		return nil, &issueResult{
-			ObsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
-			HTTPCode:    http.StatusBadRequest,
+			obsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
+			httpCode:    http.StatusBadRequest,
 			errorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
 		}
 	}
@@ -80,8 +78,8 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 	vCode.TestType = strings.ToLower(request.TestType)
 	if _, ok := validTestType[request.TestType]; !ok {
 		return nil, &issueResult{
-			ObsResult:   observability.ResultError("INVALID_TEST_TYPE"),
-			HTTPCode:    http.StatusBadRequest,
+			obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
+			httpCode:    http.StatusBadRequest,
 			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrInvalidTestType),
 		}
 	}
@@ -89,8 +87,8 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 	// Validate that the request with the provided test type is valid for this realm.
 	if !realm.ValidTestType(vCode.TestType) {
 		return nil, &issueResult{
-			ObsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
-			HTTPCode:    http.StatusBadRequest,
+			obsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
+			httpCode:    http.StatusBadRequest,
 			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
 		}
 	}
@@ -102,16 +100,16 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
 			return nil, &issueResult{
-				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				HTTPCode:    http.StatusInternalServerError,
+				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
+				httpCode:    http.StatusInternalServerError,
 				errorReturn: api.Errorf("failed to get sms provider"),
 			}
 		}
 		if smsProvider == nil {
 			err := fmt.Errorf("phone provided, but no sms provider is configured")
 			return nil, &issueResult{
-				ObsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				HTTPCode:    http.StatusBadRequest,
+				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
+				httpCode:    http.StatusBadRequest,
 				errorReturn: api.Error(err),
 			}
 		}
@@ -124,15 +122,15 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
 			if !database.IsNotFound(err) {
 				return nil, &issueResult{
-					ObsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
-					HTTPCode:    http.StatusInternalServerError,
+					obsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
+					httpCode:    http.StatusInternalServerError,
 					errorReturn: api.Error(err),
 				}
 			}
 		} else if code != nil {
 			return nil, &issueResult{
-				ObsResult:   observability.ResultError("UUID_CONFLICT"),
-				HTTPCode:    http.StatusConflict,
+				obsResult:   observability.ResultError("UUID_CONFLICT"),
+				httpCode:    http.StatusConflict,
 				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
