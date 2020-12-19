@@ -46,7 +46,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 			return &issueResult{
 				obsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
 				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Error(err),
+				errorReturn: api.Error(err).WithCode(api.ErrInternal),
 			}
 		}
 		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
@@ -55,7 +55,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 			return &issueResult{
 				obsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
 				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to verify realm stats, please try again"),
+				errorReturn: api.Errorf("failed to verify realm stats, please try again").WithCode(api.ErrInternal),
 			}
 		}
 
@@ -91,7 +91,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 		return &issueResult{
 			obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
 			httpCode:    http.StatusInternalServerError,
-			errorReturn: api.Errorf("failed to generate otp code, please try again"),
+			errorReturn: api.Errorf("failed to generate otp code, please try again").WithCode(api.ErrInternal),
 		}
 	}
 

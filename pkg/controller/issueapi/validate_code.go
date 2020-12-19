@@ -102,7 +102,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 			return nil, &issueResult{
 				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
 				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to get sms provider"),
+				errorReturn: api.Errorf("failed to get sms provider").WithCode(api.ErrInternal),
 			}
 		}
 		if smsProvider == nil {
@@ -124,7 +124,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 				return nil, &issueResult{
 					obsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
 					httpCode:    http.StatusInternalServerError,
-					errorReturn: api.Error(err),
+					errorReturn: api.Error(err).WithCode(api.ErrInternal),
 				}
 			}
 		} else if code != nil {
@@ -145,5 +145,16 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		// This is because the long code will never be shown or sent.
 		vCode.LongExpiresAt = vCode.ExpiresAt
 	}
+
+	// TODO: this validation duplicates things.
+	// Depend on this where we've doubled up by matching received codes.
+	if err := vCode.Validate(c.config.GetAllowedSymptomAge()); err != nil {
+		return nil, &issueResult{
+			obsResult:   observability.ResultError("DB_VALIDATION_REJECTED"),
+			httpCode:    http.StatusBadRequest,
+			errorReturn: api.Error(err).WithCode(api.ErrInternal),
+		}
+	}
+
 	return vCode, nil
 }

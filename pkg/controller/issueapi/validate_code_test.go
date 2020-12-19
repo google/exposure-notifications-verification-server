@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -62,6 +63,9 @@ func TestValidate(t *testing.T) {
 	c := New(tc.Config, db, tc.RateLimiter, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
+
+	maxDate := timeutils.UTCMidnight(time.Now())
+	minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
 
 	cases := []struct {
 		name           string
@@ -135,6 +139,16 @@ func TestValidate(t *testing.T) {
 			request: api.IssueCodeRequest{
 				TestType:    "confirmed",
 				SymptomDate: "3020-01-01",
+			},
+			responseErr:    api.ErrInvalidDate,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "test older than minDate",
+			request: api.IssueCodeRequest{
+				TestType: "confirmed",
+				TestDate: minDate.Add(12 * time.Hour).Format(project.RFC3339Date),
+				TZOffset: -5, // we loosen an extra day for this
 			},
 			responseErr:    api.ErrInvalidDate,
 			httpStatusCode: http.StatusBadRequest,

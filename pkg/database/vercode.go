@@ -54,8 +54,8 @@ var (
 	ErrInvalidTestType    = errors.New("invalid test type, must be confirmed, likely, or negative")
 	ErrCodeAlreadyExpired = errors.New("code already expired")
 	ErrCodeAlreadyClaimed = errors.New("code already claimed")
-	ErrCodeTooShort       = errors.New("verification code must be at least 6 digits")
-	ErrTestTooOld         = errors.New("test date is more than 14 day ago")
+	ErrCodeTooShort       = errors.New("verification code is too short")
+	ErrTestTooOld         = errors.New("test date is older than the maximum age")
 )
 
 // VerificationCode represents a verification code in the database.
@@ -232,14 +232,14 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	if _, ok := ValidTestTypes[v.TestType]; !ok {
 		return ErrInvalidTestType
 	}
-	minSymptomDate := timeutils.UTCMidnight(now.Add(-1 * maxAge))
+	minDate := timeutils.UTCMidnight(now.Add(-1 * maxAge))
 	if v.SymptomDate != nil {
-		if minSymptomDate.After(*v.SymptomDate) {
+		if minDate.After(*v.SymptomDate) {
 			return ErrTestTooOld
 		}
 	}
 	if v.TestDate != nil {
-		if minSymptomDate.After(*v.TestDate) {
+		if minDate.After(*v.TestDate) {
 			return ErrTestTooOld
 		}
 	}
