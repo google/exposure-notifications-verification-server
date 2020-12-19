@@ -12,14 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package issueapi implements the API handler for taking a code request, assigning
+// Package issueapi implements the API handler for taking a code request, assigning
 // an OTP, saving it to the database and returning the result.
 // This is invoked over AJAX from the Web frontend.
 package issueapi
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-limiter"
@@ -40,4 +46,30 @@ func New(config config.IssueAPIConfig, db *database.Database, limiter limiter.St
 		h:       h,
 		limiter: limiter,
 	}
+}
+
+// getAuthorizationFromContext pulls the authorization from the context. If an
+// API key is provided, it's used to lookup the realm. If a membership exists,
+// it's used to provide the realm.
+func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database.AuthorizedApp, *database.Membership, *database.Realm, error) {
+	authorizedApp := controller.AuthorizedAppFromContext(ctx)
+	if authorizedApp != nil {
+		realm, err := authorizedApp.Realm(c.db)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return authorizedApp, nil, realm, nil
+	}
+
+	membership := controller.MembershipFromContext(ctx)
+	if membership != nil {
+		realm := membership.Realm
+		return nil, membership, realm, nil
+	}
+
+	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
+}
+
+func recordObservability(ctx context.Context, result *issueResult) {
+	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.ObsBlame, &result.ObsResult)
 }

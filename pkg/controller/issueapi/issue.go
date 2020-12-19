@@ -15,57 +15,78 @@
 package issueapi
 
 import (
-	"errors"
-	"net/http"
+	"context"
+	"sync"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"go.opencensus.io/tag"
 )
 
-func (c *Controller) HandleIssue() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if c.config.IsMaintenanceMode() {
-			c.h.RenderJSON(w, http.StatusTooManyRequests,
-				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
-			return
+// issueResult is the response returned from IssueLogic.IssueOne or IssueMany.
+type issueResult struct {
+	verCode     *database.VerificationCode
+	errorReturn *api.ErrorReturn
+
+	HTTPCode  int
+	ObsBlame  tag.Mutator
+	ObsResult tag.Mutator
+}
+
+func (result *issueResult) issueCodeResponse() *api.IssueCodeResponse {
+	if result.errorReturn != nil {
+		return &api.IssueCodeResponse{
+			ErrorCode: result.errorReturn.ErrorCode,
+			Error:     result.errorReturn.Error,
+		}
+	}
+
+	v := result.verCode
+	return &api.IssueCodeResponse{
+		UUID:                   v.UUID,
+		VerificationCode:       v.Code,
+		ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
+		ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
+		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
+		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
+	}
+}
+
+func (c *Controller) issueOne(ctx context.Context, request *api.IssueCodeRequest,
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *issueResult {
+	results := c.issueMany(ctx, []*api.IssueCodeRequest{request}, authApp, membership, realm)
+	return results[0]
+}
+
+func (c *Controller) issueMany(ctx context.Context, requests []*api.IssueCodeRequest,
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) []*issueResult {
+	// Generate codes
+	results := make([]*issueResult, len(requests))
+	for i, req := range requests {
+		vCode, result := c.populateCode(ctx, req, authApp, membership, realm)
+		if result != nil {
+			results[i] = result
+			continue
+		}
+		results[i] = c.issueCode(ctx, vCode, realm)
+	}
+
+	// Send SMS messages
+	var wg sync.WaitGroup
+	for i, result := range results {
+		if result.errorReturn != nil {
+			continue
 		}
 
-		ctx := r.Context()
-		result := &issueResult{
-			HTTPCode:  http.StatusOK,
-			ObsBlame:  observability.BlameNone,
-			ObsResult: observability.ResultOK(),
-		}
-		defer recordObservability(ctx, result)
+		wg.Add(1)
+		go func(request *api.IssueCodeRequest, r *issueResult) {
+			defer wg.Done()
+			c.sendSMS(ctx, request, r, realm)
+		}(requests[i], result)
+	}
 
-		var request api.IssueCodeRequest
-		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.ObsBlame = observability.BlameClient
-			result.ObsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
-			return
-		}
+	wg.Wait() // wait the SMS work group to finish
 
-		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
-		if err != nil {
-			result.ObsBlame = observability.BlameClient
-			result.ObsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
-			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-			return
-		}
-
-		result = c.issueOne(ctx, &request, authApp, membership, realm)
-		resp := result.issueCodeResponse()
-		if resp.Error != "" {
-			if result.HTTPCode == http.StatusInternalServerError {
-				controller.InternalError(w, r, c.h, errors.New(resp.Error))
-				return
-			}
-			c.h.RenderJSON(w, result.HTTPCode, resp)
-			return
-		}
-
-		c.h.RenderJSON(w, http.StatusOK, resp)
-	})
+	return results
 }

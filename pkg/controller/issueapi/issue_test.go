@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi_test
+package issueapi
 
 import (
 	"context"
@@ -20,20 +20,59 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
-func TestIssue(t *testing.T) {
+func TestIssueCode(t *testing.T) {
 	t.Parallel()
-
 	ctx := context.Background()
-	testSuite := testsuite.NewIntegrationSuite(t, ctx)
-	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
-	if err != nil {
+
+	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
+	db := tc.Database
+
+	realm := database.NewRealmWithDefaults("Test Realm")
+	realm.AllowBulkUpload = true
+	realm.AllowedTestTypes = database.TestTypeConfirmed
+	ctx = controller.WithRealm(ctx, realm)
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatalf("failed to save realm: %v", err)
+	}
+
+	smsConfig := &database.SMSConfig{
+		RealmID:      realm.ID,
+		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
+	}
+	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
 	}
+
+	existingCode := &database.VerificationCode{
+		RealmID:       realm.ID,
+		Code:          "00000001",
+		LongCode:      "00000001ABC",
+		Claimed:       true,
+		TestType:      "confirmed",
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(time.Hour),
+	}
+	if err := db.SaveVerificationCode(existingCode, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+
+	membership := &database.Membership{
+		RealmID:     realm.ID,
+		Realm:       realm,
+		Permissions: rbac.CodeBulkIssue,
+	}
+
+	ctx = controller.WithMembership(ctx, membership)
+	c := New(tc.Config, db, tc.RateLimiter, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 
@@ -52,13 +91,58 @@ func TestIssue(t *testing.T) {
 			httpStatusCode: http.StatusOK,
 		},
 		{
-			name: "failure",
+			name: "unsupported test type",
+			request: api.IssueCodeRequest{
+				TestType:    "negative", // this realm only supports confirmed
+				SymptomDate: symptomDate,
+			},
+			responseErr:    api.ErrUnsupportedTestType,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "invalid test type",
+			request: api.IssueCodeRequest{
+				TestType:    "invalid",
+				SymptomDate: symptomDate,
+			},
+			responseErr:    api.ErrInvalidTestType,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "no test date",
+			request: api.IssueCodeRequest{
+				TestType: "confirmed",
+			},
+			responseErr:    api.ErrMissingDate,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "unparsable test date",
 			request: api.IssueCodeRequest{
 				TestType:    "confirmed",
 				SymptomDate: "invalid date",
 			},
 			responseErr:    api.ErrUnparsableRequest,
 			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "really old test date",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: "1988-09-14",
+			},
+			responseErr:    api.ErrInvalidDate,
+			httpStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "conflict",
+			request: api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: symptomDate,
+				UUID:        existingCode.UUID,
+			},
+			responseErr:    api.ErrUUIDAlreadyExists,
+			httpStatusCode: http.StatusConflict,
 		},
 	}
 
@@ -68,13 +152,11 @@ func TestIssue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			statusCode, resp, err := adminClient.IssueCode(tc.request)
-			if err != nil {
-				t.Fatal(err)
-			}
+			result := c.issueOne(ctx, &tc.request, nil, membership, realm)
+			resp := result.issueCodeResponse()
 
-			if statusCode != tc.httpStatusCode {
-				t.Errorf("incorrect error code. got %d, want %d", statusCode, tc.httpStatusCode)
+			if result.HTTPCode != tc.httpStatusCode {
+				t.Errorf("incorrect error code. got %d, want %d", result.HTTPCode, tc.httpStatusCode)
 			}
 			if resp.ErrorCode != tc.responseErr {
 				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)
