@@ -80,8 +80,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 		}
 	}
 
-	if err := c.Issue(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
-		logger.Errorw("failed to issue code", "error", err)
+	if err := c.issue(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
 		// GormV1 doesn't have a good way to match db errors
 		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
 			return &issueResult{
@@ -91,6 +90,8 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 				errorReturn: api.Errorf("code for %s already exists", vCode.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
+
+		logger.Errorw("failed to issue code", "error", err)
 		return &issueResult{
 			ObsBlame:    observability.BlameServer,
 			ObsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
@@ -107,10 +108,10 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 	}
 }
 
-// Issue will generate a verification code and save it to the database, based on
+// issue will generate a verification code and save it to the database, based on
 // the paremters provided. It returns the short code, long code, a UUID for
 // accessing the code, and any errors.
-func (c *Controller) Issue(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
+func (c *Controller) issue(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
 	logger := logging.FromContext(ctx)
 	var err error
 	for i := uint(0); i < retryCount; i++ {

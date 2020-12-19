@@ -37,7 +37,7 @@ var (
 	}
 )
 
-// populateCode populates a code from an issue request.
+// populateCode populates and validates a code from an issue request.
 func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeRequest,
 	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *issueResult) {
 	logger := logging.FromContext(ctx).Named("issueapi.populateCode")
@@ -66,6 +66,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		}
 	}
 
+	// Parse and validate SymptomDate and TestDate
 	var result *issueResult
 	vCode.SymptomDate, result = c.parseDate(request.SymptomDate, int(request.TZOffset), &onsetSettings)
 	if result != nil {
