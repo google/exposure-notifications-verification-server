@@ -30,7 +30,6 @@ type issueResult struct {
 	errorReturn *api.ErrorReturn
 
 	HTTPCode  int
-	ObsBlame  tag.Mutator
 	ObsResult tag.Mutator
 }
 

@@ -119,8 +119,8 @@ func TestIssueCode(t *testing.T) {
 		{
 			name: "unparsable test date",
 			request: api.IssueCodeRequest{
-				TestType:    "confirmed",
-				SymptomDate: "invalid date",
+				TestType: "confirmed",
+				TestDate: "invalid date",
 			},
 			responseErr:    api.ErrUnparsableRequest,
 			httpStatusCode: http.StatusBadRequest,

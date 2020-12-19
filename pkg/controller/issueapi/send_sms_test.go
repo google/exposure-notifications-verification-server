@@ -106,7 +106,6 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 	result := &issueResult{
 		HTTPCode:  http.StatusOK,
-		ObsBlame:  observability.BlameNone,
 		ObsResult: observability.ResultOK(),
 		verCode: &database.VerificationCode{
 			RealmID:       realm.ID,

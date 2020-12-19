@@ -77,7 +77,7 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
 
 	if err := func() error {
-		defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.ObsBlame, &result.ObsResult)
+		defer observability.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.ObsResult)
 
 		message, err := realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
@@ -92,7 +92,6 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 			}
 
 			logger.Infow("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
-			result.ObsBlame = observability.BlameClient
 			result.ObsResult = observability.ResultError("FAILED_TO_SEND_SMS")
 			return err
 		}

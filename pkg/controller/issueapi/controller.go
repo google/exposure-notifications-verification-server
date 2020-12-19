@@ -20,6 +20,7 @@ package issueapi
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -27,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.opencensus.io/tag"
 
 	"github.com/sethvargo/go-limiter"
 )
@@ -71,5 +73,15 @@ func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database
 }
 
 func recordObservability(ctx context.Context, result *issueResult) {
-	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result.ObsBlame, &result.ObsResult)
+	var blame tag.Mutator
+	switch result.HTTPCode {
+	case http.StatusOK:
+		blame = observability.BlameNone
+	case http.StatusInternalServerError:
+		blame = observability.BlameServer
+	default:
+		blame = observability.BlameClient
+	}
+
+	observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result.ObsResult)
 }

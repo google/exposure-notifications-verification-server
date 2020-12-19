@@ -34,14 +34,12 @@ func (c *Controller) HandleIssue() http.Handler {
 		ctx := r.Context()
 		result := &issueResult{
 			HTTPCode:  http.StatusOK,
-			ObsBlame:  observability.BlameNone,
 			ObsResult: observability.ResultOK(),
 		}
 		defer recordObservability(ctx, result)
 
 		var request api.IssueCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.ObsBlame = observability.BlameClient
 			result.ObsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
@@ -49,7 +47,6 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
 		if err != nil {
-			result.ObsBlame = observability.BlameClient
 			result.ObsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
 			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
 			return
