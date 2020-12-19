@@ -46,6 +46,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		RealmID:           realm.ID,
 		IssuingExternalID: request.ExternalIssuerID,
 		TestType:          strings.ToLower(request.TestType),
+		UUID:              project.TrimSpaceAndNonPrintable(request.UUID),
 	}
 	if membership != nil {
 		vCode.IssuingUserID = membership.UserID
@@ -98,8 +99,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 
 	// If there is a client-provided UUID, check if a code has already been issued.
 	// this prevents us from consuming quota on conflict.
-	rUUID := project.TrimSpaceAndNonPrintable(request.UUID)
-	if rUUID != "" {
+	if vCode.UUID != "" {
 		if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
 			if !database.IsNotFound(err) {
 				return nil, &issueResult{
@@ -116,7 +116,6 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 			}
 		}
 	}
-	vCode.UUID = rUUID
 
 	now := time.Now().UTC()
 	vCode.ExpiresAt = now.Add(realm.CodeDuration.Duration)
@@ -127,12 +126,9 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		vCode.LongExpiresAt = vCode.ExpiresAt
 	}
 
-	// TODO: this validation duplicates thing, but those depend on realm, config, etc.
-	// Depend on this where we've doubled up by matching received codes.
 	vCode.Code = "placeholder"
 	vCode.LongCode = "placeholder"
 	if err := vCode.Validate(realm); err != nil {
-
 		switch err {
 		case database.ErrInvalidTestType:
 			return nil, &issueResult{
@@ -151,7 +147,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		logger.Warnw("unhandled db validation", "error", err)
 		return nil, &issueResult{
 			obsResult:   observability.ResultError("DB_VALIDATION_REJECTED"),
-			httpCode:    http.StatusBadRequest,
+			httpCode:    http.StatusInternalServerError,
 			errorReturn: api.Error(err).WithCode(api.ErrInternal),
 		}
 	}
