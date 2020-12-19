@@ -219,7 +219,7 @@ func (v *VerificationCode) HasLongExpiration() bool {
 }
 
 // Validate validates a verification code before save.
-func (v *VerificationCode) Validate(maxAge time.Duration) error {
+func (v *VerificationCode) Validate(realm *Realm) error {
 	now := time.Now()
 	v.Code = project.TrimSpace(v.Code)
 	if len(v.Code) < MinCodeLength {
@@ -229,20 +229,14 @@ func (v *VerificationCode) Validate(maxAge time.Duration) error {
 	if len(v.LongCode) < MinCodeLength {
 		return ErrCodeTooShort
 	}
+
 	if _, ok := ValidTestTypes[v.TestType]; !ok {
 		return ErrInvalidTestType
 	}
-	minDate := timeutils.UTCMidnight(now.Add(-1 * maxAge))
-	if v.SymptomDate != nil {
-		if minDate.After(*v.SymptomDate) {
-			return ErrTestTooOld
-		}
+	if !realm.ValidTestType(v.TestType) {
+		return ErrUnsupportedTestType
 	}
-	if v.TestDate != nil {
-		if minDate.After(*v.TestDate) {
-			return ErrTestTooOld
-		}
-	}
+
 	if now.After(v.ExpiresAt) || now.After(v.LongExpiresAt) {
 		return ErrCodeAlreadyExpired
 	}
@@ -323,8 +317,8 @@ func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
 
 // SaveVerificationCode created or updates a verification code in the database.
 // Max age represents the maximum age of the test date [optional] in the record.
-func (db *Database) SaveVerificationCode(vc *VerificationCode, maxAge time.Duration) error {
-	if err := vc.Validate(maxAge); err != nil {
+func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) error {
+	if err := vc.Validate(realm); err != nil {
 		return err
 	}
 	if vc.Model.ID == 0 {

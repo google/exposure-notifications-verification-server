@@ -156,7 +156,7 @@ func TestIssueCode(t *testing.T) {
 		ExpiresAt:     time.Now().Add(time.Hour),
 		LongExpiresAt: time.Now().Add(time.Hour),
 	}
-	if err := db.SaveVerificationCode(existingCode, time.Hour); err != nil {
+	if err := db.SaveVerificationCode(existingCode, realm); err != nil {
 		t.Fatal(err)
 	}
 

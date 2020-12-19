@@ -117,7 +117,7 @@ func TestSMS_sendSMS(t *testing.T) {
 			LongExpiresAt: time.Now().Add(time.Hour),
 		},
 	}
-	if err := db.SaveVerificationCode(result.verCode, c.config.GetAllowedSymptomAge()); err != nil {
+	if err := db.SaveVerificationCode(result.verCode, realm); err != nil {
 		t.Fatal(err)
 	}
 	// un-hmac the codes so rollback can find them.

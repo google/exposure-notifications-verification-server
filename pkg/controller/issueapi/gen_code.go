@@ -127,7 +127,7 @@ func (c *Controller) commitCode(ctx context.Context, vCode *database.Verificatio
 		vCode.LongCode = longCode
 
 		// If a verification code already exists, it will fail to save, and we retry.
-		if err = c.db.SaveVerificationCode(vCode, c.config.GetAllowedSymptomAge()); err != nil {
+		if err = c.db.SaveVerificationCode(vCode, realm); err != nil {
 			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
 				logger.Warnf("duplicate OTP found: %v", err)
 				break // not retryable

@@ -45,7 +45,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 	vCode := &database.VerificationCode{
 		RealmID:           realm.ID,
 		IssuingExternalID: request.ExternalIssuerID,
-		TestType:          request.TestType,
+		TestType:          strings.ToLower(request.TestType),
 	}
 	if membership != nil {
 		vCode.IssuingUserID = membership.UserID
@@ -63,7 +63,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		}
 	}
 
-	// Parse and validate SymptomDate and TestDate
+	// Parse SymptomDate and TestDate
 	var result *issueResult
 	vCode.SymptomDate, result = c.parseDate(request.SymptomDate, int(request.TZOffset), &onsetSettings)
 	if result != nil {
@@ -72,25 +72,6 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 	vCode.TestDate, result = c.parseDate(request.TestDate, int(request.TZOffset), &testSettings)
 	if result != nil {
 		return nil, result
-	}
-
-	// Verify the test type
-	vCode.TestType = strings.ToLower(request.TestType)
-	if _, ok := validTestType[request.TestType]; !ok {
-		return nil, &issueResult{
-			obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("invalid test type").WithCode(api.ErrInvalidTestType),
-		}
-	}
-
-	// Validate that the request with the provided test type is valid for this realm.
-	if !realm.ValidTestType(vCode.TestType) {
-		return nil, &issueResult{
-			obsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
-		}
 	}
 
 	// Verify SMS configuration if phone was provided
@@ -150,8 +131,24 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 	// Depend on this where we've doubled up by matching received codes.
 	vCode.Code = "placeholder"
 	vCode.LongCode = "placeholder"
-	if err := vCode.Validate(c.config.GetAllowedSymptomAge()); err != nil {
-		logger.Infow("failed db validation", "error", err)
+	if err := vCode.Validate(realm); err != nil {
+
+		switch err {
+		case database.ErrInvalidTestType:
+			return nil, &issueResult{
+				obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
+				httpCode:    http.StatusBadRequest,
+				errorReturn: api.Errorf("invalid test type").WithCode(api.ErrInvalidTestType),
+			}
+		case database.ErrUnsupportedTestType:
+			return nil, &issueResult{
+				obsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
+				httpCode:    http.StatusBadRequest,
+				errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
+			}
+		}
+
+		logger.Warnw("unhandled db validation", "error", err)
 		return nil, &issueResult{
 			obsResult:   observability.ResultError("DB_VALIDATION_REJECTED"),
 			httpCode:    http.StatusBadRequest,
