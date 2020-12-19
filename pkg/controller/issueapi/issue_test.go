@@ -26,7 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func TestIssueCode(t *testing.T) {
+func TestIssueOne(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 

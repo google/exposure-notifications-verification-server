@@ -109,7 +109,8 @@ func (c *Controller) commitCode(ctx context.Context, vCode *database.Verificatio
 	logger := logging.FromContext(ctx)
 	var err error
 	for i := uint(0); i < retryCount; i++ {
-		code, err := generateCode(realm.CodeLength)
+		var code string
+		code, err = generateCode(realm.CodeLength)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
 			continue
@@ -127,8 +128,8 @@ func (c *Controller) commitCode(ctx context.Context, vCode *database.Verificatio
 
 		// If a verification code already exists, it will fail to save, and we retry.
 		if err = c.db.SaveVerificationCode(vCode, c.config.GetAllowedSymptomAge()); err != nil {
-			logger.Warnf("duplicate OTP found: %v", err)
 			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
+				logger.Warnf("duplicate OTP found: %v", err)
 				break // not retryable
 			}
 			continue

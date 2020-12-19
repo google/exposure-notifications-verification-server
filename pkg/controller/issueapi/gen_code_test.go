@@ -16,10 +16,12 @@ package issueapi
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -68,7 +70,7 @@ func TestGenerateAlphanumericCode(t *testing.T) {
 	}
 }
 
-func TestIssue(t *testing.T) {
+func TestCommitCode(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -128,5 +130,118 @@ func TestIssue(t *testing.T) {
 		} else if codeType != database.CodeTypeLong {
 			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeLong, codeType)
 		}
+	}
+}
+
+func TestIssueCode(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	testConfig := testconfig.NewServerConfig(t, TestDatabaseInstance)
+	db := testConfig.Database
+
+	// Enable quota on the realm
+	realm := database.NewRealmWithDefaults("Test Realm")
+	realm.AbusePreventionEnabled = true
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatalf("failed to save realm: %v", err)
+	}
+
+	existingCode := &database.VerificationCode{
+		RealmID:       realm.ID,
+		Code:          "00000001",
+		LongCode:      "00000001ABC",
+		Claimed:       true,
+		TestType:      "confirmed",
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(time.Hour),
+	}
+	if err := db.SaveVerificationCode(existingCode, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+
+	key, err := realm.QuotaKey(testConfig.Config.GetRateLimitConfig().HMACKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testConfig.RateLimiter.Set(ctx, key, 0, time.Hour)
+
+	c := New(testConfig.Config, db, testConfig.RateLimiter, nil)
+
+	symptomDate := time.Now().UTC().Add(-48 * time.Hour)
+	expires := time.Now().UTC().Add(48 * time.Hour)
+
+	cases := []struct {
+		name               string
+		vCode              *database.VerificationCode
+		enforceRealmQuotas bool
+		responseErr        string
+		httpStatusCode     int
+	}{
+		{
+			name: "success",
+			vCode: &database.VerificationCode{
+				TestType:      "confirmed",
+				SymptomDate:   &symptomDate,
+				ExpiresAt:     expires,
+				LongExpiresAt: expires,
+			},
+			httpStatusCode: http.StatusOK,
+		},
+		{
+			name: "conflict",
+			vCode: &database.VerificationCode{
+				TestType:      "confirmed",
+				SymptomDate:   &symptomDate,
+				UUID:          existingCode.UUID,
+				ExpiresAt:     expires,
+				LongExpiresAt: expires,
+			},
+			responseErr:    api.ErrUUIDAlreadyExists,
+			httpStatusCode: http.StatusConflict,
+		},
+		{
+			name:  "db rejects",
+			vCode: &database.VerificationCode{
+				// type, date, and expiry are required
+			},
+			httpStatusCode: http.StatusInternalServerError,
+		},
+		{
+			name: "rate limit exceeded",
+			vCode: &database.VerificationCode{
+				TestType:      "confirmed",
+				SymptomDate:   &symptomDate,
+				ExpiresAt:     expires,
+				LongExpiresAt: expires,
+			},
+			enforceRealmQuotas: true,
+			responseErr:        api.ErrQuotaExceeded,
+			httpStatusCode:     http.StatusTooManyRequests,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			testConfig.Config.EnforceRealmQuotas = tc.enforceRealmQuotas
+			result := c.issueCode(ctx, tc.vCode, realm)
+
+			if tc.responseErr == "" {
+				if tc.vCode.Code == "" {
+					t.Fatal("Expected issued code.")
+				}
+				if tc.vCode.LongCode == "" {
+					t.Fatal("Expected issued long code.")
+				}
+			} else {
+				if result.httpCode != tc.httpStatusCode {
+					t.Fatalf("incorrect error code. got %d, want %d", result.httpCode, tc.httpStatusCode)
+				}
+				if result.errorReturn.ErrorCode != tc.responseErr {
+					t.Fatalf("did not receive expected errorCode. got %q, want %q", result.errorReturn.Error, tc.responseErr)
+				}
+			}
+		})
 	}
 }
