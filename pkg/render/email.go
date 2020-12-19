@@ -16,7 +16,6 @@ package render
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/microcosm-cc/bluemonday"
@@ -30,10 +29,6 @@ import (
 // The buffers are fetched via a sync.Pool to reduce allocations and improve
 // performance.
 func (r *ProdRenderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
-	if r.templates == nil {
-		return nil, errors.New("no templates found")
-	}
-
 	if r.debug {
 		if err := r.loadTemplates(); err != nil {
 			return nil, fmt.Errorf("error loading templates %v", err)
@@ -46,7 +41,7 @@ func (r *ProdRenderer) RenderEmail(tmpl string, data interface{}) ([]byte, error
 	defer r.rendererPool.Put(b)
 
 	// Render into the renderer
-	if err := r.textTemplates.ExecuteTemplate(b, tmpl, data); err != nil {
+	if err := r.executeTextTemplate(b, tmpl, data); err != nil {
 		return nil, fmt.Errorf("error executing email template %v", err)
 	}
 	return bluemonday.UGCPolicy().SanitizeBytes(b.Bytes()), nil

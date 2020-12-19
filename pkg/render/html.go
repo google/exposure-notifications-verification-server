@@ -52,12 +52,6 @@ func (r *ProdRenderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl st
 		return
 	}
 
-	if r.templates == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, htmlErrTmpl, "No templates are defined")
-		return
-	}
-
 	if r.debug {
 		if err := r.loadTemplates(); err != nil {
 			msg := html.EscapeString(err.Error())
@@ -73,7 +67,7 @@ func (r *ProdRenderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl st
 	defer r.rendererPool.Put(b)
 
 	// Render into the renderer
-	if err := r.templates.ExecuteTemplate(b, tmpl, data); err != nil {
+	if err := r.executeHTMLTemplate(b, tmpl, data); err != nil {
 		msg := "An internal error occurred."
 		if r.debug {
 			msg = err.Error()

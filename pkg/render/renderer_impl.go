@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	htmltemplate "html/template"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -72,6 +73,7 @@ type ProdRenderer struct {
 	// concurrent modification of the templates field.
 	templates     *htmltemplate.Template
 	textTemplates *texttemplate.Template
+	templatesLock sync.RWMutex
 	templatesRoot string
 }
 
@@ -104,8 +106,35 @@ func newProdRenderer(ctx context.Context, root string, debug bool) (*ProdRendere
 	return r, nil
 }
 
+// executeHTMLTemplate executes a single HTML template with the provided data.
+func (r *ProdRenderer) executeHTMLTemplate(w io.Writer, name string, data interface{}) error {
+	r.templatesLock.RLock()
+	defer r.templatesLock.RUnlock()
+
+	if r.templates == nil {
+		return fmt.Errorf("no templates are defined")
+	}
+
+	return r.templates.ExecuteTemplate(w, name, data)
+}
+
+// executeTextTemplate executes a single text template with the provided data.
+func (r *ProdRenderer) executeTextTemplate(w io.Writer, name string, data interface{}) error {
+	r.templatesLock.RLock()
+	defer r.templatesLock.RUnlock()
+
+	if r.templates == nil {
+		return fmt.Errorf("no templates are defined")
+	}
+
+	return r.textTemplates.ExecuteTemplate(w, name, data)
+}
+
 // loadTemplates loads or reloads all templates.
 func (r *ProdRenderer) loadTemplates() error {
+	r.templatesLock.Lock()
+	defer r.templatesLock.Unlock()
+
 	if r.templatesRoot == "" {
 		return nil
 	}
