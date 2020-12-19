@@ -92,7 +92,7 @@ func TestIssue(t *testing.T) {
 			LongExpiresAt: time.Now().Add(24 * time.Hour),
 			TestType:      "confirmed",
 		}
-		if err := c.issue(ctx, vCode, realm, 10); err != nil {
+		if err := c.commitCode(ctx, vCode, realm, 10); err != nil {
 			t.Fatal(err)
 		}
 		if vCode.UUID == "" {

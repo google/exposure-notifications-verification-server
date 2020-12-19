@@ -80,7 +80,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 		}
 	}
 
-	if err := c.issue(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
+	if err := c.commitCode(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
 		// GormV1 doesn't have a good way to match db errors
 		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
 			return &issueResult{
@@ -108,10 +108,10 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 	}
 }
 
-// issue will generate a verification code and save it to the database, based on
+// commitCode will generate a verification code and save it to the database, based on
 // the paremters provided. It returns the short code, long code, a UUID for
 // accessing the code, and any errors.
-func (c *Controller) issue(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
+func (c *Controller) commitCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
 	logger := logging.FromContext(ctx)
 	var err error
 	for i := uint(0); i < retryCount; i++ {
