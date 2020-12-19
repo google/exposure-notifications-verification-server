@@ -29,14 +29,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
-var (
-	validTestType = map[string]struct{}{
-		api.TestTypeConfirmed: {},
-		api.TestTypeLikely:    {},
-		api.TestTypeNegative:  {},
-	}
-)
-
 // populateCode populates and validates a code from an issue request.
 func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeRequest,
 	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *issueResult) {
