@@ -16,13 +16,13 @@ package apikey
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
 )
 
 // HandleUpdate handles an update.
@@ -75,13 +75,6 @@ func (c *Controller) HandleUpdate() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			authApp.Name = form.Name
-
-			if terr, ok := err.(schema.MultiError); ok {
-				for k, err := range terr {
-					authApp.AddError(k, err.Error())
-				}
-			}
-
 			flash.Error("Failed to process form: %v", err)
 			c.renderEdit(ctx, w, authApp)
 		}
@@ -97,7 +90,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 
 		flash.Alert("Successfully updated API key!")
-		http.Redirect(w, r, "/apikeys", http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/realm/apikeys/%d", authApp.ID), http.StatusSeeOther)
 	})
 }
 

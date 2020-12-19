@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
@@ -161,7 +163,7 @@ func NewServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *Test
 	}
 
 	// Create the config and requirements.
-	response := newServerConfig(tb, testDatabaseInstance)
+	response := NewServerConfig(tb, testDatabaseInstance)
 
 	ctx := context.Background()
 
@@ -212,8 +214,8 @@ func NewServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *Test
 	}
 }
 
-// serverConfigResponse is the response from creating a server config.
-type serverConfigResponse struct {
+// ServerConfigResponse is the response from creating a server config.
+type ServerConfigResponse struct {
 	AuthProvider auth.Provider
 	Config       *config.ServerConfig
 	Database     *database.Database
@@ -222,10 +224,10 @@ type serverConfigResponse struct {
 	RateLimiter  limiter.Store
 }
 
-// newServerConfig creates a new server configuration. It creates all the keys,
+// NewServerConfig creates a new server configuration. It creates all the keys,
 // databases, and cacher, but does not actually start the server. All cleanup is
 // scheduled by t.Cleanup.
-func newServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance) *serverConfigResponse {
+func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance) *ServerConfigResponse {
 	tb.Helper()
 
 	if testing.Short() {
@@ -278,7 +280,7 @@ func newServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		LocalesPath: LocalesPath(),
 		Cache: cache.Config{
 			Type:    cache.TypeInMemory,
-			HMACKey: RandomBytes(tb, 64),
+			HMACKey: randomBytes(tb, 64),
 		},
 		Database: *dbConfig,
 		// Firebase is not used for browser tests.
@@ -292,18 +294,18 @@ func newServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 			AppID:           "1:test:web:test",
 			MeasurementID:   "G-TEST",
 		},
-		CookieKeys:  config.Base64ByteSlice{RandomBytes(tb, 64), RandomBytes(tb, 32)},
-		CSRFAuthKey: RandomBytes(tb, 32),
+		CookieKeys:  config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
+		CSRFAuthKey: randomBytes(tb, 32),
 		CertificateSigning: config.CertificateSigningConfig{
 			CertificateSigningKey: "UPDATE_ME",
 			Keys: keys.Config{
 				KeyManagerType: keys.KeyManagerTypeFilesystem,
-				FilesystemRoot: filepath.Join(project.Root(), "local", "test", RandomString(tb, 8)),
+				FilesystemRoot: filepath.Join(project.Root(), "local", "test", randomString(tb, 8)),
 			},
 		},
 		RateLimit: ratelimit.Config{
 			Type:    ratelimit.RateLimiterTypeMemory,
-			HMACKey: RandomBytes(tb, 64),
+			HMACKey: randomBytes(tb, 64),
 		},
 
 		// DevMode has to be enabled for tests. Otherwise the cookies fail.
@@ -317,7 +319,7 @@ func newServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		tb.Fatal(err)
 	}
 
-	return &serverConfigResponse{
+	return &ServerConfigResponse{
 		AuthProvider: authProvider,
 		Config:       cfg,
 		Database:     db,
@@ -325,6 +327,22 @@ func newServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		KeyManager:   keyManager,
 		RateLimiter:  limiterStore,
 	}
+}
+
+// AutoConfirmDialogs automatically clicks "confirm" on popup dialogs from
+// window.Confirm prompts.
+func AutoConfirmDialogs(ctx context.Context, b bool) <-chan error {
+	errCh := make(chan error, 1)
+
+	chromedp.ListenTarget(ctx, func(i interface{}) {
+		if _, ok := i.(*page.EventJavascriptDialogOpening); ok {
+			go func() {
+				errCh <- chromedp.Run(ctx, page.HandleJavaScriptDialog(b))
+			}()
+		}
+	})
+
+	return errCh
 }
 
 // ServerAssetsPath returns the path to the UI server assets.
@@ -335,4 +353,24 @@ func ServerAssetsPath() string {
 // LocalesPath returns the path to the i18n locales.
 func LocalesPath() string {
 	return filepath.Join(project.Root(), "internal", "i18n", "locales")
+}
+
+func randomBytes(tb testing.TB, len int) []byte {
+	tb.Helper()
+
+	b, err := project.RandomBytes(len)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return b
+}
+
+func randomString(tb testing.TB, len int) string {
+	tb.Helper()
+
+	s, err := project.RandomHexString(len)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return s
 }

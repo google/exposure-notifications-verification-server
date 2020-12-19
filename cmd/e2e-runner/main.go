@@ -124,7 +124,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Create new API keys
-	suffix, err := project.RandomString()
+	suffix, err := project.RandomHexString(6)
 	if err != nil {
 		return fmt.Errorf("failed to create suffix string for API keys: %w", err)
 	}

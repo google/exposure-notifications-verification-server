@@ -16,7 +16,7 @@ package apikey_test
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -29,7 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-func TestHandleCreate(t *testing.T) {
+func TestHandleShow(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
@@ -51,83 +51,61 @@ func TestHandleCreate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		c := apikey.New(harness.Cacher, harness.Database, h)
-		handler := c.HandleCreate()
+		handler := c.HandleShow()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 	})
 
-	t.Run("validation", func(t *testing.T) {
+	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
 		browserCtx := browser.New(t)
 		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
 		defer done()
 
-		var nameAttrs map[string]string
-		var typeAttrs map[string]string
-
 		if err := chromedp.Run(taskCtx,
 			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
-			chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
-			chromedp.Attributes(`input#name`, &nameAttrs, chromedp.ByQuery),
-			chromedp.Attributes(`select#type`, &typeAttrs, chromedp.ByQuery),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/100`),
+			chromedp.WaitVisible(`body#unauthorized`, chromedp.ByQuery),
 		); err != nil {
 			t.Fatal(err)
-		}
-
-		if got, want := nameAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
-		}
-		if got, want := typeAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})
 
-	t.Run("creates", func(t *testing.T) {
+	t.Run("shows", func(t *testing.T) {
 		t.Parallel()
+
+		authApp := &database.AuthorizedApp{
+			RealmID: realm.ID,
+			Name:    "Appy",
+		}
+		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
 		browserCtx := browser.New(t)
 		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
 		defer done()
 
-		var apiKey string
+		u := fmt.Sprintf("http://%s/realm/apikeys/%d", harness.Server.Addr(), authApp.ID)
+
+		var name string
+
 		if err := chromedp.Run(taskCtx,
 			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
-			chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
-
-			chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
-			chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
+			chromedp.Navigate(u),
 			chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
-			chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
+
+			chromedp.Text(`#apikey-name`, &name, chromedp.ByQuery),
 		); err != nil {
 			t.Fatal(err)
 		}
 
-		// Ensure API key is valid.
-		record, err := harness.Database.FindAuthorizedAppByAPIKey(apiKey)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if got, want := record.RealmID, realm.ID; got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-		if got, want := record.Name, "Example API key"; got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-		if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
-			t.Errorf("expected %v to be %v", got, want)
+		if got, want := strings.TrimSpace(name), authApp.Name; got != want {
+			t.Errorf("expected %q to be %q", got, want)
 		}
 	})
 }

@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -51,7 +52,7 @@ type PageParams struct {
 // pagination parameters, the struct is returned with the default values.
 func FromRequest(r *http.Request) (*PageParams, error) {
 	page := uint64(0)
-	if v := r.FormValue(QueryKeyPage); v != "" {
+	if v := strings.TrimSpace(r.FormValue(QueryKeyPage)); v != "" {
 		var err error
 		page, err = strconv.ParseUint(v, 10, 64)
 		if err != nil {
@@ -60,7 +61,7 @@ func FromRequest(r *http.Request) (*PageParams, error) {
 	}
 
 	limit := DefaultLimit
-	if v := r.FormValue(QueryKeyLimit); v != "" {
+	if v := strings.TrimSpace(r.FormValue(QueryKeyLimit)); v != "" {
 		var err error
 		limit, err = strconv.ParseUint(v, 10, 64)
 		if err != nil {

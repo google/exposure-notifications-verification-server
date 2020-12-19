@@ -16,33 +16,21 @@
 package apikey
 
 import (
-	"context"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 type Controller struct {
-	config *config.ServerConfig
 	cacher cache.Cacher
 	db     *database.Database
 	h      render.Renderer
 }
 
-func New(ctx context.Context, config *config.ServerConfig, cacher cache.Cacher, db *database.Database, h render.Renderer) *Controller {
+func New(cacher cache.Cacher, db *database.Database, h render.Renderer) *Controller {
 	return &Controller{
-		config: config,
 		cacher: cacher,
 		db:     db,
 		h:      h,
 	}
-}
-
-func (c *Controller) findAuthorizedApp(currentUser *database.User, realm *database.Realm, id interface{}) (*database.AuthorizedApp, error) {
-	if currentUser.SystemAdmin {
-		return c.db.FindAuthorizedApp(id)
-	}
-	return realm.FindAuthorizedApp(c.db, id)
 }
