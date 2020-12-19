@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -67,45 +66,15 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 		}
 	}
 
-	// Set up parallel arrays to leverage the observability reporting and connect the parse / validation errors
-	// to the correct date.
-	parsedDates := make([]*time.Time, 2)
-	dateSettings := []*dateParseSettings{&onsetSettings, &testSettings}
-	for i, d := range []string{request.SymptomDate, request.TestDate} {
-		if d != "" {
-			parsed, err := time.Parse(project.RFC3339Date, d)
-			if err != nil {
-				return nil, &issueResult{
-					ObsBlame:    observability.BlameClient,
-					ObsResult:   observability.ResultError(dateSettings[i].ParseError),
-					HTTPCode:    http.StatusBadRequest,
-					errorReturn: api.Errorf("failed to process %s date: %v", dateSettings[i].Name, err).WithCode(api.ErrUnparsableRequest),
-				}
-			}
-			// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
-			maxDate := timeutils.UTCMidnight(time.Now())
-			minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
-
-			validatedDate, err := validateDate(parsed, minDate, maxDate, int(request.TZOffset))
-			if err != nil {
-				err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
-					dateSettings[i].Name,
-					minDate.Format(project.RFC3339Date),
-					maxDate.Format(project.RFC3339Date),
-					parsed.Format(project.RFC3339Date),
-				)
-				return nil, &issueResult{
-					ObsBlame:    observability.BlameClient,
-					ObsResult:   observability.ResultError(dateSettings[i].ValidateError),
-					HTTPCode:    http.StatusBadRequest,
-					errorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
-				}
-			}
-			parsedDates[i] = validatedDate
-		}
+	var result *issueResult
+	vCode.SymptomDate, result = c.parseDate(request.SymptomDate, int(request.TZOffset), &onsetSettings)
+	if result != nil {
+		return nil, result
 	}
-	vCode.SymptomDate = parsedDates[0]
-	vCode.TestDate = parsedDates[1]
+	vCode.TestDate, result = c.parseDate(request.TestDate, int(request.TZOffset), &testSettings)
+	if result != nil {
+		return nil, result
+	}
 
 	// Verify the test type
 	vCode.TestType = strings.ToLower(request.TestType)

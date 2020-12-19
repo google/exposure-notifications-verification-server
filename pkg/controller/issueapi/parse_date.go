@@ -17,7 +17,13 @@ package issueapi
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
 type dateParseSettings struct {
@@ -48,6 +54,43 @@ func init() {
 	if err != nil {
 		panic("should have found UTC")
 	}
+}
+
+func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseSettings) (*time.Time, *issueResult) {
+	if d == "" {
+		return nil, nil
+	}
+
+	parsed, err := time.Parse(project.RFC3339Date, d)
+	if err != nil {
+		return nil, &issueResult{
+			ObsBlame:    observability.BlameClient,
+			ObsResult:   observability.ResultError(parseSettings.ParseError),
+			HTTPCode:    http.StatusBadRequest,
+			errorReturn: api.Errorf("failed to process %s date: %v", parseSettings.Name, err).WithCode(api.ErrUnparsableRequest),
+		}
+	}
+	// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+	maxDate := timeutils.UTCMidnight(time.Now())
+	minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+
+	validatedDate, err := validateDate(parsed, minDate, maxDate, tzOffset)
+	if err != nil {
+		err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
+			parseSettings.Name,
+			minDate.Format(project.RFC3339Date),
+			maxDate.Format(project.RFC3339Date),
+			parsed.Format(project.RFC3339Date),
+		)
+		return nil, &issueResult{
+			ObsBlame:    observability.BlameClient,
+			ObsResult:   observability.ResultError(parseSettings.ValidateError),
+			HTTPCode:    http.StatusBadRequest,
+			errorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
+		}
+	}
+
+	return validatedDate, nil
 }
 
 // validateDate validates the date given -- returning the time or an error.
