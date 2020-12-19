@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package testconfig defines global test helpers for the entire project,
+// but avoids dependance on internal/routes for starting a server.
 package testconfig
 
 import (
