@@ -55,7 +55,6 @@ var (
 	ErrCodeAlreadyExpired = errors.New("code already expired")
 	ErrCodeAlreadyClaimed = errors.New("code already claimed")
 	ErrCodeTooShort       = errors.New("verification code is too short")
-	ErrTestTooOld         = errors.New("test date is older than the maximum age")
 )
 
 // VerificationCode represents a verification code in the database.

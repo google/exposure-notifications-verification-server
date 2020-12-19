@@ -123,7 +123,6 @@ func TestSubject(t *testing.T) {
 func TestIssueToken(t *testing.T) {
 	t.Parallel()
 
-	codeAge := time.Hour
 	symptomDate := timeutils.UTCMidnight(time.Now())
 	wrongSymptomDate := symptomDate.Add(-48 * time.Hour)
 
@@ -304,7 +303,7 @@ func TestIssueToken(t *testing.T) {
 				code = verification.LongCode
 			}
 
-			if err := db.SaveVerificationCode(verification, codeAge); err != nil {
+			if err := db.SaveVerificationCode(verification, realm); err != nil {
 				t.Fatalf("error creating verification code: %v", err)
 			}
 
