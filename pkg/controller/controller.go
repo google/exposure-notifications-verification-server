@@ -28,6 +28,7 @@ import (
 )
 
 var (
+	apiErrorBadRequest   = api.Errorf("bad request")
 	apiErrorUnauthorized = api.Errorf("unauthorized")
 	apiErrorMissingRealm = api.Errorf("missing realm")
 
@@ -131,6 +132,21 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 		h.RenderJSON(w, http.StatusUnauthorized, apiErrorUnauthorized)
 	default:
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	}
+}
+
+// BadRequest indicates the client sent an invalid request.
+func BadRequest(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+	accept := strings.Split(r.Header.Get("Accept"), ",")
+	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
+
+	switch {
+	case prefixInList(accept, ContentTypeHTML):
+		h.RenderHTMLStatus(w, http.StatusBadRequest, "400", nil)
+	case prefixInList(accept, ContentTypeJSON):
+		h.RenderJSON(w, http.StatusBadRequest, apiErrorBadRequest)
+	default:
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 	}
 }
 
