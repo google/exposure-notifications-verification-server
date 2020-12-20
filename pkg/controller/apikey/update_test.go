@@ -17,6 +17,7 @@ package apikey_test
 import (
 	"context"
 	"fmt"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -24,9 +25,13 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleUpdate(t *testing.T) {
@@ -101,18 +106,37 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
-		defer done()
-
-		u := fmt.Sprintf("http://%s/realm/apikeys/100/edit", harness.Server.Addr())
-
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(u),
-			chromedp.WaitVisible(`body#unauthorized`, chromedp.ByQuery),
-		); err != nil {
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
 			t.Fatal(err)
+		}
+		c := apikey.New(harness.Cacher, harness.Database, h)
+
+		mux := mux.NewRouter()
+		mux.Handle("/{id}", c.HandleUpdate())
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       &database.Realm{},
+			User:        &database.User{},
+			Permissions: rbac.APIKeyWrite,
+		})
+
+		r := httptest.NewRequest("GET", "/100", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 401; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "unauthorized"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})
 
