@@ -27,90 +27,95 @@ import (
 
 const maxBatchSize = 10
 
-// HandleBatchIssue shows the page for batch-issuing codes.
+// HandleBatchIssue responds to the /batch-issue API for issuing verification codes
 func (c *Controller) HandleBatchIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if c.config.IsMaintenanceMode() {
-			c.h.RenderJSON(w, http.StatusTooManyRequests,
-				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
-			return
+		if result := c.handleBatchIssueFn(w, r); result != nil {
+			recordObservability(r.Context(), result)
 		}
-		ctx := r.Context()
-
-		result := &issueResult{
-			httpCode:  http.StatusOK,
-			obsResult: observability.ResultOK(),
-		}
-		defer recordObservability(ctx, result)
-
-		var request api.BatchIssueCodeRequest
-		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
-			return
-		}
-
-		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
-		if err != nil {
-			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
-			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-			return
-		}
-
-		// Ensure bulk upload is enabled on this realm.
-		if !realm.AllowBulkUpload {
-			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
-			return
-		}
-
-		if membership != nil && !membership.Can(rbac.CodeBulkIssue) {
-			result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
-			controller.Unauthorized(w, r, c.h)
-			return
-		}
-
-		l := len(request.Codes)
-		if l > maxBatchSize {
-			result.obsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit [%d] exceeded", maxBatchSize))
-			return
-		}
-
-		results := c.issueMany(ctx, request.Codes, authApp, membership, realm)
-
-		httpCode := http.StatusOK
-		batchResp := &api.BatchIssueCodeResponse{}
-		batchResp.Codes = make([]*api.IssueCodeResponse, len(results))
-		errCount := 0
-
-		for i, result := range results {
-			singleResponse := result.issueCodeResponse()
-			batchResp.Codes[i] = singleResponse
-			if singleResponse.Error == "" {
-				continue
-			}
-
-			// If any issuance fails, the returned code is the code of the first failure
-			// and continue processing all codes.
-			errCount++
-			if httpCode == http.StatusOK {
-				httpCode = result.httpCode
-				batchResp.ErrorCode = singleResponse.ErrorCode
-			}
-		}
-
-		if errCount > 0 {
-			var sb strings.Builder
-			sb.WriteString(fmt.Sprintf("Failed to issue %d codes.", errCount))
-			if succeeded := len(request.Codes) - errCount; succeeded > 0 {
-				sb.WriteString(fmt.Sprintf(" Issued %d codes successfully.", succeeded))
-			}
-			sb.WriteString("See each error status in the codes array.")
-			batchResp.Error = sb.String()
-		}
-
-		c.h.RenderJSON(w, httpCode, batchResp)
-		return
 	})
+}
+
+func (c *Controller) handleBatchIssueFn(w http.ResponseWriter, r *http.Request) *issueResult {
+	if c.config.IsMaintenanceMode() {
+		c.h.RenderJSON(w, http.StatusTooManyRequests,
+			api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+		return nil
+	}
+	ctx := r.Context()
+
+	result := &issueResult{
+		httpCode:  http.StatusOK,
+		obsResult: observability.ResultOK(),
+	}
+
+	var request api.BatchIssueCodeRequest
+	if err := controller.BindJSON(w, r, &request); err != nil {
+		result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+		c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
+		return result
+	}
+
+	authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
+	if err != nil {
+		result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+		c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
+		return result
+	}
+
+	// Ensure bulk upload is enabled on this realm.
+	if !realm.AllowBulkUpload {
+		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
+		return result
+	}
+
+	if membership != nil && !membership.Can(rbac.CodeBulkIssue) {
+		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+		controller.Unauthorized(w, r, c.h)
+		return result
+	}
+
+	l := len(request.Codes)
+	if l > maxBatchSize {
+		result.obsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
+		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit [%d] exceeded", maxBatchSize))
+		return result
+	}
+
+	results := c.issueMany(ctx, request.Codes, authApp, membership, realm)
+
+	httpCode := http.StatusOK
+	batchResp := &api.BatchIssueCodeResponse{}
+	batchResp.Codes = make([]*api.IssueCodeResponse, len(results))
+	errCount := 0
+
+	for i, result := range results {
+		singleResponse := result.issueCodeResponse()
+		batchResp.Codes[i] = singleResponse
+		if singleResponse.Error == "" {
+			continue
+		}
+
+		// If any issuance fails, the returned code is the code of the first failure
+		// and continue processing all codes.
+		errCount++
+		if httpCode == http.StatusOK {
+			httpCode = result.httpCode
+			batchResp.ErrorCode = singleResponse.ErrorCode
+		}
+	}
+
+	if errCount > 0 {
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("Failed to issue %d codes.", errCount))
+		if succeeded := len(request.Codes) - errCount; succeeded > 0 {
+			sb.WriteString(fmt.Sprintf(" Issued %d codes successfully.", succeeded))
+		}
+		sb.WriteString("See each error status in the codes array.")
+		batchResp.Error = sb.String()
+	}
+
+	c.h.RenderJSON(w, httpCode, batchResp)
+	return result
 }

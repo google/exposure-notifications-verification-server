@@ -23,46 +23,54 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
+// HandleIssue responds to the /issue API for issuing verification codes
 func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if c.config.IsMaintenanceMode() {
-			c.h.RenderJSON(w, http.StatusTooManyRequests,
-				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
-			return
+		if result := c.handleIssueFn(w, r); result != nil {
+			recordObservability(r.Context(), result)
 		}
-
-		ctx := r.Context()
-		result := &issueResult{
-			httpCode:  http.StatusOK,
-			obsResult: observability.ResultOK(),
-		}
-		defer recordObservability(ctx, result)
-
-		var request api.IssueCodeRequest
-		if err := controller.BindJSON(w, r, &request); err != nil {
-			result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
-			return
-		}
-
-		authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
-		if err != nil {
-			result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
-			c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-			return
-		}
-
-		result = c.issueOne(ctx, &request, authApp, membership, realm)
-		resp := result.issueCodeResponse()
-		if resp.Error != "" {
-			if result.httpCode == http.StatusInternalServerError {
-				controller.InternalError(w, r, c.h, errors.New(resp.Error))
-				return
-			}
-			c.h.RenderJSON(w, result.httpCode, resp)
-			return
-		}
-
-		c.h.RenderJSON(w, http.StatusOK, resp)
 	})
+}
+
+func (c *Controller) handleIssueFn(w http.ResponseWriter, r *http.Request) *issueResult {
+	if c.config.IsMaintenanceMode() {
+		c.h.RenderJSON(w, http.StatusTooManyRequests,
+			api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+		return nil
+	}
+
+	ctx := r.Context()
+	result := &issueResult{
+		httpCode:  http.StatusOK,
+		obsResult: observability.ResultOK(),
+	}
+
+	var request api.IssueCodeRequest
+	if err := controller.BindJSON(w, r, &request); err != nil {
+		result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+		c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
+		return result
+	}
+
+	authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
+	if err != nil {
+		result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+		c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
+		return result
+	}
+
+	res := c.issueOne(ctx, &request, authApp, membership, realm)
+	result.httpCode = res.httpCode
+	resp := res.issueCodeResponse()
+	if resp.Error != "" {
+		if result.httpCode == http.StatusInternalServerError {
+			controller.InternalError(w, r, c.h, errors.New(resp.Error))
+			return result
+		}
+		c.h.RenderJSON(w, result.httpCode, resp)
+		return result
+	}
+
+	c.h.RenderJSON(w, http.StatusOK, resp)
+	return result
 }
