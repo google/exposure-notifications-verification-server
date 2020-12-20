@@ -35,6 +35,9 @@ func BindJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
 	if !IsJSONContentType(r) {
 		return fmt.Errorf("content-type is not application/json")
 	}
+	if r.Body == nil {
+		return fmt.Errorf("no body set")
+	}
 
 	defer r.Body.Close()
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
