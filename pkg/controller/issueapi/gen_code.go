@@ -115,16 +115,19 @@ func (c *Controller) CommitCode(ctx context.Context, vCode *database.Verificatio
 		vCode.LongCode = longCode
 
 		// If a verification code already exists, it will fail to save, and we retry.
-		if err = c.db.SaveVerificationCode(vCode, realm); err != nil {
-			if strings.Contains(err.Error(), database.VerCodesCodeUniqueIndex) || strings.Contains(err.Error(), database.VerCodesLongCodeUniqueIndex) {
-				continue
-			}
-			break // not retryable
-		} else {
+		err = c.db.SaveVerificationCode(vCode, realm)
+		switch {
+		case err == nil:
 			// These are stored encrypted, but here we need to tell the user about them.
 			vCode.Code = code
 			vCode.LongCode = longCode
-			break // successful save, nil error, break out.
+			return nil // success
+		case strings.Contains(err.Error(), database.VerCodesCodeUniqueIndex):
+			continue
+		case strings.Contains(err.Error(), database.VerCodesLongCodeUniqueIndex):
+			continue
+		default:
+			break // err not retryable
 		}
 	}
 	if err != nil {
