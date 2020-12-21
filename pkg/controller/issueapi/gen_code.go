@@ -71,7 +71,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 				return &issueResult{
 					obsResult:   observability.ResultError("QUOTA_EXCEEDED"),
 					httpCode:    http.StatusTooManyRequests,
-					errorReturn: api.Errorf("exceeded realm quota, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
+					errorReturn: api.Errorf("exceeded daily realm quota configured from abuse prevention, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
 				}
 			}
 		}
