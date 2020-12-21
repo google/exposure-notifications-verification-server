@@ -46,7 +46,6 @@ func (c *Controller) HandleShow() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
 
 		// Pull the authorized app from the id.

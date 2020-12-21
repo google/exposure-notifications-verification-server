@@ -56,7 +56,7 @@
           </thead>
           <tbody>
           {{range $apps}}
-            <tr>
+            <tr id="mobileapp-{{.ID}}">
               <td class="text-center">
                 {{if .DeletedAt}}
                   <span class="oi oi-circle-x text-danger"
@@ -72,15 +72,17 @@
               {{if $canWrite}}
                 <td class="text-center">
                   {{if .DeletedAt}}
-                  <a href="/realm/mobile-apps/{{.ID}}/enable" class="d-block text-danger"
+                  <a href="/realm/mobile-apps/{{.ID}}/enable" id="enable-mobileapp-{{.ID}}"
+                    class="d-block text-danger"
                     data-method="patch"
-                    data-confirm="Are you sure you want to restore '{{.Name}}'?"
+                    data-confirm="Are you sure you want to enable '{{.Name}}'?"
                     data-toggle="tooltip"
-                    title="Restore this mobile app">
+                    title="Enable this mobile app">
                     <span class="oi oi-loop-circular" aria-hidden="true"></span>
                   </a>
                   {{else}}
-                  <a href="/realm/mobile-apps/{{.ID}}/disable" class="d-block text-danger"
+                  <a href="/realm/mobile-apps/{{.ID}}/disable" id="disable-mobileapp-{{.ID}}"
+                    class="d-block text-danger"
                     data-method="patch"
                     data-confirm="Are you sure you want to disable '{{.Name}}'?"
                     data-toggle="tooltip"

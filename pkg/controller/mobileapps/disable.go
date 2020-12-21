@@ -68,7 +68,7 @@ func (c *Controller) HandleDisable() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully disabled mobile app '%v'", app.Name)
+		flash.Alert("Successfully disabled mobile app %q", app.Name)
 		http.Redirect(w, r, "/realm/mobile-apps", http.StatusSeeOther)
 	})
 }

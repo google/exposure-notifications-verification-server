@@ -66,7 +66,7 @@ func (c *Controller) HandleEnable() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully enabled mobile app '%v'", app.Name)
+		flash.Alert("Successfully enabled mobile app %q", app.Name)
 		http.Redirect(w, r, "/realm/mobile-apps", http.StatusSeeOther)
 	})
 }

@@ -35,13 +35,13 @@
       <div class="card-body">
         <dl class="mb-n1">
           <dt>App name</dt>
-          <dd>{{$app.Name}}</dd>
+          <dd id="mobileapps-name">{{$app.Name}}</dd>
 
           <dt>AppStore link</dt>
-          <dd><a href="{{$app.URL}}" rel="noreferrer" target="_blank">{{$app.URL}}</a></dd>
+          <dd id="mobileapps-url"><a href="{{$app.URL}}" rel="noreferrer" target="_blank">{{$app.URL}}</a></dd>
 
           <dt>OS</dt>
-          <dd>
+          <dd id="mobileapps-os">
             {{if (eq $app.OS .iOS)}}
               iOS
             {{else if (eq $app.OS .android)}}
@@ -51,15 +51,15 @@
 
           {{if (eq $app.OS .iOS)}}
             <dt>Application ID</dt>
-            <dd class="text-monospace">{{$app.AppID}}</dd>
+            <dd id="mobileapps-app-id" class="text-monospace">{{$app.AppID}}</dd>
           {{end}}
 
           {{if (eq $app.OS .android)}}
             <dt>Package name</dt>
-            <dd class="text-monospace">{{$app.AppID}}</dd>
+            <dd id="mobileapps-package-name" class="text-monospace">{{$app.AppID}}</dd>
 
             <dt>SHA</dt>
-            <dd class="text-monospace">{{$app.SHA}}</dd>
+            <dd id="mobileapps-sha" class="text-monospace">{{$app.SHA}}</dd>
           {{end}}
         </dl>
       </div>
