@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/jinzhu/gorm"
@@ -40,6 +41,7 @@ func TestValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithRealm(ctx, realm)
 	realm.AllowedTestTypes = database.TestTypeConfirmed
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatalf("failed to save realm: %v", err)
@@ -61,8 +63,9 @@ func TestValidate(t *testing.T) {
 	authApp := &database.AuthorizedApp{
 		Model: gorm.Model{ID: 123},
 	}
-
+	ctx = controller.WithAuthorizedApp(ctx, authApp)
 	membership := &database.Membership{UserID: 456}
+	ctx = controller.WithMembership(ctx, membership)
 
 	c := issueapi.New(tc.Config, db, tc.RateLimiter, nil)
 
@@ -175,7 +178,7 @@ func TestValidate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			VerCode, result := c.BuildVerificationCode(ctx, &tc.request, authApp, membership, realm)
+			VerCode, result := c.BuildVerificationCode(ctx, &tc.request)
 			if VerCode != nil {
 				if tc.request.UUID != "" && tc.request.UUID != VerCode.UUID {
 					t.Errorf("expecting stable client-provided uuid. got %s, want %s", VerCode.UUID, tc.request.UUID)

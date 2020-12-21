@@ -15,9 +15,11 @@
 package issueapi
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -27,63 +29,95 @@ import (
 
 const maxBatchSize = 10
 
-// HandleBatchIssue responds to the /batch-issue API for issuing verification codes
-func (c *Controller) HandleBatchIssue() http.Handler {
+// HandleBatchIssueAPI responds to the /batch-issue API for issuing verification codes
+func (c *Controller) HandleBatchIssueAPI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if result := c.HandleBatchIssueFn(w, r); result != nil {
-			recordObservability(r.Context(), result)
+		if c.config.IsMaintenanceMode() {
+			c.h.RenderJSON(w, http.StatusTooManyRequests,
+				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+			return
+		}
+
+		startTime := time.Now()
+		if result := c.BatchIssueWithAPIAuth(w, r); result != nil {
+			recordObservability(r.Context(), startTime, result)
 		}
 	})
 }
 
-func (c *Controller) HandleBatchIssueFn(w http.ResponseWriter, r *http.Request) *IssueResult {
-	if c.config.IsMaintenanceMode() {
-		c.h.RenderJSON(w, http.StatusTooManyRequests,
-			api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
-		return nil
-	}
-	ctx := r.Context()
+// HandleBatchIssueUI responds to the /batch-issue API for issuing verification codes
+func (c *Controller) HandleBatchIssueUI() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c.config.IsMaintenanceMode() {
+			c.h.RenderJSON(w, http.StatusTooManyRequests,
+				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+			return
+		}
 
+		startTime := time.Now()
+		if result := c.BatchIssueWithUIAuth(w, r); result != nil {
+			recordObservability(r.Context(), startTime, result)
+		}
+	})
+}
+
+func (c *Controller) BatchIssueWithAPIAuth(w http.ResponseWriter, r *http.Request) *IssueResult {
+	ctx := r.Context()
 	result := &IssueResult{
 		HTTPCode:  http.StatusOK,
 		obsResult: observability.ResultOK(),
+	}
+
+	if authorizedApp := controller.AuthorizedAppFromContext(ctx); authorizedApp == nil {
+		result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+		controller.MissingAuthorizedApp(w, r, c.h)
+		return result
+	}
+
+	c.decodeAndBulkIssue(ctx, w, r, result)
+	return result
+}
+
+func (c *Controller) BatchIssueWithUIAuth(w http.ResponseWriter, r *http.Request) *IssueResult {
+	ctx := r.Context()
+	result := &IssueResult{
+		HTTPCode:  http.StatusOK,
+		obsResult: observability.ResultOK(),
+	}
+
+	if membership := controller.MembershipFromContext(ctx); membership == nil || !membership.Can(rbac.CodeBulkIssue) {
+		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ALLOWED")
+		controller.Unauthorized(w, r, c.h)
+		return result
+	}
+
+	c.decodeAndBulkIssue(ctx, w, r, result)
+	return result
+}
+
+func (c *Controller) decodeAndBulkIssue(ctx context.Context, w http.ResponseWriter, r *http.Request, result *IssueResult) {
+	// Ensure bulk upload is enabled on this realm.
+	if currentRealm := controller.RealmFromContext(ctx); !currentRealm.AllowBulkUpload {
+		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
+		return
 	}
 
 	var request api.BatchIssueCodeRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
 		result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
-		return result
-	}
-
-	authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
-	if err != nil {
-		result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
-		c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
-		return result
-	}
-
-	// Ensure bulk upload is enabled on this realm.
-	if !realm.AllowBulkUpload {
-		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
-		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
-		return result
-	}
-
-	if membership != nil && !membership.Can(rbac.CodeBulkIssue) {
-		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ALLOWED")
-		controller.Unauthorized(w, r, c.h)
-		return result
+		return
 	}
 
 	l := len(request.Codes)
 	if l > maxBatchSize {
 		result.obsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit [%d] exceeded", maxBatchSize))
-		return result
+		return
 	}
 
-	results := c.IssueMany(ctx, request.Codes, authApp, membership, realm)
+	results := c.IssueMany(ctx, request.Codes)
 
 	HTTPCode := http.StatusOK
 	batchResp := &api.BatchIssueCodeResponse{}
@@ -117,5 +151,5 @@ func (c *Controller) HandleBatchIssueFn(w http.ResponseWriter, r *http.Request) 
 	}
 
 	c.h.RenderJSON(w, HTTPCode, batchResp)
-	return result
+	return
 }

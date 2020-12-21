@@ -15,8 +15,10 @@
 package issueapi
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -24,60 +26,92 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
-// HandleIssue responds to the /issue API for issuing verification codes
-func (c *Controller) HandleIssue() http.Handler {
+// HandleIssueAPI responds to the /issue API for issuing verification codes
+func (c *Controller) HandleIssueAPI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if result := c.HandleIssueFn(w, r); result != nil {
-			recordObservability(r.Context(), result)
+		if c.config.IsMaintenanceMode() {
+			c.h.RenderJSON(w, http.StatusTooManyRequests,
+				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+			return
+		}
+
+		startTime := time.Now()
+		if result := c.IssueWithAPIAuth(w, r); result != nil {
+			recordObservability(r.Context(), startTime, result)
 		}
 	})
 }
 
-func (c *Controller) HandleIssueFn(w http.ResponseWriter, r *http.Request) *IssueResult {
-	if c.config.IsMaintenanceMode() {
-		c.h.RenderJSON(w, http.StatusTooManyRequests,
-			api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
-		return nil
-	}
+// HandleIssueUI responds to the /issue API for issuing verification codes
+func (c *Controller) HandleIssueUI() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c.config.IsMaintenanceMode() {
+			c.h.RenderJSON(w, http.StatusTooManyRequests,
+				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
+			return
+		}
 
+		startTime := time.Now()
+		if result := c.IssueWithUIAuth(w, r); result != nil {
+			recordObservability(r.Context(), startTime, result)
+		}
+	})
+}
+
+func (c *Controller) IssueWithAPIAuth(w http.ResponseWriter, r *http.Request) *IssueResult {
 	ctx := r.Context()
 	result := &IssueResult{
 		HTTPCode:  http.StatusOK,
 		obsResult: observability.ResultOK(),
 	}
 
-	var request api.IssueCodeRequest
-	if err := controller.BindJSON(w, r, &request); err != nil {
-		result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
-		c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
-		return result
-	}
-
-	authApp, membership, realm, err := c.getAuthorizationFromContext(ctx)
-	if err != nil {
+	if authorizedApp := controller.AuthorizedAppFromContext(ctx); authorizedApp == nil {
 		result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
-		c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
+		controller.MissingAuthorizedApp(w, r, c.h)
 		return result
 	}
 
-	if membership != nil && !membership.Can(rbac.CodeIssue) {
+	c.decodeAndIssue(ctx, w, r, result)
+	return result
+}
+
+func (c *Controller) IssueWithUIAuth(w http.ResponseWriter, r *http.Request) *IssueResult {
+	ctx := r.Context()
+	result := &IssueResult{
+		HTTPCode:  http.StatusOK,
+		obsResult: observability.ResultOK(),
+	}
+
+	if membership := controller.MembershipFromContext(ctx); membership == nil || !membership.Can(rbac.CodeIssue) {
 		result.obsResult = observability.ResultError("ISSUE_NOT_ALLOWED")
 		controller.Unauthorized(w, r, c.h)
 		return result
 	}
 
-	res := c.IssueOne(ctx, &request, authApp, membership, realm)
+	c.decodeAndIssue(ctx, w, r, result)
+	return result
+}
+
+func (c *Controller) decodeAndIssue(ctx context.Context, w http.ResponseWriter, r *http.Request, result *IssueResult) {
+	var request api.IssueCodeRequest
+	if err := controller.BindJSON(w, r, &request); err != nil {
+		result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+		c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
+		return
+	}
+
+	res := c.IssueOne(ctx, &request)
 	result.HTTPCode = res.HTTPCode
 	resp := res.IssueCodeResponse()
 	if resp.Error != "" {
 		if result.HTTPCode == http.StatusInternalServerError {
 			controller.InternalError(w, r, c.h, errors.New(resp.Error))
-			return result
+			return
 		}
 		c.h.RenderJSON(w, result.HTTPCode, resp)
-		return result
+		return
 	}
 
 	c.h.RenderJSON(w, http.StatusOK, resp)
-	return result
+	return
 }

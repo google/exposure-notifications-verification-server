@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -37,6 +38,7 @@ func TestIssueOne(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithRealm(ctx, realm)
 
 	existingCode := &database.VerificationCode{
 		RealmID:       realm.ID,
@@ -83,7 +85,7 @@ func TestIssueOne(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := c.IssueOne(ctx, &tc.request, nil, nil, realm)
+			result := c.IssueOne(ctx, &tc.request)
 			resp := result.IssueCodeResponse()
 
 			if result.HTTPCode != tc.httpStatusCode {

@@ -25,8 +25,10 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
@@ -38,52 +40,17 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestIssueMaintenanceMode(t *testing.T) {
-	t.Parallel()
-	tc := envstest.NewServerConfig(t, testDatabaseInstance)
-	ctx := context.Background()
-	r, err := render.New(ctx, "", true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	c := issueapi.New(tc.Config, tc.Database, tc.RateLimiter, r)
-	tc.Config.MaintenanceMode = true
-
-	cases := []struct {
-		name string
-		fn   func(http.ResponseWriter, *http.Request) *issueapi.IssueResult
-	}{
-		{
-			name: "issue",
-			fn:   c.HandleIssueFn,
-		},
-		{
-			name: "issue batch",
-			fn:   c.HandleBatchIssueFn,
-		},
-	}
-
-	for _, tc := range cases {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			recorder := httptest.NewRecorder()
-			tc.fn(recorder, nil)
-
-			result := recorder.Result()
-			if result.StatusCode != http.StatusTooManyRequests {
-				t.Errorf("incorrect error code. got %d, want %d", result.StatusCode, http.StatusTooManyRequests)
-			}
-		})
-	}
-}
-
 func TestIssueMalformed(t *testing.T) {
 	t.Parallel()
 	tc := envstest.NewServerConfig(t, testDatabaseInstance)
 	ctx := context.Background()
+
+	realm, err := tc.Database.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx = controller.WithRealm(ctx, realm)
+
 	r, err := render.New(ctx, "", true)
 	if err != nil {
 		t.Fatal(err)
@@ -91,34 +58,51 @@ func TestIssueMalformed(t *testing.T) {
 	c := issueapi.New(tc.Config, tc.Database, tc.RateLimiter, r)
 
 	cases := []struct {
-		name string
-		fn   func(http.ResponseWriter, *http.Request) *issueapi.IssueResult
-		req  interface{}
-		code int
+		name       string
+		membership database.Membership
+		fn         func(http.ResponseWriter, *http.Request) *issueapi.IssueResult
+		req        interface{}
+		code       int
 	}{
 		{
-			name: "issue",
-			fn:   c.HandleIssueFn,
+			name: "issue wrong request type",
+			membership: database.Membership{
+				UserID:      456,
+				Permissions: rbac.CodeIssue,
+			},
+			fn:   c.IssueWithUIAuth,
 			req:  api.VerifyCodeRequest{}, // not issue
 			code: http.StatusBadRequest,
 		},
 		{
-			name: "issue batch",
-			fn:   c.HandleBatchIssueFn,
+			name: "issue batch wrong request type",
+			membership: database.Membership{
+				UserID:      456,
+				Permissions: rbac.CodeBulkIssue,
+			},
+			fn:   c.BatchIssueWithUIAuth,
 			req:  api.VerifyCodeRequest{}, // not issue
 			code: http.StatusBadRequest,
 		},
 		{
-			name: "issue",
-			fn:   c.HandleIssueFn,
+			name: "issue no permissions",
+			membership: database.Membership{
+				UserID: 456,
+				// no permissions
+			},
+			fn: c.IssueWithUIAuth,
 			req: api.IssueCodeRequest{
 				Phone: "something",
 			},
 			code: http.StatusUnauthorized,
 		},
 		{
-			name: "issue batch",
-			fn:   c.HandleBatchIssueFn,
+			name: "issue batch no permissions",
+			membership: database.Membership{
+				UserID: 456,
+				// no permissions
+			},
+			fn:   c.BatchIssueWithUIAuth,
 			req:  api.BatchIssueCodeRequest{},
 			code: http.StatusUnauthorized,
 		},
@@ -130,6 +114,7 @@ func TestIssueMalformed(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			localCtx := controller.WithMembership(ctx, &tc.membership)
 			var reader io.Reader
 			if tc.req != nil {
 				b, err := json.Marshal(tc.req)
@@ -138,7 +123,7 @@ func TestIssueMalformed(t *testing.T) {
 				}
 				reader = bytes.NewBuffer(b)
 			}
-			req, err := http.NewRequest("GET", "http://example.com", reader)
+			req, err := http.NewRequestWithContext(localCtx, "GET", "http://example.com", reader)
 			req.Header.Add("content-type", "application/json")
 			if err != nil {
 				t.Fatal(err)

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"go.opencensus.io/tag"
 )
@@ -51,18 +52,17 @@ func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
 	}
 }
 
-func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *IssueResult {
-	results := c.IssueMany(ctx, []*api.IssueCodeRequest{request}, authApp, membership, realm)
+func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
+	results := c.IssueMany(ctx, []*api.IssueCodeRequest{request})
 	return results[0]
 }
 
-func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) []*IssueResult {
+func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
+	realm := controller.RealmFromContext(ctx)
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, req := range requests {
-		vCode, result := c.BuildVerificationCode(ctx, req, authApp, membership, realm)
+		vCode, result := c.BuildVerificationCode(ctx, req)
 		if result != nil {
 			results[i] = result
 			continue

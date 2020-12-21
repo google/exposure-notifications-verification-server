@@ -24,15 +24,16 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
 // BuildVerificationCode populates and validates a code from an issue request.
-func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *IssueResult) {
+func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.IssueCodeRequest) (*database.VerificationCode, *IssueResult) {
 	logger := logging.FromContext(ctx).Named("issueapi.buildVerificationCode")
+	realm := controller.RealmFromContext(ctx)
 
 	now := time.Now().UTC()
 	vCode := &database.VerificationCode{
@@ -42,10 +43,10 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.Iss
 		ExpiresAt:         now.Add(realm.CodeDuration.Duration),
 		LongExpiresAt:     now.Add(realm.LongCodeDuration.Duration),
 	}
-	if membership != nil {
+	if membership := controller.MembershipFromContext(ctx); membership != nil {
 		vCode.IssuingUserID = membership.UserID
 	}
-	if authApp != nil {
+	if authApp := controller.AuthorizedAppFromContext(ctx); authApp != nil {
 		vCode.IssuingAppID = authApp.ID
 	}
 
