@@ -75,8 +75,8 @@ func TestCommitCode(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	tc := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := tc.Database
+	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := testCfg.Database
 
 	realm, err := db.FindRealm(1)
 	if err != nil {
@@ -84,7 +84,7 @@ func TestCommitCode(t *testing.T) {
 	}
 	ctx = controller.WithRealm(ctx, realm)
 
-	c := issueapi.New(tc.Config, db, tc.RateLimiter, nil)
+	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)

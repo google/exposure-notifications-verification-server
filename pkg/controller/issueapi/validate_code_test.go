@@ -34,8 +34,8 @@ func TestValidate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	tc := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := tc.Database
+	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := testCfg.Database
 
 	realm, err := db.FindRealm(1)
 	if err != nil {
@@ -63,12 +63,12 @@ func TestValidate(t *testing.T) {
 	membership := &database.Membership{UserID: 456}
 	ctx = controller.WithMembership(ctx, membership)
 
-	c := issueapi.New(tc.Config, db, tc.RateLimiter, nil)
+	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 
 	maxDate := timeutils.UTCMidnight(time.Now())
-	minDate := timeutils.Midnight(maxDate.Add(-1 * tc.Config.GetAllowedSymptomAge()))
+	minDate := timeutils.Midnight(maxDate.Add(-1 * testCfg.Config.GetAllowedSymptomAge()))
 
 	cases := []struct {
 		name           string
