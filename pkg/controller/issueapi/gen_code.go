@@ -116,11 +116,10 @@ func (c *Controller) CommitCode(ctx context.Context, vCode *database.Verificatio
 
 		// If a verification code already exists, it will fail to save, and we retry.
 		if err = c.db.SaveVerificationCode(vCode, realm); err != nil {
-			if strings.Contains(err.Error(), database.VerCodeUUIDUniqueIndex) {
-				logger.Warnf("duplicate OTP found: %v", err)
-				break // not retryable
+			if strings.Contains(err.Error(), database.VerCodesCodeUniqueIndex) || strings.Contains(err.Error(), database.VerCodesLongCodeUniqueIndex) {
+				continue
 			}
-			continue
+			break // not retryable
 		} else {
 			// These are stored encrypted, but here we need to tell the user about them.
 			vCode.Code = code

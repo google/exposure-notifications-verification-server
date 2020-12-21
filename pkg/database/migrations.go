@@ -28,7 +28,8 @@ import (
 )
 
 const initState = "00000-Init"
-const VerCodeUUIDUniqueIndex = "idx_vercode_uuid_unique"
+const VerCodesLongCodeUniqueIndex = "uix_verification_codes_code"
+const VerCodesCodeUniqueIndex = "uix_verification_codes_long_code"
 
 func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 	logger := logging.FromContext(ctx)
@@ -591,7 +592,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				sqls := []string{
 					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_code VARCHAR(20)",
 					"UPDATE verification_codes SET long_code = code",
-					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_long_code ON verification_codes(long_code)",
+					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes(long_code)", VerCodesLongCodeUniqueIndex),
 					"ALTER TABLE verification_codes ALTER COLUMN long_code SET NOT NULL",
 					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_expires_at TIMESTAMPTZ",
 					"UPDATE verification_codes SET long_expires_at = expires_at",
@@ -1505,8 +1506,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					"ALTER TABLE verification_codes ALTER COLUMN long_code DROP NOT NULL",
 					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_code ON verification_codes (realm_id,code) WHERE code != ''",
 					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_long_code ON verification_codes (realm_id,long_code) WHERE long_code != ''",
-					"DROP INDEX IF EXISTS uix_verification_codes_code",
-					"DROP INDEX IF EXISTS uix_verification_codes_long_code",
+					fmt.Sprintf("DROP INDEX IF EXISTS %s", VerCodesLongCodeUniqueIndex),
+					fmt.Sprintf("DROP INDEX IF EXISTS %s", VerCodesLongCodeUniqueIndex),
 				}
 
 				for _, sql := range sqls {
@@ -1576,7 +1577,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`DROP INDEX IF EXISTS idx_vercode_uuid`,
-					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes(uuid)", VerCodeUUIDUniqueIndex),
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_vercode_uuid_unique ON verification_codes(uuid)`,
 				}
 
 				for _, sql := range sqls {
@@ -1588,7 +1589,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				sqls := []string{
-					fmt.Sprintf("DROP INDEX IF EXISTS %s", VerCodeUUIDUniqueIndex),
+					`DROP INDEX IF EXISTS idx_vercode_uuid_unique`,
 					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
 				}
 
