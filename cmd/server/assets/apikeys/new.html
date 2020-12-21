@@ -22,6 +22,8 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
+        {{template "errorSummary" $authApp}}
+
         <form method="POST" action="/realm/apikeys">
           {{ .csrfField }}
 

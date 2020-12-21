@@ -98,10 +98,7 @@ func (a *AuthorizedApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("type", "is invalid")
 	}
 
-	if msgs := a.ErrorMessages(); len(msgs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
-	}
-	return nil
+	return a.ErrorOrNil()
 }
 
 func (a *AuthorizedApp) IsAdminType() bool {
@@ -253,7 +250,7 @@ func (db *Database) SaveAuthorizedApp(a *AuthorizedApp, actor Auditable) error {
 
 		// Save the app
 		if err := tx.Unscoped().Save(a).Error; err != nil {
-			return fmt.Errorf("failed to save API key: %w", err)
+			return err
 		}
 
 		// Brand new app?
