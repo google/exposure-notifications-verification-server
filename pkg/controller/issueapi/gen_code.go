@@ -75,15 +75,6 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 	}
 
 	if err := c.commitCode(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
-		// GormV1 doesn't have a good way to match db errors
-		if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
-			return &issueResult{
-				obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-				httpCode:    http.StatusConflict,
-				errorReturn: api.Errorf("code for %s already exists", vCode.UUID).WithCode(api.ErrUUIDAlreadyExists),
-			}
-		}
-
 		logger.Errorw("failed to issue code", "error", err)
 		return &issueResult{
 			obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),

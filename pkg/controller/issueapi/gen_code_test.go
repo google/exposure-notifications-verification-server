@@ -192,18 +192,6 @@ func TestIssueCode(t *testing.T) {
 			httpStatusCode: http.StatusOK,
 		},
 		{
-			name: "conflict",
-			vCode: &database.VerificationCode{
-				TestType:      "confirmed",
-				SymptomDate:   &symptomDate,
-				UUID:          existingCode.UUID,
-				ExpiresAt:     expires,
-				LongExpiresAt: expires,
-			},
-			responseErr:    api.ErrUUIDAlreadyExists,
-			httpStatusCode: http.StatusConflict,
-		},
-		{
 			name:  "db rejects",
 			vCode: &database.VerificationCode{
 				// type, date, and expiry are required
