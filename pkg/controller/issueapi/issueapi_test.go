@@ -67,7 +67,6 @@ func TestIssueMalformed(t *testing.T) {
 		{
 			name: "issue wrong request type",
 			membership: database.Membership{
-				UserID:      456,
 				Permissions: rbac.CodeIssue,
 			},
 			fn:   c.IssueWithUIAuth,
@@ -77,7 +76,6 @@ func TestIssueMalformed(t *testing.T) {
 		{
 			name: "issue batch wrong request type",
 			membership: database.Membership{
-				UserID:      456,
 				Permissions: rbac.CodeBulkIssue,
 			},
 			fn:   c.BatchIssueWithUIAuth,
@@ -85,9 +83,8 @@ func TestIssueMalformed(t *testing.T) {
 			code: http.StatusBadRequest,
 		},
 		{
-			name: "issue no permissions",
+			name:       "issue no permissions",
 			membership: database.Membership{
-				UserID: 456,
 				// no permissions
 			},
 			fn: c.IssueWithUIAuth,
@@ -97,14 +94,33 @@ func TestIssueMalformed(t *testing.T) {
 			code: http.StatusUnauthorized,
 		},
 		{
-			name: "issue batch no permissions",
+			name:       "issue batch no permissions",
 			membership: database.Membership{
-				UserID: 456,
 				// no permissions
 			},
 			fn:   c.BatchIssueWithUIAuth,
 			req:  api.BatchIssueCodeRequest{},
 			code: http.StatusUnauthorized,
+		},
+		{
+			name: "issue API wants authapp",
+			membership: database.Membership{
+				Permissions: rbac.CodeIssue,
+			},
+			fn: c.IssueWithAPIAuth,
+			req: api.IssueCodeRequest{
+				Phone: "something",
+			},
+			code: http.StatusInternalServerError, // unauthorized at middleware
+		},
+		{
+			name: "issue batch API wants authapp",
+			membership: database.Membership{
+				Permissions: rbac.CodeBulkIssue,
+			},
+			fn:   c.BatchIssueWithAPIAuth,
+			req:  api.BatchIssueCodeRequest{},
+			code: http.StatusInternalServerError, // unauthorized at middleware
 		},
 	}
 
