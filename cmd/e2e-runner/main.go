@@ -172,8 +172,8 @@ func realMain(ctx context.Context) error {
 		logger.Info("successfully cleaned up e2e test device key")
 	}()
 
-	e2eConfig.envstest.VerificationAdminAPIKey = adminKey
-	e2eConfig.envstest.VerificationAPIServerKey = deviceKey
+	e2eConfig.TestConfig.VerificationAdminAPIKey = adminKey
+	e2eConfig.TestConfig.VerificationAPIServerKey = deviceKey
 
 	// Create the router
 	r := mux.NewRouter()
