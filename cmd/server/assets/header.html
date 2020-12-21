@@ -203,6 +203,24 @@ aria-expanded="false" aria-label="Toggle navigation">
 {{end}}
 {{end}}
 
+{{define "errorSummary"}}
+{{if $errs := .Errors}}
+  <div class="alert alert-danger mb-4" role="alert">
+    <p>
+      The following errors occurred:
+    </p>
+
+    <ul class="mb-1">
+      {{range $k, $v := $errs}}
+        {{range $e := $v}}
+          <li><strong>{{$k}}</strong> {{$e}}</li>
+        {{end}}
+      {{end}}
+    </ul>
+  </div>
+{{end}}
+{{end}}
+
 {{define "beta-notice"}}
 <div class="alert alert-warning">
   <span class="oi oi-beaker"></span> This feature is still under active

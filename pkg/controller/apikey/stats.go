@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -37,8 +36,6 @@ func (c *Controller) HandleStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
-
-		logger := logging.FromContext(ctx).Named("apikey.HandleStats")
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -61,7 +58,6 @@ func (c *Controller) HandleStats() http.Handler {
 		authApp, err := currentRealm.FindAuthorizedApp(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
-				logger.Debugw("auth app does not exist", "id", vars["id"])
 				controller.Unauthorized(w, r, c.h)
 				return
 			}
