@@ -41,11 +41,7 @@ func TestValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx = controller.WithRealm(ctx, realm)
 	realm.AllowedTestTypes = database.TestTypeConfirmed
-	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatalf("failed to save realm: %v", err)
-	}
 
 	existingCode := &database.VerificationCode{
 		RealmID:       realm.ID,
@@ -178,16 +174,16 @@ func TestValidate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			VerCode, result := c.BuildVerificationCode(ctx, &tc.request)
-			if VerCode != nil {
-				if tc.request.UUID != "" && tc.request.UUID != VerCode.UUID {
-					t.Errorf("expecting stable client-provided uuid. got %s, want %s", VerCode.UUID, tc.request.UUID)
+			verCode, result := c.BuildVerificationCode(ctx, &tc.request, realm)
+			if verCode != nil {
+				if tc.request.UUID != "" && tc.request.UUID != verCode.UUID {
+					t.Errorf("expecting stable client-provided uuid. got %s, want %s", verCode.UUID, tc.request.UUID)
 				}
-				if tc.request.TestDate != "" && VerCode.TestDate == nil {
-					t.Errorf("No test date. got %s, want %s", VerCode.TestDate, tc.request.TestDate)
+				if tc.request.TestDate != "" && verCode.TestDate == nil {
+					t.Errorf("No test date. got %s, want %s", verCode.TestDate, tc.request.TestDate)
 				}
-				if tc.request.SymptomDate != "" && VerCode.SymptomDate == nil {
-					t.Errorf("No symptom date. got %s, want %s", VerCode.TestDate, tc.request.TestDate)
+				if tc.request.SymptomDate != "" && verCode.SymptomDate == nil {
+					t.Errorf("No symptom date. got %s, want %s", verCode.TestDate, tc.request.TestDate)
 				}
 				return
 			}

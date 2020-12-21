@@ -62,7 +62,7 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, req := range requests {
-		vCode, result := c.BuildVerificationCode(ctx, req)
+		vCode, result := c.BuildVerificationCode(ctx, req, realm)
 		if result != nil {
 			results[i] = result
 			continue

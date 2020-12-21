@@ -31,9 +31,8 @@ import (
 )
 
 // BuildVerificationCode populates and validates a code from an issue request.
-func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.IssueCodeRequest) (*database.VerificationCode, *IssueResult) {
+func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.IssueCodeRequest, realm *database.Realm) (*database.VerificationCode, *IssueResult) {
 	logger := logging.FromContext(ctx).Named("issueapi.buildVerificationCode")
-	realm := controller.RealmFromContext(ctx)
 
 	now := time.Now().UTC()
 	vCode := &database.VerificationCode{

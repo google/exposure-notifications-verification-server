@@ -97,7 +97,7 @@ func (c *Controller) BatchIssueWithUIAuth(w http.ResponseWriter, r *http.Request
 
 func (c *Controller) decodeAndBulkIssue(ctx context.Context, w http.ResponseWriter, r *http.Request, result *IssueResult) {
 	// Ensure bulk upload is enabled on this realm.
-	if currentRealm := controller.RealmFromContext(ctx); !currentRealm.AllowBulkUpload {
+	if currentRealm := controller.RealmFromContext(ctx); currentRealm == nil || !currentRealm.AllowBulkUpload {
 		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
 		return
