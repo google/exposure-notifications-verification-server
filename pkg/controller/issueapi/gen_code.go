@@ -21,10 +21,12 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/sethvargo/go-retry"
 	"go.opencensus.io/stats"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -96,19 +98,25 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 func (c *Controller) CommitCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
 	logger := logging.FromContext(ctx)
 	var err error
-	for i := uint(0); i < retryCount; i++ {
+
+	b, err := retry.NewConstant(50 * time.Millisecond)
+	if err != nil {
+		return fmt.Errorf("failed to create backoff: %w", err)
+	}
+
+	retry.Do(ctx, retry.WithMaxRetries(uint64(retryCount), b), func(ctx context.Context) error {
 		var code string
 		code, err = GenerateCode(realm.CodeLength)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
-			continue
+			return err
 		}
 		longCode := code
 		if realm.LongCodeLength > 0 {
 			longCode, err = GenerateAlphanumericCode(realm.LongCodeLength)
 			if err != nil {
 				logger.Errorf("long code generation error: %v", err)
-				continue
+				return err
 			}
 		}
 		vCode.Code = code
@@ -122,17 +130,17 @@ func (c *Controller) CommitCode(ctx context.Context, vCode *database.Verificatio
 			vCode.Code = code
 			vCode.LongCode = longCode
 			return nil // success
-		case strings.Contains(err.Error(), database.VerCodesCodeUniqueIndex):
-			continue
-		case strings.Contains(err.Error(), database.VerCodesLongCodeUniqueIndex):
-			continue
+		case strings.Contains(err.Error(), database.VerCodesCodeUniqueIndex),
+			strings.Contains(err.Error(), database.VerCodesLongCodeUniqueIndex):
+			return retry.RetryableError(err)
 		default:
-			break // err not retryable
+			return err // err not retryable
 		}
-	}
+	})
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
