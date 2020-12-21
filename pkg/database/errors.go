@@ -21,7 +21,13 @@ import (
 )
 
 var (
+	// ErrNoSigningKeyManager is the error returned when the key manager cannot be
+	// used as a SigningKeyManager.
 	ErrNoSigningKeyManager = errors.New("configured key manager cannot be used to manage per-realm keys")
+
+	// ErrValidationFailed is the error returned when validation failed. This
+	// should always be considered user error.
+	ErrValidationFailed = errors.New("validation failed")
 )
 
 // Errorable defines an embeddable struct for managing errors on models.
@@ -69,6 +75,16 @@ func (e *Errorable) ErrorMessages() []string {
 func (e *Errorable) ErrorsFor(key string) []string {
 	e.init()
 	return e.errors[key]
+}
+
+// ErrorOrNil returns ErrValidationFailed if there are any errors, or nil if
+// there are none.
+func (e *Errorable) ErrorOrNil() error {
+	e.init()
+	if len(e.errors) == 0 {
+		return nil
+	}
+	return ErrValidationFailed
 }
 
 func (e *Errorable) init() {

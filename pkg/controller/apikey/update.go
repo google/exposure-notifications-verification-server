@@ -84,7 +84,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		// Save
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
-			flash.Error("Failed to save api key: %v", err)
+			flash.Error("Failed to update API Key: %v", err)
 			c.renderEdit(ctx, w, authApp)
 			return
 		}
