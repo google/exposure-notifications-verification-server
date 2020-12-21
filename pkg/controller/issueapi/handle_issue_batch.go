@@ -71,7 +71,7 @@ func (c *Controller) HandleBatchIssueFn(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if membership != nil && !membership.Can(rbac.CodeBulkIssue) {
-		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ALLOWED")
 		controller.Unauthorized(w, r, c.h)
 		return result
 	}

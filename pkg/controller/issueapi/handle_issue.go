@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 // HandleIssue responds to the /issue API for issuing verification codes
@@ -56,6 +57,12 @@ func (c *Controller) HandleIssueFn(w http.ResponseWriter, r *http.Request) *Issu
 	if err != nil {
 		result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
 		c.h.RenderJSON(w, http.StatusUnauthorized, api.Error(err))
+		return result
+	}
+
+	if membership != nil && !membership.Can(rbac.CodeIssue) {
+		result.obsResult = observability.ResultError("ISSUE_NOT_ALLOWED")
+		controller.Unauthorized(w, r, c.h)
 		return result
 	}
 
