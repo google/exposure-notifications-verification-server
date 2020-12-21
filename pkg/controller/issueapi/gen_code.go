@@ -55,7 +55,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 			return &issueResult{
 				obsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
 				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to verify realm stats, please try again").WithCode(api.ErrInternal),
+				errorReturn: api.Errorf("failed to issue code, please try again in a few seconds").WithCode(api.ErrInternal),
 			}
 		}
 
