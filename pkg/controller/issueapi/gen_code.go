@@ -150,7 +150,7 @@ func GenerateCode(length uint) (string, error) {
 	return result, nil
 }
 
-// generateAlphanumericCode will generate an alpha numberic code.
+// GenerateAlphanumericCode will generate an alpha numberic code.
 // It uses the length to estimate how many bytes of randomness will
 // base64 encode to that length string.
 // For example 16 character string requires 12 bytes.

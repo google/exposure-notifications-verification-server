@@ -29,7 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
-// buildVerificationCode populates and validates a code from an issue request.
+// BuildVerificationCode populates and validates a code from an issue request.
 func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.IssueCodeRequest,
 	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *IssueResult) {
 	logger := logging.FromContext(ctx).Named("issueapi.buildVerificationCode")
