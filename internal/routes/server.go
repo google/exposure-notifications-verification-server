@@ -228,7 +228,7 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		mobileappsController := mobileapps.New(ctx, cfg, cacher, db, h)
+		mobileappsController := mobileapps.New(cacher, db, h)
 		mobileappsRoutes(sub, mobileappsController)
 	}
 

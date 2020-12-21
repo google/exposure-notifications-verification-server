@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apikey_test
+package mobileapps_test
 
 import (
 	"context"
@@ -23,14 +23,13 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/jinzhu/gorm"
 )
 
-func TestHandleEnable(t *testing.T) {
+func TestHandleDisable(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
@@ -52,8 +51,8 @@ func TestHandleEnable(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := apikey.New(harness.Cacher, harness.Database, h)
-		handler := c.HandleEnable()
+		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		handler := c.HandleDisable()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -61,22 +60,21 @@ func TestHandleEnable(t *testing.T) {
 		envstest.ExerciseIDNotFound(t, &database.Membership{
 			Realm:       realm,
 			User:        user,
-			Permissions: rbac.APIKeyWrite,
+			Permissions: rbac.MobileAppWrite,
 		}, handler)
 	})
 
-	t.Run("enables", func(t *testing.T) {
+	t.Run("disables", func(t *testing.T) {
 		t.Parallel()
 
-		now := time.Now().UTC().Add(-5 * time.Second)
-		authApp := &database.AuthorizedApp{
+		app := &database.MobileApp{
 			RealmID: realm.ID,
-			Name:    "Disables app",
-			Model: gorm.Model{
-				DeletedAt: &now,
-			},
+			Name:    "Appy",
+			AppID:   "com.example.app",
+			URL:     "https://app.example.com",
+			OS:      database.OSTypeIOS,
 		}
-		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
+		if err := harness.Database.SaveMobileApp(app, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -89,12 +87,12 @@ func TestHandleEnable(t *testing.T) {
 
 		if err := chromedp.Run(taskCtx,
 			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys`),
-			chromedp.WaitVisible(`body#apikeys-index`, chromedp.ByQuery),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps`),
+			chromedp.WaitVisible(`body#mobileapps-index`, chromedp.ByQuery),
 
-			chromedp.Click(fmt.Sprintf(`a#enable-apikey-%d`, authApp.ID), chromedp.ByQuery),
+			chromedp.Click(fmt.Sprintf(`a#disable-mobileapp-%d`, app.ID), chromedp.ByQuery),
 
-			chromedp.WaitVisible(`body#apikeys-index`, chromedp.ByQuery),
+			chromedp.WaitVisible(`body#mobileapps-index`, chromedp.ByQuery),
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -103,13 +101,12 @@ func TestHandleEnable(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Ensure enabled
-		record, err := harness.Database.FindAuthorizedApp(authApp.ID)
+		record, err := realm.FindMobileApp(harness.Database, app.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := record.DeletedAt; got != nil {
-			t.Errorf("expected %v to be nil", got)
+		if got := record.DeletedAt; got == nil {
+			t.Errorf("expected %v to be %v", got, nil)
 		}
 	})
 }

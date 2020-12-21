@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
@@ -33,7 +34,7 @@ func TestHandleIndex(t *testing.T) {
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, _, session, err := harness.ProvisionAndLogin()
+	realm, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,22 +56,11 @@ func TestHandleIndex(t *testing.T) {
 
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
-	})
-
-	t.Run("bad_query_params", func(t *testing.T) {
-		t.Parallel()
-
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
-		defer done()
-
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys?page=banana`),
-			chromedp.WaitVisible(`body#bad-request`, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
-		}
+		envstest.ExerciseBadPagination(t, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.APIKeyRead,
+		}, handler)
 	})
 
 	t.Run("lists", func(t *testing.T) {

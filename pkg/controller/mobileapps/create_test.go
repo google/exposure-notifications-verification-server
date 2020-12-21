@@ -17,12 +17,15 @@ package mobileapps_test
 import (
 	"context"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/chromedp/chromedp"
 )
@@ -37,55 +40,98 @@ func TestHandleCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Mint a cookie for the session.
 	cookie, err := harness.SessionCookie(session)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Create a browser runner.
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
-	defer done()
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		// Visit /realm/mobile-apps/new.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps/new`),
+		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		handler := c.HandleCreate()
 
-		// Wait for render.
-		chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
+	})
 
-		// Fill out the form.
-		chromedp.SetValue(`input#name`, "Example mobile app", chromedp.ByQuery),
-		chromedp.SetValue(`input#url`, "https://example.com", chromedp.ByQuery),
-		chromedp.SetValue(`select#os`, strconv.Itoa(int(database.OSTypeIOS)), chromedp.ByQuery),
-		chromedp.SetValue(`input#app-id`, "com.example.app", chromedp.ByQuery),
+	t.Run("validation", func(t *testing.T) {
+		t.Parallel()
 
-		// Click the submit button.
-		chromedp.Click(`#submit`, chromedp.ByQuery),
+		browserCtx := browser.New(t)
+		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
+		defer done()
 
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`body#mobileapps-show`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+		var nameAttrs map[string]string
+		var appIDAttrs map[string]string
+		var osAttrs map[string]string
 
-	// Ensure valid
-	record, err := realm.FindMobileApp(harness.Database, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+		if err := chromedp.Run(taskCtx,
+			browser.SetCookie(cookie),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps/new`),
+			chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),
+			chromedp.Click(`#submit`, chromedp.ByQuery),
 
-	if got, want := record.RealmID, realm.ID; got != want {
-		t.Errorf("expected %v to be %v", got, want)
-	}
-	if got, want := record.Name, "Example mobile app"; got != want {
-		t.Errorf("expected %v to be %v", got, want)
-	}
-	if got, want := record.URL, "https://example.com"; got != want {
-		t.Errorf("expected %v to be %v", got, want)
-	}
+			chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),
+			chromedp.Attributes(`input#name`, &nameAttrs, chromedp.ByQuery),
+			chromedp.Attributes(`input#app-id`, &appIDAttrs, chromedp.ByQuery),
+			chromedp.Attributes(`select#os`, &osAttrs, chromedp.ByQuery),
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := nameAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+		if got, want := appIDAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+		if got, want := osAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
+
+	t.Run("creates", func(t *testing.T) {
+		t.Parallel()
+
+		browserCtx := browser.New(t)
+		taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+		defer done()
+
+		if err := chromedp.Run(taskCtx,
+			browser.SetCookie(cookie),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps/new`),
+
+			chromedp.SetValue(`input#name`, "Example mobile app", chromedp.ByQuery),
+			chromedp.SetValue(`input#url`, "https://example.com", chromedp.ByQuery),
+			chromedp.SetValue(`select#os`, strconv.Itoa(int(database.OSTypeIOS)), chromedp.ByQuery),
+			chromedp.SetValue(`input#app-id`, "com.example.app", chromedp.ByQuery),
+			chromedp.Click(`#submit`, chromedp.ByQuery),
+
+			chromedp.WaitVisible(`body#mobileapps-show`, chromedp.ByQuery),
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		record, err := realm.FindMobileApp(harness.Database, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := record.RealmID, realm.ID; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := record.Name, "Example mobile app"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+		if got, want := record.URL, "https://example.com"; got != want {
+			t.Errorf("expected %v to be %v", got, want)
+		}
+	})
 }

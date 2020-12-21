@@ -21,10 +21,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
 // ExerciseSessionMissing tests that the proper response code and HTML error
@@ -104,7 +106,71 @@ func ExercisePermissionMissing(t *testing.T, h http.Handler) {
 		if got, want := w.Code, 401; got != want {
 			t.Errorf("expected %d to be %d", got, want)
 		}
-		if got, want := w.Body.String(), "not authorized"; !strings.Contains(got, want) {
+		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
+}
+
+// ExerciseBadPagination tests that the proper response code and HTML error page
+// are rendered when the URL includes pagination parameters that fail to parse.
+func ExerciseBadPagination(t *testing.T, membership *database.Membership, h http.Handler) {
+	t.Run("bad_pagination", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, membership)
+
+		r := httptest.NewRequest("GET", "/13940890", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		q := r.URL.Query()
+		q.Set(pagination.QueryKeyPage, "banana")
+		r.URL.RawQuery = q.Encode()
+
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 400; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Bad request"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
+}
+
+// ExerciseIDNotFound tests that the proper response code and HTML error page
+// are rendered when the route expects an "id" mux parameter, but the one given
+// does not correspond to an actual record.
+func ExerciseIDNotFound(t *testing.T, membership *database.Membership, h http.Handler) {
+	t.Run("id_not_found", func(t *testing.T) {
+		t.Parallel()
+
+		mux := mux.NewRouter()
+		mux.Handle("/{id}", h)
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, membership)
+
+		r := httptest.NewRequest("GET", "/13940890", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 401; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})

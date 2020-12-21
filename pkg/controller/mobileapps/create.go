@@ -52,7 +52,6 @@ func (c *Controller) HandleCreate() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
 		currentUser := membership.User
 
@@ -94,7 +93,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully created mobile app '%v'", form.Name)
+		flash.Alert("Successfully created mobile app %q", form.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/mobile-apps/%d", app.ID), http.StatusSeeOther)
 	})
 }

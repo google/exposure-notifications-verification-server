@@ -22,13 +22,15 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
+        {{template "errorSummary" $app}}
+
         <form method="POST" action="/realm/mobile-apps/{{$app.ID}}" class="floating-form">
           <input type="hidden" name="_method" value="PATCH">
           {{ .csrfField }}
 
           {{template "mobileapps/_app" .}}
 
-          <button type="submit" class="btn btn-primary btn-block">Update mobile app</button>
+          <button type="submit" id="submit" class="btn btn-primary btn-block">Update mobile app</button>
         </form>
       </div>
     </div>

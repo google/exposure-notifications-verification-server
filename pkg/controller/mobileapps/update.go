@@ -16,13 +16,13 @@ package mobileapps
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
 )
 
 // HandleUpdate handles an update.
@@ -79,13 +79,6 @@ func (c *Controller) HandleUpdate() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			app.Name = form.Name
-
-			if terr, ok := err.(schema.MultiError); ok {
-				for k, err := range terr {
-					app.AddError(k, err.Error())
-				}
-			}
-
 			flash.Error("Failed to process form: %v", err)
 			c.renderEdit(ctx, w, app)
 		}
@@ -99,13 +92,13 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		// Save
 		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
-			flash.Error("Failed to save mobile app: %v", err)
+			flash.Error("Failed to update mobile app: %v", err)
 			c.renderEdit(ctx, w, app)
 			return
 		}
 
-		flash.Alert("Successfully updated mobile app!")
-		http.Redirect(w, r, "/realm/mobile-apps", http.StatusSeeOther)
+		flash.Alert("Successfully updated mobile app %q!", app.Name)
+		http.Redirect(w, r, fmt.Sprintf("/realm/mobile-apps/%d", app.ID), http.StatusSeeOther)
 	})
 }
 

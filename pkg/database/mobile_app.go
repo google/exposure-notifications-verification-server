@@ -130,10 +130,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	}
 	a.SHA = strings.Join(shas, "\n")
 
-	if msgs := a.ErrorMessages(); len(msgs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
-	}
-	return nil
+	return a.ErrorOrNil()
 }
 
 func (a *MobileApp) AfterFind(tx *gorm.DB) error {
@@ -236,7 +233,7 @@ func (db *Database) SaveMobileApp(a *MobileApp, actor Auditable) error {
 
 		// Save the app
 		if err := tx.Unscoped().Save(a).Error; err != nil {
-			return fmt.Errorf("failed to save mobile app: %w", err)
+			return err
 		}
 
 		// Brand new app?
