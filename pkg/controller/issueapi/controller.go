@@ -72,9 +72,9 @@ func (c *Controller) getAuthorizationFromContext(ctx context.Context) (*database
 	return nil, nil, nil, fmt.Errorf("unable to identify authorized requestor")
 }
 
-func recordObservability(ctx context.Context, result *issueResult) {
+func recordObservability(ctx context.Context, result *IssueResult) {
 	var blame tag.Mutator
-	switch result.httpCode {
+	switch result.HTTPCode {
 	case http.StatusOK:
 		blame = observability.BlameNone
 	case http.StatusInternalServerError:

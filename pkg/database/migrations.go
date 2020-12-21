@@ -28,7 +28,7 @@ import (
 )
 
 const initState = "00000-Init"
-const VercodeUUIDUniqueIndex = "idx_vercode_uuid_unique"
+const VerCodeUUIDUniqueIndex = "idx_vercode_uuid_unique"
 
 func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 	logger := logging.FromContext(ctx)
@@ -1576,7 +1576,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`DROP INDEX IF EXISTS idx_vercode_uuid`,
-					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes(uuid)", VercodeUUIDUniqueIndex),
+					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes(uuid)", VerCodeUUIDUniqueIndex),
 				}
 
 				for _, sql := range sqls {
@@ -1588,7 +1588,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				sqls := []string{
-					fmt.Sprintf("DROP INDEX IF EXISTS %s", VercodeUUIDUniqueIndex),
+					fmt.Sprintf("DROP INDEX IF EXISTS %s", VerCodeUUIDUniqueIndex),
 					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
 				}
 

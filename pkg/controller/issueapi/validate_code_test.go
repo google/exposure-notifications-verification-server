@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issueapi_test
 
 import (
 	"context"
@@ -21,9 +21,10 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
-	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/jinzhu/gorm"
 )
@@ -32,7 +33,7 @@ func TestValidate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
+	tc := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := tc.Database
 
 	realm, err := db.FindRealm(1)
@@ -63,12 +64,12 @@ func TestValidate(t *testing.T) {
 
 	membership := &database.Membership{UserID: 456}
 
-	c := New(tc.Config, db, tc.RateLimiter, nil)
+	c := issueapi.New(tc.Config, db, tc.RateLimiter, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 
 	maxDate := timeutils.UTCMidnight(time.Now())
-	minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+	minDate := timeutils.Midnight(maxDate.Add(-1 * tc.Config.GetAllowedSymptomAge()))
 
 	cases := []struct {
 		name           string
@@ -174,22 +175,22 @@ func TestValidate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			verCode, result := c.buildVerificationCode(ctx, &tc.request, authApp, membership, realm)
-			if verCode != nil {
-				if tc.request.UUID != "" && tc.request.UUID != verCode.UUID {
-					t.Errorf("expecting stable client-provided uuid. got %s, want %s", verCode.UUID, tc.request.UUID)
+			VerCode, result := c.BuildVerificationCode(ctx, &tc.request, authApp, membership, realm)
+			if VerCode != nil {
+				if tc.request.UUID != "" && tc.request.UUID != VerCode.UUID {
+					t.Errorf("expecting stable client-provided uuid. got %s, want %s", VerCode.UUID, tc.request.UUID)
 				}
-				if tc.request.TestDate != "" && verCode.TestDate == nil {
-					t.Errorf("No test date. got %s, want %s", verCode.TestDate, tc.request.TestDate)
+				if tc.request.TestDate != "" && VerCode.TestDate == nil {
+					t.Errorf("No test date. got %s, want %s", VerCode.TestDate, tc.request.TestDate)
 				}
-				if tc.request.SymptomDate != "" && verCode.SymptomDate == nil {
-					t.Errorf("No symptom date. got %s, want %s", verCode.TestDate, tc.request.TestDate)
+				if tc.request.SymptomDate != "" && VerCode.SymptomDate == nil {
+					t.Errorf("No symptom date. got %s, want %s", VerCode.TestDate, tc.request.TestDate)
 				}
 				return
 			}
-			resp := result.issueCodeResponse()
-			if result.httpCode != tc.httpStatusCode {
-				t.Errorf("incorrect error code. got %d, want %d", result.httpCode, tc.httpStatusCode)
+			resp := result.IssueCodeResponse()
+			if result.HTTPCode != tc.httpStatusCode {
+				t.Errorf("incorrect error code. got %d, want %d", result.HTTPCode, tc.httpStatusCode)
 			}
 			if resp.ErrorCode != tc.responseErr {
 				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)

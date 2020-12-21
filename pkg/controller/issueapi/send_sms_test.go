@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issueapi_test
 
 import (
 	"context"
@@ -22,12 +22,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
@@ -58,7 +58,7 @@ func TestSMS_scrubPhoneNumber(t *testing.T) {
 				t.Parallel()
 
 				errMsg := fmt.Sprintf(pattern, tc.input)
-				got := scrubPhoneNumbers(errMsg)
+				got := issueapi.ScrubPhoneNumbers(errMsg)
 				if strings.Contains(got, tc.input) {
 					t.Errorf("phone number was not scrubbed, %v", got)
 				}
@@ -71,7 +71,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
+	tc := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := tc.Database
 
 	realm, err := db.FindRealm(1)
@@ -98,7 +98,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 
 	ctx = controller.WithMembership(ctx, membership)
-	c := New(tc.Config, db, tc.RateLimiter, nil)
+	c := issueapi.New(tc.Config, db, tc.RateLimiter, nil)
 
 	request := &api.IssueCodeRequest{
 		TestType:    "confirmed",
@@ -106,10 +106,9 @@ func TestSMS_sendSMS(t *testing.T) {
 		TZOffset:    0,
 		Phone:       "+15005550006",
 	}
-	result := &issueResult{
-		httpCode:  http.StatusOK,
-		obsResult: observability.ResultOK(),
-		verCode: &database.VerificationCode{
+	result := &issueapi.IssueResult{
+		HTTPCode: http.StatusOK,
+		VerCode: &database.VerificationCode{
 			RealmID:       realm.ID,
 			Code:          "00000001",
 			LongCode:      "00000001ABC",
@@ -119,20 +118,20 @@ func TestSMS_sendSMS(t *testing.T) {
 			LongExpiresAt: time.Now().Add(time.Hour),
 		},
 	}
-	if err := db.SaveVerificationCode(result.verCode, realm); err != nil {
+	if err := db.SaveVerificationCode(result.VerCode, realm); err != nil {
 		t.Fatal(err)
 	}
 	// un-hmac the codes so rollback can find them.
-	result.verCode.Code = "00000001"
-	result.verCode.LongCode = "00000001ABC"
+	result.VerCode.Code = "00000001"
+	result.VerCode.LongCode = "00000001ABC"
 
 	// Successful SMS send
 
-	if err := c.sendSMS(ctx, request, result, realm); err != nil {
+	if err := c.SendSMS(ctx, request, result, realm); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := realm.FindVerificationCodeByUUID(db, result.verCode.UUID); err != nil {
-		t.Errorf("couldn't find code got %s: %v", result.verCode.UUID, err)
+	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); err != nil {
+		t.Errorf("couldn't find code got %s: %v", result.VerCode.UUID, err)
 	}
 
 	// Failed SMS send
@@ -141,10 +140,10 @@ func TestSMS_sendSMS(t *testing.T) {
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
 	}
-	if err := c.sendSMS(ctx, request, result, realm); err != sms.ErrNoop {
+	if err := c.SendSMS(ctx, request, result, realm); err != sms.ErrNoop {
 		t.Errorf("expected sms failure. got %v want %v", err, sms.ErrNoop)
 	}
-	if _, err := realm.FindVerificationCodeByUUID(db, result.verCode.UUID); !database.IsNotFound(err) {
+	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {
 		t.Errorf("expected SMS failure to roll-back and delete code. got %v", err)
 	}
 }

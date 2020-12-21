@@ -30,8 +30,8 @@ import (
 )
 
 // buildVerificationCode populates and validates a code from an issue request.
-func (c *Controller) buildVerificationCode(ctx context.Context, request *api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *issueResult) {
+func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.IssueCodeRequest,
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *IssueResult) {
 	logger := logging.FromContext(ctx).Named("issueapi.buildVerificationCode")
 
 	now := time.Now().UTC()
@@ -51,15 +51,15 @@ func (c *Controller) buildVerificationCode(ctx context.Context, request *api.Iss
 
 	// If this realm requires a date but no date was specified, return an error.
 	if realm.RequireDate && request.SymptomDate == "" && request.TestDate == "" {
-		return nil, &issueResult{
+		return nil, &IssueResult{
 			obsResult:   observability.ResultError("MISSING_REQUIRED_FIELDS"),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
+			HTTPCode:    http.StatusBadRequest,
+			ErrorReturn: api.Errorf("missing either test or symptom date").WithCode(api.ErrMissingDate),
 		}
 	}
 
 	// Parse SymptomDate and TestDate
-	var result *issueResult
+	var result *IssueResult
 	vCode.SymptomDate, result = c.parseDate(request.SymptomDate, int(request.TZOffset), &onsetSettings)
 	if result != nil {
 		return nil, result
@@ -75,18 +75,18 @@ func (c *Controller) buildVerificationCode(ctx context.Context, request *api.Iss
 		smsProvider, err := realm.SMSProvider(c.db)
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
-			return nil, &issueResult{
+			return nil, &IssueResult{
 				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to get sms provider").WithCode(api.ErrInternal),
+				HTTPCode:    http.StatusInternalServerError,
+				ErrorReturn: api.Errorf("failed to get sms provider").WithCode(api.ErrInternal),
 			}
 		}
 		if smsProvider == nil {
 			err := fmt.Errorf("phone provided, but no sms provider is configured")
-			return nil, &issueResult{
+			return nil, &IssueResult{
 				obsResult:   observability.ResultError("FAILED_TO_GET_SMS_PROVIDER"),
-				httpCode:    http.StatusBadRequest,
-				errorReturn: api.Error(err),
+				HTTPCode:    http.StatusBadRequest,
+				ErrorReturn: api.Error(err),
 			}
 		}
 	}
@@ -102,17 +102,17 @@ func (c *Controller) buildVerificationCode(ctx context.Context, request *api.Iss
 	if vCode.UUID = project.TrimSpaceAndNonPrintable(request.UUID); vCode.UUID != "" {
 		if code, err := realm.FindVerificationCodeByUUID(c.db, vCode.UUID); err != nil {
 			if !database.IsNotFound(err) {
-				return nil, &issueResult{
+				return nil, &IssueResult{
 					obsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
-					httpCode:    http.StatusInternalServerError,
-					errorReturn: api.Error(err).WithCode(api.ErrInternal),
+					HTTPCode:    http.StatusInternalServerError,
+					ErrorReturn: api.Error(err).WithCode(api.ErrInternal),
 				}
 			}
 		} else if code != nil {
-			return nil, &issueResult{
+			return nil, &IssueResult{
 				obsResult:   observability.ResultError("UUID_CONFLICT"),
-				httpCode:    http.StatusConflict,
-				errorReturn: api.Errorf("code for %s already exists", vCode.UUID).WithCode(api.ErrUUIDAlreadyExists),
+				HTTPCode:    http.StatusConflict,
+				ErrorReturn: api.Errorf("code for %s already exists", vCode.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
 	}
@@ -122,24 +122,24 @@ func (c *Controller) buildVerificationCode(ctx context.Context, request *api.Iss
 	if err := vCode.Validate(realm); err != nil {
 		switch err {
 		case database.ErrInvalidTestType:
-			return nil, &issueResult{
+			return nil, &IssueResult{
 				obsResult:   observability.ResultError("INVALID_TEST_TYPE"),
-				httpCode:    http.StatusBadRequest,
-				errorReturn: api.Errorf("invalid test type").WithCode(api.ErrInvalidTestType),
+				HTTPCode:    http.StatusBadRequest,
+				ErrorReturn: api.Errorf("invalid test type").WithCode(api.ErrInvalidTestType),
 			}
 		case database.ErrUnsupportedTestType:
-			return nil, &issueResult{
+			return nil, &IssueResult{
 				obsResult:   observability.ResultError("UNSUPPORTED_TEST_TYPE"),
-				httpCode:    http.StatusBadRequest,
-				errorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
+				HTTPCode:    http.StatusBadRequest,
+				ErrorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
 			}
 		}
 
 		logger.Warnw("unhandled db validation", "error", err)
-		return nil, &issueResult{
+		return nil, &IssueResult{
 			obsResult:   observability.ResultError("DB_VALIDATION_REJECTED"),
-			httpCode:    http.StatusInternalServerError,
-			errorReturn: api.Error(err).WithCode(api.ErrInternal),
+			HTTPCode:    http.StatusInternalServerError,
+			ErrorReturn: api.Error(err).WithCode(api.ErrInternal),
 		}
 	}
 

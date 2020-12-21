@@ -25,7 +25,6 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -53,7 +52,7 @@ func TestHandleShow(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(context.Background(), testconfig.ServerAssetsPath(), true)
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,7 +67,7 @@ func TestHandleShow(t *testing.T) {
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(context.Background(), testconfig.ServerAssetsPath(), true)
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
 		if err != nil {
 			t.Fatal(err)
 		}

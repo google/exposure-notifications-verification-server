@@ -24,23 +24,23 @@ import (
 	"go.opencensus.io/tag"
 )
 
-// issueResult is the response returned from IssueLogic.IssueOne or IssueMany.
-type issueResult struct {
-	verCode     *database.VerificationCode
-	errorReturn *api.ErrorReturn
-	httpCode    int
+// IssueResult is the response returned from IssueLogic.IssueOne or IssueMany.
+type IssueResult struct {
+	VerCode     *database.VerificationCode
+	ErrorReturn *api.ErrorReturn
+	HTTPCode    int
 	obsResult   tag.Mutator
 }
 
-func (result *issueResult) issueCodeResponse() *api.IssueCodeResponse {
-	if result.errorReturn != nil {
+func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
+	if result.ErrorReturn != nil {
 		return &api.IssueCodeResponse{
-			ErrorCode: result.errorReturn.ErrorCode,
-			Error:     result.errorReturn.Error,
+			ErrorCode: result.ErrorReturn.ErrorCode,
+			Error:     result.ErrorReturn.Error,
 		}
 	}
 
-	v := result.verCode
+	v := result.VerCode
 	return &api.IssueCodeResponse{
 		UUID:                   v.UUID,
 		VerificationCode:       v.Code,
@@ -51,36 +51,36 @@ func (result *issueResult) issueCodeResponse() *api.IssueCodeResponse {
 	}
 }
 
-func (c *Controller) issueOne(ctx context.Context, request *api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *issueResult {
-	results := c.issueMany(ctx, []*api.IssueCodeRequest{request}, authApp, membership, realm)
+func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest,
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) *IssueResult {
+	results := c.IssueMany(ctx, []*api.IssueCodeRequest{request}, authApp, membership, realm)
 	return results[0]
 }
 
-func (c *Controller) issueMany(ctx context.Context, requests []*api.IssueCodeRequest,
-	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) []*issueResult {
+func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest,
+	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) []*IssueResult {
 	// Generate codes
-	results := make([]*issueResult, len(requests))
+	results := make([]*IssueResult, len(requests))
 	for i, req := range requests {
-		vCode, result := c.buildVerificationCode(ctx, req, authApp, membership, realm)
+		vCode, result := c.BuildVerificationCode(ctx, req, authApp, membership, realm)
 		if result != nil {
 			results[i] = result
 			continue
 		}
-		results[i] = c.issueCode(ctx, vCode, realm)
+		results[i] = c.IssueCode(ctx, vCode, realm)
 	}
 
 	// Send SMS messages
 	var wg sync.WaitGroup
 	for i, result := range results {
-		if result.errorReturn != nil {
+		if result.ErrorReturn != nil {
 			continue
 		}
 
 		wg.Add(1)
-		go func(request *api.IssueCodeRequest, r *issueResult) {
+		go func(request *api.IssueCodeRequest, r *IssueResult) {
 			defer wg.Done()
-			c.sendSMS(ctx, request, r, realm)
+			c.SendSMS(ctx, request, r, realm)
 		}(requests[i], result)
 	}
 

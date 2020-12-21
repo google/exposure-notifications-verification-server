@@ -35,27 +35,27 @@ const (
 	charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
 
-func (c *Controller) issueCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm) *issueResult {
-	logger := logging.FromContext(ctx).Named("issueapi.issueCode")
+func (c *Controller) IssueCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm) *IssueResult {
+	logger := logging.FromContext(ctx).Named("issueapi.IssueCode")
 
 	// If we got this far, we're about to issue a code - take from the limiter
 	// to ensure this is permitted.
 	if realm.AbusePreventionEnabled {
 		key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
 		if err != nil {
-			return &issueResult{
+			return &IssueResult{
 				obsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
-				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Error(err).WithCode(api.ErrInternal),
+				HTTPCode:    http.StatusInternalServerError,
+				ErrorReturn: api.Error(err).WithCode(api.ErrInternal),
 			}
 		}
 
 		if limit, _, reset, ok, err := c.limiter.Take(ctx, key); err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
-			return &issueResult{
+			return &IssueResult{
 				obsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
-				httpCode:    http.StatusInternalServerError,
-				errorReturn: api.Errorf("failed to issue code, please try again in a few seconds").WithCode(api.ErrInternal),
+				HTTPCode:    http.StatusInternalServerError,
+				ErrorReturn: api.Errorf("failed to issue code, please try again in a few seconds").WithCode(api.ErrInternal),
 			}
 		} else if !ok {
 			logger.Warnw("realm has exceeded daily quota",
@@ -64,48 +64,48 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 				"reset", reset)
 
 			if c.config.GetEnforceRealmQuotas() {
-				return &issueResult{
+				return &IssueResult{
 					obsResult:   observability.ResultError("QUOTA_EXCEEDED"),
-					httpCode:    http.StatusTooManyRequests,
-					errorReturn: api.Errorf("exceeded daily realm quota configured from abuse prevention, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
+					HTTPCode:    http.StatusTooManyRequests,
+					ErrorReturn: api.Errorf("exceeded daily realm quota configured from abuse prevention, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
 				}
 			}
 		}
 		stats.Record(ctx, mRealmTokenUsed.M(1))
 	}
 
-	if err := c.commitCode(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
+	if err := c.CommitCode(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
 		logger.Errorw("failed to issue code", "error", err)
-		return &issueResult{
+		return &IssueResult{
 			obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
-			httpCode:    http.StatusInternalServerError,
-			errorReturn: api.Errorf("failed to generate otp code, please try again").WithCode(api.ErrInternal),
+			HTTPCode:    http.StatusInternalServerError,
+			ErrorReturn: api.Errorf("failed to generate otp code, please try again").WithCode(api.ErrInternal),
 		}
 	}
 
-	return &issueResult{
-		verCode:   vCode,
-		httpCode:  http.StatusOK,
+	return &IssueResult{
+		VerCode:   vCode,
+		HTTPCode:  http.StatusOK,
 		obsResult: observability.ResultOK(),
 	}
 }
 
-// commitCode will generate a verification code and save it to the database, based on
+// CommitCode will generate a verification code and save it to the database, based on
 // the paremters provided. It returns the short code, long code, a UUID for
 // accessing the code, and any errors.
-func (c *Controller) commitCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
+func (c *Controller) CommitCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
 	logger := logging.FromContext(ctx)
 	var err error
 	for i := uint(0); i < retryCount; i++ {
 		var code string
-		code, err = generateCode(realm.CodeLength)
+		code, err = GenerateCode(realm.CodeLength)
 		if err != nil {
 			logger.Errorf("code generation error: %v", err)
 			continue
 		}
 		longCode := code
 		if realm.LongCodeLength > 0 {
-			longCode, err = generateAlphanumericCode(realm.LongCodeLength)
+			longCode, err = GenerateAlphanumericCode(realm.LongCodeLength)
 			if err != nil {
 				logger.Errorf("long code generation error: %v", err)
 				continue
@@ -116,7 +116,7 @@ func (c *Controller) commitCode(ctx context.Context, vCode *database.Verificatio
 
 		// If a verification code already exists, it will fail to save, and we retry.
 		if err = c.db.SaveVerificationCode(vCode, realm); err != nil {
-			if strings.Contains(err.Error(), database.VercodeUUIDUniqueIndex) {
+			if strings.Contains(err.Error(), database.VerCodeUUIDUniqueIndex) {
 				logger.Warnf("duplicate OTP found: %v", err)
 				break // not retryable
 			}
@@ -134,8 +134,8 @@ func (c *Controller) commitCode(ctx context.Context, vCode *database.Verificatio
 	return nil
 }
 
-// generateCode creates a new OTP code.
-func generateCode(length uint) (string, error) {
+// GenerateCode creates a new OTP code.
+func GenerateCode(length uint) (string, error) {
 	limit := big.NewInt(0)
 	limit.Exp(big.NewInt(10), big.NewInt(int64(length)), nil)
 	digits, err := rand.Int(rand.Reader, limit)
@@ -154,7 +154,7 @@ func generateCode(length uint) (string, error) {
 // It uses the length to estimate how many bytes of randomness will
 // base64 encode to that length string.
 // For example 16 character string requires 12 bytes.
-func generateAlphanumericCode(length uint) (string, error) {
+func GenerateAlphanumericCode(length uint) (string, error) {
 	var result string
 	for i := uint(0); i < length; i++ {
 		ch, err := randomFromCharset()

@@ -26,13 +26,13 @@ import (
 // HandleIssue responds to the /issue API for issuing verification codes
 func (c *Controller) HandleIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if result := c.handleIssueFn(w, r); result != nil {
+		if result := c.HandleIssueFn(w, r); result != nil {
 			recordObservability(r.Context(), result)
 		}
 	})
 }
 
-func (c *Controller) handleIssueFn(w http.ResponseWriter, r *http.Request) *issueResult {
+func (c *Controller) HandleIssueFn(w http.ResponseWriter, r *http.Request) *IssueResult {
 	if c.config.IsMaintenanceMode() {
 		c.h.RenderJSON(w, http.StatusTooManyRequests,
 			api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
@@ -40,8 +40,8 @@ func (c *Controller) handleIssueFn(w http.ResponseWriter, r *http.Request) *issu
 	}
 
 	ctx := r.Context()
-	result := &issueResult{
-		httpCode:  http.StatusOK,
+	result := &IssueResult{
+		HTTPCode:  http.StatusOK,
 		obsResult: observability.ResultOK(),
 	}
 
@@ -59,15 +59,15 @@ func (c *Controller) handleIssueFn(w http.ResponseWriter, r *http.Request) *issu
 		return result
 	}
 
-	res := c.issueOne(ctx, &request, authApp, membership, realm)
-	result.httpCode = res.httpCode
-	resp := res.issueCodeResponse()
+	res := c.IssueOne(ctx, &request, authApp, membership, realm)
+	result.HTTPCode = res.HTTPCode
+	resp := res.IssueCodeResponse()
 	if resp.Error != "" {
-		if result.httpCode == http.StatusInternalServerError {
+		if result.HTTPCode == http.StatusInternalServerError {
 			controller.InternalError(w, r, c.h, errors.New(resp.Error))
 			return result
 		}
-		c.h.RenderJSON(w, result.httpCode, resp)
+		c.h.RenderJSON(w, result.HTTPCode, resp)
 		return result
 	}
 

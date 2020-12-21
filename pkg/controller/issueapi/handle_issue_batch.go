@@ -30,13 +30,13 @@ const maxBatchSize = 10
 // HandleBatchIssue responds to the /batch-issue API for issuing verification codes
 func (c *Controller) HandleBatchIssue() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if result := c.handleBatchIssueFn(w, r); result != nil {
+		if result := c.HandleBatchIssueFn(w, r); result != nil {
 			recordObservability(r.Context(), result)
 		}
 	})
 }
 
-func (c *Controller) handleBatchIssueFn(w http.ResponseWriter, r *http.Request) *issueResult {
+func (c *Controller) HandleBatchIssueFn(w http.ResponseWriter, r *http.Request) *IssueResult {
 	if c.config.IsMaintenanceMode() {
 		c.h.RenderJSON(w, http.StatusTooManyRequests,
 			api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
@@ -44,8 +44,8 @@ func (c *Controller) handleBatchIssueFn(w http.ResponseWriter, r *http.Request) 
 	}
 	ctx := r.Context()
 
-	result := &issueResult{
-		httpCode:  http.StatusOK,
+	result := &IssueResult{
+		HTTPCode:  http.StatusOK,
 		obsResult: observability.ResultOK(),
 	}
 
@@ -83,15 +83,15 @@ func (c *Controller) handleBatchIssueFn(w http.ResponseWriter, r *http.Request) 
 		return result
 	}
 
-	results := c.issueMany(ctx, request.Codes, authApp, membership, realm)
+	results := c.IssueMany(ctx, request.Codes, authApp, membership, realm)
 
-	httpCode := http.StatusOK
+	HTTPCode := http.StatusOK
 	batchResp := &api.BatchIssueCodeResponse{}
 	batchResp.Codes = make([]*api.IssueCodeResponse, len(results))
 	errCount := 0
 
 	for i, result := range results {
-		singleResponse := result.issueCodeResponse()
+		singleResponse := result.IssueCodeResponse()
 		batchResp.Codes[i] = singleResponse
 		if singleResponse.Error == "" {
 			continue
@@ -100,8 +100,8 @@ func (c *Controller) handleBatchIssueFn(w http.ResponseWriter, r *http.Request) 
 		// If any issuance fails, the returned code is the code of the first failure
 		// and continue processing all codes.
 		errCount++
-		if httpCode == http.StatusOK {
-			httpCode = result.httpCode
+		if HTTPCode == http.StatusOK {
+			HTTPCode = result.HTTPCode
 			batchResp.ErrorCode = singleResponse.ErrorCode
 		}
 	}
@@ -116,6 +116,6 @@ func (c *Controller) handleBatchIssueFn(w http.ResponseWriter, r *http.Request) 
 		batchResp.Error = sb.String()
 	}
 
-	c.h.RenderJSON(w, httpCode, batchResp)
+	c.h.RenderJSON(w, HTTPCode, batchResp)
 	return result
 }

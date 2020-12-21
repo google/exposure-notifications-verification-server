@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issueapi_test
 
 import (
 	"bytes"
@@ -23,42 +23,43 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-var TestDatabaseInstance *database.TestInstance
+var testDatabaseInstance *database.TestInstance
 
 func TestMain(m *testing.M) {
-	TestDatabaseInstance = database.MustTestInstance()
-	defer TestDatabaseInstance.MustClose()
+	testDatabaseInstance = database.MustTestInstance()
+	defer testDatabaseInstance.MustClose()
 	m.Run()
 }
 
 func TestIssueMaintenanceMode(t *testing.T) {
 	t.Parallel()
-	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
+	tc := envstest.NewServerConfig(t, testDatabaseInstance)
 	ctx := context.Background()
 	r, err := render.New(ctx, "", true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := New(tc.Config, tc.Database, tc.RateLimiter, r)
+	c := issueapi.New(tc.Config, tc.Database, tc.RateLimiter, r)
 	tc.Config.MaintenanceMode = true
 
 	cases := []struct {
 		name string
-		fn   func(http.ResponseWriter, *http.Request) *issueResult
+		fn   func(http.ResponseWriter, *http.Request) *issueapi.IssueResult
 	}{
 		{
 			name: "issue",
-			fn:   c.handleIssueFn,
+			fn:   c.HandleIssueFn,
 		},
 		{
 			name: "issue batch",
-			fn:   c.handleBatchIssueFn,
+			fn:   c.HandleBatchIssueFn,
 		},
 	}
 
@@ -81,35 +82,35 @@ func TestIssueMaintenanceMode(t *testing.T) {
 
 func TestIssueMalformed(t *testing.T) {
 	t.Parallel()
-	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
+	tc := envstest.NewServerConfig(t, testDatabaseInstance)
 	ctx := context.Background()
 	r, err := render.New(ctx, "", true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := New(tc.Config, tc.Database, tc.RateLimiter, r)
+	c := issueapi.New(tc.Config, tc.Database, tc.RateLimiter, r)
 
 	cases := []struct {
 		name string
-		fn   func(http.ResponseWriter, *http.Request) *issueResult
+		fn   func(http.ResponseWriter, *http.Request) *issueapi.IssueResult
 		req  interface{}
 		code int
 	}{
 		{
 			name: "issue",
-			fn:   c.handleIssueFn,
+			fn:   c.HandleIssueFn,
 			req:  api.VerifyCodeRequest{}, // not issue
 			code: http.StatusBadRequest,
 		},
 		{
 			name: "issue batch",
-			fn:   c.handleBatchIssueFn,
+			fn:   c.HandleBatchIssueFn,
 			req:  api.VerifyCodeRequest{}, // not issue
 			code: http.StatusBadRequest,
 		},
 		{
 			name: "issue",
-			fn:   c.handleIssueFn,
+			fn:   c.HandleIssueFn,
 			req: api.IssueCodeRequest{
 				Phone: "something",
 			},
@@ -117,7 +118,7 @@ func TestIssueMalformed(t *testing.T) {
 		},
 		{
 			name: "issue batch",
-			fn:   c.handleBatchIssueFn,
+			fn:   c.HandleBatchIssueFn,
 			req:  api.BatchIssueCodeRequest{},
 			code: http.StatusUnauthorized,
 		},

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issueapi_test
 
 import (
 	"context"
@@ -20,9 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -30,7 +31,7 @@ func TestIssueOne(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
+	tc := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := tc.Database
 	realm, err := db.FindRealm(1)
 	if err != nil {
@@ -49,7 +50,7 @@ func TestIssueOne(t *testing.T) {
 	if err := db.SaveVerificationCode(existingCode, realm); err != nil {
 		t.Fatal(err)
 	}
-	c := New(tc.Config, db, tc.RateLimiter, nil)
+	c := issueapi.New(tc.Config, db, tc.RateLimiter, nil)
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 	cases := []struct {
 		name           string
@@ -82,11 +83,11 @@ func TestIssueOne(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := c.issueOne(ctx, &tc.request, nil, nil, realm)
-			resp := result.issueCodeResponse()
+			result := c.IssueOne(ctx, &tc.request, nil, nil, realm)
+			resp := result.IssueCodeResponse()
 
-			if result.httpCode != tc.httpStatusCode {
-				t.Errorf("incorrect error code. got %d, want %d", result.httpCode, tc.httpStatusCode)
+			if result.HTTPCode != tc.httpStatusCode {
+				t.Errorf("incorrect error code. got %d, want %d", result.HTTPCode, tc.httpStatusCode)
 			}
 			if resp.ErrorCode != tc.responseErr {
 				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)

@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issueapi_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 )
 
 func TestDateValidation(t *testing.T) {
@@ -55,7 +56,7 @@ func TestDateValidation(t *testing.T) {
 		}
 		min := test.max.Add(-24 * time.Hour)
 		var newDate *time.Time
-		if newDate, err = validateDate(date, min, test.max, test.tzOffset); newDate == nil {
+		if newDate, err = issueapi.ValidateDate(date, min, test.max, test.tzOffset); newDate == nil {
 			if err != nil {
 				if !test.shouldErr {
 					t.Fatalf("[%d] validateDate returned an unexpected error: %q", i, err)

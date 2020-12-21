@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package issueapi
+package issueapi_test
 
 import (
 	"context"
@@ -20,9 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -31,7 +32,7 @@ func TestGenerateCode(t *testing.T) {
 
 	// Run through a whole bunch of iterations.
 	for j := 0; j < 1000; j++ {
-		code, err := generateCode(8)
+		code, err := issueapi.GenerateCode(8)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -53,7 +54,7 @@ func TestGenerateAlphanumericCode(t *testing.T) {
 
 	// Run through a whole bunch of iterations.
 	for j := 0; j < 1000; j++ {
-		code, err := generateAlphanumericCode(16)
+		code, err := issueapi.GenerateAlphanumericCode(16)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -74,7 +75,7 @@ func TestCommitCode(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
+	tc := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := tc.Database
 
 	realm, err := db.FindRealm(1)
@@ -83,7 +84,7 @@ func TestCommitCode(t *testing.T) {
 	}
 	ctx = controller.WithRealm(ctx, realm)
 
-	c := New(tc.Config, db, tc.RateLimiter, nil)
+	c := issueapi.New(tc.Config, db, tc.RateLimiter, nil)
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)
@@ -94,7 +95,7 @@ func TestCommitCode(t *testing.T) {
 			LongExpiresAt: time.Now().Add(24 * time.Hour),
 			TestType:      "confirmed",
 		}
-		if err := c.commitCode(ctx, vCode, realm, 10); err != nil {
+		if err := c.CommitCode(ctx, vCode, realm, 10); err != nil {
 			t.Fatal(err)
 		}
 		if vCode.UUID == "" {
@@ -109,11 +110,11 @@ func TestCommitCode(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		verCode, err := db.FindVerificationCode(code)
+		VerCode, err := db.FindVerificationCode(code)
 		if err != nil {
 			t.Errorf("didn't find previously saved code")
 		}
-		if exp, codeType, err := db.IsCodeExpired(verCode, code); exp || err != nil {
+		if exp, codeType, err := db.IsCodeExpired(VerCode, code); exp || err != nil {
 			t.Fatalf("loaded code doesn't match requested code, %v %v", exp, err)
 		} else if codeType != database.CodeTypeShort {
 			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeShort, codeType)
@@ -121,11 +122,11 @@ func TestCommitCode(t *testing.T) {
 	}
 
 	for _, code := range longCodes {
-		verCode, err := db.FindVerificationCode(code)
+		VerCode, err := db.FindVerificationCode(code)
 		if err != nil {
 			t.Errorf("didn't find previously saved code")
 		}
-		if exp, codeType, err := db.IsCodeExpired(verCode, code); exp || err != nil {
+		if exp, codeType, err := db.IsCodeExpired(VerCode, code); exp || err != nil {
 			t.Fatalf("loaded code doesn't match requested code")
 		} else if codeType != database.CodeTypeLong {
 			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeLong, codeType)
@@ -137,8 +138,8 @@ func TestIssueCode(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	testConfig := testconfig.NewServerConfig(t, TestDatabaseInstance)
-	db := testConfig.Database
+	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := testCfg.Database
 
 	// Enable quota on the realm
 	realm, err := db.FindRealm(1)
@@ -163,13 +164,13 @@ func TestIssueCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	key, err := realm.QuotaKey(testConfig.Config.GetRateLimitConfig().HMACKey)
+	key, err := realm.QuotaKey(testCfg.Config.GetRateLimitConfig().HMACKey)
 	if err != nil {
 		t.Fatal(err)
 	}
-	testConfig.RateLimiter.Set(ctx, key, 0, time.Hour)
+	testCfg.RateLimiter.Set(ctx, key, 0, time.Hour)
 
-	c := New(testConfig.Config, db, testConfig.RateLimiter, nil)
+	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour)
 	expires := time.Now().UTC().Add(48 * time.Hour)
@@ -215,8 +216,8 @@ func TestIssueCode(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			testConfig.Config.EnforceRealmQuotas = tc.enforceRealmQuotas
-			result := c.issueCode(ctx, tc.vCode, realm)
+			testCfg.Config.EnforceRealmQuotas = tc.enforceRealmQuotas
+			result := c.IssueCode(ctx, tc.vCode, realm)
 
 			if tc.responseErr == "" {
 				if tc.vCode.Code == "" {
@@ -226,11 +227,11 @@ func TestIssueCode(t *testing.T) {
 					t.Fatal("Expected issued long code.")
 				}
 			} else {
-				if result.httpCode != tc.httpStatusCode {
-					t.Fatalf("incorrect error code. got %d, want %d", result.httpCode, tc.httpStatusCode)
+				if result.HTTPCode != tc.httpStatusCode {
+					t.Fatalf("incorrect error code. got %d, want %d", result.HTTPCode, tc.httpStatusCode)
 				}
-				if result.errorReturn.ErrorCode != tc.responseErr {
-					t.Fatalf("did not receive expected errorCode. got %q, want %q", result.errorReturn.Error, tc.responseErr)
+				if result.ErrorReturn.ErrorCode != tc.responseErr {
+					t.Fatalf("did not receive expected errorCode. got %q, want %q", result.ErrorReturn.Error, tc.responseErr)
 				}
 			}
 		})

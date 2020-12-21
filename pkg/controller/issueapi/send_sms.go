@@ -43,9 +43,9 @@ var (
 	}
 )
 
-// scrubPhoneNumbers checks for phone numbers in known Twilio error strings that contains
+// ScrubPhoneNumbers checks for phone numbers in known Twilio error strings that contains
 // user phone numbers.
-func scrubPhoneNumbers(s string) string {
+func ScrubPhoneNumbers(s string) string {
 	noScrubs := s
 	for _, scrub := range scrubbers {
 		pi := strings.Index(noScrubs, scrub.prefix)
@@ -62,7 +62,7 @@ func scrubPhoneNumbers(s string) string {
 	return noScrubs
 }
 
-func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest, result *issueResult, realm *database.Realm) error {
+func (c *Controller) SendSMS(ctx context.Context, request *api.IssueCodeRequest, result *IssueResult, realm *database.Realm) error {
 	if request.Phone == "" {
 		return nil
 	}
@@ -77,7 +77,7 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
 	smsStart := time.Now()
 	err = func() error {
-		message, err := realm.BuildSMSText(result.verCode.Code, result.verCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+		message, err := realm.BuildSMSText(result.VerCode.Code, result.VerCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
 			result.obsResult = observability.ResultError("FAILED_TO_BUILD_SMS")
 			return err
@@ -85,12 +85,12 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 
 		if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 			// Delete the token
-			if err := c.db.DeleteVerificationCode(result.verCode.Code); err != nil {
+			if err := c.db.DeleteVerificationCode(result.VerCode.Code); err != nil {
 				logger.Errorw("failed to delete verification code", "error", err)
 				// fallthrough to the error
 			}
 
-			logger.Infow("failed to send sms", "error", scrubPhoneNumbers(err.Error()))
+			logger.Infow("failed to send sms", "error", ScrubPhoneNumbers(err.Error()))
 			result.obsResult = observability.ResultError("FAILED_TO_SEND_SMS")
 			return err
 		}
@@ -98,8 +98,8 @@ func (c *Controller) sendSMS(ctx context.Context, request *api.IssueCodeRequest,
 	}()
 	observability.RecordLatency(ctx, smsStart, mSMSLatencyMs, &result.obsResult)
 	if err != nil {
-		result.httpCode = http.StatusBadRequest
-		result.errorReturn = api.Errorf("failed to send sms: %s", err)
+		result.HTTPCode = http.StatusBadRequest
+		result.ErrorReturn = api.Errorf("failed to send sms: %s", err)
 		return err
 	}
 	return nil

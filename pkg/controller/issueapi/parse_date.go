@@ -56,24 +56,24 @@ func init() {
 	}
 }
 
-func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseSettings) (*time.Time, *issueResult) {
+func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseSettings) (*time.Time, *IssueResult) {
 	if d == "" {
 		return nil, nil
 	}
 
 	parsed, err := time.Parse(project.RFC3339Date, d)
 	if err != nil {
-		return nil, &issueResult{
+		return nil, &IssueResult{
 			obsResult:   observability.ResultError(parseSettings.ParseError),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Errorf("failed to process %s date: %v", parseSettings.Name, err).WithCode(api.ErrUnparsableRequest),
+			HTTPCode:    http.StatusBadRequest,
+			ErrorReturn: api.Errorf("failed to process %s date: %v", parseSettings.Name, err).WithCode(api.ErrUnparsableRequest),
 		}
 	}
 	// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
 	maxDate := timeutils.UTCMidnight(time.Now())
 	minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
 
-	validatedDate, err := validateDate(parsed, minDate, maxDate, tzOffset)
+	validatedDate, err := ValidateDate(parsed, minDate, maxDate, tzOffset)
 	if err != nil {
 		err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
 			parseSettings.Name,
@@ -81,18 +81,18 @@ func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseS
 			maxDate.Format(project.RFC3339Date),
 			parsed.Format(project.RFC3339Date),
 		)
-		return nil, &issueResult{
+		return nil, &IssueResult{
 			obsResult:   observability.ResultError(parseSettings.ValidateError),
-			httpCode:    http.StatusBadRequest,
-			errorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
+			HTTPCode:    http.StatusBadRequest,
+			ErrorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
 		}
 	}
 
 	return validatedDate, nil
 }
 
-// validateDate validates the date given -- returning the time or an error.
-func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, error) {
+// ValidateDate validates the date given -- returning the time or an error.
+func ValidateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, error) {
 	// Check that all our dates are utc.
 	if date.Location() != utc || minDate.Location() != utc || maxDate.Location() != utc {
 		return nil, errors.New("dates weren't in UTC")

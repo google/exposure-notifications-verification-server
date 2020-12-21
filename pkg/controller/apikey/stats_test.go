@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/internal/envstest/testconfig"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -50,7 +49,7 @@ func TestHandleStats(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(context.Background(), testconfig.ServerAssetsPath(), true)
+	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
