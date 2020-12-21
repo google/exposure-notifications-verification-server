@@ -36,7 +36,7 @@ const (
 )
 
 func (c *Controller) issueCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm) *issueResult {
-	logger := logging.FromContext(ctx).Named("issueapi.populateCode")
+	logger := logging.FromContext(ctx).Named("issueapi.issueCode")
 
 	// If we got this far, we're about to issue a code - take from the limiter
 	// to ensure this is permitted.
@@ -49,6 +49,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 				errorReturn: api.Error(err).WithCode(api.ErrInternal),
 			}
 		}
+
 		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
 		if err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)

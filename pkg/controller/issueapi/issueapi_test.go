@@ -98,11 +98,13 @@ func TestIssueMalformed(t *testing.T) {
 		{
 			name: "issue",
 			fn:   c.handleIssueFn,
+			req:  api.VerifyCodeRequest{}, // not issue
 			code: http.StatusBadRequest,
 		},
 		{
 			name: "issue batch",
 			fn:   c.handleBatchIssueFn,
+			req:  api.VerifyCodeRequest{}, // not issue
 			code: http.StatusBadRequest,
 		},
 		{

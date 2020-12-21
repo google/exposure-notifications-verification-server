@@ -77,11 +77,11 @@ func TestCommitCode(t *testing.T) {
 	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
 	db := tc.Database
 
-	realm := database.NewRealmWithDefaults("Test Realm")
-	ctx = controller.WithRealm(ctx, realm)
-	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatalf("failed to save realm: %v", err)
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
 	}
+	ctx = controller.WithRealm(ctx, realm)
 
 	c := New(tc.Config, db, tc.RateLimiter, nil)
 
@@ -141,7 +141,10 @@ func TestIssueCode(t *testing.T) {
 	db := testConfig.Database
 
 	// Enable quota on the realm
-	realm := database.NewRealmWithDefaults("Test Realm")
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
 	realm.AbusePreventionEnabled = true
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatalf("failed to save realm: %v", err)

@@ -62,7 +62,7 @@ func (c *Controller) issueMany(ctx context.Context, requests []*api.IssueCodeReq
 	// Generate codes
 	results := make([]*issueResult, len(requests))
 	for i, req := range requests {
-		vCode, result := c.populateCode(ctx, req, authApp, membership, realm)
+		vCode, result := c.buildVerificationCode(ctx, req, authApp, membership, realm)
 		if result != nil {
 			results[i] = result
 			continue

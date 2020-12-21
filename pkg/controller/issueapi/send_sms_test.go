@@ -74,9 +74,11 @@ func TestSMS_sendSMS(t *testing.T) {
 	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
 	db := tc.Database
 
-	realm := database.NewRealmWithDefaults("Test Realm")
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
 	realm.AllowBulkUpload = true
-	ctx = controller.WithRealm(ctx, realm)
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatalf("failed to save realm: %v", err)
 	}

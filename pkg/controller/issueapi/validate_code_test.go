@@ -35,7 +35,10 @@ func TestValidate(t *testing.T) {
 	tc := testconfig.NewServerConfig(t, TestDatabaseInstance)
 	db := tc.Database
 
-	realm := database.NewRealmWithDefaults("Test Realm")
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
 	realm.AllowedTestTypes = database.TestTypeConfirmed
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatalf("failed to save realm: %v", err)
@@ -171,7 +174,7 @@ func TestValidate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			verCode, result := c.populateCode(ctx, &tc.request, authApp, membership, realm)
+			verCode, result := c.buildVerificationCode(ctx, &tc.request, authApp, membership, realm)
 			if verCode != nil {
 				if tc.request.UUID != "" && tc.request.UUID != verCode.UUID {
 					t.Errorf("expecting stable client-provided uuid. got %s, want %s", verCode.UUID, tc.request.UUID)

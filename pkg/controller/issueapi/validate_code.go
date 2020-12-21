@@ -29,17 +29,16 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
-// populateCode populates and validates a code from an issue request.
-func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeRequest,
+// buildVerificationCode populates and validates a code from an issue request.
+func (c *Controller) buildVerificationCode(ctx context.Context, request *api.IssueCodeRequest,
 	authApp *database.AuthorizedApp, membership *database.Membership, realm *database.Realm) (*database.VerificationCode, *issueResult) {
-	logger := logging.FromContext(ctx).Named("issueapi.populateCode")
+	logger := logging.FromContext(ctx).Named("issueapi.buildVerificationCode")
 
 	now := time.Now().UTC()
 	vCode := &database.VerificationCode{
 		RealmID:           realm.ID,
 		IssuingExternalID: request.ExternalIssuerID,
 		TestType:          strings.ToLower(request.TestType),
-		UUID:              project.TrimSpaceAndNonPrintable(request.UUID),
 		ExpiresAt:         now.Add(realm.CodeDuration.Duration),
 		LongExpiresAt:     now.Add(realm.LongCodeDuration.Duration),
 	}
@@ -100,8 +99,8 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 
 	// If there is a client-provided UUID, check if a code has already been issued.
 	// this prevents us from consuming quota on conflict.
-	if vCode.UUID != "" {
-		if code, err := realm.FindVerificationCodeByUUID(c.db, request.UUID); err != nil {
+	if vCode.UUID = project.TrimSpaceAndNonPrintable(request.UUID); vCode.UUID != "" {
+		if code, err := realm.FindVerificationCodeByUUID(c.db, vCode.UUID); err != nil {
 			if !database.IsNotFound(err) {
 				return nil, &issueResult{
 					obsResult:   observability.ResultError("FAILED_TO_CHECK_UUID"),
@@ -113,7 +112,7 @@ func (c *Controller) populateCode(ctx context.Context, request *api.IssueCodeReq
 			return nil, &issueResult{
 				obsResult:   observability.ResultError("UUID_CONFLICT"),
 				httpCode:    http.StatusConflict,
-				errorReturn: api.Errorf("code for %s already exists", request.UUID).WithCode(api.ErrUUIDAlreadyExists),
+				errorReturn: api.Errorf("code for %s already exists", vCode.UUID).WithCode(api.ErrUUIDAlreadyExists),
 			}
 		}
 	}
