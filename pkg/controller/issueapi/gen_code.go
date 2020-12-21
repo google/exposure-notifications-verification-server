@@ -50,19 +50,14 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 			}
 		}
 
-		limit, _, reset, ok, err := c.limiter.Take(ctx, key)
-		if err != nil {
+		if limit, _, reset, ok, err := c.limiter.Take(ctx, key); err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
 			return &issueResult{
 				obsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
 				httpCode:    http.StatusInternalServerError,
 				errorReturn: api.Errorf("failed to issue code, please try again in a few seconds").WithCode(api.ErrInternal),
 			}
-		}
-
-		stats.Record(ctx, mRealmTokenUsed.M(1))
-
-		if !ok {
+		} else if !ok {
 			logger.Warnw("realm has exceeded daily quota",
 				"realm", realm.ID,
 				"limit", limit,
@@ -76,6 +71,7 @@ func (c *Controller) issueCode(ctx context.Context, vCode *database.Verification
 				}
 			}
 		}
+		stats.Record(ctx, mRealmTokenUsed.M(1))
 	}
 
 	if err := c.commitCode(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
