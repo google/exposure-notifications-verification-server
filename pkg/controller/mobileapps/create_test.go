@@ -31,6 +31,8 @@ import (
 )
 
 func TestHandleCreate(t *testing.T) {
+	t.Parallel()
+
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	realm, _, session, err := harness.ProvisionAndLogin()
