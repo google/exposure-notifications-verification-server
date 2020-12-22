@@ -60,7 +60,7 @@ func (c *Controller) HandleResetPassword() http.Handler {
 		}
 
 		// Build the emailer.
-		resetComposer, err := controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email)
+		resetComposer, err := controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email, currentRealm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
