@@ -87,8 +87,13 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			// Use the first membership available. This will help get the user a realm-localized template.
 			// For most users the expected number of memberships is 1.
 			membership, err = user.SelectFirstMembership(c.db)
-			if err != nil && !database.IsNotFound(err) {
-				logger.Warnw("failed retrieving membership", "error", err)
+			if err != nil {
+				if !database.IsNotFound(err) {
+					logger.Infof("No membership found for %s", user.Email)
+				} else {
+					controller.InternalError(w, r, c.h, err)
+					return
+				}
 			}
 		}
 
