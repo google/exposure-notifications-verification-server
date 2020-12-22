@@ -145,9 +145,8 @@ func (u *User) ListMemberships(db *Database) ([]*Membership, error) {
 }
 
 // SelectFirstMembership selects the first memberships for this user.
-func (u *User) SelectFirstMembershipOrNil(db *Database) (*Membership, error) {
+func (u *User) SelectFirstMembership(db *Database) (*Membership, error) {
 	var membership *Membership
-
 	if err := db.db.
 		Preload("Realm").
 		Preload("User").
@@ -157,9 +156,6 @@ func (u *User) SelectFirstMembershipOrNil(db *Database) (*Membership, error) {
 		Order("realms.name").
 		First(&membership).
 		Error; err != nil {
-		if IsNotFound(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return membership, nil
