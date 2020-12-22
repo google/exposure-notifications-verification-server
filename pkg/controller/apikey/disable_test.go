@@ -17,16 +17,21 @@ package apikey_test
 import (
 	"context"
 	"fmt"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleDisable(t *testing.T) {
@@ -36,6 +41,14 @@ func TestHandleDisable(t *testing.T) {
 
 	realm, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	authApp := &database.AuthorizedApp{
+		RealmID: realm.ID,
+		Name:    "Disables app",
+	}
+	if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
@@ -64,16 +77,47 @@ func TestHandleDisable(t *testing.T) {
 		}, handler)
 	})
 
-	t.Run("disables", func(t *testing.T) {
-		t.Parallel()
+	t.Run("internal_error", func(t *testing.T) {
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		authApp := &database.AuthorizedApp{
-			RealmID: realm.ID,
-			Name:    "Disables app",
-		}
-		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
 			t.Fatal(err)
 		}
+
+		c := apikey.New(harness.Cacher, harness.Database, h)
+
+		mux := mux.NewRouter()
+		mux.Handle("/{id}", c.HandleDisable()).Methods("PUT")
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.APIKeyWrite,
+		})
+
+		r := httptest.NewRequest("PUT", "/1", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
+			t.Errorf("expected %s to contain %q", got, want)
+		}
+	})
+
+	t.Run("disables", func(t *testing.T) {
+		t.Parallel()
 
 		browserCtx := browser.New(t)
 		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)

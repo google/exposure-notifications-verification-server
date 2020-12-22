@@ -57,6 +57,8 @@ var (
 // Verification Server.
 type Database struct {
 	db     *gorm.DB
+	dbLock sync.Mutex
+
 	config *Config
 
 	// keyManager is used to encrypt/decrypt values.
@@ -261,14 +263,31 @@ func (db *Database) Ping(ctx context.Context) error {
 	return db.db.DB().PingContext(ctx)
 }
 
-// RawDB returns the underlying gorm database.
+// RawDB returns the underlying gorm database. This is publicly exposed for
+// tests.
 func (db *Database) RawDB() *gorm.DB {
+	db.dbLock.Lock()
+	defer db.dbLock.Unlock()
 	return db.db
+}
+
+// SetRawDB sets the underlying gorm database. This is publicly exposed for
+// tests.
+func (db *Database) SetRawDB(tx *gorm.DB) {
+	db.dbLock.Lock()
+	defer db.dbLock.Unlock()
+	db.db = tx
 }
 
 // IsNotFound determines if an error is a record not found.
 func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)
+}
+
+// IsValidationError returns true if the error is a validation error (user
+// error), or false otherwise.
+func IsValidationError(err error) bool {
+	return errors.Is(err, ErrValidationFailed)
 }
 
 // callbackIncrementMetric increments the provided metric

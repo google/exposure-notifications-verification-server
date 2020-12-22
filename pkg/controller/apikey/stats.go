@@ -83,7 +83,7 @@ func (c *Controller) HandleStats() http.Handler {
 			c.h.RenderJSON(w, http.StatusOK, stats)
 			return
 		default:
-			controller.InternalError(w, r, c.h, fmt.Errorf("unknown path %q", pth))
+			controller.NotFound(w, r, c.h)
 			return
 		}
 	})
