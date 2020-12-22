@@ -16,7 +16,6 @@ package middleware_test
 
 import (
 	"context"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -26,10 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
-
-func emptyHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-}
 
 func TestProcessFirewall(t *testing.T) {
 	t.Parallel()
@@ -155,6 +150,7 @@ func TestProcessFirewall(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			processFirewall.ServeHTTP(w, r)
+			w.Flush()
 
 			if got, want := w.Code, tc.code; got != want {
 				t.Errorf("expected %d to be %d", got, want)

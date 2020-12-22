@@ -18,6 +18,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -50,7 +51,7 @@ func RequireAPIKey(cacher cache.Cacher, db *database.Database, h render.Renderer
 
 			logger := logging.FromContext(ctx).Named("middleware.RequireAPIKey")
 
-			apiKey := r.Header.Get(APIKeyHeader)
+			apiKey := strings.TrimSpace(r.Header.Get(APIKeyHeader))
 			if apiKey == "" {
 				logger.Debugw("missing API key in request")
 				controller.Unauthorized(w, r, h)
