@@ -63,6 +63,45 @@ func TestHandleStats(t *testing.T) {
 		envstest.ExercisePermissionMissing(t, c.HandleStats())
 	})
 
+	t.Run("internal_error", func(t *testing.T) {
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+		harness.Database.SetRawDB(envstest.NewFailingDatabase())
+
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		c := apikey.New(harness.Cacher, harness.Database, h)
+
+		mux := mux.NewRouter()
+		mux.Handle("/{id}", c.HandleStats()).Methods("GET")
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.APIKeyRead,
+		})
+
+		r := httptest.NewRequest("GET", "/1", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
+			t.Errorf("expected %s to contain %q", got, want)
+		}
+	})
+
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
@@ -73,8 +112,8 @@ func TestHandleStats(t *testing.T) {
 		ctx := context.Background()
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       &database.Realm{},
-			User:        &database.User{},
+			Realm:       realm,
+			User:        user,
 			Permissions: rbac.APIKeyRead,
 		})
 
@@ -91,6 +130,38 @@ func TestHandleStats(t *testing.T) {
 			t.Errorf("expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "unauthorized"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
+
+	t.Run("unknown_extension", func(t *testing.T) {
+		t.Parallel()
+
+		mux := mux.NewRouter()
+		mux.Handle("/{id}.xml", c.HandleStats())
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.APIKeyRead,
+		})
+
+		u := fmt.Sprintf("/%d.xml", authApp.ID)
+		r := httptest.NewRequest("GET", u, nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 404; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Not found"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})

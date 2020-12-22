@@ -245,7 +245,7 @@ func (db *Database) SaveAuthorizedApp(a *AuthorizedApp, actor Auditable) error {
 			Where("id = ?", a.ID).
 			First(&existing).
 			Error; err != nil && !IsNotFound(err) {
-			return fmt.Errorf("failed to get existing API key")
+			return fmt.Errorf("failed to get existing API key: %w", err)
 		}
 
 		// Save the app

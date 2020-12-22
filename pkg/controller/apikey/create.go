@@ -25,11 +25,6 @@ import (
 )
 
 func (c *Controller) HandleCreate() http.Handler {
-	type FormData struct {
-		Name string              `form:"name"`
-		Type database.APIKeyType `form:"type"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -60,28 +55,23 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			authApp := &database.AuthorizedApp{
-				Name:       form.Name,
-				APIKeyType: form.Type,
-			}
-
-			flash.Error("Failed to process form: %v", err)
-			c.renderNew(ctx, w, authApp)
+		var authApp database.AuthorizedApp
+		if err := bindCreateForm(r, &authApp); err != nil {
+			authApp.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderNew(ctx, w, &authApp)
 			return
 		}
 
-		// Build the authorized app struct
-		authApp := &database.AuthorizedApp{
-			Name:       form.Name,
-			APIKeyType: form.Type,
-		}
-
-		apiKey, err := currentRealm.CreateAuthorizedApp(c.db, authApp, currentUser)
+		apiKey, err := currentRealm.CreateAuthorizedApp(c.db, &authApp, currentUser)
 		if err != nil {
-			flash.Error("Failed to create API Key: %v", err)
-			c.renderNew(ctx, w, authApp)
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusBadRequest)
+				c.renderNew(ctx, w, &authApp)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
@@ -89,9 +79,22 @@ func (c *Controller) HandleCreate() http.Handler {
 		// the next page.
 		session.Values["apiKey"] = apiKey
 
-		flash.Alert("Successfully created API Key for %v", form.Name)
+		flash.Alert("Successfully created API Key for %q", authApp.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/apikeys/%d", authApp.ID), http.StatusSeeOther)
 	})
+}
+
+func bindCreateForm(r *http.Request, app *database.AuthorizedApp) error {
+	type CreateFormData struct {
+		Name string              `form:"name"`
+		Type database.APIKeyType `form:"type"`
+	}
+
+	var form CreateFormData
+	err := controller.BindForm(nil, r, &form)
+	app.Name = form.Name
+	app.APIKeyType = form.Type
+	return err
 }
 
 // renderNew renders the edit page.

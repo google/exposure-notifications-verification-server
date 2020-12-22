@@ -27,10 +27,6 @@ import (
 
 // HandleUpdate handles an update.
 func (c *Controller) HandleUpdate() http.Handler {
-	type FormData struct {
-		Name string `form:"name"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -72,15 +68,12 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			authApp.Name = form.Name
-			flash.Error("Failed to process form: %v", err)
-			c.renderEdit(ctx, w, authApp)
+		if err := bindUpdateForm(r, authApp); err != nil {
+			authApp.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderNew(ctx, w, authApp)
+			return
 		}
-
-		// Build the authorized app struct
-		authApp.Name = form.Name
 
 		// Save
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
@@ -92,6 +85,17 @@ func (c *Controller) HandleUpdate() http.Handler {
 		flash.Alert("Successfully updated API key!")
 		http.Redirect(w, r, fmt.Sprintf("/realm/apikeys/%d", authApp.ID), http.StatusSeeOther)
 	})
+}
+
+func bindUpdateForm(r *http.Request, app *database.AuthorizedApp) error {
+	type CreateFormData struct {
+		Name string `form:"name"`
+	}
+
+	var form CreateFormData
+	err := controller.BindForm(nil, r, &form)
+	app.Name = form.Name
+	return err
 }
 
 // renderEdit renders the edit page.
