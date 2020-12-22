@@ -145,7 +145,7 @@ func (u *User) ListMemberships(db *Database) ([]*Membership, error) {
 }
 
 // SelectFirstMembership selects the first memberships for this user.
-func (u *User) SelectFirstMembership(db *Database) (*Membership, error) {
+func (u *User) SelectFirstMembershipOrNil(db *Database) (*Membership, error) {
 	var membership *Membership
 
 	if err := db.db.
@@ -158,7 +158,7 @@ func (u *User) SelectFirstMembership(db *Database) (*Membership, error) {
 		First(&membership).
 		Error; err != nil {
 		if IsNotFound(err) {
-			return membership, nil
+			return nil, nil
 		}
 		return nil, err
 	}
