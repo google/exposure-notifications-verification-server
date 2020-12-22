@@ -77,7 +77,17 @@ func ProcessFirewall(h render.Renderer, typ string) mux.MiddlewareFunc {
 				ipStr = strings.Split(xff, ",")[0]
 			}
 
+			// In some cases, the remote addr will include a port. However, Go doesn't
+			// make it easy to distinguish between an ip:port and an IPv6 address.
+			// Here we'll attempt to split the address into host:port, but if that
+			// fails, we'll attempt to process the original value as an IP directly.
+			host, _, err := net.SplitHostPort(ipStr)
+			if err == nil {
+				ipStr = host
+			}
+
 			// Parse as an IP.
+			ipStr = strings.TrimSpace(ipStr)
 			ip := net.ParseIP(ipStr)
 			if ip == nil {
 				logger.Errorw("provided ip could not be parsed")
