@@ -82,11 +82,13 @@ func (c *Controller) IssueWithUIAuth(w http.ResponseWriter, r *http.Request) *Is
 		obsResult: observability.ResultOK(),
 	}
 
-	if membership := controller.MembershipFromContext(ctx); !membership.Can(rbac.CodeIssue) {
+	membership := controller.MembershipFromContext(ctx)
+	if !membership.Can(rbac.CodeIssue) {
 		result.obsResult = observability.ResultError("ISSUE_NOT_ALLOWED")
 		controller.Unauthorized(w, r, c.h)
 		return result
 	}
+	ctx = controller.WithRealm(ctx, membership.Realm)
 
 	c.decodeAndIssue(ctx, w, r, result)
 	return result

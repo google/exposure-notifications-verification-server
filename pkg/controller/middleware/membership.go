@@ -81,9 +81,8 @@ func LoadCurrentMembership(cacher cache.Cacher, db *database.Database, h render.
 				return
 			}
 
-			// Save the membership and realm on the context.
+			// Save the membership on the context.
 			ctx = controller.WithMembership(ctx, membership)
-			ctx = controller.WithRealm(ctx, membership.Realm)
 			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)

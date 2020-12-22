@@ -50,7 +50,6 @@ func TestIssueMalformed(t *testing.T) {
 		t.Fatal(err)
 	}
 	realm.AllowBulkUpload = true
-	ctx = controller.WithRealm(ctx, realm)
 
 	r, err := render.New(ctx, "", true)
 	if err != nil {
@@ -61,7 +60,6 @@ func TestIssueMalformed(t *testing.T) {
 	cases := []struct {
 		name       string
 		membership *database.Membership
-		realm      *database.Realm
 		fn         func(http.ResponseWriter, *http.Request) *issueapi.IssueResult
 		req        interface{}
 		code       int
@@ -69,6 +67,7 @@ func TestIssueMalformed(t *testing.T) {
 		{
 			name: "issue wrong request type",
 			membership: &database.Membership{
+				Realm:       realm,
 				Permissions: rbac.CodeIssue,
 			},
 			fn:   c.IssueWithUIAuth,
@@ -78,6 +77,7 @@ func TestIssueMalformed(t *testing.T) {
 		{
 			name: "issue batch wrong request type",
 			membership: &database.Membership{
+				Realm:       realm,
 				Permissions: rbac.CodeBulkIssue,
 			},
 			fn:   c.BatchIssueWithUIAuth,
@@ -87,6 +87,7 @@ func TestIssueMalformed(t *testing.T) {
 		{
 			name: "issue API wants authapp",
 			membership: &database.Membership{
+				Realm:       realm,
 				Permissions: rbac.CodeIssue,
 			},
 			fn: c.IssueWithAPIAuth,
@@ -98,6 +99,7 @@ func TestIssueMalformed(t *testing.T) {
 		{
 			name: "issue batch API wants authapp",
 			membership: &database.Membership{
+				Realm:       realm,
 				Permissions: rbac.CodeBulkIssue,
 			},
 			fn:   c.BatchIssueWithAPIAuth,
@@ -105,8 +107,9 @@ func TestIssueMalformed(t *testing.T) {
 			code: http.StatusInternalServerError, // unauthorized at middleware
 		},
 		{
-			name:       "issue no permissions",
+			name: "issue no permissions",
 			membership: &database.Membership{
+				Realm: realm,
 				// no permissions
 			},
 			fn: c.IssueWithUIAuth,
@@ -116,8 +119,9 @@ func TestIssueMalformed(t *testing.T) {
 			code: http.StatusUnauthorized,
 		},
 		{
-			name:       "issue batch no permissions",
+			name: "issue batch no permissions",
 			membership: &database.Membership{
+				Realm: realm,
 				// no permissions
 			},
 			fn:   c.BatchIssueWithUIAuth,
@@ -126,10 +130,11 @@ func TestIssueMalformed(t *testing.T) {
 		},
 		{
 			name: "issue batch, realm not allowed",
-			realm: &database.Realm{
-				AllowBulkUpload: false,
-			},
+
 			membership: &database.Membership{
+				Realm: &database.Realm{
+					AllowBulkUpload: false,
+				},
 				Permissions: rbac.CodeBulkIssue,
 			},
 			fn:   c.BatchIssueWithUIAuth,
@@ -145,10 +150,6 @@ func TestIssueMalformed(t *testing.T) {
 			t.Parallel()
 
 			localCtx := controller.WithMembership(ctx, tc.membership)
-			if tc.realm != nil {
-				localCtx = controller.WithRealm(localCtx, tc.realm)
-			}
-
 			var reader io.Reader
 			if tc.req != nil {
 				b, err := json.Marshal(tc.req)
