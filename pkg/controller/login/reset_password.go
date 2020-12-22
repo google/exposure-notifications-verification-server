@@ -88,7 +88,7 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			// For most users the expected number of memberships is 1.
 			membership, err = user.SelectFirstMembership(c.db)
 			if err != nil {
-				if !database.IsNotFound(err) {
+				if database.IsNotFound(err) {
 					logger.Infof("No membership found for %s", user.Email)
 				} else {
 					controller.InternalError(w, r, c.h, err)
