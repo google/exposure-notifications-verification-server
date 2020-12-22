@@ -85,7 +85,7 @@ func (c *Controller) BatchIssueWithUIAuth(w http.ResponseWriter, r *http.Request
 		obsResult: observability.ResultOK(),
 	}
 
-	if membership := controller.MembershipFromContext(ctx); membership == nil || !membership.Can(rbac.CodeBulkIssue) {
+	if membership := controller.MembershipFromContext(ctx); !membership.Can(rbac.CodeBulkIssue) {
 		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ALLOWED")
 		controller.Unauthorized(w, r, c.h)
 		return result

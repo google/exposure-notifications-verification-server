@@ -82,7 +82,7 @@ func (c *Controller) IssueWithUIAuth(w http.ResponseWriter, r *http.Request) *Is
 		obsResult: observability.ResultOK(),
 	}
 
-	if membership := controller.MembershipFromContext(ctx); membership == nil || !membership.Can(rbac.CodeIssue) {
+	if membership := controller.MembershipFromContext(ctx); !membership.Can(rbac.CodeIssue) {
 		result.obsResult = observability.ResultError("ISSUE_NOT_ALLOWED")
 		controller.Unauthorized(w, r, c.h)
 		return result
