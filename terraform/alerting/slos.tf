@@ -14,31 +14,27 @@
 
 locals {
   default_per_service_slo = {
-    enable_alert = false
-    availability_goal = 0.995
-    latency_goal = 0.9
-    latency_threshold = 60000
+    enable_alert        = false
+    availability_goal   = 0.995
+    latency_goal        = 0.99
+    latency_threshold   = 60000
   }
   service_configs = {
     adminapi     = merge(local.default_per_service_slo,
                         { enable_alert = true ,
-                          latency_goal = 0.99 ,
                           latency_threshold = 6000 })
     apiserver    = merge(local.default_per_service_slo,
                         { enable_alert = true ,
-                          latency_goal = 0.99 ,
                           latency_threshold = 400 })
     appsync      = local.default_per_service_slo
     cleanup      = local.default_per_service_slo
     e2e-runner   = local.default_per_service_slo
     enx-redirect = merge(local.default_per_service_slo,
                         { enable_alert = true ,
-                          latency_goal = 0.99 ,
                           latency_threshold = 400})
     modeler      = local.default_per_service_slo
     server       = merge(local.default_per_service_slo,
                         { enable_alert = true ,
-                          latency_goal = 0.99,
                           latency_threshold = 2000})
   }
 }
@@ -64,7 +60,7 @@ module "availability-slos" {
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  custom_service_id   = each.key
+  # custom_service_id   = each.key
   service_name        = each.key
   goal                = each.value.availability_goal
   enable_alert        = each.value.enable_alert
@@ -80,7 +76,7 @@ module "latency-slos" {
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  custom_service_id   = each.key
+  # custom_service_id   = each.key
   service_name        = each.key
   goal                = each.value.latency_goal
   threshold           = each.value.latency_threshold
