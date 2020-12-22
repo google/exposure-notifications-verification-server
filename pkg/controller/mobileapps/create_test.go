@@ -67,6 +67,8 @@ func TestHandleCreate(t *testing.T) {
 	})
 
 	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
+
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
@@ -105,42 +107,43 @@ func TestHandleCreate(t *testing.T) {
 			t.Errorf("expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %s to contain %q", got, want)
+			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
-		defer done()
-
-		var nameAttrs map[string]string
-		var appIDAttrs map[string]string
-		var osAttrs map[string]string
-
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps/new`),
-			chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),
-			chromedp.Attributes(`input#name`, &nameAttrs, chromedp.ByQuery),
-			chromedp.Attributes(`input#app-id`, &appIDAttrs, chromedp.ByQuery),
-			chromedp.Attributes(`select#os`, &osAttrs, chromedp.ByQuery),
-		); err != nil {
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
 			t.Fatal(err)
 		}
 
-		if got, want := nameAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+		c := mobileapps.New(harness.Database, h)
+		handler := c.HandleCreate()
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.MobileAppWrite,
+		})
+
+		r := httptest.NewRequest("POST", "/", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 422; got != want {
+			t.Errorf("expected %d to be %d", got, want)
 		}
-		if got, want := appIDAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
-		}
-		if got, want := osAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
+		if got, want := w.Body.String(), "cannot be blank"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})

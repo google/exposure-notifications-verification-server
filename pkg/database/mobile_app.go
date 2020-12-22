@@ -81,7 +81,7 @@ type MobileApp struct {
 func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	a.Name = project.TrimSpace(a.Name)
 	if a.Name == "" {
-		a.AddError("name", "is required")
+		a.AddError("name", "cannot be blank")
 	}
 
 	if a.RealmID == 0 {
@@ -90,7 +90,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 
 	a.AppID = project.TrimSpace(a.AppID)
 	if a.AppID == "" {
-		a.AddError("app_id", "is required")
+		a.AddError("app_id", "cannot be blank")
 	}
 
 	a.URL = project.TrimSpace(a.URL)
@@ -105,7 +105,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 	a.SHA = project.TrimSpace(a.SHA)
 	if a.OS == OSTypeAndroid {
 		if a.SHA == "" {
-			a.AddError("sha", "is required for Android apps")
+			a.AddError("sha", "cannot be blank for Android apps")
 		}
 	}
 
@@ -119,7 +119,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 			}
 
 			if len(entry) != 95 {
-				a.AddError("sha", "is not 95 characters")
+				a.AddError("sha", "must be 95 characters")
 				continue
 			}
 

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -337,9 +338,30 @@ func AutoConfirmDialogs(ctx context.Context, b bool) <-chan error {
 	chromedp.ListenTarget(ctx, func(i interface{}) {
 		if _, ok := i.(*page.EventJavascriptDialogOpening); ok {
 			go func() {
-				errCh <- chromedp.Run(ctx, page.HandleJavaScriptDialog(b))
+				select {
+				case errCh <- chromedp.Run(ctx, page.HandleJavaScriptDialog(b)):
+				default:
+				}
 			}()
 		}
+	})
+
+	return errCh
+}
+
+// CaptureJavascriptErrors captures any console errors that occur.
+func CaptureJavascriptErrors(ctx context.Context) <-chan error {
+	errCh := make(chan error, 1)
+
+	chromedp.ListenTarget(ctx, func(i interface{}) {
+		go func() {
+			if t, ok := i.(*runtime.EventExceptionThrown); ok {
+				select {
+				case errCh <- fmt.Errorf(t.ExceptionDetails.Error()):
+				default:
+				}
+			}
+		}()
 	})
 
 	return errCh

@@ -123,7 +123,6 @@ func (c *Controller) HandleSettings() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
 		currentUser := membership.User
 
@@ -156,7 +155,8 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		var form formData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
+			currentRealm.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
 			return
 		}
@@ -211,7 +211,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			allowedCIDRsAdminADPI, err := database.ToCIDRList(form.AllowedCIDRsAdminAPI)
 			if err != nil {
 				currentRealm.AddError("allowedCIDRsAdminAPI", err.Error())
-				flash.Error("Failed to update realm")
+				w.WriteHeader(http.StatusUnprocessableEntity)
 				c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
 				return
 			}
@@ -220,7 +220,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			allowedCIDRsAPIServer, err := database.ToCIDRList(form.AllowedCIDRsAPIServer)
 			if err != nil {
 				currentRealm.AddError("allowedCIDRsAPIServer", err.Error())
-				flash.Error("Failed to update realm")
+				w.WriteHeader(http.StatusUnprocessableEntity)
 				c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
 				return
 			}
@@ -229,7 +229,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			allowedCIDRsServer, err := database.ToCIDRList(form.AllowedCIDRsServer)
 			if err != nil {
 				currentRealm.AddError("allowedCIDRsServer", err.Error())
-				flash.Error("Failed to update realm")
+				w.WriteHeader(http.StatusUnprocessableEntity)
 				c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
 				return
 			}
@@ -270,8 +270,13 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		// Save realm
 		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
-			flash.Error("Failed to update realm: %v", err)
-			c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
@@ -292,26 +297,27 @@ func (c *Controller) HandleSettings() http.Handler {
 					smsConfig.TwilioAuthToken = form.TwilioAuthToken
 				}
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
-
-				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
-					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, currentRealm, smsConfig, nil, quotaLimit, quotaRemaining)
-					return
-				}
 			} else {
 				// There's no record or the existing record was the system config so we
 				// want to create our own.
-				smsConfig := &database.SMSConfig{
+				smsConfig = &database.SMSConfig{
 					RealmID:          currentRealm.ID,
 					ProviderType:     sms.ProviderTypeTwilio,
 					TwilioAccountSid: form.TwilioAccountSid,
 					TwilioAuthToken:  form.TwilioAuthToken,
 					TwilioFromNumber: form.TwilioFromNumber,
 				}
+			}
 
+			if !smsConfig.IsSystem {
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
-					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, currentRealm, smsConfig, nil, quotaLimit, quotaRemaining)
+					if database.IsValidationError(err) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						c.renderSettings(ctx, w, r, currentRealm, smsConfig, nil, quotaLimit, quotaRemaining)
+						return
+					}
+
+					controller.InternalError(w, r, c.h, err)
 					return
 				}
 			}
@@ -335,16 +341,10 @@ func (c *Controller) HandleSettings() http.Handler {
 				}
 				emailConfig.SMTPHost = form.SMTPHost
 				emailConfig.SMTPPort = form.SMTPPort
-
-				if err := c.db.SaveEmailConfig(emailConfig); err != nil {
-					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, currentRealm, nil, emailConfig, quotaLimit, quotaRemaining)
-					return
-				}
 			} else {
 				// There's no record or the existing record was the system config so we
 				// want to create our own.
-				emailConfig := &database.EmailConfig{
+				emailConfig = &database.EmailConfig{
 					RealmID:      currentRealm.ID,
 					ProviderType: email.ProviderTypeSMTP,
 					SMTPAccount:  form.SMTPAccount,
@@ -352,10 +352,17 @@ func (c *Controller) HandleSettings() http.Handler {
 					SMTPHost:     form.SMTPHost,
 					SMTPPort:     form.SMTPPort,
 				}
+			}
 
+			if !emailConfig.IsSystem {
 				if err := c.db.SaveEmailConfig(emailConfig); err != nil {
-					flash.Error("Failed to update realm: %v", err)
-					c.renderSettings(ctx, w, r, currentRealm, nil, emailConfig, quotaLimit, quotaRemaining)
+					if database.IsValidationError(err) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						c.renderSettings(ctx, w, r, currentRealm, nil, emailConfig, quotaLimit, quotaRemaining)
+						return
+					}
+
+					controller.InternalError(w, r, c.h, err)
 					return
 				}
 			}
@@ -380,10 +387,10 @@ func (c *Controller) HandleSettings() http.Handler {
 				return
 			}
 
-			flash.Alert("Successfully added %d to realm quota!", burst)
+			flash.Alert("Successfully added %d to realm quota", burst)
 		}
 
-		flash.Alert("Successfully updated realm settings!")
+		flash.Alert("Successfully updated realm settings")
 		http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 	})
 }

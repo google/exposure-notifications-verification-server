@@ -77,7 +77,7 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
 			if database.IsValidationError(err) {
-				w.WriteHeader(http.StatusBadRequest)
+				w.WriteHeader(http.StatusUnprocessableEntity)
 				c.renderEdit(ctx, w, app)
 				return
 			}

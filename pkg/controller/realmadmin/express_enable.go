@@ -15,56 +15,13 @@
 package realmadmin
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
-
-func (c *Controller) HandleDisableExpress() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-		flash := controller.Flash(session)
-
-		membership := controller.MembershipFromContext(ctx)
-		if membership == nil {
-			controller.MissingMembership(w, r, c.h)
-			return
-		}
-		if !membership.Can(rbac.SettingsWrite) {
-			controller.Unauthorized(w, r, c.h)
-			return
-		}
-		currentRealm := membership.Realm
-		currentUser := membership.User
-
-		if !currentRealm.EnableENExpress {
-			flash.Error("Realm is not currently enrolled in EN Express.")
-			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
-			return
-		}
-
-		defaultSettings := database.NewRealmWithDefaults("--")
-		currentRealm.EnableENExpress = false
-		currentRealm.SMSTextTemplate = defaultSettings.SMSTextTemplate
-		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
-			flash.Error("Failed to disable EN Express: %v", err)
-
-			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
-			return
-		}
-
-		flash.Alert("Successfully disabled EN Express")
-		http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
-	})
-}
 
 func (c *Controller) HandleEnableExpress() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +47,8 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 		currentUser := membership.User
 
 		if currentRealm.EnableENExpress {
-			flash.Error("Realm already has EN Express Enabled.")
+			currentRealm.AddError("", fmt.Sprintf("%s is already enrolled in EN Express", currentRealm.Name))
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
 			return
 		}
@@ -107,15 +65,21 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 		currentRealm.AllowedTestTypes = database.TestTypeConfirmed
 
 		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
-			flash.Error("Failed to enable EN Express: %v", err)
-			// This will allow the user to correct other validation errors and then click "uprade" again.
-			currentRealm.EnableENExpress = false
-			currentRealm.SMSTextTemplate = enxSettings.SMSTextTemplate
-			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
+			if database.IsValidationError(err) {
+				// This will allow the user to correct other validation errors and then
+				// click "upgrade" again.
+				currentRealm.EnableENExpress = false
+
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		flash.Alert("Successfully enabled EN Express!")
+		flash.Alert("Successfully enabled EN Express")
 		http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 	})
 }

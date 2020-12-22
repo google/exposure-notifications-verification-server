@@ -15,9 +15,6 @@
 package database
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
@@ -62,10 +59,7 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 		s.TwilioFromNumber = ""
 	}
 
-	if len(s.Errors()) > 0 {
-		return fmt.Errorf("sms config validation failed: %s", strings.Join(s.ErrorMessages(), ", "))
-	}
-	return nil
+	return s.ErrorOrNil()
 }
 
 // SystemSMSConfig returns the system SMS config, if one exists

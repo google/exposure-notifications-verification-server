@@ -36,6 +36,12 @@ func (c *Controller) HandleEvents() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
 		membership := controller.MembershipFromContext(ctx)
 		if membership == nil {
 			controller.MissingMembership(w, r, c.h)
@@ -45,7 +51,6 @@ func (c *Controller) HandleEvents() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
 
 		var scopes []database.Scope

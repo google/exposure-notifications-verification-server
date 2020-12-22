@@ -77,8 +77,8 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			if database.IsValidationError(err) {
-				w.WriteHeader(http.StatusBadRequest)
-				c.renderEdit(ctx, w, authApp)
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderNew(ctx, w, authApp)
 				return
 			}
 

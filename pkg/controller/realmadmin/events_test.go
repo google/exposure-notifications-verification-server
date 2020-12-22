@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mobileapps_test
+package realmadmin_test
 
 import (
 	"context"
-	"fmt"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -27,15 +25,14 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
 
-func TestHandleUpdate(t *testing.T) {
+func TestHandleEvents(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
@@ -50,17 +47,6 @@ func TestHandleUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	app := &database.MobileApp{
-		RealmID: realm.ID,
-		Name:    "Appy",
-		AppID:   "com.example.app",
-		URL:     "https://app.example.com",
-		OS:      database.OSTypeIOS,
-	}
-	if err := harness.Database.SaveMobileApp(app, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
@@ -68,17 +54,16 @@ func TestHandleUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		c := mobileapps.New(harness.Database, h)
-		handler := c.HandleUpdate()
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		handler := c.HandleEvents()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
-		envstest.ExerciseIDNotFound(t, &database.Membership{
+		envstest.ExerciseBadPagination(t, &database.Membership{
 			Realm:       realm,
 			User:        user,
-			Permissions: rbac.MobileAppWrite,
+			Permissions: rbac.AuditRead,
 		}, handler)
 	})
 
@@ -93,29 +78,24 @@ func TestHandleUpdate(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := mobileapps.New(harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		handler := c.HandleEvents()
 
 		ctx := context.Background()
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        user,
-			Permissions: rbac.MobileAppWrite,
+			Permissions: rbac.AuditRead,
 		})
 
-		r := httptest.NewRequest("PUT", "/1", strings.NewReader(url.Values{
-			"name": []string{"apple"},
-		}.Encode()))
+		r := httptest.NewRequest("GET", "/", nil)
 		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		r.Header.Set("Content-Type", "text/html")
 
 		w := httptest.NewRecorder()
 
-		mux.ServeHTTP(w, r)
+		handler.ServeHTTP(w, r)
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
@@ -126,77 +106,35 @@ func TestHandleUpdate(t *testing.T) {
 		}
 	})
 
-	t.Run("validation", func(t *testing.T) {
-		t.Parallel()
-
-		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := mobileapps.New(harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
-
-		ctx := context.Background()
-		ctx = controller.WithSession(ctx, &sessions.Session{})
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        user,
-			Permissions: rbac.MobileAppWrite,
-		})
-
-		r := httptest.NewRequest("PUT", "/1", strings.NewReader(url.Values{
-			"name": []string{""},
-			"type": []string{"-1"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
-
-		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "cannot be blank"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
-		}
-	})
-
-	t.Run("updates", func(t *testing.T) {
+	t.Run("lists", func(t *testing.T) {
 		t.Parallel()
 
 		browserCtx := browser.New(t)
 		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
 		defer done()
 
-		u := fmt.Sprintf("http://%s/realm/mobile-apps/%d/edit", harness.Server.Addr(), app.ID)
-
 		if err := chromedp.Run(taskCtx,
 			browser.SetCookie(cookie),
-			chromedp.Navigate(u),
-			chromedp.WaitVisible(`body#mobileapps-edit`, chromedp.ByQuery),
-
-			chromedp.SetValue(`input#name`, "Updated name", chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#mobileapps-show`, chromedp.ByQuery),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/events`),
+			chromedp.WaitVisible(`body#realmadmin-events`, chromedp.ByQuery),
 		); err != nil {
 			t.Fatal(err)
 		}
+	})
 
-		record, err := realm.FindMobileApp(harness.Database, app.ID)
-		if err != nil {
+	t.Run("searches", func(t *testing.T) {
+		t.Parallel()
+
+		browserCtx := browser.New(t)
+		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
+		defer done()
+
+		if err := chromedp.Run(taskCtx,
+			browser.SetCookie(cookie),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/events?from=2020-01-01&to=2020-12-31`),
+			chromedp.WaitVisible(`body#realmadmin-events`, chromedp.ByQuery),
+		); err != nil {
 			t.Fatal(err)
-		}
-
-		if got, want := record.Name, "Updated name"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
 		}
 	})
 }

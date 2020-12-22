@@ -66,7 +66,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		apiKey, err := currentRealm.CreateAuthorizedApp(c.db, &authApp, currentUser)
 		if err != nil {
 			if database.IsValidationError(err) {
-				w.WriteHeader(http.StatusBadRequest)
+				w.WriteHeader(http.StatusUnprocessableEntity)
 				c.renderNew(ctx, w, &authApp)
 				return
 			}

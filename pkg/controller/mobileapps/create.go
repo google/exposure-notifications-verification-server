@@ -64,7 +64,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		app.RealmID = currentRealm.ID
 		if err := c.db.SaveMobileApp(&app, currentUser); err != nil {
 			if database.IsValidationError(err) {
-				w.WriteHeader(http.StatusBadRequest)
+				w.WriteHeader(http.StatusUnprocessableEntity)
 				c.renderNew(ctx, w, &app)
 				return
 			}
