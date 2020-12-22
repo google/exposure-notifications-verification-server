@@ -121,7 +121,7 @@ func (c *Controller) importUsers(ctx context.Context,
 		}
 
 		// Create the invitation email composer.
-		inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email)
+		inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email, realm)
 		if err != nil {
 			batchErr = multierror.Append(batchErr, err)
 			continue

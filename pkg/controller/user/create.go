@@ -99,7 +99,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email)
+		inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email, currentRealm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

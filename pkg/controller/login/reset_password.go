@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 func (c *Controller) HandleShowResetPassword() http.Handler {
@@ -59,6 +60,11 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			return
 		}
 
+		membership := controller.MembershipFromContext(ctx)
+		if !membership.Can(rbac.UserWrite) {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
 		// Does the user exist?
 		user, err := c.db.FindUserByEmail(form.Email)
 		if err != nil {
@@ -75,7 +81,7 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		}
 
 		// Build the emailer.
-		resetComposer, err := controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email)
+		resetComposer, err := controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email, membership.Realm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
