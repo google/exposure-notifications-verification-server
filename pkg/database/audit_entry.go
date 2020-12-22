@@ -15,8 +15,6 @@
 package database
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
@@ -86,10 +84,7 @@ func (a *AuditEntry) BeforeSave(tx *gorm.DB) error {
 		a.AddError("target_display", "cannot be blank")
 	}
 
-	if msgs := a.ErrorMessages(); len(msgs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
-	}
-	return nil
+	return a.ErrorOrNil()
 }
 
 // SaveAuditEntry saves the audit entry.

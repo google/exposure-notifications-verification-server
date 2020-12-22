@@ -27,14 +27,6 @@ import (
 
 // HandleUpdate handles an update.
 func (c *Controller) HandleUpdate() http.Handler {
-	type FormData struct {
-		Name  string          `form:"name"`
-		URL   string          `form:"url"`
-		OS    database.OSType `form:"os"`
-		AppID string          `form:"app_id"`
-		SHA   string          `form:"sha"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -76,30 +68,46 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			app.Name = form.Name
-			flash.Error("Failed to process form: %v", err)
-			c.renderEdit(ctx, w, app)
+		if err := bindUpdateForm(r, app); err != nil {
+			app.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderNew(ctx, w, app)
+			return
 		}
 
-		// Build the authorized app struct
-		app.Name = form.Name
-		app.URL = form.URL
-		app.OS = form.OS
-		app.AppID = form.AppID
-		app.SHA = form.SHA
-
-		// Save
 		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
-			flash.Error("Failed to update mobile app: %v", err)
-			c.renderEdit(ctx, w, app)
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderEdit(ctx, w, app)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
 		flash.Alert("Successfully updated mobile app %q!", app.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/mobile-apps/%d", app.ID), http.StatusSeeOther)
 	})
+}
+
+func bindUpdateForm(r *http.Request, app *database.MobileApp) error {
+	type FormData struct {
+		Name  string          `form:"name"`
+		URL   string          `form:"url"`
+		OS    database.OSType `form:"os"`
+		AppID string          `form:"app_id"`
+		SHA   string          `form:"sha"`
+	}
+
+	var form FormData
+	err := controller.BindForm(nil, r, &form)
+	app.Name = form.Name
+	app.URL = form.URL
+	app.OS = form.OS
+	app.AppID = form.AppID
+	app.SHA = form.SHA
+	return err
 }
 
 // renderEdit renders the edit page.

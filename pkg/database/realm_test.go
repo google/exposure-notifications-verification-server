@@ -378,7 +378,7 @@ func TestRealm_BeforeSave(t *testing.T) {
 
 			if err := tc.Input.BeforeSave(&gorm.DB{}); err != nil {
 				if tc.Error != "" {
-					if got, want := err.Error(), tc.Error; !strings.Contains(got, want) {
+					if got, want := strings.Join(tc.Input.ErrorMessages(), ","), tc.Error; !strings.Contains(got, want) {
 						t.Errorf("expected %q to be %q", got, want)
 					}
 				} else {

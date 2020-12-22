@@ -78,6 +78,8 @@ func TestHandleShow(t *testing.T) {
 	})
 
 	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
+
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
@@ -112,7 +114,7 @@ func TestHandleShow(t *testing.T) {
 			t.Errorf("expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %s to contain %q", got, want)
+			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})
 
