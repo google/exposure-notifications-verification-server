@@ -60,8 +60,7 @@ func TestValidate(t *testing.T) {
 		Model: gorm.Model{ID: 123},
 	}
 	ctx = controller.WithAuthorizedApp(ctx, authApp)
-	membership := &database.Membership{UserID: 456}
-	ctx = controller.WithMembership(ctx, membership)
+	ctx = controller.WithMembership(ctx, &database.Membership{UserID: 456})
 
 	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
 
