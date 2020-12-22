@@ -58,7 +58,7 @@ func TestHandleCreate(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		c := mobileapps.New(harness.Database, h)
 		handler := c.HandleCreate()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -75,7 +75,7 @@ func TestHandleCreate(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		c := mobileapps.New(harness.Database, h)
 		handler := c.HandleCreate()
 
 		ctx := context.Background()

@@ -56,7 +56,7 @@ func TestHandleDisable(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		c := mobileapps.New(harness.Database, h)
 		handler := c.HandleDisable()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -78,7 +78,7 @@ func TestHandleDisable(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		c := mobileapps.New(harness.Database, h)
 
 		mux := mux.NewRouter()
 		mux.Handle("/{id}", c.HandleDisable()).Methods("PUT")

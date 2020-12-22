@@ -55,7 +55,7 @@ func TestHandleIndex(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		c := mobileapps.New(harness.Database, h)
 		handler := c.HandleIndex()
 
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -76,7 +76,7 @@ func TestHandleIndex(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		c := mobileapps.New(harness.Database, h)
 		handler := c.HandleIndex()
 
 		ctx := context.Background()
