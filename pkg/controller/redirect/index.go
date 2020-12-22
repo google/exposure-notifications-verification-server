@@ -15,6 +15,7 @@
 package redirect
 
 import (
+	"net"
 	"net/http"
 	"strings"
 
@@ -32,8 +33,8 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		// Strip of the port if that was passed along in the host header.
 		baseHost := strings.ToLower(r.Host)
-		if i := strings.Index(baseHost, ":"); i > 0 {
-			baseHost = baseHost[0:i]
+		if host, _, err := net.SplitHostPort(baseHost); err == nil {
+			baseHost = host
 		}
 
 		var hostRegion string = ""

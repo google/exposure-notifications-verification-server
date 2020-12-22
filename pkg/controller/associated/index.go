@@ -24,6 +24,7 @@ package associated
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 
@@ -45,13 +46,13 @@ type Controller struct {
 
 func (c *Controller) getRegion(r *http.Request) string {
 	// Get the hostname first
-	host := strings.ToLower(r.Host)
-	if i := strings.Index(host, ":"); i > 0 {
-		host = host[0:i]
+	baseHost := strings.ToLower(r.Host)
+	if host, _, err := net.SplitHostPort(baseHost); err == nil {
+		baseHost = host
 	}
 
 	// return the mapped region code (or default, "", if not found)
-	return c.hostnameToRegion[host]
+	return c.hostnameToRegion[baseHost]
 }
 
 func (c *Controller) HandleIos() http.Handler {
