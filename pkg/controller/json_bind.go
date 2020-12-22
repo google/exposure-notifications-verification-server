@@ -36,8 +36,8 @@ func BindJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
 		return fmt.Errorf("content-type is not application/json")
 	}
 
-	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	defer r.Body.Close()
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()

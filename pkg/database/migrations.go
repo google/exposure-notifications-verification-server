@@ -28,8 +28,8 @@ import (
 )
 
 const initState = "00000-Init"
-const VerCodesLongCodeUniqueIndex = "uix_verification_codes_code"
-const VerCodesCodeUniqueIndex = "uix_verification_codes_long_code"
+const VerCodesCodeUniqueIndex = "uix_verification_codes_realm_code"
+const VerCodesLongCodeUniqueIndex = "uix_verification_codes_realm_long_code"
 
 func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 	logger := logging.FromContext(ctx)
@@ -592,7 +592,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				sqls := []string{
 					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_code VARCHAR(20)",
 					"UPDATE verification_codes SET long_code = code",
-					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes(long_code)", VerCodesLongCodeUniqueIndex),
+					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_long_code ON verification_codes(long_code)",
 					"ALTER TABLE verification_codes ALTER COLUMN long_code SET NOT NULL",
 					"ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS long_expires_at TIMESTAMPTZ",
 					"UPDATE verification_codes SET long_expires_at = expires_at",
@@ -1504,10 +1504,10 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					"ALTER TABLE verification_codes ALTER COLUMN long_code DROP NOT NULL",
-					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_code ON verification_codes (realm_id,code) WHERE code != ''",
-					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_long_code ON verification_codes (realm_id,long_code) WHERE long_code != ''",
-					fmt.Sprintf("DROP INDEX IF EXISTS %s", VerCodesLongCodeUniqueIndex),
-					fmt.Sprintf("DROP INDEX IF EXISTS %s", VerCodesLongCodeUniqueIndex),
+					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes (realm_id,code) WHERE code != ''", VerCodesCodeUniqueIndex),
+					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes (realm_id,long_code) WHERE long_code != ''", VerCodesLongCodeUniqueIndex),
+					"DROP INDEX IF EXISTS uix_verification_codes_code",
+					"DROP INDEX IF EXISTS uix_verification_codes_long_code",
 				}
 
 				for _, sql := range sqls {
