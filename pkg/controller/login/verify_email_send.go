@@ -54,11 +54,8 @@ func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
+		membership := controller.MembershipFromContext(ctx)
+		currentUser := membership.User
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
@@ -68,7 +65,7 @@ func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
 		}
 
 		// Build the email template.
-		verifyComposer, err := controller.SendEmailVerificationEmailFunc(ctx, c.db, c.h, currentUser.Email)
+		verifyComposer, err := controller.SendEmailVerificationEmailFunc(ctx, c.db, c.h, currentUser.Email, membership.Realm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

@@ -19,6 +19,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -74,11 +75,17 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 			return
 		}
 
+		// nil composer falls back to firebase and no custom message.
+		var resetComposer auth.ResetPasswordEmailFunc
+
+		membership := controller.MembershipFromContext(ctx)
 		// Build the emailer.
-		resetComposer, err := controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
+		if membership != nil {
+			resetComposer, err = controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email, membership.Realm)
+			if err != nil {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
 		}
 
 		// Reset the password.
