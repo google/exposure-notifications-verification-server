@@ -84,14 +84,11 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 
 		// This is likely - most users reset password from un-authed context.
 		if membership == nil {
-			memberships, err := user.ListMemberships(c.db)
-			if err != nil {
-				logger.Warnw("failed retrieving memberships", "error", err)
-			}
 			// Use the first membership available. This will help get the user a realm-localized template.
 			// For most users the expected number of memberships is 1.
-			if len(memberships) > 0 {
-				membership = memberships[0]
+			membership, err = user.SelectFirstMembership(c.db)
+			if err != nil {
+				logger.Warnw("failed retrieving membership", "error", err)
 			}
 		}
 
