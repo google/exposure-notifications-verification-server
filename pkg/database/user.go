@@ -146,19 +146,17 @@ func (u *User) ListMemberships(db *Database) ([]*Membership, error) {
 
 // SelectFirstMembership selects the first memberships for this user.
 func (u *User) SelectFirstMembership(db *Database) (*Membership, error) {
-	var membership *Membership
+	var membership Membership
 	if err := db.db.
 		Preload("Realm").
 		Preload("User").
 		Model(&Membership{}).
 		Where("user_id = ?", u.ID).
-		Joins("JOIN realms ON realms.id = memberships.realm_id").
-		Order("realms.name").
 		First(&membership).
 		Error; err != nil {
 		return nil, err
 	}
-	return membership, nil
+	return &membership, nil
 }
 
 // FindMembership finds the corresponding membership for the given realm ID, if

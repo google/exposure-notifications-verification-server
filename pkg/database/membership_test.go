@@ -83,6 +83,28 @@ func TestMembership_SaveMembership(t *testing.T) {
 	}
 
 	if m.DefaultSMSTemplateLabel != "This one" {
-		t.Fatalf("Expected default template saved. got %s, want \"This one\"", m.DefaultSMSTemplateLabel)
+		t.Fatalf("expected default template saved. got %s, want \"This one\"", m.DefaultSMSTemplateLabel)
+	}
+
+	found, err := user.SelectFirstMembership(db)
+	if err != nil {
+		t.Fatalf("failed finding membership %v", err)
+	}
+
+	if m.RealmID != found.RealmID {
+		t.Fatalf("expected to find the same membership. got %v, want %v", m.RealmID, found.RealmID)
+	}
+
+	mList, err := user.ListMemberships(db)
+	if err != nil {
+		t.Fatalf("failed finding membership %v", err)
+	}
+
+	if len(mList) != 1 {
+		t.Fatalf("membership ist length too short. got %d, want 1", len(mList))
+	}
+
+	if mList[0].RealmID != found.RealmID {
+		t.Fatalf("expected to find the same membership. got %v, want %v", m.RealmID, found.RealmID)
 	}
 }
