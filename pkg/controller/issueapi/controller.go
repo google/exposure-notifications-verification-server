@@ -18,10 +18,15 @@
 package issueapi
 
 import (
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"context"
+	"net/http"
+	"time"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"go.opencensus.io/tag"
 
 	"github.com/sethvargo/go-limiter"
 )
@@ -31,8 +36,6 @@ type Controller struct {
 	db      *database.Database
 	h       render.Renderer
 	limiter limiter.Store
-
-	validTestType map[string]struct{}
 }
 
 // New creates a new IssueAPI controller.
@@ -42,10 +45,19 @@ func New(config config.IssueAPIConfig, db *database.Database, limiter limiter.St
 		db:      db,
 		h:       h,
 		limiter: limiter,
-		validTestType: map[string]struct{}{
-			api.TestTypeConfirmed: {},
-			api.TestTypeLikely:    {},
-			api.TestTypeNegative:  {},
-		},
 	}
+}
+
+func recordObservability(ctx context.Context, startTime time.Time, result *IssueResult) {
+	var blame tag.Mutator
+	switch result.HTTPCode {
+	case http.StatusOK:
+		blame = observability.BlameNone
+	case http.StatusInternalServerError:
+		blame = observability.BlameServer
+	default:
+		blame = observability.BlameClient
+	}
+
+	observability.RecordLatency(ctx, startTime, mLatencyMs, &blame, &result.obsResult)
 }

@@ -17,7 +17,13 @@ package issueapi
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
 type dateParseSettings struct {
@@ -50,8 +56,43 @@ func init() {
 	}
 }
 
-// validateDate validates the date given -- returning the time or an error.
-func validateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, error) {
+func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseSettings) (*time.Time, *IssueResult) {
+	if d == "" {
+		return nil, nil
+	}
+
+	parsed, err := time.Parse(project.RFC3339Date, d)
+	if err != nil {
+		return nil, &IssueResult{
+			obsResult:   observability.ResultError(parseSettings.ParseError),
+			HTTPCode:    http.StatusBadRequest,
+			ErrorReturn: api.Errorf("failed to process %s date: %v", parseSettings.Name, err).WithCode(api.ErrUnparsableRequest),
+		}
+	}
+	// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
+	maxDate := timeutils.UTCMidnight(time.Now())
+	minDate := timeutils.Midnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+
+	validatedDate, err := ValidateDate(parsed, minDate, maxDate, tzOffset)
+	if err != nil {
+		err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
+			parseSettings.Name,
+			minDate.Format(project.RFC3339Date),
+			maxDate.Format(project.RFC3339Date),
+			parsed.Format(project.RFC3339Date),
+		)
+		return nil, &IssueResult{
+			obsResult:   observability.ResultError(parseSettings.ValidateError),
+			HTTPCode:    http.StatusBadRequest,
+			ErrorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
+		}
+	}
+
+	return validatedDate, nil
+}
+
+// ValidateDate validates the date given -- returning the time or an error.
+func ValidateDate(date, minDate, maxDate time.Time, tzOffset int) (*time.Time, error) {
 	// Check that all our dates are utc.
 	if date.Location() != utc || minDate.Location() != utc || maxDate.Location() != utc {
 		return nil, errors.New("dates weren't in UTC")

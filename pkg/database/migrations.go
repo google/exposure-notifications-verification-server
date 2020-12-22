@@ -28,7 +28,8 @@ import (
 )
 
 const initState = "00000-Init"
-const VercodeUUIDUniqueIndex = "idx_vercode_uuid_unique"
+const VerCodesCodeUniqueIndex = "uix_verification_codes_realm_code"
+const VerCodesLongCodeUniqueIndex = "uix_verification_codes_realm_long_code"
 
 func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 	logger := logging.FromContext(ctx)
@@ -1503,8 +1504,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					"ALTER TABLE verification_codes ALTER COLUMN long_code DROP NOT NULL",
-					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_code ON verification_codes (realm_id,code) WHERE code != ''",
-					"CREATE UNIQUE INDEX IF NOT EXISTS uix_verification_codes_realm_long_code ON verification_codes (realm_id,long_code) WHERE long_code != ''",
+					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes (realm_id,code) WHERE code != ''", VerCodesCodeUniqueIndex),
+					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes (realm_id,long_code) WHERE long_code != ''", VerCodesLongCodeUniqueIndex),
 					"DROP INDEX IF EXISTS uix_verification_codes_code",
 					"DROP INDEX IF EXISTS uix_verification_codes_long_code",
 				}
@@ -1576,7 +1577,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				sqls := []string{
 					`DROP INDEX IF EXISTS idx_vercode_uuid`,
-					fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON verification_codes(uuid)", VercodeUUIDUniqueIndex),
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_vercode_uuid_unique ON verification_codes(uuid)`,
 				}
 
 				for _, sql := range sqls {
@@ -1588,7 +1589,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 			Rollback: func(tx *gorm.DB) error {
 				sqls := []string{
-					fmt.Sprintf("DROP INDEX IF EXISTS %s", VercodeUUIDUniqueIndex),
+					`DROP INDEX IF EXISTS idx_vercode_uuid_unique`,
 					`CREATE INDEX IF NOT EXISTS idx_vercode_uuid ON verification_codes(uuid)`,
 				}
 

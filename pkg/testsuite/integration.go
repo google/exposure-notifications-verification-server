@@ -292,8 +292,8 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 		sub.Use(requireAPIKey)
 
 		issueapiController := issueapi.New(&s.cfg.AdminAPISrvConfig, s.DB, limiterStore, h)
-		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
-		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
+		sub.Handle("/issue", issueapiController.HandleIssueAPI()).Methods("POST")
+		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueAPI()).Methods("POST")
 
 		codesController := codes.NewAPI(ctx, &s.cfg.AdminAPISrvConfig, s.DB, h)
 		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")

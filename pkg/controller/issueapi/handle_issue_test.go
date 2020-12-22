@@ -20,40 +20,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
 )
 
-func TestIssueOne(t *testing.T) {
+func TestIssue(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
-	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := testCfg.Database
-	realm, err := db.FindRealm(1)
+	ctx := context.Background()
+	testSuite := testsuite.NewIntegrationSuite(t, ctx)
+	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx = controller.WithRealm(ctx, realm)
 
-	existingCode := &database.VerificationCode{
-		RealmID:       realm.ID,
-		Code:          "00000001",
-		LongCode:      "00000001ABC",
-		Claimed:       true,
-		TestType:      "confirmed",
-		ExpiresAt:     time.Now().Add(time.Hour),
-		LongExpiresAt: time.Now().Add(time.Hour),
-	}
-	if err := db.SaveVerificationCode(existingCode, realm); err != nil {
-		t.Fatal(err)
-	}
-	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
+
 	cases := []struct {
 		name           string
 		request        api.IssueCodeRequest
@@ -69,12 +52,12 @@ func TestIssueOne(t *testing.T) {
 			httpStatusCode: http.StatusOK,
 		},
 		{
-			name: "invalid test type",
+			name: "failure",
 			request: api.IssueCodeRequest{
-				TestType:    "invalid",
-				SymptomDate: symptomDate,
+				TestType:    "confirmed",
+				SymptomDate: "invalid date",
 			},
-			responseErr:    api.ErrInvalidTestType,
+			responseErr:    api.ErrUnparsableRequest,
 			httpStatusCode: http.StatusBadRequest,
 		},
 	}
@@ -85,11 +68,13 @@ func TestIssueOne(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := c.IssueOne(ctx, &tc.request)
-			resp := result.IssueCodeResponse()
+			statusCode, resp, err := adminClient.IssueCode(tc.request)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-			if result.HTTPCode != tc.httpStatusCode {
-				t.Errorf("incorrect error code. got %d, want %d", result.HTTPCode, tc.httpStatusCode)
+			if statusCode != tc.httpStatusCode {
+				t.Errorf("incorrect error code. got %d, want %d", statusCode, tc.httpStatusCode)
 			}
 			if resp.ErrorCode != tc.responseErr {
 				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)

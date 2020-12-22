@@ -102,8 +102,8 @@ func AdminAPI(
 		sub.Use(processFirewall)
 
 		issueapiController := issueapi.New(cfg, db, limiterStore, h)
-		sub.Handle("/issue", issueapiController.HandleIssue()).Methods("POST")
-		sub.Handle("/batch-issue", issueapiController.HandleBatchIssue()).Methods("POST")
+		sub.Handle("/issue", issueapiController.HandleIssueAPI()).Methods("POST")
+		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueAPI()).Methods("POST")
 
 		codesController := codes.NewAPI(ctx, cfg, db, h)
 		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")

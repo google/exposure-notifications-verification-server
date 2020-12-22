@@ -73,12 +73,12 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm := NewRealmWithDefaults("Test Realm")
 
 	uuid := "5148c75c-2bc5-4874-9d1c-f9185d0e1b8a"
 	code := "12345678"
 	longCode := "abcdefgh12345678"
 
-	maxAge := time.Hour
 	vc := &VerificationCode{
 		UUID:          uuid,
 		Code:          code,
@@ -88,7 +88,7 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(vc, maxAge); err != nil {
+	if err := db.SaveVerificationCode(vc, realm); err != nil {
 		t.Fatalf("error creating verification code: %v", err)
 	}
 
@@ -115,7 +115,7 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	}
 
 	vc.Claimed = true
-	if err := db.SaveVerificationCode(vc, maxAge); err != nil {
+	if err := db.SaveVerificationCode(vc, realm); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -144,7 +144,7 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(vc, time.Hour); err != nil {
+	if err := db.SaveVerificationCode(vc, realm); err != nil {
 		t.Fatal(err)
 	}
 
@@ -188,12 +188,12 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm := NewRealmWithDefaults("Test Realm")
 
-	var realmID uint = 123
 	var userID uint = 456
 
 	vc := &VerificationCode{
-		RealmID:       realmID,
+		RealmID:       realm.ID,
 		IssuingUserID: userID,
 		Code:          "123456",
 		LongCode:      "defghijk329024",
@@ -202,7 +202,7 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(vc, time.Hour); err != nil {
+	if err := db.SaveVerificationCode(vc, realm); err != nil {
 		t.Fatal(err)
 	}
 
@@ -212,9 +212,8 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	}
 
 	{
-		r := &Realm{Model: gorm.Model{ID: realmID}}
 		u := &User{Model: gorm.Model{ID: userID}}
-		got, err := db.ListRecentCodes(r, u)
+		got, err := db.ListRecentCodes(realm, u)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -228,6 +227,7 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm := NewRealmWithDefaults("Test Realm")
 
 	vc := &VerificationCode{
 		Code:          "123456",
@@ -237,7 +237,7 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(vc, time.Hour); err != nil {
+	if err := db.SaveVerificationCode(vc, realm); err != nil {
 		t.Fatal(err)
 	}
 
@@ -267,8 +267,7 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 func TestVerCodeValidate(t *testing.T) {
 	t.Parallel()
 
-	maxAge := time.Hour * 24 * 14
-	oldTest := time.Now().Add(-1 * 20 * oneDay)
+	realm := NewRealmWithDefaults("Test Realm")
 	cases := []struct {
 		Name string
 		Code VerificationCode
@@ -289,26 +288,6 @@ func TestVerCodeValidate(t *testing.T) {
 			Err: ErrInvalidTestType,
 		},
 		{
-			Name: "invalid_symptom_date",
-			Code: VerificationCode{
-				Code:        "123456",
-				LongCode:    "123456",
-				TestType:    "negative",
-				SymptomDate: &oldTest,
-			},
-			Err: ErrTestTooOld,
-		},
-		{
-			Name: "invalid_test_date",
-			Code: VerificationCode{
-				Code:     "123456",
-				LongCode: "123456",
-				TestType: "negative",
-				TestDate: &oldTest,
-			},
-			Err: ErrTestTooOld,
-		},
-		{
 			Name: "already_expired",
 			Code: VerificationCode{
 				Code:      "123456",
@@ -326,7 +305,7 @@ func TestVerCodeValidate(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
 
-			if err := tc.Code.Validate(maxAge); err != tc.Err {
+			if err := tc.Code.Validate(realm); err != tc.Err {
 				t.Fatalf("wrong error, want %v, got: %v", tc.Err, err)
 			}
 		})
@@ -351,8 +330,8 @@ func TestDeleteVerificationCode(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm := NewRealmWithDefaults("Test Realm")
 
-	maxAge := time.Hour
 	code := VerificationCode{
 		Code:          "12345678",
 		LongCode:      "12345678",
@@ -361,7 +340,7 @@ func TestDeleteVerificationCode(t *testing.T) {
 		LongExpiresAt: time.Now().Add(time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(&code, maxAge); err != nil {
+	if err := db.SaveVerificationCode(&code, realm); err != nil {
 		t.Fatal(err)
 	}
 
@@ -380,7 +359,6 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	now := time.Now()
-	maxAge := time.Hour // not important to this test case
 
 	realm := NewRealmWithDefaults("realmy")
 	if err := db.SaveRealm(realm, SystemTest); err != nil {
@@ -396,7 +374,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 		{Code: "333333", LongCode: "333333ABCDEF", RealmID: realm.ID, TestType: "negative", ExpiresAt: now.Add(time.Minute), LongExpiresAt: now.Add(time.Hour)},
 	}
 	for _, rec := range testData {
-		if err := db.SaveVerificationCode(rec, maxAge); err != nil {
+		if err := db.SaveVerificationCode(rec, realm); err != nil {
 			t.Fatalf("can't save test data: %v", err)
 		}
 	}
@@ -466,10 +444,10 @@ func TestStatDatesOnCreate(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm := NewRealmWithDefaults("Test Realm")
 
 	now := time.Now()
 	nowStr := now.Format(project.RFC3339Date)
-	maxAge := time.Hour
 
 	tests := []struct {
 		code     *VerificationCode
@@ -492,7 +470,7 @@ func TestStatDatesOnCreate(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		if err := db.SaveVerificationCode(test.code, maxAge); err != nil {
+		if err := db.SaveVerificationCode(test.code, realm); err != nil {
 			t.Fatalf("[%d] error saving code: %v", i, err)
 		}
 

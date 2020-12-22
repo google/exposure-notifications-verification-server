@@ -511,7 +511,7 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 	}
 }
 
-// callbackHMAC alters HMACs the value with the given key before saving.
+// callbackHMAC HMACs the value with the given key before saving.
 func callbackHMAC(ctx context.Context, hashFunc func(string) (string, error), table, column string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		// Do nothing if not the target table
