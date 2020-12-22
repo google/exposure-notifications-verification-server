@@ -19,6 +19,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -45,6 +46,7 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		logger := logging.FromContext(ctx).Named("HandleSubmitResetPassword")
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
@@ -79,6 +81,20 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		var resetComposer auth.ResetPasswordEmailFunc
 
 		membership := controller.MembershipFromContext(ctx)
+
+		// This is likely - most users reset password from un-authed context.
+		if membership == nil {
+			memberships, err := user.ListMemberships(c.db)
+			if err != nil {
+				logger.Warnw("failed retrieving memberships", "error", err)
+			}
+			// Use the first membership available. This will help get the user a realm-localized template.
+			// For most users the expected number of memberships is 1.
+			if len(memberships) > 0 {
+				membership = memberships[0]
+			}
+		}
+
 		// Build the emailer.
 		if membership != nil {
 			resetComposer, err = controller.SendPasswordResetEmailFunc(ctx, c.db, c.h, user.Email, membership.Realm)
