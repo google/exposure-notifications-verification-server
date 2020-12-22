@@ -60,7 +60,7 @@ module "availability-slos" {
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  # custom_service_id   = each.key
+  custom_service_id   = each.key
   service_name        = each.key
   goal                = each.value.availability_goal
   enable_alert        = each.value.enable_alert
@@ -76,7 +76,7 @@ module "latency-slos" {
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  # custom_service_id   = each.key
+  custom_service_id   = each.key
   service_name        = each.key
   goal                = each.value.latency_goal
   threshold           = each.value.latency_threshold
