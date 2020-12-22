@@ -16,6 +16,8 @@ package mobileapps_test
 
 import (
 	"context"
+	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -23,9 +25,12 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 
 	"github.com/chromedp/chromedp"
 )
@@ -35,7 +40,7 @@ func TestHandleCreate(t *testing.T) {
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, _, session, err := harness.ProvisionAndLogin()
+	realm, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,6 +64,49 @@ func TestHandleCreate(t *testing.T) {
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
+	})
+
+	t.Run("internal_error", func(t *testing.T) {
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+		harness.Database.SetRawDB(envstest.NewFailingDatabase())
+
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		handler := c.HandleCreate()
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.MobileAppWrite,
+		})
+
+		r := httptest.NewRequest("POST", "/", strings.NewReader(url.Values{
+			"name":   []string{"banana"},
+			"url":    []string{"http://example.com"},
+			"os":     []string{"1"},
+			"app_id": []string{"com.example.app"},
+		}.Encode()))
+		r = r.Clone(ctx)
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
+			t.Errorf("expected %s to contain %q", got, want)
+		}
 	})
 
 	t.Run("validation", func(t *testing.T) {

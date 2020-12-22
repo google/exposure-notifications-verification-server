@@ -75,10 +75,14 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		// Save
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
-			flash.Error("Failed to update API Key: %v", err)
-			c.renderEdit(ctx, w, authApp)
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusBadRequest)
+				c.renderEdit(ctx, w, authApp)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
@@ -88,11 +92,11 @@ func (c *Controller) HandleUpdate() http.Handler {
 }
 
 func bindUpdateForm(r *http.Request, app *database.AuthorizedApp) error {
-	type CreateFormData struct {
+	type FormData struct {
 		Name string `form:"name"`
 	}
 
-	var form CreateFormData
+	var form FormData
 	err := controller.BindForm(nil, r, &form)
 	app.Name = form.Name
 	return err

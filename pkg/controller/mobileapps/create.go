@@ -25,14 +25,6 @@ import (
 )
 
 func (c *Controller) HandleCreate() http.Handler {
-	type FormData struct {
-		Name  string          `form:"name"`
-		URL   string          `form:"url"`
-		OS    database.OSType `form:"os"`
-		AppID string          `form:"app_id"`
-		SHA   string          `form:"sha"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -56,46 +48,53 @@ func (c *Controller) HandleCreate() http.Handler {
 		currentUser := membership.User
 
 		// Requested form, stop processing.
+		var app database.MobileApp
 		if r.Method == http.MethodGet {
-			var app database.MobileApp
 			c.renderNew(ctx, w, &app)
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			app := &database.MobileApp{
-				Name:  form.Name,
-				URL:   form.URL,
-				OS:    form.OS,
-				AppID: form.AppID,
-				SHA:   form.SHA,
+		if err := bindCreateForm(r, &app); err != nil {
+			app.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderNew(ctx, w, &app)
+			return
+		}
+
+		app.RealmID = currentRealm.ID
+		if err := c.db.SaveMobileApp(&app, currentUser); err != nil {
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusBadRequest)
+				c.renderNew(ctx, w, &app)
+				return
 			}
 
-			flash.Error("Failed to process form: %v", err)
-			c.renderNew(ctx, w, app)
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		// Build the authorized app struct
-		app := &database.MobileApp{
-			Name:    form.Name,
-			RealmID: currentRealm.ID,
-			URL:     form.URL,
-			OS:      form.OS,
-			AppID:   form.AppID,
-			SHA:     form.SHA,
-		}
-
-		if err := c.db.SaveMobileApp(app, currentUser); err != nil {
-			flash.Error("Failed to create mobile app: %v", err)
-			c.renderNew(ctx, w, app)
-			return
-		}
-
-		flash.Alert("Successfully created mobile app %q", form.Name)
+		flash.Alert("Successfully created mobile app %q", app.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/mobile-apps/%d", app.ID), http.StatusSeeOther)
 	})
+}
+
+func bindCreateForm(r *http.Request, app *database.MobileApp) error {
+	type FormData struct {
+		Name  string          `form:"name"`
+		URL   string          `form:"url"`
+		OS    database.OSType `form:"os"`
+		AppID string          `form:"app_id"`
+		SHA   string          `form:"sha"`
+	}
+
+	var form FormData
+	err := controller.BindForm(nil, r, &form)
+	app.Name = form.Name
+	app.URL = form.URL
+	app.OS = form.OS
+	app.AppID = form.AppID
+	app.SHA = form.SHA
+	return err
 }
 
 // renderNew renders the new page.

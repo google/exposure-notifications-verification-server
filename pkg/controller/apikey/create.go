@@ -85,12 +85,12 @@ func (c *Controller) HandleCreate() http.Handler {
 }
 
 func bindCreateForm(r *http.Request, app *database.AuthorizedApp) error {
-	type CreateFormData struct {
+	type FormData struct {
 		Name string              `form:"name"`
 		Type database.APIKeyType `form:"type"`
 	}
 
-	var form CreateFormData
+	var form FormData
 	err := controller.BindForm(nil, r, &form)
 	app.Name = form.Name
 	app.APIKeyType = form.Type
