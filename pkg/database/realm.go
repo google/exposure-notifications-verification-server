@@ -114,7 +114,8 @@ const (
 	SMSTemplateMaxLength    = 800
 	SMSTemplateExpansionMax = 918
 
-	DefaultTemplateLabel = "Default SMS template"
+	DefaultTemplateLabel   = "Default SMS template"
+	DefaultSMSTextTemplate = "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours"
 
 	EmailInviteLink        = "[invitelink]"
 	EmailPasswordResetLink = "[passwordresetlink]"
@@ -278,7 +279,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		CodeDuration:        FromDuration(15 * time.Minute),
 		LongCodeLength:      16,
 		LongCodeDuration:    FromDuration(24 * time.Hour),
-		SMSTextTemplate:     "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours",
+		SMSTextTemplate:     DefaultSMSTextTemplate,
 		AllowedTestTypes:    14,
 		CertificateDuration: FromDuration(15 * time.Minute),
 		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
@@ -407,10 +408,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
-	if msgs := r.ErrorMessages(); len(msgs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
-	}
-	return nil
+	return r.ErrorOrNil()
 }
 
 // validateSMSTemplate is a helper method to validate a single SMSTemplate.
@@ -429,7 +427,6 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
 			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
-
 	} else {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
 		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
@@ -1020,12 +1017,12 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 			Where("id = ?", r.ID).
 			First(&existing).
 			Error; err != nil && !IsNotFound(err) {
-			return fmt.Errorf("failed to get existing realm")
+			return fmt.Errorf("failed to get existing realm: %w", err)
 		}
 
 		// Save the realm
 		if err := tx.Save(r).Error; err != nil {
-			return fmt.Errorf("failed to save realm: %w", err)
+			return err
 		}
 
 		// Brand new realm?

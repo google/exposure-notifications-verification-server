@@ -201,6 +201,8 @@ func NewTestInstance() (*TestInstance, error) {
 	if err := db.Open(ctx); err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
+	db.db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+	db.db.LogMode(false)
 
 	// Run database migrations.
 	if err := runMigrations(db); err != nil {
@@ -281,6 +283,8 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher) (*Databas
 	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		tb.Fatalf("failed to open database connection: %s", err)
 	}
+	db.db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+	db.db.LogMode(false)
 
 	// Close connection and delete database when done.
 	tb.Cleanup(func() {
@@ -331,22 +335,9 @@ func (i *TestInstance) clone() (string, error) {
 
 // runMigrations runs the migrations for the database.
 func runMigrations(db *Database) error {
-	ctx := context.Background()
-
-	// Disable logging for migrations - the callback registration is quite chatty.
-	db.db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
-	db.db = db.db.LogMode(false)
-
-	defer func() {
-		// Re-enable logging.
-		db.db.SetLogger(gorm.Logger{LogWriter: log.New(os.Stdout, "", 0)})
-	}()
-
-	// Run migrations.
-	if err := db.MigrateTo(ctx, "", false); err != nil {
+	if err := db.MigrateTo(context.Background(), "", false); err != nil {
 		return fmt.Errorf("failed to migrate database: %v", err)
 	}
-
 	return nil
 }
 

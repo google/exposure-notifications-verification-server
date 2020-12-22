@@ -19,23 +19,20 @@ package mobileapps
 import (
 	"context"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 type Controller struct {
-	cacher cache.Cacher
-	db     *database.Database
-	h      render.Renderer
+	db *database.Database
+	h  render.Renderer
 }
 
-func New(cacher cache.Cacher, db *database.Database, h render.Renderer) *Controller {
+func New(db *database.Database, h render.Renderer) *Controller {
 	return &Controller{
-		cacher: cacher,
-		db:     db,
-		h:      h,
+		db: db,
+		h:  h,
 	}
 }
 

@@ -16,6 +16,8 @@ package mobileapps_test
 
 import (
 	"context"
+	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -23,9 +25,12 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 
 	"github.com/chromedp/chromedp"
 )
@@ -35,7 +40,7 @@ func TestHandleCreate(t *testing.T) {
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, _, session, err := harness.ProvisionAndLogin()
+	realm, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +58,7 @@ func TestHandleCreate(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := mobileapps.New(harness.Cacher, harness.Database, h)
+		c := mobileapps.New(harness.Database, h)
 		handler := c.HandleCreate()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -61,38 +66,84 @@ func TestHandleCreate(t *testing.T) {
 		envstest.ExercisePermissionMissing(t, handler)
 	})
 
-	t.Run("validation", func(t *testing.T) {
+	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
-		defer done()
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		var nameAttrs map[string]string
-		var appIDAttrs map[string]string
-		var osAttrs map[string]string
-
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps/new`),
-			chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#mobileapps-new`, chromedp.ByQuery),
-			chromedp.Attributes(`input#name`, &nameAttrs, chromedp.ByQuery),
-			chromedp.Attributes(`input#app-id`, &appIDAttrs, chromedp.ByQuery),
-			chromedp.Attributes(`select#os`, &osAttrs, chromedp.ByQuery),
-		); err != nil {
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
 			t.Fatal(err)
 		}
 
-		if got, want := nameAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
+		c := mobileapps.New(harness.Database, h)
+		handler := c.HandleCreate()
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.MobileAppWrite,
+		})
+
+		r := httptest.NewRequest("POST", "/", strings.NewReader(url.Values{
+			"name":   []string{"banana"},
+			"url":    []string{"http://example.com"},
+			"os":     []string{"1"},
+			"app_id": []string{"com.example.app"},
+		}.Encode()))
+		r = r.Clone(ctx)
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
 		}
-		if got, want := appIDAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+	})
+
+	t.Run("validation", func(t *testing.T) {
+		t.Parallel()
+
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if got, want := osAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
+
+		c := mobileapps.New(harness.Database, h)
+		handler := c.HandleCreate()
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.MobileAppWrite,
+		})
+
+		r := httptest.NewRequest("POST", "/", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 422; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "cannot be blank"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})

@@ -80,6 +80,8 @@ func TestHandleUpdate(t *testing.T) {
 	})
 
 	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
+
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
@@ -117,36 +119,48 @@ func TestHandleUpdate(t *testing.T) {
 			t.Errorf("expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %s to contain %q", got, want)
+			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
-		defer done()
-
-		u := fmt.Sprintf("http://%s/realm/apikeys/%d/edit", harness.Server.Addr(), authApp.ID)
-
-		var nameAttrs map[string]string
-
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(u),
-			chromedp.WaitVisible(`body#apikeys-edit`, chromedp.ByQuery),
-
-			chromedp.SetValue(`input#name`, "", chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#apikeys-edit`, chromedp.ByQuery),
-			chromedp.Attributes(`input#name`, &nameAttrs, chromedp.ByQuery),
-		); err != nil {
+		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		if err != nil {
 			t.Fatal(err)
 		}
 
-		if got, want := nameAttrs["class"], "is-invalid"; !strings.Contains(got, want) {
+		c := apikey.New(harness.Cacher, harness.Database, h)
+
+		mux := mux.NewRouter()
+		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
+
+		ctx := context.Background()
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.APIKeyWrite,
+		})
+
+		r := httptest.NewRequest("PUT", "/1", strings.NewReader(url.Values{
+			"name": []string{""},
+			"type": []string{"-1"},
+		}.Encode()))
+		r = r.Clone(ctx)
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 422; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "cannot be blank"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})

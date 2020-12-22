@@ -16,9 +16,6 @@
 package realmadmin
 
 import (
-	"context"
-
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -26,16 +23,14 @@ import (
 )
 
 type Controller struct {
-	cacher  cache.Cacher
 	config  *config.ServerConfig
 	db      *database.Database
 	h       render.Renderer
 	limiter limiter.Store
 }
 
-func New(ctx context.Context, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
+func New(config *config.ServerConfig, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
 	return &Controller{
-		cacher:  cacher,
 		config:  config,
 		db:      db,
 		h:       h,

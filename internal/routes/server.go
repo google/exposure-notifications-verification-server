@@ -228,7 +228,7 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		mobileappsController := mobileapps.New(cacher, db, h)
+		mobileappsController := mobileapps.New(db, h)
 		mobileappsRoutes(sub, mobileappsController)
 	}
 
@@ -288,7 +288,7 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(ctx, cacher, cfg, db, limiterStore, h)
+		realmadminController := realmadmin.New(cfg, db, limiterStore, h)
 		realmadminRoutes(sub, realmadminController)
 
 		realmkeysController, err := realmkeys.New(ctx, cfg, db, certificateSigner, cacher, h)

@@ -16,8 +16,6 @@ package database
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/jinzhu/gorm"
@@ -59,10 +57,7 @@ func (e *EmailConfig) BeforeSave(tx *gorm.DB) error {
 		e.AddError("SMTPHost", "all must be specified or all must be blank")
 	}
 
-	if len(e.Errors()) > 0 {
-		return fmt.Errorf("email config validation failed: %s", strings.Join(e.ErrorMessages(), ", "))
-	}
-	return nil
+	return e.ErrorOrNil()
 }
 
 func (e *EmailConfig) Provider() (email.Provider, error) {

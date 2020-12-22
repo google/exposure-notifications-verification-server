@@ -15,13 +15,15 @@
 package realmadmin
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
-func (c *Controller) HandleStats() http.Handler {
+func (c *Controller) HandleDisableExpress() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -30,19 +32,41 @@ func (c *Controller) HandleStats() http.Handler {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
 
 		membership := controller.MembershipFromContext(ctx)
 		if membership == nil {
 			controller.MissingMembership(w, r, c.h)
 			return
 		}
-		if !membership.Can(rbac.StatsRead) {
+		if !membership.Can(rbac.SettingsWrite) {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentRealm := membership.Realm
+		currentUser := membership.User
 
-		m := controller.TemplateMapFromContext(ctx)
-		m.Title("Realm stats")
-		c.h.RenderHTML(w, "realmadmin/stats", m)
+		if !currentRealm.EnableENExpress {
+			currentRealm.AddError("", fmt.Sprintf("%s is not current enrolled in EN Express", currentRealm.Name))
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
+			return
+		}
+
+		currentRealm.EnableENExpress = false
+		currentRealm.SMSTextTemplate = database.DefaultSMSTextTemplate
+		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		flash.Alert("Successfully disabled EN Express")
+		http.Redirect(w, r, "/realm/settings", http.StatusSeeOther)
 	})
 }
