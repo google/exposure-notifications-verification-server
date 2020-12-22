@@ -15,6 +15,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.213 // indirect
 	github.com/armon/go-proxyproto v0.0.0-20200108142055-f0b8253b1507 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
+	github.com/aws/aws-sdk-go v1.36.14 // indirect
 	github.com/chromedp/cdproto v0.0.0-20201204063249-be40c824ad18
 	github.com/chromedp/chromedp v0.5.4
 	github.com/circonus-labs/circonusllhist v0.1.4 // indirect
@@ -27,7 +28,7 @@ require (
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.18.2-0.20201218004231-6600ba12b4eb
+	github.com/google/exposure-notifications-server v0.18.2-0.20201222193632-1e42c4da0f6e
 	github.com/google/go-cmp v0.5.4
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/csrf v1.7.0
@@ -73,9 +74,11 @@ require (
 	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.22.5
 	go.uber.org/zap v1.16.0
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
+	golang.org/x/sys v0.0.0-20201221093633-bc327ba9c2f0 // indirect
 	golang.org/x/text v0.3.4
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
-	golang.org/x/tools v0.0.0-20201217235154-5b06639e575e
+	golang.org/x/tools v0.0.0-20201222163215-f2e330f49058
 	google.golang.org/api v0.36.0
 	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d
 	gopkg.in/gormigrate.v1 v1.6.0
