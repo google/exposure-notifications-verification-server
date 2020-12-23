@@ -41,6 +41,11 @@ tabcheck:
 		fi
 .PHONY: tabcheck
 
+bodyclose:
+	@command -v bodyclose > /dev/null 2>&1 || go get github.com/timakin/bodyclose
+	@go vet -vettool=$$(which bodyclose) ./...
+.PHONY: bodyclose
+
 copyrightcheck:
 	@CHANGES="$$(grep -L "Copyright" $(GO_FILES))"; \
 		if [ -n "$${CHANGES}" ]; then \
