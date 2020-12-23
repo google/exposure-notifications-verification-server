@@ -18,6 +18,7 @@ package certapi
 import (
 	"context"
 	"crypto"
+	"errors"
 	"fmt"
 
 	vcache "github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -76,29 +77,33 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
 		kid, ok := kidHeader.(string)
 		if !ok {
-			return nil, fmt.Errorf("missing 'kid' header in token")
+			message := "missing 'kid' header in token"
+			logger.Infow("invalid verification token", "error", message)
+			return nil, errors.New(message)
 		}
 		publicKey, ok := publicKeys[kid]
 		if !ok {
-			return nil, fmt.Errorf("no public key for specified 'kid' not found: %v", kid)
+			message := fmt.Sprintf("no public key for specified 'kid' not found: %q", kid)
+			logger.Infow("invalid verification token", "error", message)
+			return nil, errors.New(message)
 		}
 		return publicKey, nil
 	})
 	if err != nil {
-		logger.Errorf("invalid verification token: %v", err)
+		logger.Infow("invalid verification token", "error", err)
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	tokenClaims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
-		logger.Errorf("invalid claims in verification token")
+		logger.Info("invalid claims in verification token")
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	if err := tokenClaims.Valid(); err != nil {
-		logger.Errorf("JWT is invalid: %v", err)
+		logger.Infow("JWT is invalid", "error", err)
 		return "", nil, fmt.Errorf("verification token expired")
 	}
 	if !tokenClaims.VerifyIssuer(c.config.TokenSigning.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenSigning.TokenIssuer, true) {
-		logger.Errorf("jwt contains invalid iss/aud: iss %v aud: %v", tokenClaims.Issuer, tokenClaims.Audience)
+		logger.Infow("jwt contains invalid iss/aud", "issuer", tokenClaims.Issuer, "audience", tokenClaims.Audience)
 		return "", nil, fmt.Errorf("verification token not valid")
 	}
 	subject, err := database.ParseSubject(tokenClaims.Subject)
