@@ -77,15 +77,15 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
 		kid, ok := kidHeader.(string)
 		if !ok {
-			message := "missing 'kid' header in token"
-			logger.Infow("invalid verification token", "error", message)
-			return nil, errors.New(message)
+			err := errors.New("missing 'kid' header in token")
+			logger.Infow("invalid verification token", "error", err)
+			return nil, err
 		}
 		publicKey, ok := publicKeys[kid]
 		if !ok {
-			message := fmt.Sprintf("no public key exists for kid %q", kid)
-			logger.Infow("invalid verification token", "error", message)
-			return nil, errors.New(message)
+			err := fmt.Errorf("no public key exists for kid %q", kid)
+			logger.Infow("invalid verification token", "error", err)
+			return nil, err
 		}
 		return publicKey, nil
 	})
@@ -104,9 +104,9 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 	}
 	if !tokenClaims.VerifyIssuer(c.config.TokenSigning.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenSigning.TokenIssuer, true) {
 		logger.Infow("invalid verification token",
-		        "error", "jwt contains invalid iss/aud",
-		        "issuer", tokenClaims.Issuer,
-		        "audience", tokenClaims.Audience)
+			"error", "jwt contains invalid iss/aud",
+			"issuer", tokenClaims.Issuer,
+			"audience", tokenClaims.Audience)
 		return "", nil, fmt.Errorf("verification token not valid")
 	}
 	subject, err := database.ParseSubject(tokenClaims.Subject)
