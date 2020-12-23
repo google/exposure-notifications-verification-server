@@ -83,7 +83,7 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		}
 		publicKey, ok := publicKeys[kid]
 		if !ok {
-			message := fmt.Sprintf("no public key for specified 'kid' not found: %q", kid)
+			message := fmt.Sprintf("no public key exists for kid %q", kid)
 			logger.Infow("invalid verification token", "error", message)
 			return nil, errors.New(message)
 		}
