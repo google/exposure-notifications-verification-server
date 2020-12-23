@@ -99,7 +99,7 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	if err := tokenClaims.Valid(); err != nil {
-		logger.Infow("JWT is invalid", "error", err)
+		logger.Infow("invalid verification token", "error", "jwt is invalid", "jwtError", err)
 		return "", nil, fmt.Errorf("verification token expired")
 	}
 	if !tokenClaims.VerifyIssuer(c.config.TokenSigning.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenSigning.TokenIssuer, true) {
