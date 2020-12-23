@@ -85,7 +85,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Parse and validate the verification token.
 		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken, allowedPublicKeys)
 		if err != nil {
-			logger.Debugw("verification token invalid", "error", err)
 			blame = observability.BlameClient
 			result = observability.ResultError("FAILED_TO_VALIDATE_TOKEN")
 
@@ -150,31 +149,35 @@ func (c *Controller) HandleCertificate() http.Handler {
 			blame = observability.BlameServer
 			result = observability.ResultError("FAILED_TO_SIGN_JWT")
 
-			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error(err).WithCode(api.ErrInternal))
 			return
 		}
 
 		// Do the transactional update to the database last so that if it fails, the
 		// client can retry.
 		if err := c.db.ClaimToken(authApp.RealmID, tokenID, subject); err != nil {
-			logger.Errorw("failed to claim token", "tokenID", tokenID, "error", err)
 			blame = observability.BlameClient
 			switch {
 			case errors.Is(err, database.ErrTokenExpired):
+				logger.Infow("failed to claim token, expired", "tokenID", tokenID, "error", err)
 				result = observability.ResultError("TOKEN_EXPIRED")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenExpired))
 				return
 			case errors.Is(err, database.ErrTokenUsed):
+				logger.Infow("failed to claim token, already used", "tokenID", tokenID, "error", err)
 				result = observability.ResultError("TOKEN_USED")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 				return
 			case errors.Is(err, database.ErrTokenMetadataMismatch):
+				logger.Infow("failed to claim token, metadata mismatch", "tokenID", tokenID, "error", err)
 				result = observability.ResultError("TOKEN_METADATA_MISMATCH")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 				return
 			default:
+				blame = observability.BlameServer
+				logger.Errorw("failed to claim token, unknown", "tokenID", tokenID, "error", err)
 				result = observability.ResultError("UNKNOWN_TOKEN_CLAIM_ERROR")
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.Error(err))
 				return
 			}
 		}
