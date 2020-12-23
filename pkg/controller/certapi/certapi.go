@@ -95,7 +95,7 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 	}
 	tokenClaims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
-		logger.Info("invalid claims in verification token")
+		logger.Infow("invalid verification token", "error", "claims are not StandardClaims")
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
 	if err := tokenClaims.Valid(); err != nil {
