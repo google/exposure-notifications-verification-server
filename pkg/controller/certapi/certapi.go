@@ -103,7 +103,10 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		return "", nil, fmt.Errorf("verification token expired")
 	}
 	if !tokenClaims.VerifyIssuer(c.config.TokenSigning.TokenIssuer, true) || !tokenClaims.VerifyAudience(c.config.TokenSigning.TokenIssuer, true) {
-		logger.Infow("jwt contains invalid iss/aud", "issuer", tokenClaims.Issuer, "audience", tokenClaims.Audience)
+		logger.Infow("invalid verification token",
+		        "error", "jwt contains invalid iss/aud",
+		        "issuer", tokenClaims.Issuer,
+		        "audience", tokenClaims.Audience)
 		return "", nil, fmt.Errorf("verification token not valid")
 	}
 	subject, err := database.ParseSubject(tokenClaims.Subject)
