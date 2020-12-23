@@ -143,6 +143,20 @@
         <tbody id="error-table"></tbody>
       </table>
     </div>
+    <div class="card mb-3 shadow-sm d-none" id="success-div">
+      <div class="card-header">Successfully issued codes</div>
+      <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+        <thead>
+          <tr>
+            <th width="60">Line</th>
+            <th width="150">Phone#</th>
+            <th width="130">Test date</th>
+            <th>Tracking UUID</th>
+          </tr>
+        </thead>
+        <tbody id="success-table"></tbody>
+      </table>
+    </div>
   </main>
 
   <script type="text/javascript">
@@ -168,6 +182,9 @@
 
       let $errorDiv = $('#error-div');
       let $errorTable = $('#error-table');
+
+      let $successiv = $('#success-div');
+      let $successTable = $('#success-table');
 
       let tzOffset = new Date().getTimezoneOffset();
       let randomString = getCookie("retryCode");
@@ -215,6 +232,9 @@
 
         $errorDiv.addClass("d-none");
         $errorTable.empty();
+
+        $successDiv.addClass("d-none");
+        $successTable.empty();
 
         if ($rememberCode.is(':checked')) {
           setCookie('retryCode',$retryCode.val(),1);
@@ -343,10 +363,18 @@
           headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
           data: JSON.stringify({'codes':data}),
           success: function(result) {
-            total += data.length;
             if (result.error) {
               flash.error(result.error);
             }
+
+            $successDiv.removeClass('d-none');
+            let codes = result.responseJSON.codes;
+            for(let i = 0; i < codes.length; i++) {
+              let code = codes[i]
+              showSuccessfulCode(code);
+            }
+
+            $successDiv.removeClass('d-none');
           },
           error: function(xhr, resp, text) {
             if (!xhr || !xhr.responseJSON) {
@@ -363,25 +391,47 @@
             }
 
 
-            let l = xhr.responseJSON.codes.length;
-            for(let i = 0; i < l; i++) {
-              let code = xhr.responseJSON.codes[i]
+            let codes = xhr.responseJSON.codes;
+            for(let i = 0; i < codes.length; i++) {
+              let code = codes[i]
               if (code.error) {
-                totalErrs++;
-                $errorDiv.removeClass('d-none');
-                let $row = $('<tr/>');
-                $row.append($('<td/>').text(lastRow - l + i + 1));
-                $row.append($('<td/>').text(data[i]["phone"]));
-                $row.append($('<td/>').text(data[i]["testDate"]));
-                $row.append($('<td/>').text(code.error));
-                $errorTable.append($row);
+                showErroredCode(code);
               } else {
-                total++;
+                showSuccessfulCode(code);
               }
             }
           },
         });
       }
+
+      function showErroredCode(code) {
+        totalErrs++;
+        $errorDiv.removeClass('d-none');
+        let $row = $('<tr/>');
+        $row.append($('<td/>').text(lastRow - l + i + 1));
+        $row.append($('<td/>').text(data[i]["phone"]));
+        $row.append($('<td/>').text(data[i]["testDate"]));
+        $row.append($('<td/>').text(code.error));
+        $errorTable.append($row);
+      }
+
+      function showSuccessfulCode(code) {
+        total++;
+        if (total == 21) { // only show 20 successes
+          $successTable.empty();
+          let $tooMany = $('<p>Too many codes issued to display results</p>');
+          $successTable.append($tooMany);
+          return
+        }
+
+        let $row = $('<tr/>');
+        $row.append($('<td/>').text(lastRow - l + i + 1));
+        $row.append($('<td/>').text(data[i]["phone"]));
+        $row.append($('<td/>').text(data[i]["testDate"]));
+        $row.append($('<td/>').text(code.uuid));
+        $successTable.append($row);
+      }
+
     });
   </script>
 </body>
