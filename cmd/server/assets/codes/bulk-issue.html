@@ -129,9 +129,25 @@
         </table>
       </div>
     </div>
+
+    <div class="card mb-3 shadow-sm d-none" id="receipt-div">
+      <div class="card-header">Receipt</div>
+      <div class="card-body">
+        <a id="save" class="card-link" download="bulk-issue-log.csv" href="data:text/plain,">Save code results log</a>
+        <small class="form-text text-muted">
+          <p><span class="text-success" id="receipt-success">0</span> codes issued.
+          <span class="text-danger" id="receipt-failure">0</span> codes failed.</p>
+          The above link allows you to download a log file of the results of your bulk issuance.
+          It follows the same CSV format as input with tracking UUIDs appended for successfully issued codes or the error code and message for failures.
+          You can make corrections to lines of this file and use it to retry the upload.
+        </small>
+        <p>
+      </div>
+    </div>
+
     <div class="card mb-3 shadow-sm d-none" id="error-div">
       <div class="card-header">Errors</div>
-      <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+      <table id="error-table" class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
         <thead>
           <tr>
             <th width="60">Line</th>
@@ -140,7 +156,10 @@
             <th>Error message</th>
           </tr>
         </thead>
-        <tbody id="error-table"></tbody>
+        <tbody></tbody>
+        <div class="card-body d-none" id="error-too-many">
+          <p class="card-text">Too many code errors to display results</p>
+        </div>
       </table>
     </div>
     <div class="card mb-3 shadow-sm d-none" id="success-div">
@@ -156,7 +175,7 @@
         </thead>
         <tbody></tbody>
       </table>
-      <div class="card-body d-none" id="too-many">
+      <div class="card-body d-none" id="success-too-many">
         <p class="card-text">Too many codes issued to display results</p>
       </div>
     </div>
@@ -164,6 +183,7 @@
 
   <script type="text/javascript">
     const batchSize = 10;
+    const showMaxResults = 50;
     let total = 0;
     let totalErrs = 0;
 
@@ -183,13 +203,20 @@
       let $newCode = $('#new-code');
       let $startAt = $('#start-at');
 
+      let $receiptDiv = $('#receipt-div');
+      let $save = $('#save');
+      let $receiptSuccess = $('#receipt-success');
+      let $receiptFailure = $('#receipt-failure');
+
       let $errorDiv = $('#error-div');
       let $errorTable = $('#error-table');
+      let $errorTableBody = $('#error-table > tbody');
+      let $errorTooMany = $('#error-too-many');
 
       let $successDiv = $('#success-div');
       let $successTable = $('#success-table');
       let $successTableBody = $('#success-table > tbody');
-      let $tooMany = $('#too-many');
+      let $successTooMany = $('#success-too-many');
 
       let tzOffset = new Date().getTimezoneOffset();
       let randomString = getCookie("retryCode");
@@ -235,10 +262,16 @@
         $table.removeClass('d-none');
         $progressDiv.removeClass('d-none');
 
-        $errorDiv.addClass("d-none");
-        $errorTable.empty();
+        $receiptDiv.addClass('d-none');
+        $save.attr("href", "data:text/plain,");
+        $receiptSuccess.text(0);
+        $receiptFailure.text(0);
 
-        $tooMany.addClass('d-none');
+        $errorTooMany.addClass('d-none');
+        $errorDiv.addClass("d-none");
+        $errorTableBody.empty();
+
+        $successTooMany.addClass('d-none');
         $successDiv.addClass("d-none");
         $successTableBody.empty();
 
@@ -299,12 +332,14 @@
                 }
                 break;
               }
-              $startAt.val(i + 2);
+              $startAt.val(i + 1);
               let percent = Math.floor((i + 1) * 100 / rows.length) + "%";
               $progress.width(percent);
               $progress.html(percent);
             }
           }
+
+          $save.attr("href", $save.attr("href") + '\n');
 
           if (!cancelUpload) {
             $progress.width('100%');
@@ -349,10 +384,17 @@
           return "";
         }
 
-        // Generate a UUID by hashing phone
-        let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36);
-        request["uuid"] = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
+        let uuid = ""
+        if (cols.length > 6) {
+          uuid = $("<div>").text(cols[6].trim()).html();
+        }
+        if (uuid.length != 36) {
+          // Generate a UUID by hashing phone
+          let hs  = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0,36);
+          uuid = hs.substr(0,8)+ '-' + hs.substr(9,4) + '-' + hs.substr(13,4) + '-' + hs.substr(17,4) + '-' + hs.substr(21,12);
+        }
 
+        request["uuid"] = uuid
         request["smsTemplateLabel"] = template;
         request["testType"] = "confirmed";
         request["tzOffset"] = tzOffset;
@@ -406,25 +448,46 @@
 
       function showErroredCode(request, code, line) {
         totalErrs++;
-        $errorDiv.removeClass('d-none');
+        $receiptFailure.text(totalErrs);
+        if (totalErrs == 1) {
+          $receiptDiv.removeClass('d-none');
+          $errorDiv.removeClass('d-none');
+        }
+        if (totalErrs == showMaxResults + 1) {
+          $errorTableBody.empty();
+          $errorTable.addClass('d-none');
+          $errorTooMany.removeClass('d-none');
+        }
+        $save.attr("href", $save.attr("href") + request["phone"] + ',' + request["testDate"]
+                  + ',' + request["symptomDate"] + ",,,,," + code.errorCode + ',' + code.error + '\n');
+        if (totalErrs > showMaxResults) {
+          return
+        }
+
         let $row = $('<tr/>');
         $row.append($('<td/>').text(line));
         $row.append($('<td/>').text(request["phone"]));
         $row.append($('<td/>').text(request["testDate"]));
         $row.append($('<td/>').text(code.error));
-        $errorTable.append($row);
+        $errorTableBody.append($row);
       }
 
       function showSuccessfulCode(request, code, line) {
         total++;
+        $receiptSuccess.text(total);
         if (total == 1) {
+          $receiptDiv.removeClass('d-none');
           $successDiv.removeClass('d-none');
           $successTable.removeClass('d-none');
         }
-        if (total == 51) { // only show first 50 successes
+        if (total == showMaxResults + 1) {
           $successTableBody.empty();
           $successTable.addClass('d-none');
-          $tooMany.removeClass('d-none');
+          $successTooMany.removeClass('d-none');
+        }
+        $save.attr("href", $save.attr("href") + request["phone"] + ',' + request["testDate"]
+                  + ',' + request["symptomDate"] + ",,,," + code.uuid + '\n');
+        if (total > showMaxResults) {
           return
         }
 
