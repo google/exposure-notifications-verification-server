@@ -17,7 +17,7 @@ locals {
     enable_alert      = false
     availability_goal = 0.995
     latency_goal      = 0.99
-    latency_threshold = 60000
+    latency_threshold = 60000 # in ms
   }
   service_configs = {
     adminapi = merge(local.default_per_service_slo,
