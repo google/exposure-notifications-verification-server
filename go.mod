@@ -70,6 +70,7 @@ require (
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
+	github.com/timakin/bodyclose v0.0.0-20200424151742-cb6215831a94
 	github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c // indirect
 	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.22.5

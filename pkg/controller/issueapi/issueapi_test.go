@@ -167,9 +167,8 @@ func TestIssueMalformed(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			tc.fn(recorder, req)
 
-			result := recorder.Result()
-			if result.StatusCode != tc.code {
-				t.Errorf("incorrect error code. got %d, want %d", result.StatusCode, tc.code)
+			if got, want := recorder.Code, tc.code; got != want {
+				t.Errorf("incorrect error code. got %d, want %d", got, want)
 			}
 		})
 	}
