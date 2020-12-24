@@ -14,44 +14,56 @@
 
 locals {
   default_per_service_slo = {
+    enable_alert      = false
     availability_goal = 0.995
-    latency = {
-      goal      = 0.9
-      threshold = 60000
-    }
-    enable_alert = false
+    latency_goal      = 0.99
+    latency_threshold = 60000 # in ms
   }
-  default_slo_thresholds = {
-    adminapi     = merge(local.default_per_service_slo, { enable_alert = true })
-    apiserver    = merge(local.default_per_service_slo, { enable_alert = true })
-    appsync      = local.default_per_service_slo
-    cleanup      = local.default_per_service_slo
-    e2e-runner   = local.default_per_service_slo
-    enx-redirect = merge(local.default_per_service_slo, { enable_alert = true })
-    modeler      = local.default_per_service_slo
-    server       = merge(local.default_per_service_slo, { enable_alert = true })
+  service_configs = {
+    adminapi = merge(local.default_per_service_slo,
+      { enable_alert = true,
+    latency_threshold = 6000 })
+    apiserver = merge(local.default_per_service_slo,
+      { enable_alert = true,
+    latency_threshold = 400 })
+    appsync    = local.default_per_service_slo
+    cleanup    = local.default_per_service_slo
+    e2e-runner = local.default_per_service_slo
+    enx-redirect = merge(local.default_per_service_slo,
+      { enable_alert = true,
+    latency_threshold = 400 })
+    modeler = local.default_per_service_slo
+    server = merge(local.default_per_service_slo,
+      { enable_alert = true,
+    latency_threshold = 2000 })
   }
 }
 
-resource "google_monitoring_custom_service" "verification-server" {
-  service_id   = "verification-server"
-  display_name = "Verification Server"
-  project      = var.project
+module "services" {
+  source = "./module.service"
+
+  project = var.project
+
+  for_each          = merge(local.service_configs, var.slo_thresholds_overrides)
+  service_name      = each.key
+  display_name      = each.key
+  latency_threshold = each.value.latency_threshold
+  latency_goal      = each.value.latency_goal
 }
 
 module "availability-slos" {
   source = "./module.availability-slo"
 
   project               = var.project
-  custom_service_id     = google_monitoring_custom_service.verification-server.service_id
   enabled               = var.https-forwarding-rule != ""
   notification_channels = google_monitoring_notification_channel.channels
 
-  for_each = merge(local.default_slo_thresholds, var.slo_thresholds_overrides)
+  for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  service_name = each.key
-  goal         = each.value.availability_goal
-  enable_alert = each.value.enable_alert
+  custom_service_id = each.key
+  service_name      = each.key
+  goal              = each.value.availability_goal
+  enable_alert      = each.value.enable_alert
 }
 
 module "latency-slos" {
@@ -59,14 +71,14 @@ module "latency-slos" {
 
   project = var.project
 
-  custom_service_id     = google_monitoring_custom_service.verification-server.service_id
   enabled               = var.https-forwarding-rule != ""
   notification_channels = google_monitoring_notification_channel.channels
 
-  for_each = merge(local.default_slo_thresholds, var.slo_thresholds_overrides)
+  for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  service_name = each.key
-  goal         = each.value.latency.goal
-  threshold    = each.value.latency.threshold
-  enable_alert = each.value.enable_alert
+  custom_service_id = each.key
+  service_name      = each.key
+  goal              = each.value.latency_goal
+  threshold         = each.value.latency_threshold
+  enable_alert      = each.value.enable_alert
 }
