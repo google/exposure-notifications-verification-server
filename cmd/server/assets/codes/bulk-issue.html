@@ -151,7 +151,7 @@
         <thead>
           <tr>
             <th width="60">Line</th>
-            <th width="150">Phone#</th>
+            <th width="150">Phone #</th>
             <th width="130">Test date</th>
             <th>Error message</th>
           </tr>
@@ -168,7 +168,7 @@
         <thead>
           <tr>
             <th width="60">Line</th>
-            <th width="150">Phone#</th>
+            <th width="150">Phone #</th>
             <th width="130">Test date</th>
             <th>Tracking UUID</th>
           </tr>
@@ -485,8 +485,7 @@
           $successTable.addClass('d-none');
           $successTooMany.removeClass('d-none');
         }
-        $save.attr("href", $save.attr("href") + request["phone"] + ',' + request["testDate"]
-                  + ',' + request["symptomDate"] + ",,,," + code.uuid + '\n');
+        $save.attr("href", $save.attr("href") + `${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,code.uuid + '\n');
         if (total > showMaxResults) {
           return
         }
