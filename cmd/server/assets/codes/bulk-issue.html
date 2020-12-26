@@ -458,8 +458,8 @@
           $errorTable.addClass('d-none');
           $errorTooMany.removeClass('d-none');
         }
-        $save.attr("href", $save.attr("href") + request["phone"] + ',' + request["testDate"]
-                  + ',' + request["symptomDate"] + ",,,,," + code.errorCode + ',' + code.error + '\n');
+        $save.attr("href", $save.attr("href") +
+         `$[request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,,${code.errorCode},${code.error}\n`);
         if (totalErrs > showMaxResults) {
           return
         }
@@ -485,8 +485,8 @@
           $successTable.addClass('d-none');
           $successTooMany.removeClass('d-none');
         }
-        $save.attr("href", $save.attr("href") + request["phone"] + ',' + request["testDate"]
-                    + ',' + request["symptomDate"] + ",,,," + code.uuid + '\n');
+        $save.attr("href", $save.attr("href") +
+        `${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,${code.uuid}\n`);
         if (total > showMaxResults) {
           return
         }
