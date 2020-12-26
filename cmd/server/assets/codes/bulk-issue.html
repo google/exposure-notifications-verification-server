@@ -485,7 +485,8 @@
           $successTable.addClass('d-none');
           $successTooMany.removeClass('d-none');
         }
-        $save.attr("href", $save.attr("href") + `${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,code.uuid + '\n');
+        $save.attr("href", $save.attr("href") + request["phone"] + ',' + request["testDate"]
+                    + ',' + request["symptomDate"] + ",,,," + code.uuid + '\n');
         if (total > showMaxResults) {
           return
         }
