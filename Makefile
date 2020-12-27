@@ -65,8 +65,8 @@ staticcheck:
 .PHONY: staticcheck
 
 zapcheck:
-	command -v zapw > /dev/null 2>&1 || GO111MODULE=off go get github.com/sethvargo/zapw/cmd/zapw
-	zapw ./...
+	@command -v zapw > /dev/null 2>&1 || GO111MODULE=off go get github.com/sethvargo/zapw/cmd/zapw
+	@zapw ./...
 
 test:
 	@go test \
