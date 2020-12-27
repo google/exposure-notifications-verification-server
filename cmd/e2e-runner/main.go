@@ -213,7 +213,7 @@ func batchIssueHandler(ctx context.Context, config config.E2ETestConfig) func(ht
 	c.DoRevise = false
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := clients.RunBatchIssue(ctx, c); err != nil {
-			logger.Errorw("could not run batch issue", "error", err)
+			logger.Errorw("could not run batch issue", "error", err, "hi")
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -231,7 +231,7 @@ func defaultHandler(ctx context.Context, config config.E2ETestConfig) func(http.
 	c.DoRevise = false
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := clients.RunEndToEnd(ctx, c); err != nil {
-			logger.Errorw("could not run default end to end", "error", err)
+			logger.Errorw("could not run default end to end", "error", err, 5, "hi")
 			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
 			return
 		}

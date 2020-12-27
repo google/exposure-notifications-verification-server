@@ -38,6 +38,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gostaticanalysis/analysisutil v0.6.1 // indirect
 	github.com/hashicorp/go-memdb v1.2.1 // indirect
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
@@ -68,6 +69,7 @@ require (
 	github.com/sethvargo/go-redisstore v0.3.0-opencensus
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sethvargo/go-signalcontext v0.1.0
+	github.com/sethvargo/zapw v0.1.0
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/timakin/bodyclose v0.0.0-20200424151742-cb6215831a94
@@ -79,7 +81,7 @@ require (
 	golang.org/x/sys v0.0.0-20201221093633-bc327ba9c2f0 // indirect
 	golang.org/x/text v0.3.4
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
-	golang.org/x/tools v0.0.0-20201222163215-f2e330f49058
+	golang.org/x/tools v0.0.0-20201226215659-b1c90890d22a
 	google.golang.org/api v0.36.0
 	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d
 	gopkg.in/gormigrate.v1 v1.6.0

@@ -2,7 +2,8 @@ name: Code Review
 
 on:
   pull_request:
-    branches: [ 'main' ]
+    branches:
+    - 'main'
 
 jobs:
   only_user_errors:
@@ -31,7 +32,7 @@ jobs:
             -fail-on-error="false" \
             -level="warning"
 
-  controller_error_without_return:
+  controller-error-without-return:
     name: controller-returns
     runs-on: ubuntu-latest
 
@@ -60,6 +61,45 @@ jobs:
             . | \
           reviewdog -efm="%f:%l:%m" \
             -name="controller-returns" \
+            -reporter="github-pr-review" \
+            -filter-mode="diff_context" \
+            -fail-on-error="true" \
+            -level="error"
+
+  zap-logger:
+    name: zap-logger
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - uses: reviewdog/action-setup@v1
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.15'
+
+      - uses: actions/cache@v2
+        with:
+          path: |-
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Check
+        shell: bash
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |-
+          set -eEu
+          set +o pipefail
+
+          make zapcheck 2>&1 | \
+          reviewdog -efm="%f:%l:%c: %m" \
+            -name="zap-logger" \
             -reporter="github-pr-review" \
             -filter-mode="diff_context" \
             -fail-on-error="true" \
