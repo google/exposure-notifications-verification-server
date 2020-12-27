@@ -266,10 +266,10 @@ const stopUploadingEnum = [
   'maintenance_mode',
 ];
 
-async function uploadWithRetries(batch, uploadFn) {
+async function uploadWithRetries(uploadFn) {
   let cancel = false;
   for (let retries = 3; retries > 0; retries--) {
-    await uploadFn(batch).then(
+    await uploadFn().then(
       () => { retries = 0; }).catch(
         async function(err) {
           if (!err) {
