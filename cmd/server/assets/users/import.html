@@ -174,7 +174,7 @@
 
             // If we've hit the batch limit or end of file, upload it.
             if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
-              cancelUpload = await uploadWithRetries(batch, b => uploadBatch(b, checked));
+              cancelUpload = await uploadWithRetries(() => uploadBatch(batch, checked));
               if (cancelUpload) {
                 flash.warning("Successfully added " + totalUsersAdded + " users to realm."
                   + (rows.length - i) + " remaining.");

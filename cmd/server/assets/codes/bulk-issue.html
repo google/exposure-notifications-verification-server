@@ -298,6 +298,7 @@
           let template = $inputSMSTemplate.val();
           let rows = e.target.result.split('\n');
           let batch = [];
+          let batchLines = [];
           total = 0;
           totalErrs = 0;
           $tableBody.empty();
@@ -306,12 +307,14 @@
             // Clear batch that was just uploaded.
             if (batch.length >= batchSize) {
               batch = [];
+              batchLines = [];
             }
 
             // Add to batch if the next row is valid.
             let request = buildRequest(rows[i], retryCode, template);
             if (request != "") {
               batch.push(request);
+              batchLines.push(i+1);
             }
 
             // If we've hit the batch limit or end of file, upload it.
@@ -324,7 +327,7 @@
                 $tableBody.append($row);
               }
 
-              cancelUpload = await uploadWithRetries(batch, d => uploadBatch(d, i));
+              cancelUpload = await uploadWithRetries(() => uploadBatch(batch, batchLines));
 
               if (cancelUpload) {
                 if (total > 0) {
@@ -401,7 +404,7 @@
         return request
       }
 
-      function uploadBatch(data, lastRow) {
+      function uploadBatch(data, lines) {
         return $.ajax({
           url: '/codes/batch-issue',
           type: 'POST',
@@ -414,7 +417,7 @@
             if (!result.responseJSON || !result.responseJSON.codes) {
               return
             }
-            readCodes(data, result.responseJSON.codes, lastRow);
+            readCodes(data, lines, result.responseJSON.codes);
           },
           error: function(xhr, resp, text) {
             if (!xhr || !xhr.responseJSON) {
@@ -429,19 +432,18 @@
               flash.error(message);
               return
             }
-            readCodes(data, xhr.responseJSON.codes, lastRow);
+            readCodes(data, lines, xhr.responseJSON.codes);
           },
         });
       }
 
-      function readCodes(data, codes, lastRow) {
+      function readCodes(data, lines, codes) {
         for(let i = 0; i < codes.length; i++) {
           let code = codes[i]
-          let line = lastRow - codes.length + i + 1
           if (code.error) {
-            showErroredCode(data[i], code, line);
+            showErroredCode(data[i], code, lines[i]);
           } else {
-            showSuccessfulCode(data[i], code, line);
+            showSuccessfulCode(data[i], code, lines[i]);
           }
         }
       }
@@ -458,8 +460,7 @@
           $errorTable.addClass('d-none');
           $errorTooMany.removeClass('d-none');
         }
-        $save.attr("href", $save.attr("href") + request["phone"] + ',' + request["testDate"]
-                  + ',' + request["symptomDate"] + ",,,,," + code.errorCode + ',' + code.error + '\n');
+        $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,,${code.errorCode},${code.error}\n`);
         if (totalErrs > showMaxResults) {
           return
         }
@@ -485,7 +486,7 @@
           $successTable.addClass('d-none');
           $successTooMany.removeClass('d-none');
         }
-        $save.attr("href", $save.attr("href") + `${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,code.uuid + '\n');
+        $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,${code.uuid}\n`);
         if (total > showMaxResults) {
           return
         }
