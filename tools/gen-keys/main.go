@@ -20,10 +20,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
-	"strconv"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -36,8 +34,7 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
-	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
-	logger := logging.NewLogger(debug)
+	logger := logging.NewLoggerFromEnv().Named("gen-keys")
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)

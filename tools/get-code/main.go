@@ -19,8 +19,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
@@ -44,8 +42,7 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
-	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
-	logger := logging.NewLogger(debug)
+	logger := logging.NewLoggerFromEnv().Named("get-code")
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
