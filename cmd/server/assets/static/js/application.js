@@ -732,6 +732,9 @@ function initBulkUploadUI() {
   $successTable = $('#success-table');
   $successTableBody = $('#success-table > tbody');
   $successTooMany = $('#success-too-many');
+
+  let now = new Date();
+  $save.attr('download', `bulk-issue-log-${now.toISOString().split('T')[0]}.csv`);
 }
 
 function resetBulkUploadUI() {
