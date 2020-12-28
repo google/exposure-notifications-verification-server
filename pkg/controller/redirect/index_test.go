@@ -59,8 +59,10 @@ func TestIndex(t *testing.T) {
 		AssetsPath: filepath.Join(project.Root(), "cmd", "enx-redirect", "assets"),
 		DevMode:    true,
 		HostnameConfig: map[string]string{
-			"bad":  "nope",
-			"okay": "bb",
+			"bad":    "nope",
+			"realm1": "aa",
+			"realm2": "bb",
+			"realm3": "cc",
 		},
 	}
 
@@ -75,7 +77,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	// Create another realm with apps.
-	realm2 := database.NewRealmWithDefaults("okay")
+	realm2 := database.NewRealmWithDefaults("realm2")
 	realm2.RegionCode = "bb"
 	if err := db.SaveRealm(realm2, database.SystemTest); err != nil {
 		t.Fatal(err)
@@ -94,7 +96,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	// Create Android app
-	app2 := &database.MobileApp{
+	androidApp := &database.MobileApp{
 		Name:    "app2",
 		RealmID: realm2.ID,
 		URL:     "https://app2.example.com/",
@@ -102,7 +104,23 @@ func TestIndex(t *testing.T) {
 		AppID:   "com.example.app2",
 		SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 	}
-	if err := db.SaveMobileApp(app2, database.SystemTest); err != nil {
+	if err := db.SaveMobileApp(androidApp, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create yet another realm with no apps, but enx is enabled
+	realm3 := database.NewRealmWithDefaults("realm3")
+	realm3.RegionCode = "cc"
+	if err := db.SaveRealm(realm3, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+	// Enable ENX, bypassing validations because it's annoying to set all those
+	// fields manually.
+	if err := db.RawDB().
+		Model(&database.Realm{}).
+		Where("id = ?", realm3.ID).
+		UpdateColumn("enable_en_express", true).
+		Error; err != nil {
 		t.Fatal(err)
 	}
 
@@ -195,12 +213,36 @@ func TestIndex(t *testing.T) {
 		}
 	})
 
+	// A matching region that has no apps should 404
+	t.Run("matching_region_no_apps", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL, nil)
+		req.Host = "realm1"
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 404; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+	})
+
 	// Not a mobile user agent returns a 404
 	t.Run("not_mobile_user_agent", func(t *testing.T) {
 		t.Parallel()
 
 		req, err := http.NewRequest("GET", srv.URL, nil)
-		req.Host = "okay"
+		req.Host = "realm2"
 		req.Header.Set("User-Agent", "bananarama")
 		if err != nil {
 			t.Fatal(err)
@@ -225,7 +267,7 @@ func TestIndex(t *testing.T) {
 		t.Parallel()
 
 		req, err := http.NewRequest("GET", srv.URL, nil)
-		req.Host = "okay"
+		req.Host = "realm2"
 		req.Header.Set("User-Agent", "android")
 		if err != nil {
 			t.Fatal(err)
@@ -250,12 +292,41 @@ func TestIndex(t *testing.T) {
 		}
 	})
 
+	// Android redirect where enx is enabled
+	t.Run("android_redirect_enx", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/app", nil)
+		req.Host = "realm3"
+		req.Header.Set("User-Agent", "android")
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 303; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+
+		if got, want := resp.Header.Get("Location"), "ens://app?r=CC"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
 	// iOS redirects
 	t.Run("ios_redirect", func(t *testing.T) {
 		t.Parallel()
 
 		req, err := http.NewRequest("GET", srv.URL, nil)
-		req.Host = "okay"
+		req.Host = "realm2"
 		req.Header.Set("User-Agent", "iphone")
 		if err != nil {
 			t.Fatal(err)
@@ -275,6 +346,35 @@ func TestIndex(t *testing.T) {
 		}
 
 		if got, want := resp.Header.Get("Location"), "https://app1.example.com/"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
+	// iOS redirect when enx is enabled
+	t.Run("ios_redirect_enx", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/app", nil)
+		req.Host = "realm3"
+		req.Header.Set("User-Agent", "iphone")
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 303; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+
+		if got, want := resp.Header.Get("Location"), "ens://app?r=CC"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
 	})

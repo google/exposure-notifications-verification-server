@@ -36,8 +36,14 @@ func (c *Controller) getAppStoreData(realmID uint) (*AppStoreData, error) {
 		return nil, fmt.Errorf("failed to get Android Apps: %w", err)
 	}
 	if len(androidApps) > 0 {
-		androidURL = androidApps[0].URL
-		androidAppID = androidApps[0].AppID
+		// Find the first app that has redirects enabled.
+		for _, app := range androidApps {
+			if !app.DisableRedirect {
+				androidURL = app.URL
+				androidAppID = app.AppID
+				break
+			}
+		}
 	}
 
 	// Pick first iOS app (in the realm) for Store redirect.
@@ -47,7 +53,13 @@ func (c *Controller) getAppStoreData(realmID uint) (*AppStoreData, error) {
 		return nil, fmt.Errorf("failed to get iOS Apps: %w", err)
 	}
 	if len(iosApps) > 0 {
-		iosURL = iosApps[0].URL
+		// Find the first app that has redirects enabled.
+		for _, app := range iosApps {
+			if !app.DisableRedirect {
+				iosURL = app.URL
+				break
+			}
+		}
 	}
 
 	return &AppStoreData{

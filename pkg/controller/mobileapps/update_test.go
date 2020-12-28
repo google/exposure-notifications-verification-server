@@ -183,6 +183,7 @@ func TestHandleUpdate(t *testing.T) {
 			chromedp.WaitVisible(`body#mobileapps-edit`, chromedp.ByQuery),
 
 			chromedp.SetValue(`input#name`, "Updated name", chromedp.ByQuery),
+			chromedp.RemoveAttribute(`input#enable-redirect`, "checked", chromedp.ByQuery),
 			chromedp.Click(`#submit`, chromedp.ByQuery),
 
 			chromedp.WaitVisible(`body#mobileapps-show`, chromedp.ByQuery),
@@ -197,6 +198,9 @@ func TestHandleUpdate(t *testing.T) {
 
 		if got, want := record.Name, "Updated name"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
+		}
+		if got, want := record.DisableRedirect, true; got != want {
+			t.Errorf("expected %t to be %t", got, want)
 		}
 	})
 }

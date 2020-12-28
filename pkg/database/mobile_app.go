@@ -63,6 +63,10 @@ type MobileApp struct {
 	URL    string  `gorm:"-"`
 	URLPtr *string `gorm:"column:url; type:text"`
 
+	// DisableRedirect disables URL redirection in the redirector service for this
+	// app.
+	DisableRedirect bool `gorm:"column:disable_redirect; type:bool; default:false; not null"`
+
 	// OS is the type of the application we're using (eg, iOS, Android).
 	OS OSType `gorm:"column:os; type:int;"`
 
