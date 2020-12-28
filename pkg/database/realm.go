@@ -110,6 +110,7 @@ const (
 	SMSLongCode      = "[longcode]"
 	SMSLongExpires   = "[longexpires]"
 	SMSENExpressLink = "[enslink]"
+	SMSUUID          = "[uuid]"
 
 	SMSTemplateMaxLength    = 800
 	SMSTemplateExpansionMax = 918
@@ -442,10 +443,13 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 	}
 
 	// Check expansion length based on settings.
-	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
-	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
+	fakeVerCode := &VerificationCode{
+		Code:     fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0),
+		LongCode: fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0),
+		UUID:     "00000000-0000-0000-0000-000000000000",
+	}
 	enxDomain := os.Getenv("ENX_REDIRECT_DOMAIN")
-	expandedSMSText, err := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain, label)
+	expandedSMSText, err := r.BuildSMSText(fakeVerCode, enxDomain, label)
 	if err != nil {
 		r.AddError("smsTextTemplate", fmt.Sprintf("SMS template expansion failed: %s", err))
 		r.AddError(label, fmt.Sprintf("SMS template expansion failed: %s", err))
@@ -494,7 +498,7 @@ func (r *Realm) FindVerificationCodeByUUID(db *Database, uuid string) (*Verifica
 }
 
 // BuildSMSText replaces certain strings with the right values.
-func (r *Realm) BuildSMSText(code, longCode string, enxDomain, templateLabel string) (string, error) {
+func (r *Realm) BuildSMSText(verCode *VerificationCode, enxDomain, templateLabel string) (string, error) {
 	text := r.SMSTextTemplate
 	if templateLabel != "" && templateLabel != DefaultTemplateLabel && r.SMSTextAlternateTemplates != nil {
 		if t, has := r.SMSTextAlternateTemplates[templateLabel]; has && t != nil && *t != "" {
@@ -515,10 +519,11 @@ func (r *Realm) BuildSMSText(code, longCode string, enxDomain, templateLabel str
 				SMSLongCode))
 	}
 	text = strings.ReplaceAll(text, SMSRegion, r.RegionCode)
-	text = strings.ReplaceAll(text, SMSCode, code)
+	text = strings.ReplaceAll(text, SMSCode, verCode.Code)
 	text = strings.ReplaceAll(text, SMSExpires, fmt.Sprintf("%d", r.GetCodeDurationMinutes()))
-	text = strings.ReplaceAll(text, SMSLongCode, longCode)
+	text = strings.ReplaceAll(text, SMSLongCode, verCode.LongCode)
 	text = strings.ReplaceAll(text, SMSLongExpires, fmt.Sprintf("%d", r.GetLongCodeDurationHours()))
+	text = strings.ReplaceAll(text, SMSUUID, verCode.UUID)
 
 	return text, nil
 }

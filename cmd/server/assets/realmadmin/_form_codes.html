@@ -259,13 +259,15 @@
           <li><code>[enslink]</code> Inserts the EN Express link of: <code>https://{{toLower $realm.RegionCode}}.{{.enxRedirectDomain}}/v?c=[longcode]</code>
             <ul>
               <li>This domain should be registered as a universal link for both your Android and iOS applications.</li>
-              <li>Contact your server operator to verify the the verification EN Express redirect service is running and configurd correctly.</li>
+              <li>Contact your server operator to verify the the verification EN Express redirect service is running and configured correctly.</li>
             </ul>
           </li>
           {{end}}
           <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
           <li><code>[code]</code>The 'short' verification code can be optionally included here in the event the link isn't clickable for the user. Typically this is not needed.</li>
           <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units). Should be included if <code>[code]</code> is used</li>
+          <li><code>[uuid]</code>The tracking uuid of the code, this may be associated with the user's case data, and
+            issuers may use this to confirm that a code has been claimed by the user.</li>
         </ul>
 
         Here is an example SMS template using EN Express.
@@ -302,6 +304,8 @@
         <li><code>[expires]</code>The number of minutes until the short code expires (just the number, no units).</li>
         <li><code>[longcode]</code>The 'long' verification code</li>
         <li><code>[longexpires]</code>The number of hours until the long code expires (just the number, no units).</li>
+        <li><code>[uuid]</code>The tracking uuid of the code, this may be associated with the user's case data, and
+          issuers may use this to confirm that a code has been claimed by the user.</li>
       </ul>
 
       Here are some example SMS templates. The recommended usage is to include the long code in the SMS, and make
@@ -319,7 +323,7 @@
         </li>
         <li>
           <p>Send long code with custom URI (<code>152</code> characters with 16 digit codes and 24 hour expiration).
-            Here we assume that <code>verify.mypha.gov</code> is registred as a universal link for both your iOS
+            Here we assume that <code>verify.mypha.gov</code> is registered as a universal link for both your iOS
             and Android applications.
           </p>
           <p>
