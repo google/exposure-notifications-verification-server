@@ -73,7 +73,7 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 	logger := logging.FromContext(ctx).Named("certapi.validateToken")
 
 	parser := &jwt.Parser{
-		SkipClaimsValidation: true, // Manually check claims.Valid() below
+		SkipClaimsValidation: true, // we manually check claims.Valid() below
 	}
 	// Parse and validate the verification token.
 	token, err := parser.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
