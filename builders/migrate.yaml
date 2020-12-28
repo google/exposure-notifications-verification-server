@@ -30,7 +30,7 @@ substitutions:
   _DB_USER:
   _DB_VERIFICATION_CODE_DATABASE_KEY:
   _KEY_MANAGER:
-  _LOG_DEBUG:
+  _LOG_LEVEL:
   _REPO: 'github.com/google/exposure-notifications-verification-server'
   _TAG:
 
@@ -51,4 +51,4 @@ steps:
   - 'DB_USER=${_DB_USER}'
   - 'DB_VERIFICATION_CODE_DATABASE_KEY=${_DB_VERIFICATION_CODE_DATABASE_KEY}'
   - 'KEY_MANAGER=${_KEY_MANAGER}'
-  - 'LOG_DEBUG=${_LOG_DEBUG}'
+  - 'LOG_LEVEL=${_LOG_LEVEL}'
