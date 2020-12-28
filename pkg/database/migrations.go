@@ -1650,7 +1650,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return tx.Exec(sql).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable(&ExternalIssuerStat{}).Error
+				sql := `ALTER TABLE verification_codes DROP COLUMN IF EXISTS issuing_external_id`
+				return tx.Exec(sql).Error
 			},
 		},
 		{
@@ -1877,6 +1878,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					}
 				}
 				return nil
+			},
+		},
+		{
+			ID: "00080-AddExternalCaseIDToVerificationCode",
+			Migrate: func(tx *gorm.DB) error {
+				sql := `ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS external_case_id VARCHAR(255)`
+				return tx.Exec(sql).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sql := `ALTER TABLE verification_codes DROP COLUMN IF EXISTS external_case_id`
+				return tx.Exec(sql).Error
 			},
 		},
 	}

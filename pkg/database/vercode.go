@@ -88,12 +88,21 @@ type VerificationCode struct {
 	// API AND the API caller supplied it in the request. This ID has no meaning
 	// in this system. It can be up to 255 characters in length.
 	IssuingExternalID string `gorm:"column:issuing_external_id; type:varchar(255);"`
+
+	// ExternalCaseID is an optional ID to an external system that may be used
+	// in SMS expansions to coordinate with the patient with issuer data that is
+	// external to this system.
+	ExternalCaseID string `gorm:"column:external_case_id; type:varchar(255);"`
 }
 
 // BeforeSave is used by callbacks.
 func (v *VerificationCode) BeforeSave(tx *gorm.DB) error {
 	if len(v.IssuingExternalID) > 255 {
 		v.AddError("issuingExternalID", "cannot exceed 255 characters")
+	}
+
+	if len(v.ExternalCaseID) > 255 {
+		v.AddError("externalCaseID", "cannot exceed 255 characters")
 	}
 
 	if msgs := v.ErrorMessages(); len(msgs) > 0 {
