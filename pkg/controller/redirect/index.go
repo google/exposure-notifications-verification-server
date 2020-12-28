@@ -79,12 +79,12 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		if sendto, success := decideRedirect(hostRegion, r.UserAgent(), *r.URL, data); success {
+		if sendto, success := decideRedirect(hostRegion, r.UserAgent(), r.URL, realm.EnableENExpress, data); success {
 			http.Redirect(w, r, sendto, http.StatusSeeOther)
 			return
 		}
 
-		logger.Infow("not a mobile user agent",
+		logger.Infow("no matching metadata for redirect",
 			"host", r.Host,
 			"userAgent", r.UserAgent())
 

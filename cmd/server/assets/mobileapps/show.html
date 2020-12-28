@@ -40,6 +40,9 @@
           <dt>AppStore link</dt>
           <dd id="mobileapps-url"><a href="{{$app.URL}}" rel="noreferrer" target="_blank">{{$app.URL}}</a></dd>
 
+          <dt>Enable AppStore redirect</dt>
+          <dd>{{not $app.DisableRedirect}}</dd>
+
           <dt>OS</dt>
           <dd id="mobileapps-os">
             {{if (eq $app.OS .iOS)}}

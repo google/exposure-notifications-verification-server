@@ -1879,6 +1879,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return nil
 			},
 		},
+		{
+			ID: "00080-AddDisableRedirectToMobileApps",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE mobile_apps ADD COLUMN IF NOT EXISTS disable_redirect BOOL DEFAULT false NOT NULL`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE mobile_apps DROP COLUMN IF EXISTS disable_redirect`)
+			},
+		},
 	}
 }
 
@@ -1899,4 +1910,14 @@ func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool)
 		return m.MigrateTo(target)
 	}
 	return m.Migrate()
+}
+
+// multiExec is a helper that executes the given sql clauses against the tx.
+func multiExec(tx *gorm.DB, sqls ...string) error {
+	for _, sql := range sqls {
+		if err := tx.Exec(sql).Error; err != nil {
+			return fmt.Errorf("failed to execute %q: %w", sql, err)
+		}
+	}
+	return nil
 }
