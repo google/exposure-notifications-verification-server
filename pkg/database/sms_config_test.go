@@ -41,6 +41,12 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 		}
 	}
 
+	if has, err := realm.HasSMSConfig(db); err != nil {
+		t.Fatal(err)
+	} else if has {
+		t.Fatal("expected no SMS config for realm")
+	}
+
 	// Create SMS config on the realm
 	smsConfig := &SMSConfig{
 		RealmID:          realm.ID,
@@ -57,6 +63,12 @@ func TestSMSConfig_Lifecycle(t *testing.T) {
 	realm, err = db.FindRealm(realm.ID)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if has, err := realm.HasSMSConfig(db); err != nil {
+		t.Fatal(err)
+	} else if !has {
+		t.Fatal("expected realm to have SMS config")
 	}
 
 	// Load the SMS config

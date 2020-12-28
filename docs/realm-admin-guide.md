@@ -121,7 +121,7 @@ See the help text on that page for guidance.
 
 ![sms text](images/admin/settings04.png "SMS Template")
 
-The fields `[region]`, `[code]`, `[expires]`, `[longcode]`, and `[longexpires]` may be included with brackets
+The fields `[region]`, `[code]`, `[expires]`, `[longcode]`, `[longexpires]`, and `[externalcaseid]` may be included with brackets
 which will be programmatically substituted with values. It is recommended that the text of this SMS be composed
 in such a way that is respectful to the patient and does not reveal details about their diagnosis to potential onlookers of the phone's notifications with further information presented in-app.
 

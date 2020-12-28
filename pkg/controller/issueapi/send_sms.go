@@ -77,7 +77,7 @@ func (c *Controller) SendSMS(ctx context.Context, request *api.IssueCodeRequest,
 	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
 	smsStart := time.Now()
 	err = func() error {
-		message, err := realm.BuildSMSText(result.VerCode.Code, result.VerCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+		message, err := realm.BuildSMSText(result.VerCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
 			result.obsResult = observability.ResultError("FAILED_TO_BUILD_SMS")
 			return err
