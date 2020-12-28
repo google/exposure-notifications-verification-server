@@ -72,8 +72,11 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 func (c *Controller) validateToken(ctx context.Context, verToken string, publicKeys map[string]crypto.PublicKey) (string, *database.Subject, error) {
 	logger := logging.FromContext(ctx).Named("certapi.validateToken")
 
+	parser := &jwt.Parser{
+		SkipClaimsValidation: true, // we manually check claims.Valid() below
+	}
 	// Parse and validate the verification token.
-	token, err := jwt.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := parser.ParseWithClaims(verToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
 		kid, ok := kidHeader.(string)
 		if !ok {
