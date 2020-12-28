@@ -197,7 +197,7 @@ type IssueCodeRequest struct {
 	// of the issued verification code. If omitted the server will generate the UUID.
 	UUID string `json:"uuid"`
 
-	// ExternalIssuerID is a optional information supplied by the API caller to
+	// ExternalIssuerID is optional information supplied by the API caller to
 	// uniquely identify the entity making this request. This is useful where
 	// callers are using a single API key behind an ERP, or when callers are using
 	// the verification server as an API with a different authentication system.
