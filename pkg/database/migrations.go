@@ -1650,7 +1650,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return tx.Exec(sql).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.DropTable(&ExternalIssuerStat{}).Error
+				sql := `ALTER TABLE verification_codes DROP COLUMN IF EXISTS issuing_external_id`
+				return tx.Exec(sql).Error
 			},
 		},
 		{
