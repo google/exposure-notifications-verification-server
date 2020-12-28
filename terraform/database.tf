@@ -314,7 +314,7 @@ resource "null_resource" "migrate" {
       DB_PASSWORD                       = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
       DB_USER                           = google_sql_user.user.name
       DB_VERIFICATION_CODE_DATABASE_KEY = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
-      LOG_DEBUG                         = true
+      LOG_LEVEL                         = "debug"
       TAG                               = "initial"
     }
 
@@ -445,7 +445,7 @@ output "db_password" {
 }
 
 output "migrate_command" {
-  value = "PROJECT_ID=\"${var.project}\" DB_CONN=\"${google_sql_database_instance.db-inst.connection_name}\" DB_ENCRYPTION_KEY=\"${google_kms_crypto_key.database-encrypter.self_link}\" DB_APIKEY_DATABASE_KEY=\"secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}\" DB_APIKEY_SIGNATURE_KEY=\"secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}\" DB_VERIFICATION_CODE_DATABASE_KEY=\"secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}\" DB_PASSWORD=\"secret://${google_secret_manager_secret_version.db-secret-version["password"].name}\" DB_NAME=\"${google_sql_database.db.name}\" DB_USER=\"${google_sql_user.user.name}\" DB_DEBUG=\"true\" LOG_DEBUG=\"true\" ./scripts/migrate"
+  value = "PROJECT_ID=\"${var.project}\" DB_CONN=\"${google_sql_database_instance.db-inst.connection_name}\" DB_ENCRYPTION_KEY=\"${google_kms_crypto_key.database-encrypter.self_link}\" DB_APIKEY_DATABASE_KEY=\"secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}\" DB_APIKEY_SIGNATURE_KEY=\"secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}\" DB_VERIFICATION_CODE_DATABASE_KEY=\"secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}\" DB_PASSWORD=\"secret://${google_secret_manager_secret_version.db-secret-version["password"].name}\" DB_NAME=\"${google_sql_database.db.name}\" DB_USER=\"${google_sql_user.user.name}\" DB_DEBUG=\"true\" LOG_LEVEL=\"debug\" ./scripts/migrate"
 }
 
 output "proxy_command" {

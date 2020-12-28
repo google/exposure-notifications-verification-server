@@ -142,6 +142,8 @@ represent best practices.
 
     # Enable dev mode. Do not enable dev mode or database dev mode in production
     # environments.
+    export LOG_MODE="development"
+    export LOG_LEVEL="debug"
     export DEV_MODE="true"
     export DB_DEBUG="true"
     ```

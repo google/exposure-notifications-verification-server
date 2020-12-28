@@ -21,8 +21,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
-	"os"
-	"strconv"
 	"time"
 
 	firebase "firebase.google.com/go"
@@ -42,8 +40,7 @@ import (
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
-	logger := logging.NewLogger(debug)
+	logger := logging.NewLoggerFromEnv().Named("seed")
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)

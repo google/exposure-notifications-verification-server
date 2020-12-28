@@ -17,8 +17,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -30,8 +28,7 @@ import (
 func main() {
 	ctx, done := signalcontext.OnInterrupt()
 
-	debug, _ := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
-	logger := logging.NewLogger(debug).Named("e2e-test")
+	logger := logging.NewLoggerFromEnv().Named("e2e-test")
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)

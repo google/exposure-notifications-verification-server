@@ -36,21 +36,23 @@ module "en" {
     server = {
       FIREBASE_PRIVACY_POLICY_URL   = "https://policies.google.com/privacy"
       FIREBASE_TERMS_OF_SERVICE_URL = "https://policies.google.com/terms"
-      LOG_DEBUG                     = "true"
+
+      LOG_LEVEL = "debug"
     }
 
     apiserver = {
-      LOG_DEBUG = "true"
+      LOG_LEVEL = "debug"
     }
 
     adminapi = {
-      LOG_DEBUG = "true"
+      LOG_LEVEL = "debug"
     }
 
     e2e-runner = {
       HEALTH_AUTHORITY_CODE = "e2e-test-only"
       KEY_SERVER            = "TODO"
-      LOG_DEBUG             = "true"
+
+      LOG_LEVEL = "debug"
     }
   }
 }
