@@ -30,7 +30,7 @@ func isIOS(userAgent string) bool {
 }
 
 // decideRedirect selects where to redirect based on several signals.
-func decideRedirect(region, userAgent string, url url.URL, appStoreData AppStoreData) (string, bool) {
+func decideRedirect(region, userAgent string, url *url.URL, enxEnabled bool, appStoreData AppStoreData) (string, bool) {
 	// Canonicalize path as lowercase.
 	path := strings.ToLower(url.Path)
 
@@ -38,22 +38,25 @@ func decideRedirect(region, userAgent string, url url.URL, appStoreData AppStore
 	onAndroid := isAndroid(userAgent)
 	onIOS := isIOS(userAgent)
 
-	// On Android redirect to Play Store if App Link doesn't trigger
-	// and an a link is set up.
-	if onAndroid && appStoreData.AndroidURL != "" && appStoreData.AndroidAppID != "" {
-		return buildIntentURL(path, url.Query(), region, appStoreData.AndroidAppID, appStoreData.AndroidURL), true
+	// On Android redirect to Play Store if App Link doesn't trigger and an a link
+	// is set up.
+	if onAndroid && appStoreData.AndroidAppID != "" && appStoreData.AndroidURL != "" {
+		intent := buildIntentURL(path, url.Query(), region, appStoreData.AndroidAppID, appStoreData.AndroidURL)
+		return intent, true
 	}
 
-	// On iOS redirect to App Store if App Link doesn't trigger
-	// and an a link is set up.
+	// On iOS redirect to App Store if App Link doesn't trigger and an a link is
+	// set up.
 	if onIOS && appStoreData.IOSURL != "" {
 		return appStoreData.IOSURL, true
 	}
 
-	if onIOS || onAndroid {
+	// If enx is enabled, return that URL.
+	if enxEnabled && (onAndroid || onIOS) {
 		return buildEnsURL(path, url.Query(), region), true
 	}
 
+	// The request included no matching metadata, do nothing.
 	return "", false
 }
 

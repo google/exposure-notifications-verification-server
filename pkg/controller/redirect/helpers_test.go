@@ -261,11 +261,6 @@ func TestDecideRedirect(t *testing.T) {
 		AndroidAppID: "gov.moosylvania.app",
 		IOSURL:       "https://ios.example.com/store/moosylvania",
 	}
-	appLinkOnlyAndroid := AppStoreData{
-		AndroidURL:   "https://android.example.com/store/moosylvania",
-		AndroidAppID: "gov.moosylvania.app",
-		IOSURL:       "",
-	}
 	appLinkNeither := AppStoreData{
 		AndroidURL:   "",
 		AndroidAppID: "",
@@ -288,50 +283,82 @@ func TestDecideRedirect(t *testing.T) {
 		host         string
 		url          string
 		altURL       *url.URL
+		enxEnabled   bool
 		userAgent    string
 		appStoreData *AppStoreData
 		expected     string
 	}{
+		// Android
 		{
-			name:         "moosylvania_android_both",
+			name:         "android_both",
 			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkBoth,
 			expected:     "intent://v?c=1234567890abcdef&r=US-MOO" + expectedSuffix,
 		},
 		{
-			name:         "moosylvania_android_both_relative",
+			name:         "android_both_relative",
 			altURL:       &relativePinURL,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkBoth,
 			expected:     "intent://v?c=1234567890abcdef&r=US-MOO" + expectedSuffix,
 		},
 		{
-			name:         "moosylvania_android_no_applink",
+			name:         "android_no_applink_enx",
 			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			enxEnabled:   true,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkNeither,
 			expected:     "ens://v?c=1234567890abcdef&r=US-MOO",
 		},
 		{
-			name:         "moosylvania_ios_no_applink",
+			name:         "android_no_applink",
 			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
-			userAgent:    userAgentIOS,
-			appStoreData: &appLinkOnlyAndroid,
-			expected:     "ens://v?c=1234567890abcdef&r=US-MOO",
+			enxEnabled:   false,
+			userAgent:    userAgentAndroid,
+			appStoreData: &appLinkNeither,
+			expected:     "",
 		},
+
+		// iOS
 		{
-			name:         "moosylvania_ios_no_applink",
-			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			name:         "ios_both",
+			url:          "https://ios.example.com/store/moosylvania",
 			userAgent:    userAgentIOS,
 			appStoreData: &appLinkBoth,
 			expected:     "https://ios.example.com/store/moosylvania",
 		},
 		{
-			name:         "moosylvania_windows",
+			name:         "ios_both_relative",
+			url:          "https://ios.example.com/store/moosylvania",
+			altURL:       &relativePinURL,
+			userAgent:    userAgentIOS,
+			appStoreData: &appLinkBoth,
+			expected:     "https://ios.example.com/store/moosylvania",
+		},
+		{
+			name:         "ios_no_applink_enx",
+			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			enxEnabled:   true,
+			userAgent:    userAgentIOS,
+			appStoreData: &appLinkNeither,
+			expected:     "ens://v?c=1234567890abcdef&r=US-MOO",
+		},
+		{
+			name:         "ios_no_applink",
+			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			enxEnabled:   false,
+			userAgent:    userAgentIOS,
+			appStoreData: &appLinkNeither,
+			expected:     "",
+		},
+
+		// Other
+		{
+			name:         "windows",
 			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
 			userAgent:    userAgentNeither,
-			appStoreData: &appLinkOnlyAndroid,
+			appStoreData: &appLinkBoth,
 			expected:     "",
 		},
 	}
@@ -349,9 +376,9 @@ func TestDecideRedirect(t *testing.T) {
 				}
 				url = otherURL
 			}
-			result, success := decideRedirect("US-MOO", tc.userAgent, *url, *tc.appStoreData)
+			result, success := decideRedirect("US-MOO", tc.userAgent, url, tc.enxEnabled, *tc.appStoreData)
 			if tc.expected != result {
-				t.Errorf("expected %s, got %s", tc.expected, result)
+				t.Errorf("expected %q to be %q", result, tc.expected)
 			}
 			if (tc.expected != "") != success {
 				t.Errorf("expected doesn't match success")
