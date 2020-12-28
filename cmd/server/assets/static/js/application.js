@@ -698,3 +698,272 @@ function utcDate(str) {
   let offset = d.getTimezoneOffset() * 60 * 1000;
   return new Date(d.getTime() + offset);
 }
+
+const batchSize = 10;
+const showMaxResults = 50;
+
+function initBulkUploadUI() {
+  $form = $('#form');
+  $csv = $('#csv');
+  $fileLabel = $('#file-label');
+  $import = $('#import');
+  $cancel = $('#cancel');
+  $table = $('#csv-table');
+  $tableBody = $('#csv-table-body');
+  $progressDiv = $('#progress-div');
+  $progress = $('#progress');
+  $retryCode = $('#retry-code');
+  $rememberCode = $('#remember-code');
+  $inputSMSTemplate = $('select#sms-template');
+  $newCode = $('#new-code');
+  $startAt = $('#start-at');
+
+  $receiptDiv = $('#receipt-div');
+  $save = $('#save');
+  $receiptSuccess = $('#receipt-success');
+  $receiptFailure = $('#receipt-failure');
+
+  $errorDiv = $('#error-div');
+  $errorTable = $('#error-table');
+  $errorTableBody = $('#error-table > tbody');
+  $errorTooMany = $('#error-too-many');
+
+  $successDiv = $('#success-div');
+  $successTable = $('#success-table');
+  $successTableBody = $('#success-table > tbody');
+  $successTooMany = $('#success-too-many');
+}
+
+function resetBulkUploadUI() {
+  $import.prop('disabled', true);
+  $cancel.removeClass('d-none');
+
+  $table.removeClass('d-none');
+  $progressDiv.removeClass('d-none');
+
+  $receiptDiv.addClass('d-none');
+  $save.attr("href", "data:text/plain,");
+  $receiptSuccess.text(0);
+  $receiptFailure.text(0);
+
+  $errorTooMany.addClass('d-none');
+  $errorDiv.addClass("d-none");
+  $errorTableBody.empty();
+
+  $successTooMany.addClass('d-none');
+  $successDiv.addClass("d-none");
+  $successTableBody.empty();
+}
+
+function readBulkUploadCSVFile() {
+  // State for managing cleanup and canceling
+  let cancelUpload = false;
+  let cancel = () => {
+    cancelUpload = true;
+  };
+
+  let start = async function(e) {
+    let retryCode = $retryCode.val();
+    let template = $inputSMSTemplate.val();
+    let rows = e.target.result.split('\n');
+    let batch = [];
+    let batchLines = [];
+    total = 0;
+    totalErrs = 0;
+    $tableBody.empty();
+
+    for (let i = parseInt($startAt.val() - 1); i < rows.length && !cancelUpload; i++) {
+      // Clear batch that was just uploaded.
+      if (batch.length >= batchSize) {
+        batch = [];
+        batchLines = [];
+      }
+
+      // Add to batch if the next row is valid.
+      let request = buildBatchIssueRequest(rows[i], retryCode, template);
+      if (request != "") {
+        batch.push(request);
+        batchLines.push(i + 1);
+      }
+
+      // If we've hit the batch limit or end of file, upload it.
+      if (batch.length >= batchSize || i == rows.length - 1 && batch.length > 0) {
+        $tableBody.empty();
+        for (let r = 0; r < batch.length; r++) {
+          let $row = $('<tr/>');
+          $row.append($('<td/>').text(batch[r]["phone"]));
+          $row.append($('<td/>').text(batch[r]["testDate"]));
+          $tableBody.append($row);
+        }
+
+        cancelUpload = await uploadWithRetries(() => uploadBatchIssue(batch, batchLines));
+
+        if (cancelUpload) {
+          if (total > 0) {
+            flash.warning(`Successfully issued ${total} codes. ${(rows.length - i)} +  remaining.`);
+          }
+          break;
+        }
+        $startAt.val(i + 1);
+        let percent = Math.floor((i + 1) * 100 / rows.length) + "%";
+        $progress.width(percent);
+        $progress.html(percent);
+      }
+    }
+
+    $save.attr("href", $save.attr("href") + '\n');
+
+    if (!cancelUpload) {
+      $progress.width('100%');
+      $progress.html('100%');
+      if (total > 0) {
+        flash.alert(`Successfully issued ${total} codes.`);
+      }
+    }
+
+    if (totalErrs > 0) {
+      flash.error(`Received errors for ${totalErrs} entries. See error table for details.`);
+    }
+
+    $import.prop('disabled', false);
+    $cancel.addClass('d-none');
+    $table.addClass('d-none');
+    $tableBody.empty();
+  };
+
+  return { start, cancel };
+}
+
+function buildBatchIssueRequest(thisRow, retryCode, template) {
+  thisRow = thisRow.trim();
+  if (thisRow == "") {
+    return "";
+  }
+  let request = {};
+  let cols = thisRow.split(',');
+  if (cols.length < 2) {
+    return "";
+  }
+
+  // Escape csv row contents
+  request["phone"] = $("<div>").text(cols[0].trim()).html();
+  request["testDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
+  request["symptomDate"] = (cols.length > 2) ? $("<div>").text(cols[2].trim()).html() : "";
+  // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
+  // to prevent network traffic observation.
+  request["padding"] = btoa(genRandomString(5 + Math.floor(Math.random() * 15)));
+  if (request["phone"] == "") {
+    return "";
+  }
+
+  let uuid = "";
+  if (cols.length > 6) {
+    uuid = $("<div>").text(cols[6].trim()).html();
+  }
+  if (uuid.length != 36) {
+    // Generate a UUID by hashing phone
+    let hs = String(CryptoJS.HmacSHA256(request["phone"], retryCode)).substr(0, 36);
+    uuid = hs.substr(0, 8) + '-' + hs.substr(9, 4) + '-' + hs.substr(13, 4) + '-' + hs.substr(17, 4) + '-' + hs.substr(21, 12);
+  }
+
+  request["uuid"] = uuid;
+  request["smsTemplateLabel"] = template;
+  request["testType"] = "confirmed";
+  request["tzOffset"] = tzOffset;
+  return request;
+}
+
+function uploadBatchIssue(data, lines) {
+  return $.ajax({
+    url: '/codes/batch-issue',
+    type: 'POST',
+    dataType: 'json',
+    cache: false,
+    contentType: 'application/json',
+    headers: { 'X-CSRF-Token': csrfToken },
+    data: JSON.stringify({ 'codes': data }),
+    success: function(result) {
+      if (!result.responseJSON || !result.responseJSON.codes) {
+        return;
+      }
+      readCodesBatch(data, lines, result.responseJSON.codes);
+    },
+    error: function(xhr, resp, text) {
+      if (!xhr || !xhr.responseJSON) {
+        return;
+      }
+
+      if (!xhr.responseJSON.codes) {
+        let message = resp;
+        if (xhr.responseJSON.error) {
+          message = message + ": " + xhr.responseJSON.error;
+        }
+        flash.error(message);
+        return;
+      }
+      readCodesBatch(data, lines, xhr.responseJSON.codes);
+    },
+  });
+}
+
+function readCodesBatch(data, lines, codes) {
+  for (let i = 0; i < codes.length; i++) {
+    let code = codes[i];
+    if (code.error) {
+      showErroredCode(data[i], code, lines[i]);
+    } else {
+      showSuccessfulCode(data[i], code, lines[i]);
+    }
+  }
+}
+
+function showErroredCode(request, code, line) {
+  totalErrs++;
+  $receiptFailure.text(totalErrs);
+  if (totalErrs == 1) {
+    $receiptDiv.removeClass('d-none');
+    $errorDiv.removeClass('d-none');
+  }
+  if (totalErrs == showMaxResults + 1) {
+    $errorTableBody.empty();
+    $errorTable.addClass('d-none');
+    $errorTooMany.removeClass('d-none');
+  }
+  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,,${code.errorCode},${code.error}\n`);
+  if (totalErrs > showMaxResults) {
+    return;
+  }
+
+  let $row = $('<tr/>');
+  $row.append($('<td/>').text(line));
+  $row.append($('<td/>').text(request["phone"]));
+  $row.append($('<td/>').text(request["testDate"]));
+  $row.append($('<td/>').text(code.error));
+  $errorTableBody.append($row);
+}
+
+function showSuccessfulCode(request, code, line) {
+  total++;
+  $receiptSuccess.text(total);
+  if (total == 1) {
+    $receiptDiv.removeClass('d-none');
+    $successDiv.removeClass('d-none');
+    $successTable.removeClass('d-none');
+  }
+  if (total == showMaxResults + 1) {
+    $successTableBody.empty();
+    $successTable.addClass('d-none');
+    $successTooMany.removeClass('d-none');
+  }
+  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,${code.uuid}\n`);
+  if (total > showMaxResults) {
+    return;
+  }
+
+  let $row = $('<tr/>');
+  $row.append($('<td/>').text(line));
+  $row.append($('<td/>').text(request["phone"]));
+  $row.append($('<td/>').text(request["testDate"]));
+  $row.append($('<td/>').text(code.uuid));
+  $successTableBody.append($row);
+}

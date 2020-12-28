@@ -93,17 +93,19 @@ func (c *Controller) HandleUpdate() http.Handler {
 
 func bindUpdateForm(r *http.Request, app *database.MobileApp) error {
 	type FormData struct {
-		Name  string          `form:"name"`
-		URL   string          `form:"url"`
-		OS    database.OSType `form:"os"`
-		AppID string          `form:"app_id"`
-		SHA   string          `form:"sha"`
+		Name           string          `form:"name"`
+		URL            string          `form:"url"`
+		EnableRedirect bool            `form:"enable_redirect"`
+		OS             database.OSType `form:"os"`
+		AppID          string          `form:"app_id"`
+		SHA            string          `form:"sha"`
 	}
 
 	var form FormData
 	err := controller.BindForm(nil, r, &form)
 	app.Name = form.Name
 	app.URL = form.URL
+	app.DisableRedirect = !form.EnableRedirect
 	app.OS = form.OS
 	app.AppID = form.AppID
 	app.SHA = form.SHA
