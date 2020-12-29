@@ -119,7 +119,7 @@ func Server(
 	r.Use(processDebug)
 
 	// Install the CSRF protection middleware.
-	configureCSRF := middleware.ConfigureCSRF(ctx, cfg, h)
+	configureCSRF := middleware.ConfigureCSRF(cfg, h)
 	r.Use(configureCSRF)
 
 	// Sessions
