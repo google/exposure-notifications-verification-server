@@ -45,11 +45,7 @@
 
           <dt>OS</dt>
           <dd id="mobileapps-os">
-            {{if (eq $app.OS .iOS)}}
-              iOS
-            {{else if (eq $app.OS .android)}}
-              Android
-            {{end}}
+            {{$app.OS.Display}}
           </dd>
 
           {{if (eq $app.OS .iOS)}}
