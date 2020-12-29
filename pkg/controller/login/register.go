@@ -46,8 +46,7 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 		}
 
 		currentRealm := membership.Realm
-		currentUser := membership.User
-		mode := currentRealm.EffectiveMFAMode(currentUser)
+		mode := currentRealm.EffectiveMFAMode(membership.CreatedAt)
 		c.renderRegisterPhone(ctx, w, &mode)
 	})
 }
