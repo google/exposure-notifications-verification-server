@@ -36,15 +36,18 @@ const (
 	ChaffDailyKey = "daily"
 )
 
+// ChaffHeaderDetector returns a chaff header detector.
+func ChaffHeaderDetector() chaff.Detector {
+	return chaff.HeaderDetector(ChaffHeader)
+}
+
 // ProcessChaff injects the chaff processing middleware. If chaff requests send
 // a value of "daily" (case-insensitive), they will be counted toward the
 // realm's total active users and return a chaff response. Any other values will
 // only return a chaff response.
 //
 // This must come after RequireAPIKey.
-func ProcessChaff(db *database.Database, t *chaff.Tracker) mux.MiddlewareFunc {
-	detector := chaff.HeaderDetector(ChaffHeader)
-
+func ProcessChaff(db *database.Database, t *chaff.Tracker, det chaff.Detector) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -71,7 +74,7 @@ func ProcessChaff(db *database.Database, t *chaff.Tracker) mux.MiddlewareFunc {
 				}
 			}
 
-			t.HandleTrack(detector, next).ServeHTTP(w, r)
+			t.HandleTrack(det, next).ServeHTTP(w, r)
 		})
 	}
 }
