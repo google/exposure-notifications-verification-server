@@ -860,7 +860,7 @@ func TestRealm_Audits(t *testing.T) {
 	realm.AllowedCIDRsAPIServer = pq.StringArray([]string{"0.0.0.0/0", "1.1.1.1/0"})
 	realm.AllowedCIDRsServer = pq.StringArray([]string{"0.0.0.0/0", "1.1.1.1/0"})
 	realm.AllowedTestTypes = TestTypeLikely
-	realm.RequireDate = true
+	realm.RequireDate = false
 	realm.UseRealmCertificateKey = true
 	realm.CertificateIssuer = "test issuer"
 	realm.CertificateAudience = "test audience"
@@ -876,7 +876,7 @@ func TestRealm_Audits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(audits), 31; got != want {
+	if got, want := len(audits), 32; got != want {
 		t.Errorf("expected %d audits, got %d: %v", want, got, audits)
 	}
 }
