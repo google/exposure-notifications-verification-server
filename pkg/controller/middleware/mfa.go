@@ -60,9 +60,9 @@ func RequireMFA(authProvider auth.Provider, h render.Renderer) mux.MiddlewareFun
 					return
 				}
 			}
-			if !prompted { // Store prompted check, so we don't check again.
-				controller.StoreSessionMFAPrompted(session, true)
-			}
+
+			// Store prompted check, so we don't check again.
+			controller.StoreSessionMFAPrompted(session, true)
 
 			next.ServeHTTP(w, r)
 		})

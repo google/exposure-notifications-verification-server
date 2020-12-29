@@ -16,9 +16,9 @@ package middleware_test
 
 import (
 	"context"
-	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
@@ -29,7 +29,7 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-func TestRequireEmailVerified(t *testing.T) {
+func TestRequireMFA(t *testing.T) {
 	t.Parallel()
 
 	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
@@ -42,18 +42,14 @@ func TestRequireEmailVerified(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	requireEmailVerified := middleware.RequireEmailVerified(authProvider, h)
-
-	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-	})
+	requireMFA := middleware.RequireMFA(authProvider, h)
 
 	cases := []struct {
-		name          string
-		emailVerified bool
-		prompted      bool
-		membership    *database.Membership
-		code          int
+		name        string
+		mfaVerified bool
+		prompted    bool
+		membership  *database.Membership
+		code        int
 	}{
 		{
 			name:       "missing_membership",
@@ -61,73 +57,99 @@ func TestRequireEmailVerified(t *testing.T) {
 			code:       400,
 		},
 		{
-			name:          "optional_verified",
-			emailVerified: true,
+			name:        "optional_verified",
+			mfaVerified: true,
 			membership: &database.Membership{
 				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptional,
+					MFAMode: database.MFAOptional,
 				},
 			},
 			code: 200,
 		},
 		{
-			name:          "optional_not_verified",
-			emailVerified: false,
+			name:        "optional_not_verified",
+			mfaVerified: false,
 			membership: &database.Membership{
 				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptional,
+					MFAMode: database.MFAOptional,
 				},
 			},
 			code: 200,
 		},
 		{
-			name:          "optional_prompt_verified",
-			emailVerified: true,
+			name:        "optional_prompt_verified",
+			mfaVerified: true,
 			membership: &database.Membership{
 				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptionalPrompt,
+					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
 			code: 200,
 		},
 		{
-			name:          "optional_prompt_not_verified",
-			emailVerified: false,
+			name:        "optional_prompt_not_verified",
+			mfaVerified: false,
 			membership: &database.Membership{
 				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptionalPrompt,
+					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
 			code: 303,
 		},
 		{
-			name:          "optional_prompt_not_verified_prompted",
-			emailVerified: false,
-			prompted:      true,
+			name:        "optional_prompt_not_verified_prompted",
+			mfaVerified: false,
+			prompted:    true,
 			membership: &database.Membership{
 				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptionalPrompt,
+					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
 			code: 200,
 		},
 		{
-			name:          "required_verified",
-			emailVerified: true,
+			name:        "required_verified",
+			mfaVerified: true,
 			membership: &database.Membership{
 				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFARequired,
+					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
 			code: 200,
 		},
 		{
-			name:          "required_not_verified",
-			emailVerified: false,
+			name:        "required_not_verified",
+			mfaVerified: false,
 			membership: &database.Membership{
 				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFARequired,
+					MFAMode: database.MFAOptionalPrompt,
 				},
+			},
+			code: 303,
+		},
+		{
+			name:        "required_not_grace_allowed",
+			mfaVerified: false,
+			prompted:    true,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					MFAMode:                database.MFARequired,
+					MFARequiredGracePeriod: database.FromDuration(7 * 24 * time.Hour),
+				},
+				CreatedAt: time.Now().UTC(),
+			},
+			code: 200,
+		},
+		{
+			name:        "required_not_grace_expired",
+			mfaVerified: false,
+			prompted:    true,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					MFAMode:                database.MFARequired,
+					MFARequiredGracePeriod: database.FromDuration(7 * 24 * time.Hour),
+				},
+				CreatedAt: time.Now().UTC().Add(-30 * 24 * time.Hour),
 			},
 			code: 303,
 		},
@@ -143,8 +165,8 @@ func TestRequireEmailVerified(t *testing.T) {
 			if err := authProvider.StoreSession(ctx, session, &auth.SessionInfo{
 				Data: map[string]interface{}{
 					"email":          "you@example.com",
-					"email_verified": tc.emailVerified,
-					"mfa_enabled":    true,
+					"email_verified": true,
+					"mfa_enabled":    tc.mfaVerified,
 					"revoked":        false,
 				},
 			}); err != nil {
@@ -157,7 +179,7 @@ func TestRequireEmailVerified(t *testing.T) {
 				ctx = controller.WithMembership(ctx, tc.membership)
 			}
 			if tc.prompted {
-				controller.StoreSessionEmailVerificationPrompted(session, true)
+				controller.StoreSessionMFAPrompted(session, true)
 			}
 
 			r := httptest.NewRequest("GET", "/", nil)
@@ -165,11 +187,17 @@ func TestRequireEmailVerified(t *testing.T) {
 			r.Header.Set("Content-Type", "application/json")
 
 			w := httptest.NewRecorder()
-			requireEmailVerified(next).ServeHTTP(w, r)
+			requireMFA(emptyHandler()).ServeHTTP(w, r)
 			w.Flush()
 
 			if got, want := w.Code, tc.code; got != want {
 				t.Errorf("expected %d to be %d", got, want)
+			}
+			if tc.code == 200 {
+				stored := controller.MFAPromptedFromSession(session)
+				if !stored {
+					t.Errorf("expected mfa prompted to have been stored")
+				}
 			}
 		})
 	}
