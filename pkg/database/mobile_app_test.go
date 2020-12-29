@@ -267,3 +267,42 @@ func TestDatabase_PurgeMobileApps(t *testing.T) {
 		}
 	}
 }
+
+func TestMobileApp_Audits(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm1 := NewRealmWithDefaults("realm1")
+	if err := db.SaveRealm(realm1, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	app1 := &MobileApp{
+		Name:    "app1",
+		RealmID: realm1.ID,
+		URL:     "https://example1.com",
+		OS:      OSTypeIOS,
+		AppID:   "app1",
+	}
+	if err := db.SaveMobileApp(app1, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	app1.Name = "New Name"
+	app1.URL = "https://new.url"
+	app1.OS = OSTypeAndroid
+	app1.AppID = "appNew"
+	app1.SHA = "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA"
+	if err := db.SaveMobileApp(app1, SystemTest); err != nil {
+		t.Fatalf("%v, %v", err, app1.errors)
+	}
+
+	audits, _, err := db.ListAudits(&pagination.PageParams{Limit: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(audits), 6; got != want {
+		t.Errorf("expected %d audits, got %d: %v", want, got, audits)
+	}
+}

@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -302,5 +303,34 @@ func TestUserNotFound(t *testing.T) {
 
 	if !IsNotFound(err) {
 		t.Errorf("expected %#v to be %#v", err, "not found")
+	}
+}
+
+func TestUser_Audits(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	user := &User{
+		Email: "something@example.com",
+		Name:  "Dr Audit",
+	}
+	if err := db.SaveUser(user, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	user.SystemAdmin = true
+	user.Name = "something new"
+	user.Email = "somethingelse@example.com"
+	if err := db.SaveUser(user, SystemTest); err != nil {
+		t.Fatalf("%v, %v", err, user.errors)
+	}
+
+	audits, _, err := db.ListAudits(&pagination.PageParams{Limit: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(audits), 4; got != want {
+		t.Errorf("expected %d audits, got %d: %v", want, got, audits)
 	}
 }

@@ -25,7 +25,9 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 )
 
 func TestTestType(t *testing.T) {
@@ -822,5 +824,59 @@ func TestRealm_EmailConfig(t *testing.T) {
 		if got, want := emailConfig.SMTPPort, "system-port"; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
+	}
+}
+
+func TestRealm_Audits(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm := NewRealmWithDefaults("realm1")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	realm.Name = "new name"
+	realm.RegionCode = "US-NEW"
+	realm.WelcomeMessage = "Welcome changed"
+	realm.CodeLength = 6
+	realm.CodeDuration = FromDuration(time.Hour)
+	realm.LongCodeLength = 12
+	realm.LongCodeDuration = FromDuration(6 * time.Hour)
+	realm.SMSTextTemplate = "new [code]"
+	realm.SMSCountry = "US"
+	realm.CanUseSystemSMSConfig = true
+	realm.EmailInviteTemplate = "new invite [invitelink]"
+	realm.EmailPasswordResetTemplate = "new reset [passwordresetlink]"
+	realm.EmailVerifyTemplate = "email verify [verifylink]"
+	realm.CanUseSystemEmailConfig = true
+	realm.MFAMode = MFARequired
+	realm.MFARequiredGracePeriod = FromDuration(time.Hour)
+	realm.EmailVerifiedMode = MFARequired
+	realm.PasswordRotationPeriodDays = 3
+	realm.PasswordRotationWarningDays = 2
+	realm.AllowedCIDRsAdminAPI = pq.StringArray([]string{"0.0.0.0/0", "1.1.1.1/0"})
+	realm.AllowedCIDRsAPIServer = pq.StringArray([]string{"0.0.0.0/0", "1.1.1.1/0"})
+	realm.AllowedCIDRsServer = pq.StringArray([]string{"0.0.0.0/0", "1.1.1.1/0"})
+	realm.AllowedTestTypes = TestTypeLikely
+	realm.RequireDate = false
+	realm.UseRealmCertificateKey = true
+	realm.CertificateIssuer = "test issuer"
+	realm.CertificateAudience = "test audience"
+	realm.CertificateDuration = FromDuration(time.Hour)
+	realm.AbusePreventionEnabled = true
+	realm.AbusePreventionLimit = 100
+	realm.AbusePreventionLimitFactor = 5
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("%v, %v", err, realm.errors)
+	}
+
+	audits, _, err := db.ListAudits(&pagination.PageParams{Limit: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(audits), 32; got != want {
+		t.Errorf("expected %d audits, got %d: %v", want, got, audits)
 	}
 }
