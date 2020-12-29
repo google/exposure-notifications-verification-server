@@ -49,6 +49,7 @@
             <tr>
               <th scope="col" width="40"></th>
               <th scope="col">Mobile app</th>
+              <th scope="col" width="100">OS</th>
               {{if $canWrite}}
                 <th scope="col" width="40"></th>
               {{end}}
@@ -69,6 +70,7 @@
               <td class="text-truncate">
                 <a href="/realm/mobile-apps/{{.ID}}">{{.Name}}</a>
               </td>
+              <td>{{.OS.Display}}</td>
               {{if $canWrite}}
                 <td class="text-center">
                   {{if .DeletedAt}}
