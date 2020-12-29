@@ -119,7 +119,7 @@ func APIServer(
 		sub := r.PathPrefix("/api/verify").Subrouter()
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
-		sub.Use(middleware.ProcessChaff(db, verifyChaffTracker))
+		sub.Use(middleware.ProcessChaff(db, verifyChaffTracker, middleware.ChaffHeaderDetector()))
 		sub.Use(rateLimit)
 
 		// POST /api/verify
@@ -134,7 +134,7 @@ func APIServer(
 		sub := r.PathPrefix("/api/certificate").Subrouter()
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)
-		sub.Use(middleware.ProcessChaff(db, certChaffTracker))
+		sub.Use(middleware.ProcessChaff(db, certChaffTracker, middleware.ChaffHeaderDetector()))
 		sub.Use(rateLimit)
 
 		// POST /api/certificate
