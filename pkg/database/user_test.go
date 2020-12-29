@@ -55,11 +55,15 @@ func TestUser_Lifecycle(t *testing.T) {
 	}
 
 	if err := db.SaveUser(&user, SystemTest); err != nil {
-		t.Fatalf("error creating user: %v", err)
+		t.Fatal(err)
 	}
 
 	// Find user by ID
 	{
+		if err := db.TouchUserRevokeCheck(&user); err != nil {
+			t.Fatal(err)
+		}
+
 		got, err := db.FindUser(user.ID)
 		if err != nil {
 			t.Fatal(err)
@@ -68,10 +72,18 @@ func TestUser_Lifecycle(t *testing.T) {
 		if got, want := got.ID, user.ID; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
+
+		if got.LastRevokeCheck == (time.Time{}) {
+			t.Errorf("expected LastRevokeCheck set, got %q", got.LastRevokeCheck)
+		}
 	}
 
 	// Find user by email
 	{
+		if err := db.UntouchUserRevokeCheck(&user); err != nil {
+			t.Fatal(err)
+		}
+
 		got, err := db.FindUserByEmail(email)
 		if err != nil {
 			t.Fatal(err)
@@ -87,6 +99,9 @@ func TestUser_Lifecycle(t *testing.T) {
 		}
 		if got, want := got.SystemAdmin, user.SystemAdmin; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got.LastRevokeCheck != (time.Time{}) {
+			t.Errorf("expected LastRevokeCheck unset, got %q", got.LastRevokeCheck)
 		}
 	}
 
@@ -118,6 +133,18 @@ func TestUser_Lifecycle(t *testing.T) {
 			t.Errorf("expected %#v to be %#v (diff: %#v)", got, want, got-want)
 		}
 	}
+
+	// Delete user
+	{
+		if err := db.DeleteUser(&user, SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := db.FindUser(user.ID); err == nil || !IsNotFound(err) {
+			t.Fatalf("expected not found, got %v", err)
+		}
+	}
+
 }
 
 func TestDatabase_PurgeUsers(t *testing.T) {
