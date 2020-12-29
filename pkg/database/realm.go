@@ -874,21 +874,6 @@ func (r *Realm) ListMemberships(db *Database, p *pagination.PageParams, scopes .
 	return memberships, paginator, nil
 }
 
-// FindMembership finds the membership with the given id, if it exists.
-func (r *Realm) FindMembership(db *Database, userID interface{}) (*Membership, error) {
-	var membership Membership
-	if err := db.db.
-		Preload("User").
-		Preload("Realm").
-		Model(&Membership{}).
-		Where("realm_id = ? AND user_id = ?", r.ID, userID).
-		First(&membership).
-		Error; err != nil {
-		return nil, err
-	}
-	return &membership, nil
-}
-
 // MembershipPermissionMap returns a map where the key is the ID of a user and
 // the value is the permissions for that user.
 func (r *Realm) MembershipPermissionMap(db *Database) (map[uint]rbac.Permission, error) {

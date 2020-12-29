@@ -218,7 +218,14 @@ func TestUser_DeleteFromRealm(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if got, want := got.ID, user.ID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
 
+		got, err = realm.FindUser(db, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if got, want := got.ID, user.ID; got != want {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}

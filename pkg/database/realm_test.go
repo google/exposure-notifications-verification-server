@@ -501,6 +501,53 @@ func TestRealm_UserStats(t *testing.T) {
 	}
 }
 
+func TestRealm_FindRealm(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm1 := NewRealmWithDefaults("realm1")
+	realm1.RegionCode = "US-MOO"
+	if err := db.SaveRealm(realm1, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name   string
+		findFn func() (*Realm, error)
+	}{
+		{
+			name:   "find by realm",
+			findFn: func() (*Realm, error) { return db.FindRealm(realm1.ID) },
+		},
+		{
+			name:   "find by name",
+			findFn: func() (*Realm, error) { return db.FindRealmByName(realm1.Name) },
+		},
+		{
+			name:   "find by region",
+			findFn: func() (*Realm, error) { return db.FindRealmByRegion(realm1.RegionCode) },
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			found, err := tc.findFn()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := found.Name, realm1.Name; got != want {
+				t.Errorf("expected %v to be %v", got, want)
+			}
+		})
+	}
+}
+
 func TestRealm_FindMobileApp(t *testing.T) {
 	t.Parallel()
 

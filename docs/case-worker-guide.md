@@ -56,7 +56,7 @@ The unique identifier can be used later to confirm if the verification code was 
 
 ## Bulk issue verification codes
 
-If [enabled in the realm](/realm-admin-guide.md#bulk-issue-codes), there will be a menu option to bulk issue codes.
+If [enabled in the realm](/doc/realm-admin-guide.md#bulk-issue-codes), there will be a menu option to bulk issue codes.
 
 ![bulk issue menu](images/issue/menu_bulk_issue.png "bulk issue menu")
 
