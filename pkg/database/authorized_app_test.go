@@ -341,6 +341,8 @@ func TestAuthorizedApp_Audits(t *testing.T) {
 	}
 
 	authorizedApp.Name = "something else"
+	authorizedApp.APIKey = "somekey"
+	authorizedApp.APIKeyType = APIKeyTypeAdmin
 	if err := db.SaveAuthorizedApp(authorizedApp, SystemTest); err != nil {
 		t.Fatalf("%v, %v", err, authorizedApp.errors)
 	}
@@ -349,7 +351,7 @@ func TestAuthorizedApp_Audits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(audits), 2; got != want {
+	if got, want := len(audits), 4; got != want {
 		t.Errorf("expected %d audits, got %d: %v", want, got, audits)
 	}
 }

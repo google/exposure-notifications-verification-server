@@ -264,6 +264,18 @@ func (db *Database) SaveAuthorizedApp(a *AuthorizedApp, actor Auditable) error {
 				audits = append(audits, audit)
 			}
 
+			if existing.APIKey != a.APIKey {
+				audit := BuildAuditEntry(actor, "updated API key", a, a.RealmID)
+				audit.Diff = stringDiff(existing.Name, a.Name)
+				audits = append(audits, audit)
+			}
+
+			if existing.APIKeyType != a.APIKeyType {
+				audit := BuildAuditEntry(actor, "updated API key type", a, a.RealmID)
+				audit.Diff = stringDiff(existing.Name, a.Name)
+				audits = append(audits, audit)
+			}
+
 			if existing.DeletedAt != a.DeletedAt {
 				audit := BuildAuditEntry(actor, "updated API key enabled", a, a.RealmID)
 				audit.Diff = boolDiff(existing.DeletedAt == nil, a.DeletedAt == nil)
