@@ -15,10 +15,8 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
@@ -27,15 +25,10 @@ import (
 
 // RequireHeader requires that the request have a certain header present. The
 // header just needs to exist - it does not need to have a specific value.
-func RequireHeader(h render.Renderer, header string) mux.MiddlewareFunc {
+func RequireHeader(header string, h render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			logger := logging.FromContext(ctx).Named("middleware.RequireHeader")
-
 			if v := r.Header.Get(header); v == "" {
-				logger.Debugw("missing required header", "header", header)
 				controller.Unauthorized(w, r, h)
 				return
 			}
@@ -47,34 +40,29 @@ func RequireHeader(h render.Renderer, header string) mux.MiddlewareFunc {
 
 // RequireHeaderValues requires that the request have a certain header present
 // and that the value be one of the supplied entries.
-func RequireHeaderValues(ctx context.Context, h render.Renderer, header string, allowed []string) mux.MiddlewareFunc {
-	logger := logging.FromContext(ctx).Named("middleware.RequireHeaderValue")
+func RequireHeaderValues(header string, allowed []string, h render.Renderer) mux.MiddlewareFunc {
+	want := make(map[string]struct{}, len(allowed))
+	for _, v := range allowed {
+		want[v] = struct{}{}
+	}
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			vals := r.Header.Values(header)
 			if len(vals) == 0 {
-				logger.Debugw("missing required header", "header", header)
 				controller.Unauthorized(w, r, h)
 				return
 			}
 
 			found := false
-		LOOP:
 			for _, v := range vals {
-				for _, a := range allowed {
-					if a == v {
-						found = true
-						break LOOP
-					}
+				if _, ok := want[v]; ok {
+					found = true
+					break
 				}
 			}
 
 			if !found {
-				logger.Debugw("header does not have allowed values",
-					"header", header,
-					"values", vals,
-					"allowed", allowed)
 				controller.Unauthorized(w, r, h)
 				return
 			}
