@@ -469,14 +469,14 @@ func (r *Realm) GetLongCodeDurationHours() int {
 	return int(r.LongCodeDuration.Duration.Hours())
 }
 
-// EffectiveMFAMode returns the realm's default MFAMode but first
-// checks if the user is in the grace-period (if so, required becomes prompt).
-func (r *Realm) EffectiveMFAMode(user *User) AuthRequirement {
+// EffectiveMFAMode returns the realm's default MFAMode but first checks if the
+// time is in the grace-period (if so, required becomes prompt).
+func (r *Realm) EffectiveMFAMode(t time.Time) AuthRequirement {
 	if r == nil {
 		return MFARequired
 	}
 
-	if time.Since(user.CreatedAt) <= r.MFARequiredGracePeriod.Duration {
+	if time.Since(t) <= r.MFARequiredGracePeriod.Duration {
 		return MFAOptionalPrompt
 	}
 	return r.MFAMode

@@ -17,6 +17,7 @@ package database
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/jinzhu/gorm"
@@ -38,6 +39,12 @@ type Membership struct {
 	DefaultSMSTemplateLabel string `gorm:"type:varchar(255);"`
 
 	Permissions rbac.Permission
+
+	// CreatedAt is when the user was added to the realm. UpdatedAt is when the
+	// user's permissions were last updated. Note that UpdatedAt only applies to
+	// the membership's fields, not the user fields (e.g. email, name).
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // SaveMembership saves the membership details. Should have a userID and a realmID to identify it.

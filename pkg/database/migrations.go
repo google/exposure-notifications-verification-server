@@ -1891,6 +1891,21 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE mobile_apps DROP COLUMN IF EXISTS disable_redirect`)
 			},
 		},
+		{
+			ID: "00081-AddTimestampsToMemberships",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE memberships ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE`,
+					`ALTER TABLE memberships ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE`,
+					`UPDATE memberships SET created_at = NOW() WHERE created_at IS NULL`,
+					`UPDATE memberships SET updated_at = NOW() WHERE updated_at IS NULL`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE memberships DROP COLUMN IF EXISTS created_at`,
+					`ALTER TABLE memberships DROP COLUMN IF EXISTS updated_at`)
+			},
+		},
 	}
 }
 

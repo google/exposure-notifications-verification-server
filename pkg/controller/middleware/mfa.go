@@ -45,7 +45,6 @@ func RequireMFA(authProvider auth.Provider, h render.Renderer) mux.MiddlewareFun
 				return
 			}
 			currentRealm := membership.Realm
-			currentUser := membership.User
 
 			mfaEnabled, err := authProvider.MFAEnabled(ctx, session)
 			if err != nil {
@@ -55,7 +54,7 @@ func RequireMFA(authProvider auth.Provider, h render.Renderer) mux.MiddlewareFun
 
 			prompted := controller.MFAPromptedFromSession(session)
 			if !mfaEnabled {
-				if mode := currentRealm.EffectiveMFAMode(currentUser); mode == database.MFARequired ||
+				if mode := currentRealm.EffectiveMFAMode(membership.CreatedAt); mode == database.MFARequired ||
 					mode == database.MFAOptionalPrompt && !prompted {
 					controller.RedirectToMFA(w, r, h)
 					return
