@@ -133,8 +133,8 @@ func Server(
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
 	requireEmailVerified := middleware.RequireEmailVerified(authProvider, h)
-	loadCurrentMembership := middleware.LoadCurrentMembership(cacher, db, h)
-	requireMembership := middleware.RequireMembership(db, h)
+	loadCurrentMembership := middleware.LoadCurrentMembership(h)
+	requireMembership := middleware.RequireMembership(h)
 	requireSystemAdmin := middleware.RequireSystemAdmin(h)
 	requireMFA := middleware.RequireMFA(authProvider, h)
 	processFirewall := middleware.ProcessFirewall(h, "server")
