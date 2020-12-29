@@ -701,7 +701,3 @@ func uintPtr(v uint) *uint {
 func uintDiff(old, new uint) string {
 	return stringDiff(strconv.FormatUint(uint64(old), 10), strconv.FormatUint(uint64(new), 10))
 }
-
-func intDiff(old, new int) string {
-	return stringDiff(strconv.FormatInt(int64(old), 10), strconv.FormatInt(int64(new), 10))
-}
