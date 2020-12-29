@@ -73,7 +73,7 @@ Also under realm settings `settings` from the drop down menu, there are several 
     A new tab is added to the realm that allows the issuance of many codes from a CSV file.
     This can be useful for case-workers who are given a data-set of test results rather than
     administering tests one-by-one.
-    Details about how to bulk-issue codes [can be found here](docs/case-worker-guide.md#bulk-issue-verification-codes).
+    Details about how to bulk-issue codes [can be found here](/case-worker-guide.md#bulk-issue-verification-codes).
 
   * Disabled
 
