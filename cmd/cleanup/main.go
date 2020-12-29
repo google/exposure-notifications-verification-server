@@ -42,6 +42,13 @@ func main() {
 		With("build_tag", buildinfo.BuildTag)
 	ctx = logging.WithLogger(ctx, logger)
 
+	defer func() {
+		done()
+		if r := recover(); r != nil {
+			logger.Fatalw("application panic", "panic", r)
+		}
+	}()
+
 	err := realMain(ctx)
 	done()
 

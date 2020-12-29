@@ -119,7 +119,7 @@ func Server(
 	r.Use(processDebug)
 
 	// Install the CSRF protection middleware.
-	configureCSRF := middleware.ConfigureCSRF(ctx, cfg, h)
+	configureCSRF := middleware.ConfigureCSRF(cfg, h)
 	r.Use(configureCSRF)
 
 	// Sessions
@@ -132,9 +132,9 @@ func Server(
 
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
-	requireVerified := middleware.RequireVerified(authProvider, db, h, cfg.SessionDuration)
-	loadCurrentMembership := middleware.LoadCurrentMembership(cacher, db, h)
-	requireMembership := middleware.RequireMembership(db, h)
+	requireEmailVerified := middleware.RequireEmailVerified(authProvider, h)
+	loadCurrentMembership := middleware.LoadCurrentMembership(h)
+	requireMembership := middleware.RequireMembership(h)
 	requireSystemAdmin := middleware.RequireSystemAdmin(h)
 	requireMFA := middleware.RequireMFA(authProvider, h)
 	processFirewall := middleware.ProcessFirewall(h, "server")
@@ -201,7 +201,7 @@ func Server(
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireVerified)
+		sub.Use(requireEmailVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
@@ -224,7 +224,7 @@ func Server(
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireVerified)
+		sub.Use(requireEmailVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
@@ -239,7 +239,7 @@ func Server(
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireVerified)
+		sub.Use(requireEmailVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
@@ -254,7 +254,7 @@ func Server(
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireVerified)
+		sub.Use(requireEmailVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
@@ -269,7 +269,7 @@ func Server(
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireVerified)
+		sub.Use(requireEmailVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
@@ -284,7 +284,7 @@ func Server(
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
 		sub.Use(processFirewall)
-		sub.Use(requireVerified)
+		sub.Use(requireEmailVerified)
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 

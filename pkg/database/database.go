@@ -227,7 +227,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
 
 	// Metrics
-	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(ctx, mAuditEntryCreated, "audit_entries"))
+	rawDB.Callback().Create().After("gorm:create").Register("audit_entries:metrics", callbackIncrementMetric(mAuditEntryCreated, "audit_entries"))
 
 	// Cache clearing
 	if cacher != nil {
@@ -291,7 +291,7 @@ func IsValidationError(err error) bool {
 }
 
 // callbackIncrementMetric increments the provided metric
-func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table string) func(scope *gorm.Scope) {
+func callbackIncrementMetric(m *stats.Int64Measure, table string) func(scope *gorm.Scope) {
 	return func(scope *gorm.Scope) {
 		if scope.TableName() != table {
 			return
@@ -300,6 +300,8 @@ func callbackIncrementMetric(ctx context.Context, m *stats.Int64Measure, table s
 		if scope.HasError() {
 			return
 		}
+
+		ctx := context.Background()
 
 		// Add realm so that metrics are groupable on a per-realm basis.
 		field, ok := scope.FieldByName("realm_id")
