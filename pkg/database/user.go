@@ -342,25 +342,6 @@ func (db *Database) ListUsers(p *pagination.PageParams, scopes ...Scope) ([]*Use
 	return users, paginator, nil
 }
 
-// ListSystemAdmins returns a list of users who are system admins sorted by
-// name.
-func (db *Database) ListSystemAdmins() ([]*User, error) {
-	var users []*User
-	if err := db.db.
-		Model(&User{}).
-		Where("system_admin IS TRUE").
-		Order("LOWER(name) ASC").
-		Find(&users).
-		Error; err != nil {
-		if IsNotFound(err) {
-			return users, nil
-		}
-		return nil, err
-	}
-
-	return users, nil
-}
-
 // TouchUserRevokeCheck updates the revoke check time on the user. It updates
 // the column directly and does not invoke callbacks.
 func (db *Database) TouchUserRevokeCheck(u *User) error {
