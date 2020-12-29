@@ -45,6 +45,10 @@ func ProcessLocale(locales *i18n.LocaleMap) mux.MiddlewareFunc {
 			m := controller.TemplateMapFromContext(ctx)
 			m["locale"] = locales.Lookup(param, header)
 
+			// Save the template map on the context.
+			ctx = controller.WithTemplateMap(ctx, m)
+			r = r.Clone(ctx)
+
 			next.ServeHTTP(w, r)
 		})
 	}
