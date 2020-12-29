@@ -512,45 +512,39 @@ func TestRealm_FindRealm(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	realm2 := NewRealmWithDefaults("realm2")
-	if err := db.SaveRealm(realm2, SystemTest); err != nil {
-		t.Fatal(err)
+	cases := []struct {
+		name   string
+		findFn func() (*Realm, error)
+	}{
+		{
+			name:   "find by realm",
+			findFn: func() (*Realm, error) { return db.FindRealm(realm1.ID) },
+		},
+		{
+			name:   "find by name",
+			findFn: func() (*Realm, error) { return db.FindRealmByName(realm1.Name) },
+		},
+		{
+			name:   "find by region",
+			findFn: func() (*Realm, error) { return db.FindRealmByRegion(realm1.RegionCode) },
+		},
 	}
 
-	// FindRealm by ID
-	{
-		found, err := db.FindRealm(realm1.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
+	for _, tc := range cases {
+		tc := tc
 
-		if got, want := found.Name, realm1.Name; got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-	}
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-	// FindRealm by Name
-	{
-		found, err := db.FindRealmByName(realm1.Name)
-		if err != nil {
-			t.Fatal(err)
-		}
+			found, err := tc.findFn()
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if got, want := found.ID, realm1.ID; got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-	}
-
-	// FindRealm by Region
-	{
-		found, err := db.FindRealmByRegion(realm1.RegionCode)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if got, want := found.Name, realm1.Name; got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
+			if got, want := found.Name, realm1.Name; got != want {
+				t.Errorf("expected %v to be %v", got, want)
+			}
+		})
 	}
 }
 
