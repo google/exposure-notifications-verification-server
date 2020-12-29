@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
 )
 
@@ -320,5 +321,35 @@ func TestDatabase_PurgeAuthorizedApps(t *testing.T) {
 		if got, want := n, int64(5); got != want {
 			t.Errorf("expected %d to purge, got %d", want, got)
 		}
+	}
+}
+
+func TestAuthorizedApp_Audits(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authorizedApp := &AuthorizedApp{
+		Name: "Appy",
+	}
+	if _, err := realm.CreateAuthorizedApp(db, authorizedApp, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	authorizedApp.Name = "something else"
+	if err := db.SaveAuthorizedApp(authorizedApp, SystemTest); err != nil {
+		t.Fatalf("%v, %v", err, authorizedApp.errors)
+	}
+
+	audits, _, err := db.ListAudits(&pagination.PageParams{Limit: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(audits), 2; got != want {
+		t.Errorf("expected %d audits, got %d: %v", want, got, audits)
 	}
 }
