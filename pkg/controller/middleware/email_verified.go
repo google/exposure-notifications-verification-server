@@ -17,9 +17,7 @@ package middleware
 
 import (
 	"net/http"
-	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -28,20 +26,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// RequireVerified requires a user to have verified their login email.
+// RequireEmailVerified requires a user to have verified their login email.
 //
 // MUST first run RequireAuth to populate user and RequireRealm to populate the
 // realm.
-func RequireVerified(authProvider auth.Provider, db *database.Database, h render.Renderer, ttl time.Duration) mux.MiddlewareFunc {
+func RequireEmailVerified(authProvider auth.Provider, h render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			logger := logging.FromContext(ctx).Named("middleware.RequireVerified")
-
 			session := controller.SessionFromContext(ctx)
 			if session == nil {
-				logger.Errorw("session does not exist")
 				controller.MissingSession(w, r, h)
 				return
 			}
