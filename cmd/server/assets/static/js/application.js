@@ -387,6 +387,7 @@ function decorateInvalid($element) {
 function loginScripts(hasCurrentUser, onLoginSuccess) {
   let $loginDiv = $('#login-div');
   let $submit = $('#submit');
+  let $loginForm = $('#login-form');
   let $email = $('#email');
   let $password = $('#password');
 
@@ -407,11 +408,14 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
   let selectedFactorIndex = 0;
 
   window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-    'submit', {
+    'recaptcha-container', {
     'size': 'invisible',
-    'callback': (response) => onSignInSubmit(),
   });
-  window.recaptchaVerifier.render();
+
+  $loginForm.on('submit', function(event) {
+    event.preventDefault();
+    onSignInSubmit();
+  });
 
   $pinForm.on('submit', function(event) {
     event.preventDefault();
@@ -435,7 +439,6 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
   });
 
   $pinClose.on('click', function(event) {
-    window.recaptchaVerifier.reset();
     event.preventDefault();
     $submit.prop('disabled', false);
     $factors.empty();
@@ -470,6 +473,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
       onLoginSuccess();
     }).catch(function(error) {
       if (error.code == 'auth/multi-factor-auth-required') {
+        window.recaptchaVerifier.render();
         resolver = error.resolver;
         populatePinText(resolver.hints);
         populateFactors(resolver.hints);
@@ -498,12 +502,10 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
           flash.error('Unsupported 2nd factor authentication type.');
         }
       } else if (error.code == 'auth/too-many-requests') {
-        window.recaptchaVerifier.reset();
         flash.clear();
         flash.error(error.message);
         $submit.prop('disabled', false);
       } else {
-        window.recaptchaVerifier.reset();
         console.error(error);
         flash.clear();
         flash.error("Sign-in failed. Please try again.");
@@ -734,7 +736,7 @@ function initBulkUploadUI() {
   $successTooMany = $('#success-too-many');
 
   let now = new Date();
-  $save.attr('download', `bulk-issue-log-${now.toISOString().split('T')[0]}.csv`);
+  $save.attr('download', `${now.toISOString().split('T')[0]}-bulk-issue-log.csv`);
 }
 
 function resetBulkUploadUI() {
