@@ -12,30 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package associated
+package associated_test
 
 import (
 	"sort"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/associated"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-func TestGetIosData(t *testing.T) {
+func TestIOSData(t *testing.T) {
 	t.Parallel()
+
+	ctx := project.TestContext(t)
+
+	cfg := &config.RedirectConfig{}
+
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("no_active_apps", func(t *testing.T) {
 		t.Parallel()
 
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-		realm, err := db.FindRealm(1)
+		realm, err := harness.Database.FindRealm(1)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		c := &Controller{db: db}
-		data, err := c.getIosData(realm.ID)
+		c, err := associated.New(cfg, harness.Database, harness.Cacher, h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, err := c.IOSData(realm.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -47,9 +64,9 @@ func TestGetIosData(t *testing.T) {
 	t.Run("active_apps", func(t *testing.T) {
 		t.Parallel()
 
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-		realm, err := db.FindRealm(1)
+		realm, err := harness.Database.FindRealm(1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -62,7 +79,7 @@ func TestGetIosData(t *testing.T) {
 			OS:      database.OSTypeIOS,
 			AppID:   "com.example.app1",
 		}
-		if err := db.SaveMobileApp(app1, database.SystemTest); err != nil {
+		if err := harness.Database.SaveMobileApp(app1, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -74,7 +91,7 @@ func TestGetIosData(t *testing.T) {
 			OS:      database.OSTypeIOS,
 			AppID:   "com.example.app2",
 		}
-		if err := db.SaveMobileApp(app2, database.SystemTest); err != nil {
+		if err := harness.Database.SaveMobileApp(app2, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -87,7 +104,7 @@ func TestGetIosData(t *testing.T) {
 			AppID:   "com.example.app3",
 			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 		}
-		if err := db.SaveMobileApp(app3, database.SystemTest); err != nil {
+		if err := harness.Database.SaveMobileApp(app3, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -99,12 +116,15 @@ func TestGetIosData(t *testing.T) {
 			OS:      database.OSTypeIOS,
 			AppID:   "com.example.app4",
 		}
-		if err := db.SaveMobileApp(app4, database.SystemTest); err != nil {
+		if err := harness.Database.SaveMobileApp(app4, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
-		c := &Controller{db: db}
-		data, err := c.getIosData(realm.ID)
+		c, err := associated.New(cfg, harness.Database, harness.Cacher, h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, err := c.IOSData(realm.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

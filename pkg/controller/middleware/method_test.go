@@ -22,12 +22,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 )
 
 func TestMutateMethod(t *testing.T) {
 	t.Parallel()
 
+	ctx := project.TestContext(t)
 	mutateMethod := middleware.MutateMethod()
 
 	cases := []struct {
@@ -63,6 +65,7 @@ func TestMutateMethod(t *testing.T) {
 			t.Parallel()
 
 			r := httptest.NewRequest("POST", "/", tc.r)
+			r = r.Clone(ctx)
 			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 			w := httptest.NewRecorder()

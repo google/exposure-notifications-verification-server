@@ -12,29 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package redirect defines the controller for the deep link redirector.
-package redirect
+// Package associated handles the iOS and Android associated app handler
+// protocols. For more discussion of these protocols, please see:
+//
+// Android:
+//   https://developer.android.com/training/app-links/verify-site-associations
+//
+// iOS:
+//   https://developer.apple.com/documentation/safariservices/supporting_associated_domains
+package associated
 
 import (
 	"fmt"
+	"net"
+	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 type Controller struct {
 	config           *config.RedirectConfig
+	hostnameToRegion map[string]string
 	cacher           cache.Cacher
 	db               *database.Database
 	h                render.Renderer
-	hostnameToRegion map[string]string
 }
 
-// New creates a new redirect controller.
-func New(db *database.Database, config *config.RedirectConfig, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
+func New(config *config.RedirectConfig, db *database.Database, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
 	cfgMap, err := config.HostnameToRegion()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -47,4 +55,15 @@ func New(db *database.Database, config *config.RedirectConfig, cacher cache.Cach
 		h:                h,
 		hostnameToRegion: cfgMap,
 	}, nil
+}
+
+func (c *Controller) getRegion(r *http.Request) string {
+	// Get the hostname first
+	baseHost := strings.ToLower(r.Host)
+	if host, _, err := net.SplitHostPort(baseHost); err == nil {
+		baseHost = host
+	}
+
+	// return the mapped region code (or default, "", if not found)
+	return c.hostnameToRegion[baseHost]
 }

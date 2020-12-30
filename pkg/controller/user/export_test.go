@@ -15,14 +15,12 @@
 package user_test
 
 import (
-	"context"
 	"fmt"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -37,12 +35,7 @@ import (
 func TestHandleExport(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	authProvider, err := auth.NewLocal(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	realm, admin, _, err := harness.ProvisionAndLogin()
@@ -62,7 +55,7 @@ func TestHandleExport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +63,7 @@ func TestHandleExport(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		c := userpkg.New(authProvider, harness.Cacher, harness.Database, h)
+		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 		handler := c.HandleExport()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -84,12 +77,12 @@ func TestHandleExport(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		c := userpkg.New(authProvider, harness.Cacher, harness.Database, h)
+		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 
 		mux := mux.NewRouter()
 		mux.Handle("/", c.HandleExport()).Methods("GET")
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
@@ -117,12 +110,12 @@ func TestHandleExport(t *testing.T) {
 	t.Run("csvs", func(t *testing.T) {
 		t.Parallel()
 
-		c := userpkg.New(authProvider, harness.Cacher, harness.Database, h)
+		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 
 		mux := mux.NewRouter()
 		mux.Handle("/", c.HandleExport()).Methods("GET")
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,

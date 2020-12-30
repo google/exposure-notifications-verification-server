@@ -34,6 +34,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
@@ -173,6 +174,10 @@ func NewServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *Test
 	if err != nil {
 		tb.Fatal(err)
 	}
+
+	// Inject the test logger into the context instead of the default sugared
+	// logger.
+	mux = middleware.PopulateLogger(project.TestLogger(tb))(mux)
 
 	// Create a stoppable context.
 	doneCtx, cancel := context.WithCancel(ctx)

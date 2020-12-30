@@ -15,16 +15,17 @@
 package modeler
 
 import (
-	"context"
 	"testing"
 	"time"
 
+	"github.com/sethvargo/go-envconfig"
+	"github.com/sethvargo/go-limiter/memorystore"
+
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
-	"github.com/sethvargo/go-envconfig"
-	"github.com/sethvargo/go-limiter/memorystore"
 )
 
 var testDatabaseInstance *database.TestInstance
@@ -38,7 +39,7 @@ func TestMain(m *testing.M) {
 func testModeler(tb testing.TB) *Controller {
 	tb.Helper()
 
-	ctx := context.Background()
+	ctx := project.TestContext(tb)
 	db, dbConfig := testDatabaseInstance.NewDatabase(tb, nil)
 
 	config := config.Modeler{
@@ -71,7 +72,7 @@ func testModeler(tb testing.TB) *Controller {
 func TestRebuildModel(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := project.TestContext(t)
 	modeler := testModeler(t)
 	db := modeler.db
 

@@ -15,12 +15,12 @@
 package middleware_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
@@ -31,17 +31,16 @@ import (
 func TestRequireAPIKey(t *testing.T) {
 	t.Parallel()
 
-	cacher, err := cache.NewNoop()
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+
+	db := harness.Database
+	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	db, _ := testDatabaseInstance.NewDatabase(t, cacher)
-
-	realm, err := db.FindRealm(1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cacher := harness.Cacher
 
 	authApp := &database.AuthorizedApp{
 		Name:       "Appy",
@@ -61,7 +60,7 @@ func TestRequireAPIKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,6 +136,7 @@ func TestRequireAPIKey(t *testing.T) {
 			t.Parallel()
 
 			r := httptest.NewRequest("GET", "/", nil)
+			r = r.Clone(ctx)
 			r.Header.Set(middleware.APIKeyHeader, tc.apiKey)
 			r.Header.Set("Accept", "application/json")
 

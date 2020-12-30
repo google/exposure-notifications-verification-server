@@ -19,11 +19,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 )
 
 func TestProcessDebug(t *testing.T) {
 	t.Parallel()
+
+	ctx := project.TestContext(t)
 
 	processDebug := middleware.ProcessDebug()
 
@@ -48,6 +51,7 @@ func TestProcessDebug(t *testing.T) {
 			t.Parallel()
 
 			r := httptest.NewRequest("GET", "/", nil)
+			r = r.Clone(ctx)
 			r.Header.Set("Content-Type", "text/html")
 
 			if tc.exp {

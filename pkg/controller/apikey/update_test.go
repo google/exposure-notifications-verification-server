@@ -26,6 +26,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -38,6 +39,7 @@ import (
 func TestHandleUpdate(t *testing.T) {
 	t.Parallel()
 
+	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	realm, user, session, err := harness.ProvisionAndLogin()
@@ -61,7 +63,7 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -85,7 +87,7 @@ func TestHandleUpdate(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,7 +97,7 @@ func TestHandleUpdate(t *testing.T) {
 		mux := mux.NewRouter()
 		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
@@ -126,7 +128,7 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -136,7 +138,7 @@ func TestHandleUpdate(t *testing.T) {
 		mux := mux.NewRouter()
 		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,

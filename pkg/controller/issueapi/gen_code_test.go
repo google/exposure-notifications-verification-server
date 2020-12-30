@@ -15,12 +15,12 @@
 package issueapi_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -74,7 +74,7 @@ func TestGenerateAlphanumericCode(t *testing.T) {
 func TestCommitCode(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := project.TestContext(t)
 	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := testCfg.Database
 
@@ -136,8 +136,8 @@ func TestCommitCode(t *testing.T) {
 
 func TestIssueCode(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
+	ctx := project.TestContext(t)
 	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := testCfg.Database
 
@@ -168,7 +168,9 @@ func TestIssueCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testCfg.RateLimiter.Set(ctx, key, 0, time.Hour)
+	if err := testCfg.RateLimiter.Set(ctx, key, 0, time.Hour); err != nil {
+		t.Fatal(err)
+	}
 
 	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
 

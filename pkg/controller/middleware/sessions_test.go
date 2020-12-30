@@ -15,12 +15,12 @@
 package middleware_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -30,16 +30,18 @@ import (
 func TestRequireSession(t *testing.T) {
 	t.Parallel()
 
-	store := sessions.NewCookieStore()
-
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	ctx := project.TestContext(t)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	store := sessions.NewCookieStore()
+
 	requireSession := middleware.RequireSession(store, h)
 
 	r := httptest.NewRequest("GET", "/", nil)
+	r = r.Clone(ctx)
 	r.Header.Set("Accept", "application/json")
 
 	w := httptest.NewRecorder()

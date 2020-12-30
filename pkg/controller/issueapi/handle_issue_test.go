@@ -15,7 +15,6 @@
 package issueapi_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -28,7 +27,7 @@ import (
 func TestIssue(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := project.TestContext(t)
 	testSuite := testsuite.NewIntegrationSuite(t, ctx)
 	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
 	if err != nil {

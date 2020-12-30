@@ -38,7 +38,6 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Mint a cookie for the session.
 	cookie, err := harness.SessionCookie(session)
 	if err != nil {
 		t.Fatal(err)
@@ -52,7 +51,6 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a browser runner.
 	browserCtx := browser.New(t)
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
@@ -61,24 +59,15 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 
 	var code string
 	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
-
-		// Visit /codes/issue.
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/issue`),
-
-		// Wait for render.
 		chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
 
-		// Add a date fields
 		chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
 		chromedp.SetValue(`input#symptom-date`, yesterday, chromedp.ByQuery),
-
-		// Click the issue button.
 		chromedp.Click(`#submit`, chromedp.ByQuery),
-		chromedp.WaitVisible(`#short-code`, chromedp.ByQuery),
 
-		// Get the code.
+		chromedp.WaitVisible(`#short-code`, chromedp.ByQuery),
 		chromedp.TextContent(`#short-code`, &code, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)

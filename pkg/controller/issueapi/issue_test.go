@@ -15,7 +15,6 @@
 package issueapi_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -30,10 +29,11 @@ import (
 
 func TestIssueOne(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
+	ctx := project.TestContext(t)
 	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := testCfg.Database
+
 	realm, err := db.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)

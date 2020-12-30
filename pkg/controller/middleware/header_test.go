@@ -15,11 +15,11 @@
 package middleware_test
 
 import (
-	"context"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
@@ -27,8 +27,7 @@ import (
 func TestRequireHeader(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
+	ctx := project.TestContext(t)
 	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
@@ -59,6 +58,7 @@ func TestRequireHeader(t *testing.T) {
 			t.Parallel()
 
 			r := httptest.NewRequest("GET", "/", nil)
+			r = r.Clone(ctx)
 			r.Header.Set("Accept", "application/json")
 			for k, v := range tc.headers {
 				r.Header.Set(k, v)
@@ -78,8 +78,7 @@ func TestRequireHeader(t *testing.T) {
 func TestRequireHeaderValues(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
+	ctx := project.TestContext(t)
 	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
@@ -116,6 +115,7 @@ func TestRequireHeaderValues(t *testing.T) {
 			t.Parallel()
 
 			r := httptest.NewRequest("GET", "/", nil)
+			r = r.Clone(ctx)
 			r.Header.Set("Accept", "application/json")
 			for k, v := range tc.headers {
 				r.Header.Set(k, v)

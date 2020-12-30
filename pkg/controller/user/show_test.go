@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -38,12 +38,7 @@ import (
 func TestHandleShow(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	authProvider, err := auth.NewLocal(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	realm, user, session, err := harness.ProvisionAndLogin()
@@ -59,11 +54,11 @@ func TestHandleShow(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := userpkg.New(authProvider, harness.Cacher, harness.Database, h)
+		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 		handler := c.HandleShow()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -82,17 +77,17 @@ func TestHandleShow(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		c := userpkg.New(authProvider, harness.Cacher, harness.Database, h)
+		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 
 		mux := mux.NewRouter()
 		mux.Handle("/{id}", c.HandleShow()).Methods("GET")
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
