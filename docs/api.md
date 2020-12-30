@@ -7,11 +7,11 @@
 - [API Methods](#api-methods)
   - [`/api/verify`](#apiverify)
   - [`/api/certificate`](#apicertificate)
-  - [`/api/checkcodestatus`](#apicheckcodestatus)
-  - [`/api/expirecode`](#apiexpirecode)
-  - [`/api/stats/*` (preview)](#apistats-preview)
-- [Chaffing requests](#chaffing-requests)
-- [Response codes overview](#response-codes-overview)
+- [Admin APIs](#admin-apis)
+  - [`/api/issue`](#apiissue)
+    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
+  - [`/api/batch-issue`](#apibatch-issue)
+    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
 
 <!-- /TOC -->
 
@@ -151,7 +151,7 @@ Exchange a verification token for a verification certificate (for sending to a k
 
 **VerificationCertificateResponse**
 
- ```json
+```json
 {
   "certificate": "<JWT verification certificate>",
   "error": "",
