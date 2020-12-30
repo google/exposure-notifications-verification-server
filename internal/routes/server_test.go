@@ -232,16 +232,16 @@ func TestRoutes_statsRoutes(t *testing.T) {
 			req: httptest.NewRequest("GET", "/realm.json", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm-user.csv", nil),
+			req: httptest.NewRequest("GET", "/realm/users.csv", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm-user.json", nil),
+			req: httptest.NewRequest("GET", "/realm/users.json", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm-external-issuer.csv", nil),
+			req: httptest.NewRequest("GET", "/realm/external-issuers.csv", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm-external-issuer.json", nil),
+			req: httptest.NewRequest("GET", "/realm/external-issuers.json", nil),
 		},
 	}
 

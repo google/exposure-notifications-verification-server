@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
 // HandleRealmStats renders statistics for the current realm.
@@ -26,7 +27,7 @@ func (c *Controller) HandleRealmStats(typ StatsType) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		currentRealm, ok := authorizeFromContext(ctx)
+		currentRealm, ok := authorizeFromContext(ctx, rbac.StatsRead)
 		if !ok {
 			controller.Unauthorized(w, r, c.h)
 			return

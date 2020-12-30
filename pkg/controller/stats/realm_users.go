@@ -22,8 +22,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
-// HandleRealmExternalIssuersStats renders statistics for the current realm.
-func (c *Controller) HandleRealmExternalIssuersStats(typ StatsType) http.Handler {
+// HandleRealmUsersStats renders statistics for the current realm.
+func (c *Controller) HandleRealmUsersStats(typ StatsType) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -33,7 +33,7 @@ func (c *Controller) HandleRealmExternalIssuersStats(typ StatsType) http.Handler
 			return
 		}
 
-		stats, err := currentRealm.ExternalIssuerStatsCached(ctx, c.db, c.cacher)
+		stats, err := currentRealm.UserStatsCached(ctx, c.db, c.cacher)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -41,7 +41,7 @@ func (c *Controller) HandleRealmExternalIssuersStats(typ StatsType) http.Handler
 
 		switch typ {
 		case StatsTypeCSV:
-			c.h.RenderCSV(w, http.StatusOK, csvFilename("external-issuer-stats"), stats)
+			c.h.RenderCSV(w, http.StatusOK, csvFilename("user-stats"), stats)
 			return
 		case StatsTypeJSON:
 			c.h.RenderJSON(w, http.StatusOK, stats)

@@ -119,10 +119,15 @@ func AdminAPI(
 		statsController := stats.New(ctx, cacher, db, h)
 		sub.Handle("/realm.csv", statsController.HandleRealmStats(stats.StatsTypeCSV)).Methods("GET")
 		sub.Handle("/realm.json", statsController.HandleRealmStats(stats.StatsTypeJSON)).Methods("GET")
-		sub.Handle("/realm-user.csv", statsController.HandleRealmUserStats(stats.StatsTypeCSV)).Methods("GET")
-		sub.Handle("/realm-user.json", statsController.HandleRealmUserStats(stats.StatsTypeJSON)).Methods("GET")
-		sub.Handle("/realm-external-issuer.csv", statsController.HandleRealmExternalIssuerStats(stats.StatsTypeCSV)).Methods("GET")
-		sub.Handle("/realm-external-issuer.json", statsController.HandleRealmExternalIssuerStats(stats.StatsTypeJSON)).Methods("GET")
+
+		sub.Handle("/realm/users.csv", statsController.HandleRealmUsersStats(stats.StatsTypeCSV)).Methods("GET")
+		sub.Handle("/realm/users.json", statsController.HandleRealmUsersStats(stats.StatsTypeJSON)).Methods("GET")
+
+		sub.Handle("/realm/users/{id}.csv", statsController.HandleRealmUserStats(stats.StatsTypeCSV)).Methods("GET")
+		sub.Handle("/realm/users/{id}.json", statsController.HandleRealmUserStats(stats.StatsTypeJSON)).Methods("GET")
+
+		sub.Handle("/realm/external-issuers.csv", statsController.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
+		sub.Handle("/realm/external-issuers.json", statsController.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be

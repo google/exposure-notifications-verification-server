@@ -7,11 +7,6 @@
 - [API Methods](#api-methods)
   - [`/api/verify`](#apiverify)
   - [`/api/certificate`](#apicertificate)
-- [Admin APIs](#admin-apis)
-  - [`/api/issue`](#apiissue)
-    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
-  - [`/api/batch-issue`](#apibatch-issue)
-    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
   - [`/api/checkcodestatus`](#apicheckcodestatus)
   - [`/api/expirecode`](#apiexpirecode)
   - [`/api/stats/*` (preview)](#apistats-preview)
@@ -469,11 +464,16 @@ This path includes realm-level statistics for the past 30 days.
 -   `/api/stats/realm.{csv,json}` - Daily statistics for the realm, including
     codes issued, codes claimed, and daily active users (if enabled).
 
--   `/api/stats/realm-user.{csv,json}` - Daily statistics for codes issued by
+-   `/api/stats/realm/users.{csv,json}` - Daily statistics for codes issued by
     realm user. These statistics only include codes issued by humans logged into
     the verification system.
 
--   `/api/stats/realm-external-issuser.{csv,json}` - Daily statistics for codes
+-   `/api/stats/realm/users/:id.{csv,json}` - Daily statistics for codes issued
+    by the user with the given ID. These statistics only include codes issued by
+    that human user logged into the verification system for the currently
+    authorized realm.
+
+-   `/api/stats/realm/external-issusers.{csv,json}` - Daily statistics for codes
     issued by external issuers. These statistics only include codes issued by
     the API where an `externalIssuer` field was provided.
 

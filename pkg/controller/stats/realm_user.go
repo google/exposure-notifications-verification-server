@@ -17,22 +17,42 @@ package stats
 
 import (
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/mux"
 )
 
-// HandleRealmUserStats renders statistics for the current realm.
+// HandleRealmUserStats renders statistics for a single user in the current
+// realm.
 func (c *Controller) HandleRealmUserStats(typ StatsType) http.Handler {
+	re := regexp.MustCompile(`[^A-Za-z0-9]`)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
 
-		currentRealm, ok := authorizeFromContext(ctx)
+		currentRealm, ok := authorizeFromContext(ctx, rbac.StatsRead, rbac.UserRead)
 		if !ok {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		stats, err := currentRealm.UserStatsCached(ctx, c.db, c.cacher)
+		user, err := currentRealm.FindUser(c.db, vars["id"])
+		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		stats, err := user.StatsCached(ctx, c.db, c.cacher, currentRealm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -40,7 +60,8 @@ func (c *Controller) HandleRealmUserStats(typ StatsType) http.Handler {
 
 		switch typ {
 		case StatsTypeCSV:
-			c.h.RenderCSV(w, http.StatusOK, csvFilename("user-stats"), stats)
+			filename := re.ReplaceAllString(strings.ToLower(user.Name), "-")
+			c.h.RenderCSV(w, http.StatusOK, csvFilename(filename), stats)
 			return
 		case StatsTypeJSON:
 			c.h.RenderJSON(w, http.StatusOK, stats)

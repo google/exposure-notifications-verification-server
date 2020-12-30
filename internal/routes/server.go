@@ -377,8 +377,6 @@ func userRoutes(r *mux.Router, c *user.Controller) {
 	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
 	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
 	r.Handle("/{id:[0-9]+}", c.HandleDelete()).Methods("DELETE")
-	r.Handle("/{id:[0-9]+}/stats.json", c.HandleUserStats()).Methods("GET")
-	r.Handle("/{id:[0-9]+}/stats.csv", c.HandleUserStats()).Methods("GET")
 	r.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods("POST")
 }
 
@@ -396,10 +394,15 @@ func realmkeysRoutes(r *mux.Router, c *realmkeys.Controller) {
 func statsRoutes(r *mux.Router, c *stats.Controller) {
 	r.Handle("/realm.csv", c.HandleRealmStats(stats.StatsTypeCSV)).Methods("GET")
 	r.Handle("/realm.json", c.HandleRealmStats(stats.StatsTypeJSON)).Methods("GET")
-	r.Handle("/realm-user.csv", c.HandleRealmUserStats(stats.StatsTypeCSV)).Methods("GET")
-	r.Handle("/realm-user.json", c.HandleRealmUserStats(stats.StatsTypeJSON)).Methods("GET")
-	r.Handle("/realm-external-issuer.csv", c.HandleRealmExternalIssuerStats(stats.StatsTypeCSV)).Methods("GET")
-	r.Handle("/realm-external-issuer.json", c.HandleRealmExternalIssuerStats(stats.StatsTypeJSON)).Methods("GET")
+
+	r.Handle("/realm/users.csv", c.HandleRealmUsersStats(stats.StatsTypeCSV)).Methods("GET")
+	r.Handle("/realm/users.json", c.HandleRealmUsersStats(stats.StatsTypeJSON)).Methods("GET")
+
+	r.Handle("/realm/users/{id}.csv", c.HandleRealmUserStats(stats.StatsTypeCSV)).Methods("GET")
+	r.Handle("/realm/users/{id}.json", c.HandleRealmUserStats(stats.StatsTypeJSON)).Methods("GET")
+
+	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
+	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")
 }
 
 // realmadminRoutes are the realm admin routes.

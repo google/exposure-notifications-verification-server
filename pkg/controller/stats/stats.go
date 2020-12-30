@@ -54,11 +54,16 @@ func New(ctx context.Context, cacher cache.Cacher, db *database.Database, h rend
 }
 
 // authorizeFromContext attempts to pull authorization from the context. It
-// returns false if authorization failed.
-func authorizeFromContext(ctx context.Context) (*database.Realm, bool) {
+// returns false if authorization failed. The authorization must have one of the
+// provided permissions. to succeed
+func authorizeFromContext(ctx context.Context, permissions ...rbac.Permission) (*database.Realm, bool) {
 	membership := controller.MembershipFromContext(ctx)
-	if membership != nil && membership.Can(rbac.StatsRead) {
-		return membership.Realm, true
+	if membership != nil {
+		for _, permission := range permissions {
+			if membership.Can(permission) {
+				return membership.Realm, true
+			}
+		}
 	}
 
 	realm := controller.RealmFromContext(ctx)

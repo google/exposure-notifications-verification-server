@@ -12,6 +12,7 @@
 <html lang="en">
 <head>
   {{template "head" .}}
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 
 <body id="users-show" class="tab-content">
@@ -79,15 +80,13 @@
       </div>
     </div>
 
-    <div class="card mb-3 shadow-sm">
+    <div class="card mb-3 shadow-sm mb-3">
       <div class="card-header">
         <span class="oi oi-bar-chart mr-2 ml-n1"></span>
         Statistics
       </div>
-      <div class="card-body">
-        <div id="user_stats_chart" class="container d-flex h-100 w-100" style="min-height:300px;">
-          <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
-        </div>
+      <div id="user_stats_chart" class="container d-flex h-100 w-100" style="min-height:300px;">
+        <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
       </div>
       <small class="card-footer d-flex justify-content-between text-muted">
         <span>
@@ -96,8 +95,8 @@
         </span>
         <span>
           <span class="mr-1">Export as:</span>
-          <a href="/realm/users/{{$user.ID}}/stats.csv" class="mr-1">CSV</a>
-          <a href="/realm/users/{{$user.ID}}/stats.json">JSON</a>
+          <a href="/stats/realm/users/{{$user.ID}}.csv" class="mr-1">CSV</a>
+          <a href="/stats/realm/users/{{$user.ID}}.json">JSON</a>
         </span>
       </small>
     </div>
@@ -113,9 +112,8 @@
           </div>
           <div class="modal-body mb-n3">
             <p>
-              This chart reflects the number of codes issued each by
-              {{$user.Name}} ({{$user.Email}}) for
-              {{$currentMembership.Realm.Name}}.
+              This chart reflects the number of codes issued by {{$user.Name}}
+              ({{$user.Email}}) for {{$currentMembership.Realm.Name}}.
             </p>
             <p>
               This chart does <u>not</u> include codes that were issued via the
@@ -128,30 +126,22 @@
     </div>
   </main>
 
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
-  <script>
-    let userStatsChartDiv = document.getElementById('user_stats_chart');
-    let dateFormatter;
-
+  <script type="text/javascript">
     google.charts.load('current', {
       packages: ['corechart'],
-      callback: function() {
-        dateFormatter = new google.visualization.DateFormat({
-          pattern: 'MMM dd',
-        });
-
-        drawStats();
-      },
+      callback: drawRealmCharts,
     });
 
-    function drawStats() {
+    function drawRealmCharts() {
       $.ajax({
-        url: '/realm/users/{{$user.ID}}/stats.json',
+        url: '/stats/realm/users/{{$user.ID}}.json',
         dataType: 'json',
       })
       .done(function(data, status, xhr) {
+        let $userStatsChart = $('#user_stats_chart');
+
         if (!data.statistics) {
-          $(userStatsChartDiv).find('p').text('This user has not yet issued any codes.');
+          $userStatsChart.find('p').text('No data yet.');
           return;
         }
 
@@ -163,26 +153,28 @@
           dataTable.addRow([utcDate(row.date), row.data.codes_issued]);
         });
 
+        let dateFormatter = new google.visualization.DateFormat({
+          pattern: 'MMM dd',
+        });
         dateFormatter.format(dataTable, 0);
 
         let options = {
-          colors: ['#007bff'],
+          colors: ['#007bff', '#ff7b00'],
           chartArea: {
-            left: 60, // leave room for y-axis labels
-            top: 20,
-            bottom: 20,
-            width: '100%',
-            height: '100%',
+            left: 40, // leave room for y-axis labels
+            right: 20,
+            width: '100%'
           },
           hAxis: { format: 'M/d' },
           legend: 'none',
+          width: '100%'
         };
 
-        let chart = new google.visualization.LineChart(userStatsChartDiv);
+        let chart = new google.visualization.LineChart($userStatsChart.get(0));
         chart.draw(dataTable, options);
       })
       .fail(function(xhr, status, err) {
-        flash.error('Failed to render user stats: ' + err);
+        flash.error('Failed to render realm stats: ' + err);
       });
     }
   </script>
