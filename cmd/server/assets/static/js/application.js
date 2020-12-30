@@ -408,10 +408,9 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
   let selectedFactorIndex = 0;
 
   window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-    'submit', {
+    'recaptcha-container', {
     'size': 'invisible',
   });
-  window.recaptchaVerifier.render();
 
   $loginForm.on('submit', function(event) {
     event.preventDefault();
@@ -474,6 +473,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
       onLoginSuccess();
     }).catch(function(error) {
       if (error.code == 'auth/multi-factor-auth-required') {
+        window.recaptchaVerifier.render();
         resolver = error.resolver;
         populatePinText(resolver.hints);
         populateFactors(resolver.hints);
