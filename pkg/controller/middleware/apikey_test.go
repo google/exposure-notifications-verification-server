@@ -40,7 +40,10 @@ func TestRequireAPIKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cacher := harness.Cacher
+	cacher, err := cache.NewNoop()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	authApp := &database.AuthorizedApp{
 		Name:       "Appy",
@@ -73,44 +76,38 @@ func TestRequireAPIKey(t *testing.T) {
 		apiKey string
 		code   int
 
-		cacher cache.Cacher
-		db     *database.Database
-		next   func(t *testing.T) http.Handler
+		db   *database.Database
+		next func(t *testing.T) http.Handler
 	}{
 		{
 			name:   "no_key",
 			apiKey: "",
 			code:   401,
 			db:     db,
-			cacher: cacher,
 		},
 		{
 			name:   "non_existent_key",
 			apiKey: "abcd1234",
 			code:   401,
 			db:     db,
-			cacher: cacher,
 		},
 		{
 			name:   "bad_database_conn",
 			apiKey: apiKey,
 			code:   500,
 			db:     badDB,
-			cacher: cacher,
 		},
 		{
 			name:   "wrong_type",
 			apiKey: wrongAPIKey,
 			code:   401,
 			db:     db,
-			cacher: cacher,
 		},
 		{
 			name:   "valid",
 			apiKey: apiKey,
 			code:   200,
 			db:     db,
-			cacher: cacher,
 			next: func(t *testing.T) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					ctx := r.Context()
@@ -146,7 +143,7 @@ func TestRequireAPIKey(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			handler := middleware.RequireAPIKey(tc.cacher, tc.db, h, []database.APIKeyType{
+			handler := middleware.RequireAPIKey(cacher, tc.db, h, []database.APIKeyType{
 				database.APIKeyTypeAdmin,
 			})(next)
 
