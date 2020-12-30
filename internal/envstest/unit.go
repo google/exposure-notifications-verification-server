@@ -15,7 +15,6 @@
 package envstest
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -24,6 +23,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
@@ -35,7 +35,7 @@ func ExerciseSessionMissing(t *testing.T, h http.Handler) {
 	t.Run("session_missing", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := project.TestContext(t)
 
 		r := httptest.NewRequest("GET", "/", nil)
 		r = r.Clone(ctx)
@@ -62,7 +62,7 @@ func ExerciseMembershipMissing(t *testing.T, h http.Handler) {
 	t.Run("membership_missing", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 
 		r := httptest.NewRequest("GET", "/", nil)
@@ -90,7 +90,7 @@ func ExercisePermissionMissing(t *testing.T, h http.Handler) {
 	t.Run("permission_missing", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{})
 
@@ -118,7 +118,7 @@ func ExerciseBadPagination(t *testing.T, membership *database.Membership, h http
 	t.Run("bad_pagination", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, membership)
 
@@ -154,7 +154,7 @@ func ExerciseIDNotFound(t *testing.T, membership *database.Membership, h http.Ha
 		mux := mux.NewRouter()
 		mux.Handle("/{id}", h)
 
-		ctx := context.Background()
+		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, membership)
 

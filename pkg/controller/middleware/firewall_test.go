@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -29,8 +30,7 @@ import (
 func TestProcessFirewall(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
+	ctx := project.TestContext(t)
 	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
@@ -47,24 +47,24 @@ func TestProcessFirewall(t *testing.T) {
 	}{
 		{
 			name: "no_realm",
-			ctx:  context.Background(),
+			ctx:  ctx,
 			code: 400,
 		},
 		{
 			name: "realm_in_context",
-			ctx:  controller.WithRealm(context.Background(), &database.Realm{}),
+			ctx:  controller.WithRealm(ctx, &database.Realm{}),
 			code: 200,
 		},
 		{
 			name: "membership_in_context",
-			ctx: controller.WithMembership(context.Background(), &database.Membership{
+			ctx: controller.WithMembership(ctx, &database.Membership{
 				Realm: &database.Realm{},
 			}),
 			code: 200,
 		},
 		{
 			name: "all_allowed4",
-			ctx: controller.WithRealm(context.Background(), &database.Realm{
+			ctx: controller.WithRealm(ctx, &database.Realm{
 				AllowedCIDRsServer: []string{"0.0.0.0/0"},
 			}),
 			remoteAddr: "1.2.3.4",
@@ -72,7 +72,7 @@ func TestProcessFirewall(t *testing.T) {
 		},
 		{
 			name: "all_allowed6",
-			ctx: controller.WithRealm(context.Background(), &database.Realm{
+			ctx: controller.WithRealm(ctx, &database.Realm{
 				AllowedCIDRsServer: []string{"::/0"},
 			}),
 			remoteAddr: "2001:db8::8a2e:370:7334",
@@ -80,7 +80,7 @@ func TestProcessFirewall(t *testing.T) {
 		},
 		{
 			name: "single_allowed_ip4",
-			ctx: controller.WithRealm(context.Background(), &database.Realm{
+			ctx: controller.WithRealm(ctx, &database.Realm{
 				AllowedCIDRsServer: []string{"1.2.3.4/32"},
 			}),
 			remoteAddr: "1.2.3.4",
@@ -88,7 +88,7 @@ func TestProcessFirewall(t *testing.T) {
 		},
 		{
 			name: "single_allowed_ip6",
-			ctx: controller.WithRealm(context.Background(), &database.Realm{
+			ctx: controller.WithRealm(ctx, &database.Realm{
 				AllowedCIDRsServer: []string{"2001::/0"},
 			}),
 			remoteAddr: "2001:db8::8a2e:370:7334",
@@ -96,7 +96,7 @@ func TestProcessFirewall(t *testing.T) {
 		},
 		{
 			name: "single_allowed_xff",
-			ctx: controller.WithRealm(context.Background(), &database.Realm{
+			ctx: controller.WithRealm(ctx, &database.Realm{
 				AllowedCIDRsServer: []string{"1.2.3.4/32"},
 			}),
 			remoteAddr: "9.8.7.6",
@@ -105,7 +105,7 @@ func TestProcessFirewall(t *testing.T) {
 		},
 		{
 			name: "single_reject_ip4",
-			ctx: controller.WithRealm(context.Background(), &database.Realm{
+			ctx: controller.WithRealm(ctx, &database.Realm{
 				AllowedCIDRsServer: []string{"1.2.3.4/32"},
 			}),
 			remoteAddr: "9.8.7.6",
@@ -113,7 +113,7 @@ func TestProcessFirewall(t *testing.T) {
 		},
 		{
 			name: "single_reject_ip6",
-			ctx: controller.WithRealm(context.Background(), &database.Realm{
+			ctx: controller.WithRealm(ctx, &database.Realm{
 				AllowedCIDRsServer: []string{"2000::/64"},
 			}),
 			remoteAddr: "2001:db8::8a2e:370:7334",
@@ -121,7 +121,7 @@ func TestProcessFirewall(t *testing.T) {
 		},
 		{
 			name: "single_reject_xff",
-			ctx: controller.WithRealm(context.Background(), &database.Realm{
+			ctx: controller.WithRealm(ctx, &database.Realm{
 				AllowedCIDRsServer: []string{"1.2.3.4/32"},
 			}),
 			remoteAddr: "1.2.3.4",          // xff is preferred over remote ip

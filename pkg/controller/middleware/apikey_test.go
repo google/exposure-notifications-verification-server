@@ -15,12 +15,12 @@
 package middleware_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
@@ -31,14 +31,16 @@ import (
 func TestRequireAPIKey(t *testing.T) {
 	t.Parallel()
 
-	cacher, err := cache.NewNoop()
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+
+	db := harness.Database
+	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	db, _ := testDatabaseInstance.NewDatabase(t, cacher)
-
-	realm, err := db.FindRealm(1)
+	cacher, err := cache.NewNoop()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +63,7 @@ func TestRequireAPIKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,44 +76,38 @@ func TestRequireAPIKey(t *testing.T) {
 		apiKey string
 		code   int
 
-		cacher cache.Cacher
-		db     *database.Database
-		next   func(t *testing.T) http.Handler
+		db   *database.Database
+		next func(t *testing.T) http.Handler
 	}{
 		{
 			name:   "no_key",
 			apiKey: "",
 			code:   401,
 			db:     db,
-			cacher: cacher,
 		},
 		{
 			name:   "non_existent_key",
 			apiKey: "abcd1234",
 			code:   401,
 			db:     db,
-			cacher: cacher,
 		},
 		{
 			name:   "bad_database_conn",
 			apiKey: apiKey,
 			code:   500,
 			db:     badDB,
-			cacher: cacher,
 		},
 		{
 			name:   "wrong_type",
 			apiKey: wrongAPIKey,
 			code:   401,
 			db:     db,
-			cacher: cacher,
 		},
 		{
 			name:   "valid",
 			apiKey: apiKey,
 			code:   200,
 			db:     db,
-			cacher: cacher,
 			next: func(t *testing.T) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					ctx := r.Context()
@@ -137,6 +133,7 @@ func TestRequireAPIKey(t *testing.T) {
 			t.Parallel()
 
 			r := httptest.NewRequest("GET", "/", nil)
+			r = r.Clone(ctx)
 			r.Header.Set(middleware.APIKeyHeader, tc.apiKey)
 			r.Header.Set("Accept", "application/json")
 
@@ -146,7 +143,7 @@ func TestRequireAPIKey(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			handler := middleware.RequireAPIKey(tc.cacher, tc.db, h, []database.APIKeyType{
+			handler := middleware.RequireAPIKey(cacher, tc.db, h, []database.APIKeyType{
 				database.APIKeyTypeAdmin,
 			})(next)
 

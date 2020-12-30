@@ -15,12 +15,12 @@
 package middleware_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -32,7 +32,8 @@ import (
 func TestLoadCurrentMembership(t *testing.T) {
 	t.Parallel()
 
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	ctx := project.TestContext(t)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +103,7 @@ func TestLoadCurrentMembership(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := context.Background()
+			ctx := ctx
 			if tc.user != nil {
 				ctx = controller.WithUser(ctx, tc.user)
 			}
@@ -152,7 +153,8 @@ func TestLoadCurrentMembership(t *testing.T) {
 func TestRequireMembership(t *testing.T) {
 	t.Parallel()
 
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	ctx := project.TestContext(t)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +187,7 @@ func TestRequireMembership(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := context.Background()
+			ctx := ctx
 			if tc.membership != nil {
 				ctx = controller.WithMembership(ctx, tc.membership)
 			}

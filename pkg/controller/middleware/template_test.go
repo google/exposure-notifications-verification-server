@@ -19,6 +19,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
@@ -27,6 +28,8 @@ import (
 func TestPopulateTemplateVariables(t *testing.T) {
 	t.Parallel()
 
+	ctx := project.TestContext(t)
+
 	cfg := &config.ServerConfig{
 		ServerName:      "namey",
 		MaintenanceMode: true,
@@ -34,6 +37,7 @@ func TestPopulateTemplateVariables(t *testing.T) {
 	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)
 
 	r := httptest.NewRequest("GET", "/", nil)
+	r = r.Clone(ctx)
 	r.Header.Set("Accept", "application/json")
 
 	w := httptest.NewRecorder()

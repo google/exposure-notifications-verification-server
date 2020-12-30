@@ -15,7 +15,6 @@
 package issueapi_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -69,8 +68,8 @@ func TestSMS_scrubPhoneNumber(t *testing.T) {
 
 func TestSMS_sendSMS(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
+	ctx := project.TestContext(t)
 	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := testCfg.Database
 

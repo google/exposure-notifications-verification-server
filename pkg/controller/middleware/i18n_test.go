@@ -30,6 +30,8 @@ import (
 func TestProcessLocale(t *testing.T) {
 	t.Parallel()
 
+	ctx := project.TestContext(t)
+
 	locales, err := i18n.Load(filepath.Join(project.Root(), "internal", "i18n", "locales"))
 	if err != nil {
 		t.Fatal(err)
@@ -73,6 +75,7 @@ func TestProcessLocale(t *testing.T) {
 			t.Parallel()
 
 			r := httptest.NewRequest("GET", "/"+tc.query, nil)
+			r = r.Clone(ctx)
 			r.Header.Set("Accept", "application/json")
 			for k, v := range tc.headers {
 				r.Header.Set(k, v)

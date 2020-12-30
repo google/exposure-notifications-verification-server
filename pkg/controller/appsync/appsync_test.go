@@ -15,9 +15,9 @@
 package appsync
 
 import (
-	"context"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -33,6 +33,8 @@ func TestMain(m *testing.M) {
 
 func TestAppSync(t *testing.T) {
 	t.Parallel()
+
+	ctx := project.TestContext(t)
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	config := &config.AppSyncConfig{}
@@ -80,7 +82,7 @@ func TestAppSync(t *testing.T) {
 			},
 		}
 
-		merr := c.syncApps(context.Background(), resp)
+		merr := c.syncApps(ctx, resp)
 		if e := merr.ErrorOrNil(); e != nil {
 			t.Fatalf(e.Error())
 		}

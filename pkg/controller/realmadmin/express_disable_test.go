@@ -15,12 +15,12 @@
 package realmadmin_test
 
 import (
-	"context"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -32,6 +32,7 @@ import (
 func TestHandleDisableExpress(t *testing.T) {
 	t.Parallel()
 
+	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	_, user, _, err := harness.ProvisionAndLogin()
@@ -39,7 +40,7 @@ func TestHandleDisableExpress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +65,7 @@ func TestHandleDisableExpress(t *testing.T) {
 		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
 		handler := c.HandleDisableExpress()
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
@@ -97,7 +98,7 @@ func TestHandleDisableExpress(t *testing.T) {
 		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
 		handler := c.HandleDisableExpress()
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
@@ -130,7 +131,7 @@ func TestHandleDisableExpress(t *testing.T) {
 		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
 		handler := c.HandleDisableExpress()
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
@@ -172,7 +173,7 @@ func TestHandleDisableExpress(t *testing.T) {
 		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
 		handler := c.HandleDisableExpress()
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,

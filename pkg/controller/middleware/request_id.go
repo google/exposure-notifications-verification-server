@@ -30,14 +30,16 @@ func PopulateRequestID(h render.Renderer) mux.MiddlewareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			u, err := uuid.NewRandom()
-			if err != nil {
-				controller.InternalError(w, r, h, err)
-				return
-			}
+			if existing := controller.RequestIDFromContext(ctx); existing == "" {
+				u, err := uuid.NewRandom()
+				if err != nil {
+					controller.InternalError(w, r, h, err)
+					return
+				}
 
-			ctx = controller.WithRequestID(ctx, u.String())
-			r = r.Clone(ctx)
+				ctx = controller.WithRequestID(ctx, u.String())
+				r = r.Clone(ctx)
+			}
 
 			next.ServeHTTP(w, r)
 		})

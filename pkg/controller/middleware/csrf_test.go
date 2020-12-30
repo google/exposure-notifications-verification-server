@@ -15,7 +15,6 @@
 package middleware_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,7 +30,8 @@ import (
 func TestConfigureCSRF(t *testing.T) {
 	t.Parallel()
 
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	ctx := project.TestContext(t)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -16,7 +16,6 @@ package issueapi_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -24,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -42,8 +42,9 @@ func TestMain(m *testing.M) {
 
 func TestIssueMalformed(t *testing.T) {
 	t.Parallel()
+
+	ctx := project.TestContext(t)
 	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
-	ctx := context.Background()
 
 	realm, err := testCfg.Database.FindRealm(1)
 	if err != nil {

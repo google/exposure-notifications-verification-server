@@ -15,13 +15,13 @@
 package apikey_test
 
 import (
-	"context"
 	"fmt"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -34,6 +34,7 @@ import (
 func TestHandleStats(t *testing.T) {
 	t.Parallel()
 
+	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	realm, user, _, err := harness.ProvisionAndLogin()
@@ -49,7 +50,7 @@ func TestHandleStats(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +70,7 @@ func TestHandleStats(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		h, err := render.New(context.Background(), envstest.ServerAssetsPath(), true)
+		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +80,7 @@ func TestHandleStats(t *testing.T) {
 		mux := mux.NewRouter()
 		mux.Handle("/{id}", c.HandleStats()).Methods("GET")
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
@@ -111,7 +112,7 @@ func TestHandleStats(t *testing.T) {
 		mux.Handle("/{id}.json", c.HandleStats())
 		mux.Handle("/{id}.csv", c.HandleStats())
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
@@ -142,7 +143,7 @@ func TestHandleStats(t *testing.T) {
 		mux := mux.NewRouter()
 		mux.Handle("/{id}.xml", c.HandleStats())
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
@@ -175,7 +176,7 @@ func TestHandleStats(t *testing.T) {
 		mux.Handle("/{id}.json", c.HandleStats())
 		mux.Handle("/{id}.csv", c.HandleStats())
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
@@ -208,7 +209,7 @@ func TestHandleStats(t *testing.T) {
 		mux.Handle("/{id}.json", c.HandleStats())
 		mux.Handle("/{id}.csv", c.HandleStats())
 
-		ctx := context.Background()
+		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,

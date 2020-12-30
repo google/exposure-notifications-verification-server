@@ -32,8 +32,8 @@ type Target struct {
 	Fingerprints []string `json:"sha256_cert_fingerprints,omitempty"`
 }
 
-// getAndroidData finds all the android data apps.
-func (c *Controller) getAndroidData(realmID uint) ([]AndroidData, error) {
+// AndroidData finds all the android data apps.
+func (c *Controller) AndroidData(realmID uint) ([]AndroidData, error) {
 	apps, err := c.db.ListActiveApps(realmID, database.WithAppOS(database.OSTypeAndroid))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get android data: %w", err)

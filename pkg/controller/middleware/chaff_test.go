@@ -15,7 +15,6 @@
 package middleware_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +23,7 @@ import (
 
 	"github.com/mikehelmick/go-chaff"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -85,7 +85,7 @@ func TestProcessChaff(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
+			ctx := project.TestContext(t)
 			ctx = controller.WithRealm(ctx, realm)
 
 			r := httptest.NewRequest("GET", "/", nil)

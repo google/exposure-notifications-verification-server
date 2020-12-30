@@ -88,7 +88,7 @@ func ENXRedirect(
 		wk := r.PathPrefix("/.well-known").Subrouter()
 
 		// Enable the iOS and Android redirect handler.
-		assocController, err := associated.New(ctx, cfg, db, cacher, h)
+		assocController, err := associated.New(cfg, db, cacher, h)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create associated links controller: %w", err)
 		}
@@ -97,7 +97,7 @@ func ENXRedirect(
 	}
 
 	// Handle redirects.
-	redirectController, err := redirect.New(ctx, db, cfg, cacher, h)
+	redirectController, err := redirect.New(db, cfg, cacher, h)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create redirect controller: %w", err)
 	}

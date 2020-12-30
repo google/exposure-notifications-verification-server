@@ -44,8 +44,8 @@ type Appstrings struct {
 	Apps []string `json:"apps,omitempty"`
 }
 
-// getAppIds finds all the iOS app ids we know about.
-func (c *Controller) getAppIds(realmID uint) ([]string, error) {
+// iosAppIDs finds all the iOS app ids we know about.
+func (c *Controller) iosAppIDs(realmID uint) ([]string, error) {
 	apps, err := c.db.ListActiveApps(realmID, database.WithAppOS(database.OSTypeIOS))
 	if err != nil {
 		return nil, err
@@ -57,9 +57,9 @@ func (c *Controller) getAppIds(realmID uint) ([]string, error) {
 	return ret, nil
 }
 
-// getIosData gets the iOS app data.
-func (c *Controller) getIosData(realmID uint) (*IOSData, error) {
-	ids, err := c.getAppIds(realmID)
+// IOSData gets the iOS app data.
+func (c *Controller) IOSData(realmID uint) (*IOSData, error) {
+	ids, err := c.iosAppIDs(realmID)
 	if err != nil {
 		return nil, err
 	}

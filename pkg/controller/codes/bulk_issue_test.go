@@ -15,7 +15,6 @@
 package codes_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -32,7 +31,8 @@ import (
 
 func TestRenderBulkIssue(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+
+	ctx := project.TestContext(t)
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := database.NewRealmWithDefaults("Test Realm")

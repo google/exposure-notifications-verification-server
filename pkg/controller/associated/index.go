@@ -22,38 +22,14 @@
 package associated
 
 import (
-	"context"
 	"fmt"
-	"net"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
-
-type Controller struct {
-	config           *config.RedirectConfig
-	hostnameToRegion map[string]string
-	cacher           cache.Cacher
-	db               *database.Database
-	h                render.Renderer
-}
-
-func (c *Controller) getRegion(r *http.Request) string {
-	// Get the hostname first
-	baseHost := strings.ToLower(r.Host)
-	if host, _, err := net.SplitHostPort(baseHost); err == nil {
-		baseHost = host
-	}
-
-	// return the mapped region code (or default, "", if not found)
-	return c.hostnameToRegion[baseHost]
-}
 
 func (c *Controller) HandleIos() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +62,7 @@ func (c *Controller) HandleIos() http.Handler {
 		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &data, c.config.AppCacheTTL, func() (interface{}, error) {
 			logger.Debug("fetching new ios data")
-			return c.getIosData(realm.ID)
+			return c.IOSData(realm.ID)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -132,7 +108,7 @@ func (c *Controller) HandleAndroid() http.Handler {
 		}
 		if err := c.cacher.Fetch(ctx, cacheKey, &data, c.config.AppCacheTTL, func() (interface{}, error) {
 			logger.Debug("fetching new android data")
-			return c.getAndroidData(realm.ID)
+			return c.AndroidData(realm.ID)
 		}); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -145,19 +121,4 @@ func (c *Controller) HandleAndroid() http.Handler {
 
 		c.h.RenderJSON(w, http.StatusOK, data)
 	})
-}
-
-func New(ctx context.Context, config *config.RedirectConfig, db *database.Database, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
-	cfgMap, err := config.HostnameToRegion()
-	if err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
-	}
-
-	return &Controller{
-		config:           config,
-		db:               db,
-		cacher:           cacher,
-		h:                h,
-		hostnameToRegion: cfgMap,
-	}, nil
 }

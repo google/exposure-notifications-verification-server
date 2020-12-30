@@ -15,16 +15,15 @@
 package associated_test
 
 import (
-	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -32,27 +31,8 @@ import (
 func TestIndex(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
-	// Create cacher.
-	cacher, err := cache.NewInMemory(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := cacher.Close(); err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	// Create database.
-	testDatabaseInstance := database.MustTestInstance()
-	t.Cleanup(func() {
-		if err := testDatabaseInstance.Close(); err != nil {
-			t.Fatal(err)
-		}
-	})
-	db, _ := testDatabaseInstance.NewDatabase(t, cacher)
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	// Create config.
 	cfg := &config.RedirectConfig{
@@ -66,19 +46,19 @@ func TestIndex(t *testing.T) {
 	}
 
 	// Set realm to resolve.
-	realm1, err := db.FindRealm(1)
+	realm1, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	realm1.RegionCode = "aa"
-	if err := db.SaveRealm(realm1, database.SystemTest); err != nil {
+	if err := harness.Database.SaveRealm(realm1, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create another realm with apps.
 	realm2 := database.NewRealmWithDefaults("okay")
 	realm2.RegionCode = "bb"
-	if err := db.SaveRealm(realm2, database.SystemTest); err != nil {
+	if err := harness.Database.SaveRealm(realm2, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
@@ -90,7 +70,7 @@ func TestIndex(t *testing.T) {
 		OS:      database.OSTypeIOS,
 		AppID:   "com.example.app1",
 	}
-	if err := db.SaveMobileApp(iosApp, database.SystemTest); err != nil {
+	if err := harness.Database.SaveMobileApp(iosApp, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
@@ -103,12 +83,12 @@ func TestIndex(t *testing.T) {
 		AppID:   "com.example.app2",
 		SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 	}
-	if err := db.SaveMobileApp(app2, database.SystemTest); err != nil {
+	if err := harness.Database.SaveMobileApp(app2, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
 	// Build routes.
-	mux, err := routes.ENXRedirect(ctx, cfg, db, cacher)
+	mux, err := routes.ENXRedirect(ctx, cfg, harness.Database, harness.Cacher)
 	if err != nil {
 		t.Fatal(err)
 	}
