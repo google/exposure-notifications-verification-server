@@ -53,7 +53,7 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 	if u.Email == "" {
 		u.AddError("email", "cannot be blank")
 	} else if !strings.Contains(u.Email, "@") {
-		u.AddError("email", "appears to be invalid")
+		u.AddError("email", "invalid email address")
 	}
 
 	u.Name = project.TrimSpace(u.Name)
