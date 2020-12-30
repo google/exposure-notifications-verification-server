@@ -37,8 +37,19 @@ type AuthorizedAppStats []*AuthorizedAppStat
 // database.
 type AuthorizedAppStat struct {
 	Date            time.Time `gorm:"date; not null;"`
-	AuthorizedAppID uint      `gorm:"authorized_app_id; not null;"`
-	CodesIssued     uint      `gorm:"codes_issued; default: 0;"`
+	AuthorizedAppID uint      `gorm:"column:authorized_app_id; type:integer; not null; not null;"`
+
+	// CodesIssued is the number of codes issued. Only keys of type "admin" can
+	// issue codes. CodesClaimed and CodesInvalid are the number of codes claimed
+	// and valid, respectively. These fields are only valid for "device" API keys.
+	CodesIssued  uint `gorm:"column:codes_issued; type:integer; not null; default: 0;"`
+	CodesClaimed uint `gorm:"column:codes_claimed; type:integer; not null; default: 0;"`
+	CodesInvalid uint `gorm:"column:codes_invalid; type:integer; not null; default:0;"`
+
+	// TokensClaimed and TokensInvalid are the number of tokens exchanged for a
+	// certificate or failures. These fields are only valid for "device" API keys.
+	TokensClaimed uint `gorm:"column:tokens_claimed; type:integer; not null; default:0;"`
+	TokensInvalid uint `gorm:"column:tokens_invalid; type:integer; not null; default:0;"`
 
 	// Non-database fields, these are added via the stats lookup using the join
 	// table.

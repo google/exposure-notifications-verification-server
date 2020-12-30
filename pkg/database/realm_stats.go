@@ -34,11 +34,24 @@ type RealmStats []*RealmStat
 
 // RealmStat represents statistics related to a user in the database.
 type RealmStat struct {
-	Date             time.Time `gorm:"date; not null;"`
-	RealmID          uint      `gorm:"realm_id; not null;"`
-	CodesIssued      uint      `gorm:"codes_issued; default:0;"`
-	CodesClaimed     uint      `gorm:"codes_claimed; default:0;"`
-	DailyActiveUsers uint      `gorm:"daily_active_users; default:0;"`
+	Date    time.Time `gorm:"column:date; type:date; not null;"`
+	RealmID uint      `gorm:"column:realm_id; type:integer; not null;"`
+
+	// CodesIssued is the total number of codes issued. CodesClaimed are
+	// successful claims. CodesInvalid are codes that have failed to claim
+	// (expired or not found).
+	CodesIssued  uint `gorm:"column:codes_issued; type:integer; not null; default:0;"`
+	CodesClaimed uint `gorm:"column:codes_claimed; type:integer; not null; default:0;"`
+	CodesInvalid uint `gorm:"column:codes_invalid; type:integer; not null; default:0;"`
+
+	// TokensClaimed is the number of tokens exchanged for a certificate.
+	// TokensInvalid is the number of tokens which failed to exchange due to
+	// a user error.
+	TokensClaimed uint `gorm:"column:tokens_claimed; type:integer; not null; default:0;"`
+	TokensInvalid uint `gorm:"column:tokens_invalid; type:integer; not null; default:0;"`
+
+	// DailyActiveUsers is the total number of daily active users.
+	DailyActiveUsers uint `gorm:"column:daily_active_users; type:integer; not null; default:0;"`
 }
 
 // MarshalCSV returns bytes in CSV format.

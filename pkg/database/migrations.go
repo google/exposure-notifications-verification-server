@@ -1906,6 +1906,29 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE memberships DROP COLUMN IF EXISTS updated_at`)
 			},
 		},
+		{
+			ID: "00082-AddMoreStats",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS codes_invalid INTEGER NOT NULL DEFAULT 0`,
+					`ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS tokens_claimed INTEGER NOT NULL DEFAULT 0`,
+					`ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS tokens_invalid INTEGER NOT NULL DEFAULT 0`,
+					`ALTER TABLE authorized_app_stats ADD COLUMN IF NOT EXISTS codes_claimed INTEGER NOT NULL DEFAULT 0`,
+					`ALTER TABLE authorized_app_stats ADD COLUMN IF NOT EXISTS codes_invalid INTEGER NOT NULL DEFAULT 0`,
+					`ALTER TABLE authorized_app_stats ADD COLUMN IF NOT EXISTS tokens_claimed INTEGER NOT NULL DEFAULT 0`,
+					`ALTER TABLE authorized_app_stats ADD COLUMN IF NOT EXISTS tokens_invalid INTEGER NOT NULL DEFAULT 0`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS codes_invalid`,
+					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS tokens_claimed`,
+					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS tokens_invalid`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS codes_claimed`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS codes_invalid`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS tokens_claimed`,
+					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS tokens_invalid`)
+			},
+		},
 	}
 }
 

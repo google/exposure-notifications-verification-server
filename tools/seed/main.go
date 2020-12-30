@@ -191,6 +191,10 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create device api key: %w", err)
 	}
 	logger.Infow("created device api key", "key", deviceAPIKey)
+	deviceAuthorizedApp, err := db.FindAuthorizedAppByAPIKey(deviceAPIKey)
+	if err != nil {
+		return fmt.Errorf("failed to lookup device api id: %w", err)
+	}
 
 	// Create some Apps
 	apps := []*database.MobileApp{
@@ -301,7 +305,7 @@ func realMain(ctx context.Context) error {
 					api.TestTypeLikely:    {},
 					api.TestTypeNegative:  {},
 				}
-				if _, err := db.VerifyCodeAndIssueToken(realm1.ID, code, accept, 24*time.Hour); err != nil {
+				if _, err := db.VerifyCodeAndIssueToken(deviceAuthorizedApp, code, accept, 24*time.Hour); err != nil {
 					return fmt.Errorf("failed to claim token: %w", err)
 				}
 			}

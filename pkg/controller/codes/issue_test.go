@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/chromedp/chromedp"
 )
@@ -40,6 +41,14 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 	// Mint a cookie for the session.
 	cookie, err := harness.SessionCookie(session)
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	authApp := &database.AuthorizedApp{
+		RealmID: realm.ID,
+		Name:    "Appy",
+	}
+	if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
@@ -100,7 +109,7 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 
 	// Exchange the code for a verification certificate.
 	allowedTypes := api.AcceptTypes{api.TestTypeConfirmed: struct{}{}}
-	token, err := harness.Database.VerifyCodeAndIssueToken(realm.ID, code, allowedTypes, 30*time.Minute)
+	token, err := harness.Database.VerifyCodeAndIssueToken(authApp, code, allowedTypes, 30*time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -140,48 +140,79 @@ func (t *Token) Subject() *Subject {
 
 // ClaimToken looks up the token by ID, verifies that it is not expired and that
 // the specified subject matches the parameters that were configured when issued.
-func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) error {
+func (db *Database) ClaimToken(authApp *AuthorizedApp, tokenID string, subject *Subject) error {
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		var tok Token
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where("token_id = ?", tokenID).
-			Where("realm_id = ?", realmID).
+			Where("realm_id = ?", authApp.RealmID).
 			First(&tok).
 			Error; err != nil {
+			if IsNotFound(err) {
+				if err := updateStatsTokenInvalid(tx, authApp); err != nil {
+					return err
+				}
+				return ErrTokenExpired
+			}
 			return err
 		}
 
 		if !tok.ExpiresAt.After(time.Now().UTC()) {
 			db.logger.Debugw("tried to claim expired token", "ID", tok.ID)
+			if err := updateStatsTokenInvalid(tx, authApp); err != nil {
+				return err
+			}
 			return ErrTokenExpired
 		}
 
 		if tok.Used {
 			db.logger.Debugw("tried to claim used token", "ID", tok.ID)
+			if err := updateStatsTokenInvalid(tx, authApp); err != nil {
+				return err
+			}
 			return ErrTokenUsed
 		}
 
-		// The subject is made up of testtype.symptomDate
+		// The subject is made up of testtype.symptomDate.
 		if tok.TestType != subject.TestType {
 			db.logger.Debugw("database testType changed after token issued", "ID", tok.ID)
+			if err := updateStatsTokenInvalid(tx, authApp); err != nil {
+				return err
+			}
 			return ErrTokenMetadataMismatch
 		}
 		if (tok.SymptomDate == nil && subject.SymptomDate != nil) ||
 			(tok.SymptomDate != nil && subject.SymptomDate == nil) ||
 			(tok.SymptomDate != nil && !tok.SymptomDate.Equal(*subject.SymptomDate)) {
 			db.logger.Debugw("database symptomDate changed after token issued", "ID", tok.ID)
+			if err := updateStatsTokenInvalid(tx, authApp); err != nil {
+				return err
+			}
 			return ErrTokenMetadataMismatch
 		}
 		if (tok.TestDate == nil && subject.TestDate != nil) ||
 			(tok.TestDate != nil && subject.TestDate == nil) ||
 			(tok.TestDate != nil && !tok.TestDate.Equal(*subject.TestDate)) {
 			db.logger.Debugw("database testDate changed after token issued", "ID", tok.ID)
+			if err := updateStatsTokenInvalid(tx, authApp); err != nil {
+				return err
+			}
 			return ErrTokenMetadataMismatch
 		}
 
+		// Save token.
 		tok.Used = true
-		return tx.Save(&tok).Error
+		if err := tx.Save(&tok).Error; err != nil {
+			return err
+		}
+
+		// Update stats.
+		if err := updateStatsTokenClaimed(tx, authApp); err != nil {
+			return err
+		}
+
+		return nil
 	})
 }
 
@@ -192,7 +223,7 @@ func (db *Database) ClaimToken(realmID uint, tokenID string, subject *Subject) e
 // The verCode can be the "short code" or the "long code" which impacts expiry time.
 //
 // The long term token can be used later to sign keys when they are submitted.
-func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, acceptTypes api.AcceptTypes, expireAfter time.Duration) (*Token, error) {
+func (db *Database) VerifyCodeAndIssueToken(authApp *AuthorizedApp, verCode string, acceptTypes api.AcceptTypes, expireAfter time.Duration) (*Token, error) {
 	hmacedCodes, err := db.generateVerificationCodeHMACs(verCode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
@@ -205,11 +236,17 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 		var vc VerificationCode
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
-			Where("realm_id = ?", realmID).
+			Where("realm_id = ?", authApp.RealmID).
 			Where("(code IN (?) OR long_code IN (?))", hmacedCodes, hmacedCodes).
 			First(&vc).
 			Error; err != nil {
-			if gorm.IsRecordNotFoundError(err) {
+			if IsNotFound(err) {
+				// This code was not found. It could have been a typo or a fake code, or
+				// it could have been a code that has since been purged from the system.
+				if err := updateStatsCodeInvalid(tx, authApp); err != nil {
+					return err
+				}
+
 				return ErrVerificationCodeNotFound
 			}
 			return err
@@ -222,10 +259,17 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			return ErrVerificationCodeExpired
 		}
 		if expired {
+			// This code is expired, increment statistic.
+			if err := updateStatsCodeInvalid(tx, authApp); err != nil {
+				return err
+			}
+
 			db.logger.Debugw("checked expired code", "ID", vc.ID, "codeType", codeType)
 			return ErrVerificationCodeExpired
 		}
 		if vc.Claimed {
+			// Note that we don't increment statistics for already-claimed codes. For
+			// statistics purposes, this code was "valid".
 			db.logger.Debugw("checked expired code already used", "ID", vc.ID, "codeType", codeType)
 			return ErrVerificationCodeUsed
 		}
@@ -241,16 +285,9 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			return fmt.Errorf("failed to claim token: %w", err)
 		}
 
-		// Update statistics
-		now := timeutils.Midnight(vc.CreatedAt)
-		sql := `
-			INSERT INTO realm_stats(date, realm_id, codes_claimed)
-				VALUES ($1, $2, 1)
-			ON CONFLICT (date, realm_id) DO UPDATE
-				SET codes_claimed = realm_stats.codes_claimed + 1
-		`
-		if err := tx.Exec(sql, now, vc.RealmID).Error; err != nil {
-			return fmt.Errorf("failed to update stats: %w", err)
+		// Update statistics for a successful claim.
+		if err := updateStatsCodeClaimed(tx, authApp); err != nil {
+			return err
 		}
 
 		buffer := make([]byte, tokenBytes)
@@ -267,7 +304,7 @@ func (db *Database) VerifyCodeAndIssueToken(realmID uint, verCode string, accept
 			TestDate:    vc.TestDate,
 			Used:        false,
 			ExpiresAt:   time.Now().UTC().Add(expireAfter),
-			RealmID:     realmID,
+			RealmID:     authApp.RealmID,
 		}
 
 		return tx.Create(tok).Error
@@ -298,4 +335,116 @@ func (db *Database) PurgeTokens(maxAge time.Duration) (int64, error) {
 	// Delete codes that expired before the delete before time.
 	rtn := db.db.Unscoped().Where("expires_at < ?", deleteBefore).Delete(&Token{})
 	return rtn.RowsAffected, rtn.Error
+}
+
+// updateStatsCodeInvalid updates the statistics, increasing the number of codes
+// that were invalid.
+func updateStatsCodeInvalid(tx *gorm.DB, authApp *AuthorizedApp) error {
+	now := timeutils.UTCMidnight(time.Now().UTC())
+
+	realmSQL := `
+			INSERT INTO realm_stats(date, realm_id, codes_invalid)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET codes_invalid = realm_stats.codes_invalid + 1
+		`
+	if err := tx.Exec(realmSQL, now, authApp.RealmID).Error; err != nil {
+		return fmt.Errorf("failed to update realm stats: %w", err)
+	}
+
+	authAppSQL := `
+			INSERT INTO authorized_app_stats(date, authorized_app_id, codes_invalid)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, authorized_app_id) DO UPDATE
+				SET codes_invalid = authorized_app_stats.codes_invalid + 1
+		`
+	if err := tx.Exec(authAppSQL, now, authApp.ID).Error; err != nil {
+		return fmt.Errorf("failed to update authorized app stats: %w", err)
+	}
+
+	return nil
+}
+
+// updateStatsCodeClaimed updates the statistics, increasing the number of codes
+// claimed.
+func updateStatsCodeClaimed(tx *gorm.DB, authApp *AuthorizedApp) error {
+	now := timeutils.UTCMidnight(time.Now().UTC())
+
+	realmSQL := `
+			INSERT INTO realm_stats(date, realm_id, codes_claimed)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET codes_claimed = realm_stats.codes_claimed + 1
+		`
+	if err := tx.Exec(realmSQL, now, authApp.RealmID).Error; err != nil {
+		return fmt.Errorf("failed to update realm stats: %w", err)
+	}
+
+	authAppSQL := `
+			INSERT INTO authorized_app_stats(date, authorized_app_id, codes_claimed)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, authorized_app_id) DO UPDATE
+				SET codes_claimed = authorized_app_stats.codes_claimed + 1
+		`
+	if err := tx.Exec(authAppSQL, now, authApp.ID).Error; err != nil {
+		return fmt.Errorf("failed to update authorized app stats: %w", err)
+	}
+
+	return nil
+}
+
+// updateStatsTokenInvalid updates the statistics, increasing the number of
+// tokens that were invalid.
+func updateStatsTokenInvalid(tx *gorm.DB, authApp *AuthorizedApp) error {
+	now := timeutils.UTCMidnight(time.Now().UTC())
+
+	realmSQL := `
+			INSERT INTO realm_stats(date, realm_id, tokens_invalid)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET tokens_invalid = realm_stats.tokens_invalid + 1
+		`
+	if err := tx.Exec(realmSQL, now, authApp.RealmID).Error; err != nil {
+		return fmt.Errorf("failed to update realm stats: %w", err)
+	}
+
+	authAppSQL := `
+			INSERT INTO authorized_app_stats(date, authorized_app_id, tokens_invalid)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, authorized_app_id) DO UPDATE
+				SET tokens_invalid = authorized_app_stats.tokens_invalid + 1
+		`
+	if err := tx.Exec(authAppSQL, now, authApp.ID).Error; err != nil {
+		return fmt.Errorf("failed to update authorized app stats: %w", err)
+	}
+
+	return nil
+}
+
+// updateStatsTokenClaimed updates the statistics, increasing the number of
+// tokens claimed.
+func updateStatsTokenClaimed(tx *gorm.DB, authApp *AuthorizedApp) error {
+	now := timeutils.UTCMidnight(time.Now().UTC())
+
+	realmSQL := `
+			INSERT INTO realm_stats(date, realm_id, tokens_claimed)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET tokens_claimed = realm_stats.tokens_claimed + 1
+		`
+	if err := tx.Exec(realmSQL, now, authApp.RealmID).Error; err != nil {
+		return fmt.Errorf("failed to update realm stats: %w", err)
+	}
+
+	authAppSQL := `
+			INSERT INTO authorized_app_stats(date, authorized_app_id, tokens_claimed)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, authorized_app_id) DO UPDATE
+				SET tokens_claimed = authorized_app_stats.tokens_claimed + 1
+		`
+	if err := tx.Exec(authAppSQL, now, authApp.ID).Error; err != nil {
+		return fmt.Errorf("failed to update authorized app stats: %w", err)
+	}
+
+	return nil
 }
