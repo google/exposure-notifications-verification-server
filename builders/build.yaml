@@ -15,6 +15,7 @@
 #
 # Builds a container image.
 #
+timeout: '1200s'
 options:
   # N1_HIGHCPU_32 builds faster, but takes much longer to provision.
   machineType: 'N1_HIGHCPU_8'
