@@ -73,8 +73,11 @@
                 <td class="text-center">
                   {{if not (eq $membership.UserID $currentMembership.UserID)}}
                   {{- /* cannot delete yourself */ -}}
-                  <a href="/realm/users/{{$user.ID}}" class="d-block text-danger" data-method="DELETE"
-                    data-confirm="Are you sure you want to remove '{{$user.Name}}'?" data-toggle="tooltip"
+                  <a href="/realm/users/{{$user.ID}}" id="delete-user-{{$user.ID}}"
+                    class="d-block text-danger"
+                    data-method="DELETE"
+                    data-confirm="Are you sure you want to remove '{{$user.Name}}'?"
+                    data-toggle="tooltip"
                     title="Remove this user">
                     <span class="oi oi-trash" aria-hidden="true"></span>
                   </a>

@@ -38,7 +38,6 @@ func TestHandleSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Mint a cookie for the session.
 	cookie, err := harness.SessionCookie(session)
 	if err != nil {
 		t.Fatal(err)
@@ -56,29 +55,19 @@ func TestHandleSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a browser runner.
 	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+	taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
 	defer done()
 
 	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
 		browser.SetCookie(cookie),
-
-		// Visit /realm/users.
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/users`),
-
-		// Wait for render.
 		chromedp.WaitVisible(`body#users-index`, chromedp.ByQuery),
 
-		// Fill out the form.
 		chromedp.SetValue(`input#search`, "@example.com", chromedp.ByQuery),
 		chromedp.Submit(`form#search-form`, chromedp.ByQuery),
 
-		// Wait for render.
 		chromedp.WaitVisible(`body#users-index`, chromedp.ByQuery),
-
-		// Look for the user.
 		chromedp.WaitVisible(fmt.Sprintf(`tr#user-%d`, user.ID), chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)

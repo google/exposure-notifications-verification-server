@@ -52,9 +52,8 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 	u.Email = project.TrimSpace(u.Email)
 	if u.Email == "" {
 		u.AddError("email", "cannot be blank")
-	}
-	if !strings.Contains(u.Email, "@") {
-		u.AddError("email", "appears to be invalid")
+	} else if !strings.Contains(u.Email, "@") {
+		u.AddError("email", "invalid email address")
 	}
 
 	u.Name = project.TrimSpace(u.Name)
@@ -62,10 +61,7 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 		u.AddError("name", "cannot be blank")
 	}
 
-	if msgs := u.ErrorMessages(); len(msgs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
-	}
-	return nil
+	return u.ErrorOrNil()
 }
 
 // PasswordChanged returns password change time or account creation time if unset.

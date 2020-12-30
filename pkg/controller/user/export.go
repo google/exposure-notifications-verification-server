@@ -15,11 +15,15 @@
 package user
 
 import (
+	"bytes"
 	"encoding/csv"
+	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
@@ -27,7 +31,12 @@ import (
 func (c *Controller) HandleExport() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		logger := logging.FromContext(ctx)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
 
 		membership := controller.MembershipFromContext(ctx)
 		if membership == nil {
@@ -38,7 +47,6 @@ func (c *Controller) HandleExport() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
 
 		pageParams := &pagination.PageParams{
@@ -51,17 +59,42 @@ func (c *Controller) HandleExport() http.Handler {
 			return
 		}
 
-		w.Header().Add("Content-Disposition", "")
-		w.Header().Add("Content-Type", "text/CSV")
-
-		csvWriter := csv.NewWriter(w)
-		for _, membership := range memberships {
-			user := membership.User
-			if err := csvWriter.Write([]string{user.Email, user.Name}); err != nil {
-				logger.Errorw("error writing record to csv:", "error", err)
-				break
-			}
-		}
-		csvWriter.Flush()
+		filename := fmt.Sprintf("%s-users.csv", time.Now().Format(project.RFC3339Squish))
+		c.h.RenderCSV(w, 200, filename, membershipsCSV(memberships))
 	})
+}
+
+// membershipsCSV is a CSV writer.
+type membershipsCSV []*database.Membership
+
+// MarshalCSV returns bytes in CSV format.
+func (s membershipsCSV) MarshalCSV() ([]byte, error) {
+	// Do nothing if there's no records
+	if len(s) == 0 {
+		return nil, nil
+	}
+
+	var b bytes.Buffer
+	w := csv.NewWriter(&b)
+
+	if err := w.Write([]string{"name", "email", "joined"}); err != nil {
+		return nil, fmt.Errorf("failed to write CSV header: %w", err)
+	}
+
+	for i, m := range s {
+		if err := w.Write([]string{
+			m.User.Name,
+			m.User.Email,
+			m.CreatedAt.Format(project.RFC3339Date),
+		}); err != nil {
+			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
+		}
+	}
+
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("failed to create CSV: %w", err)
+	}
+
+	return b.Bytes(), nil
 }
