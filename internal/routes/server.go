@@ -258,7 +258,7 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		userController := user.New(ctx, authProvider, cacher, cfg, db, h)
+		userController := user.New(authProvider, cacher, db, h)
 		userRoutes(sub, userController)
 	}
 

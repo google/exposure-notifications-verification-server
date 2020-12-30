@@ -25,12 +25,6 @@ import (
 )
 
 func (c *Controller) HandleCreate() http.Handler {
-	type FormData struct {
-		Email       string            `form:"email"`
-		Name        string            `form:"name"`
-		Permissions []rbac.Permission `form:"permissions"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -41,64 +35,69 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		membership := controller.MembershipFromContext(ctx)
-		if membership == nil {
+		currentMembership := controller.MembershipFromContext(ctx)
+		if currentMembership == nil {
 			controller.MissingMembership(w, r, c.h)
 			return
 		}
-		if !membership.Can(rbac.UserWrite) {
+		if !currentMembership.Can(rbac.UserWrite) {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentRealm := currentMembership.Realm
+		currentUser := currentMembership.User
 
-		currentRealm := membership.Realm
-		currentUser := membership.User
+		user := &database.User{}
+		userMembership := &database.Membership{}
 
-		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderNew(ctx, w)
+			c.renderNew(ctx, w, user, userMembership)
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
-			c.renderNew(ctx, w)
+		if err := bindCreateForm(r, currentMembership, user, userMembership); err != nil {
+			user.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderNew(ctx, w, user, userMembership)
 			return
 		}
 
 		// See if the user already exists by email - they may be a member of another
 		// realm.
-		user, err := c.db.FindUserByEmail(form.Email)
-		if err != nil {
-			if !database.IsNotFound(err) {
-				controller.InternalError(w, r, c.h, err)
+		existing, err := c.db.FindUserByEmail(user.Email)
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		if existing != nil && existing.ID != 0 {
+			user.ID = existing.ID
+		}
+
+		// Create or update user.
+		if err := c.db.SaveUser(user, currentUser); err != nil {
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderNew(ctx, w, user, userMembership)
 				return
 			}
 
-			user = new(database.User)
-			user.Email = form.Email
-			user.Name = form.Name
-		}
-		if err := c.db.SaveUser(user, currentUser); err != nil {
-			flash.Error("Failed to create user: %v", err)
-			c.renderNew(ctx, w)
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		// Create membership properties.
-		permission, err := rbac.CompileAndAuthorize(membership.Permissions, form.Permissions)
-		if err != nil {
-			flash.Error("Failed to update user permissions: %s", err)
-			c.renderNew(ctx, w)
-			return
-		}
-		if err := user.AddToRealm(c.db, currentRealm, permission, currentUser); err != nil {
-			flash.Error("Failed to update user in realm: %v", err)
-			c.renderNew(ctx, w)
+		// Create or update membership properties.
+		if err := user.AddToRealm(c.db, currentRealm, userMembership.Permissions, currentUser); err != nil {
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderNew(ctx, w, user, userMembership)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
+		// Ensure the user exists in the upstream auth provider.
 		inviteComposer, err := controller.SendInviteEmailFunc(ctx, c.db, c.h, user.Email, currentRealm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
@@ -106,22 +105,43 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		if _, err := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", true, inviteComposer); err != nil {
-			flash.Alert("Failed to create user: %v", err)
-			c.renderNew(ctx, w)
+			user.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderNew(ctx, w, user, userMembership)
 			return
 		}
 
-		flash.Alert("Successfully created user %v.", user.Name)
+		flash.Alert("Successfully created user %q", user.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/users/%d", user.ID), http.StatusSeeOther)
-		return
 	})
 }
 
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter) {
+func bindCreateForm(r *http.Request, currentMembership *database.Membership, user *database.User, membership *database.Membership) error {
+	type FormData struct {
+		Email       string            `form:"email"`
+		Name        string            `form:"name"`
+		Permissions []rbac.Permission `form:"permissions"`
+	}
+
+	var form FormData
+	formErr := controller.BindForm(nil, r, &form)
+	user.Email = form.Email
+	user.Name = form.Name
+
+	permissions, rbacErr := rbac.CompileAndAuthorize(currentMembership.Permissions, form.Permissions)
+	membership.Permissions = permissions
+
+	if formErr != nil {
+		return formErr
+	}
+	return rbacErr
+}
+
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, user *database.User, membership *database.Membership) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("New user")
-	m["user"] = &database.User{}
-	m["userMembership"] = &database.Membership{}
+	m["user"] = user
+	m["userMembership"] = membership
 	m["permissions"] = rbac.NamePermissionMap
 	c.h.RenderHTML(w, "users/new", m)
 }

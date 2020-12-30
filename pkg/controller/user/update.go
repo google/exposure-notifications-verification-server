@@ -26,12 +26,6 @@ import (
 )
 
 func (c *Controller) HandleUpdate() http.Handler {
-	type FormData struct {
-		Name        string            `form:"name"`
-		Admin       bool              `form:"admin"`
-		Permissions []rbac.Permission `form:"permissions"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -43,19 +37,19 @@ func (c *Controller) HandleUpdate() http.Handler {
 		}
 		flash := controller.Flash(session)
 
-		membership := controller.MembershipFromContext(ctx)
-		if membership == nil {
+		currentMembership := controller.MembershipFromContext(ctx)
+		if currentMembership == nil {
 			controller.MissingMembership(w, r, c.h)
 			return
 		}
-		if !membership.Can(rbac.UserWrite) {
+		if !currentMembership.Can(rbac.UserWrite) {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentRealm := currentMembership.Realm
+		currentUser := currentMembership.User
 
-		currentRealm := membership.Realm
-		currentUser := membership.User
-
+		// Look up the user.
 		user, userMembership, err := c.findUser(currentUser, currentRealm, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -73,39 +67,61 @@ func (c *Controller) HandleUpdate() http.Handler {
 			return
 		}
 
-		var form FormData
-		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("failed to process form: %v", err)
-			c.renderEdit(ctx, w, user, userMembership)
+		if err := bindUpdateForm(r, currentMembership, user, userMembership); err != nil {
+			user.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderNew(ctx, w, user, userMembership)
 			return
 		}
 
-		// Update user properties.
-		user.Name = form.Name
+		// Update user.
 		if err := c.db.SaveUser(user, currentUser); err != nil {
-			flash.Error("Failed to update user: %v", err)
-			c.renderEdit(ctx, w, user, userMembership)
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderNew(ctx, w, user, userMembership)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		// Update membership properties, iff the target user differs
+		// Update membership properties, iff the target user differs.
 		if currentUser.ID != user.ID {
-			permission, err := rbac.CompileAndAuthorize(membership.Permissions, form.Permissions)
-			if err != nil {
-				flash.Error("Failed to update user permissions: %s", err)
-				c.renderEdit(ctx, w, user, userMembership)
-				return
-			}
-			if err := user.AddToRealm(c.db, currentRealm, permission, currentUser); err != nil {
-				flash.Error("Failed to update user in realm: %v", err)
-				c.renderEdit(ctx, w, user, membership)
+			if err := user.AddToRealm(c.db, currentRealm, userMembership.Permissions, currentUser); err != nil {
+				if database.IsValidationError(err) {
+					w.WriteHeader(http.StatusUnprocessableEntity)
+					c.renderNew(ctx, w, user, userMembership)
+					return
+				}
+
+				controller.InternalError(w, r, c.h, err)
 				return
 			}
 		}
 
-		flash.Alert("Successfully updated user '%v'", form.Name)
+		flash.Alert("Successfully updated user %q", user.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/users/%d", user.ID), http.StatusSeeOther)
 	})
+}
+
+func bindUpdateForm(r *http.Request, currentMembership *database.Membership, user *database.User, membership *database.Membership) error {
+	type FormData struct {
+		Name        string            `form:"name"`
+		Permissions []rbac.Permission `form:"permissions"`
+	}
+
+	var form FormData
+	formErr := controller.BindForm(nil, r, &form)
+	user.Name = form.Name
+
+	permissions, rbacErr := rbac.CompileAndAuthorize(currentMembership.Permissions, form.Permissions)
+	membership.Permissions = permissions
+
+	if formErr != nil {
+		return formErr
+	}
+	return rbacErr
 }
 
 func (c *Controller) renderEdit(ctx context.Context, w http.ResponseWriter, user *database.User, membership *database.Membership) {

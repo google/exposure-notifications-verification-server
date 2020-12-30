@@ -44,7 +44,6 @@ func (c *Controller) HandleDelete() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
 		currentUser := membership.User
 
@@ -82,7 +81,7 @@ func (c *Controller) HandleDelete() http.Handler {
 			return
 		}
 
-		flash.Alert("Successfully removed user %v from realm", user.Email)
+		flash.Alert("Successfully removed %q from realm", user.Email)
 		http.Redirect(w, r, "/realm/users", http.StatusSeeOther)
 	})
 }

@@ -19,14 +19,14 @@
 
     <div class="form-label-group">
       <input type="text" id="name" name="name" class="form-control{{if $user.ErrorsFor "name"}} is-invalid{{end}}"
-        value="{{$user.Name}}" placeholder="Name" required autofocus />
+        value="{{$user.Name}}" placeholder="Name" autofocus />
       <label for="name">Name</label>
       {{template "errorable" $user.ErrorsFor "name"}}
     </div>
 
     <div class="form-label-group">
       <input type="email" id="email" name="email" class="form-control{{if $user.ErrorsFor "email"}} is-invalid{{end}}"
-        value="{{$user.Email}}" placeholder="Email address" {{if $user.ID}}disabled{{else}}required{{end}} />
+        value="{{$user.Email}}" placeholder="Email address" {{disabledIf (ne $user.ID 0)}} />
       <label for="email">Email address</label>
       {{template "errorable" $user.ErrorsFor "email"}}
     </div>

@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/gorilla/mux"
 )
 
@@ -30,13 +29,8 @@ const formKeyMethod = "_method"
 func MutateMethod() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			logger := logging.FromContext(ctx).Named("middleware.MutateMethod")
-
 			method := strings.ToUpper(r.FormValue(formKeyMethod))
 			if method != "" {
-				logger.Debugw("overriding method", "old", r.Method, "new", method)
 				r.Method = method
 			}
 

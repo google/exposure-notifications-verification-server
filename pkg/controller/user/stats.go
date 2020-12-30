@@ -51,7 +51,6 @@ func (c *Controller) HandleUserStats() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
 		currentUser := membership.User
 
@@ -84,7 +83,7 @@ func (c *Controller) HandleUserStats() http.Handler {
 			c.h.RenderJSON(w, http.StatusOK, stats)
 			return
 		default:
-			controller.InternalError(w, r, c.h, fmt.Errorf("unknown path %q", pth))
+			controller.BadRequest(w, r, c.h)
 			return
 		}
 	})

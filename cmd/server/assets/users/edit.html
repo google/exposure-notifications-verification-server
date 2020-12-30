@@ -19,6 +19,8 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
+        {{template "errorSummary" .user}}
+        {{template "errorSummary" .userMembership}}
         {{template "users/_form" .}}
       </div>
     </div>

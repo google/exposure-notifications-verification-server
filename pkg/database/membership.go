@@ -16,7 +16,6 @@ package database
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
@@ -102,10 +101,7 @@ func (m *Membership) AfterFind() error {
 		m.AddError("realm", "does not exist")
 	}
 
-	if msgs := m.ErrorMessages(); len(msgs) > 0 {
-		return fmt.Errorf("lookup failed: %s", strings.Join(msgs, ", "))
-	}
-	return nil
+	return m.ErrorOrNil()
 }
 
 // Can returns true if the membership has the checked permission on the realm,
