@@ -95,7 +95,7 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		// Exchange the short term verification code for a long term verification token.
 		// The token can be used to sign TEKs later.
-		verificationToken, err := c.db.VerifyCodeAndIssueToken(authApp.RealmID, request.VerificationCode, acceptTypes, c.config.VerificationTokenDuration)
+		verificationToken, err := c.db.VerifyCodeAndIssueToken(authApp, request.VerificationCode, acceptTypes, c.config.VerificationTokenDuration)
 		if err != nil {
 			blame = observability.BlameClient
 			switch {

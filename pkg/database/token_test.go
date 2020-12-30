@@ -15,7 +15,6 @@
 package database
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -128,6 +127,21 @@ func TestIssueToken(t *testing.T) {
 
 	acceptConfirmed := api.AcceptTypes{
 		api.TestTypeConfirmed: struct{}{},
+	}
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authApp := &AuthorizedApp{
+		RealmID: realm.ID,
+		Name:    "Appy",
+	}
+	if _, err := realm.CreateAuthorizedApp(db, authApp, SystemTest); err != nil {
+		t.Fatal(err)
 	}
 
 	cases := []struct {
@@ -283,13 +297,6 @@ func TestIssueToken(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
 
-			db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-			realm := NewRealmWithDefaults(fmt.Sprintf("TestIssueToken/%s", tc.Name))
-			if err := db.SaveRealm(realm, SystemTest); err != nil {
-				t.Fatal(err)
-			}
-
 			// Create the verification. We do this here instead of inside the test
 			// struct to mitigate as much time drift as possible. It also ensures we
 			// get a new VerificationCode on each invocation.
@@ -311,7 +318,7 @@ func TestIssueToken(t *testing.T) {
 				time.Sleep(tc.Delay)
 			}
 
-			tok, err := db.VerifyCodeAndIssueToken(realm.ID, code, tc.Accept, tc.TokenAge)
+			tok, err := db.VerifyCodeAndIssueToken(authApp, code, tc.Accept, tc.TokenAge)
 			if err != nil {
 				if tc.Error == "" {
 					t.Fatalf("error issuing token: %v", err)
@@ -350,7 +357,7 @@ func TestIssueToken(t *testing.T) {
 				if err != nil {
 					t.Fatalf("unable to parse subject: %v", err)
 				}
-				if err := db.ClaimToken(realm.ID, got.TokenID, subject); err != nil && tc.ClaimError == "" {
+				if err := db.ClaimToken(authApp, got.TokenID, subject); err != nil && tc.ClaimError == "" {
 					t.Fatalf("unexpected error claiming token: %v", err)
 				} else if tc.ClaimError != "" {
 					if err == nil {

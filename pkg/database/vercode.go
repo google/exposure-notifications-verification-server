@@ -203,6 +203,8 @@ func (db *Database) IsCodeExpired(v *VerificationCode, code string) (bool, CodeT
 	case inList(v.LongCode, possibles):
 		return !v.LongExpiresAt.After(now), CodeTypeLong, nil
 	default:
+		// This should be unreachable code because the caller looks up the
+		// verification code.
 		return true, 0, fmt.Errorf("not found")
 	}
 }
