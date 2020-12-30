@@ -15,12 +15,14 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/jinzhu/gorm"
@@ -280,10 +282,9 @@ func (u *User) DeleteFromRealm(db *Database, r *Realm, actor Auditable) error {
 
 // Stats returns the usage statistics for this user at the provided realm. If no
 // stats exist, it returns an empty array.
-func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) (UserStats, error) {
-	start = timeutils.UTCMidnight(start)
-	stop = timeutils.UTCMidnight(stop)
-
+func (u *User) Stats(db *Database, realm *Realm) (UserStats, error) {
+	stop := timeutils.Midnight(time.Now().UTC())
+	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
@@ -306,10 +307,29 @@ func (u *User) Stats(db *Database, realmID uint, start, stop time.Time) (UserSta
 		ORDER BY date DESC`
 
 	var stats []*UserStat
-	if err := db.db.Raw(sql, realmID, u.ID, u.Name, u.Email, start, stop).Scan(&stats).Error; err != nil {
+	if err := db.db.Raw(sql, realm.ID, u.ID, u.Name, u.Email, start, stop).Scan(&stats).Error; err != nil {
 		if IsNotFound(err) {
 			return stats, nil
 		}
+		return nil, err
+	}
+	return stats, nil
+}
+
+// StatsCached is stats, but cached.
+func (u *User) StatsCached(ctx context.Context, db *Database, cacher cache.Cacher, realm *Realm) (UserStats, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var stats UserStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:user",
+		Key:       fmt.Sprintf("%d/%d", realm.ID, u.ID),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return u.Stats(db, realm)
+	}); err != nil {
 		return nil, err
 	}
 	return stats, nil

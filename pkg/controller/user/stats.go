@@ -15,21 +15,17 @@
 package user
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
-
-const statsCacheTimeout = 30 * time.Minute
 
 func (c *Controller) HandleUserStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +62,7 @@ func (c *Controller) HandleUserStats() http.Handler {
 			return
 		}
 
-		stats, err := c.getStats(ctx, user, currentRealm)
+		stats, err := user.StatsCached(ctx, c.db, c.cacher, currentRealm)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -87,21 +83,4 @@ func (c *Controller) HandleUserStats() http.Handler {
 			return
 		}
 	})
-}
-
-func (c *Controller) getStats(ctx context.Context, user *database.User, realm *database.Realm) (database.UserStats, error) {
-	now := time.Now().UTC()
-	past := now.Add(-30 * 24 * time.Hour)
-
-	var stats database.UserStats
-	cacheKey := &cache.Key{
-		Namespace: "stats:user",
-		Key:       fmt.Sprintf("%d:%d", realm.ID, user.ID),
-	}
-	if err := c.cacher.Fetch(ctx, cacheKey, &stats, statsCacheTimeout, func() (interface{}, error) {
-		return user.Stats(c.db, realm.ID, past, now)
-	}); err != nil {
-		return nil, err
-	}
-	return stats, nil
 }
