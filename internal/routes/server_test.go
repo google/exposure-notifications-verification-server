@@ -164,12 +164,6 @@ func TestRoutes_userRoutes(t *testing.T) {
 			req: httptest.NewRequest("DELETE", "/12345", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/12345/stats.json", nil),
-		},
-		{
-			req: httptest.NewRequest("GET", "/12345/stats.csv", nil),
-		},
-		{
 			req: httptest.NewRequest("POST", "/12345/reset-password", nil),
 		},
 	}
@@ -236,6 +230,12 @@ func TestRoutes_statsRoutes(t *testing.T) {
 		},
 		{
 			req: httptest.NewRequest("GET", "/realm/users.json", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm/users/12345.csv", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm/users/12345.json", nil),
 		},
 		{
 			req: httptest.NewRequest("GET", "/realm/external-issuers.csv", nil),
