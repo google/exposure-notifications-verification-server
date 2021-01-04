@@ -69,7 +69,7 @@ func ENXRedirect(
 	r.Use(processDebug)
 
 	// Handle health.
-	r.Handle("/health", controller.HandleHealthz(ctx, nil, h)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(db, h)).Methods("GET")
 
 	// iOS and Android include functionality to associate data between web-apps
 	// and device apps. Things like handoff between websites and apps, or

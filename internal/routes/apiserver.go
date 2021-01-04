@@ -94,7 +94,7 @@ func APIServer(
 	processFirewall := middleware.ProcessFirewall(h, "apiserver")
 
 	// Health route
-	r.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(db, h)).Methods("GET")
 
 	// Make verify chaff tracker.
 	verifyChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyResponse), chaff.DefaultCapacity)

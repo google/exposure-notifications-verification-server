@@ -279,7 +279,7 @@ func (s *IntegrationSuite) newAdminAPIServer(ctx context.Context, tb testing.TB)
 		tb.Fatalf("failed to create the limit store %v", err)
 	}
 
-	adminRouter.Handle("/health", controller.HandleHealthz(ctx, &s.cfg.AdminAPISrvConfig.Database, h)).Methods("GET")
+	adminRouter.Handle("/health", controller.HandleHealthz(s.DB, h)).Methods("GET")
 
 	{
 		sub := adminRouter.PathPrefix("/api").Subrouter()
@@ -339,7 +339,7 @@ func (s *IntegrationSuite) newAPIServer(ctx context.Context, tb testing.TB) *htt
 	// Install common security headers
 	apiRouter.Use(middleware.SecureHeaders(s.cfg.APISrvConfig.DevMode, "json"))
 
-	apiRouter.Handle("/health", controller.HandleHealthz(ctx, &s.cfg.APISrvConfig.Database, h)).Methods("GET")
+	apiRouter.Handle("/health", controller.HandleHealthz(s.DB, h)).Methods("GET")
 
 	{
 		sub := apiRouter.PathPrefix("/api").Subrouter()

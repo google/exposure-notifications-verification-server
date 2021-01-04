@@ -15,7 +15,6 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -27,11 +26,9 @@ import (
 	"golang.org/x/time/rate"
 )
 
-var (
-	rl = rate.NewLimiter(rate.Every(time.Minute), 1)
-)
+func HandleHealthz(db *database.Database, h render.Renderer) http.Handler {
+	rl := rate.NewLimiter(rate.Every(time.Second), 1)
 
-func HandleHealthz(ctx context.Context, cfg *database.Config, h render.Renderer) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -42,31 +39,14 @@ func HandleHealthz(ctx context.Context, cfg *database.Config, h render.Renderer)
 		case "":
 			// Do nothing and continue rendering - this is a basic HTTP health check
 		case "database":
-			if cfg == nil {
-				InternalError(w, r, h, fmt.Errorf("database not configured for health check"))
+			if !rl.Allow() {
+				h.RenderJSON(w, http.StatusTooManyRequests, fmt.Errorf("too many requests"))
 				return
 			}
 
-			if rl.Allow() {
-				db, err := cfg.Load(ctx)
-				if err != nil {
-					logger.Errorw("config db", "error", err)
-					InternalError(w, r, h, err)
-					return
-				}
-
-				if err := db.Open(ctx); err != nil {
-					logger.Errorw("connect db", "error", err)
-					InternalError(w, r, h, err)
-					return
-				}
-				defer db.Close()
-
-				if err := db.Ping(ctx); err != nil {
-					logger.Errorw("ping db", "error", err)
-					InternalError(w, r, h, err)
-					return
-				}
+			if err := db.Ping(ctx); err != nil {
+				InternalError(w, r, h, fmt.Errorf("failed to ping db: %w", err))
+				return
 			}
 		case "alerts":
 			// TODO(ych): fire a metric and configure an alert

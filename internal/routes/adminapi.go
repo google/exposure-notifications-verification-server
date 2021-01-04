@@ -93,7 +93,7 @@ func AdminAPI(
 	processFirewall := middleware.ProcessFirewall(h, "adminapi")
 
 	// Health route
-	r.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(db, h)).Methods("GET")
 
 	// API routes
 	{
