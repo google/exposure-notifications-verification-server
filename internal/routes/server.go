@@ -154,7 +154,7 @@ func Server(
 
 	{
 		sub := r.PathPrefix("").Subrouter()
-		sub.Handle("/health", controller.HandleHealthz(ctx, &cfg.Database, h)).Methods("GET")
+		sub.Handle("/health", controller.HandleHealthz(db, h)).Methods("GET")
 	}
 
 	{
