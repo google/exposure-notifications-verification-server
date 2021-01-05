@@ -146,3 +146,80 @@ msgstr "Kalan süre"
 
 msgid "codes.issue.countdown-expired"
 msgstr "SÜRESİ DOLDU"
+
+
+#
+# bulk-issue codes
+# ----------
+
+msgid "codes.bulk-issue.header"
+msgstr "Bulk issue"
+
+msgid "codes.bulk-issue.receipt-header"
+msgstr "Receipt"
+
+msgid "codes.bulk-issue.errors-header"
+msgstr "Errors"
+
+msgid "codes.bulk-issue.success-header"
+msgstr "Successfully issued codes"
+
+msgid "codes.bulk-issue.no-sms-provider"
+msgstr "No SMS provider is configured for this realm. Please contact a realm administrator to enable this feature."
+
+msgid "codes.bulk-issue.select-csv"
+msgstr "Select a CSV file..."
+
+msgid "codes.bulk-issue.csv-format1"
+msgstr "The CSV file must be of the format %s."
+
+msgid "codes.bulk-issue.csv-format2"
+msgstr "Each entry must appear on its own line, and phone numbers must be in %s format and dates in %s."
+
+msgid "codes.bulk-issue.line-num"
+msgstr "Parsing the CSV will start at this line. Begin at 1 for a new file. This can be used to resume a canceled or partial upload."
+
+msgid "codes.bulk-issue.retry-code"
+msgstr "Retry code"
+
+msgid "codes.bulk-issue.new-retry-code"
+msgstr "Generate new code"
+
+msgid "codes.bulk-issue.retry-code-detail"
+msgstr "The retry code is a password for this bulk upload status in case it fails during processing. If you attempt this upload again with the same retry code, the server will be able to retry re-issue codes for phones which have not been successfully notified. You may use the same retry code for all of your uploads, but guard it like a password."
+
+msgid "codes.bulk-issue.remember-code"
+msgstr "Remember code"
+
+msgid "codes.bulk-issue.remember-code-detail"
+msgstr "Store the retry code in a cookie in your browser."
+
+msgid "codes.bulk-issue.issue-codes"
+msgstr "Issue codes"
+
+msgid "codes.bulk-issue.cancel"
+msgstr "Cancel"
+
+msgid "codes.bulk-issue.phone-number"
+msgstr "Phone number"
+
+msgid "codes.bulk-issue.test-date"
+msgstr "Test date"
+
+msgid "codes.bulk-issue.save-results"
+msgstr "Save code results log"
+
+msgid "codes.bulk-issue.save-results-success"
+msgstr "codes issued."
+
+msgid "codes.bulk-issue.save-results-fail"
+msgstr "codes failed."
+
+msgid "codes.bulk-issue.save-results-detail"
+msgstr "The above link allows you to download a log file of the results of your bulk issuance. It follows the same CSV format as input with tracking UUIDs appended for successfully issued codes or the error code and message for failures. You can make corrections to lines of this file and use it to retry the upload."
+
+msgid "codes.bulk-issue.too-many-fail"
+msgstr "Too many code errors to display results"
+
+msgid "codes.bulk-issue.too-many-success"
+msgstr "Too many codes issued to display results"
