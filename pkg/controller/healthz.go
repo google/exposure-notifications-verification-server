@@ -17,18 +17,13 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"golang.org/x/time/rate"
 )
 
 func HandleHealthz(db *database.Database, h render.Renderer) http.Handler {
-	rl := rate.NewLimiter(rate.Every(time.Second), 1)
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -39,11 +34,6 @@ func HandleHealthz(db *database.Database, h render.Renderer) http.Handler {
 		case "":
 			// Do nothing and continue rendering - this is a basic HTTP health check
 		case "database":
-			if !rl.Allow() {
-				h.RenderJSON(w, http.StatusTooManyRequests, fmt.Errorf("too many requests"))
-				return
-			}
-
 			if err := db.Ping(ctx); err != nil {
 				InternalError(w, r, h, fmt.Errorf("failed to ping db: %w", err))
 				return
