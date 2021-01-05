@@ -18,10 +18,10 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
+	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -31,6 +31,7 @@ import (
 var (
 	testFlag     = flag.String("type", "", "diagnosis test type: confirmed, likely, negative")
 	onsetFlag    = flag.String("onset", "", "Symptom onset date, YYYY-MM-DD format")
+	timeoutFlag  = flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	tzOffsetFlag = flag.Int("tzOffset", 0, "timezone adjustment (minutes) from UTC for request")
 	apikeyFlag   = flag.String("apikey", "", "API Key to use")
 	adminIDFlag  = flag.String("adminID", "", "AdminID for statistics tracking")
@@ -56,18 +57,22 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	request := &api.IssueCodeRequest{
+	client, err := clients.NewAdminAPIServerClient(*addrFlag, *apikeyFlag,
+		clients.WithTimeout(*timeoutFlag))
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.IssueCode(ctx, &api.IssueCodeRequest{
 		TestType:         *testFlag,
 		SymptomDate:      *onsetFlag,
 		TZOffset:         float32(*tzOffsetFlag),
 		ExternalIssuerID: *adminIDFlag,
+	})
+	if err != nil {
+		return err
 	}
 
-	response, err := clients.IssueCode(ctx, *addrFlag, *apikeyFlag, request)
-	logger.Infow("sent request", "request", request)
-	if err != nil {
-		return fmt.Errorf("failed to get token: %w", err)
-	}
-	logger.Infow("got response", "response", response)
+	logger.Infow("success", "response", resp)
 	return nil
 }

@@ -192,33 +192,6 @@ resource "google_cloud_run_service_iam_member" "e2e-runner-invoker" {
   member   = "serviceAccount:${google_service_account.e2e-runner-invoker.email}"
 }
 
-resource "google_cloud_scheduler_job" "e2e-batch-issue" {
-  name             = "e2e-batch-issue"
-  region           = var.cloudscheduler_location
-  schedule         = "0,2,12,22,32,42,52,55 * * * *"
-  time_zone        = "America/Los_Angeles"
-  attempt_deadline = "30s"
-
-  retry_config {
-    retry_count = 1
-  }
-
-  http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.e2e-runner.status.0.url}/batch"
-    oidc_token {
-      audience              = "${google_cloud_run_service.e2e-runner.status.0.url}/batch"
-      service_account_email = google_service_account.e2e-runner-invoker.email
-    }
-  }
-
-  depends_on = [
-    google_app_engine_application.app,
-    google_cloud_run_service_iam_member.e2e-runner-invoker,
-    google_project_service.services["cloudscheduler.googleapis.com"],
-  ]
-}
-
 resource "google_cloud_scheduler_job" "e2e-default-workflow" {
   name             = "e2e-default-workflow"
   region           = var.cloudscheduler_location

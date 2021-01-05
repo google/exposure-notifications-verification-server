@@ -18,10 +18,10 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -54,11 +54,18 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	request, response, err := clients.GetToken(ctx, *addrFlag, *apikeyFlag, *codeFlag, *timeoutFlag)
-	logger.Infow("sent request", "request", request)
+	client, err := clients.NewAPIServerClient(*addrFlag, *apikeyFlag,
+		clients.WithTimeout(*timeoutFlag))
 	if err != nil {
-		return fmt.Errorf("failed to get token: %w", err)
+		return err
 	}
-	logger.Infow("got response", "response", response)
+
+	resp, err := client.Verify(ctx, &api.VerifyCodeRequest{
+		VerificationCode: *codeFlag,
+	})
+	if err != nil {
+		return err
+	}
+	logger.Infow("success", "response", resp)
 	return nil
 }

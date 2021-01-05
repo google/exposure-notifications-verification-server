@@ -15,31 +15,44 @@
 package issueapi_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
-	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
 )
 
 func TestIssueBatch(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	testSuite := testsuite.NewIntegrationSuite(t, ctx)
-	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+
+	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	db := testSuite.DB
-	realm := testSuite.Realm
-
+	realm.AllowBulkUpload = true
 	realm.AllowedTestTypes = database.TestTypeConfirmed
-	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	authApp := &database.AuthorizedApp{
+		Name:       "Appy",
+		APIKeyType: database.APIKeyTypeAdmin,
+	}
+	if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
@@ -47,22 +60,30 @@ func TestIssueBatch(t *testing.T) {
 		RealmID:      realm.ID,
 		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
 	}
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
+	if err := harness.Database.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
 	}
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 	tzMinOffset := 0
 
+	h, err := render.New(ctx, "", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, h)
+	handler := c.HandleBatchIssueAPI()
+
 	cases := []struct {
 		name           string
-		request        api.BatchIssueCodeRequest
-		response       api.BatchIssueCodeResponse
+		request        *api.BatchIssueCodeRequest
+		response       *api.BatchIssueCodeResponse
 		httpStatusCode int
 	}{
 		{
 			name: "success",
-			request: api.BatchIssueCodeRequest{
+			request: &api.BatchIssueCodeRequest{
 				Codes: []*api.IssueCodeRequest{
 					{
 						TestType:    "confirmed",
@@ -71,7 +92,7 @@ func TestIssueBatch(t *testing.T) {
 					},
 				},
 			},
-			response: api.BatchIssueCodeResponse{
+			response: &api.BatchIssueCodeResponse{
 				Codes: []*api.IssueCodeResponse{
 					{
 						// success
@@ -81,8 +102,8 @@ func TestIssueBatch(t *testing.T) {
 			httpStatusCode: http.StatusOK,
 		},
 		{
-			name: "all failure",
-			request: api.BatchIssueCodeRequest{
+			name: "all_failure",
+			request: &api.BatchIssueCodeRequest{
 				Codes: []*api.IssueCodeRequest{
 					{
 						TestType:    "negative", // this realm only supports confirmed
@@ -91,7 +112,7 @@ func TestIssueBatch(t *testing.T) {
 					},
 				},
 			},
-			response: api.BatchIssueCodeResponse{
+			response: &api.BatchIssueCodeResponse{
 				Codes: []*api.IssueCodeResponse{
 					{
 						ErrorCode: api.ErrUnsupportedTestType,
@@ -102,8 +123,8 @@ func TestIssueBatch(t *testing.T) {
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "partial success",
-			request: api.BatchIssueCodeRequest{
+			name: "partial_success",
+			request: &api.BatchIssueCodeRequest{
 				Codes: []*api.IssueCodeRequest{
 					{
 						TestType:    "confirmed",
@@ -122,7 +143,7 @@ func TestIssueBatch(t *testing.T) {
 					},
 				},
 			},
-			response: api.BatchIssueCodeResponse{
+			response: &api.BatchIssueCodeResponse{
 				Codes: []*api.IssueCodeResponse{
 					{
 						// success
@@ -139,8 +160,8 @@ func TestIssueBatch(t *testing.T) {
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "batch size limit",
-			request: api.BatchIssueCodeRequest{
+			name: "batch_size_limit",
+			request: &api.BatchIssueCodeRequest{
 				Codes: []*api.IssueCodeRequest{
 					{TestType: "1"},
 					{TestType: "2"},
@@ -155,7 +176,7 @@ func TestIssueBatch(t *testing.T) {
 					{TestType: "11"},
 				},
 			},
-			response:       api.BatchIssueCodeResponse{},
+			response:       &api.BatchIssueCodeResponse{},
 			httpStatusCode: http.StatusBadRequest,
 		},
 	}
@@ -166,22 +187,39 @@ func TestIssueBatch(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			statusCode, resp, err := adminClient.BatchIssueCode(tc.request)
-			if err != nil {
+			var b bytes.Buffer
+			if err := json.NewEncoder(&b).Encode(tc.request); err != nil {
 				t.Fatal(err)
 			}
 
-			// Check outer error
-			if statusCode != tc.httpStatusCode {
-				t.Errorf("incorrect error code. got %d, want %d", statusCode, tc.httpStatusCode)
+			ctx := controller.WithRealm(ctx, realm)
+			ctx = controller.WithAuthorizedApp(ctx, authApp)
+			r, err := http.NewRequestWithContext(ctx, "POST", "/", &b)
+			if err != nil {
+				t.Fatal(err)
 			}
-			if resp.ErrorCode != tc.response.ErrorCode {
-				t.Errorf("did not receive expected outer errorCode. got %s, want %v", resp.ErrorCode, tc.response.ErrorCode)
+			r.Header.Set("Accept", "application/json")
+			r.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, r)
+
+			if got, want := w.Code, tc.httpStatusCode; got != want {
+				t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 			}
 
-			for i, issuedCode := range resp.Codes {
-				if issuedCode.ErrorCode != tc.response.Codes[i].ErrorCode {
-					t.Errorf("did not receive expected inner errorCode. got %q, want %q", issuedCode.ErrorCode, tc.response.Codes[i].ErrorCode)
+			var apiResp api.BatchIssueCodeResponse
+			if err := json.NewDecoder(w.Body).Decode(&apiResp); err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := apiResp.ErrorCode, tc.response.ErrorCode; got != want {
+				t.Errorf("expected %#v to be %#v: %#v", got, want, apiResp)
+			}
+
+			for i, issuedCode := range apiResp.Codes {
+				if got, want := issuedCode.ErrorCode, tc.response.Codes[i].ErrorCode; got != want {
+					t.Errorf("bad inner error code, expected %#v to be %#v", got, want)
 				}
 			}
 		})
