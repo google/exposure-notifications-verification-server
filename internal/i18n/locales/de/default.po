@@ -153,73 +153,73 @@ msgstr "Verfallen"
 # ----------
 
 msgid "codes.bulk-issue.header"
-msgstr "Bulk issue"
+msgstr "Bulk veröffentlichen"
 
 msgid "codes.bulk-issue.receipt-header"
-msgstr "Receipt"
+msgstr "der Beleg"
 
 msgid "codes.bulk-issue.errors-header"
-msgstr "Errors"
+msgstr "Fehler"
 
 msgid "codes.bulk-issue.success-header"
-msgstr "Successfully issued codes"
+msgstr "Erfolgreich ausgegebene Codes"
 
 msgid "codes.bulk-issue.no-sms-provider"
-msgstr "No SMS provider is configured for this realm. Please contact a realm administrator to enable this feature."
+msgstr "Für diesen Bereich ist kein SMS-Anbieter konfiguriert. Wenden Sie sich an einen Realm-Administrator, um diese Funktion zu aktivieren."
 
 msgid "codes.bulk-issue.select-csv"
-msgstr "Select a CSV file..."
+msgstr "Wählen Sie eine CSV-Datei ..."
 
 msgid "codes.bulk-issue.csv-format1"
-msgstr "The CSV file must be of the format %s."
+msgstr "Die CSV-Datei muss das Format %s haben."
 
 msgid "codes.bulk-issue.csv-format2"
-msgstr "Each entry must appear on its own line, and phone numbers must be in %s format and dates in %s."
+msgstr "Jeder Eintrag muss in einer eigenen Zeile erscheinen und die Telefonnummern müssen im %s Format und die Daten in %s vorliegen."
 
 msgid "codes.bulk-issue.line-num"
-msgstr "Parsing the CSV will start at this line. Begin at 1 for a new file. This can be used to resume a canceled or partial upload."
+msgstr "Das Parsen der CSV beginnt in dieser Zeile. Beginnen Sie bei 1 für eine neue Datei. Dies kann verwendet werden, um einen abgebrochenen oder teilweisen Upload fortzusetzen."
 
 msgid "codes.bulk-issue.retry-code"
-msgstr "Retry code"
+msgstr "Wiederholungscode"
 
 msgid "codes.bulk-issue.new-retry-code"
-msgstr "Generate new code"
+msgstr "Generieren Sie neuen Code"
 
 msgid "codes.bulk-issue.retry-code-detail"
-msgstr "The retry code is a password for this bulk upload status in case it fails during processing. If you attempt this upload again with the same retry code, the server will be able to retry re-issue codes for phones which have not been successfully notified. You may use the same retry code for all of your uploads, but guard it like a password."
+msgstr "Der Wiederholungscode ist ein Kennwort für diesen Massen-Upload-Status, falls er während der Verarbeitung fehlschlägt. Wenn Sie diesen Upload erneut mit demselben Wiederholungscode versuchen, kann der Server erneut versuchen, Codes für Telefone erneut auszugeben, die nicht erfolgreich benachrichtigt wurden. Sie können für alle Ihre Uploads denselben Wiederholungscode verwenden, ihn jedoch wie ein Kennwort schützen."
 
 msgid "codes.bulk-issue.remember-code"
-msgstr "Remember code"
+msgstr "Code merken"
 
 msgid "codes.bulk-issue.remember-code-detail"
-msgstr "Store the retry code in a cookie in your browser."
+msgstr "Speichern Sie den Wiederholungscode in einem Cookie in Ihrem Browser."
 
 msgid "codes.bulk-issue.issue-codes"
-msgstr "Issue codes"
+msgstr "Ausgabecodes"
 
 msgid "codes.bulk-issue.cancel"
-msgstr "Cancel"
+msgstr "stornieren"
 
 msgid "codes.bulk-issue.phone-number"
-msgstr "Phone number"
+msgstr "Telefonnummer"
 
 msgid "codes.bulk-issue.test-date"
-msgstr "Test date"
+msgstr "Testdatum"
 
 msgid "codes.bulk-issue.save-results"
-msgstr "Save code results log"
+msgstr "Code-Ergebnisprotokoll speichern"
 
 msgid "codes.bulk-issue.save-results-success"
-msgstr "codes issued."
+msgstr "Codes ausgegeben."
 
 msgid "codes.bulk-issue.save-results-fail"
-msgstr "codes failed."
+msgstr "Codes fehlgeschlagen."
 
 msgid "codes.bulk-issue.save-results-detail"
-msgstr "The above link allows you to download a log file of the results of your bulk issuance. It follows the same CSV format as input with tracking UUIDs appended for successfully issued codes or the error code and message for failures. You can make corrections to lines of this file and use it to retry the upload."
+msgstr "Über den obigen Link können Sie eine Protokolldatei mit den Ergebnissen Ihrer Massenausgabe herunterladen. Es folgt demselben CSV-Format wie die Eingabe mit Tracking-UUIDs, die für erfolgreich ausgegebene Codes angehängt wurden, oder dem Fehlercode und der Fehlermeldung. Sie können Korrekturen an den Zeilen dieser Datei vornehmen und damit den Upload wiederholen."
 
 msgid "codes.bulk-issue.too-many-fail"
-msgstr "Too many code errors to display results"
+msgstr "Zu viele Codefehler, um Ergebnisse anzuzeigen"
 
 msgid "codes.bulk-issue.too-many-success"
-msgstr "Too many codes issued to display results"
+msgstr "Es wurden zu viele Codes ausgegeben, um die Ergebnisse anzuzeigen"
