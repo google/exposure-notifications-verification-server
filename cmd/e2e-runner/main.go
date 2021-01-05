@@ -195,7 +195,6 @@ func realMain(ctx context.Context) error {
 
 	r.HandleFunc("/default", defaultHandler(ctx, e2eConfig.TestConfig))
 	r.HandleFunc("/revise", reviseHandler(ctx, e2eConfig.TestConfig))
-	r.HandleFunc("/batch", batchIssueHandler(ctx, e2eConfig.TestConfig))
 
 	mux := http.Handler(r)
 	if e2eConfig.DevMode {
@@ -209,21 +208,6 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", e2eConfig.Port)
 	return srv.ServeHTTPHandler(ctx, mux)
-}
-
-func batchIssueHandler(ctx context.Context, config config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
-	logger := logging.FromContext(ctx)
-	c := &config
-	c.DoRevise = false
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := clients.RunBatchIssue(ctx, c); err != nil {
-			logger.Errorw("could not run batch issue", "error", err)
-			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		fmt.Fprint(w, "ok")
-	}
 }
 
 // Config is passed by value so that each http handler has a separate copy (since they are changing one of the)

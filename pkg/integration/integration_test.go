@@ -12,20 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package integration
+// Package integration runs integration tests. These tests could be internal
+// (all the servers are spun up in memory) or it could be via the e2e test which
+// communicate across services deployed at distinct URLs.
+package integration_test
 
 import (
-	"context"
 	"encoding/base64"
 	"flag"
-	"net/http"
-	"strings"
 	"testing"
 	"time"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/util"
 	"github.com/google/exposure-notifications-server/pkg/verification"
+
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
@@ -38,225 +40,237 @@ const (
 )
 
 var (
-	isE2E = flag.Bool("is_e2e", false, "Set to true when run as E2E tests.")
+	flagE2E = flag.Bool("is_e2e", false, "Set to true when run as E2E tests.")
 )
-
-type testCase struct {
-	name    string
-	expire  bool
-	errMsg  string
-	skipE2E bool
-	batch   bool
-}
 
 func TestIntegration(t *testing.T) {
 	t.Parallel()
-	cases := []testCase{
-		{
-			name: "valid token",
-		},
-		{
-			name:    "expired token",
-			expire:  true,
-			errMsg:  "verification token expired",
-			skipE2E: true,
-		},
-		{
-			name:  "valid token batch",
-			batch: true,
-		},
-		{
-			name:    "expired token batch",
-			expire:  true,
-			errMsg:  "verification token expired",
-			skipE2E: true,
-			batch:   true,
-		},
+
+	ctx := project.TestContext(t)
+
+	var adminAPIClient *clients.AdminAPIServerClient
+	var apiServerClient *clients.APIServerClient
+	if *flagE2E {
+		e2eSuite := testsuite.NewE2ESuite(t)
+		adminAPIClient = e2eSuite.AdminAPIServerClient()
+		apiServerClient = e2eSuite.APIServerClient()
+	} else {
+		integrationSuite := testsuite.NewIntegrationSuite(t)
+		adminAPIClient = integrationSuite.AdminAPIServerClient()
+		apiServerClient = integrationSuite.APIServerClient()
 	}
 
-	ctx := context.Background()
-	testSuite := testsuite.NewTestSuite(t, ctx, *isE2E)
-	adminClient, err := testSuite.NewAdminAPIClient(ctx, t)
-	if err != nil {
-		t.Fatalf("failed to create admin API client, err: %v", err)
-	}
-	apiClient, err := testSuite.NewAPIClient(ctx, t)
-	if err != nil {
-		t.Fatalf("failed to create API client, err: %v", err)
-	}
-
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			if *isE2E && tc.skipE2E {
-				t.Skip("Skip in E2E test mode.")
-			}
-
-			if tc.batch {
-				tc.batchIssue(t, adminClient, apiClient)
-			} else {
-				tc.singleIssue(t, adminClient, apiClient)
-			}
-		})
-	}
-}
-
-func (tc testCase) singleIssue(t *testing.T, adminClient *testsuite.AdminClient, apiClient *testsuite.APIClient) {
 	now := time.Now().UTC()
 	curDayInterval := timeToInterval(now)
 	nextInterval := curDayInterval
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 	testType := "confirmed"
-	tzMinOffset := 0
 
-	teks := make([]verifyapi.ExposureKey, 14)
-	for i := 0; i < len(teks); i++ {
-		key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
+	// Test issuing a single code
+	t.Run("issue", func(t *testing.T) {
+		t.Parallel()
+
+		// Generate HMAC
+		tekHMAC := generateHMAC(t, nextInterval)
+
+		// Issue a code
+		issueReq := &api.IssueCodeRequest{
+			TestType:    testType,
+			SymptomDate: symptomDate,
+		}
+		issueResp, err := adminAPIClient.IssueCode(ctx, issueReq)
 		if err != nil {
-			t.Fatalf("not enough entropy: %v", err)
+			t.Fatalf("failed to issue code: %#v\n  req: %#v\n  resp: %#v", err, issueReq, issueResp)
 		}
-		teks[i] = key
-		nextInterval -= maxInterval
-	}
 
-	hmacSecret := make([]byte, 32)
-	hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
-	if err != nil {
-		t.Fatalf("error calculating tek HMAC: %v", err)
-	}
-	hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
-
-	issueRequest := api.IssueCodeRequest{
-		TestType:    testType,
-		SymptomDate: symptomDate,
-		TZOffset:    float32(tzMinOffset),
-	}
-
-	httpCode, issueResp, err := adminClient.IssueCode(issueRequest)
-	if issueResp == nil || err != nil || issueResp.UUID == "" || httpCode != http.StatusOK {
-		t.Fatalf("adminClient.IssueCode(%+v) = expected nil, got resp %+v, err %v", issueRequest, issueResp, err)
-	}
-
-	// Try to issue the same code again (same UUID)
-	issueRequest.UUID = issueResp.UUID
-	if httpCode, _, err = adminClient.IssueCode(issueRequest); httpCode != http.StatusConflict {
-		t.Fatalf("Expected 409 conflict, got %d", httpCode)
-	} else if err != nil {
-		t.Fatal(err)
-	}
-
-	verifyRequest := api.VerifyCodeRequest{
-		VerificationCode: issueResp.VerificationCode,
-		AcceptTestTypes:  []string{testType},
-	}
-
-	verifyResp, err := apiClient.GetToken(verifyRequest)
-	if err != nil {
-		t.Fatalf("apiClient.GetToken(%+v) = expected nil, got resp %+v, err %v", verifyRequest, verifyResp, err)
-	}
-
-	if tc.expire {
-		time.Sleep(testsuite.VerificationTokenDuration)
-	}
-
-	certRequest := api.VerificationCertificateRequest{
-		VerificationToken: verifyResp.VerificationToken,
-		ExposureKeyHMAC:   hmacB64,
-	}
-	_, err = apiClient.GetCertificate(certRequest)
-	if tc.expire {
-		if err == nil || !strings.Contains(err.Error(), tc.errMsg) {
-			t.Errorf("apiClient.GetCertificate(%+v) = expected %v, got err %v", certRequest, tc.errMsg, err)
+		// Invalid code should fail to verify
+		{
+			verifyReq := &api.VerifyCodeRequest{
+				VerificationCode: "NOT-A-REAL-CODE",
+				AcceptTestTypes:  []string{testType},
+			}
+			verifyResp, err := apiServerClient.Verify(ctx, verifyReq)
+			if err == nil {
+				t.Fatalf("expected code to fail to verify (invalid), got no error\n  req: %#v\n  resp: %#v", verifyReq, verifyResp)
+			}
 		}
-		return
-	}
 
-	if err != nil {
-		t.Errorf("apiClient.GetCertificate(%+v) = expected nil, got err %v", certRequest, err)
-	}
-}
-
-func (tc testCase) batchIssue(t *testing.T, adminClient *testsuite.AdminClient, apiClient *testsuite.APIClient) {
-	now := time.Now().UTC()
-	curDayInterval := timeToInterval(now)
-	nextInterval := curDayInterval
-	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
-	testType := "confirmed"
-	tzMinOffset := 0
-
-	teks := make([]verifyapi.ExposureKey, 14)
-	for i := 0; i < len(teks); i++ {
-		key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
-		if err != nil {
-			t.Fatalf("not enough entropy: %v", err)
-		}
-		teks[i] = key
-		nextInterval -= maxInterval
-	}
-
-	hmacSecret := make([]byte, 32)
-	hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
-	if err != nil {
-		t.Fatalf("error calculating tek HMAC: %v", err)
-	}
-	hmacB64 := base64.StdEncoding.EncodeToString(hmacValue)
-
-	// Issue 2 codes
-	issueRequest := api.BatchIssueCodeRequest{
-		Codes: []*api.IssueCodeRequest{
-			{
-				TestType:    testType,
-				SymptomDate: symptomDate,
-				TZOffset:    float32(tzMinOffset),
-			},
-			{
-				TestType:    testType,
-				SymptomDate: symptomDate,
-				TZOffset:    float32(tzMinOffset),
-			},
-		},
-	}
-
-	httpCode, batchResp, err := adminClient.BatchIssueCode(issueRequest)
-	if batchResp == nil || err != nil {
-		t.Fatalf("adminClient.IssueCode(%+v) = expected nil, got resp %+v, err %v", issueRequest, batchResp, err)
-	} else if httpCode != http.StatusOK {
-		t.Errorf("got http status %d, expected 200", httpCode)
-	}
-
-	for _, issueResp := range batchResp.Codes {
-		verifyRequest := api.VerifyCodeRequest{
+		// Valid code verifies
+		verifyReq := &api.VerifyCodeRequest{
 			VerificationCode: issueResp.VerificationCode,
 			AcceptTestTypes:  []string{testType},
 		}
-
-		verifyResp, err := apiClient.GetToken(verifyRequest)
+		verifyResp, err := apiServerClient.Verify(ctx, verifyReq)
 		if err != nil {
-			t.Fatalf("apiClient.GetToken(%+v) = expected nil, got resp %+v, err %v", verifyRequest, verifyResp, err)
+			t.Fatalf("failed to verify code: %#v\n  req: %#v\n  resp: %#v", err, verifyReq, verifyResp)
 		}
 
-		if tc.expire {
-			time.Sleep(testsuite.VerificationTokenDuration)
-		}
-
-		certRequest := api.VerificationCertificateRequest{
-			VerificationToken: verifyResp.VerificationToken,
-			ExposureKeyHMAC:   hmacB64,
-		}
-		_, err = apiClient.GetCertificate(certRequest)
-		if tc.expire {
-			if err == nil || !strings.Contains(err.Error(), tc.errMsg) {
-				t.Errorf("apiClient.GetCertificate(%+v) = expected %v, got err %v", certRequest, tc.errMsg, err)
+		// Valid code verifies only once
+		{
+			verifyReq := &api.VerifyCodeRequest{
+				VerificationCode: issueResp.VerificationCode,
+				AcceptTestTypes:  []string{testType},
 			}
-			return
+			verifyResp, err := apiServerClient.Verify(ctx, verifyReq)
+			if err == nil {
+				t.Fatalf("expected code to fail to verify (already used), got no error\n  req: %#v\n  resp: %#v", verifyReq, verifyResp)
+			}
 		}
 
-		if err != nil {
-			t.Errorf("apiClient.GetCertificate(%+v) = expected nil, got err %v", certRequest, err)
+		// Invalid token should fail to issue a certificate
+		{
+			certReq := &api.VerificationCertificateRequest{
+				VerificationToken: "STILL-TOTALLY-NOT-REAL",
+				ExposureKeyHMAC:   tekHMAC,
+			}
+			certResp, err := apiServerClient.Certificate(ctx, certReq)
+			if err == nil {
+				t.Fatalf("expected certificate to failed to issue (invalid): got no error\n  req: %#v\n  resp: %#v", certReq, certResp)
+			}
 		}
+
+		// Get a certificate
+		certReq := &api.VerificationCertificateRequest{
+			VerificationToken: verifyResp.VerificationToken,
+			ExposureKeyHMAC:   tekHMAC,
+		}
+		certResp, err := apiServerClient.Certificate(ctx, certReq)
+		if err != nil {
+			t.Fatalf("failed to get certificate: %#v\n  req: %#v\n  resp: %#v", err, certReq, certResp)
+		}
+
+		// Valid token issues only once
+		{
+			certReq := &api.VerificationCertificateRequest{
+				VerificationToken: verifyResp.VerificationToken,
+				ExposureKeyHMAC:   tekHMAC,
+			}
+			certResp, err := apiServerClient.Certificate(ctx, certReq)
+			if err == nil {
+				t.Fatalf("expected certificate to failed to issue (already used): got no error\n  req: %#v\n  resp: %#v", certReq, certResp)
+			}
+		}
+	})
+
+	t.Run("issue_batch", func(t *testing.T) {
+		t.Parallel()
+
+		// Generate HMAC
+		tekHMAC := generateHMAC(t, nextInterval)
+
+		// Issue 2 codes
+		issueReq := &api.BatchIssueCodeRequest{
+			Codes: []*api.IssueCodeRequest{
+				{
+					TestType:    testType,
+					SymptomDate: symptomDate,
+				},
+				{
+					TestType:    testType,
+					SymptomDate: symptomDate,
+				},
+			},
+		}
+		issueResp, err := adminAPIClient.BatchIssueCode(ctx, issueReq)
+		if err != nil {
+			t.Fatalf("failed to issue code: %#v\n  req: %#v\n  resp: %#v", err, issueReq, issueResp)
+		}
+
+		// Invalid code should fail to verify
+		{
+			verifyReq := &api.VerifyCodeRequest{
+				VerificationCode: "NOT-A-REAL-CODE",
+				AcceptTestTypes:  []string{testType},
+			}
+			verifyResp, err := apiServerClient.Verify(ctx, verifyReq)
+			if err == nil {
+				t.Fatalf("expected code to fail to verify (invalid), got no error\n  req: %#v\n  resp: %#v", verifyReq, verifyResp)
+			}
+		}
+
+		// Verify all codes in batch.
+		for _, issueResp := range issueResp.Codes {
+			verifyReq := &api.VerifyCodeRequest{
+				VerificationCode: issueResp.VerificationCode,
+				AcceptTestTypes:  []string{testType},
+			}
+			verifyResp, err := apiServerClient.Verify(ctx, verifyReq)
+			if err != nil {
+				t.Fatalf("apiClient.GetToken(%+v) = expected nil, got resp %+v, err %v", verifyReq, verifyResp, err)
+			}
+			if err != nil {
+				t.Fatalf("failed to verify code: %#v\n  req: %#v\n  resp: %#v", err, verifyReq, verifyResp)
+			}
+
+			// Valid code verifies only once
+			{
+				verifyReq := &api.VerifyCodeRequest{
+					VerificationCode: issueResp.VerificationCode,
+					AcceptTestTypes:  []string{testType},
+				}
+				verifyResp, err := apiServerClient.Verify(ctx, verifyReq)
+				if err == nil {
+					t.Fatalf("expected code to fail to verify (already used), got no error\n  req: %#v\n  resp: %#v", verifyReq, verifyResp)
+				}
+			}
+
+			// Invalid token should fail to issue a certificate
+			{
+				certReq := &api.VerificationCertificateRequest{
+					VerificationToken: "STILL-TOTALLY-NOT-REAL",
+					ExposureKeyHMAC:   tekHMAC,
+				}
+				certResp, err := apiServerClient.Certificate(ctx, certReq)
+				if err == nil {
+					t.Fatalf("expected certificate to failed to issue (invalid): got no error\n  req: %#v\n  resp: %#v", certReq, certResp)
+				}
+			}
+
+			certReq := &api.VerificationCertificateRequest{
+				VerificationToken: verifyResp.VerificationToken,
+				ExposureKeyHMAC:   tekHMAC,
+			}
+			certResp, err := apiServerClient.Certificate(ctx, certReq)
+			if err != nil {
+				t.Fatalf("failed to get certificate: %#v\n  req: %#v\n  resp: %#v", err, certReq, certResp)
+			}
+
+			// Valid token issues only once
+			{
+				certReq := &api.VerificationCertificateRequest{
+					VerificationToken: verifyResp.VerificationToken,
+					ExposureKeyHMAC:   tekHMAC,
+				}
+				certResp, err := apiServerClient.Certificate(ctx, certReq)
+				if err == nil {
+					t.Fatalf("expected certificate to failed to issue (already used): got no error\n  req: %#v\n  resp: %#v", certReq, certResp)
+				}
+			}
+		}
+	})
+}
+
+// generateHMAC generates an HMAC of TEKs.
+func generateHMAC(tb testing.TB, nextInterval int32) string {
+	teks := make([]verifyapi.ExposureKey, 14)
+	for i := 0; i < len(teks); i++ {
+		key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
+		if err != nil {
+			tb.Fatal(err)
+		}
+		teks[i] = key
+		nextInterval -= maxInterval
 	}
+
+	hmacSecret, err := project.RandomBytes(32)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return base64.StdEncoding.EncodeToString(hmacValue)
 }
 
 func timeToInterval(t time.Time) int32 {

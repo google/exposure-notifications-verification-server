@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package testsuite includes helpers for building a testsuite.
+// TODO(sethvargo): move to internal/
 package testsuite
 
 import (
@@ -19,8 +21,11 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -51,21 +56,24 @@ type E2ESuite struct {
 	db    *database.Database
 	realm *database.Realm
 
-	adminKey, deviceKey string
+	adminAPIServerClient *clients.AdminAPIServerClient
+	apiServerClient      *clients.APIServerClient
 }
 
-// NewAdminAPIClient returns an admin API client.
-func (s *E2ESuite) NewAdminAPIClient(context.Context, testing.TB) (*AdminClient, error) {
-	return NewAdminClient(s.cfg.AdminAPIURL, s.adminKey)
+// AdminAPIServerClient returns an admin API client.
+func (s *E2ESuite) AdminAPIServerClient() *clients.AdminAPIServerClient {
+	return s.adminAPIServerClient
 }
 
-// NewAPIClient returns an API client.
-func (s *E2ESuite) NewAPIClient(context.Context, testing.TB) (*APIClient, error) {
-	return NewAPIClient(s.cfg.APIServerURL, s.deviceKey)
+// APIServerClient returns an API client.
+func (s *E2ESuite) APIServerClient() *clients.APIServerClient {
+	return s.apiServerClient
 }
 
 // NewE2ESuite returns an E2E test suite.
-func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
+func NewE2ESuite(tb testing.TB) *E2ESuite {
+	ctx := context.Background()
+
 	cfg := NewE2EConfig(tb, ctx)
 	db, err := cfg.DBConfig.Load(ctx)
 	if err != nil {
@@ -120,11 +128,22 @@ func NewE2ESuite(tb testing.TB, ctx context.Context) *E2ESuite {
 		tb.Fatalf("error trying to create a new Device API Key: %v", err)
 	}
 
+	adminAPIServerClient, err := clients.NewAdminAPIServerClient(cfg.AdminAPIURL, adminKey)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	apiServerClient, err := clients.NewAPIServerClient(cfg.APIServerURL, deviceKey)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	return &E2ESuite{
-		cfg:       cfg,
-		db:        db,
-		realm:     realm,
-		adminKey:  adminKey,
-		deviceKey: deviceKey,
+		cfg:   cfg,
+		db:    db,
+		realm: realm,
+
+		adminAPIServerClient: adminAPIServerClient,
+		apiServerClient:      apiServerClient,
 	}
 }

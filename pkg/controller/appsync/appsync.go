@@ -21,10 +21,12 @@ import (
 	"net/url"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -39,7 +41,8 @@ func (c *Controller) HandleSync() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		apps, err := clients.AppSync(c.config.AppSyncURL, c.config.Timeout, c.config.FileSizeLimitBytes)
+
+		apps, err := c.appSyncClient.AppSync(ctx)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

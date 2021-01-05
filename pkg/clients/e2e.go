@@ -12,20 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package clients defines e2e clients.
+// TODO(sethvargo): move into internal/
 package clients
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/jsonclient"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"go.opencensus.io/tag"
 
@@ -48,12 +52,24 @@ func timeToInterval(t time.Time) int32 {
 
 // RunEndToEnd - code that exercises the verification and key server, simulating a
 // mobile device uploading TEKs.
-func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
+func RunEndToEnd(ctx context.Context, cfg *config.E2ETestConfig) error {
 	logger := logging.FromContext(ctx)
+
+	adminAPIClient, err := clients.NewAdminAPIServerClient(cfg.VerificationAdminAPIServer, cfg.VerificationAdminAPIKey,
+		clients.WithTimeout(timeout))
+	if err != nil {
+		return err
+	}
+
+	apiServerClient, err := clients.NewAPIServerClient(cfg.VerificationAPIServer, cfg.VerificationAPIServerKey,
+		clients.WithTimeout(timeout))
+	if err != nil {
+		return err
+	}
 
 	testType := "confirmed"
 	iterations := 1
-	if config.DoRevise {
+	if cfg.DoRevise {
 		testType = "likely"
 		iterations++
 	}
@@ -93,27 +109,23 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 			defer recordLatency(ctx, time.Now(), "/api/issue")
 
 			// Issue the verification code.
-			codeRequest := &api.IssueCodeRequest{
+			codeReq := &api.IssueCodeRequest{
 				TestType:         testType,
 				SymptomDate:      symptomDate,
 				TZOffset:         0,
 				ExternalIssuerID: adminID,
 			}
 
-			code, err := IssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codeRequest)
+			codeResp, err := adminAPIClient.IssueCode(ctx, codeReq)
+			defer logger.Debugw("issuing code", "request", codeReq, "response", codeResp)
 			if err != nil {
 				result = observability.ResultNotOK()
 				return nil, fmt.Errorf("error issuing verification code: %w", err)
-			} else if code.Error != "" {
+			} else if codeResp.Error != "" {
 				result = observability.ResultNotOK()
-				return nil, fmt.Errorf("issue API Error: %+v", code)
+				return nil, fmt.Errorf("issue API Error: %+v", codeResp)
 			}
-
-			logger.Debugw("Issue Code",
-				"request", codeRequest,
-				"response", code,
-			)
-			return code, nil
+			return codeResp, nil
 		}()
 		if err != nil {
 			return err
@@ -123,19 +135,19 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 			defer recordLatency(ctx, time.Now(), "/api/verify")
 			// Get the verification token
 			logger.Infof("Verifying code and getting token")
-			tokenRequest, token, err := GetToken(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, code.VerificationCode, timeout)
+			tokenReq := &api.VerifyCodeRequest{
+				VerificationCode: code.VerificationCode,
+			}
+			tokenResp, err := apiServerClient.Verify(ctx, tokenReq)
+			logger.Debugw("verifying code", "request", tokenReq, "response", tokenResp)
 			if err != nil {
 				result = observability.ResultNotOK()
 				return nil, fmt.Errorf("error verifying code: %w", err)
-			} else if token.Error != "" {
+			} else if tokenResp.Error != "" {
 				result = observability.ResultNotOK()
-				return nil, fmt.Errorf("verification API Error %+v", token)
+				return nil, fmt.Errorf("verification API Error %+v", tokenResp)
 			}
-			logger.Debugw("getting token",
-				"request", tokenRequest,
-				"response", token,
-			)
-			return token, nil
+			return tokenResp, nil
 		}()
 		if err != nil {
 			return err
@@ -144,19 +156,19 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		if err := func() error {
 			defer recordLatency(ctx, time.Now(), "/api/verify")
 			logger.Infof("Check code status")
-			statusReq, codeStatus, err := CheckCodeStatus(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, code.UUID, timeout)
+			statusReq := &api.CheckCodeStatusRequest{
+				UUID: code.UUID,
+			}
+			statusResp, err := adminAPIClient.CheckCodeStatus(ctx, statusReq)
+			logger.Debugw("check code status", "request", statusReq, "response", statusResp)
 			if err != nil {
 				result = observability.ResultNotOK()
 				return fmt.Errorf("error check code status: %w", err)
-			} else if codeStatus.Error != "" {
+			} else if statusResp.Error != "" {
 				result = observability.ResultNotOK()
-				return fmt.Errorf("check code status Error: %+v", codeStatus)
+				return fmt.Errorf("check code status Error: %+v", statusResp)
 			}
-			logger.Debugw("check code status",
-				"request", statusReq,
-				"response", codeStatus,
-			)
-			if !codeStatus.Claimed {
+			if !statusResp.Claimed {
 				result = observability.ResultNotOK()
 				return fmt.Errorf("expected claimed OTP code for %s", statusReq.UUID)
 			}
@@ -186,64 +198,72 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 		certificate, err := func() (*api.VerificationCertificateResponse, error) {
 			defer recordLatency(ctx, time.Now(), "/api/certificate")
 			logger.Infof("Getting verification certificate")
-			// Get the verification certificate
-			certRequest, certificate, err := GetCertificate(ctx, config.VerificationAPIServer, config.VerificationAPIServerKey, token.VerificationToken, hmacB64, timeout)
+			certReq := &api.VerificationCertificateRequest{
+				VerificationToken: token.VerificationToken,
+				ExposureKeyHMAC:   hmacB64,
+			}
+			certResp, err := apiServerClient.Certificate(ctx, certReq)
+			logger.Debugw("get certificate", "request", certReq, "response", certResp)
 			if err != nil {
 				result = observability.ResultNotOK()
 				return nil, fmt.Errorf("error getting verification certificate: %w", err)
-			} else if certificate.Error != "" {
+			} else if certResp.Error != "" {
 				result = observability.ResultNotOK()
-				return nil, fmt.Errorf("certificate API Error: %+v", certificate)
+				return nil, fmt.Errorf("certificate API Error: %+v", certResp)
 			}
-			logger.Debugw("get certificate",
-				"request", certRequest,
-				"response", certificate,
-			)
-			return certificate, nil
+			return certResp, nil
 		}()
 		if err != nil {
 			return err
 		}
 
 		// Upload the TEKs
-		publish := verifyapi.Publish{
-			Keys:                teks,
-			HealthAuthorityID:   config.HealthAuthorityCode,
-			VerificationPayload: certificate.Certificate,
-			HMACKey:             base64.StdEncoding.EncodeToString(hmacSecret),
-			RevisionToken:       revisionToken,
-		}
-
 		response, err := func() (*verifyapi.PublishResponse, error) {
 			defer recordLatency(ctx, time.Now(), "upload_to_key_server")
 			// Make the publish request.
 			logger.Infof("Publish TEKs to the key server")
-			var response verifyapi.PublishResponse
+			publishReq := &verifyapi.Publish{
+				Keys:                teks,
+				HealthAuthorityID:   cfg.HealthAuthorityCode,
+				VerificationPayload: certificate.Certificate,
+				HMACKey:             base64.StdEncoding.EncodeToString(hmacSecret),
+				RevisionToken:       revisionToken,
+			}
+
 			client := &http.Client{
 				Timeout: timeout,
 			}
-			logger.Debugw("publish",
-				"request", publish,
-			)
-			if err := jsonclient.MakeRequest(ctx, client, config.KeyServer, http.Header{}, &publish, &response); err != nil {
-				result = observability.ResultNotOK()
-				return nil, fmt.Errorf("error publishing teks: %w", err)
-			} else if response.ErrorMessage != "" {
-				result = observability.ResultNotOK()
-				logger.Infow("Error publishing teks", "error", err, "keys", teks)
-				return nil, fmt.Errorf("publish API error: %+v", response)
+
+			var b bytes.Buffer
+			if err := json.NewEncoder(&b).Encode(publishReq); err != nil {
+				return nil, err
 			}
-			logger.Infof("Inserted %v exposures", response.InsertedExposures)
-			logger.Debugw("publish",
-				"response", response,
-			)
-			return &response, nil
+
+			httpResp, err := client.Post(cfg.KeyServer, "application/json", &b)
+			if err != nil {
+				result = observability.ResultNotOK()
+				return nil, fmt.Errorf("error making request to publish teks: %w", err)
+			}
+			defer httpResp.Body.Close()
+
+			var publishResp verifyapi.PublishResponse
+			if err := json.NewDecoder(httpResp.Body).Decode(&publishResp); err != nil {
+				return nil, err
+			}
+			defer logger.Debugw("publish", "request", publishReq, "response", publishResp)
+			if publishResp.ErrorMessage != "" {
+				result = observability.ResultNotOK()
+				logger.Infow("failed to publish teks", "error", err, "keys", teks)
+				return nil, fmt.Errorf("publish API error: %+v", publishResp)
+			}
+			logger.Infof("Inserted %v exposures", publishResp.InsertedExposures)
+			return &publishResp, nil
 		}()
 		if err != nil {
 			return err
 		}
 
-		if config.DoRevise {
+		if cfg.DoRevise {
 			testType = "confirmed"
 			revisionToken = response.RevisionToken
 
@@ -253,77 +273,6 @@ func RunEndToEnd(ctx context.Context, config *config.E2ETestConfig) error {
 				return fmt.Errorf("not enough entropy: %w", err)
 			}
 			teks = append(teks, key)
-		}
-	}
-
-	return nil
-}
-
-// RunBatchIssue is the prober for the batch issue API
-func RunBatchIssue(ctx context.Context, config *config.E2ETestConfig) error {
-	logger := logging.FromContext(ctx)
-
-	result := observability.ResultOK()
-	recordLatency := func(ctx context.Context, start time.Time, step string) {
-		stepMutator := tag.Upsert(stepTagKey, step)
-		observability.RecordLatency(ctx, start, mLatencyMs, &stepMutator, &result)
-	}
-
-	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
-	// Run the batch issue w/ all test types
-	{
-		codesRequest := &api.BatchIssueCodeRequest{
-			Codes: []*api.IssueCodeRequest{
-				{
-					TestType:    api.TestTypeConfirmed,
-					SymptomDate: symptomDate,
-					TZOffset:    0,
-				},
-				{
-					TestType:    api.TestTypeLikely,
-					SymptomDate: symptomDate,
-					TZOffset:    0,
-				},
-				{
-					TestType: api.TestTypeNegative,
-					TestDate: symptomDate,
-					TZOffset: 0,
-				},
-			},
-		}
-
-		codes, err := func() (*api.BatchIssueCodeResponse, error) {
-			defer recordLatency(ctx, time.Now(), "/api/issue-batch")
-
-			codes, err := BatchIssueCode(ctx, config.VerificationAdminAPIServer, config.VerificationAdminAPIKey, codesRequest)
-			if err != nil {
-				result = observability.ResultNotOK()
-				return nil, fmt.Errorf("error issuing verification code: %w", err)
-			} else if codes.Error != "" {
-				result = observability.ResultNotOK()
-				return nil, fmt.Errorf("issue API Error: %+v", codes)
-			}
-
-			logger.Debugw("Issue Code",
-				"request", codesRequest,
-				"response", codes,
-			)
-			return codes, nil
-		}()
-		if err != nil {
-			return err
-		}
-
-		// Check the resulting issued codes
-		if len(codes.Codes) != len(codesRequest.Codes) {
-			result = observability.ResultNotOK()
-			return fmt.Errorf("batch response length should match request: got %d, want %d", len(codes.Codes), len(codesRequest.Codes))
-		}
-		for _, c := range codes.Codes {
-			if c.Error != "" {
-				result = observability.ResultNotOK()
-				return fmt.Errorf("expected successfully issued codes, got %s", c.Error)
-			}
 		}
 	}
 

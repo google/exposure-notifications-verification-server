@@ -16,6 +16,7 @@
 package appsync
 
 import (
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -26,13 +27,24 @@ type Controller struct {
 	config *config.AppSyncConfig
 	db     *database.Database
 	h      render.Renderer
+
+	appSyncClient *clients.AppSyncClient
 }
 
 // New creates a new appsync controller.
 func New(config *config.AppSyncConfig, db *database.Database, h render.Renderer) (*Controller, error) {
+	appSyncClient, err := clients.NewAppSyncClient(config.AppSyncURL,
+		clients.WithTimeout(config.Timeout),
+		clients.WithMaxBodySize(config.FileSizeLimitBytes))
+	if err != nil {
+		return nil, err
+	}
+
 	return &Controller{
 		config: config,
 		db:     db,
 		h:      h,
+
+		appSyncClient: appSyncClient,
 	}, nil
 }

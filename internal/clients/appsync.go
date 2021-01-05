@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,41 @@
 // limitations under the License.
 
 package clients
+
+import (
+	"context"
+)
+
+// AppSyncClient is a client that talks to the appsync service.
+type AppSyncClient struct {
+	*client
+}
+
+// NewAppSyncClient creates a new app sync service http client.
+func NewAppSyncClient(base string, opts ...Option) (*AppSyncClient, error) {
+	client, err := newClient(base, "", opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AppSyncClient{
+		client: client,
+	}, nil
+}
+
+// AppSync triggers an application sync.
+func (c *AppSyncClient) AppSync(ctx context.Context) (*AppsResponse, error) {
+	req, err := c.newRequest(ctx, "GET", "/", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var out AppsResponse
+	if _, err := c.doOK(req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
 
 // AppsResponse is the body for the published list of android apps.
 type AppsResponse struct {
