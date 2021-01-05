@@ -86,12 +86,6 @@ make tabcheck || {
   exit 1
 }
 
-echo "© Verify Copyrights"
-make copyrightcheck || {
-  echo "✋ Missing copyrights."
-  exit 1
-}
-
 
 echo "🌌 Verify and tidy module"
 OUT="$(go mod verify 2>&1 && go mod tidy 2>&1)" || {
