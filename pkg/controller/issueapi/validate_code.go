@@ -42,7 +42,6 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.Iss
 		ExpiresAt:         now.Add(realm.CodeDuration.Duration),
 		LongExpiresAt:     now.Add(realm.LongCodeDuration.Duration),
 	}
-
 	if membership := controller.MembershipFromContext(ctx); membership != nil {
 		vCode.IssuingUserID = membership.UserID
 	}
