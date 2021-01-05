@@ -46,14 +46,6 @@ bodyclose:
 	@go vet -vettool=$$(which bodyclose) ./...
 .PHONY: bodyclose
 
-copyrightcheck:
-	@CHANGES="$$(grep -L "Copyright" $(GO_FILES))"; \
-		if [ -n "$${CHANGES}" ]; then \
-			echo "$${CHANGES}\n\n"; \
-			exit 1; \
-		fi
-.PHONY: copyrightcheck
-
 spellcheck:
 	@command -v misspell > /dev/null 2>&1 || go get github.com/client9/misspell/cmd/misspell
 	@misspell -locale="US" -error -source="text" $(GO_FILES) $(HTML_FILES) $(MD_FILES)
