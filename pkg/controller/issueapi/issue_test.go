@@ -105,8 +105,7 @@ func TestIssueOne(t *testing.T) {
 				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)
 			}
 
-			// success case
-			if tc.responseErr == "" && resp.ExpiresAt == resp.LongExpiresAt {
+			if tc.responseErr == "" && tc.request.Phone != "" && resp.ExpiresAt == resp.LongExpiresAt {
 				t.Errorf("Long expiry should be longer than short when a phone is provided.")
 			}
 		})
