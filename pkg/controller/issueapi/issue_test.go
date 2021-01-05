@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
 func TestIssueOne(t *testing.T) {
@@ -40,6 +41,14 @@ func TestIssueOne(t *testing.T) {
 	}
 	ctx = controller.WithRealm(ctx, realm)
 
+	smsConfig := &database.SMSConfig{
+		RealmID:      realm.ID,
+		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
+	}
+	if err := db.SaveSMSConfig(smsConfig); err != nil {
+		t.Fatal(err)
+	}
+
 	existingCode := &database.VerificationCode{
 		RealmID:       realm.ID,
 		Code:          "00000001",
@@ -47,7 +56,7 @@ func TestIssueOne(t *testing.T) {
 		Claimed:       true,
 		TestType:      "confirmed",
 		ExpiresAt:     time.Now().Add(time.Hour),
-		LongExpiresAt: time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 	if err := db.SaveVerificationCode(existingCode, realm); err != nil {
 		t.Fatal(err)
@@ -65,6 +74,7 @@ func TestIssueOne(t *testing.T) {
 			request: api.IssueCodeRequest{
 				TestType:    "confirmed",
 				SymptomDate: symptomDate,
+				Phone:       "+15005550006",
 			},
 			httpStatusCode: http.StatusOK,
 		},
@@ -93,6 +103,10 @@ func TestIssueOne(t *testing.T) {
 			}
 			if resp.ErrorCode != tc.responseErr {
 				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)
+			}
+
+			if tc.responseErr == "" && tc.request.Phone != "" && resp.ExpiresAt == resp.LongExpiresAt {
+				t.Errorf("Long expiry should be longer than short when a phone is provided.")
 			}
 		})
 	}

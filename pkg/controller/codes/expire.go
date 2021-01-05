@@ -47,7 +47,7 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 		c.h.RenderJSON(w, http.StatusOK,
 			&api.ExpireCodeResponse{
 				ExpiresAtTimestamp:     code.ExpiresAt.UTC().Unix(),
-				LongExpiresAtTimestamp: code.ExpiresAt.UTC().Unix(),
+				LongExpiresAtTimestamp: code.LongExpiresAt.UTC().Unix(),
 			})
 	})
 }

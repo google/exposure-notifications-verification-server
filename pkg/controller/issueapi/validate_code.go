@@ -72,7 +72,8 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.Iss
 	// Verify SMS configuration if phone was provided
 	var smsProvider sms.Provider
 	if request.Phone != "" {
-		smsProvider, err := realm.SMSProvider(c.db)
+		var err error
+		smsProvider, err = realm.SMSProvider(c.db)
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
 			return nil, &IssueResult{
