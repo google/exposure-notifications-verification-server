@@ -16,7 +16,7 @@ locals {
   default_per_service_slo = {
     enable_alert      = false
     availability_goal = 0.995
-    latency_goal      = 0.99
+    latency_goal      = 0.95
     latency_threshold = 60000 # in ms
   }
   service_configs = {
@@ -25,13 +25,13 @@ locals {
     latency_threshold = 6000 })
     apiserver = merge(local.default_per_service_slo,
       { enable_alert = true,
-    latency_threshold = 400 })
+    latency_threshold = 2000 })
     appsync    = local.default_per_service_slo
     cleanup    = local.default_per_service_slo
     e2e-runner = local.default_per_service_slo
     enx-redirect = merge(local.default_per_service_slo,
       { enable_alert = true,
-    latency_threshold = 400 })
+    latency_threshold = 2000 })
     modeler = local.default_per_service_slo
     server = merge(local.default_per_service_slo,
       { enable_alert = true,
