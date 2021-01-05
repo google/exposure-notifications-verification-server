@@ -16,7 +16,7 @@ locals {
   default_per_service_slo = {
     enable_alert           = false
     availability_goal      = 0.995
-    enable_latency_slo     = false
+    enable_latency_slo     = false # disabled by default due to low request volume; use latency alert for those
     latency_goal           = 0.95
     latency_threshold      = 60000 # 60 seconds, in ms
     enable_latency_alert   = false
@@ -26,8 +26,7 @@ locals {
   service_configs = {
     adminapi = merge(local.default_per_service_slo,
       { enable_alert         = true,
-        enable_latency_alert = true,
-        enable_latency_slo   = false,
+        enable_latency_alert = true
     latency_threshold = 6000 })
     apiserver = merge(local.default_per_service_slo,
       { enable_alert         = true,
@@ -94,7 +93,6 @@ module "latency-slos" {
 
   project = var.project
 
-  # enabled               = var.https-forwarding-rule != ""
   notification_channels = google_monitoring_notification_channel.channels
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)

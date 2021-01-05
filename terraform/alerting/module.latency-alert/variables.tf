@@ -41,6 +41,6 @@ variable "threshold" {
 
 variable "duration" {
   type        = number
-  description = "Duration of alert evaluation"
+  description = "Duration of alert evaluation (in ms)"
 }
 
