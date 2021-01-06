@@ -21,16 +21,13 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    {{template "beta-notice" .}}
-
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Bulk issue</div>
+      <div class="card-header">{{t $.locale "codes.bulk-issue.header"}}</div>
       <div class="card-body">
         {{if not $hasSMSConfig}}
           <div class="alert alert-danger">
             <span class="oi oi-warning"></span>
-            No SMS provider is configured for this realm.
-            Please contact a realm administrator to enable this feature.
+            {{t $.locale "codes.bulk-issue.no-sms-provider"}}
           </div>
         {{end}}
 
@@ -38,13 +35,11 @@
           <div class="form-group">
             <div class="custom-file">
               <input type="file" class="custom-file-input" id="csv" accept=".csv" disabled required>
-              <label class="custom-file-label" for="csv" id="file-label">Select a CSV file...</label>
+              <label class="custom-file-label" for="csv" id="file-label">{{t $.locale "codes.bulk-issue.select-csv"}}</label>
             </div>
             <small class="form-text text-muted">
-              The CSV file must be of the format <code>phone,testDate,[optional]symptomDate</code>. Each
-              entry must appear on its own line, and phone numbers must be in
-              <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a>
-              format and dates in <a href="https://www.iso.org/iso-8601-date-and-time-format.html" target="_blank">ISO 8601</a>.
+              {{t $.locale "codes.bulk-issue.csv-format1" `<code>phone,testDate,[optional]symptomDate</code>` | safeHTML}}
+              {{t $.locale "codes.bulk-issue.csv-format2" `<a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a>` `<a href="https://www.iso.org/iso-8601-date-and-time-format.html" target="_blank">ISO 8601</a>` | safeHTML}}
             </small>
           </div>
 
@@ -55,40 +50,34 @@
               placeholder="Start at line" value="1" min="1">
             <label for="start-at">Start at line</label>
             <small class="form-text text-muted">
-              Parsing the CSV will start at this line. Begin at 1 for a new file.
-              This can be used to resume a canceled or partial upload.
+              {{t $.locale "codes.bulk-issue.line-num"}}
             </small>
           </div>
 
           <div class="form-label-group">
             <div class="input-group">
               <input type="text" class="form-control text-monospace" id="retry-code"
-                placeholder="Retry code" required>
-              <label for="retry-code">Retry code</label>
+                placeholder="{{t $.locale "codes.bulk-issue.retry-code"}}" required>
+              <label for="retry-code">{{t $.locale "codes.bulk-issue.retry-code"}}</label>
               <div class="input-group-append">
-                <a id="new-code" class="input-group-text" data-toggle-password="twilio-auth-token" data-toggle="tooltip" title="Generate new code">
+                <a id="new-code" class="input-group-text" data-toggle-password="twilio-auth-token" data-toggle="tooltip" title="{{t $.locale "codes.bulk-issue.new-retry-code"}}">
                   <span class="oi oi-loop-circular" aria-hidden="true"></span>
-                  <span class="sr-only">Generate new code</span>
+                  <span class="sr-only">{{t $.locale "codes.bulk-issue.new-retry-code"}}</span>
                 </a>
               </div>
             </div>
             <small class="form-text text-muted">
-              The retry code is a password for this bulk upload status in case
-              it fails during processing. If you attempt this upload again with
-              the same retry code, the server will be able to retry re-issue
-              codes for phones which have not been successfully notified. You
-              may use the same retry code for all of your uploads, but guard it
-              like a password.
+              {{t $.locale "codes.bulk-issue.retry-code-detail"}}
             </small>
           </div>
 
           <div class="form-group">
             <div class="custom-control custom-checkbox">
               <input type="checkbox" class="custom-control-input" id="remember-code">
-              <label class="custom-control-label" for="remember-code">Remember code</label>
+              <label class="custom-control-label" for="remember-code">{{t $.locale "codes.bulk-issue.remember-code"}}</label>
             </div>
             <small class="form-text text-muted">
-              Store the retry code in a cookie in your browser.
+              {{t $.locale "codes.bulk-issue.remember-code-detail"}}
             </small>
           </div>
 
@@ -108,8 +97,8 @@
           </div>
           {{end}}
 
-          <button class="btn btn-primary btn-block" type="submit" id="import" disabled>Issue codes</button>
-          <button class="btn btn-danger btn-block d-none" id="cancel" disabled>Cancel</button>
+          <button class="btn btn-primary btn-block" type="submit" id="import" disabled>{{t $.locale "codes.bulk-issue.issue-codes"}}</button>
+          <button class="btn btn-danger btn-block d-none" id="cancel" disabled>{{t $.locale "codes.bulk-issue.cancel"}}</button>
         </form>
       </div>
 
@@ -121,8 +110,8 @@
         <table class="table table-bordered d-none" id="csv-table">
           <thead>
             <tr>
-              <th>Phone number</th>
-              <th>Test date</th>
+              <th>{{t $.locale "codes.bulk-issue.phone-number"}}</th>
+              <th>{{t $.locale "codes.bulk-issue.test-date"}}</th>
             </tr>
           </thead>
           <tbody id="csv-table-body"></tbody>
@@ -131,22 +120,20 @@
     </div>
 
     <div class="card mb-3 shadow-sm d-none" id="receipt-div">
-      <div class="card-header">Receipt</div>
+      <div class="card-header">{{t $.locale "codes.bulk-issue.receipt-header"}}</div>
       <div class="card-body">
-        <a id="save" class="card-link" download="bulk-issue-log.csv" href="data:text/plain,">Save code results log</a>
+        <a id="save" class="card-link" download="bulk-issue-log.csv" href="data:text/plain,">{{t $.locale "codes.bulk-issue.save-results"}}</a>
         <small class="form-text text-muted">
-          <p><span class="text-success" id="receipt-success">0</span> codes issued.
-          <span class="text-danger" id="receipt-failure">0</span> codes failed.</p>
-          The above link allows you to download a log file of the results of your bulk issuance.
-          It follows the same CSV format as input with tracking UUIDs appended for successfully issued codes or the error code and message for failures.
-          You can make corrections to lines of this file and use it to retry the upload.
+          <p><span class="text-success" id="receipt-success">0</span> {{t $.locale "codes.bulk-issue.save-results-success"}}
+          <span class="text-danger" id="receipt-failure">0</span> {{t $.locale "codes.bulk-issue.save-results-fail"}}</p>
+          {{t $.locale "codes.bulk-issue.save-results-detail"}}
         </small>
         <p>
       </div>
     </div>
 
     <div class="card mb-3 shadow-sm d-none" id="error-div">
-      <div class="card-header">Errors</div>
+      <div class="card-header">{{t $.locale "codes.bulk-issue.errors-header"}}</div>
       <table id="error-table" class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
         <thead>
           <tr>
@@ -158,12 +145,12 @@
         </thead>
         <tbody></tbody>
         <div class="card-body d-none" id="error-too-many">
-          <p class="card-text">Too many code errors to display results</p>
+          <p class="card-text">{{t $.locale "codes.bulk-issue.too-many-fail"}}</p>
         </div>
       </table>
     </div>
     <div class="card mb-3 shadow-sm d-none" id="success-div">
-      <div class="card-header">Successfully issued codes</div>
+      <div class="card-header">{{t $.locale "codes.bulk-issue.success-header"}}</div>
       <table id="success-table" class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
         <thead>
           <tr>
@@ -176,7 +163,7 @@
         <tbody></tbody>
       </table>
       <div class="card-body d-none" id="success-too-many">
-        <p class="card-text">Too many codes issued to display results</p>
+        <p class="card-text">{{t $.locale "codes.bulk-issue.too-many-success"}}</p>
       </div>
     </div>
   </main>

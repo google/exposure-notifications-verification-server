@@ -146,3 +146,80 @@ msgstr "Expira en"
 
 msgid "codes.issue.countdown-expired"
 msgstr "EXPIRADO"
+
+
+#
+# bulk-issue codes
+# ----------
+
+msgid "codes.bulk-issue.header"
+msgstr "Generar lote de códigos"
+
+msgid "codes.bulk-issue.receipt-header"
+msgstr "Recibo"
+
+msgid "codes.bulk-issue.errors-header"
+msgstr "Errores"
+
+msgid "codes.bulk-issue.success-header"
+msgstr "Códigos emitidos con éxito"
+
+msgid "codes.bulk-issue.no-sms-provider"
+msgstr "No hay ningún proveedor de SMS configurado para este reino. Comuníquese con un administrador del reino para habilitar esta función."
+
+msgid "codes.bulk-issue.select-csv"
+msgstr "Seleccione un archivo CSV ..."
+
+msgid "codes.bulk-issue.csv-format1"
+msgstr "El archivo CSV debe tener el formato %s."
+
+msgid "codes.bulk-issue.csv-format2"
+msgstr "Cada entrada debe aparecer en su propia línea, y los números de teléfono deben estar en formato %s y las fechas en %s."
+
+msgid "codes.bulk-issue.line-num"
+msgstr "El análisis del CSV comenzará en esta línea. Comience en 1 para un archivo nuevo. Esto se puede utilizar para reanudar una carga cancelada o parcial"
+
+msgid "codes.bulk-issue.retry-code"
+msgstr "Código de reintento"
+
+msgid "codes.bulk-issue.new-retry-code"
+msgstr "Generar nuevo código"
+
+msgid "codes.bulk-issue.retry-code-detail"
+msgstr "El código de reintento es una contraseña para este estado de carga masiva en caso de que falle durante el procesamiento. Si intenta esta carga nuevamente con el mismo código de reintento, el servidor podrá volver a intentar volver a emitir códigos para teléfonos que no hayan sido notificados correctamente. Puede usar el mismo código de reintento para todas sus cargas, pero guárdelo como una contraseña."
+
+msgid "codes.bulk-issue.remember-code"
+msgstr "Recuerda el código"
+
+msgid "codes.bulk-issue.remember-code-detail"
+msgstr "Almacene el código de reintento en una cookie en su navegador."
+
+msgid "codes.bulk-issue.issue-codes"
+msgstr "Emitir códigos"
+
+msgid "codes.bulk-issue.cancel"
+msgstr "Cancelar"
+
+msgid "codes.bulk-issue.phone-number"
+msgstr "Número telefónico"
+
+msgid "codes.bulk-issue.test-date"
+msgstr "Fecha de prueba"
+
+msgid "codes.bulk-issue.save-results"
+msgstr "Guardar registro de resultados de código"
+
+msgid "codes.bulk-issue.save-results-success"
+msgstr "códigos emitidos."
+
+msgid "codes.bulk-issue.save-results-fail"
+msgstr "códigos fracasaron."
+
+msgid "codes.bulk-issue.save-results-detail"
+msgstr "El enlace anterior le permite descargar un archivo de registro de los resultados de su emisión masiva. Sigue el mismo formato CSV que la entrada con los UUID de seguimiento adjuntos para los códigos emitidos con éxito o el código de error y el mensaje de fallas. Puede hacer correcciones a las líneas de este archivo y usarlo para volver a intentar la carga."
+
+msgid "codes.bulk-issue.too-many-fail"
+msgstr "Demasiados errores de código para mostrar resultados"
+
+msgid "codes.bulk-issue.too-many-success"
+msgstr "Se emitieron demasiados códigos para mostrar los resultados"
