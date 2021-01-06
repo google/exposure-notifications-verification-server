@@ -35,6 +35,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+	"github.com/google/uuid"
 	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/jinzhu/gorm"
@@ -482,11 +483,18 @@ func (r *Realm) EffectiveMFAMode(t time.Time) AuthRequirement {
 	return r.MFAMode
 }
 
-// FindVerificationCodeByUUID find a verification codes by UUID.
-func (r *Realm) FindVerificationCodeByUUID(db *Database, uuid string) (*VerificationCode, error) {
+// FindVerificationCodeByUUID find a verification codes by UUID. It returns
+// NotFound if the UUID is invalid.
+func (r *Realm) FindVerificationCodeByUUID(db *Database, uuidStr string) (*VerificationCode, error) {
+	// Postgres returns an error if the provided input is not a valid UUID.
+	parsed, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+
 	var vc VerificationCode
 	if err := db.db.
-		Where("uuid = ? AND realm_id = ?", uuid, r.ID).
+		Where("uuid = ? AND realm_id = ?", parsed.String(), r.ID).
 		First(&vc).Error; err != nil {
 		return nil, err
 	}
