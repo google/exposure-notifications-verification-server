@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -126,7 +127,11 @@ func (c *client) do(req *http.Request, out interface{}) (*http.Response, error) 
 
 	r := io.LimitReader(resp.Body, c.maxBodySize)
 	if err := json.NewDecoder(r).Decode(out); err != nil {
-		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+		bodyBytes, rawErr := ioutil.ReadAll(resp.Body)
+		if rawErr != nil {
+			return nil, fmt.Errorf("failed to read response body %w.", rawErr)
+		}
+		return nil, fmt.Errorf("failed to decode JSON response: %w. Raw response: %s", err, string(bodyBytes))
 	}
 	return resp, nil
 }
