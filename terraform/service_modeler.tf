@@ -97,6 +97,13 @@ resource "google_cloud_run_service" "modeler" {
 
   autogenerate_revision_name = true
 
+  metadata {
+    annotations = merge(
+      local.default_service_annotations,
+      var.default_service_annotations_overrides,
+      lookup(var.service_annotations, "modeler", {})
+    )
+  }
   template {
     spec {
       service_account_name = google_service_account.modeler.email
@@ -134,9 +141,9 @@ resource "google_cloud_run_service" "modeler" {
 
     metadata {
       annotations = merge(
-        local.default_annotations,
-        var.default_annotations_overrides,
-        lookup(var.service_annotations, "modeler", {})
+        local.default_revision_annotations,
+        var.default_revision_annotations_overrides,
+        lookup(var.revision_annotations, "modeler", {})
       )
     }
   }
@@ -164,6 +171,8 @@ resource "google_cloud_run_service" "modeler" {
       template[0].metadata[0].annotations["run.googleapis.com/client-name"],
       template[0].metadata[0].annotations["run.googleapis.com/client-version"],
       template[0].spec[0].containers[0].image,
+      metadata[0].annotations["run.googleapis.com/ingress-status"],
+      metadata[0].labels["cloud.googleapis.com/location"],
     ]
   }
 }

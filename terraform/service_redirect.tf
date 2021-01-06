@@ -117,6 +117,13 @@ resource "google_cloud_run_service" "enx-redirect" {
 
   autogenerate_revision_name = true
 
+  metadata {
+    annotations = merge(
+      local.default_service_annotations,
+      var.default_service_annotations_overrides,
+      lookup(var.service_annotations, "enx-redirect", {})
+    )
+  }
   template {
     spec {
       service_account_name = google_service_account.enx-redirect.email
@@ -154,9 +161,9 @@ resource "google_cloud_run_service" "enx-redirect" {
 
     metadata {
       annotations = merge(
-        local.default_annotations,
-        var.default_annotations_overrides,
-        lookup(var.service_annotations, "enx-redirect", {})
+        local.default_revision_annotations,
+        var.default_revision_annotations_overrides,
+        lookup(var.revision_annotations, "enx-redirect", {})
       )
     }
   }
@@ -186,6 +193,8 @@ resource "google_cloud_run_service" "enx-redirect" {
       template[0].metadata[0].annotations["run.googleapis.com/client-name"],
       template[0].metadata[0].annotations["run.googleapis.com/client-version"],
       template[0].spec[0].containers[0].image,
+      metadata[0].annotations["run.googleapis.com/ingress-status"],
+      metadata[0].labels["cloud.googleapis.com/location"],
     ]
   }
 }
