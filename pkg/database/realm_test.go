@@ -503,6 +503,73 @@ func TestRealm_UserStats(t *testing.T) {
 	}
 }
 
+func TestRealm_FindVerificationCodeByUUID(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now().UTC()
+	verificationCode := &VerificationCode{
+		RealmID:       realm.ID,
+		Code:          "1111111",
+		LongCode:      "11111111111111111",
+		TestType:      "confirmed",
+		TestDate:      &now,
+		SymptomDate:   &now,
+		ExpiresAt:     time.Now().UTC().Add(5 * time.Minute),
+		LongExpiresAt: time.Now().UTC().Add(24 * time.Hour),
+	}
+	if err := db.SaveVerificationCode(verificationCode, realm); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name   string
+		uuid   string
+		errStr string
+		expID  uint
+	}{
+		{
+			name:   "empty",
+			uuid:   "",
+			errStr: "not found",
+		},
+		{
+			name:   "invalid",
+			uuid:   "dfdafa",
+			errStr: "not found",
+		},
+		{
+			name:  "found",
+			uuid:  verificationCode.UUID,
+			expID: verificationCode.ID,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			code, err := realm.FindVerificationCodeByUUID(db, tc.uuid)
+			if (err != nil) != (tc.errStr != "") {
+				t.Fatal(err)
+			}
+
+			if code != nil {
+				if got, want := code.ID, tc.expID; got != want {
+					t.Errorf("expected %d to be %d", got, want)
+				}
+			}
+		})
+	}
+}
+
 func TestRealm_FindRealm(t *testing.T) {
 	t.Parallel()
 
