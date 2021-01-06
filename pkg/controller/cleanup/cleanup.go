@@ -47,23 +47,23 @@ func New(ctx context.Context, config *config.CleanupConfig, db *database.Databas
 	}, nil
 }
 
-func (c *Controller) shouldCleanup(ctx context.Context) error {
+func (c *Controller) shouldCleanup(ctx context.Context) (bool, error) {
 	cStat, err := c.db.CreateCleanup(database.CleanupName)
 	if err != nil {
-		return fmt.Errorf("failed to create cleanup: %w", err)
+		return false, fmt.Errorf("failed to create cleanup: %w", err)
 	}
 
 	if cStat.NotBefore.After(time.Now().UTC()) {
-		return fmt.Errorf("skipping cleanup, no cleanup before %v", cStat.NotBefore)
+		return false, nil
 	}
 
 	// Attempt to advance the generation.
 	if _, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod); err != nil {
 		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
-		return fmt.Errorf("failed to claim cleanup: %w", err)
+		return false, fmt.Errorf("failed to claim cleanup: %w", err)
 	}
 	stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
-	return nil
+	return true, nil
 }
 
 func (c *Controller) HandleCleanup() http.Handler {
@@ -79,13 +79,20 @@ func (c *Controller) HandleCleanup() http.Handler {
 
 		var result, item tag.Mutator
 
-		if err := c.shouldCleanup(ctx); err != nil {
+		ok, err := c.shouldCleanup(ctx)
+		if err != nil {
 			logger.Errorw("failed to run shouldCleanup", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
 				OK:     false,
 				Errors: []error{err},
 			})
 			return
+		}
+		if !ok {
+			c.h.RenderJSON(w, http.StatusTooManyRequests, &CleanupResult{
+				OK:     false,
+				Errors: []error{fmt.Errorf("too early")},
+			})
 		}
 
 		// Construct a multi-error. If one of the purges fails, we still want to
