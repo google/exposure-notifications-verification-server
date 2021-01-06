@@ -84,8 +84,8 @@ locals {
   e2e_runner_config = {
     HEALTH_AUTHORITY_CODE   = "com.example"
     KEY_SERVER              = "https://example.com/v1/publish"
-    VERIFICATION_ADMIN_API  = google_cloud_run_service.adminapi.status.0.url
-    VERIFICATION_SERVER_API = google_cloud_run_service.apiserver.status.0.url
+    VERIFICATION_ADMIN_API  = local.enable_lb ? var.adminapi_hosts[0] : google_cloud_run_service.adminapi.status.0.url
+    VERIFICATION_SERVER_API = local.enable_lb ? var.server_hosts[0] : google_cloud_run_service.apiserver.status.0.url
   }
 
   issue_config = {
