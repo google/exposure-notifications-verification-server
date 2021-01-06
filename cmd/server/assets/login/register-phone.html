@@ -106,6 +106,12 @@
         'submit-register', {
           'size': 'invisible',
           'callback': (response) => onSignInSubmit(),
+          'expired-callback': e => {
+            grecaptcha.reset(window.recaptchaWidgetId);
+          },
+          'error-callback': e => {
+            grecaptcha.reset(window.recaptchaWidgetId);
+          },
         },
       );
 
@@ -244,7 +250,6 @@
       });
 
       $pinClose.on('click', function(event) {
-        grecaptcha.reset(window.recaptchaWidgetId);
         $submit.prop('disabled', false);
         $registerDiv.show();
         $pinDiv.addClass('d-none');
