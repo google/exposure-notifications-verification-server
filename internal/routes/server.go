@@ -373,6 +373,8 @@ func userRoutes(r *mux.Router, c *user.Controller) {
 	r.Handle("/export.csv", c.HandleExport()).Methods("GET")
 	r.Handle("/import", c.HandleImport()).Methods("GET")
 	r.Handle("/import", c.HandleImportBatch()).Methods("POST")
+	r.Handle("/bulk-permissions/add", c.HandleBulkPermissions(database.BulkPermissionActionAdd)).Methods("POST")
+	r.Handle("/bulk-permissions/remove", c.HandleBulkPermissions(database.BulkPermissionActionRemove)).Methods("POST")
 	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods("GET")
 	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
 	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")

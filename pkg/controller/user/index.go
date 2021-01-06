@@ -17,6 +17,7 @@ package user
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -32,6 +33,13 @@ const (
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
 
 		membership := controller.MembershipFromContext(ctx)
 		if membership == nil {
@@ -56,6 +64,13 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		memberships, paginator, err := currentRealm.ListMemberships(c.db, pageParams, scopes...)
 		if err != nil {
+			if database.IsValidationError(err) {
+				msg := strings.TrimPrefix(err.Error(), "validation failed: ")
+				flash.Warning(msg)
+				controller.Back(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
@@ -72,5 +87,6 @@ func (c *Controller) renderIndex(
 	m["memberships"] = memberships
 	m["paginator"] = paginator
 	m["query"] = query
+	m["permissions"] = rbac.NamePermissionMap
 	c.h.RenderHTML(w, "users/index", m)
 }

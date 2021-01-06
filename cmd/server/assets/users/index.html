@@ -2,6 +2,7 @@
 
 {{$csrfField := .csrfField}}
 {{$memberships := .memberships}}
+{{$permissions := .permissions}}
 
 {{$currentMembership := .currentMembership}}
 {{$canWrite := $currentMembership.Can rbac.UserWrite}}
@@ -11,6 +12,17 @@
 
 <head>
   {{template "head" .}}
+
+  <style>
+    .dropdown-hover:hover {
+      background-color: #f8f9fa;
+    }
+
+    .custom-control-label.py-2::before,
+    .custom-control-label.py-2::after {
+      top: 0.72rem;
+    }
+  </style>
 </head>
 
 <body id="users-index" class="tab-content">
@@ -45,49 +57,183 @@
               </button>
             </div>
           </div>
+          <small class="float-right mt-2">
+            <a href="#" data-toggle="modal" data-target="#advanced-search-modal">Advanced</a>
+          </small>
         </form>
       </div>
 
+      <div class="modal fade" id="advanced-search-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Advanced search</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body mb-n3">
+              <p>
+                The default search uses fuzzy matching on the name and email
+                fields for a user. For example, a search for
+                <code>"admin"</code> would match both "Admin user" and
+                "admin@example.com". All searches are case-insensitive.
+              </p>
+
+              <p>
+                The system also supports advanced querying via prefixing:
+              </p>
+              <ul>
+                <li><code>name:</code> searches for users with that name</li>
+                <li><code>email:</code> searches for users with that email</li>
+                <li><code>can:</code> searches for users with that permission</li>
+                <li><code>cannot:</code> searches for users without that permission</li>
+              </ul>
+
+              <p>
+                Multiple advanced queries are considered compound requirements.
+                For example, the following query searches for all users which
+                have a name matching <code>"fred"</code> who lack the
+                <code>"APIKeyRead"</code>
+                permission.
+              </p>
+              <p>
+                <pre class="border border-muted bg-light rounded p-2"><code>name:fred cannot:APIKeyRead</code></pre>
+              </p>
+
+              <hr>
+
+              <p>
+                The syntax also supports modifiers, including:
+              </p>
+
+              <ul>
+                <li><code>|</code> means OR</li>
+                <li><code>*</code> means repeated 0 or more times</li>
+                <li><code>+</code> means repeated 1 or more times</li>
+                <li><code>?</code> means repeated 0 or 1 time</li>
+                <li><code>{n}</code> means repeated exactly n times</li>
+                <li><code>{n,}</code> means repeated n or more times</li>
+                <li><code>{n,m}</code> means repeated between n and m times</li>
+              </ul>
+
+              <p>
+                This searches for users who have the name
+                <code>"fred"</code> or <code>"jones"</code>:
+              </p>
+              <p>
+                <pre class="border border-muted bg-light rounded p-2"><code>name:fred|jones</code></pre>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {{if $memberships}}
-        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col" width="300">Email</th>
-              {{if $canWrite}}
-                <th scope="col" width="40"></th>
-              {{end}}
-            </tr>
-          </thead>
-          <tbody>
-            {{range $membership := $memberships}}
-            {{$user := $membership.User}}
-            <tr id="user-{{$user.ID}}">
-              <td>
-                <a href="/realm/users/{{$user.ID}}">{{$user.Name}}</a>
-              </td>
-              <td>
-                {{$user.Email}}
-              </td>
-              {{if $canWrite}}
+        <form method="POST" id="users-form">
+          {{$csrfField}}
+          <div class="float-left d-flex ml-3 pl-1 mt-n4 mb-3 pb-1">
+            <div class="dropdown">
+              <button disabled id="add-permissions-button" class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-toggle="dropdown">
+                Add permissions
+              </button>
+              <div class="dropdown-menu">
+                {{range $name, $permission := $permissions}}
+                  <div class="custom-control custom-checkbox keep-open dropdown-hover">
+                    <input type="checkbox" name="permission" id="add-permission-{{$name}}"
+                      class="custom-control-input" value="{{$permission.Value}}"
+                      {{disabledIf ($currentMembership.Cannot $permission)}}
+                      {{readonlyIf ($currentMembership.Cannot $permission)}}
+                    >
+                    <label for="add-permission-{{$name}}" class="custom-control-label user-select-none d-block ml-3 py-2">
+                      {{$name}}
+                      {{if $currentMembership.Cannot $permission}}
+                        <span class="oi oi-circle-x small py-1 px-1" aria-hidden="true"
+                          data-toggle="tooltip" data-placement="top" data-offset="75" title="You lack this permission"></span>
+                      {{end}}
+                    </label>
+                  </div>
+                {{end}}
+                <div class="dropdown-divider"></div>
+                <div class="mx-3 my-2">
+                  <input type="submit" value="Add permissions" formaction="/realm/users/bulk-permissions/add"
+                    id="add-permissions-submit" class="btn btn-primary btn-block mx-0 mt-3" style="min-width:275px;">
+                </div>
+              </div>
+            </div>
+
+            <div class="dropdown">
+              <button disabled id="remove-permissions-button" class="btn btn-sm btn-secondary dropdown-toggle ml-2" type="button" data-toggle="dropdown">
+                Remove permissions
+              </button>
+              <div class="dropdown-menu">
+                {{range $name, $permission := $permissions}}
+                  <div class="custom-control custom-checkbox keep-open dropdown-hover">
+                    <input type="checkbox" name="permission" id="remove-permission-{{$name}}" class="custom-control-input" value="{{$permission.Value}}">
+                    <label for="remove-permission-{{$name}}" class="custom-control-label user-select-none d-block ml-3 py-2">{{$name}}</label>
+                  </div>
+                {{end}}
+                <div class="dropdown-divider"></div>
+                <div class="mx-3 my-2">
+                  <input type="submit" value="Remove permissions" formaction="/realm/users/bulk-permissions/remove"
+                    id="remove-permissions-submit" class="btn btn-primary btn-block mx-0 mt-3" style="min-width:275px;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+            <thead>
+              <tr>
+                <th scope="col" width="40">
+                  <div class="custom-control custom-checkbox mr-0">
+                    <input type="checkbox" id="select-user-all" class="custom-control-input">
+                    <label class="custom-control-label" for="select-user-all"></label>
+                  </div>
+                </th>
+                <th scope="col">Name</th>
+                <th scope="col" width="300">Email</th>
+                {{if $canWrite}}
+                  <th scope="col" width="40"></th>
+                {{end}}
+              </tr>
+            </thead>
+            <tbody>
+              {{range $membership := $memberships}}
+              {{$user := $membership.User}}
+              <tr id="user-{{$user.ID}}">
                 <td class="text-center">
-                  {{if not (eq $membership.UserID $currentMembership.UserID)}}
-                  {{- /* cannot delete yourself */ -}}
-                  <a href="/realm/users/{{$user.ID}}" id="delete-user-{{$user.ID}}"
-                    class="d-block text-danger"
-                    data-method="DELETE"
-                    data-confirm="Are you sure you want to remove '{{$user.Name}}'?"
-                    data-toggle="tooltip"
-                    title="Remove this user">
-                    <span class="oi oi-trash" aria-hidden="true"></span>
-                  </a>
-                  {{end}}
+                  <div class="custom-control custom-checkbox mr-0">
+                    <input type="checkbox" name="user_id" id="select-user-{{$user.ID}}" class="custom-control-input" value="{{$user.ID}}">
+                    <label class="custom-control-label" for="select-user-{{$user.ID}}"></label>
+                  </div>
                 </td>
+                <td>
+                  <a href="/realm/users/{{$user.ID}}">{{$user.Name}}</a>
+                </td>
+                <td>
+                  {{$user.Email}}
+                </td>
+                {{if $canWrite}}
+                  <td class="text-center">
+                    {{if not (eq $membership.UserID $currentMembership.UserID)}}
+                    {{- /* cannot delete yourself */ -}}
+                    <a href="/realm/users/{{$user.ID}}" id="delete-user-{{$user.ID}}"
+                      class="d-block text-danger"
+                      data-method="DELETE"
+                      data-confirm="Are you sure you want to remove '{{$user.Name}}'?"
+                      data-toggle="tooltip"
+                      title="Remove this user">
+                      <span class="oi oi-trash" aria-hidden="true"></span>
+                    </a>
+                    {{end}}
+                  </td>
+                {{end}}
+              </tr>
               {{end}}
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </form>
       {{else}}
         <p class="card-body text-center mb-0">
           <em>There are no users{{if .query}} that match the query{{end}}.</em>
@@ -97,6 +243,44 @@
 
     {{template "shared/pagination" .}}
   </main>
+
+  <script type="text/javascript">
+    $(function() {
+      let $selectUserAll = $('#select-user-all');
+      let $addPermissionsButton = $('#add-permissions-button');
+      let $addPermissionsSubmit = $('#add-permissions-submit');
+      let $removePermissionsButton = $('#remove-permissions-button');
+      let $removePermissionsSubmit = $('#remove-permissions-submit');
+
+      function updateUI() {
+        let checked = $('#users-form input[name=user_id]:checkbox:checked').length;
+
+        if (checked > 0) {
+          let users = 'users';
+          if (checked === 1) {
+            users = 'user';
+          }
+
+          $addPermissionsButton.prop('disabled', false);
+          $addPermissionsSubmit.val(`Add permissions to ${checked} ${users}`);
+          $removePermissionsButton.prop('disabled', false);
+          $removePermissionsSubmit.val(`Remove permissions from ${checked} ${users}`);
+        } else {
+          $addPermissionsButton.prop('disabled', true);
+          $removePermissionsButton.prop('disabled', true);
+        }
+      }
+
+      $('#users-form input[name=user_id]:checkbox').change(updateUI);
+
+      $selectUserAll.change(function() {
+        $('#users-form input[name=user_id]:checkbox').attr('checked', $selectUserAll.is(':checked'));
+        updateUI();
+      });
+
+      updateUI();
+    });
+  </script>
 </body>
 
 </html>
