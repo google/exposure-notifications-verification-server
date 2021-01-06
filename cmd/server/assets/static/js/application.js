@@ -410,6 +410,12 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
   window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
     'recaptcha-container', {
     'size': 'invisible',
+    'expired-callback': e => {
+      window.recaptchaVerifier.reset();
+    },
+    'error-callback': e => {
+      window.recaptchaVerifier.reset();
+    },
   });
 
   $loginForm.on('submit', function(event) {
