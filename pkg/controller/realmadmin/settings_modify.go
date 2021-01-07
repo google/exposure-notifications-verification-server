@@ -288,7 +288,6 @@ func (c *Controller) HandleSettings() http.Handler {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-
 			if smsConfig != nil && !smsConfig.IsSystem {
 				// We have an existing record and the existing record is NOT the system
 				// record.
