@@ -142,7 +142,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 
 		// Fill out the form.
 		chromedp.SetValue(`input#twilio-account-sid`, "accountSid-new", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number`, "+1234567890-new", chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number`, "+1987654320", chromedp.ByQuery),
 
 		// Click submit.
 		chromedp.Click(`input#update-sms`, chromedp.ByQuery),
@@ -170,7 +170,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 			// should not change
 			t.Errorf("expected %q to be %q", got, want)
 		}
-		if got, want := smsConfig.TwilioFromNumber, "+1234567890-new"; got != want {
+		if got, want := smsConfig.TwilioFromNumber, "+1987654320"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
 	}
