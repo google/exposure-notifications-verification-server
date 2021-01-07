@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -128,7 +129,7 @@ func (c *client) do(req *http.Request, out interface{}) (*http.Response, error) 
 	r := io.LimitReader(resp.Body, c.maxBodySize)
 
 	ct := resp.Header.Get("Content-Type")
-	if ct != "application/json" {
+	if !strings.HasPrefix(ct, "application/json") {
 		bodyBytes, rawErr := ioutil.ReadAll(r)
 		if rawErr != nil {
 			return nil, fmt.Errorf("failed to read %s response body %w", ct, rawErr)
