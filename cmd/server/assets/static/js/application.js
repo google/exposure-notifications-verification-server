@@ -796,7 +796,7 @@ function readBulkUploadCSVFile() {
       }
 
       // Add to batch if the next row is valid.
-      let request = buildBatchIssueRequest(rows[i], retryCode, template);
+      let request = buildBatchIssueRequest(rows[i], retryCode, template, i + 1);
       if (request != "") {
         batch.push(request);
         batchLines.push(i + 1);
@@ -850,25 +850,26 @@ function readBulkUploadCSVFile() {
   return { start, cancel };
 }
 
-function buildBatchIssueRequest(thisRow, retryCode, template) {
+function buildBatchIssueRequest(thisRow, retryCode, template, line) {
   thisRow = thisRow.trim();
   if (thisRow == "") {
     return "";
   }
   let request = {};
   let cols = thisRow.split(',');
-  if (cols.length < 2) {
-    return "";
-  }
 
   // Escape csv row contents
   request["phone"] = $("<div>").text(cols[0].trim()).html();
   request["testDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
   request["symptomDate"] = (cols.length > 2) ? $("<div>").text(cols[2].trim()).html() : "";
-  // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
-  // to prevent network traffic observation.
-  request["padding"] = btoa(genRandomString(5 + Math.floor(Math.random() * 15)));
-  if (request["phone"] == "") {
+
+  // Skip missing phone number
+  if (request["phone"] == "" || cols.Length < 2) {
+    let code = {
+      errorCode: "invalid_client",
+      error: "phone number missing",
+    };
+    showErroredCode(request, code, line);
     return "";
   }
 
@@ -886,6 +887,26 @@ function buildBatchIssueRequest(thisRow, retryCode, template) {
   request["smsTemplateLabel"] = template;
   request["testType"] = "confirmed";
   request["tzOffset"] = tzOffset;
+
+  // CSV file has error codes in the file. Usually means a retry of the receipt file.
+  // Skip un-retryable errors
+  if (cols.length > 8) {
+    let existingUUID = $("<div>").text(cols[7].trim()).html();
+    let code = $("<div>").text(cols[7].trim()).html();
+    if (uuid == existingUUID && code == "uuid_already_exists") {
+      let code = {
+        errorCode: code,
+        error: "code already exists on the server. skipping code.",
+      };
+      showErroredCode(request, code, line);
+      return "";
+    }
+  }
+
+  // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
+  // to prevent network traffic observation.
+  request["padding"] = btoa(genRandomString(5 + Math.floor(Math.random() * 15)));
+
   return request;
 }
 
@@ -945,7 +966,7 @@ function showErroredCode(request, code, line) {
     $errorTable.addClass('d-none');
     $errorTooMany.removeClass('d-none');
   }
-  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,,${code.errorCode},${code.error}\n`);
+  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,${request["uuid"]},${code.errorCode},${code.error}\n`);
   if (totalErrs > showMaxResults) {
     return;
   }
