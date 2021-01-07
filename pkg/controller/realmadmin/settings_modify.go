@@ -71,14 +71,13 @@ type formData struct {
 	SMSTextTemplate           string             `form:"-"`
 	SMSTextAlternateTemplates map[string]*string `form:"-"`
 
-	SMS                       bool   `form:"sms"`
-	UseSystemSMSConfig        bool   `form:"use_system_sms_config"`
-	SMSCountry                string `form:"sms_country"`
-	SMSFromNumberID           uint   `form:"sms_from_number_id"`
-	TwilioAccountSid          string `form:"twilio_account_sid"`
-	TwilioAuthToken           string `form:"twilio_auth_token"`
-	TwilioFromNumber          string `form:"twilio_from_number"`
-	TwilioMessagingServiceSid string `form:"twilio_messaging_service_sid"`
+	SMS                bool   `form:"sms"`
+	UseSystemSMSConfig bool   `form:"use_system_sms_config"`
+	SMSCountry         string `form:"sms_country"`
+	SMSFromNumberID    uint   `form:"sms_from_number_id"`
+	TwilioAccountSid   string `form:"twilio_account_sid"`
+	TwilioAuthToken    string `form:"twilio_auth_token"`
+	TwilioFromNumber   string `form:"twilio_from_number"`
 
 	Email                bool   `form:"email"`
 	UseSystemEmailConfig bool   `form:"use_system_email_config"`
@@ -289,6 +288,13 @@ func (c *Controller) HandleSettings() http.Handler {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
+			fromNumber, messagingSid := "", ""
+			if strings.HasPrefix(form.TwilioFromNumber, "MG") {
+				messagingSid = form.TwilioFromNumber
+			} else {
+				fromNumber = form.TwilioFromNumber
+			}
+
 			if smsConfig != nil && !smsConfig.IsSystem {
 				// We have an existing record and the existing record is NOT the system
 				// record.
@@ -297,8 +303,8 @@ func (c *Controller) HandleSettings() http.Handler {
 				if form.TwilioAuthToken != project.PasswordSentinel {
 					smsConfig.TwilioAuthToken = form.TwilioAuthToken
 				}
-				smsConfig.TwilioFromNumber = form.TwilioFromNumber
-				smsConfig.TwilioMessagingServiceSid = form.TwilioMessagingServiceSid
+				smsConfig.TwilioMessagingServiceSid = messagingSid
+				smsConfig.TwilioFromNumber = fromNumber
 			} else {
 				// There's no record or the existing record was the system config so we
 				// want to create our own.
@@ -307,8 +313,8 @@ func (c *Controller) HandleSettings() http.Handler {
 					ProviderType:              sms.ProviderTypeTwilio,
 					TwilioAccountSid:          form.TwilioAccountSid,
 					TwilioAuthToken:           form.TwilioAuthToken,
-					TwilioFromNumber:          form.TwilioFromNumber,
-					TwilioMessagingServiceSid: form.TwilioMessagingServiceSid,
+					TwilioFromNumber:          fromNumber,
+					TwilioMessagingServiceSid: messagingSid,
 				}
 			}
 

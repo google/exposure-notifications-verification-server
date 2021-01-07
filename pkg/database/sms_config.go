@@ -40,7 +40,7 @@ type SMSConfig struct {
 	// MessagingServiceSid is an identifier for a Twilio messaging service
 	// this may be used instead of a TwilioFromNumber and is used to manage a pool of numbers
 	// see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
-	TwilioMessagingServiceSid string `gorm:"type:varchar(34)"`
+	TwilioMessagingServiceSid string `gorm:"type:varchar(255)"`
 
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.

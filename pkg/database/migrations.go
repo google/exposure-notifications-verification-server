@@ -1933,7 +1933,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			ID: "00083-AddTwilioMessageSid",
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
-					`ALTER TABLE sms_configs ADD COLUMN IF NOT EXISTS twilio_messaging_service_sid varchar(34)`)
+					`ALTER TABLE sms_configs ADD COLUMN IF NOT EXISTS twilio_messaging_service_sid varchar(255)`)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return multiExec(tx,
