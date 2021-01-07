@@ -61,9 +61,7 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 	}
 
 	if s.TwilioAccountSid != "" {
-		if s.TwilioFromNumber == "" && s.TwilioMessagingServiceSid == "" {
-			s.AddError("twilioFromNumber", "either twilio from number or messaging service sid must be provided")
-		} else if s.TwilioFromNumber != "" && s.TwilioMessagingServiceSid != "" {
+		if s.TwilioFromNumber != "" && s.TwilioMessagingServiceSid != "" {
 			s.AddError("twilioFromNumber", "only one of twilio from number or messaging service sid may be provided")
 		}
 
