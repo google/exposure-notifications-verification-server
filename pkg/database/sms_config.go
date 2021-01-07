@@ -60,15 +60,21 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 		s.AddError("twilioAuthToken", "all must be specified or all must be blank")
 	}
 
-	if s.TwilioAccountSid != "" && s.TwilioFromNumber == "" && s.TwilioMessagingServiceSid == "" {
-		s.AddError("twilioFromNumber", "either twilio from number or messaging service sid must be provided")
-	}
+	if s.TwilioAccountSid != "" {
+		if s.TwilioFromNumber == "" && s.TwilioMessagingServiceSid == "" {
+			s.AddError("twilioFromNumber", "either twilio from number or messaging service sid must be provided")
+		} else if s.TwilioFromNumber != "" && s.TwilioMessagingServiceSid != "" {
+			s.AddError("twilioFromNumber", "only one of twilio from number or messaging service sid may be provided")
+		}
 
-	if s.TwilioMessagingServiceSid != "" && strings.HasPrefix(s.TwilioMessagingServiceSid, "MG") {
-		s.AddError("twilioMessagingServiceSid", `a valid twilio messaging service sid should begin with "MG"`)
-	}
-	if s.TwilioMessagingServiceSid != "" && len(s.TwilioMessagingServiceSid) != 34 {
-		s.AddError("twilioMessagingServiceSid", `a valid twilio messaging service sid should be 34 characters`)
+		if s.TwilioMessagingServiceSid != "" {
+			if !strings.HasPrefix(s.TwilioMessagingServiceSid, "MG") {
+				s.AddError("twilioMessagingServiceSid", `a valid twilio messaging service sid should begin with "MG"`)
+			}
+			if len(s.TwilioMessagingServiceSid) != 34 {
+				s.AddError("twilioMessagingServiceSid", `a valid twilio messaging service sid should be 34 characters`)
+			}
+		}
 	}
 
 	if s.IsSystem {
