@@ -78,7 +78,7 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 	if s.IsSystem {
 		// Do not persist from numbers for system configs
 		s.TwilioFromNumber = ""
-		s.TwilioAccountSid = ""
+		s.TwilioMessagingServiceSid = ""
 	}
 
 	return s.ErrorOrNil()
