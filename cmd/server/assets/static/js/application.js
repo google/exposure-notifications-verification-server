@@ -862,6 +862,11 @@ function buildBatchIssueRequest(thisRow, retryCode, template, line) {
   request["phone"] = $("<div>").text(cols[0].trim()).html();
   request["testDate"] = (cols.length > 1) ? $("<div>").text(cols[1].trim()).html() : "";
   request["symptomDate"] = (cols.length > 2) ? $("<div>").text(cols[2].trim()).html() : "";
+  request["testType"] = (cols.length > 3) ? $("<div>").text(cols[3].trim()).html() : "confirmed";
+
+  if (request["testType"] == "") {
+    request["testType"] = "confirmed";
+  }
 
   // Skip missing phone number
   if (request["phone"] == "" || cols.Length < 2) {
@@ -885,7 +890,6 @@ function buildBatchIssueRequest(thisRow, retryCode, template, line) {
 
   request["uuid"] = uuid;
   request["smsTemplateLabel"] = template;
-  request["testType"] = "confirmed";
   request["tzOffset"] = tzOffset;
 
   // CSV file has error codes in the file. Usually means a retry of the receipt file.
@@ -978,7 +982,7 @@ function showErroredCode(request, code, line) {
     $errorTable.addClass('d-none');
     $errorTooMany.removeClass('d-none');
   }
-  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,${request["uuid"]},${code.errorCode},${code.error}\n`);
+  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},${request["testType"]},,,${request["uuid"]},${code.errorCode},${code.error}\n`);
   if (totalErrs > showMaxResults) {
     return;
   }
@@ -1004,7 +1008,7 @@ function showSuccessfulCode(request, code, line) {
     $successTable.addClass('d-none');
     $successTooMany.removeClass('d-none');
   }
-  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,${code.uuid},success\n`);
+  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},${request["testType"]},,,${code.uuid},success\n`);
   if (total > showMaxResults) {
     return;
   }
