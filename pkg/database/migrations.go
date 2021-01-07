@@ -1929,6 +1929,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS tokens_invalid`)
 			},
 		},
+		{
+			ID: "00082-AddTwilioMessageSid",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE sms_configs ADD COLUMN IF NOT EXISTS twilio_messaging_service_sid varchar(34)`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE sms_configs DROP COLUMN IF EXISTS twilio_messaging_service_sid`)
+			},
+		},
 	}
 }
 

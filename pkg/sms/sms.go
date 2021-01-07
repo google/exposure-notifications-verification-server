@@ -38,9 +38,10 @@ type Config struct {
 	ProviderType ProviderType
 
 	// Twilio options
-	TwilioAccountSid string
-	TwilioAuthToken  string
-	TwilioFromNumber string
+	TwilioAccountSid          string
+	TwilioAuthToken           string
+	TwilioFromNumber          string
+	TwilioMessagingServiceSid string
 }
 
 type Provider interface {
@@ -56,7 +57,7 @@ func ProviderFor(ctx context.Context, c *Config) (Provider, error) {
 	case ProviderTypeNoopFail:
 		return NewNoopFail(ctx)
 	case ProviderTypeTwilio:
-		return NewTwilio(ctx, c.TwilioAccountSid, c.TwilioAuthToken, c.TwilioFromNumber)
+		return NewTwilio(ctx, c.TwilioAccountSid, c.TwilioAuthToken, c.TwilioFromNumber, c.TwilioMessagingServiceSid)
 	default:
 		return nil, fmt.Errorf("unknown sms provider type: %v", typ)
 	}

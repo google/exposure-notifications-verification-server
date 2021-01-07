@@ -97,7 +97,7 @@ func TestTwilio_SendSMS(t *testing.T) {
 			t.Parallel()
 
 			ctx := context.Background()
-			twilio, err := NewTwilio(ctx, accountSid, authToken, tc.from)
+			twilio, err := NewTwilio(ctx, accountSid, authToken, tc.from, "")
 			if err != nil {
 				t.Fatal(err)
 			}

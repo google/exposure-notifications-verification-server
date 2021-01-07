@@ -33,7 +33,12 @@ type SMSConfig struct {
 
 	// Twilio configuration options.
 	TwilioAccountSid string `gorm:"type:varchar(250)"`
+	// E.164 format telephone number
 	TwilioFromNumber string `gorm:"type:varchar(16)"`
+	// MessagingServiceSid is an identifier for a Twilio messaging service
+	// this may be used instead of a TwilioFromNumber and is used to manage a pool of numbers
+	// see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
+	TwilioMessagingServiceSid string `gorm:"type:varchar(34)"`
 
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
@@ -48,15 +53,19 @@ type SMSConfig struct {
 
 func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 	// Twilio config is all or nothing
-	if (s.TwilioAccountSid != "" || s.TwilioAuthToken != "") &&
-		(s.TwilioAccountSid == "" || s.TwilioAuthToken == "") {
+	if (s.TwilioAccountSid == "") != (s.TwilioAuthToken == "") {
 		s.AddError("twilioAccountSid", "all must be specified or all must be blank")
 		s.AddError("twilioAuthToken", "all must be specified or all must be blank")
+	}
+
+	if s.TwilioAccountSid != "" && s.TwilioFromNumber == "" && s.TwilioMessagingServiceSid == "" {
+		s.AddError("twilioFromNumber", "either twilio from number or messaging service sid must be provided")
 	}
 
 	if s.IsSystem {
 		// Do not persist from numbers for system configs
 		s.TwilioFromNumber = ""
+		s.TwilioAccountSid = ""
 	}
 
 	return s.ErrorOrNil()

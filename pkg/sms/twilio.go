@@ -29,20 +29,22 @@ var _ Provider = (*Twilio)(nil)
 
 // Twilio sends messages via the Twilio API.
 type Twilio struct {
-	client *http.Client
-	from   string
+	client     *http.Client
+	from       string
+	serviceSid string
 }
 
 // NewTwilio creates a new Twilio SMS sender with the given auth.
-func NewTwilio(ctx context.Context, accountSid, authToken, from string) (Provider, error) {
+func NewTwilio(ctx context.Context, accountSid, authToken, from, serviceSid string) (Provider, error) {
 	client := &http.Client{
 		Timeout:   5 * time.Second,
 		Transport: &twilioAuthRoundTripper{accountSid, authToken},
 	}
 
 	return &Twilio{
-		client: client,
-		from:   from,
+		client:     client,
+		from:       from,
+		serviceSid: serviceSid,
 	}, nil
 }
 
@@ -50,7 +52,11 @@ func NewTwilio(ctx context.Context, accountSid, authToken, from string) (Provide
 func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 	params := url.Values{}
 	params.Set("To", to)
+	if p.serviceSid != "" {
+		params.Set("MessagingServiceSid", p.serviceSid)
+	}
 	params.Set("From", p.from)
+
 	params.Set("Body", message)
 	body := strings.NewReader(params.Encode())
 

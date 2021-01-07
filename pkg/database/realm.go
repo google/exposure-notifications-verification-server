@@ -623,10 +623,11 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 
 	ctx := context.Background()
 	provider, err := sms.ProviderFor(ctx, &sms.Config{
-		ProviderType:     smsConfig.ProviderType,
-		TwilioAccountSid: smsConfig.TwilioAccountSid,
-		TwilioAuthToken:  smsConfig.TwilioAuthToken,
-		TwilioFromNumber: smsConfig.TwilioFromNumber,
+		ProviderType:              smsConfig.ProviderType,
+		TwilioAccountSid:          smsConfig.TwilioAccountSid,
+		TwilioAuthToken:           smsConfig.TwilioAuthToken,
+		TwilioFromNumber:          smsConfig.TwilioFromNumber,
+		TwilioMessagingServiceSid: smsConfig.TwilioMessagingServiceSid,
 	})
 	if err != nil {
 		return nil, err
