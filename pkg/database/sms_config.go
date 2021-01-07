@@ -65,7 +65,7 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 			s.AddError("twilioFromNumber", "only one of twilio from number or messaging service sid may be provided")
 		}
 
-		if s.TwilioFromNumber != "" && !strings.HasPrefix(s.TwilioMessagingServiceSid, "+") {
+		if s.TwilioFromNumber != "" && !strings.HasPrefix(s.TwilioFromNumber, "+") {
 			s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+"`)
 		}
 
