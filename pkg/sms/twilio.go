@@ -54,8 +54,9 @@ func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 	params.Set("To", to)
 	if p.serviceSid != "" {
 		params.Set("MessagingServiceSid", p.serviceSid)
+	} else {
+		params.Set("From", p.from)
 	}
-	params.Set("From", p.from)
 
 	params.Set("Body", message)
 	body := strings.NewReader(params.Encode())
