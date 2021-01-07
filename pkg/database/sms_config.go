@@ -15,6 +15,8 @@
 package database
 
 import (
+	"strings"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
@@ -62,6 +64,13 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 		s.AddError("twilioFromNumber", "either twilio from number or messaging service sid must be provided")
 	}
 
+	if s.TwilioMessagingServiceSid != "" && strings.HasPrefix(s.TwilioMessagingServiceSid, "MG") {
+		s.AddError("twilioMessagingServiceSid", `a valid twilio messaging service sid should begin with "MG"`)
+	}
+	if s.TwilioMessagingServiceSid != "" && len(s.TwilioMessagingServiceSid) != 34 {
+		s.AddError("twilioMessagingServiceSid", `a valid twilio messaging service sid should be 34 characters`)
+	}
+
 	if s.IsSystem {
 		// Do not persist from numbers for system configs
 		s.TwilioFromNumber = ""
@@ -87,7 +96,8 @@ func (db *Database) SystemSMSConfig() (*SMSConfig, error) {
 // SaveSMSConfig creates or updates an SMS configuration record.
 func (db *Database) SaveSMSConfig(s *SMSConfig) error {
 	if s.ProviderType == sms.ProviderTypeTwilio &&
-		s.TwilioAccountSid == "" && s.TwilioAuthToken == "" && s.TwilioFromNumber == "" {
+		s.TwilioAccountSid == "" && s.TwilioAuthToken == "" &&
+		s.TwilioFromNumber == "" && s.TwilioMessagingServiceSid == "" {
 		if db.db.NewRecord(s) {
 			// The fields are all blank, do not create the record.
 			return nil
