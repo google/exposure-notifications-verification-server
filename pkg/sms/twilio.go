@@ -25,6 +25,7 @@ import (
 	"time"
 )
 
+// TwilioMessagingServiceSidPrefix is the prefix for a 34 character messaging service identifier
 const TwilioMessagingServiceSidPrefix = "MG"
 
 var _ Provider = (*Twilio)(nil)

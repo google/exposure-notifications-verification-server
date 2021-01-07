@@ -1936,8 +1936,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE sms_configs ALTER COLUMN twilio_from_number TYPE varchar(255)`)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return multiExec(tx,
-					`ALTER TABLE sms_configs ALTER COLUMN twilio_from_number TYPE varchar(16)`)
+				// No rollback for this, which would destroy data.
+				return nil
 			},
 		},
 	}
