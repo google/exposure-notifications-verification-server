@@ -111,7 +111,7 @@ func realMain(ctx context.Context) error {
 	if err := db.CreateOrUpdateSMSFromNumbers([]*database.SMSFromNumber{
 		{
 			Label: "USA",
-			Value: "111-111-1111",
+			Value: "+15005550006",
 		},
 		{
 			Label: "Mexico",

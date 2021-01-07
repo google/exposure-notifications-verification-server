@@ -749,7 +749,7 @@ func TestRealm_SMSConfig(t *testing.T) {
 		RealmID:          realm.ID,
 		TwilioAccountSid: "sid",
 		TwilioAuthToken:  "token",
-		TwilioFromNumber: "111-111-1111",
+		TwilioFromNumber: "+15005550006",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -766,7 +766,7 @@ func TestRealm_SMSConfig(t *testing.T) {
 		if got, want := smsConfig.TwilioAuthToken, "token"; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
-		if got, want := smsConfig.TwilioFromNumber, "111-111-1111"; got != want {
+		if got, want := smsConfig.TwilioFromNumber, "+15005550006"; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	}
@@ -783,7 +783,7 @@ func TestRealm_SMSConfig(t *testing.T) {
 	// Create from number
 	smsFromNumber := &SMSFromNumber{
 		Label: "Default",
-		Value: "222-222-2222",
+		Value: "+15005550000",
 	}
 	if err := db.CreateOrUpdateSMSFromNumbers([]*SMSFromNumber{smsFromNumber}); err != nil {
 		t.Fatal(err)
@@ -809,7 +809,7 @@ func TestRealm_SMSConfig(t *testing.T) {
 		if got, want := smsConfig.TwilioAuthToken, "system-token"; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
-		if got, want := smsConfig.TwilioFromNumber, "222-222-2222"; got != want {
+		if got, want := smsConfig.TwilioFromNumber, "+15005550000"; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	}

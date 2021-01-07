@@ -48,7 +48,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 	// Create a system phone number.
 	smsFromNumber := &database.SMSFromNumber{
 		Label: "Default",
-		Value: "+111-111-1111",
+		Value: "+15005550006",
 	}
 	if err := harness.Database.CreateOrUpdateSMSFromNumbers([]*database.SMSFromNumber{smsFromNumber}); err != nil {
 		t.Fatal(err)
