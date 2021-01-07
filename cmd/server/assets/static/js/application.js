@@ -892,7 +892,14 @@ function buildBatchIssueRequest(thisRow, retryCode, template, line) {
   // Skip un-retryable errors
   if (cols.length >= 8) {
     let errCode = $("<div>").text(cols[7].trim()).html();
-    if (errCode == "uuid_already_exists") {
+    if (errCode == "success") {
+      let code = {
+        errorCode: errCode,
+        error: `code uuid ${uuid} already succeeded. skipping code.`,
+      };
+      showErroredCode(request, code, line);
+      return "";
+    } else if (errCode == "uuid_already_exists") {
       let existingUUID = $("<div>").text(cols[6].trim()).html();
       if (uuid == existingUUID) {
         let code = {
@@ -994,7 +1001,7 @@ function showSuccessfulCode(request, code, line) {
     $successTable.addClass('d-none');
     $successTooMany.removeClass('d-none');
   }
-  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,${code.uuid}\n`);
+  $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},,,,${code.uuid},success\n`);
   if (total > showMaxResults) {
     return;
   }
