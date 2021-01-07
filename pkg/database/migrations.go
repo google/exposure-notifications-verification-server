@@ -1933,11 +1933,11 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			ID: "00083-ExpandTwilioFrom",
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
-					`ALTER TABLE sms_configs ALTER COLUMN twilio_from_number  TYPE varchar(255)`)
+					`ALTER TABLE sms_configs ALTER COLUMN twilio_from_number TYPE varchar(255)`)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return multiExec(tx,
-					`ALTER TABLE sms_configs ALTER COLUMN twilio_from_number  TYPE varchar(16)`)
+					`ALTER TABLE sms_configs ALTER COLUMN twilio_from_number TYPE varchar(16)`)
 			},
 		},
 	}
