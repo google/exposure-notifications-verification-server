@@ -964,7 +964,10 @@ function readCodesBatch(data, lines, codes) {
 }
 
 function showErroredCode(request, code, line) {
-  totalErrs++;
+  // We show error for already-succeeded codes. Skip those for the count.
+  if (code.errorCode != "success") {
+    totalErrs++;
+  }
   $receiptFailure.text(totalErrs);
   if (totalErrs == 1) {
     $receiptDiv.removeClass('d-none');
@@ -985,7 +988,7 @@ function showErroredCode(request, code, line) {
   $row.append($('<td/>').text(request["phone"]));
   $row.append($('<td/>').text(request["testDate"]));
   $row.append($('<td/>').text(code.error));
-  $errorTableBody.append($row);
+  $errorTableBody.append($row); // TODO prepend if there's one there that < ?
 }
 
 function showSuccessfulCode(request, code, line) {
