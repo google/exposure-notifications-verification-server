@@ -112,6 +112,11 @@ $(function() {
     $this.text(date.toLocaleString());
   });
 
+  // Disable propagation on links in menus if they are marked as such.
+  $(document).on('click', 'div.dropdown-menu .keep-open', function(e) {
+    e.stopPropagation();
+  });
+
   // Toast shows alerts/flash messages.
   $(".toast").toast("show");
 

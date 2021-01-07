@@ -15,7 +15,11 @@
 package database
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/jinzhu/gorm"
 )
 
@@ -35,12 +39,105 @@ func OnlySystemAdmins() Scope {
 // name, case-insensitive. It's only applicable to functions that query User.
 func WithUserSearch(q string) Scope {
 	return func(db *gorm.DB) *gorm.DB {
-		q = project.TrimSpace(q)
-		if q != "" {
-			q = `%` + q + `%`
-			return db.Where("users.email ILIKE ? OR users.name ILIKE ?", q, q)
+		search, err := parseUserSearch(q)
+		if err != nil {
+			_ = db.AddError(fmt.Errorf("%w: %s", ErrValidationFailed, err))
+			return db
 		}
+
+		if search.name != "" {
+			db = db.Where("name ~* ?", fmt.Sprintf("(%s)", search.name))
+		}
+
+		if search.email != "" {
+			db = db.Where("email ~* ?", fmt.Sprintf("(%s)", search.email))
+		}
+
+		// For backwards-compatibility with previous versions of search, other could
+		// have been a name or email.
+		if search.other != nil {
+			s := strings.Join(search.other, "|")
+			db = db.Where("name ~* ? OR email ~* ?", fmt.Sprintf("(%s)", s), fmt.Sprintf("(%s)", s))
+		}
+
+		if p := search.withPerms; p != 0 {
+			db = WithPermissionSearch(p)(db)
+		}
+
+		if p := search.withoutPerms; p != 0 {
+			db = WithoutPermissionSearch(p)(db)
+		}
+
 		return db
+	}
+}
+
+type userSearchQuery struct {
+	name  string
+	email string
+	other []string
+
+	withPerms    rbac.Permission
+	withoutPerms rbac.Permission
+}
+
+func parseUserSearch(q string) (*userSearchQuery, error) {
+	var resp userSearchQuery
+
+	parts := strings.Split(project.TrimSpace(q), " ")
+	for _, part := range parts {
+		part = project.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		switch {
+		case strings.HasPrefix(part, "name:"):
+			if resp.name != "" {
+				return nil, fmt.Errorf(`cannot specify "name:" more than once`)
+			}
+			resp.name = project.TrimSpace(part[5:])
+		case strings.HasPrefix(part, "email:"):
+			if resp.email != "" {
+				return nil, fmt.Errorf(`cannot specify "email:" more than once`)
+			}
+			resp.email = project.TrimSpace(part[6:])
+		case strings.HasPrefix(part, "can:"):
+			name := project.TrimSpace(part[4:])
+			p, ok := rbac.NamePermissionMap[name]
+			if !ok {
+				return nil, fmt.Errorf("unknown permission %q", name)
+			}
+			resp.withPerms |= p
+		case strings.HasPrefix(part, "cannot:"):
+			name := project.TrimSpace(part[7:])
+			p, ok := rbac.NamePermissionMap[name]
+			if !ok {
+				return nil, fmt.Errorf("unknown permission %q", name)
+			}
+			resp.withoutPerms |= p
+		default:
+			// These are "naked" fields in the query
+			resp.other = append(resp.other, part)
+		}
+	}
+
+	return &resp, nil
+}
+
+// WithPermissionSearch searches for memberships which have the given
+// permission.
+func WithPermissionSearch(p rbac.Permission) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where(fmt.Sprintf("memberships.permissions::bit(64) & %d::bit(64) != 0::bit(64)", p))
+	}
+}
+
+// WithoutPermissionSearch searches for memberships which do not have the given
+// permission.
+func WithoutPermissionSearch(p rbac.Permission) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where(fmt.Sprintf("memberships.permissions::bit(64) & %d::bit(64) = 0::bit(64)", p))
 	}
 }
 

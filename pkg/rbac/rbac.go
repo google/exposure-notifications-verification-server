@@ -75,15 +75,21 @@ func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Per
 
 	// Ensure implied permissions. The actor must also have the implied
 	// permissions by definition.
+	permission = AddImplied(permission)
+	return permission, nil
+}
+
+// AddImplied adds any missing implied permissions.
+func AddImplied(target Permission) Permission {
 	for has, needs := range requiredPermission {
 		// If granted has, ensure that we have all needs.
-		if Can(permission, has) {
+		if Can(target, has) {
 			for _, required := range needs {
-				permission = permission | required
+				target = target | required
 			}
 		}
 	}
-	return permission, nil
+	return target
 }
 
 // ImpliedBy returns any permissions that cause this permission to be added
