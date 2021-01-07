@@ -650,16 +650,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sqls := []string{
-					"ALTER TABLE verification_codes ALTER COLUMN code TYPE varchar(20)",
-					"ALTER TABLE verification_codes ALTER COLUMN long_code TYPE varchar(20)",
-				}
-
-				for _, sql := range sqls {
-					if err := tx.Exec(sql).Error; err != nil {
-						return err
-					}
-				}
+				// No rollback for this, which would destroy data.
 				return nil
 			},
 		},
