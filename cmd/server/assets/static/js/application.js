@@ -988,7 +988,7 @@ function showErroredCode(request, code, line) {
   $row.append($('<td/>').text(request["phone"]));
   $row.append($('<td/>').text(request["testDate"]));
   $row.append($('<td/>').text(code.error));
-  $errorTableBody.append($row); // TODO prepend if there's one there that < ?
+  $errorTableBody.append($row);
 }
 
 function showSuccessfulCode(request, code, line) {
