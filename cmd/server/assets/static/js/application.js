@@ -890,16 +890,18 @@ function buildBatchIssueRequest(thisRow, retryCode, template, line) {
 
   // CSV file has error codes in the file. Usually means a retry of the receipt file.
   // Skip un-retryable errors
-  if (cols.length > 8) {
-    let existingUUID = $("<div>").text(cols[7].trim()).html();
-    let code = $("<div>").text(cols[7].trim()).html();
-    if (uuid == existingUUID && code == "uuid_already_exists") {
-      let code = {
-        errorCode: code,
-        error: "code already exists on the server. skipping code.",
-      };
-      showErroredCode(request, code, line);
-      return "";
+  if (cols.length >= 8) {
+    let errCode = $("<div>").text(cols[7].trim()).html();
+    if (errCode == "uuid_already_exists") {
+      let existingUUID = $("<div>").text(cols[6].trim()).html();
+      if (uuid == existingUUID) {
+        let code = {
+          errorCode: errCode,
+          error: `code uuid ${existingUUID} already exists on the server. skipping code.`,
+        };
+        showErroredCode(request, code, line);
+        return "";
+      }
     }
   }
 
