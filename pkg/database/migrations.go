@@ -1929,6 +1929,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE authorized_app_stats DROP COLUMN IF EXISTS tokens_invalid`)
 			},
 		},
+		{
+			ID: "00083-ExpandTwilioFrom",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE sms_configs ALTER COLUMN twilio_from_number TYPE varchar(255)`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				// No rollback for this, which would destroy data.
+				return nil
+			},
+		},
 	}
 }
 

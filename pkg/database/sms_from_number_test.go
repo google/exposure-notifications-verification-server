@@ -48,11 +48,11 @@ func TestSMSFromNumbers(t *testing.T) {
 	if err := db.CreateOrUpdateSMSFromNumbers([]*SMSFromNumber{
 		{
 			Label: "zzz",
-			Value: "222-222-2222",
+			Value: "+15005550000",
 		},
 		{
 			Label: "aaa",
-			Value: "111-111-1111",
+			Value: "+15005550006",
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -73,7 +73,7 @@ func TestSMSFromNumbers(t *testing.T) {
 	if got, want := labels, []string{"aaa", "zzz"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("expected %v to be %v", got, want)
 	}
-	if got, want := values, []string{"111-111-1111", "222-222-2222"}; !reflect.DeepEqual(got, want) {
+	if got, want := values, []string{"+15005550006", "+15005550000"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("expected %v to be %v", got, want)
 	}
 }

@@ -48,7 +48,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 	// Create a system phone number.
 	smsFromNumber := &database.SMSFromNumber{
 		Label: "Default",
-		Value: "+111-111-1111",
+		Value: "+15005550006",
 	}
 	if err := harness.Database.CreateOrUpdateSMSFromNumbers([]*database.SMSFromNumber{smsFromNumber}); err != nil {
 		t.Fatal(err)
@@ -82,7 +82,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 		// Fill out the form.
 		chromedp.SetValue(`input#twilio-account-sid`, "accountSid", chromedp.ByQuery),
 		chromedp.SetValue(`input#twilio-auth-token`, "authToken", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number`, "1234567890", chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number`, "+1234567890", chromedp.ByQuery),
 
 		// Click submit.
 		chromedp.Click(`input#update-sms`, chromedp.ByQuery),
@@ -104,7 +104,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 	if got, want := twilioAuthToken, project.PasswordSentinel; got != want {
 		t.Errorf("expected %q to be %q", got, want)
 	}
-	if got, want := twilioFromNumber, "1234567890"; got != want {
+	if got, want := twilioFromNumber, "+1234567890"; got != want {
 		t.Errorf("expected %q to be %q", got, want)
 	}
 
@@ -124,7 +124,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 		if got, want := smsConfig.TwilioAuthToken, "authToken"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
-		if got, want := smsConfig.TwilioFromNumber, "1234567890"; got != want {
+		if got, want := smsConfig.TwilioFromNumber, "+1234567890"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
 	}
@@ -142,7 +142,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 
 		// Fill out the form.
 		chromedp.SetValue(`input#twilio-account-sid`, "accountSid-new", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number`, "1234567890-new", chromedp.ByQuery),
+		chromedp.SetValue(`input#twilio-from-number`, "+1987654320", chromedp.ByQuery),
 
 		// Click submit.
 		chromedp.Click(`input#update-sms`, chromedp.ByQuery),
@@ -170,7 +170,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 			// should not change
 			t.Errorf("expected %q to be %q", got, want)
 		}
-		if got, want := smsConfig.TwilioFromNumber, "1234567890-new"; got != want {
+		if got, want := smsConfig.TwilioFromNumber, "+1987654320"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
 	}

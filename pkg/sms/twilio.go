@@ -25,6 +25,9 @@ import (
 	"time"
 )
 
+// TwilioMessagingServiceSidPrefix is the prefix for a 34 character messaging service identifier
+const TwilioMessagingServiceSidPrefix = "MG"
+
 var _ Provider = (*Twilio)(nil)
 
 // Twilio sends messages via the Twilio API.
@@ -50,7 +53,12 @@ func NewTwilio(ctx context.Context, accountSid, authToken, from string) (Provide
 func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 	params := url.Values{}
 	params.Set("To", to)
-	params.Set("From", p.from)
+	if strings.HasPrefix(p.from, TwilioMessagingServiceSidPrefix) {
+		params.Set("MessagingServiceSid", p.from)
+	} else {
+		params.Set("From", p.from)
+	}
+
 	params.Set("Body", message)
 	body := strings.NewReader(params.Encode())
 

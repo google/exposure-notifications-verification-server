@@ -15,6 +15,9 @@
 package database
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
@@ -33,7 +36,9 @@ type SMSConfig struct {
 
 	// Twilio configuration options.
 	TwilioAccountSid string `gorm:"type:varchar(250)"`
-	TwilioFromNumber string `gorm:"type:varchar(16)"`
+	// E.164 format telephone number or
+	// Twilio messaging service identifier see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
+	TwilioFromNumber string `gorm:"type:varchar(255)"`
 
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
@@ -48,10 +53,30 @@ type SMSConfig struct {
 
 func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 	// Twilio config is all or nothing
-	if (s.TwilioAccountSid != "" || s.TwilioAuthToken != "") &&
-		(s.TwilioAccountSid == "" || s.TwilioAuthToken == "") {
+	if (s.TwilioAccountSid == "") != (s.TwilioAuthToken == "") {
 		s.AddError("twilioAccountSid", "all must be specified or all must be blank")
 		s.AddError("twilioAuthToken", "all must be specified or all must be blank")
+	}
+
+	if s.TwilioAccountSid != "" {
+		if s.TwilioFromNumber != "" {
+			switch {
+			case strings.HasPrefix(s.TwilioFromNumber, sms.TwilioMessagingServiceSidPrefix):
+				if len(s.TwilioFromNumber) != 34 {
+					s.AddError("twilioFromNumber", `a valid twilio messaging service sid should be 34 characters`)
+				}
+			case strings.HasPrefix(s.TwilioFromNumber, "+"):
+				if _, err := strconv.ParseInt(s.TwilioFromNumber[1:], 10, 64); err != nil {
+					s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+" followed by digits`)
+				}
+			case len(s.TwilioFromNumber) <= 6:
+				if _, err := strconv.ParseInt(s.TwilioFromNumber, 10, 32); len(s.TwilioFromNumber) <= 6 && err != nil {
+					s.AddError("twilioFromNumber", `a short code should contain only digits`)
+				}
+			default:
+				s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+" followed by digits`)
+			}
+		}
 	}
 
 	if s.IsSystem {
