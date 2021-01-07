@@ -64,10 +64,8 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 				if len(s.TwilioFromNumber) != 34 {
 					s.AddError("twilioFromNumber", `a valid twilio messaging service sid should be 34 characters`)
 				}
-			} else if len(s.TwilioFromNumber) <= 6 {
-				if _, err := strconv.ParseInt(s.TwilioFromNumber, 10, 32); err != nil {
-					s.AddError("twilioFromNumber", `a short code should contain only digits`)
-				}
+			} else if _, err := strconv.ParseInt(s.TwilioFromNumber, 10, 32); len(s.TwilioFromNumber) <= 6 && err != nil {
+				s.AddError("twilioFromNumber", `a short code should contain only digits`)
 			} else if !strings.HasPrefix(s.TwilioFromNumber, "+") {
 				s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+"`)
 			}
