@@ -35,12 +35,9 @@ type SMSConfig struct {
 
 	// Twilio configuration options.
 	TwilioAccountSid string `gorm:"type:varchar(250)"`
-	// E.164 format telephone number
-	TwilioFromNumber string `gorm:"type:varchar(16)"`
-	// MessagingServiceSid is an identifier for a Twilio messaging service
-	// this may be used instead of a TwilioFromNumber and is used to manage a pool of numbers
-	// see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
-	TwilioMessagingServiceSid string `gorm:"type:varchar(255)"`
+	// E.164 format telephone number or
+	// Twilio messaging service identifier see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
+	TwilioFromNumber string `gorm:"type:varchar(255)"`
 
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
@@ -61,20 +58,13 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 	}
 
 	if s.TwilioAccountSid != "" {
-		if s.TwilioFromNumber != "" && s.TwilioMessagingServiceSid != "" {
-			s.AddError("twilioFromNumber", "only one of twilio from number or messaging service sid may be provided")
-		}
-
-		if s.TwilioFromNumber != "" && !strings.HasPrefix(s.TwilioFromNumber, "+") {
-			s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+"`)
-		}
-
-		if s.TwilioMessagingServiceSid != "" {
-			if !strings.HasPrefix(s.TwilioMessagingServiceSid, "MG") {
-				s.AddError("twilioMessagingServiceSid", `a valid twilio messaging service sid should begin with "MG"`)
-			}
-			if len(s.TwilioMessagingServiceSid) != 34 {
-				s.AddError("twilioMessagingServiceSid", `a valid twilio messaging service sid should be 34 characters`)
+		if s.TwilioFromNumber != "" {
+			if strings.HasPrefix(s.TwilioFromNumber, sms.TwilioMessagingServiceSidPrefix) {
+				if len(s.TwilioFromNumber) != 34 {
+					s.AddError("twilioFromNumber", `a valid twilio messaging service sid should be 34 characters`)
+				}
+			} else if !strings.HasPrefix(s.TwilioFromNumber, "+") {
+				s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+"`)
 			}
 		}
 	}
@@ -82,7 +72,6 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 	if s.IsSystem {
 		// Do not persist from numbers for system configs
 		s.TwilioFromNumber = ""
-		s.TwilioMessagingServiceSid = ""
 	}
 
 	return s.ErrorOrNil()
@@ -105,7 +94,7 @@ func (db *Database) SystemSMSConfig() (*SMSConfig, error) {
 func (db *Database) SaveSMSConfig(s *SMSConfig) error {
 	if s.ProviderType == sms.ProviderTypeTwilio &&
 		s.TwilioAccountSid == "" && s.TwilioAuthToken == "" &&
-		s.TwilioFromNumber == "" && s.TwilioMessagingServiceSid == "" {
+		s.TwilioFromNumber == "" {
 		if db.db.NewRecord(s) {
 			// The fields are all blank, do not create the record.
 			return nil

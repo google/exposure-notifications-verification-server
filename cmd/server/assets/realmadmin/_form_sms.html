@@ -56,12 +56,11 @@
 
     <div class="form-label-group">
       <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control text-monospace
-      {{if or ($smsConfig.ErrorsFor "twilioFromNumber") ($smsConfig.ErrorsFor "twilioMessagingServiceSid") }} is-invalid{{end}}"
-      {{if $smsConfig.TwilioFromNumber}}value="{{$smsConfig.TwilioFromNumber}}"{{else if $smsConfig.TwilioFromNumber}}value="{{$smsConfig.TwilioMessagingServiceSid}}"{{end}}
+      {{if $smsConfig.ErrorsFor "twilioFromNumber"}} is-invalid{{end}}"
+      {{if $smsConfig.TwilioFromNumber}}value="{{$smsConfig.TwilioFromNumber}}"{{end}}
       placeholder="Twilio number" autocomplete="new-password"/>
       <label for="twilio-from-number">Twilio number</label>
       {{template "errorable" $smsConfig.ErrorsFor "twilioFromNumber"}}
-      {{template "errorable" $smsConfig.ErrorsFor "twilioMessagingServiceSid"}}
       <small class="form-text text-muted">
         This is the Twilio From Number.
         It should be either a <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164</a> formatted phone number or

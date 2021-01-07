@@ -288,12 +288,6 @@ func (c *Controller) HandleSettings() http.Handler {
 				controller.InternalError(w, r, c.h, err)
 				return
 			}
-			fromNumber, messagingSid := "", ""
-			if strings.HasPrefix(form.TwilioFromNumber, "MG") {
-				messagingSid = form.TwilioFromNumber
-			} else {
-				fromNumber = form.TwilioFromNumber
-			}
 
 			if smsConfig != nil && !smsConfig.IsSystem {
 				// We have an existing record and the existing record is NOT the system
@@ -303,18 +297,16 @@ func (c *Controller) HandleSettings() http.Handler {
 				if form.TwilioAuthToken != project.PasswordSentinel {
 					smsConfig.TwilioAuthToken = form.TwilioAuthToken
 				}
-				smsConfig.TwilioMessagingServiceSid = messagingSid
-				smsConfig.TwilioFromNumber = fromNumber
+				smsConfig.TwilioFromNumber = form.TwilioFromNumber
 			} else {
 				// There's no record or the existing record was the system config so we
 				// want to create our own.
 				smsConfig = &database.SMSConfig{
-					RealmID:                   currentRealm.ID,
-					ProviderType:              sms.ProviderTypeTwilio,
-					TwilioAccountSid:          form.TwilioAccountSid,
-					TwilioAuthToken:           form.TwilioAuthToken,
-					TwilioFromNumber:          fromNumber,
-					TwilioMessagingServiceSid: messagingSid,
+					RealmID:          currentRealm.ID,
+					ProviderType:     sms.ProviderTypeTwilio,
+					TwilioAccountSid: form.TwilioAccountSid,
+					TwilioAuthToken:  form.TwilioAuthToken,
+					TwilioFromNumber: form.TwilioFromNumber,
 				}
 			}
 

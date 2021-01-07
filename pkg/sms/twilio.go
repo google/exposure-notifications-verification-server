@@ -25,26 +25,26 @@ import (
 	"time"
 )
 
+const TwilioMessagingServiceSidPrefix = "MG"
+
 var _ Provider = (*Twilio)(nil)
 
 // Twilio sends messages via the Twilio API.
 type Twilio struct {
-	client     *http.Client
-	from       string
-	serviceSid string
+	client *http.Client
+	from   string
 }
 
 // NewTwilio creates a new Twilio SMS sender with the given auth.
-func NewTwilio(ctx context.Context, accountSid, authToken, from, serviceSid string) (Provider, error) {
+func NewTwilio(ctx context.Context, accountSid, authToken, from string) (Provider, error) {
 	client := &http.Client{
 		Timeout:   5 * time.Second,
 		Transport: &twilioAuthRoundTripper{accountSid, authToken},
 	}
 
 	return &Twilio{
-		client:     client,
-		from:       from,
-		serviceSid: serviceSid,
+		client: client,
+		from:   from,
 	}, nil
 }
 
@@ -52,8 +52,8 @@ func NewTwilio(ctx context.Context, accountSid, authToken, from, serviceSid stri
 func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 	params := url.Values{}
 	params.Set("To", to)
-	if p.serviceSid != "" {
-		params.Set("MessagingServiceSid", p.serviceSid)
+	if strings.HasPrefix(p.from, TwilioMessagingServiceSidPrefix) {
+		params.Set("MessagingServiceSid", p.from)
 	} else {
 		params.Set("From", p.from)
 	}
