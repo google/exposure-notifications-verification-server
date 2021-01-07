@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -126,10 +127,20 @@ func (c *client) do(req *http.Request, out interface{}) (*http.Response, error) 
 	defer resp.Body.Close()
 
 	r := io.LimitReader(resp.Body, c.maxBodySize)
+
+	ct := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, "application/json") {
+		bodyBytes, rawErr := ioutil.ReadAll(r)
+		if rawErr != nil {
+			return nil, fmt.Errorf("failed to read %s response body %w", ct, rawErr)
+		}
+		return nil, fmt.Errorf("response content type: %s. Raw response: %s", ct, string(bodyBytes))
+	}
+
 	if err := json.NewDecoder(r).Decode(out); err != nil {
 		bodyBytes, rawErr := ioutil.ReadAll(r)
 		if rawErr != nil {
-			return nil, fmt.Errorf("failed to read response body %w", rawErr)
+			return nil, fmt.Errorf("failed to read JSON response body %w", rawErr)
 		}
 		return nil, fmt.Errorf("failed to decode JSON response: %w. Raw response: %s", err, string(bodyBytes))
 	}
