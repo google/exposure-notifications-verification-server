@@ -66,6 +66,18 @@
         reduce the chance that your message will be flagged as spam.
       </small>
     </div>
+
+    <div class="form-label-group">
+      <input type="tel" name="twilio_messaging_service_sid" id="twilio-messaging-service-sid" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioMessagingServiceSid"}} is-invalid{{end}}" autocomplete="new-password"
+        placeholder="Twilio messaging service sid" {{if $smsConfig.TwilioMessagingServiceSid}}value="{{$smsConfig.TwilioMessagingServiceSid}}"{{end}} />
+      <label for="twilio-messaging-service-sid">Twilio messaging service sid</label>
+      {{template "errorable" $smsConfig.ErrorsFor "twilioMessagingServiceSid"}}
+      <small class="form-text text-muted">
+        This is a Twilio Messaging Service sid. Get this value from the Twilio console if you
+        are using the <a href="https://www.twilio.com/docs/messaging/services" target="_blank">Twilio messaging service</a>
+        to manage a pool of phone numbers.
+      </small>
+    </div>
   </div>
 
   <div class="sms-system-form collapse{{if $realm.UseSystemSMSConfig}} show{{end}}">

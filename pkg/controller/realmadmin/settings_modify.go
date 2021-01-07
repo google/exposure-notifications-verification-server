@@ -71,13 +71,14 @@ type formData struct {
 	SMSTextTemplate           string             `form:"-"`
 	SMSTextAlternateTemplates map[string]*string `form:"-"`
 
-	SMS                bool   `form:"sms"`
-	UseSystemSMSConfig bool   `form:"use_system_sms_config"`
-	SMSCountry         string `form:"sms_country"`
-	SMSFromNumberID    uint   `form:"sms_from_number_id"`
-	TwilioAccountSid   string `form:"twilio_account_sid"`
-	TwilioAuthToken    string `form:"twilio_auth_token"`
-	TwilioFromNumber   string `form:"twilio_from_number"`
+	SMS                       bool   `form:"sms"`
+	UseSystemSMSConfig        bool   `form:"use_system_sms_config"`
+	SMSCountry                string `form:"sms_country"`
+	SMSFromNumberID           uint   `form:"sms_from_number_id"`
+	TwilioAccountSid          string `form:"twilio_account_sid"`
+	TwilioAuthToken           string `form:"twilio_auth_token"`
+	TwilioFromNumber          string `form:"twilio_from_number"`
+	TwilioMessagingServiceSid string `form:"twilio_messaging_service_sid"`
 
 	Email                bool   `form:"email"`
 	UseSystemEmailConfig bool   `form:"use_system_email_config"`
@@ -297,15 +298,17 @@ func (c *Controller) HandleSettings() http.Handler {
 					smsConfig.TwilioAuthToken = form.TwilioAuthToken
 				}
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
+				smsConfig.TwilioMessagingServiceSid = form.TwilioMessagingServiceSid
 			} else {
 				// There's no record or the existing record was the system config so we
 				// want to create our own.
 				smsConfig = &database.SMSConfig{
-					RealmID:          currentRealm.ID,
-					ProviderType:     sms.ProviderTypeTwilio,
-					TwilioAccountSid: form.TwilioAccountSid,
-					TwilioAuthToken:  form.TwilioAuthToken,
-					TwilioFromNumber: form.TwilioFromNumber,
+					RealmID:                   currentRealm.ID,
+					ProviderType:              sms.ProviderTypeTwilio,
+					TwilioAccountSid:          form.TwilioAccountSid,
+					TwilioAuthToken:           form.TwilioAuthToken,
+					TwilioFromNumber:          form.TwilioFromNumber,
+					TwilioMessagingServiceSid: form.TwilioMessagingServiceSid,
 				}
 			}
 
