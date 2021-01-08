@@ -1764,7 +1764,13 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 
 				// Convert realm and user into real foreign keys. If the parent record
 				// is deleted, also delete the membership record.
+				if err := tx.Exec(`ALTER TABLE user_realms DROP CONSTRAINT IF EXISTS fk_realm`).Error; err != nil {
+					return err
+				}
 				if err := tx.Exec(`ALTER TABLE user_realms ADD CONSTRAINT fk_realm FOREIGN KEY (realm_id) REFERENCES realms(id) ON DELETE CASCADE`).Error; err != nil {
+					return err
+				}
+				if err := tx.Exec(`ALTER TABLE user_realms DROP CONSTRAINT IF EXISTS fk_user`).Error; err != nil {
 					return err
 				}
 				if err := tx.Exec(`ALTER TABLE user_realms ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`).Error; err != nil {
