@@ -12,6 +12,11 @@
     - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
   - [`/api/batch-issue`](#apibatch-issue)
     - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
+  - [`/api/checkcodestatus`](#apicheckcodestatus)
+  - [`/api/expirecode`](#apiexpirecode)
+  - [`/api/stats/*` (preview)](#apistats-preview)
+- [Chaffing requests](#chaffing-requests)
+- [Response codes overview](#response-codes-overview)
 
 <!-- /TOC -->
 
@@ -344,14 +349,14 @@ eg.
       "testType": "<valid test type>",
       "tzOffset": 0,
       "phone": "+CC Phone number",
-      "padding": "<bytes>",
       "uuid": "optional string UUID",
       "externalIssuerID": "external-ID",
     },
     {
       ...
     },
-  ]
+  ],
+  "padding": "<bytes>"
 }
 ```
 
@@ -380,6 +385,7 @@ for each code response. The index of each responses will match the index of the 
       ...
     },
   ],
+  "padding": "<bytes>"
   "error": "descriptive error message",
   "errorCode": "well defined error code from api.go",
 }
