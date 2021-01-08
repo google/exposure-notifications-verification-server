@@ -113,11 +113,10 @@ func TestHandleSettings(t *testing.T) {
 		})
 
 		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
-			"general":                    []string{"1"},
-			"name":                       []string{"new-realmy"},
-			"region_code":                []string{"TT2"},
-			"welcome_message":            []string{"hello there"},
-			"daily_active_users_enabled": []string{"1"},
+			"general":         []string{"1"},
+			"name":            []string{"new-realmy"},
+			"region_code":     []string{"TT2"},
+			"welcome_message": []string{"hello there"},
 		}.Encode()))
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
@@ -145,9 +144,6 @@ func TestHandleSettings(t *testing.T) {
 		}
 		if got, want := realm.WelcomeMessage, "hello there"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
-		}
-		if got, want := realm.DailyActiveUsersEnabled, true; got != want {
-			t.Errorf("expected %t to be %t", got, want)
 		}
 	})
 

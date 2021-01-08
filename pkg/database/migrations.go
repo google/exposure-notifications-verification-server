@@ -1948,6 +1948,19 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return nil
 			},
 		},
+		{
+			ID: "00084-DropDAU",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS daily_active_users_enabled`,
+					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS daily_active_users`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS daily_active_users_enabled BOOL DEFAULT false NOT NULL`,
+					`ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS daily_active_users INTEGER DEFAULT 0`)
+			},
+		},
 	}
 }
 
