@@ -126,7 +126,7 @@ type Padding []byte
 // MarshalJSON is a custom JSON marshaler for padding. It generates and returns
 // 1-2kb (random) of base64-encoded bytes.
 func (p Padding) MarshalJSON() ([]byte, error) {
-	if p != nil {
+	if p == nil {
 		bi, err := rand.Int(rand.Reader, big.NewInt(1024))
 		if err != nil {
 			return nil, fmt.Errorf("padding: failed to generate random number: %w", err)
@@ -147,6 +147,13 @@ func (p Padding) MarshalJSON() ([]byte, error) {
 
 	s := fmt.Sprintf("%q", base64.StdEncoding.EncodeToString(p))
 	return []byte(s), nil
+}
+
+// UnmarshalJSON is a custom JSON unmarshaler for padding.
+// The field is meaningless bytes, so this is just a passthrough.
+func (p *Padding) UnmarshalJSON(b []byte) error {
+	*p = b[1 : len(b)-1] // remove outer quotes
+	return nil
 }
 
 // CSRFResponse is the return type when requesting an AJAX CSRF token.
@@ -184,7 +191,7 @@ type UserBatchResponse struct {
 // code. This is called by the Web frontend.
 // API is served at /api/issue
 type IssueCodeRequest struct {
-	Padding Padding `json:"padding,omitempty"`
+	Padding Padding `json:"padding"`
 
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 	TestDate    string `json:"testDate"`
@@ -215,7 +222,7 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	Padding Padding `json:"padding,omitempty"`
+	Padding Padding `json:"padding"`
 
 	// UUID is a handle which allows the issuer to track status of the issued verification code.
 	UUID string `json:"uuid"`
@@ -242,13 +249,13 @@ type IssueCodeResponse struct {
 
 // BatchIssueCodeRequest defines the request for issuing many codes at once.
 type BatchIssueCodeRequest struct {
-	Padding Padding             `json:"padding,omitempty"`
+	Padding Padding             `json:"padding"`
 	Codes   []*IssueCodeRequest `json:"codes"`
 }
 
 // BatchIssueCodeResponse defines the response for BatchIssueCodeRequest.
 type BatchIssueCodeResponse struct {
-	Padding Padding              `json:"padding,omitempty"`
+	Padding Padding              `json:"padding"`
 	Codes   []*IssueCodeResponse `json:"codes,omitempty"`
 
 	Error     string `json:"error,omitempty"`

@@ -82,6 +82,9 @@ func TestIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to issue code: %#v\n  req: %#v\n  resp: %#v", err, issueReq, issueResp)
 		}
+		if len(issueResp.Padding) == 0 {
+			t.Error("expected response padding")
+		}
 
 		// Invalid code should fail to verify
 		{
@@ -171,9 +174,12 @@ func TestIntegration(t *testing.T) {
 				},
 			},
 		}
-		issueResp, err := adminAPIClient.BatchIssueCode(ctx, issueReq)
+		outerIssueResp, err := adminAPIClient.BatchIssueCode(ctx, issueReq)
 		if err != nil {
-			t.Fatalf("failed to issue code: %#v\n  req: %#v\n  resp: %#v", err, issueReq, issueResp)
+			t.Fatalf("failed to issue code: %#v\n  req: %#v\n  resp: %#v", err, issueReq, outerIssueResp)
+		}
+		if len(outerIssueResp.Padding) == 0 {
+			t.Error("expected response padding")
 		}
 
 		// Invalid code should fail to verify
@@ -189,7 +195,11 @@ func TestIntegration(t *testing.T) {
 		}
 
 		// Verify all codes in batch.
-		for _, issueResp := range issueResp.Codes {
+		for _, issueResp := range outerIssueResp.Codes {
+			if len(issueResp.Padding) != 0 {
+				t.Errorf("batch does not expect inner response padding, got %s", string(issueResp.Padding))
+			}
+
 			verifyReq := &api.VerifyCodeRequest{
 				VerificationCode: issueResp.VerificationCode,
 				AcceptTestTypes:  []string{testType},
