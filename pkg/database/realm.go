@@ -262,10 +262,6 @@ type Realm struct {
 	// before triggering abuse protections.
 	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0;"`
 
-	// DailyActiveUsersEnabled determines if the realm collects and displays daily
-	// active user metrics.
-	DailyActiveUsersEnabled bool `gorm:"type:boolean; not null; default: false;"`
-
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
@@ -1434,8 +1430,7 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 			d.date AS date,
 			$1 AS realm_id,
 			COALESCE(s.codes_issued, 0) AS codes_issued,
-			COALESCE(s.codes_claimed, 0) AS codes_claimed,
-			COALESCE(s.daily_active_users, 0) AS daily_active_users
+			COALESCE(s.codes_claimed, 0) AS codes_claimed
 		FROM (
 			SELECT date::date FROM generate_series($2, $3, '1 day'::interval) date
 		) d
@@ -1616,24 +1611,6 @@ func (r *Realm) QuotaKey(hmacKey []byte) (string, error) {
 		return "", fmt.Errorf("failed to create realm quota key: %w", err)
 	}
 	return fmt.Sprintf("realm:quota:%s", dig), nil
-}
-
-// IncrementDailyActiveUsers increments the daily active users for the realm by
-// the provided amount.
-func (r *Realm) IncrementDailyActiveUsers(db *Database, now time.Time) error {
-	date := timeutils.Midnight(now)
-
-	sql := `
-		INSERT INTO realm_stats (date, realm_id, daily_active_users)
-			VALUES ($1, $2, 1)
-		ON CONFLICT (date, realm_id) DO UPDATE
-			SET daily_active_users = realm_stats.daily_active_users + 1
-	`
-
-	if err := db.db.Exec(sql, date, r.ID).Error; err != nil {
-		return fmt.Errorf("failed to increment daily active users for realm %d: %w", r.ID, err)
-	}
-	return nil
 }
 
 // ToCIDRList converts the newline-separated and/or comma-separated CIDR list

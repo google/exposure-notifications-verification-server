@@ -38,46 +38,42 @@ func TestRealmStats_MarshalCSV(t *testing.T) {
 			name: "single",
 			stats: []*RealmStat{
 				{
-					Date:             time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					RealmID:          1,
-					CodesIssued:      10,
-					CodesClaimed:     9,
-					DailyActiveUsers: 2,
+					Date:         time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					RealmID:      1,
+					CodesIssued:  10,
+					CodesClaimed: 9,
 				},
 			},
-			exp: `date,codes_issued,codes_claimed,daily_active_users
-2020-02-03,10,9,2
+			exp: `date,codes_issued,codes_claimed
+2020-02-03,10,9
 `,
 		},
 		{
 			name: "multi",
 			stats: []*RealmStat{
 				{
-					Date:             time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					RealmID:          1,
-					CodesIssued:      10,
-					CodesClaimed:     9,
-					DailyActiveUsers: 12,
+					Date:         time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					RealmID:      1,
+					CodesIssued:  10,
+					CodesClaimed: 9,
 				},
 				{
-					Date:             time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
-					RealmID:          1,
-					CodesIssued:      45,
-					CodesClaimed:     30,
-					DailyActiveUsers: 24,
+					Date:         time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
+					RealmID:      1,
+					CodesIssued:  45,
+					CodesClaimed: 30,
 				},
 				{
-					Date:             time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
-					RealmID:          1,
-					CodesIssued:      15,
-					CodesClaimed:     2,
-					DailyActiveUsers: 18,
+					Date:         time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
+					RealmID:      1,
+					CodesIssued:  15,
+					CodesClaimed: 2,
 				},
 			},
-			exp: `date,codes_issued,codes_claimed,daily_active_users
-2020-02-03,10,9,12
-2020-02-04,45,30,24
-2020-02-05,15,2,18
+			exp: `date,codes_issued,codes_claimed
+2020-02-03,10,9
+2020-02-04,45,30
+2020-02-05,15,2
 `,
 		},
 	}

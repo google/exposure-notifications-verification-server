@@ -16,25 +16,14 @@ package middleware
 
 import (
 	"net/http"
-	"strings"
-	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
 	"github.com/mikehelmick/go-chaff"
 )
 
-const (
-	// ChaffHeader is the chaff header key.
-	ChaffHeader = "X-Chaff"
-
-	// ChaffDailyKey is the key to check if the chaff should be counted toward
-	// daily stats.
-	ChaffDailyKey = "daily"
-)
+// ChaffHeader is the chaff header key.
+const ChaffHeader = "X-Chaff"
 
 // ChaffHeaderDetector returns a chaff header detector.
 func ChaffHeaderDetector() chaff.Detector {
@@ -49,32 +38,6 @@ func ChaffHeaderDetector() chaff.Detector {
 // This must come after RequireAPIKey.
 func ProcessChaff(db *database.Database, t *chaff.Tracker, det chaff.Detector) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			now := time.Now().UTC()
-
-			logger := logging.FromContext(ctx).Named("middleware.ProcessChaff")
-
-			chaffValue := project.TrimSpace(strings.ToLower(r.Header.Get(ChaffHeader)))
-			if chaffValue == ChaffDailyKey {
-				currentRealm := controller.RealmFromContext(ctx)
-				if currentRealm == nil {
-					logger.Error("missing current realm in context")
-				} else if currentRealm.DailyActiveUsersEnabled {
-					// Increment DAU asynchronously and out-of-band for the request. These
-					// statistics are best-effort and we don't want to block or delay
-					// rendering to populate stats.
-					go func() {
-						if err := currentRealm.IncrementDailyActiveUsers(db, now); err != nil {
-							logger.Errorw("failed to increment daily active stats",
-								"realm", currentRealm.ID,
-								"error", err)
-						}
-					}()
-				}
-			}
-
-			t.HandleTrack(det, next).ServeHTTP(w, r)
-		})
+		return t.HandleTrack(det, next)
 	}
 }

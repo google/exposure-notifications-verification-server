@@ -55,21 +55,6 @@
     </small>
   </div>
 
-  <div class="custom-control custom-checkbox">
-    <input type="checkbox" name="daily_active_users_enabled" id="daily-active-users-enabled"
-      class="custom-control-input" {{checkedIf $realm.DailyActiveUsersEnabled}}>
-    <label class="custom-control-label" for="daily-active-users-enabled">Enable daily active user counting</label>
-    {{template "errorable" $realm.ErrorsFor "dailyActiveUsersEnabled"}}
-    <small class="form-text text-muted">
-      Enable server-side collection of reported daily active users. You must
-      also <a
-      href="https://github.com/google/exposure-notifications-verification-server/blob/main/docs/api.md#chaffing-requests"
-      target="_BLANK" rel="noopener">enable this functionality</a> on your iOS
-      and Android applications. This will also add a new dashboard to the
-      statistics page.
-    </small>
-  </div>
-
   <div class="mt-4">
     <input type="submit" class="btn btn-primary btn-block" value="Update general settings" />
   </div>

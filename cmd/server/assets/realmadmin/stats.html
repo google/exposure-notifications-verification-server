@@ -23,10 +23,6 @@
 
     {{template "realmadmin/_stats_codes" .}}
 
-    {{if $realm.DailyActiveUsersEnabled}}
-      {{template "realmadmin/_stats_daily_active_users" .}}
-    {{end}}
-
     <div class="row">
       <div class="col-lg-6 pr-lg-2">
         {{template "realmadmin/_stats_users" .}}
