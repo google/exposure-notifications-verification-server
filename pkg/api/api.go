@@ -155,8 +155,6 @@ func (p *Padding) UnmarshalJSON(b []byte) error {
 	l := len(b)
 	if l >= 2 {
 		*p = b[1 : l-1] // remove outer quotes
-	} else {
-		*p = b
 	}
 	return nil
 }
