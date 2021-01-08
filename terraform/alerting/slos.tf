@@ -14,35 +14,31 @@
 
 locals {
   default_per_service_slo = {
-    enable_alert           = false
-    availability_goal      = 0.995
-    enable_latency_slo     = false # disabled by default due to low request volume; use latency alert for those
-    latency_goal           = 0.95
-    latency_threshold      = 60000 # 60 seconds, in ms
-    enable_latency_alert   = false
-    latency_alert_duration = 300000 # 5 minutes, in ms
+    enable_fast_burn_alert  = false
+    enable_slow_burn_alert  = false
+    availability_goal       = 0.995
+    enable_availability_slo = false
+    enable_latency_slo      = false # disabled by default due to low request volume; use latency alert for those
+    latency_goal            = 0.95
+    latency_threshold       = 60000 # 60 seconds, in ms
+    enable_latency_alert    = false
+    latency_alert_duration  = 300000 # 5 minutes, in ms
 
   }
   service_configs = {
     adminapi = merge(local.default_per_service_slo,
-      { enable_alert         = true,
-        enable_latency_alert = true
+      { enable_latency_alert = true
     latency_threshold = 6000 })
     apiserver = merge(local.default_per_service_slo,
-      { enable_alert         = true,
-        enable_latency_alert = true,
-    latency_threshold = 2000 })
-    appsync    = local.default_per_service_slo
-    cleanup    = local.default_per_service_slo
-    e2e-runner = local.default_per_service_slo
-    enx-redirect = merge(local.default_per_service_slo,
-      { enable_alert         = true,
-        enable_latency_alert = true,
-    latency_threshold = 2000 })
-    modeler = local.default_per_service_slo
+      { enable_availability_slo = true,
+    enable_fast_burn_alert = true })
+    appsync      = local.default_per_service_slo
+    cleanup      = local.default_per_service_slo
+    e2e-runner   = local.default_per_service_slo
+    enx-redirect = local.default_per_service_slo
+    modeler      = local.default_per_service_slo
     server = merge(local.default_per_service_slo,
-      { enable_alert         = true,
-        enable_latency_alert = true,
+      { enable_latency_alert = true,
     latency_threshold = 2000 })
   }
 }
@@ -77,15 +73,16 @@ module "availability-slos" {
   source = "./module.availability-slo"
 
   project               = var.project
-  enabled               = var.https-forwarding-rule != ""
   notification_channels = google_monitoring_notification_channel.channels
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  custom_service_id = each.key
-  service_name      = each.key
-  goal              = each.value.availability_goal
-  enable_alert      = each.value.enable_alert
+  enabled                = each.value.enable_availability_slo
+  custom_service_id      = each.key
+  service_name           = each.key
+  goal                   = each.value.availability_goal
+  enable_fast_burn_alert = each.value.enable_fast_burn_alert
+  enable_slow_burn_alert = each.value.enable_slow_burn_alert
 }
 
 module "latency-slos" {
@@ -97,10 +94,11 @@ module "latency-slos" {
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  enabled           = each.value.enable_latency_slo
-  custom_service_id = each.key
-  service_name      = each.key
-  goal              = each.value.latency_goal
-  threshold         = each.value.latency_threshold
-  enable_alert      = each.value.enable_alert
+  enabled                = each.value.enable_latency_slo
+  custom_service_id      = each.key
+  service_name           = each.key
+  goal                   = each.value.latency_goal
+  threshold              = each.value.latency_threshold
+  enable_fast_burn_alert = each.value.enable_fast_burn_alert
+  enable_slow_burn_alert = each.value.enable_slow_burn_alert
 }
