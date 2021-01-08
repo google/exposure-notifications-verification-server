@@ -196,7 +196,7 @@ type UserBatchResponse struct {
 // code. This is called by the Web frontend.
 // API is served at /api/issue
 type IssueCodeRequest struct {
-	Padding Padding `json:"padding"`
+	Padding Padding `json:"padding,omitempty"`
 
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 	TestDate    string `json:"testDate"`
@@ -227,7 +227,7 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	Padding Padding `json:"padding"`
+	Padding Padding `json:"padding,omitempty"`
 
 	// UUID is a handle which allows the issuer to track status of the issued verification code.
 	UUID string `json:"uuid"`
