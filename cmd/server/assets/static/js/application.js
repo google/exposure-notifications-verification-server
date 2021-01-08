@@ -915,15 +915,16 @@ function buildBatchIssueRequest(thisRow, retryCode, template, line) {
       }
     }
   }
-
-  // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
-  // to prevent network traffic observation.
-  request["padding"] = btoa(genRandomString(5 + Math.floor(Math.random() * 15)));
-
   return request;
 }
 
 function uploadBatchIssue(data, lines) {
+  let req = {
+    'codes': data,
+    // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
+    // to prevent network traffic observation.
+    'padding': btoa(genRandomString(5 + Math.floor(Math.random() * 15)))
+  };
   return $.ajax({
     url: '/codes/batch-issue',
     type: 'POST',
@@ -931,7 +932,7 @@ function uploadBatchIssue(data, lines) {
     cache: false,
     contentType: 'application/json',
     headers: { 'X-CSRF-Token': csrfToken },
-    data: JSON.stringify({ 'codes': data }),
+    data: JSON.stringify(req),
     success: function(result) {
       if (!result.responseJSON || !result.responseJSON.codes) {
         return;
