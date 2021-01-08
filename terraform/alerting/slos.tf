@@ -14,7 +14,8 @@
 
 locals {
   default_per_service_slo = {
-    enable_alert            = false
+    enable_fast_burn_alert  = false
+    enable_slow_burn_alert  = false
     availability_goal       = 0.995
     enable_availability_slo = false
     enable_latency_slo      = false # disabled by default due to low request volume; use latency alert for those
@@ -29,8 +30,8 @@ locals {
       { enable_latency_alert = true
     latency_threshold = 6000 })
     apiserver = merge(local.default_per_service_slo,
-      { enable_alert = true,
-    enable_availability_slo = true })
+      { enable_availability_slo = true,
+    enable_fast_burn_alert = true })
     appsync      = local.default_per_service_slo
     cleanup      = local.default_per_service_slo
     e2e-runner   = local.default_per_service_slo
@@ -76,11 +77,12 @@ module "availability-slos" {
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  enabled           = each.value.enable_availability_slo
-  custom_service_id = each.key
-  service_name      = each.key
-  goal              = each.value.availability_goal
-  enable_alert      = each.value.enable_alert
+  enabled                = each.value.enable_availability_slo
+  custom_service_id      = each.key
+  service_name           = each.key
+  goal                   = each.value.availability_goal
+  enable_fast_burn_alert = each.value.enable_fast_burn_alert
+  enable_slow_burn_alert = each.value.enable_slow_burn_alert
 }
 
 module "latency-slos" {
@@ -92,10 +94,11 @@ module "latency-slos" {
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
-  enabled           = each.value.enable_latency_slo
-  custom_service_id = each.key
-  service_name      = each.key
-  goal              = each.value.latency_goal
-  threshold         = each.value.latency_threshold
-  enable_alert      = each.value.enable_alert
+  enabled                = each.value.enable_latency_slo
+  custom_service_id      = each.key
+  service_name           = each.key
+  goal                   = each.value.latency_goal
+  threshold              = each.value.latency_threshold
+  enable_fast_burn_alert = each.value.enable_fast_burn_alert
+  enable_slow_burn_alert = each.value.enable_slow_burn_alert
 }

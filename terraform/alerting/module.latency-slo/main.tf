@@ -48,9 +48,9 @@ resource "google_monitoring_slo" "slo" {
 resource "google_monitoring_alert_policy" "fast_burn" {
   count        = var.enabled ? 1 : 0
   project      = var.project
-  display_name = "FastLatencyBudgetBurn-${var.service_name}"
+  display_name = "LatencyFastLatencyBudgetBurn-${var.service_name}"
   combiner     = "AND"
-  enabled      = var.enable_alert
+  enabled      = var.enable_fast_burn_alert
 
   conditions {
     display_name = "Fast burn over last hour"
@@ -100,9 +100,9 @@ resource "google_monitoring_alert_policy" "fast_burn" {
 resource "google_monitoring_alert_policy" "slow_burn" {
   count        = var.enabled ? 1 : 0
   project      = var.project
-  display_name = "SlowLatencyBudgetBurn-${var.service_name}"
+  display_name = "LatencySlowLatencyBudgetBurn-${var.service_name}"
   combiner     = "AND"
-  enabled      = var.enable_alert
+  enabled      = var.enable_slow_burn_alert
 
   conditions {
     display_name = "Slow burn over last 6 hours"
