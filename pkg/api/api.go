@@ -61,7 +61,7 @@ const (
 	// ErrMissingDate indicates the realm requires a date, but none was supplied.
 	ErrMissingDate = "missing_date"
 	// ErrInvalidDate indicates the realm requires a date, but the supplied date
-	// was older or newer than the allowed date ramge.
+	// was older or newer than the allowed date range.
 	ErrInvalidDate = "invalid_date"
 	// ErrUUIDAlreadyExists indicates that the UUID has already been used for an issued code.
 	ErrUUIDAlreadyExists = "uuid_already_exists"
@@ -152,9 +152,8 @@ func (p Padding) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON is a custom JSON unmarshaler for padding.
 // The field is meaningless bytes, so this is just a passthrough.
 func (p *Padding) UnmarshalJSON(b []byte) error {
-	l := len(b)
-	if l >= 2 {
-		*p = b[1 : l-1] // remove outer quotes
+	if l := len(b); l > 2 {
+		*p = b[1 : l-2] // remove outer quotes
 	}
 	return nil
 }
@@ -194,7 +193,7 @@ type UserBatchResponse struct {
 // code. This is called by the Web frontend.
 // API is served at /api/issue
 type IssueCodeRequest struct {
-	Padding Padding `json:"padding,omitempty"`
+	Padding Padding `json:"padding"`
 
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 	TestDate    string `json:"testDate"`
@@ -225,7 +224,7 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	Padding Padding `json:"padding,omitempty"`
+	Padding Padding `json:"padding"`
 
 	// UUID is a handle which allows the issuer to track status of the issued verification code.
 	UUID string `json:"uuid"`
