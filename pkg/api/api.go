@@ -152,7 +152,12 @@ func (p Padding) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON is a custom JSON unmarshaler for padding.
 // The field is meaningless bytes, so this is just a passthrough.
 func (p *Padding) UnmarshalJSON(b []byte) error {
-	*p = b[1 : len(b)-1] // remove outer quotes
+	l := len(b)
+	if l >= 2 {
+		*p = b[1 : l-1] // remove outer quotes
+	} else {
+		*p = b
+	}
 	return nil
 }
 
