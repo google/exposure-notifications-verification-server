@@ -15,12 +15,15 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/sethvargo/go-retry"
 )
 
 func HandleHealthz(db *database.Database, h render.Renderer) http.Handler {
@@ -34,7 +37,18 @@ func HandleHealthz(db *database.Database, h render.Renderer) http.Handler {
 		case "":
 			// Do nothing and continue rendering - this is a basic HTTP health check
 		case "database":
-			if err := db.Ping(ctx); err != nil {
+			// Attempt to ping for up to 1s.
+			b, err := retry.NewConstant(200 * time.Millisecond)
+			if err != nil {
+				InternalError(w, r, h, fmt.Errorf("failed to create backoff: %w", err))
+				return
+			}
+			if err := retry.Do(ctx, retry.WithMaxRetries(5, b), func(ctx context.Context) error {
+				if err := db.Ping(ctx); err != nil {
+					return retry.RetryableError(err)
+				}
+				return nil
+			}); err != nil {
 				InternalError(w, r, h, fmt.Errorf("failed to ping db: %w", err))
 				return
 			}
