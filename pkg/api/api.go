@@ -126,24 +126,26 @@ type Padding []byte
 // MarshalJSON is a custom JSON marshaler for padding. It generates and returns
 // 1-2kb (random) of base64-encoded bytes.
 func (p Padding) MarshalJSON() ([]byte, error) {
-	bi, err := rand.Int(rand.Reader, big.NewInt(1024))
-	if err != nil {
-		return nil, fmt.Errorf("padding: failed to generate random number: %w", err)
+	if p != nil {
+		bi, err := rand.Int(rand.Reader, big.NewInt(1024))
+		if err != nil {
+			return nil, fmt.Errorf("padding: failed to generate random number: %w", err)
+		}
+
+		// rand.Int is [0, max), so add 1kb to set the range from 1-2kb.
+		i := int(bi.Int64() + 1024)
+
+		p = make([]byte, i)
+		n, err := rand.Read(p)
+		if err != nil {
+			return nil, fmt.Errorf("padding: failed to read bytes: %w", err)
+		}
+		if n < i {
+			return nil, fmt.Errorf("padding: wrote less bytes than expected")
+		}
 	}
 
-	// rand.Int is [0, max), so add 1kb to set the range from 1-2kb.
-	i := int(bi.Int64() + 1024)
-
-	b := make([]byte, i)
-	n, err := rand.Read(b)
-	if err != nil {
-		return nil, fmt.Errorf("padding: failed to read bytes: %w", err)
-	}
-	if n < i {
-		return nil, fmt.Errorf("padding: wrote less bytes than expected")
-	}
-
-	s := fmt.Sprintf("%q", base64.StdEncoding.EncodeToString(b))
+	s := fmt.Sprintf("%q", base64.StdEncoding.EncodeToString(p))
 	return []byte(s), nil
 }
 
@@ -182,7 +184,7 @@ type UserBatchResponse struct {
 // code. This is called by the Web frontend.
 // API is served at /api/issue
 type IssueCodeRequest struct {
-	Padding Padding `json:"padding"`
+	Padding Padding `json:"padding,omitempty"`
 
 	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
 	TestDate    string `json:"testDate"`
@@ -213,7 +215,7 @@ type IssueCodeRequest struct {
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
 type IssueCodeResponse struct {
-	Padding Padding `json:"padding"`
+	Padding Padding `json:"padding,omitempty"`
 
 	// UUID is a handle which allows the issuer to track status of the issued verification code.
 	UUID string `json:"uuid"`
@@ -240,12 +242,14 @@ type IssueCodeResponse struct {
 
 // BatchIssueCodeRequest defines the request for issuing many codes at once.
 type BatchIssueCodeRequest struct {
-	Codes []*IssueCodeRequest `json:"codes"`
+	Padding Padding             `json:"padding,omitempty"`
+	Codes   []*IssueCodeRequest `json:"codes"`
 }
 
 // BatchIssueCodeResponse defines the response for BatchIssueCodeRequest.
 type BatchIssueCodeResponse struct {
-	Codes []*IssueCodeResponse `json:"codes,omitempty"`
+	Padding Padding              `json:"padding,omitempty"`
+	Codes   []*IssueCodeResponse `json:"codes,omitempty"`
 
 	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`

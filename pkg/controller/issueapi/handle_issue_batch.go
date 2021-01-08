@@ -129,6 +129,7 @@ func (c *Controller) decodeAndBulkIssue(ctx context.Context, w http.ResponseWrit
 	for i, result := range results {
 		singleResponse := result.IssueCodeResponse()
 		batchResp.Codes[i] = singleResponse
+		singleResponse.Padding = []byte{} // prevent inner padding of each response
 		if singleResponse.Error == "" {
 			continue
 		}
