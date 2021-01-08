@@ -1743,6 +1743,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					return err
 				}
 
+				// We are about to add foreign key references for these fields. However,
+				// in the past, it was possible for de-association to occur. We need to
+				// delete any orphaned user_realm and admin_realm associations so the
+				// foreign key constraint can be properly applied in the next step.
+				if err := tx.Exec(`DELETE FROM user_realms ur WHERE NOT EXISTS (SELECT FROM users u WHERE u.id = ur.user_id)`).Error; err != nil {
+					return err
+				}
+				if err := tx.Exec(`DELETE FROM admin_realms ar WHERE NOT EXISTS (SELECT FROM users u WHERE u.id = ar.user_id)`).Error; err != nil {
+					return err
+				}
+
 				// Update existing columns defaults.
 				if err := tx.Exec(`ALTER TABLE user_realms ALTER COLUMN realm_id SET NOT NULL`).Error; err != nil {
 					return err
