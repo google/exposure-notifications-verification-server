@@ -919,7 +919,7 @@ function buildBatchIssueRequest(thisRow, retryCode, template, line) {
 }
 
 function uploadBatchIssue(data, lines) {
-  req = {
+  let req = {
     'codes': data,
     // Request is padded with 5-15 random chars. These are ignored but vary the size of the request
     // to prevent network traffic observation.
