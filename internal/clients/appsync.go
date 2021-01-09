@@ -36,8 +36,8 @@ func NewAppSyncClient(base string, opts ...Option) (*AppSyncClient, error) {
 }
 
 // AppSync triggers an application sync.
-func (c *AppSyncClient) AppSync(ctx context.Context) (*AppsResponse, error) {
-	req, err := c.newRequest(ctx, "GET", "/", nil)
+func (c *AppSyncClient) AppSync(ctx context.Context, path string) (*AppsResponse, error) {
+	req, err := c.newRequest(ctx, "GET", path, nil)
 	if err != nil {
 		return nil, err
 	}

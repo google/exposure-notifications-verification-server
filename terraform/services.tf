@@ -14,7 +14,8 @@
 
 locals {
   appsync_config = {
-    APP_SYNC_URL = "https://www.gstatic.com/exposurenotifications/apps.json"
+    APP_SYNC_BASE_URL = "https://www.gstatic.com"
+    APP_SYNC_PATH_URL = "/exposurenotifications/apps.json"
   }
 
   gcp_config = {

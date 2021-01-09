@@ -42,7 +42,7 @@ func (c *Controller) HandleSync() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		apps, err := c.appSyncClient.AppSync(ctx)
+		apps, err := c.appSyncClient.AppSync(ctx, c.config.AppSyncPath)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
