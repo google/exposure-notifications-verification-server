@@ -81,6 +81,7 @@ func newClient(base, apiKey string, opts ...Option) (*client, error) {
 // newRequest creates a new request with the given method, path (relative to the
 // baseURL), and optional body. If the body is given, it's encoded as json.
 func (c *client) newRequest(ctx context.Context, method, pth string, body interface{}) (*http.Request, error) {
+	pth = strings.TrimPrefix(pth, "/")
 	u := c.baseURL.ResolveReference(&url.URL{Path: pth})
 
 	var b bytes.Buffer
