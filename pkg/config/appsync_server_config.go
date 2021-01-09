@@ -43,7 +43,7 @@ type AppSyncConfig struct {
 
 	// AppSync config
 	AppSyncURL         string        `env:"APP_SYNC_URL"`
-	FileSizeLimitBytes int64         `env:"APP_SYNC_SIZE_LIMIT, default=10240"`
+	FileSizeLimitBytes int64         `env:"APP_SYNC_SIZE_LIMIT, default=64000"`
 	Timeout            time.Duration `env:"APP_SYNC_TIMEOUT, default=1m"`
 }
 
