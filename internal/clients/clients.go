@@ -128,21 +128,19 @@ func (c *client) do(req *http.Request, out interface{}) (*http.Response, error) 
 
 	r := io.LimitReader(resp.Body, c.maxBodySize)
 
+	errPrefix := fmt.Sprintf("%s %s - %d", strings.ToUpper(req.Method), req.URL.String(), resp.StatusCode)
+
 	ct := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(ct, "application/json") {
-		bodyBytes, rawErr := ioutil.ReadAll(r)
-		if rawErr != nil {
-			return nil, fmt.Errorf("failed to read %s response body %w", ct, rawErr)
-		}
-		return nil, fmt.Errorf("response content type: %s. Raw response: %s", ct, string(bodyBytes))
+		b, _ := ioutil.ReadAll(r)
+		return nil, fmt.Errorf("%s: response content-type is not application/json (got %s): body: %s",
+			errPrefix, ct, string(b))
 	}
 
 	if err := json.NewDecoder(r).Decode(out); err != nil {
-		bodyBytes, rawErr := ioutil.ReadAll(r)
-		if rawErr != nil {
-			return nil, fmt.Errorf("failed to read JSON response body %w", rawErr)
-		}
-		return nil, fmt.Errorf("failed to decode JSON response: %w. Raw response: %s", err, string(bodyBytes))
+		b, _ := ioutil.ReadAll(r)
+		return nil, fmt.Errorf("%s: failed to decode JSON response: %w: body: %s",
+			errPrefix, err, string(b))
 	}
 	return resp, nil
 }
