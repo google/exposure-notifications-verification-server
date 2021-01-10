@@ -1,13 +1,17 @@
-- [System admin guide](#system-admin-guide)
-  - [Account setup](#account-setup)
-  - [Inviting new admins](#inviting-new-admins)
-  - [Creating new realms](#creating-new-realms)
-  - [View realm information](#view-realm-information)
-  - [Joining realms](#joining-realms)
-  - [Create system SMS configuration](#create-system-sms-configuration)
-  - [Create system SMTP configuration](#create-system-smtp-configuration)
-  - [Clearing caches](#clearing-caches)
-  - [Getting system information](#getting-system-information)
+<!-- TOC depthFrom:2 -->
+
+- [Account setup](#account-setup)
+- [Inviting new admins](#inviting-new-admins)
+- [Creating new realms](#creating-new-realms)
+- [View realm information](#view-realm-information)
+- [Joining realms](#joining-realms)
+- [Create system SMS configuration](#create-system-sms-configuration)
+- [Create system SMTP configuration](#create-system-smtp-configuration)
+- [Configure ENX redirect service](#configure-enx-redirect-service)
+- [Clearing caches](#clearing-caches)
+- [Getting system information](#getting-system-information)
+
+<!-- /TOC -->
 
 # System admin guide
 
@@ -163,6 +167,27 @@ pages will have a new optional setting to share this system email configuration
 with that realm.
 
 ![Realm show email settings](images/system-admin/realm-show-email.png "Realm show email settings")
+
+## Configure ENX redirect service
+
+The system can optionally host an ENX redirector service. This service provides
+realm-specific deep-links on publicly-accessible URLs to help drive app adoption
+and code redemption. **To configure the ENX redirect service, you must acquire a
+unique domain solely for the purposes of this service.**
+
+1.  Compile a list of all possible realms and regions which may want the
+    redirector service. Since **adding new domains can cause downtime** (due to
+    certificate provisioning), it is recommended that you are liberal in your
+    list. You can add entries for realms which do not exist or realms that are
+    not using ENX today.
+
+1.  Update and apply your Terraform configuration with the following new values:
+
+    -   `enx_redirect_domain` - root TLD for enx-redirect service links (e.g.
+        mydomain.com).
+
+    -   `enx_redirect_domain_map` - mapping of regions to hosts (e.g.
+        `{host="us-ca.<domain>", region="us-ca"}, ...`)
 
 ## Clearing caches
 
