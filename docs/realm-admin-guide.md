@@ -1,19 +1,24 @@
-- [Realm admin guide](#realm-admin-guide)
-  - [Access protection recommendations](#access-protection-recommendations)
-    - [Account protection](#account-protection)
-    - [API key protection](#api-key-protection)
-  - [Settings, enabling EN Express](#settings-enabling-en-express)
-  - [Settings, code settings](#settings-code-settings)
-    - [Bulk Issue Codes](#bulk-issue-codes)
-    - [Allowed Test Types](#allowed-test-types)
-    - [Date Configuration](#date-configuration)
-    - [Code Length & Expiration](#code-length--expiration)
-    - [SMS Text Template](#sms-text-template)
-  - [Settings, Twilio SMS credentials](#settings-twilio-sms-credentials)
-  - [Adding users](#adding-users)
-  - [API Keys](#api-keys)
-  - [Rotating certificate signing keys](#rotating-certificate-signing-keys)
-    - [Step 1 - Create a new signing key version](#step-1---create-a-new-signing-key-version)
+<!-- TOC depthFrom:2 -->
+
+- [Access protection recommendations](#access-protection-recommendations)
+  - [Account protection](#account-protection)
+  - [API key protection](#api-key-protection)
+- [Settings, enabling EN Express](#settings-enabling-en-express)
+- [Settings, code settings](#settings-code-settings)
+  - [Bulk Issue Codes](#bulk-issue-codes)
+  - [Allowed Test Types](#allowed-test-types)
+  - [Date Configuration](#date-configuration)
+  - [Code Length & Expiration](#code-length--expiration)
+  - [SMS Text Template](#sms-text-template)
+- [Settings, Twilio SMS credentials](#settings-twilio-sms-credentials)
+- [Adding users](#adding-users)
+- [API keys](#api-keys)
+- [ENX redirector service](#enx-redirector-service)
+- [Mobile apps](#mobile-apps)
+- [Rotating certificate signing keys](#rotating-certificate-signing-keys)
+  - [Step 1 - Create a new signing key version](#step-1---create-a-new-signing-key-version)
+
+<!-- /TOC -->
 
 # Realm admin guide
 
@@ -154,7 +159,7 @@ Note, you can only grant permissions at or below your current level.
 
 ![users](images/admin/users02.png "User listing")
 
-## API Keys
+## API keys
 
 API Keys are used by your mobile app to access the verification server.
 These API keys should be kept secret and only used by your mobile app.
@@ -177,6 +182,73 @@ This is the __only__ time that this API key will be displayed.
 If you fail to copy it, you will need to create another one.
 
 ![api keys](images/admin/apikeys03.png "API key created")
+
+## ENX redirector service
+
+**This section is only applicable for realms that have adopted to Exposure
+Notifications Express (ENX).**
+
+The ENX redirector service performs the following primary functions:
+
+1.  Serve a `.well-known/` directory at a public-accessible URL with files
+    required by iOS and Android to properly handle app deep-links.
+
+1.  Open your realm's mobile app on the patient's phone. Alternatively, if the
+    patient does not have your mobile app installed, it can redirect them to
+    your app in Apple App Store or Android Play Store automatically based on the
+    device type.
+
+In order for your mobile apps to consume this functionality, you need to create
+mobile app records on your realm. Note this is **different** from an _API key_.
+Creating a mobile app is documented below.
+
+If your system supports the ENX redirector service, the system administrator
+should share your redirect domain. Typically this is comprised of your realm's
+_region code_ and a base domain, like:
+
+```text
+https://<region-code>.<domain>
+
+# Example:
+https://us-ca.enexpress.com
+```
+
+Your system administrator defines the root domain. You can use URLs with this
+domain on mobile devices. As mentioned above, if the patient has your app
+installed, the URL will deep-link into the application. If the patient does not
+have your app installed, they will be redirected to the appropriate app store
+and prompted to install.
+
+## Mobile apps
+
+**You must have `MobileAppWrite` permissions to perform these steps.**
+
+To create a new mobile app, visit the `/realm/mobile-apps` URL. You can access
+it directly via:
+
+```text
+https://<your-domain>/realm/mobile-apps
+```
+
+Or by choosing "Mobile apps" from the dropdown.
+
+![Mobile apps list](images/admin/mobile-apps-index.png "Mobile apps list")
+
+Click the "+" to launch the New Mobile Apps page.
+
+![New mobile app](images/admin/mobile-apps-new.png "New mobile app")
+
+Complete the information for your mobile app. Depending on the platform (iOS or
+Android), you may be required to enter different information. Click "Create
+mobile app" to save the entry.
+
+Once the mobile app has been created, it can take up to 30 minutes for the ENX
+redirector service to create your entry.
+
+Note that this process is separate from the Google and Apple app review
+processes. You still must submit your application for inclusion in the Play
+Store and App Store respectively, separate from this system.
+
 
 ## Rotating certificate signing keys
 
