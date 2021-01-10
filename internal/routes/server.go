@@ -182,6 +182,7 @@ func Server(
 			sub.Use(loadCurrentMembership)
 			sub.Handle("/login", loginController.HandleReauth()).Methods("GET")
 			sub.Handle("/login", loginController.HandleReauth()).Queries("redir", "").Methods("GET")
+			sub.Handle("/login/post-authenticate", loginController.HandlePostAuthenticate()).Methods("GET", "POST", "PUT", "PATCH")
 			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
 			sub.Handle("/login/change-password", loginController.HandleShowChangePassword()).Methods("GET")
 			sub.Handle("/login/change-password", loginController.HandleSubmitChangePassword()).Methods("POST")
