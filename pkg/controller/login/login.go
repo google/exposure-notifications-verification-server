@@ -17,8 +17,11 @@ package login
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
@@ -26,18 +29,43 @@ func (c *Controller) HandleLogin() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// If there's a firebase cookie in the session, try to redirect to /codes/issue. If
-		// the cookie is invalid, the auth middleware will pick it up, delete the
-		// cookie from the session, and kick them back here.
+		// If there's no session, render the login page directly.
 		session := controller.SessionFromContext(ctx)
-		if session != nil {
-			if err := c.authProvider.CheckRevoked(ctx, session); err == nil {
-				http.Redirect(w, r, "/codes/issue", http.StatusSeeOther)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		// Check session idle timeout - we do this before checking if the overall
+		// session is expired because they both have the save effect (session
+		// revocation), but this check is less expensive.
+		if t := controller.LastActivityFromSession(session); !t.IsZero() {
+			// If it's been more than the TTL since we've seen this session,
+			// expire it by creating a new empty session.
+			if time.Since(t) > c.config.SessionIdleTimeout {
+				flash.Error("Your session has expired due to inactivity.")
+				controller.RedirectToLogout(w, r, c.h)
 				return
 			}
 		}
 
-		c.renderLogin(ctx, w)
+		// Check upstream auth provider to see if the session is still valid.
+		if err := c.authProvider.CheckRevoked(ctx, session); err != nil {
+			if errors.Is(err, auth.ErrSessionMissing) {
+				c.renderLogin(ctx, w)
+				return
+			}
+
+			flash.Error("Your session has expired.")
+			controller.RedirectToLogout(w, r, c.h)
+			return
+		}
+
+		// If we got this far, the session is probably valid. Redirect to issue
+		// page. However, the auth middleware will still run after the redirect.
+		http.Redirect(w, r, "/codes/issue", http.StatusSeeOther)
+		return
 	})
 }
 

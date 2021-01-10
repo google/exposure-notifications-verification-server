@@ -16,8 +16,6 @@
 package login
 
 import (
-	"context"
-
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -34,13 +32,7 @@ type Controller struct {
 }
 
 // New creates a new login controller.
-func New(
-	ctx context.Context,
-	authProvider auth.Provider,
-	cacher cache.Cacher,
-	config *config.ServerConfig,
-	db *database.Database,
-	h render.Renderer) *Controller {
+func New(authProvider auth.Provider, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, h render.Renderer) *Controller {
 
 	return &Controller{
 		authProvider: authProvider,

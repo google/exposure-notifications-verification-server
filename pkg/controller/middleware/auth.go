@@ -53,8 +53,6 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 				// If it's been more than the TTL since we've seen this session,
 				// expire it by creating a new empty session.
 				if time.Since(t) > sessionIdleTTL {
-					authProvider.ClearSession(ctx, session)
-
 					flash.Error("Your session has expired due to inactivity.")
 					controller.RedirectToLogout(w, r, h)
 					return
@@ -64,8 +62,6 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 			// Get the email from the auth provider.
 			email, err := authProvider.EmailAddress(ctx, session)
 			if err != nil {
-				authProvider.ClearSession(ctx, session)
-
 				logger.Debugw("failed to get email from session", "error", err)
 				flash.Error("An error occurred trying to verify your credentials.")
 				controller.RedirectToLogout(w, r, h)
@@ -98,9 +94,8 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 			if time.Now().After(user.LastRevokeCheck.Add(expiryCheckTTL)) {
 				// Check if the session has been revoked.
 				if err := authProvider.CheckRevoked(ctx, session); err != nil {
-					authProvider.ClearSession(ctx, session)
-
 					logger.Debugw("session revoked", "error", err)
+					flash.Error("You have been logged out from another session.")
 					controller.RedirectToLogout(w, r, h)
 					return
 				}
