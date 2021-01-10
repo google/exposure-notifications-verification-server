@@ -77,7 +77,7 @@ func (c *Controller) HandleDelete() http.Handler {
 		if user.ID == currentUser.ID {
 			flash.Alert("Successfully removed you from the realm")
 			controller.ClearSessionRealm(session)
-			http.Redirect(w, r, "/codes/issue", http.StatusSeeOther)
+			http.Redirect(w, r, "/login/post-authenticate", http.StatusSeeOther)
 			return
 		}
 

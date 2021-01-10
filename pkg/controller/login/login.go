@@ -64,7 +64,7 @@ func (c *Controller) HandleLogin() http.Handler {
 
 		// If we got this far, the session is probably valid. Redirect to issue
 		// page. However, the auth middleware will still run after the redirect.
-		http.Redirect(w, r, "/codes/issue", http.StatusSeeOther)
+		http.Redirect(w, r, "/login/post-authenticate", http.StatusSeeOther)
 		return
 	})
 }
