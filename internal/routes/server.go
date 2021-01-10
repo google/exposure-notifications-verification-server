@@ -158,7 +158,7 @@ func Server(
 	}
 
 	{
-		loginController := login.New(ctx, authProvider, cacher, cfg, db, h)
+		loginController := login.New(authProvider, cacher, cfg, db, h)
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
