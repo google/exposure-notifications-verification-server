@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package jwks handles returning JSON encoded information about the
-// server's encryptionn keys. See https://tools.ietf.org/html/rfc75170
+// server's encryption keys. See https://tools.ietf.org/html/rfc75170
 // for information about the server.
 package jwks
 
@@ -82,7 +82,6 @@ func (c *Controller) HandleIndex() http.Handler {
 				c.h.RenderJSON(w, http.StatusBadRequest, fmt.Errorf("invalid region id %q", realmID))
 				return
 			}
-
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
