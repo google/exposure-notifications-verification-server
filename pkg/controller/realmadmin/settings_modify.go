@@ -78,13 +78,15 @@ type formData struct {
 	TwilioAuthToken    string `form:"twilio_auth_token"`
 	TwilioFromNumber   string `form:"twilio_from_number"`
 
-	Email                bool   `form:"email"`
-	UseSystemEmailConfig bool   `form:"use_system_email_config"`
-	SMTPAccount          string `form:"smtp_account"`
-	SMTPPassword         string `form:"smtp_password"`
-	SMTPHost             string `form:"smtp_host"`
-	SMTPPort             string `form:"smtp_port"`
-	EmailInviteTemplate  string `form:"email_invite_template"`
+	Email                      bool   `form:"email"`
+	UseSystemEmailConfig       bool   `form:"use_system_email_config"`
+	SMTPAccount                string `form:"smtp_account"`
+	SMTPPassword               string `form:"smtp_password"`
+	SMTPHost                   string `form:"smtp_host"`
+	SMTPPort                   string `form:"smtp_port"`
+	EmailInviteTemplate        string `form:"email_invite_template"`
+	EmailPasswordResetTemplate string `form:"password_reset_template"`
+	EmailVerifyTemplate        string `form:"email_verify_template"`
 
 	Security                    bool   `form:"security"`
 	MFAMode                     int16  `form:"mfa_mode"`
@@ -196,6 +198,8 @@ func (c *Controller) HandleSettings() http.Handler {
 		if form.Email {
 			currentRealm.UseSystemEmailConfig = form.UseSystemEmailConfig
 			currentRealm.EmailInviteTemplate = form.EmailInviteTemplate
+			currentRealm.EmailPasswordResetTemplate = form.EmailPasswordResetTemplate
+			currentRealm.EmailVerifyTemplate = form.EmailVerifyTemplate
 		}
 
 		// Security
