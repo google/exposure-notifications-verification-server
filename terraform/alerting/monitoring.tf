@@ -68,3 +68,72 @@ resource "google_logging_metric" "stackdriver_export_error_count" {
     value_type  = "INT64"
   }
 }
+
+resource "google_logging_metric" "human_accessed_secret" {
+  name    = "human_accessed_secret"
+  project = var.project
+
+  filter = <<EOT
+resource.type="audited_resource"
+resource.labels.service="secretmanager.googleapis.com"
+resource.labels.method:"AccessSecretVersion"
+protoPayload.authenticationInfo.principalEmail!~"gserviceaccount.com$"
+EOT
+
+  metric_descriptor {
+    metric_kind = "CUMULATIVE"
+    value_type  = "INT64"
+
+    labels {
+      key         = "email"
+      value_type  = "STRING"
+      description = "Email address of the violating principal."
+    }
+
+    labels {
+      key         = "secret"
+      value_type  = "STRING"
+      description = "Full resource ID of the secret."
+    }
+  }
+
+  label_extractors = {
+    "email"  = "EXTRACT(protoPayload.authenticationInfo.principalEmail)"
+    "secret" = "EXTRACT(protoPayload.resourceName)"
+  }
+}
+
+
+resource "google_logging_metric" "human_decrypted_value" {
+  name    = "human_decrypted_value"
+  project = var.project
+
+  filter = <<EOT
+resource.type="audited_resource"
+resource.labels.service="cloudkms.googleapis.com"
+resource.labels.method:"Decrypt"
+protoPayload.authenticationInfo.principalEmail!~"gserviceaccount.com$"
+EOT
+
+  metric_descriptor {
+    metric_kind = "CUMULATIVE"
+    value_type  = "INT64"
+
+    labels {
+      key         = "email"
+      value_type  = "STRING"
+      description = "Email address of the violating principal."
+    }
+
+    labels {
+      key         = "key"
+      value_type  = "STRING"
+      description = "Full resource ID of the key."
+    }
+  }
+
+  label_extractors = {
+    "email" = "EXTRACT(protoPayload.authenticationInfo.principalEmail)"
+    "key"   = "EXTRACT(protoPayload.resourceName)"
+  }
+}
