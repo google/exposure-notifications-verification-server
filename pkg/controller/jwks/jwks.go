@@ -13,15 +13,14 @@
 // limitations under the License.
 
 // Package jwks handles returning JSON encoded information about the
-// server's encryptionn keys. See https://tools.ietf.org/html/rfc75170
+// server's encryption keys. See https://tools.ietf.org/html/rfc75170
 // for information about the server.
 package jwks
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -32,9 +31,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rakutentech/jwk-go/jwk"
 )
-
-// Error codes
-var errBadRealm = errors.New("bad realm")
 
 // Controller holds all the pieces necessary to show the jwks encoded keys.
 type Controller struct {
@@ -67,18 +63,23 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		// Grab the URL path components  we need.
+		realmID := mux.Vars(r)["realm_id"]
+
+		// Find the realm, and the key abstractions from the DB.
+		realm, err := c.db.FindRealm(realmID)
+		if err != nil {
+			if database.IsNotFound(err) {
+				c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no realm exists for region %q", realmID))
+				return
+			}
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		// If we got this far, it means there was no cached value, so do a full
 		// read.
-		encoded, err := func() ([]*jwk.JWK, error) {
-			// Grab the URL path components  we need.
-			realmID := mux.Vars(r)["realm_id"]
-
-			// Find the realm, and the key abstractions from the DB.
-			realm, err := c.getRealm(realmID)
-			if err != nil {
-				return nil, err
-			}
-
+		encoded, err = func() ([]*jwk.JWK, error) {
 			var keys []*database.SigningKey
 			keys, err = realm.ListSigningKeys(c.db)
 			if err != nil {
@@ -122,20 +123,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		// Get the keys.
 		c.h.RenderJSON(w, http.StatusOK, encoded)
 	})
-}
-
-// getRealm finds realm given ID.
-func (c *Controller) getRealm(realmStr string) (*database.Realm, error) {
-	realmID, err := strconv.Atoi(realmStr)
-	if err != nil {
-		return nil, errBadRealm
-	}
-	var realm *database.Realm
-	realm, err = c.db.FindRealm(uint(realmID))
-	if err != nil {
-		return nil, errBadRealm
-	}
-	return realm, nil
 }
 
 // New creates a new jwks *Controller, and returns it.
