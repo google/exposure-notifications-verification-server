@@ -586,16 +586,24 @@ func TestRealm_FindRealm(t *testing.T) {
 		findFn func() (*Realm, error)
 	}{
 		{
-			name:   "find by realm",
+			name:   "find_by_realm",
 			findFn: func() (*Realm, error) { return db.FindRealm(realm1.ID) },
 		},
 		{
-			name:   "find by name",
+			name:   "find_by_name",
 			findFn: func() (*Realm, error) { return db.FindRealmByName(realm1.Name) },
 		},
 		{
-			name:   "find by region",
+			name:   "find_by_region",
 			findFn: func() (*Realm, error) { return db.FindRealmByRegion(realm1.RegionCode) },
+		},
+		{
+			name:   "find_by_region_or_id/id",
+			findFn: func() (*Realm, error) { return db.FindRealmByRegionOrID(fmt.Sprintf("%d", realm1.ID)) },
+		},
+		{
+			name:   "find_by_region_or_id/region_code",
+			findFn: func() (*Realm, error) { return db.FindRealmByRegionOrID(realm1.RegionCode) },
 		},
 	}
 

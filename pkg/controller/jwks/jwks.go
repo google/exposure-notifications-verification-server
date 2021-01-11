@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -48,7 +49,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		// key is the key in the cacher where the values for this JWK are cached.
 		key := &cache.Key{
 			Namespace: "jwks",
-			Key:       r.URL.String(),
+			Key:       strings.ToLower(r.URL.String()),
 		}
 
 		// See if there's a cached value. Note we cannot use Fetch here because our
@@ -67,7 +68,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		realmID := mux.Vars(r)["realm_id"]
 
 		// Find the realm, and the key abstractions from the DB.
-		realm, err := c.db.FindRealm(realmID)
+		realm, err := c.db.FindRealmByRegionOrID(realmID)
 		if err != nil {
 			if database.IsNotFound(err) {
 				c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no realm exists for region %q", realmID))
