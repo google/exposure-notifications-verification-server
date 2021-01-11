@@ -53,7 +53,19 @@ variable "slo_thresholds_overrides" {
   default = {}
 }
 
+variable "alert_on_human_accessed_secret" {
+  type    = bool
+  default = true
 
+  description = "Alert when a human accesses a secret. You must enable DATA_READ audit logs for Secret Manager."
+}
+
+variable "alert_on_human_decrypted_value" {
+  type    = bool
+  default = true
+
+  description = "Alert when a human accesses a secret. You must enable DATA_READ audit logs for Cloud KMS."
+}
 
 terraform {
   required_version = ">= 0.14.2"

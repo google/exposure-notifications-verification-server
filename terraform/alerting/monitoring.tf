@@ -81,7 +81,7 @@ protoPayload.authenticationInfo.principalEmail!~"gserviceaccount.com$"
 EOT
 
   metric_descriptor {
-    metric_kind = "CUMULATIVE"
+    metric_kind = "DELTA"
     value_type  = "INT64"
 
     labels {
@@ -116,7 +116,7 @@ protoPayload.authenticationInfo.principalEmail!~"gserviceaccount.com$"
 EOT
 
   metric_descriptor {
-    metric_kind = "CUMULATIVE"
+    metric_kind = "DELTA"
     value_type  = "INT64"
 
     labels {
