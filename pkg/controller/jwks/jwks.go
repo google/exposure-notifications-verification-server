@@ -76,11 +76,14 @@ func (c *Controller) HandleIndex() http.Handler {
 		if err != nil {
 			if database.IsNotFound(err) {
 				c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no realm exists for region %q", realmID))
-			} else if err == errBadRealm {
-				c.h.RenderJSON(w, http.StatusBadRequest, fmt.Errorf("invalid region id %q", realmID))
-			} else {
-				controller.InternalError(w, r, c.h, err)
+				return
 			}
+			if err == errBadRealm {
+				c.h.RenderJSON(w, http.StatusBadRequest, fmt.Errorf("invalid region id %q", realmID))
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
