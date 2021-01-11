@@ -16,27 +16,27 @@ package project
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 )
 
 // RandomHexString generates a random string of the provided length.
 func RandomHexString(len int) (string, error) {
-	b := make([]byte, len)
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf("failed to generate random: %w", err)
+	b, err := RandomBytes((len + 1) / 2)
+	if err != nil {
+		return "", err
 	}
-	return fmt.Sprintf("%x", sha256.Sum256(b[:])), nil
+	return hex.EncodeToString(b)[:len], nil
 }
 
 // RandomBase64String encodes a random base64 string of a given length.
 func RandomBase64String(len int) (string, error) {
-	b := make([]byte, len)
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf("failed to generate random: %w", err)
+	b, err := RandomBytes(len)
+	if err != nil {
+		return "", err
 	}
-	return base64.URLEncoding.EncodeToString(b), nil
+	return base64.URLEncoding.EncodeToString(b)[:len], nil
 }
 
 // RandomBytes returns a byte slice of random values of the given length.
