@@ -77,7 +77,10 @@ func TestRenderBulkIssue(t *testing.T) {
 
 	handleFunc := c.HandleBulkIssue()
 	handleFunc.ServeHTTP(w, r)
-	if result := w.Result(); result.StatusCode != http.StatusOK {
+	result := w.Result()
+	defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+
+	if result.StatusCode != http.StatusOK {
 		t.Errorf("expected status 200 OK, got %d", result.StatusCode)
 	}
 }
