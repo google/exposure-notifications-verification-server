@@ -323,11 +323,21 @@ func templateFuncs() htmltemplate.FuncMap {
 		"disabledIf":       disabledIf,
 		"t":                translate,
 		"passwordSentinel": pwdSentinel,
+		"hasOne":           hasOne,
+		"hasMany":          hasMany,
 
 		"rbac": func() map[string]rbac.Permission {
 			return rbac.NamePermissionMap
 		},
 	}
+}
+
+func hasOne(a []interface{}) bool {
+	return len(a) == 1
+}
+
+func hasMany(a []interface{}) bool {
+	return len(a) > 1
 }
 
 func pwdSentinel() string {

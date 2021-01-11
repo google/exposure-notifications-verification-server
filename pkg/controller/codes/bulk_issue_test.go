@@ -27,12 +27,14 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+	"github.com/gorilla/sessions"
 )
 
 func TestRenderBulkIssue(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
+	ctx = controller.WithSession(ctx, &sessions.Session{})
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := database.NewRealmWithDefaults("Test Realm")
@@ -42,11 +44,13 @@ func TestRenderBulkIssue(t *testing.T) {
 		t.Fatalf("failed to save realm: %v", err)
 	}
 
-	ctx = controller.WithMembership(ctx, &database.Membership{
+	membership := &database.Membership{
 		RealmID:     realm.ID,
 		Realm:       realm,
 		Permissions: rbac.CodeBulkIssue,
-	})
+	}
+	ctx = controller.WithMembership(ctx, membership)
+	ctx = controller.WithMemberships(ctx, []*database.Membership{membership})
 
 	config := &config.ServerConfig{}
 	h, err := render.NewTest(ctx, project.Root()+"/cmd/server/assets", t)
@@ -73,4 +77,7 @@ func TestRenderBulkIssue(t *testing.T) {
 
 	handleFunc := c.HandleBulkIssue()
 	handleFunc.ServeHTTP(w, r)
+	if result := w.Result(); result.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+	}
 }
