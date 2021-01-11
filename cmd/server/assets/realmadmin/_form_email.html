@@ -73,10 +73,13 @@
       </small>
     </div>
 
+    <hr>
+    <h6 class="mb-3">New user invitation email</h6>
+
     <div class="form-label-group">
       <textarea name="email_invite_template" id="email-invite-template" class="form-control text-monospace{{if $realm.ErrorsFor "EmailInviteTemplate"}} is-invalid{{end}}"
-        rows="5" placeholder="Email invite template">{{$realm.EmailInviteTemplate}}</textarea>
-      <label for="email-invite-template">Email invitation template</label>
+        rows="5" placeholder="Template text">{{$realm.EmailInviteTemplate}}</textarea>
+      <label for="email-invite-template">Template text</label>
       {{if $realm.ErrorsFor "EmailInviteTemplate"}}
       <div class="invalid-feedback">
         {{joinStrings ($realm.ErrorsFor "EmailInviteTemplate") ", "}}
@@ -101,8 +104,85 @@
           <samp class="text-dark">
             Welcome,<br/>
             You have been invited to the State of Wonder Dept. of Health COVID-19 exposure notification
-            server. You may use the following link to set your password and sign-in:<br/>
-            [invitelink]
+            server. You may use the following link to set your password and sign-in: [invitelink]
+            <br/><br/>
+            If you did not request this, please ignore this email.
+          </samp>
+        </p>
+      </small>
+    </div>
+
+    <hr>
+    <h6 class="mb-3">Password reset email</h6>
+
+    <div class="form-label-group">
+      <textarea name="password_reset_template" id="password-reset-template" class="form-control text-monospace{{if $realm.ErrorsFor "EmailPasswordResetTemplate"}} is-invalid{{end}}"
+        rows="5" placeholder="Template text">{{$realm.EmailPasswordResetTemplate}}</textarea>
+      <label for="password-reset-template">Template text</label>
+      {{if $realm.ErrorsFor "EmailPasswordResetTemplate"}}
+      <div class="invalid-feedback">
+        {{joinStrings ($realm.ErrorsFor "EmailPasswordResetTemplate") ", "}}
+      </div>
+      {{end}}
+      <small class="form-text text-muted">
+        <p>
+        The password reset email message will be constructed based on the template you provide.
+        This can help users trust the email with a more specific message for this realm.
+        There are some special strings that you can use to substitute items.
+
+        Your password reset template <em>MUST</em> contain <code>[passwordresetlink]</code>.
+        </p>
+
+        <ul>
+          <li><code>[passwordresetlink]</code> The link given to the user to reset their password.</li>
+          <li><code>[realname]</code> The name of the current realm. Currently <em>{{$realm.Name}}</em>.</li>
+        </ul>
+
+        Here is an example invitation template.
+        <p>
+          <samp class="text-dark">
+            You have requested your password to the State of Wonder Dept. of Health COVID-19 exposure notification
+            server to be reset. You may use the following link to set a new password: [passwordresetlink]
+            <br/><br/>
+            If you did not request this, please ignore this email.
+          </samp>
+        </p>
+      </small>
+    </div>
+
+    <hr>
+    <h6 class="mb-3">Verify email address</h6>
+
+    <div class="form-label-group">
+      <textarea name="email_verify_template" id="email-verify-template" class="form-control text-monospace{{if $realm.ErrorsFor "EmailVerifyTemplate"}} is-invalid{{end}}"
+        rows="5" placeholder="Template text">{{$realm.EmailVerifyTemplate}}</textarea>
+      <label for="email-verify-template">Template text</label>
+      {{if $realm.ErrorsFor "EmailVerifyTemplate"}}
+      <div class="invalid-feedback">
+        {{joinStrings ($realm.ErrorsFor "EmailVerifyTemplate") ", "}}
+      </div>
+      {{end}}
+      <small class="form-text text-muted">
+        <p>
+        The email verification message will be constructed based on the template you provide.
+        This can help users trust the email with a more specific message for this realm.
+        There are some special strings that you can use to substitute items.
+
+        Your email verification template <em>MUST</em> contain <code>[verifylink]</code>.
+        </p>
+
+        <ul>
+          <li><code>[verifylink]</code> The link given to the user to verify their email address.</li>
+          <li><code>[realname]</code> The name of the current realm. Currently <em>{{$realm.Name}}</em>.</li>
+        </ul>
+
+        Here is an example invitation template.
+        <p>
+          <samp class="text-dark">
+            Use the following link toverify your email address for the State of Wonder Dept. of Health COVID-19 exposure notification
+            server: [verifylink]
+            <br/><br/>
+            If you did not request this, please ignore this email.
           </samp>
         </p>
       </small>
