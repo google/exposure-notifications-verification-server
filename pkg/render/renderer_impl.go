@@ -32,6 +32,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/leonelquinteros/gotext"
 
@@ -332,11 +333,11 @@ func templateFuncs() htmltemplate.FuncMap {
 	}
 }
 
-func hasOne(a []interface{}) bool {
+func hasOne(a []*interface{}) bool {
 	return len(a) == 1
 }
 
-func hasMany(a []interface{}) bool {
+func hasMany(a []*database.Membership) bool {
 	return len(a) > 1
 }
 
