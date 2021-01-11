@@ -31,3 +31,16 @@ var _, self, _, _ = runtime.Caller(0)
 func Root() string {
 	return filepath.Join(filepath.Dir(self), "..", "..")
 }
+
+// AllDigits returns true if all runes of a string are digits.
+func AllDigits(val string) bool {
+	if val == "" {
+		return false
+	}
+	for _, c := range val {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}

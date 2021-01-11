@@ -959,15 +959,7 @@ func (db *Database) FindRealm(id interface{}) (*Realm, error) {
 
 // FindRealmByRegionOrID finds the realm by the given ID or region code.
 func (db *Database) FindRealmByRegionOrID(val string) (*Realm, error) {
-	allDigits := true
-	for _, c := range val {
-		if c < '0' || c > '9' {
-			allDigits = false
-			break
-		}
-	}
-
-	if allDigits {
+	if project.AllDigits(val) {
 		return db.FindRealm(val)
 	}
 	return db.FindRealmByRegion(val)

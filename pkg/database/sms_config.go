@@ -15,9 +15,9 @@
 package database
 
 import (
-	"strconv"
 	"strings"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"github.com/jinzhu/gorm"
 )
@@ -66,11 +66,11 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 					s.AddError("twilioFromNumber", `a valid twilio messaging service sid should be 34 characters`)
 				}
 			case strings.HasPrefix(s.TwilioFromNumber, "+"):
-				if _, err := strconv.ParseInt(s.TwilioFromNumber[1:], 10, 64); err != nil {
+				if !project.AllDigits(s.TwilioFromNumber[1:]) {
 					s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+" followed by digits`)
 				}
 			case len(s.TwilioFromNumber) <= 6:
-				if _, err := strconv.ParseInt(s.TwilioFromNumber, 10, 32); len(s.TwilioFromNumber) <= 6 && err != nil {
+				if !project.AllDigits(s.TwilioFromNumber) && len(s.TwilioFromNumber) <= 6 {
 					s.AddError("twilioFromNumber", `a short code should contain only digits`)
 				}
 			default:
