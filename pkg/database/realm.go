@@ -957,6 +957,18 @@ func (db *Database) FindRealm(id interface{}) (*Realm, error) {
 	return &realm, nil
 }
 
+// FindRealmByRegionOrID finds the realm by the given ID or region code.
+func (db *Database) FindRealmByRegionOrID(val interface{}) (*Realm, error) {
+	var realm Realm
+	if err := db.db.
+		Where("id = ? OR region_code = ?", val, val).
+		First(&realm).
+		Error; err != nil {
+		return nil, err
+	}
+	return &realm, nil
+}
+
 // ListRealms lists all available realms in the system.
 func (db *Database) ListRealms(p *pagination.PageParams, scopes ...Scope) ([]*Realm, *pagination.Paginator, error) {
 	var realms []*Realm
