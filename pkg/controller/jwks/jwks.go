@@ -19,10 +19,8 @@ package jwks
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -33,9 +31,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rakutentech/jwk-go/jwk"
 )
-
-// Error codes
-var errBadRealm = errors.New("bad realm")
 
 // Controller holds all the pieces necessary to show the jwks encoded keys.
 type Controller struct {
@@ -72,14 +67,10 @@ func (c *Controller) HandleIndex() http.Handler {
 		realmID := mux.Vars(r)["realm_id"]
 
 		// Find the realm, and the key abstractions from the DB.
-		realm, err := c.getRealm(realmID)
+		realm, err := c.db.FindRealm(realmID)
 		if err != nil {
 			if database.IsNotFound(err) {
 				c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no realm exists for region %q", realmID))
-				return
-			}
-			if err == errBadRealm {
-				c.h.RenderJSON(w, http.StatusBadRequest, fmt.Errorf("invalid region id %q", realmID))
 				return
 			}
 			controller.InternalError(w, r, c.h, err)
@@ -132,15 +123,6 @@ func (c *Controller) HandleIndex() http.Handler {
 		// Get the keys.
 		c.h.RenderJSON(w, http.StatusOK, encoded)
 	})
-}
-
-// getRealm finds realm given ID.
-func (c *Controller) getRealm(realmStr string) (*database.Realm, error) {
-	realmID, err := strconv.Atoi(realmStr)
-	if err != nil {
-		return nil, errBadRealm
-	}
-	return c.db.FindRealm(uint(realmID))
 }
 
 // New creates a new jwks *Controller, and returns it.
