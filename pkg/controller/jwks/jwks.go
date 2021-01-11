@@ -20,6 +20,7 @@ package jwks
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -67,18 +68,25 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		// Grab the URL path components  we need.
+		realmID := mux.Vars(r)["realm_id"]
+
+		// Find the realm, and the key abstractions from the DB.
+		realm, err := c.getRealm(realmID)
+		if err != nil {
+			if database.IsNotFound(err) {
+				c.h.RenderJSON(w, http.StatusNotFound, fmt.Errorf("no realm exists for region %q", realmID))
+			} else if err == errBadRealm {
+				c.h.RenderJSON(w, http.StatusBadRequest, fmt.Errorf("invalid region id %q", realmID))
+			} else {
+				controller.InternalError(w, r, c.h, err)
+			}
+			return
+		}
+
 		// If we got this far, it means there was no cached value, so do a full
 		// read.
-		encoded, err := func() ([]*jwk.JWK, error) {
-			// Grab the URL path components  we need.
-			realmID := mux.Vars(r)["realm_id"]
-
-			// Find the realm, and the key abstractions from the DB.
-			realm, err := c.getRealm(realmID)
-			if err != nil {
-				return nil, err
-			}
-
+		encoded, err = func() ([]*jwk.JWK, error) {
 			var keys []*database.SigningKey
 			keys, err = realm.ListSigningKeys(c.db)
 			if err != nil {
@@ -130,12 +138,7 @@ func (c *Controller) getRealm(realmStr string) (*database.Realm, error) {
 	if err != nil {
 		return nil, errBadRealm
 	}
-	var realm *database.Realm
-	realm, err = c.db.FindRealm(uint(realmID))
-	if err != nil {
-		return nil, errBadRealm
-	}
-	return realm, nil
+	return c.db.FindRealm(uint(realmID))
 }
 
 // New creates a new jwks *Controller, and returns it.
