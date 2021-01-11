@@ -599,7 +599,7 @@ func TestRealm_FindRealm(t *testing.T) {
 		},
 		{
 			name:   "find_by_region_or_id/id",
-			findFn: func() (*Realm, error) { return db.FindRealmByRegionOrID(realm1.ID) },
+			findFn: func() (*Realm, error) { return db.FindRealmByRegionOrID(fmt.Sprintf("%d", realm1.ID)) },
 		},
 		{
 			name:   "find_by_region_or_id/region_code",
