@@ -269,12 +269,12 @@ resource "google_monitoring_alert_policy" "HumanAccessedSecret" {
 
       query = <<-EOT
       fetch audited_resource
-      | metric 'logging.googleapis.com/user/human_accessed_secret'
+      | metric 'logging.googleapis.com/user/${google_logging_metric.human_accessed_secret.name}'
       | align rate(5m)
       | every 1m
       | group_by [resource.project_id],
-          [value_human_accessed_secret_aggregate: aggregate(value.human_accessed_secret)]
-      | condition value_human_accessed_secret_aggregate > 0
+          [val: aggregate(value.human_accessed_secret)]
+      | condition val > 0
       EOT
 
       trigger {
@@ -310,12 +310,12 @@ resource "google_monitoring_alert_policy" "HumanDecryptedValue" {
 
       query = <<-EOT
       fetch audited_resource
-      | metric 'logging.googleapis.com/user/human_decrypted_value'
+      | metric 'logging.googleapis.com/user/${google_logging_metric.human_decrypted_value.name}'
       | align rate(5m)
       | every 1m
       | group_by [resource.project_id],
-          [value_human_decrypted_value_aggregate: aggregate(value.human_decrypted_value)]
-      | condition value_human_decrypted_value_aggregate > 0
+          [val: aggregate(value.human_decrypted_value)]
+      | condition val > 0
       EOT
 
       trigger {
