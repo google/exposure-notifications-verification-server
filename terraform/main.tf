@@ -196,6 +196,9 @@ export RATE_LIMIT_REDIS_PORT="${google_redis_instance.cache.port}"
 
 export CERTIFICATE_SIGNING_KEY="${trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
 export TOKEN_SIGNING_KEY="${trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
+
+export BINAUTHZ_ATTESTOR="${google_binary_authorization_attestor.built-by-ci.id}"
+export BINAUTHZ_KEY_VERSION="${trimprefix(data.google_kms_crypto_key_version.binauthz-built-by-ci-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
 EOF
 }
 

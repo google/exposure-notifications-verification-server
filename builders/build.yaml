@@ -31,6 +31,8 @@ options:
     path: '/go/pkg'
 
 substitutions:
+  _BINAUTHZ_ATTESTOR:
+  _BINAUTHZ_KEY_VERSION:
   _REPO: 'github.com/google/exposure-notifications-verification-server'
   _TAG:
 
@@ -48,9 +50,8 @@ steps:
   name: 'golang:1.15.2'
   args:
   - 'go'
-  - 'mod'
-  - 'download'
-  - '-x'
+  - 'install'
+  - './...'
   waitFor:
   - 'restore-cache'
 
@@ -89,6 +90,29 @@ steps:
   waitFor:
   - 'build-adminapi'
 
+- id: 'push-adminapi'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG}'
+
+- id: 'attest-adminapi'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-adminapi'
+
 #
 # apiserver
 #
@@ -114,6 +138,30 @@ steps:
   - '.'
   waitFor:
   - 'build-apiserver'
+
+- id: 'push-apiserver'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}'
+
+- id: 'attest-apiserver'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-apiserver'
+
 
 #
 # appsync
@@ -141,6 +189,30 @@ steps:
   waitFor:
   - 'build-appsync'
 
+- id: 'push-appsync'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/appsync:${_TAG}'
+
+- id: 'attest-appsync'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/appsync:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-appsync'
+
+
 #
 # cleanup
 #
@@ -166,6 +238,30 @@ steps:
   - '.'
   waitFor:
   - 'build-cleanup'
+
+- id: 'push-cleanup'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}'
+
+- id: 'attest-cleanup'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-cleanup'
+
 
 #
 # e2e-runner
@@ -193,6 +289,30 @@ steps:
   waitFor:
   - 'build-e2e-runner'
 
+- id: 'push-e2e-runner'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}'
+
+- id: 'attest-e2e-runner'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-e2e-runner'
+
+
 #
 # enx-redirect
 #
@@ -218,6 +338,30 @@ steps:
   waitFor:
   - 'build-enx-redirect'
 
+- id: 'push-enx-redirect'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}'
+
+- id: 'attest-enx-redirect'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-enx-redirect'
+
+
 #
 # migrate
 #
@@ -242,6 +386,30 @@ steps:
   - '.'
   waitFor:
   - 'build-migrate'
+
+- id: 'push-migrate'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
+
+- id: 'attest-migrate'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-migrate'
+
 
 #
 # modeler
@@ -269,6 +437,30 @@ steps:
   waitFor:
   - 'build-modeler'
 
+- id: 'push-modeler'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/modeler:${_TAG}'
+
+- id: 'attest-modeler'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/modeler:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-modeler'
+
+
 #
 # server
 #
@@ -294,13 +486,25 @@ steps:
   waitFor:
   - 'build-server'
 
-images:
-- 'gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/appsync:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/modeler:${_TAG}'
-- 'gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'
+- id: 'push-server'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'
+
+- id: 'attest-server'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-server'
