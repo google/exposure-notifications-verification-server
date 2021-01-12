@@ -46,18 +46,18 @@ func WithUserSearch(q string) Scope {
 		}
 
 		if search.name != "" {
-			db = db.Where("name ~* ?", fmt.Sprintf("(%s)", search.name))
+			db = db.Where("users.name ~* ?", fmt.Sprintf("(%s)", search.name))
 		}
 
 		if search.email != "" {
-			db = db.Where("email ~* ?", fmt.Sprintf("(%s)", search.email))
+			db = db.Where("users.email ~* ?", fmt.Sprintf("(%s)", search.email))
 		}
 
 		// For backwards-compatibility with previous versions of search, other could
 		// have been a name or email.
 		if search.other != nil {
 			s := strings.Join(search.other, "|")
-			db = db.Where("name ~* ? OR email ~* ?", fmt.Sprintf("(%s)", s), fmt.Sprintf("(%s)", s))
+			db = db.Where("users.name ~* ? OR users.email ~* ?", fmt.Sprintf("(%s)", s), fmt.Sprintf("(%s)", s))
 		}
 
 		if p := search.withPerms; p != 0 {

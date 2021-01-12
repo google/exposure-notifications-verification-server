@@ -860,6 +860,9 @@ func (r *Realm) ListMemberships(db *Database, p *pagination.PageParams, scopes .
 		Model(&Membership{}).
 		Scopes(scopes...).
 		Where("realm_id = ?", r.ID).
+		Where("realms.deleted_at IS NULL").
+		Where("users.deleted_at IS NULL").
+		Joins("JOIN realms ON realms.id = memberships.realm_id").
 		Joins("JOIN users ON users.id = memberships.user_id").
 		Order("LOWER(users.name)")
 

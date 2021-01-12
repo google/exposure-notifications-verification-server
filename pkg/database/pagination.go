@@ -34,6 +34,13 @@ const (
 // If page is 0, it defaults to 1. If limit is 0, it defaults to the global
 // pagination default limit.
 func Paginate(query *gorm.DB, result interface{}, page, limit uint64) (*pagination.Paginator, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = pagination.DefaultLimit
+	}
+
 	return PaginateFn(query, page, limit, func(query *gorm.DB, offset uint64) error {
 		return query.
 			Limit(limit).
@@ -44,13 +51,6 @@ func Paginate(query *gorm.DB, result interface{}, page, limit uint64) (*paginati
 
 // PaginateFn paginates with a custom function for returning results.
 func PaginateFn(query *gorm.DB, page, limit uint64, populateFn func(query *gorm.DB, offset uint64) error) (*pagination.Paginator, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = pagination.DefaultLimit
-	}
-
 	var total uint64
 	if err := query.
 		Count(&total).
