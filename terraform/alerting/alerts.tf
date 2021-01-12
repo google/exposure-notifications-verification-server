@@ -253,3 +253,85 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
     null_resource.manual-step-to-enable-workspace,
   ]
 }
+
+resource "google_monitoring_alert_policy" "HumanAccessedSecret" {
+  count = var.alert_on_human_accessed_secret ? 1 : 0
+
+  project      = var.project
+  display_name = "HumanAccessedSecret"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "A non-service account accessed a secret."
+
+    condition_monitoring_query_language {
+      duration = "60s"
+
+      query = <<-EOT
+      fetch audited_resource
+      | metric 'logging.googleapis.com/user/${google_logging_metric.human_accessed_secret.name}'
+      | align rate(5m)
+      | every 1m
+      | group_by [resource.project_id],
+          [val: aggregate(value.human_accessed_secret)]
+      | condition val > 0
+      EOT
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = "${local.playbook_prefix}/HumanAccessedSecret.md"
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
+
+resource "google_monitoring_alert_policy" "HumanDecryptedValue" {
+  count = var.alert_on_human_decrypted_value ? 1 : 0
+
+  project      = var.project
+  display_name = "HumanDecryptedValue"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "A non-service account decrypted something."
+
+    condition_monitoring_query_language {
+      duration = "60s"
+
+      query = <<-EOT
+      fetch audited_resource
+      | metric 'logging.googleapis.com/user/${google_logging_metric.human_decrypted_value.name}'
+      | align rate(5m)
+      | every 1m
+      | group_by [resource.project_id],
+          [val: aggregate(value.human_decrypted_value)]
+      | condition val > 0
+      EOT
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = "${local.playbook_prefix}/HumanDecryptedValue.md"
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
