@@ -323,11 +323,29 @@ func templateFuncs() htmltemplate.FuncMap {
 		"disabledIf":       disabledIf,
 		"t":                translate,
 		"passwordSentinel": pwdSentinel,
+		"hasOne":           hasOne,
+		"hasMany":          hasMany,
 
 		"rbac": func() map[string]rbac.Permission {
 			return rbac.NamePermissionMap
 		},
 	}
+}
+
+func hasOne(a interface{}) bool {
+	s := reflect.ValueOf(a)
+	if s.Kind() != reflect.Slice && s.Kind() != reflect.Array {
+		return false
+	}
+	return s.Len() == 1
+}
+
+func hasMany(a interface{}) bool {
+	s := reflect.ValueOf(a)
+	if s.Kind() != reflect.Slice && s.Kind() != reflect.Array {
+		return false
+	}
+	return s.Len() > 1
 }
 
 func pwdSentinel() string {

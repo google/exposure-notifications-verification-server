@@ -960,8 +960,8 @@ github.com/jarcoal/httpmock v0.0.0-20180424175123-9c70cfe4a1da/go.mod h1:ks+b9de
 github.com/jarcoal/httpmock v1.0.4/go.mod h1:ATjnClrvW/3tijVmpL/va5Z3aAyGvqU3gCT8nX0Txik=
 github.com/jarcoal/httpmock v1.0.5 h1:cHtVEcTxRSX4J0je7mWPfc9BpDpqzXSJ5HbymZmyHck=
 github.com/jarcoal/httpmock v1.0.5/go.mod h1:ATjnClrvW/3tijVmpL/va5Z3aAyGvqU3gCT8nX0Txik=
-github.com/jba/templatecheck v0.4.0 h1:fJ/X92oBGpaAx9SjL57nmVkA1yrB2otPCFWrPVuTnaM=
-github.com/jba/templatecheck v0.4.0/go.mod h1:/1k7EajoSErFI9GLHAsiIJEaNLt3ALKNw2TV7z2SYv4=
+github.com/jba/templatecheck v0.5.0 h1:sZwNjXG3xNApuwKmgUWEo2JuxmG0sgNaELl0zwRQ9x8=
+github.com/jba/templatecheck v0.5.0/go.mod h1:/1k7EajoSErFI9GLHAsiIJEaNLt3ALKNw2TV7z2SYv4=
 github.com/jcmturner/aescts v1.0.1 h1:5jhUSHbHSZjQeWFY//Lv8dpP/O3sMDOxrGV/IfCqh44=
 github.com/jcmturner/aescts v1.0.1/go.mod h1:k9gJoDUf1GH5r2IBtBjwjDCoLELYxOcEhitdP8RL7qQ=
 github.com/jcmturner/dnsutils v1.0.1 h1:zkF8SbVatbr5LGrvcPSes62SV68lASVv6+x9wo2De+w=

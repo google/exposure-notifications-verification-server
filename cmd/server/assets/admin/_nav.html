@@ -14,11 +14,11 @@
       <div class="collapse navbar-collapse mt-2" id="navbar">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
-            {{if eq (len $currentMemberships) 1}}
+            {{if hasOne $currentMemberships}}
               <a class="nav-link" href="/codes/issue">
                 &larr; Back to {{(index $currentMemberships 0).Realm.Name}}
               </a>
-            {{else if gt (len $currentMemberships) 1}}
+            {{else if hasMany $currentMemberships}}
               <a class="nav-link" href="/login/select-realm">
                 &larr; Back to realm selection
               </a>

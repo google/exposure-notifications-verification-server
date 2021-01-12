@@ -164,7 +164,7 @@ aria-expanded="false" aria-label="Toggle navigation">
           {{end}}
         {{end}}
 
-        {{if gt (len $currentMemberships) 1}}
+        {{if hasMany $currentMemberships}}
           <a class="dropdown-item {{if .currentPath.IsDir "/login/select-realm"}}active{{end}}" href="/login/select-realm">
             {{t $.locale "nav.change-realm"}}
           </a>
