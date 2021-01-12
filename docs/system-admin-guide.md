@@ -8,6 +8,7 @@
 - [Create system SMS configuration](#create-system-sms-configuration)
 - [Create system SMTP configuration](#create-system-smtp-configuration)
 - [Configure ENX redirect service](#configure-enx-redirect-service)
+- [Adding ENX redirect domains](#adding-enx-redirect-domains)
 - [Clearing caches](#clearing-caches)
 - [Getting system information](#getting-system-information)
 
@@ -188,6 +189,60 @@ unique domain solely for the purposes of this service.**
 
     -   `enx_redirect_domain_map` - mapping of regions to hosts (e.g.
         `{host="us-ca.<domain>", region="us-ca"}, ...`)
+
+## Adding ENX redirect domains
+
+If you just add to the ENX redirect domain map, it will cause an SSL outage. To
+solve this, we need to create the new certificate, deploy it, wait, and then
+delete the old one.
+
+This approach doesn't allow for removing domains, but that doesn't need to be
+done.
+
+1. In the `main.tf` for the project to modify.
+
+   * Add new domains to the `enx_redirect_domain_map_add` section
+
+   * Increment / set `redirect_cert_generation_next` to be 1 higher than
+     the value in `redirect_cert_generation`
+
+2. Apply this change.
+
+3. Verify that the new certificate is created and installed the load balancer
+
+    * [Cloud Console Certificates Page](https://console.cloud.google.com/loadbalancing/advanced/sslCertificates/list)
+
+    * Use `curl -V` to verify the new domain name has a certificate in
+      the load balancer.
+
+    * __This could take up to an hour__
+
+4. Promote the new certificate to be the only one.
+
+ This is done by backing up the existing terraform state and doing a manual
+ delete and move of the certificate status.
+
+```shell
+terraform state pull > somefile.tfstate
+terraform state rm module.en.google_compute_managed_ssl_certificate.enx-redirect
+terraform state mv module.en.google_compute_managed_ssl_certificate.enx-redirect-next module.en.google_compute_managed_ssl_certificate.enx-redirect
+```
+
+5. Now, combine the states.
+
+   * Move the contents of `enx_redirect_domain_map_add` to
+     `enx_redirect_domain_map`. The moved entries must be at the END of the
+     list, otherwise a diff will occur on the next step.
+
+   * Set `redirect_cert_generation` to be the same value as
+     `redirect_cert_generation_next`. Leave that value in
+     `redirect_cert_generation_next` until the next time a redirect domain
+     is added.
+
+6. Terraform apply. The only SSL diff should be removing the old
+   certificate from the load balancer.
+
+7. Manually delete the old certificate from the cloud console certificates page.
 
 ## Clearing caches
 
