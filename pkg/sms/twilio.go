@@ -17,6 +17,7 @@ package sms
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -118,4 +119,18 @@ type TwilioError struct {
 
 func (e *TwilioError) Error() string {
 	return e.Message
+}
+
+// IsSMSQueueFull returns if the given error is Twilio's message queue full error.
+func IsSMSQueueFull(err error) bool {
+	return IsTwilioCode(err, 21611) // https://www.twilio.com/docs/api/errors/21611
+}
+
+// IsTwilioCode returns if the given error matches a Twilio error code.
+func IsTwilioCode(err error, code int) bool {
+	var tErr *TwilioError
+	if errors.As(err, &tErr) {
+		return tErr.Code == code
+	}
+	return false
 }

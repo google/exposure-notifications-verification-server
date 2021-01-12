@@ -269,6 +269,7 @@ const stopUploadingCodes = [
 
 const stopUploadingEnum = [
   'maintenance_mode',
+  'sms_queue_full',
 ];
 
 async function uploadWithRetries(uploadFn) {
@@ -404,7 +405,6 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
   let $submitPin = $('#sms-code-submit');
   let $resendPin = $('#sms-code-resend');
   let $smsChange = $('#sms-change');
-  let $retype = $('#retype');
 
   let $registeredDiv = $('#registered-div');
   let $factors = $('#factors');

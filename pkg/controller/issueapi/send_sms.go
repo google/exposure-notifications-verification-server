@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
 var (
@@ -100,6 +101,10 @@ func (c *Controller) SendSMS(ctx context.Context, request *api.IssueCodeRequest,
 	if err != nil {
 		result.HTTPCode = http.StatusBadRequest
 		result.ErrorReturn = api.Errorf("failed to send sms: %s", err)
+
+		if sms.IsSMSQueueFull(err) {
+			result.ErrorReturn = result.ErrorReturn.WithCode(api.ErrSMSQueueFull)
+		}
 		return err
 	}
 	return nil
