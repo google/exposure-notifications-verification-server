@@ -23,6 +23,20 @@ variable "project" {
   type = string
 }
 
+variable "redirect_cert_generation" {
+  type    = string
+  default = ""
+
+  description = "generation of the ENX redirect certificate. Needs to be incremented when new subdomains are added."
+}
+
+variable "redirect_cert_generation_next" {
+  type    = string
+  default = ""
+
+  description = "generation of the ENX redirect certificate. Needs to be incremented when new subdomains are added."
+}
+
 variable "region" {
   type    = string
   default = "us-central1"
@@ -189,6 +203,15 @@ variable "enx_redirect_domain_map" {
   }))
   default     = []
   description = "Redirect domains and environments."
+}
+
+variable "enx_redirect_domain_map_add" {
+  type = list(object({
+    region = string
+    host   = string
+  }))
+  default     = []
+  description = "Redirect domains and environments to be added to the next cert."
 }
 
 variable "db_apikey_db_hmac_count" {
