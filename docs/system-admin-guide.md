@@ -210,7 +210,7 @@ done.
 
 3. Verify that the new certificate is created and installed the load balancer
 
-    * [Cloud Console Certificates Page](https://console.cloud.google.com/loadbalancing/advanced/sslCertificates/list?_ga=2.35348769.108116296.1610381718-1909039827.1608096940)
+    * [Cloud Console Certificates Page](https://console.cloud.google.com/loadbalancing/advanced/sslCertificates/list)
 
     * Use `curl -V` to verify the new domain name has a certificate in
       the load balancer.
