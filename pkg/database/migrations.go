@@ -1961,6 +1961,13 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS daily_active_users INTEGER DEFAULT 0`)
 			},
 		},
+		{
+			ID: "00085-DeleteUsers",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DELETE FROM users WHERE deleted_at IS NOT NULL`)
+			},
+		},
 	}
 }
 

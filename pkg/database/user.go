@@ -418,7 +418,7 @@ func (db *Database) DeleteUser(u *User, actor Auditable) error {
 		}
 
 		// Delete the user
-		if err := tx.Delete(u).Error; err != nil {
+		if err := tx.Unscoped().Delete(u).Error; err != nil {
 			return fmt.Errorf("failed to save user: %w", err)
 		}
 
