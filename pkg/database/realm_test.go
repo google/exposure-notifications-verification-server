@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 )
@@ -734,6 +735,50 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	// Third should succeed now
 	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRealm_ListMemberships(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user, err := db.FindUser(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := user.AddToRealm(db, realm, rbac.CodeIssue, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	deletedUser := &User{
+		Name:  "User",
+		Email: "foo@bar.com",
+	}
+	if err := db.SaveUser(deletedUser, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+	if err := deletedUser.AddToRealm(db, realm, rbac.CodeIssue, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC().Add(-10 * time.Minute)
+	deletedUser.DeletedAt = &now
+	if err := db.SaveUser(deletedUser, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	memberships, _, err := realm.ListMemberships(db, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(memberships) != 1 {
+		t.Fatalf("expected %#v to have 1 element", memberships)
+	}
+	if got, want := memberships[0].UserID, user.ID; got != want {
+		t.Errorf("expected %d to be %d", got, want)
 	}
 }
 
