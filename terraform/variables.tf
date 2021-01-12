@@ -303,6 +303,19 @@ variable "default_revision_annotations_overrides" {
   EOT
 }
 
+variable "binary_authorization_enforcement_mode" {
+  type    = string
+  default = "ENFORCED_BLOCK_AND_AUDIT_LOG"
+
+  description = "Binary authorization enforcement mechanism, must be one of ENFORCED_BLOCK_AND_AUDIT_LOG or DRYRUN_AUDIT_LOG_ONLY"
+}
+
+variable "binary_authorization_allowlist_patterns" {
+  type    = set(string)
+  default = []
+
+  description = "List of container references to always allow, even without attestations."
+}
 
 terraform {
   required_version = ">= 0.14.2"
