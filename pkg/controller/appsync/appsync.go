@@ -72,8 +72,9 @@ func (c *Controller) HandleSync() http.Handler {
 	})
 }
 
-// syncApps looks up the realm and associated list of MobileApps for each entry of AppsResponse. Then it
-// checks to see if there exists an app with the AppResponse SHA hash, if not it creates a new MobileApp.
+// syncApps looks up the realm and associated list of MobileApps for each entry
+// of AppsResponse. Then it checks to see if there exists an app with the
+// AppResponse SHA hash, if not it creates a new MobileApp.
 func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *multierror.Error {
 	logger := logging.FromContext(ctx).Named("appsync.syncApps")
 	var merr *multierror.Error
@@ -85,7 +86,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 		realm, err := c.findRealmForApp(app, realms)
 		if err != nil {
 			if database.IsNotFound(err) {
-				logger.Warnw("no app corresponds to region, skipping",
+				logger.Debugw("no app corresponds to region, skipping",
 					"app", app.AndroidTarget.AppName,
 					"region", app.Region)
 			} else {
