@@ -74,9 +74,9 @@ resource "google_compute_target_https_proxy" "enx-redirect-https" {
     // unused cert in the first slot.
     google_compute_managed_ssl_certificate.enx-redirect-root[0].id,
     google_compute_managed_ssl_certificate.enx-redirect[0].id
-  ], var.redirect_cert_generation != var.redirect_cert_generation_next ? [
-    google_compute_managed_ssl_certificate.enx-redirect-next[0].id
-  ] : [])
+    ], var.redirect_cert_generation != var.redirect_cert_generation_next ? [
+      google_compute_managed_ssl_certificate.enx-redirect-next[0].id
+    ] : [])
 
   # Defined in verification-lb.tf
   ssl_policy = google_compute_ssl_policy.one-two-ssl-policy.id
