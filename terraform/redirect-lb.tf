@@ -69,12 +69,14 @@ resource "google_compute_target_https_proxy" "enx-redirect-https" {
   project = var.project
 
   url_map = google_compute_url_map.enx-redirect-urlmap-https[0].id
-  ssl_certificates = [
+  ssl_certificates = concat([
     // First certificate is harder to change in UI, so let's keep a separate
     // unused cert in the first slot.
     google_compute_managed_ssl_certificate.enx-redirect-root[0].id,
     google_compute_managed_ssl_certificate.enx-redirect[0].id
-  ]
+    ], var.redirect_cert_generation != var.redirect_cert_generation_next ? [
+    google_compute_managed_ssl_certificate.enx-redirect-next[0].id
+  ] : [])
 
   # Defined in verification-lb.tf
   ssl_policy = google_compute_ssl_policy.one-two-ssl-policy.id
@@ -132,7 +134,7 @@ resource "google_compute_managed_ssl_certificate" "enx-redirect" {
   count    = local.enable_enx_redirect ? 1 : 0
   provider = google-beta
 
-  name        = "verification-enx-redirect-cert"
+  name        = format("verification-enx-redirect-cert%s", var.redirect_cert_generation)
   description = "Controlled by Terraform"
 
   managed {
@@ -150,3 +152,27 @@ resource "google_compute_managed_ssl_certificate" "enx-redirect" {
     google_project_service.services["compute.googleapis.com"],
   ]
 }
+
+resource "google_compute_managed_ssl_certificate" "enx-redirect-next" {
+  count    = var.redirect_cert_generation != var.redirect_cert_generation_next ? 1 : 0
+  provider = google-beta
+
+  name        = format("verification-enx-redirect-cert%s", var.redirect_cert_generation_next)
+  description = "Controlled by Terraform"
+
+  managed {
+    // we can only have 100 domains in this list.
+    domains = [for o in concat(var.enx_redirect_domain_map, var.enx_redirect_domain_map_add) : o.host]
+  }
+
+  # This is to prevent destroying the cert while it's still attached to the load
+  # balancer.
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [
+    google_project_service.services["compute.googleapis.com"],
+  ]
+}
+
