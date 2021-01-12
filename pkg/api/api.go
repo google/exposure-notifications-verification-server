@@ -69,6 +69,8 @@ const (
 	ErrMaintenanceMode = "maintenance_mode"
 	// ErrQuotaExceeded indicates the realm has exceeded its daily allotment of codes.
 	ErrQuotaExceeded = "quota_exceeded"
+	// ErrSMSQueueFull indicates that Twilio's SMS queue is full and may not accept more SMS messages to send.
+	ErrSMSQueueFull = "sms_queue_full"
 
 	// Certificate API responses
 
