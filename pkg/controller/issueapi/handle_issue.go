@@ -113,7 +113,7 @@ func (c *Controller) decodeAndIssue(ctx context.Context, w http.ResponseWriter, 
 		c.h.RenderJSON(w, http.StatusOK, res.IssueCodeResponse())
 		return
 	default:
-		c.h.RenderJSON(w, result.HTTPCode, res.ErrorReturn)
+		c.h.RenderJSON(w, res.HTTPCode, res.ErrorReturn)
 		return
 	}
 }
