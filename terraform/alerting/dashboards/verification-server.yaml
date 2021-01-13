@@ -50,6 +50,19 @@ gridLayout:
                 | align rate()
                 | every 1m
                 | [metric.result]
+    - title: /api/issue request latency avg
+      xyChart:
+        chartOptions:
+          mode: COLOR
+        dataSets:
+          - plotType: LINE
+            timeSeriesQuery:
+              timeSeriesQueryLanguage: >
+                generic_task ::
+                custom.googleapis.com/opencensus/en-verification-server/api/issue/request_latency
+                | align delta()
+                | every 1m
+                | group_by [], [value_request_latency_mean: mean(value.request_latency)]
     - title: Rate Limited count by label.job [SUM]
       xyChart:
         chartOptions:
