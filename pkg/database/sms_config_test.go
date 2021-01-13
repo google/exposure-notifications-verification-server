@@ -249,8 +249,6 @@ func TestSMSProvider(t *testing.T) {
 }
 
 func TestSystemSMSProvider(t *testing.T) {
-	t.Parallel()
-
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	realm := NewRealmWithDefaults("test-email-realm-1")
