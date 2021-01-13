@@ -249,7 +249,7 @@ type IssueCodeResponse struct {
 	LongExpiresAt          string `json:"longExpiresAt,omitempty"`
 	LongExpiresAtTimestamp int64  `json:"longExpiresAtTimestamp,omitempty"`
 
-	Error     string `json:"error"`
+	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 
