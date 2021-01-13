@@ -251,6 +251,18 @@ func handleENXRedirect(client *clients.ENXRedirectClient, h render.Renderer) htt
 			return
 		}
 
+		// unknown redirect
+		unknownHTTPResp, err := client.CheckRedirect(ctx, "unknown")
+		if err != nil {
+			renderJSONError(w, r, h, fmt.Errorf("iphone redirect: %w", err))
+			return
+		}
+		defer unknownHTTPResp.Body.Close()
+		if got, want := unknownHTTPResp.StatusCode, 404; got != want {
+			renderJSONError(w, r, h, fmt.Errorf("expected unknown redirect code %d to be %d", got, want))
+			return
+		}
+
 		renderOK(w, h)
 	})
 }
