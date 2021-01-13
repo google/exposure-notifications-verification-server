@@ -119,7 +119,7 @@ func Bootstrap(db *database.Database) (*BootstrapResponse, error) {
 	iosApp := &database.MobileApp{
 		Name:    iosName,
 		RealmID: realm.ID,
-		URL:     "https://android.test.app",
+		URL:     "https://ios.test.app",
 		OS:      database.OSTypeIOS,
 		AppID:   fmt.Sprintf("%s.com.test.app", iosName),
 	}
@@ -135,7 +135,7 @@ func Bootstrap(db *database.Database) (*BootstrapResponse, error) {
 	androidApp := &database.MobileApp{
 		Name:    androidName,
 		RealmID: realm.ID,
-		URL:     "https://ios.test.app",
+		URL:     "https://android.test.app",
 		OS:      database.OSTypeAndroid,
 		AppID:   fmt.Sprintf("%s.com.test.app", androidName),
 		SHA:     entropy + strings.Repeat("A", 89),
