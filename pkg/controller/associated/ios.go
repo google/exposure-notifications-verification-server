@@ -14,35 +14,10 @@
 
 package associated
 
-// The iOS format is specified by:
-//   https://developer.apple.com/documentation/safariservices/supporting_associated_domains
-
 import (
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
-
-type IOSData struct {
-	Applinks Applinks `json:"applinks"`
-
-	// The following two fields are included for completeness' sake, but are not
-	// currently populated/used by the system.
-	Webcredentials *Appstrings `json:"webcredentials,omitempty"`
-	Appclips       *Appstrings `json:"appclips,omitempty"`
-}
-
-type Applinks struct {
-	Apps    []string `json:"apps"`
-	Details []Detail `json:"details,omitempty"`
-}
-
-type Detail struct {
-	AppID string   `json:"appID,omitempty"`
-	Paths []string `json:"paths,omitempty"`
-}
-
-type Appstrings struct {
-	Apps []string `json:"apps,omitempty"`
-}
 
 // iosAppIDs finds all the iOS app ids we know about.
 func (c *Controller) iosAppIDs(realmID uint) ([]string, error) {
@@ -58,7 +33,7 @@ func (c *Controller) iosAppIDs(realmID uint) ([]string, error) {
 }
 
 // IOSData gets the iOS app data.
-func (c *Controller) IOSData(realmID uint) (*IOSData, error) {
+func (c *Controller) IOSData(realmID uint) (*api.IOSDataResponse, error) {
 	ids, err := c.iosAppIDs(realmID)
 	if err != nil {
 		return nil, err
@@ -68,16 +43,16 @@ func (c *Controller) IOSData(realmID uint) (*IOSData, error) {
 		return nil, nil
 	}
 
-	details := make([]Detail, len(ids))
+	details := make([]api.IOSDetail, len(ids))
 	for i, id := range ids {
-		details[i] = Detail{
+		details[i] = api.IOSDetail{
 			AppID: id,
 			Paths: []string{"*"},
 		}
 	}
 
-	return &IOSData{
-		Applinks: Applinks{
+	return &api.IOSDataResponse{
+		Applinks: api.IOSAppLinks{
 			Apps:    []string{}, // expected always empty.
 			Details: details,
 		},
