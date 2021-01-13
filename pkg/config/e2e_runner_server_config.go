@@ -33,11 +33,6 @@ type E2ERunnerConfig struct {
 
 	Port string `env:"PORT,default=8080"`
 
-	// Share config between server and command line versions.
-	TestConfig E2ETestConfig
-}
-
-type E2ETestConfig struct {
 	VerificationAdminAPIServer string `env:"VERIFICATION_ADMIN_API, default=http://localhost:8081"`
 	VerificationAdminAPIKey    string `env:"VERIFICATION_ADMIN_API_KEY"`
 	VerificationAPIServer      string `env:"VERIFICATION_SERVER_API, default=http://localhost:8082"`
@@ -45,6 +40,13 @@ type E2ETestConfig struct {
 	KeyServer                  string `env:"KEY_SERVER, default=http://localhost:8080"`
 	HealthAuthorityCode        string `env:"HEALTH_AUTHORITY_CODE,required"`
 	DoRevise                   bool   `env:"DO_REVISIONS"`
+
+	// ENXRedirectURL is the host to use for testing the ENX redirector service.
+	// This should be the value of the e2e realm's host, like
+	// "https://e2e-realm.redirect-domain.com", where "redirect-domain.com" is
+	// your enx redirect domain. The protocol is required. If this value is blank,
+	// the enx redirect tests are not executed on the e2e-runner.
+	ENXRedirectURL string `env:"ENX_REDIRECT_URL"`
 }
 
 // NewE2ERunnerConfig returns the environment config for the e2e-runner server.
@@ -55,17 +57,4 @@ func NewE2ERunnerConfig(ctx context.Context) (*E2ERunnerConfig, error) {
 		return nil, err
 	}
 	return &config, nil
-}
-
-// NewE2ETestConfig contains just the necessary elements for command line execution.
-func NewE2ETestConfig(ctx context.Context) (*E2ETestConfig, error) {
-	var config E2ETestConfig
-	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
-
-func (c *E2ERunnerConfig) Validate() error {
-	return nil
 }

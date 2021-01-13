@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
@@ -29,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
@@ -65,14 +68,14 @@ func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
 	// load configs
-	e2eConfig, err := config.NewE2ERunnerConfig(ctx)
+	cfg, err := config.NewE2ERunnerConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to process e2e-runner config: %w", err)
 	}
 
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
-	oe, err := observability.NewFromEnv(e2eConfig.Observability)
+	oe, err := observability.NewFromEnv(cfg.Observability)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
@@ -81,9 +84,9 @@ func realMain(ctx context.Context) error {
 	}
 	defer oe.Close()
 	ctx, obs := middleware.WithObservability(ctx)
-	logger.Infow("observability exporter", "config", e2eConfig.Observability)
+	logger.Infow("observability exporter", "config", cfg.Observability)
 
-	db, err := e2eConfig.Database.Load(ctx)
+	db, err := cfg.Database.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load database config: %w", err)
 	}
@@ -93,7 +96,7 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	// Create the renderer
-	h, err := render.New(ctx, "", e2eConfig.DevMode)
+	h, err := render.New(ctx, "", cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
@@ -108,8 +111,19 @@ func realMain(ctx context.Context) error {
 		}
 	}()
 
-	e2eConfig.TestConfig.VerificationAdminAPIKey = resp.AdminAPIKey
-	e2eConfig.TestConfig.VerificationAPIServerKey = resp.DeviceAPIKey
+	// Create the enx-redirect client if the URL was specified.
+	var enxRedirectClient *clients.ENXRedirectClient
+	if u := cfg.ENXRedirectURL; u != "" {
+		var err error
+		enxRedirectClient, err = clients.NewENXRedirectClient(u,
+			clients.WithTimeout(30*time.Second))
+		if err != nil {
+			return fmt.Errorf("failed to create enx-redirect client: %s", err)
+		}
+	}
+
+	cfg.VerificationAdminAPIKey = resp.AdminAPIKey
+	cfg.VerificationAPIServerKey = resp.DeviceAPIKey
 
 	// Create the router
 	r := mux.NewRouter()
@@ -125,52 +139,140 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	r.HandleFunc("/default", defaultHandler(ctx, e2eConfig.TestConfig))
-	r.HandleFunc("/revise", reviseHandler(ctx, e2eConfig.TestConfig))
+	r.Handle("/default", handleDefault(cfg, h))
+	r.Handle("/revise", handleRevise(cfg, h))
+	r.Handle("/enx-redirect", handleENXRedirect(enxRedirectClient, h))
 
 	mux := http.Handler(r)
-	if e2eConfig.DevMode {
+	if cfg.DevMode {
 		// Also log requests in local dev.
 		mux = handlers.LoggingHandler(os.Stdout, r)
 	}
 
-	srv, err := server.New(e2eConfig.Port)
+	srv, err := server.New(cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
-	logger.Infow("server listening", "port", e2eConfig.Port)
+	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, mux)
 }
 
-// Config is passed by value so that each http handler has a separate copy (since they are changing one of the)
-// config elements. Previous versions of those code had a race condition where the "DoRevise" status
-// could be changed while a handler was executing.
-func defaultHandler(ctx context.Context, config config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
-	logger := logging.FromContext(ctx)
-	c := &config
+// handleDefault handles the default end-to-end scenario.
+func handleDefault(cfg *config.E2ERunnerConfig, h render.Renderer) http.Handler {
+	c := *cfg
 	c.DoRevise = false
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := clients.RunEndToEnd(ctx, c); err != nil {
-			logger.Errorw("could not run default end to end", "error", err)
-			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		fmt.Fprint(w, "ok")
-	}
+	return handleEndToEnd(&c, h)
 }
 
-func reviseHandler(ctx context.Context, config config.E2ETestConfig) func(http.ResponseWriter, *http.Request) {
-	logger := logging.FromContext(ctx)
-	c := &config
+// handleRevise runs the end-to-end runner with revision tokens.
+func handleRevise(cfg *config.E2ERunnerConfig, h render.Renderer) http.Handler {
+	c := *cfg
 	c.DoRevise = true
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := clients.RunEndToEnd(ctx, c); err != nil {
-			logger.Errorw("could not run revise end to end", "error", err)
-			http.Error(w, "failed (check server logs for more details): "+err.Error(), http.StatusInternalServerError)
+	return handleEndToEnd(&c, h)
+}
+
+// handleEndToEnd handles the common end-to-end scenario.
+func handleEndToEnd(cfg *config.E2ERunnerConfig, h render.Renderer) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if err := clients.RunEndToEnd(ctx, cfg); err != nil {
+			renderJSONError(w, r, h, err)
 			return
 		}
 
-		fmt.Fprint(w, "ok")
+		renderOK(w, h)
+	})
+}
+
+// handleENXRedirect handles tests for the redirector service.
+func handleENXRedirect(client *clients.ENXRedirectClient, h render.Renderer) http.Handler {
+	// If the client doesn't exist, it means the host was not provided.
+	if client == nil {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			renderOK(w, h)
+		})
 	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Android
+		androidResp, err := client.AndroidAssetLinks(ctx)
+		if err != nil {
+			renderJSONError(w, r, h, fmt.Errorf("android asset links: %w", err))
+			return
+		}
+		if len(androidResp) == 0 || androidResp[0].Target.PackageName == "" {
+			renderJSONError(w, r, h, fmt.Errorf("expected android assetlinks, got %#v", androidResp))
+			return
+		}
+
+		// iOS
+		iosResp, err := client.AppleSiteAssociation(ctx)
+		if err != nil {
+			renderJSONError(w, r, h, fmt.Errorf("apple site association: %w", err))
+			return
+		}
+		if iosResp == nil || len(iosResp.Applinks.Details) == 0 {
+			renderJSONError(w, r, h, fmt.Errorf("expected ios site association apps, got %#v", iosResp))
+			return
+		}
+
+		// Android redirect
+		androidHTTPResp, err := client.CheckRedirect(ctx, "android")
+		if err != nil {
+			renderJSONError(w, r, h, fmt.Errorf("android redirect: %w", err))
+			return
+		}
+		defer androidHTTPResp.Body.Close()
+		if got, want := androidHTTPResp.StatusCode, 303; got != want {
+			renderJSONError(w, r, h, fmt.Errorf("expected android redirect code %d to be %d", got, want))
+			return
+		}
+		if got, want := androidHTTPResp.Header.Get("Location"), "android.test.app"; !strings.Contains(got, want) {
+			controller.InternalError(w, r, h, fmt.Errorf("expected android redirect location %q to contain %q", got, want))
+			return
+		}
+
+		// iOS redirect
+		iosHTTPResp, err := client.CheckRedirect(ctx, "iphone")
+		if err != nil {
+			renderJSONError(w, r, h, fmt.Errorf("iphone redirect: %w", err))
+			return
+		}
+		defer iosHTTPResp.Body.Close()
+		if got, want := iosHTTPResp.StatusCode, 303; got != want {
+			renderJSONError(w, r, h, fmt.Errorf("expected ios redirect code %d to be %d", got, want))
+			return
+		}
+		if got, want := iosHTTPResp.Header.Get("Location"), "ios.test.app"; !strings.Contains(got, want) {
+			renderJSONError(w, r, h, fmt.Errorf("expected ios redirect location %q to contain %q", got, want))
+			return
+		}
+
+		// unknown redirect
+		unknownHTTPResp, err := client.CheckRedirect(ctx, "unknown")
+		if err != nil {
+			renderJSONError(w, r, h, fmt.Errorf("iphone redirect: %w", err))
+			return
+		}
+		defer unknownHTTPResp.Body.Close()
+		if got, want := unknownHTTPResp.StatusCode, 404; got != want {
+			renderJSONError(w, r, h, fmt.Errorf("expected unknown redirect code %d to be %d", got, want))
+			return
+		}
+
+		renderOK(w, h)
+	})
+}
+
+func renderOK(w http.ResponseWriter, h render.Renderer) {
+	h.RenderJSON(w, http.StatusOK, map[string]interface{}{"success": true})
+}
+
+func renderJSONError(w http.ResponseWriter, r *http.Request, h render.Renderer, err error) {
+	logger := logging.FromContext(r.Context())
+	logger.Errorw("failure", "error", err)
+	h.RenderJSON(w, http.StatusInternalServerError, err)
 }

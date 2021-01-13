@@ -407,7 +407,9 @@ The verification server uses the Google Identity Platform for authorization.
 
 ## End-to-end test runner
 
-Log in as a system admin and view realms, select the `e2e-test-realm`.
+Log in as a system admin and view realms, select the `e2e-test-realm`. If this
+realm has not yet been created, wait a few minutes. The e2e runner executes
+every 15 minutes.
 
 ![system admin realms](images/e2e/image01.png)
 
