@@ -41,7 +41,7 @@ func main() {
 
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
-	config, err := config.NewE2ETestConfig(ctx)
+	config, err := config.NewE2ERunnerConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to process environment: %w", err)
 	}

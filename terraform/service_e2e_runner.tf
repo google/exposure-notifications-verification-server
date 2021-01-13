@@ -254,3 +254,30 @@ resource "google_cloud_scheduler_job" "e2e-revise-workflow" {
     google_project_service.services["cloudscheduler.googleapis.com"],
   ]
 }
+
+resource "google_cloud_scheduler_job" "e2e-enx-redirect-workflow" {
+  name             = "e2e-enx-redirect-workflow"
+  region           = var.cloudscheduler_location
+  schedule         = "0,5,15,25,35,45,55 * * * *"
+  time_zone        = "America/Los_Angeles"
+  attempt_deadline = "30s"
+
+  retry_config {
+    retry_count = 1
+  }
+
+  http_target {
+    http_method = "GET"
+    uri         = "${google_cloud_run_service.e2e-runner.status.0.url}/enx-redirect"
+    oidc_token {
+      audience              = "${google_cloud_run_service.e2e-runner.status.0.url}/enx-redirect"
+      service_account_email = google_service_account.e2e-runner-invoker.email
+    }
+  }
+
+  depends_on = [
+    google_app_engine_application.app,
+    google_cloud_run_service_iam_member.e2e-runner-invoker,
+    google_project_service.services["cloudscheduler.googleapis.com"],
+  ]
+}

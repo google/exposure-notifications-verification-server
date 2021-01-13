@@ -139,7 +139,7 @@ func (c *client) do(req *http.Request, out interface{}) (*http.Response, error) 
 	}
 
 	if err := json.NewDecoder(r).Decode(out); err != nil {
-		b, _ := ioutil.ReadAll(r)
+		b, err := ioutil.ReadAll(r)
 		return nil, fmt.Errorf("%s: failed to decode JSON response: %w: body: %s",
 			errPrefix, err, string(b))
 	}

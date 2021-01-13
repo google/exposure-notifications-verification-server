@@ -81,7 +81,7 @@ func init() {
 
 // RunEndToEnd - code that exercises the verification and key server, simulating a
 // mobile device uploading TEKs.
-func RunEndToEnd(ctx context.Context, cfg *config.E2ETestConfig) error {
+func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 	logger := logging.FromContext(ctx)
 
 	adminAPIClient, err := NewAdminAPIServerClient(cfg.VerificationAdminAPIServer, cfg.VerificationAdminAPIKey,
