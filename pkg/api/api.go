@@ -71,6 +71,8 @@ const (
 	ErrQuotaExceeded = "quota_exceeded"
 	// ErrSMSQueueFull indicates that Twilio's SMS queue is full and may not accept more SMS messages to send.
 	ErrSMSQueueFull = "sms_queue_full"
+	// ErrSMSFailure indicates that Twilio's responded with a failure.
+	ErrSMSFailure = "sms_failure"
 
 	// Certificate API responses
 
@@ -247,7 +249,7 @@ type IssueCodeResponse struct {
 	LongExpiresAt          string `json:"longExpiresAt,omitempty"`
 	LongExpiresAtTimestamp int64  `json:"longExpiresAtTimestamp,omitempty"`
 
-	Error     string `json:"error"`
+	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 

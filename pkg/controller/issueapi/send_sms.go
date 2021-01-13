@@ -100,7 +100,7 @@ func (c *Controller) SendSMS(ctx context.Context, request *api.IssueCodeRequest,
 	observability.RecordLatency(ctx, smsStart, mSMSLatencyMs, &result.obsResult)
 	if err != nil {
 		result.HTTPCode = http.StatusBadRequest
-		result.ErrorReturn = api.Errorf("failed to send sms: %s", err)
+		result.ErrorReturn = api.Errorf("failed to send sms: %s", err).WithCode(api.ErrSMSFailure)
 
 		if sms.IsSMSQueueFull(err) {
 			result.ErrorReturn = result.ErrorReturn.WithCode(api.ErrSMSQueueFull)

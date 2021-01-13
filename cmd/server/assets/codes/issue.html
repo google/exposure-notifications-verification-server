@@ -394,7 +394,7 @@
           'X-CSRF-Token': '{{.csrfToken}}',
         },
         success: function(result) {
-          if(result.error != "") {
+          if(result.error && result.error != "") {
             showError(result.error);
           } else {
             // Hide the main form
