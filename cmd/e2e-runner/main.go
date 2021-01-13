@@ -225,6 +225,7 @@ func handleENXRedirect(client *clients.ENXRedirectClient, h render.Renderer) htt
 			renderJSONError(w, r, h, fmt.Errorf("android redirect: %w", err))
 			return
 		}
+		defer androidHTTPResp.Body.Close()
 		if got, want := androidHTTPResp.StatusCode, 303; got != want {
 			renderJSONError(w, r, h, fmt.Errorf("expected android redirect code %d to be %d", got, want))
 			return
@@ -240,6 +241,7 @@ func handleENXRedirect(client *clients.ENXRedirectClient, h render.Renderer) htt
 			renderJSONError(w, r, h, fmt.Errorf("iphone redirect: %w", err))
 			return
 		}
+		defer iosHTTPResp.Body.Close()
 		if got, want := iosHTTPResp.StatusCode, 303; got != want {
 			renderJSONError(w, r, h, fmt.Errorf("expected ios redirect code %d to be %d", got, want))
 			return
