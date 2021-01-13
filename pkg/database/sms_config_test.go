@@ -94,6 +94,7 @@ func TestSMSConfig_Validate(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			err := db.SaveSMSConfig(tc.smsConfig)
 
 			if tc.err == "" {
