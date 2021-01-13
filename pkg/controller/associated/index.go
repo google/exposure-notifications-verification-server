@@ -26,6 +26,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -55,7 +56,7 @@ func (c *Controller) HandleIos() http.Handler {
 			return
 		}
 
-		var data *IOSData
+		var data *api.IOSDataResponse
 		cacheKey := &cache.Key{
 			Namespace: "apps:ios:by_region",
 			Key:       region,
@@ -101,7 +102,7 @@ func (c *Controller) HandleAndroid() http.Handler {
 			return
 		}
 
-		var data []AndroidData
+		var data []api.AndroidDataResponse
 		cacheKey := &cache.Key{
 			Namespace: "apps:android:by_region",
 			Key:       region,

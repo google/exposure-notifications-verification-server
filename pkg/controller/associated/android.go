@@ -18,32 +18,22 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-type AndroidData struct {
-	Relation []string `json:"relation,omitempty"`
-	Target   Target   `json:"target,omitempty"`
-}
-
-type Target struct {
-	Namespace    string   `json:"namespace,omitempty"`
-	PackageName  string   `json:"package_name,omitempty"`
-	Fingerprints []string `json:"sha256_cert_fingerprints,omitempty"`
-}
-
 // AndroidData finds all the android data apps.
-func (c *Controller) AndroidData(realmID uint) ([]AndroidData, error) {
+func (c *Controller) AndroidData(realmID uint) ([]api.AndroidDataResponse, error) {
 	apps, err := c.db.ListActiveApps(realmID, database.WithAppOS(database.OSTypeAndroid))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get android data: %w", err)
 	}
 
-	ret := make([]AndroidData, 0, len(apps))
+	ret := make([]api.AndroidDataResponse, 0, len(apps))
 	for i := range apps {
-		ret = append(ret, AndroidData{
+		ret = append(ret, api.AndroidDataResponse{
 			Relation: []string{"delegate_permission/common.handle_all_urls"},
-			Target: Target{
+			Target: api.AndroidTarget{
 				Namespace:    "android_app",
 				PackageName:  apps[i].AppID,
 				Fingerprints: strings.Split(apps[i].SHA, "\n"),
