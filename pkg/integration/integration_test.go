@@ -19,7 +19,6 @@ package integration_test
 
 import (
 	"encoding/base64"
-	"flag"
 	"testing"
 	"time"
 
@@ -27,10 +26,9 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/util"
 	"github.com/google/exposure-notifications-server/pkg/verification"
 
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/testsuite"
 )
 
 const (
@@ -39,26 +37,14 @@ const (
 	maxInterval    = 144
 )
 
-var (
-	flagE2E = flag.Bool("is_e2e", false, "Set to true when run as E2E tests.")
-)
-
 func TestIntegration(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
 
-	var adminAPIClient *clients.AdminAPIServerClient
-	var apiServerClient *clients.APIServerClient
-	if *flagE2E {
-		e2eSuite := testsuite.NewE2ESuite(t)
-		adminAPIClient = e2eSuite.AdminAPIServerClient()
-		apiServerClient = e2eSuite.APIServerClient()
-	} else {
-		integrationSuite := testsuite.NewIntegrationSuite(t)
-		adminAPIClient = integrationSuite.AdminAPIServerClient()
-		apiServerClient = integrationSuite.APIServerClient()
-	}
+	integrationSuite := envstest.NewIntegrationSuite(t)
+	adminAPIClient := integrationSuite.AdminAPIServerClient()
+	apiServerClient := integrationSuite.APIServerClient()
 
 	now := time.Now().UTC()
 	curDayInterval := timeToInterval(now)

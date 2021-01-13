@@ -16,12 +16,10 @@ package envstest
 
 import (
 	"context"
-	"net/url"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/server"
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -44,40 +42,6 @@ type AdminAPIServerResponse struct {
 // NewHarnessServer for more information.
 func NewAdminAPIServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *AdminAPIServerResponse {
 	return NewAdminAPIServerConfig(tb, testDatabaseInstance).NewServer(tb)
-}
-
-// NewAdminAPIServerClient creates a new API key and returns a client authorized
-// with that API key. The generated API key is cleaned up by t.
-func (r *AdminAPIServerResponse) NewAdminAPIServerClient(tb testing.TB) *clients.AdminAPIServerClient {
-	tb.Helper()
-
-	realm, err := r.Database.FindRealm(1)
-	if err != nil {
-		tb.Fatal(err)
-	}
-
-	authApp := &database.AuthorizedApp{
-		Name:       "Appy-" + randomString(tb, 6),
-		APIKeyType: database.APIKeyTypeAdmin,
-	}
-	apiKey, err := realm.CreateAuthorizedApp(r.Database, authApp, database.SystemTest)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	tb.Cleanup(func() {
-		past := time.Now().UTC().Add(-30 * 24 * time.Hour)
-		authApp.DeletedAt = &past
-		if err := r.Database.SaveAuthorizedApp(authApp, database.SystemTest); err != nil && !database.IsNotFound(err) {
-			tb.Fatal(err)
-		}
-	})
-
-	u := &url.URL{Scheme: "http", Host: r.Server.Addr()}
-	client, err := clients.NewAdminAPIServerClient(u.String(), apiKey)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	return client
 }
 
 // AdminAPIServerConfigResponse is the response from creating an AdminAPI server

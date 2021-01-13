@@ -16,7 +16,6 @@ package envstest
 
 import (
 	"context"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -24,7 +23,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -48,40 +46,6 @@ type APIServerResponse struct {
 // NewHarnessServer for more information.
 func NewAPIServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *APIServerResponse {
 	return NewAPIServerConfig(tb, testDatabaseInstance).NewServer(tb)
-}
-
-// NewAPIServerClient creates a new API key and returns a client authorized with
-// that API key. The generated API key is cleaned up by t.
-func (r *APIServerResponse) NewAPIServerClient(tb testing.TB) *clients.APIServerClient {
-	tb.Helper()
-
-	realm, err := r.Database.FindRealm(1)
-	if err != nil {
-		tb.Fatal(err)
-	}
-
-	authApp := &database.AuthorizedApp{
-		Name:       "Appy-" + randomString(tb, 6),
-		APIKeyType: database.APIKeyTypeDevice,
-	}
-	apiKey, err := realm.CreateAuthorizedApp(r.Database, authApp, database.SystemTest)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	tb.Cleanup(func() {
-		past := time.Now().UTC().Add(-30 * 24 * time.Hour)
-		authApp.DeletedAt = &past
-		if err := r.Database.SaveAuthorizedApp(authApp, database.SystemTest); err != nil && !database.IsNotFound(err) {
-			tb.Fatal(err)
-		}
-	})
-
-	u := &url.URL{Scheme: "http", Host: r.Server.Addr()}
-	client, err := clients.NewAPIServerClient(u.String(), apiKey)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	return client
 }
 
 // APIServerConfigResponse is the response from creating an API server config.

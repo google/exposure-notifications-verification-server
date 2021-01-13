@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This server is a simple webserver that triggers the e2e-test binary.
+// This is a server that invokes end-to-end tests.
 package main
 
 import (
@@ -20,30 +20,21 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-signalcontext"
-)
-
-const (
-	realmName       = "e2e-test-realm"
-	realmRegionCode = "e2e-test"
-	adminKeyName    = "e2e-admin-key."
-	deviceKeyName   = "e2e-device-key."
 )
 
 func main() {
@@ -107,77 +98,18 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	// Create or reuse the existing realm
-	realm, err := db.FindRealmByName(realmName)
+	resp, err := envstest.Bootstrap(db)
 	if err != nil {
-		if !database.IsNotFound(err) {
-			return fmt.Errorf("error when finding the realm %q: %w", realmName, err)
-		}
-		realm = database.NewRealmWithDefaults(realmName)
-		realm.RegionCode = realmRegionCode
-		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-			return fmt.Errorf("failed to create realm %+v: %w: %v", realm, err, realm.ErrorMessages())
-		}
+		return fmt.Errorf("failed to bootstrap testsuite: %w", err)
 	}
-
-	// Make sure realm can issue all test types and has batch issue enabled.
-	realm.AllowedTestTypes = database.TestTypeNegative | database.TestTypeConfirmed | database.TestTypeLikely
-	realm.AllowBulkUpload = true
-	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		return fmt.Errorf("error configuring realm for e2e runner %+v: %w: %v", realm, err, realm.ErrorMessages())
-	}
-
-	// Create new API keys
-	suffix, err := project.RandomHexString(6)
-	if err != nil {
-		return fmt.Errorf("failed to create suffix string for API keys: %w", err)
-	}
-
-	adminKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
-		Name:       adminKeyName + suffix,
-		APIKeyType: database.APIKeyTypeAdmin,
-	}, database.SystemTest)
-	if err != nil {
-		return fmt.Errorf("error trying to create a new Admin API Key: %w", err)
-	}
-
 	defer func() {
-		app, err := db.FindAuthorizedAppByAPIKey(adminKey)
-		if err != nil {
-			logger.Errorf("admin API key cleanup failed: %w", err)
+		if err := resp.Cleanup(); err != nil {
+			logger.Errorw("failed to cleanup", "error", err)
 		}
-		now := time.Now().UTC()
-		app.DeletedAt = &now
-		if err := db.SaveAuthorizedApp(app, database.SystemTest); err != nil {
-			logger.Errorf("admin API key disable failed: %w", err)
-		}
-		logger.Info("successfully cleaned up e2e test admin key")
 	}()
 
-	deviceKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
-		Name:       deviceKeyName + suffix,
-		APIKeyType: database.APIKeyTypeDevice,
-	}, database.SystemTest)
-	if err != nil {
-		return fmt.Errorf("error trying to create a new Device API Key: %w", err)
-	}
-
-	defer func() {
-		app, err := db.FindAuthorizedAppByAPIKey(deviceKey)
-		if err != nil {
-			logger.Errorf("device API key cleanup failed: %w", err)
-			return
-		}
-		now := time.Now().UTC()
-		app.DeletedAt = &now
-		if err := db.SaveAuthorizedApp(app, database.SystemTest); err != nil {
-			logger.Errorf("device API key disable failed: %w", err)
-		}
-		logger.Info("successfully cleaned up e2e test device key")
-	}()
-
-	e2eConfig.TestConfig.VerificationAdminAPIKey = adminKey
-	e2eConfig.TestConfig.VerificationAPIServerKey = deviceKey
+	e2eConfig.TestConfig.VerificationAdminAPIKey = resp.AdminAPIKey
+	e2eConfig.TestConfig.VerificationAPIServerKey = resp.DeviceAPIKey
 
 	// Create the router
 	r := mux.NewRouter()

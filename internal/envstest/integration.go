@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testsuite
+package envstest
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
-	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-const (
-	realmNamePrefix = "test-realm"
-	realmRegionCode = "test"
-	adminKeyName    = "integration-admin-key"
-	deviceKeyName   = "integration-device-key"
-)
+// deleteMobileApp is a helper for ensuring an mobile app is deleted.
+func deleteMobileApp(db *database.Database, app *database.MobileApp) error {
+	now := time.Now().UTC()
+	app.DeletedAt = &now
+	if err := db.SaveMobileApp(app, database.SystemTest); err != nil {
+		return fmt.Errorf("failed to delete mobile app: %w", err)
+	}
+	return nil
+}
 
 // IntegrationSuite encompasses a local API server and Admin API server for
 // testing. Both servers run in-memory on the local machine.
@@ -50,8 +54,8 @@ func NewIntegrationSuite(tb testing.TB) *IntegrationSuite {
 		}
 	})
 
-	adminAPIServerConfig := envstest.NewAdminAPIServerConfig(tb, testDatabaseInstance)
-	apiServerConfig := envstest.NewAPIServerConfig(tb, testDatabaseInstance)
+	adminAPIServerConfig := NewAdminAPIServerConfig(tb, testDatabaseInstance)
+	apiServerConfig := NewAPIServerConfig(tb, testDatabaseInstance)
 
 	// Point everything at the same database, cacher, and key manager.
 	apiServerConfig.Database = adminAPIServerConfig.Database
@@ -60,21 +64,28 @@ func NewIntegrationSuite(tb testing.TB) *IntegrationSuite {
 
 	db := adminAPIServerConfig.Database
 
-	realm, err := db.FindRealm(1)
+	resp, err := Bootstrap(db)
 	if err != nil {
 		tb.Fatal(err)
 	}
-	realm.RegionCode = realmRegionCode
-	realm.AllowBulkUpload = true
-	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		tb.Fatal(err)
-	}
+	tb.Cleanup(func() {
+		if err := resp.Cleanup(); err != nil {
+			tb.Fatal(err)
+		}
+	})
 
 	adminAPIServer := adminAPIServerConfig.NewServer(tb)
 	apiServer := apiServerConfig.NewServer(tb)
 
-	adminAPIServerClient := adminAPIServer.NewAdminAPIServerClient(tb)
-	apiServerClient := apiServer.NewAPIServerClient(tb)
+	adminAPIServerClient, err := clients.NewAdminAPIServerClient("http://"+adminAPIServer.Server.Addr(), resp.AdminAPIKey)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	apiServerClient, err := clients.NewAPIServerClient("http://"+apiServer.Server.Addr(), resp.DeviceAPIKey)
+	if err != nil {
+		tb.Fatal(err)
+	}
 
 	return &IntegrationSuite{
 		adminAPIServerClient: adminAPIServerClient,

@@ -182,13 +182,3 @@ func randomBytes(tb testing.TB, len int) []byte {
 	}
 	return b
 }
-
-func randomString(tb testing.TB, len int) string {
-	tb.Helper()
-
-	s, err := project.RandomHexString(len)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	return s
-}
