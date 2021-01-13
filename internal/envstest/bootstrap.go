@@ -17,7 +17,6 @@ package envstest
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -175,10 +174,19 @@ func deleteAuthorizedApp(db *database.Database, key string) error {
 		}
 		return fmt.Errorf("failed to lookup api key: %w", err)
 	}
-	now := time.Now().UTC()
-	app.DeletedAt = &now
-	if err := db.SaveAuthorizedApp(app, database.SystemTest); err != nil {
-		return fmt.Errorf("failed to delete api key: %w", err)
-	}
-	return nil
+
+	return db.RawDB().
+		Unscoped().
+		Where("id = ?", app.ID).
+		Delete(&database.AuthorizedApp{}).
+		Error
+}
+
+// deleteMobileApp is a helper for ensuring an mobile app is deleted.
+func deleteMobileApp(db *database.Database, app *database.MobileApp) error {
+	return db.RawDB().
+		Unscoped().
+		Where("id = ?", app.ID).
+		Delete(&database.MobileApp{}).
+		Error
 }

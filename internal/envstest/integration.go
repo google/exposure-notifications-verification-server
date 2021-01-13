@@ -15,23 +15,11 @@
 package envstest
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
-
-// deleteMobileApp is a helper for ensuring an mobile app is deleted.
-func deleteMobileApp(db *database.Database, app *database.MobileApp) error {
-	now := time.Now().UTC()
-	app.DeletedAt = &now
-	if err := db.SaveMobileApp(app, database.SystemTest); err != nil {
-		return fmt.Errorf("failed to delete mobile app: %w", err)
-	}
-	return nil
-}
 
 // IntegrationSuite encompasses a local API server and Admin API server for
 // testing. Both servers run in-memory on the local machine.
