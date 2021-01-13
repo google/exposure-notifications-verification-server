@@ -122,6 +122,18 @@ func RequireAuth(cacher cache.Cacher, authProvider auth.Provider, db *database.D
 				return
 			}
 
+			// Insert realm id to context so metrics can pick it up.
+			realmID := controller.RealmIDFromSession(session)
+			// This is inserted by realm selector, so it could be 0 if no realm
+			// has been selected.
+			if realmID != 0 {
+				realm, err := db.FindRealm(realmID)
+				if err != nil {
+					logger.Errorw("failed to get realm from id", "error", err)
+				}
+				ctx = controller.WithRealm(ctx, realm)
+			}
+
 			// Save the user on the context.
 			ctx = controller.WithUser(ctx, &user)
 			ctx = controller.WithMemberships(ctx, memberships)
