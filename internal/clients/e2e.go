@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package clients defines e2e clients.
-// TODO(sethvargo): move into internal/
 package clients
 
 import (
@@ -26,17 +24,21 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-server/pkg/util"
+	"github.com/google/exposure-notifications-server/pkg/verification"
+
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
-	"go.opencensus.io/tag"
 
-	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
-	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-server/pkg/util"
-	"github.com/google/exposure-notifications-server/pkg/verification"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
 )
 
 const (
@@ -46,8 +48,35 @@ const (
 	maxInterval    = 144
 )
 
-func timeToInterval(t time.Time) int32 {
-	return int32(t.UTC().Truncate(oneDay).Unix() / int64(intervalLength.Seconds()))
+const metricPrefix = observability.MetricRoot + "/e2e"
+
+var (
+	mLatencyMs = stats.Float64(metricPrefix+"/request", "request latency", stats.UnitMilliseconds)
+
+	// The name of step in e2e test.
+	stepTagKey = tag.MustNewKey("step")
+
+	// The type of the e2e test.
+	testTypeTagKey = tag.MustNewKey("test_type")
+)
+
+func init() {
+	enobservability.CollectViews([]*view.View{
+		{
+			Name:        metricPrefix + "/request_count",
+			Measure:     mLatencyMs,
+			Description: "Count of e2e requests",
+			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey, stepTagKey, testTypeTagKey),
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/request_latency",
+			Measure:     mLatencyMs,
+			Description: "Distribution of e2e requests latency in ms",
+			TagKeys:     append(observability.CommonTagKeys(), stepTagKey, testTypeTagKey),
+			Aggregation: ochttp.DefaultLatencyDistribution,
+		},
+	}...)
 }
 
 // RunEndToEnd - code that exercises the verification and key server, simulating a
@@ -55,14 +84,14 @@ func timeToInterval(t time.Time) int32 {
 func RunEndToEnd(ctx context.Context, cfg *config.E2ETestConfig) error {
 	logger := logging.FromContext(ctx)
 
-	adminAPIClient, err := clients.NewAdminAPIServerClient(cfg.VerificationAdminAPIServer, cfg.VerificationAdminAPIKey,
-		clients.WithTimeout(timeout))
+	adminAPIClient, err := NewAdminAPIServerClient(cfg.VerificationAdminAPIServer, cfg.VerificationAdminAPIKey,
+		WithTimeout(timeout))
 	if err != nil {
 		return err
 	}
 
-	apiServerClient, err := clients.NewAPIServerClient(cfg.VerificationAPIServer, cfg.VerificationAPIServerKey,
-		clients.WithTimeout(timeout))
+	apiServerClient, err := NewAPIServerClient(cfg.VerificationAPIServer, cfg.VerificationAPIServerKey,
+		WithTimeout(timeout))
 	if err != nil {
 		return err
 	}
@@ -277,4 +306,8 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ETestConfig) error {
 	}
 
 	return nil
+}
+
+func timeToInterval(t time.Time) int32 {
+	return int32(t.UTC().Truncate(oneDay).Unix() / int64(intervalLength.Seconds()))
 }

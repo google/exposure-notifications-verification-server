@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
