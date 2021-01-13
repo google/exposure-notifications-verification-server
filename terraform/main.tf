@@ -118,7 +118,7 @@ resource "null_resource" "build" {
       SERVICES   = "all"
       TAG        = "initial"
 
-      BINAUTHZ_ATTESTOR    = "${google_binary_authorization_attestor.built-by-ci.id}"
+      BINAUTHZ_ATTESTOR    = google_binary_authorization_attestor.built-by-ci.id
       BINAUTHZ_KEY_VERSION = "${trimprefix(data.google_kms_crypto_key_version.binauthz-built-by-ci-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
     }
 
