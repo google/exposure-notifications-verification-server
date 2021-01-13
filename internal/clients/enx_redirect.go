@@ -46,12 +46,9 @@ func (c *ENXRedirectClient) AppleSiteAssociation(ctx context.Context) (*api.IOSD
 	}
 
 	var out api.IOSDataResponse
-	resp, err := c.doOK(req, &out)
-	if err != nil {
+	if err := c.doOK(req, &out); err != nil {
 		return &out, err
 	}
-	defer resp.Body.Close()
-
 	return &out, nil
 }
 
@@ -63,12 +60,9 @@ func (c *ENXRedirectClient) AndroidAssetLinks(ctx context.Context) ([]*api.Andro
 	}
 
 	var out []*api.AndroidDataResponse
-	resp, err := c.doOK(req, &out)
-	if err != nil {
+	if err := c.doOK(req, &out); err != nil {
 		return out, err
 	}
-	defer resp.Body.Close()
-
 	return out, nil
 }
 

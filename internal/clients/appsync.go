@@ -43,7 +43,7 @@ func (c *AppSyncClient) AppSync(ctx context.Context) (*AppsResponse, error) {
 	}
 
 	var out AppsResponse
-	if _, err := c.doOK(req, &out); err != nil {
+	if err := c.doOK(req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

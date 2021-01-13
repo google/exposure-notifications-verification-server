@@ -45,7 +45,7 @@ func (c *APIServerClient) Verify(ctx context.Context, in *api.VerifyCodeRequest)
 	}
 
 	var out api.VerifyCodeResponse
-	if _, err := c.doOK(req, &out); err != nil {
+	if err := c.doOK(req, &out); err != nil {
 		return &out, err
 	}
 	return &out, nil
@@ -59,7 +59,7 @@ func (c *APIServerClient) Certificate(ctx context.Context, in *api.VerificationC
 	}
 
 	var out api.VerificationCertificateResponse
-	if _, err := c.doOK(req, &out); err != nil {
+	if err := c.doOK(req, &out); err != nil {
 		return &out, err
 	}
 	return &out, nil

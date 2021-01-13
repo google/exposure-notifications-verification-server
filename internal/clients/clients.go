@@ -106,16 +106,17 @@ func (c *client) newRequest(ctx context.Context, method, pth string, body interf
 }
 
 // doOK is like do, but expects a 200 response.
-func (c *client) doOK(req *http.Request, out interface{}) (*http.Response, error) {
+func (c *client) doOK(req *http.Request, out interface{}) error {
 	resp, err := c.do(req, out)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode > 299 {
-		return nil, fmt.Errorf("expected 200 response, got %d", resp.StatusCode)
+		return fmt.Errorf("expected 200 response, got %d", resp.StatusCode)
 	}
-	return resp, nil
+	return nil
 }
 
 // do executes the request and decodes the result into out. It returns the http
