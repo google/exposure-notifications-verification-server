@@ -122,8 +122,8 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 				continue
 			}
 
-			if len(entry) != 95 {
-				a.AddError("sha", "must be 95 characters")
+			if got, want := len(entry), 95; got != want {
+				a.AddError("sha", fmt.Sprintf("must be %d characters (got %d)", want, got))
 				continue
 			}
 

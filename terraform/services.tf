@@ -97,12 +97,7 @@ locals {
     HOSTNAME_TO_REGION = join(",", [for o in concat(var.enx_redirect_domain_map, var.enx_redirect_domain_map_add) : format("%s:%s", o.host, o.region)])
   }
 
-  // TODO: remove once
-  // https://github.com/google/exposure-notifications-server/commit/379eda4deec703ab3744525470281a519af18e9b
-  // is released.
-  observability_config = {
-    STACKDRIVER_TIMEOUT = "1m"
-  }
+  observability_config = {}
 }
 
 output "cookie_keys" {
