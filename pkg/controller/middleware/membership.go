@@ -82,6 +82,7 @@ func LoadCurrentMembership(h render.Renderer) mux.MiddlewareFunc {
 
 			// Save the membership on the context.
 			ctx = controller.WithMembership(ctx, membership)
+			ctx = controller.WithRealm(ctx, membership.Realm)
 			r = r.Clone(ctx)
 
 			next.ServeHTTP(w, r)
