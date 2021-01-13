@@ -32,7 +32,7 @@ const (
 	StatsKeyPrefix  = "e2e-stats-key."
 
 	AndroidAppPrefix = "e2e-android-"
-	IOSAppPrefix     = "e2e-android-"
+	IOSAppPrefix     = "e2e-ios-"
 )
 
 // BootstrapResponse is the response from Bootstrap.
