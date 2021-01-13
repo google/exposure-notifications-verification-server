@@ -46,7 +46,7 @@ func (c *AdminAPIServerClient) BatchIssueCode(ctx context.Context, in *api.Batch
 	}
 
 	var out api.BatchIssueCodeResponse
-	if _, err := c.doOK(req, &out); err != nil {
+	if err := c.doOK(req, &out); err != nil {
 		return &out, err
 	}
 	return &out, nil
@@ -60,7 +60,7 @@ func (c *AdminAPIServerClient) CheckCodeStatus(ctx context.Context, in *api.Chec
 	}
 
 	var out api.CheckCodeStatusResponse
-	if _, err := c.doOK(req, &out); err != nil {
+	if err := c.doOK(req, &out); err != nil {
 		return &out, err
 	}
 	return &out, nil
@@ -75,7 +75,7 @@ func (c *AdminAPIServerClient) IssueCode(ctx context.Context, in *api.IssueCodeR
 	}
 
 	var out api.IssueCodeResponse
-	if _, err := c.doOK(req, &out); err != nil {
+	if err := c.doOK(req, &out); err != nil {
 		return &out, err
 	}
 	return &out, nil
