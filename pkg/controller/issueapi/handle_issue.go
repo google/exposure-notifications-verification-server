@@ -104,16 +104,16 @@ func (c *Controller) decodeAndIssue(ctx context.Context, w http.ResponseWriter, 
 
 	res := c.IssueOne(ctx, &request)
 	result.HTTPCode = res.HTTPCode
-	resp := res.IssueCodeResponse()
-	if resp.Error != "" {
-		if result.HTTPCode == http.StatusInternalServerError {
-			controller.InternalError(w, r, c.h, errors.New(resp.Error))
-			return
-		}
-		c.h.RenderJSON(w, result.HTTPCode, resp)
+
+	switch res.HTTPCode {
+	case http.StatusInternalServerError:
+		controller.InternalError(w, r, c.h, errors.New(res.ErrorReturn.Error))
+		return
+	case http.StatusOK:
+		c.h.RenderJSON(w, http.StatusOK, res.IssueCodeResponse())
+		return
+	default:
+		c.h.RenderJSON(w, result.HTTPCode, res.ErrorReturn)
 		return
 	}
-
-	c.h.RenderJSON(w, http.StatusOK, resp)
-	return
 }
