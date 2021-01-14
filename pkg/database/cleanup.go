@@ -27,6 +27,9 @@ var (
 
 var CleanupName = "cleanup"
 
+// CleanupStatus represents a distributed lock that spaces operations out.
+// These are only self expring locks (NotBefore) and are not explicitly
+// released.
 type CleanupStatus struct {
 	gorm.Model
 	Type       string `gorm:"type:varchar(50);unique_index"`
