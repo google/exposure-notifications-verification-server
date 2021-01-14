@@ -36,5 +36,5 @@ type CertificateSigningConfig struct {
 	CertificateDuration     time.Duration `env:"CERTIFICATE_DURATION, default=15m"`
 	// EnableAutoRotation indicates if auto rotation settings should be shown in the UI.
 	// This will become the default in v0.21.0 of the verification server.
-	EnableAutoRotation bool `env:"ENABLE_VERIFICATION_KEY_AUTO_ROTATION, default=false`
+	EnableAutoRotation bool `env:"ENABLE_VERIFICATION_KEY_AUTO_ROTATION, default=false"`
 }
