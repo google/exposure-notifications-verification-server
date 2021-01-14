@@ -51,7 +51,7 @@ type PageParams struct {
 // FromRequest builds the PageParams from an http.Request. If there are no
 // pagination parameters, the struct is returned with the default values.
 func FromRequest(r *http.Request) (*PageParams, error) {
-	page := uint64(0)
+	page := uint64(1)
 	if v := strings.TrimSpace(r.FormValue(QueryKeyPage)); v != "" {
 		var err error
 		page, err = strconv.ParseUint(v, 10, 64)
