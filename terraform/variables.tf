@@ -260,7 +260,7 @@ variable "enable_lb_logging" {
 
 locals {
   default_revision_annotations = {
-    "autoscaling.knative.dev/maxScale" : "1",
+    "autoscaling.knative.dev/maxScale" : "2",
     "run.googleapis.com/vpc-access-egress" : "private-ranges-only"
     "run.googleapis.com/vpc-access-connector" : google_vpc_access_connector.connector.id
   }
