@@ -47,13 +47,15 @@ func (c *Controller) HandleSync() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if ok, err := c.shouldSync(ctx); err != nil {
+		ok, err := c.shouldSync(ctx)
+		if err != nil {
 			c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
 				OK:     false,
 				Errors: []string{err.Error()},
 			})
 			return
-		} else if !ok {
+		}
+		if !ok {
 			c.h.RenderJSON(w, http.StatusTooManyRequests, &AppSyncResult{
 				OK:     false,
 				Errors: []string{"too early"},
