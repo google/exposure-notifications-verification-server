@@ -55,6 +55,7 @@ func (c *Controller) HandleRotate() http.Handler {
 				OK:     false,
 				Errors: []error{fmt.Errorf("too early")},
 			})
+			return
 		}
 
 		// Token signing keys
