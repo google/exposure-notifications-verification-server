@@ -1968,6 +1968,16 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`DELETE FROM users WHERE deleted_at IS NOT NULL`)
 			},
 		},
+		{
+			ID: "00086-AddRealmAutoRotateSetting",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&Realm{}).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				sql := `ALTER TABLE realms DROP COLUMN IF EXISTS auto_rotate_certificate_key`
+				return tx.Exec(sql).Error
+			},
+		},
 	}
 }
 

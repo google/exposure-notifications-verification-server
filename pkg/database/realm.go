@@ -238,10 +238,11 @@ type Realm struct {
 	RequireDate bool `gorm:"type:boolean; not null; default:false;"`
 
 	// Signing Key Settings
-	UseRealmCertificateKey bool            `gorm:"type:boolean; default: false;"`
-	CertificateIssuer      string          `gorm:"type:varchar(150); default: '';"`
-	CertificateAudience    string          `gorm:"type:varchar(150); default: '';"`
-	CertificateDuration    DurationSeconds `gorm:"type:bigint; default: 900;"` // 15m
+	UseRealmCertificateKey   bool            `gorm:"type:boolean; default: false;"`
+	CertificateIssuer        string          `gorm:"type:varchar(150); default: '';"`
+	CertificateAudience      string          `gorm:"type:varchar(150); default: '';"`
+	CertificateDuration      DurationSeconds `gorm:"type:bigint; default: 900;"` // 15m
+	AutoRotateCertificateKey bool            `gorm:"type:boolean; default: false;"`
 
 	// EN Express
 	EnableENExpress bool `gorm:"type:boolean; default: false;"`
