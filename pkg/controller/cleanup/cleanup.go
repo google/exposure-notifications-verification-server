@@ -96,6 +96,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 				OK:     false,
 				Errors: []error{fmt.Errorf("too early")},
 			})
+			return
 		}
 
 		// Construct a multi-error. If one of the purges fails, we still want to
