@@ -2003,7 +2003,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			ID: "00088-AddUUIDToTokenSigningKeys",
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
-					`ALTER TABLE token_signing_keys ADD COLUMN uuid UUID NOT NULL DEFAULT uuid_generate_v4()`)
+					`ALTER TABLE token_signing_keys ADD COLUMN uuid UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4()`)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return multiExec(tx,
