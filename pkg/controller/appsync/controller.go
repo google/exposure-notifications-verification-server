@@ -25,7 +25,7 @@ import (
 const (
 	playStoreHost = `play.google.com/store/apps/details`
 
-	appSyncLock = "appsync"
+	appSyncLock = "appSyncLock"
 )
 
 // Controller is a controller for the appsync service.
