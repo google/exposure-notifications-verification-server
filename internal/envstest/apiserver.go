@@ -15,14 +15,13 @@
 package envstest
 
 import (
-	"context"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -61,7 +60,7 @@ type APIServerConfigResponse struct {
 func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance) *APIServerConfigResponse {
 	tb.Helper()
 
-	ctx := context.Background()
+	ctx := project.TestContext(tb)
 
 	harness := NewTestHarness(tb, testDatabaseInstance)
 
@@ -78,21 +77,6 @@ func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstan
 	// Create the token key manager. We need both the signing key and the IDs, so
 	// we cannot use the helper here.
 	tokenSigningKey := keys.TestSigningKey(tb, harness.KeyManager)
-	tokenTyp, ok := harness.KeyManager.(keys.SigningKeyManager)
-	if !ok {
-		tb.Fatal("kms cannot manage signing keys")
-	}
-	tokenSigningKeyVersion, err := tokenTyp.CreateKeyVersion(ctx, tokenSigningKey)
-	if err != nil {
-		tb.Fatal(err)
-	}
-
-	// Extract the kid from the key (this is a filesystem key).
-	parts := strings.Split(tokenSigningKeyVersion, "/")
-	if len(parts) == 0 {
-		tb.Fatalf("invalid signing key version %q", tokenSigningKeyVersion)
-	}
-	kid := parts[len(parts)-1]
 
 	// Create the config.
 	cfg := &config.APIServerConfig{
@@ -109,8 +93,8 @@ func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstan
 		},
 		TokenSigning: config.TokenSigningConfig{
 			Keys:               *harness.KeyManagerConfig,
-			TokenSigningKeys:   []string{tokenSigningKeyVersion},
-			TokenSigningKeyIDs: []string{kid},
+			TokenSigningKeys:   []string{tokenSigningKey},
+			TokenSigningKeyIDs: []string{"v1"},
 			TokenIssuer:        "test-iss",
 		},
 		RateLimit: *harness.RateLimiterConfig,
@@ -120,7 +104,7 @@ func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstan
 	// Process the config - this simulates production setups and also ensures we
 	// get the defaults for any unset values.
 	emptyLookuper := envconfig.MapLookuper(nil)
-	if err := config.ProcessWith(context.Background(), cfg, emptyLookuper); err != nil {
+	if err := config.ProcessWith(project.TestContext(tb), cfg, emptyLookuper); err != nil {
 		tb.Fatal(err)
 	}
 
@@ -134,7 +118,7 @@ func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstan
 }
 
 func (r *APIServerConfigResponse) NewServer(tb testing.TB) *APIServerResponse {
-	ctx := context.Background()
+	ctx := project.TestContext(tb)
 	mux, closer, err := routes.APIServer(ctx, r.Config, r.Database, r.Cacher, r.RateLimiter, r.KeyManager, r.KeyManager)
 	tb.Cleanup(closer)
 	if err != nil {

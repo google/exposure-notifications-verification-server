@@ -15,9 +15,8 @@
 package verifyapi
 
 import (
-	"context"
-
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -27,15 +26,17 @@ import (
 type Controller struct {
 	config *config.APIServerConfig
 	db     *database.Database
-	h      render.Renderer
+	cacher cache.Cacher
 	kms    keys.KeyManager
+	h      render.Renderer
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, h render.Renderer, kms keys.KeyManager) (*Controller, error) {
+func New(cfg *config.APIServerConfig, db *database.Database, cacher cache.Cacher, kms keys.KeyManager, h render.Renderer) *Controller {
 	return &Controller{
-		config: config,
+		config: cfg,
 		db:     db,
-		h:      h,
+		cacher: cacher,
 		kms:    kms,
-	}, nil
+		h:      h,
+	}
 }

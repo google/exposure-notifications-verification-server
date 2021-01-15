@@ -48,7 +48,8 @@ func TestHandleRotate(t *testing.T) {
 
 	config := &config.RotationConfig{
 		TokenSigning: config.TokenSigningConfig{
-			TokenSigningKeys: []string{tokenSigningKey},
+			TokenSigningKeys:   []string{tokenSigningKey},
+			TokenSigningKeyIDs: []string{"v1"},
 		},
 		TokenSigningKeyMaxAge: 30 * time.Second,
 	}
@@ -57,27 +58,40 @@ func TestHandleRotate(t *testing.T) {
 	t.Run("rotates", func(t *testing.T) {
 		t.Parallel()
 
-		tokenSigningKeyVersion, err := keyManagerSigner.CreateKeyVersion(ctx, tokenSigningKey)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		key := &database.TokenSigningKey{
-			KeyVersionID: tokenSigningKeyVersion,
-			CreatedAt:    time.Now().UTC().Add(-24 * time.Hour),
-		}
-		if err := db.SaveTokenSigningKey(key, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-		if err := db.SaveTokenSigningKey(key, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-		if err := db.ActivateTokenSigningKey(key.ID, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		// Rotating should create a new key.
+		// Rotating should create a new key since none exists.
 		{
+			r, err := http.NewRequest("GET", "/", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r = r.Clone(ctx)
+
+			w := httptest.NewRecorder()
+
+			c.HandleRotate().ServeHTTP(w, r)
+
+			keys, err := db.ListTokenSigningKeys()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := len(keys), 1; got != want {
+				t.Errorf("got %d keys, expected %d", got, want)
+			}
+		}
+
+		// Rotating again should create a new key (after expiring the one just
+		// created).
+		{
+			key, err := db.ActiveTokenSigningKey()
+			if err != nil {
+				t.Fatal(err)
+			}
+			key.CreatedAt = time.Now().UTC().Add(-24 * time.Hour)
+			if err := db.SaveTokenSigningKey(key, database.SystemTest); err != nil {
+				t.Fatal(err)
+			}
+
 			r, err := http.NewRequest("GET", "/", nil)
 			if err != nil {
 				t.Fatal(err)

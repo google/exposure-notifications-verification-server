@@ -17,7 +17,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -57,10 +56,6 @@ type APIServerConfig struct {
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
-
-	// cached allowed public keys
-	allowedTokenPublicKeys map[string]string
-	mu                     sync.RWMutex
 }
 
 // NewAPIServerConfig returns the environment config for the API server.
@@ -71,37 +66,6 @@ func NewAPIServerConfig(ctx context.Context) (*APIServerConfig, error) {
 		return nil, err
 	}
 	return &config, nil
-}
-
-// AllowedTokenPublicKeys returns a map of 'kid' to the KMS KeyID reference.
-// This represents the keys that are allowed to be used to verify tokens,
-// the TokenSigningKey/TokenSigningKeyID.
-func (c *APIServerConfig) AllowedTokenPublicKeys() map[string]string {
-	result, err := func() (map[string]string, error) {
-		c.mu.RLock()
-		defer c.mu.RUnlock()
-		if len(c.allowedTokenPublicKeys) > 0 {
-			return c.allowedTokenPublicKeys, nil
-		}
-		return nil, fmt.Errorf("missing")
-	}()
-	if err == nil {
-		return result
-	}
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	// handle race condition that could occur between lock upgrade.
-	if len(c.allowedTokenPublicKeys) != 0 {
-		return c.allowedTokenPublicKeys
-	}
-
-	c.allowedTokenPublicKeys = make(map[string]string, len(c.TokenSigning.TokenSigningKeyIDs))
-
-	for i, kid := range c.TokenSigning.TokenSigningKeyIDs {
-		c.allowedTokenPublicKeys[kid] = c.TokenSigning.TokenSigningKeys[i]
-	}
-	return c.allowedTokenPublicKeys
 }
 
 func (c *APIServerConfig) Validate() error {

@@ -15,7 +15,6 @@
 package certapi
 
 import (
-	"crypto"
 	"errors"
 	"net/http"
 	"time"
@@ -57,21 +56,6 @@ func (c *Controller) HandleCertificate() http.Handler {
 			return
 		}
 
-		// Get the public key for the token.
-		allowedPublicKeys := make(map[string]crypto.PublicKey)
-		for kid, keyRef := range c.config.AllowedTokenPublicKeys() {
-			publicKey, err := c.pubKeyCache.GetPublicKey(ctx, keyRef, c.kms)
-			if err != nil {
-				logger.Errorw("failed to get public key", "error", err)
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_GET_PUBLIC_KEY")
-
-				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
-				return
-			}
-			allowedPublicKeys[kid] = publicKey
-		}
-
 		var request api.VerificationCertificateRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			logger.Errorw("failed to parse json request", "error", err)
@@ -83,7 +67,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		// Parse and validate the verification token.
-		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken, allowedPublicKeys)
+		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken)
 		if err != nil {
 			blame = observability.BlameClient
 			result = observability.ResultError("FAILED_TO_VALIDATE_TOKEN")

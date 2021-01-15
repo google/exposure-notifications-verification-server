@@ -49,6 +49,23 @@ func APIServer(
 ) (http.Handler, func(), error) {
 	closer := func() {}
 
+	// Configure system token signing keys. This is done here to ensure the
+	// bootstrapping is shared with the test harnesses, even though it's not
+	// strictly "route" setup.
+	if _, err := db.ActiveTokenSigningKey(); err != nil {
+		if !database.IsNotFound(err) {
+			return nil, closer, fmt.Errorf("failed to lookup active token signing key: %w", err)
+		}
+
+		tokenSignerTyp, ok := tokenSigner.(keys.SigningKeyManager)
+		if !ok {
+			return nil, closer, fmt.Errorf("token signing key manager is not a signing key manager (is %T)", tokenSigner)
+		}
+		if _, err := db.RotateTokenSigningKey(ctx, tokenSignerTyp, cfg.TokenSigning.ParentKeyName(), database.System); err != nil {
+			return nil, closer, fmt.Errorf("failed to create token signing key: %w", err)
+		}
+	}
+
 	// Create the router
 	r := mux.NewRouter()
 
@@ -123,10 +140,7 @@ func APIServer(
 		sub.Use(rateLimit)
 
 		// POST /api/verify
-		verifyapiController, err := verifyapi.New(ctx, cfg, db, h, tokenSigner)
-		if err != nil {
-			return nil, closer, fmt.Errorf("failed to create verify api controller: %w", err)
-		}
+		verifyapiController := verifyapi.New(cfg, db, cacher, tokenSigner, h)
 		sub.Handle("", verifyapiController.HandleVerify()).Methods("POST")
 	}
 
