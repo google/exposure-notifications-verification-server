@@ -45,7 +45,7 @@ type CleanupConfig struct {
 	// Cleanup config
 	AuditEntryMaxAge    time.Duration `env:"AUDIT_ENTRY_MAX_AGE, default=720h"`
 	AuthorizedAppMaxAge time.Duration `env:"AUTHORIZED_APP_MAX_AGE, default=336h"`
-	CleanupPeriod       time.Duration `env:"CLEANUP_PERIOD, default=15m"`
+	CleanupMinPeriod    time.Duration `env:"CLEANUP_MIN_PERIOD, default=15m"`
 	MobileAppMaxAge     time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
 
 	// SigningTokenKeyMaxAge is the maximum amount of time that a rotated signing
@@ -78,7 +78,7 @@ func (c *CleanupConfig) Validate() error {
 		Name string
 	}{
 		{c.VerificationCodeMaxAge, "VERIFICATION_TOKEN_DURATION"},
-		{c.CleanupPeriod, "CLEANUP_PERIOD"},
+		{c.CleanupMinPeriod, "CLEANUP_MIN_PERIOD"},
 		{c.VerificationCodeMaxAge, "VERIFICATION_CODE_MAX_AGE"},
 		{c.VerificationCodeStatusMaxAge, "VERIFICATION_CODE_STATUS_MAX_AGE"},
 		{c.VerificationTokenMaxAge, "VERIFICATION_TOKEN_MAX_AGE"},

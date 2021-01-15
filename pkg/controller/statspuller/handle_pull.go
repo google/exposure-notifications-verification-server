@@ -20,15 +20,35 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
+const (
+	statsPullerLock = "statsPullerLock"
+)
+
 // HandlePullStats pulls key-server statistics.
 func (c *Controller) HandlePullStats() http.Handler {
 	type Result struct {
-		OK     bool    `json:"ok"`
-		Errors []error `json:"errors,omitempty"`
+		OK     bool     `json:"ok"`
+		Errors []string `json:"errors,omitempty"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		ok, err := c.db.TryLock(ctx, statsPullerLock, c.config.StatsPullerMinPeriod)
+		if err != nil {
+			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
+				OK:     false,
+				Errors: []string{err.Error()},
+			})
+			return
+		}
+		if !ok {
+			c.h.RenderJSON(w, http.StatusOK, &Result{
+				OK:     false,
+				Errors: []string{"too early"},
+			})
+			return
+		}
 
 		logger := logging.FromContext(ctx).Named("rotation.HandlePullStats")
 		logger.Debug("no-op stats pull") // TODO(whaught): remove this and put in logic

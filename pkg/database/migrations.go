@@ -90,7 +90,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 		},
 		{
-			ID: "00005-CreateCleanups",
+			ID: "00005-CreateLocks",
 			Migrate: func(tx *gorm.DB) error {
 				if err := tx.AutoMigrate(&CleanupStatus{}).Error; err != nil {
 					return err

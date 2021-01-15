@@ -43,6 +43,10 @@ type StatsPullerConfig struct {
 	// attempted at the controller layer, independent of the data layer. In
 	// effect, it rate limits the number of rotation requests.
 	MinTTL time.Duration `env:"MIN_TTL, default=15m"`
+
+	// StatsPullerMinPeriod defines the period for which the stats puller will hold a lock
+	// which prevents other calls from entering.
+	StatsPullerMinPeriod time.Duration `env:"STATS_PULLER_MIN_PERIOD, default=5m"`
 }
 
 // NewStatsPullerConfig returns the config for the stats-puller service.

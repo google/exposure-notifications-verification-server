@@ -15,7 +15,6 @@
 package rotation
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -41,7 +40,7 @@ func (c *Controller) HandleRotate() http.Handler {
 
 		var merr *multierror.Error
 
-		ok, err := c.shouldRotate(ctx)
+		ok, err := c.db.TryLock(ctx, rotationLock, c.config.MinTTL)
 		if err != nil {
 			logger.Errorw("failed to run shouldRotate", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
@@ -51,12 +50,14 @@ func (c *Controller) HandleRotate() http.Handler {
 			return
 		}
 		if !ok {
+			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
 			c.h.RenderJSON(w, http.StatusOK, &Result{
 				OK:     false,
 				Errors: []error{fmt.Errorf("too early")},
 			})
 			return
 		}
+		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
 
 		// Token signing keys
 		func() {
@@ -103,22 +104,4 @@ func (c *Controller) HandleRotate() http.Handler {
 			OK: true,
 		})
 	})
-}
-
-func (c *Controller) shouldRotate(ctx context.Context) (bool, error) {
-	cStat, err := c.db.CreateCleanup(rotationLock)
-	if err != nil {
-		return false, fmt.Errorf("failed to create rotation claim: %w", err)
-	}
-
-	if cStat.NotBefore.After(time.Now().UTC()) {
-		return false, nil
-	}
-
-	if _, err = c.db.ClaimCleanup(cStat, c.config.MinTTL); err != nil {
-		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
-		return false, fmt.Errorf("failed to claim rotation: %w", err)
-	}
-	stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
-	return true, nil
 }

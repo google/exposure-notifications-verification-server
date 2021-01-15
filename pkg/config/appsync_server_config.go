@@ -42,10 +42,13 @@ type AppSyncConfig struct {
 	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
 
 	// AppSync config
-	AppSyncURL           string        `env:"APP_SYNC_URL"`
-	FileSizeLimitBytes   int64         `env:"APP_SYNC_SIZE_LIMIT, default=64000"`
-	Timeout              time.Duration `env:"APP_SYNC_TIMEOUT, default=1m"`
-	AppSyncMinimumPeriod time.Duration `env:"APP_SYNC_MINIMUM_PERIOD, default=5m"`
+	AppSyncURL         string        `env:"APP_SYNC_URL"`
+	FileSizeLimitBytes int64         `env:"APP_SYNC_SIZE_LIMIT, default=64000"`
+	Timeout            time.Duration `env:"APP_SYNC_TIMEOUT, default=1m"`
+
+	// AppSyncMinPeriod defines the period for which the app sync service will hold a lock
+	// which prevents other calls from entering.
+	AppSyncMinPeriod time.Duration `env:"APP_SYNC_MIN_PERIOD, default=5m"`
 }
 
 // NewAppSyncConfig returns the environment config for the appsync server.

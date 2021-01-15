@@ -15,13 +15,11 @@
 package cleanup
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
@@ -41,7 +39,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 
 		var result, item tag.Mutator
 
-		ok, err := c.shouldCleanup(ctx)
+		ok, err := c.db.TryLock(ctx, cleanupName, c.config.CleanupMinPeriod)
 		if err != nil {
 			logger.Errorw("failed to run shouldCleanup", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
@@ -51,12 +49,14 @@ func (c *Controller) HandleCleanup() http.Handler {
 			return
 		}
 		if !ok {
+			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
 			c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
 				OK:     false,
 				Errors: []error{fmt.Errorf("too early")},
 			})
 			return
 		}
+		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
 
 		// Construct a multi-error. If one of the purges fails, we still want to
 		// attempt the other purges.
@@ -184,23 +184,4 @@ func (c *Controller) HandleCleanup() http.Handler {
 			OK: true,
 		})
 	})
-}
-
-func (c *Controller) shouldCleanup(ctx context.Context) (bool, error) {
-	cStat, err := c.db.CreateCleanup(database.CleanupName)
-	if err != nil {
-		return false, fmt.Errorf("failed to create cleanup: %w", err)
-	}
-
-	if cStat.NotBefore.After(time.Now().UTC()) {
-		return false, nil
-	}
-
-	// Attempt to advance the generation.
-	if _, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod); err != nil {
-		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
-		return false, fmt.Errorf("failed to claim cleanup: %w", err)
-	}
-	stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
-	return true, nil
 }

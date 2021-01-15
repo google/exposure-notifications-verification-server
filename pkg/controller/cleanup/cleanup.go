@@ -22,6 +22,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
+const cleanupName = "cleanupLock"
+
 // Controller is a controller for the cleanup service.
 type Controller struct {
 	config                 *config.CleanupConfig
