@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cleanup implements periodic data deletion.
-package cleanup
+// Package rotation implements periodic secret rotation.
+package rotation
 
 import (
 	"github.com/google/exposure-notifications-server/pkg/keys"
@@ -22,20 +22,33 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-// Controller is a controller for the cleanup service.
+const rotationLock = "rotation"
+
 type Controller struct {
-	config                 *config.CleanupConfig
-	db                     *database.Database
-	signingTokenKeyManager keys.SigningKeyManager
-	h                      render.Renderer
+	config     *config.RotationConfig
+	db         *database.Database
+	keyManager keys.SigningKeyManager
+	h          render.Renderer
 }
 
-// New creates a new cleanup controller.
-func New(config *config.CleanupConfig, db *database.Database, signingTokenKeyManager keys.SigningKeyManager, h render.Renderer) *Controller {
+func New(cfg *config.RotationConfig, db *database.Database, keyManager keys.SigningKeyManager, h render.Renderer) *Controller {
 	return &Controller{
-		config:                 config,
-		db:                     db,
-		signingTokenKeyManager: signingTokenKeyManager,
-		h:                      h,
+		config:     cfg,
+		db:         db,
+		keyManager: keyManager,
+		h:          h,
 	}
+}
+
+// RotationActor is the actor in the database for rotation events.
+var RotationActor database.Auditable = new(rotationActor)
+
+type rotationActor struct{}
+
+func (s *rotationActor) AuditID() string {
+	return "rotation:1"
+}
+
+func (s *rotationActor) AuditDisplay() string {
+	return "Rotation"
 }

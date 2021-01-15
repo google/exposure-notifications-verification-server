@@ -5,8 +5,11 @@
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
     Codes issued &amp; claimed
   </div>
-  <div id="realm_chart" class="container d-flex h-100 w-100" style="min-height:400px;">
-    <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+  <div id="dashboard_div">
+    <div id="filter_div" class="container d-flex w-100" style="padding-left: 50px;"></div>
+    <div id="chart_div" class="container d-flex h-100 w-100" style="min-height:400px;">
+      <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+    </div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
     <a href="#" data-toggle="modal" data-target="#realm-modal">Learn more about this chart</a>
@@ -53,7 +56,7 @@
 
 <script type="text/javascript">
   google.charts.load('current', {
-    packages: ['corechart'],
+    packages: ['corechart', 'controls'],
     callback: drawRealmCharts,
   });
 
@@ -84,19 +87,56 @@
       });
       dateFormatter.format(dataTable, 0);
 
-      let options = {
-        colors: ['#007bff', '#ff7b00'],
-        chartArea: {
-          left: 60, // leave room for y-axis labels
-          width: '100%'
-        },
-        hAxis: { format: 'M/d' },
-        legend: { position: 'top' },
-        width: '100%'
-      };
+      var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
 
-      let chart = new google.visualization.LineChart($realmChartDiv.get(0));
-      chart.draw(dataTable, options);
+      var dateSlider = new google.visualization.ControlWrapper({
+          'controlType': 'DateRangeFilter',
+          'containerId': 'filter_div',
+          'options': {
+            'filterColumnLabel': 'Date',
+          }
+        });
+
+      var realmChart = new google.visualization.ChartWrapper({
+        'chartType': 'LineChart',
+        'containerId': 'chart_div',
+        'options': {
+          colors: ['#007bff', '#ff7b00'],
+          chartArea: {
+            left: 60, // leave room for y-axis labels
+            width: '100%'
+          },
+          hAxis: { format: 'M/d' },
+          legend: { position: 'top' },
+          width: '100%',
+          pointsVisible: true,
+          trendlines: {
+            0: {
+              color: '#16f5f1',
+              opacity: 0.5,
+              lineWidth: 3,
+              labelInLegend: 'Issue Trend',
+              visibleInLegend: true,
+              type: 'polynomial',
+              degree: 4,
+              pointsVisible: false,
+            },
+            1: {
+              color: '#ffe100',
+              opacity: 0.5,
+              lineWidth: 3,
+              labelInLegend: 'Claim Trend',
+              visibleInLegend: true,
+              type: 'polynomial',
+              degree: 4,
+              pointsVisible: false,
+            }
+          }
+        }
+      });
+
+      dashboard.bind(dateSlider, realmChart);
+      dashboard.draw(dataTable);
     })
     .fail(function(xhr, status, err) {
       flash.error('Failed to render realm stats: ' + err);

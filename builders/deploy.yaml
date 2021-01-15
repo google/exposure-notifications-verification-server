@@ -169,6 +169,29 @@ steps:
   waitFor:
   - '-'
 
+
+#
+# rotation
+#
+- id: 'deploy-rotation'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run deploy "rotation" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/rotation:${_TAG}" \
+      --no-traffic
+  waitFor:
+  - '-'
+
+
 #
 # server
 #

@@ -1981,7 +1981,26 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 		},
 		{
-			ID: "00087-KeyServerStats",
+			ID: "00087-AddTokenSigningKeys",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`CREATE TABLE token_signing_keys (
+						id BIGSERIAL,
+						key_version_id TEXT NOT NULL,
+						is_active BOOL NOT NULL DEFAULT FALSE,
+						created_at TIMESTAMP WITH TIME ZONE,
+						updated_at TIMESTAMP WITH TIME ZONE,
+						PRIMARY KEY (id))`,
+					`CREATE UNIQUE INDEX uix_token_signing_keys_is_active ON token_signing_keys (is_active) WHERE (is_active IS TRUE)`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE IF EXISTS token_signing_keys`)
+			},
+		},
+		{
+			ID: "00088-KeyServerStats",
 			Migrate: func(tx *gorm.DB) error {
 				err := tx.AutoMigrate(&KeyServerStats{}, &KeyServerStatsDay{}).Error
 				return err
@@ -2017,10 +2036,12 @@ func (db *Database) MigrateTo(ctx context.Context, target string, rollback bool)
 
 // multiExec is a helper that executes the given sql clauses against the tx.
 func multiExec(tx *gorm.DB, sqls ...string) error {
-	for _, sql := range sqls {
-		if err := tx.Exec(sql).Error; err != nil {
-			return fmt.Errorf("failed to execute %q: %w", sql, err)
+	return tx.Transaction(func(tx *gorm.DB) error {
+		for _, sql := range sqls {
+			if err := tx.Exec(sql).Error; err != nil {
+				return fmt.Errorf("failed to execute %q: %w", sql, err)
+			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
