@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -29,12 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/hashicorp/go-multierror"
-)
-
-const (
-	playStoreHost = `play.google.com/store/apps/details`
-
-	appSyncLock = "appsync"
 )
 
 // HandleSync performs the logic to sync mobile apps.
@@ -47,7 +40,7 @@ func (c *Controller) HandleSync() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		ok, err := c.shouldSync(ctx)
+		ok, err := c.db.TryLock(ctx, appSyncLock, c.config.AppSyncMinPeriod)
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
 				OK:     false,
@@ -56,7 +49,7 @@ func (c *Controller) HandleSync() http.Handler {
 			return
 		}
 		if !ok {
-			c.h.RenderJSON(w, http.StatusTooManyRequests, &AppSyncResult{
+			c.h.RenderJSON(w, http.StatusOK, &AppSyncResult{
 				OK:     false,
 				Errors: []string{"too early"},
 			})
@@ -91,24 +84,6 @@ func (c *Controller) HandleSync() http.Handler {
 		}
 		c.h.RenderJSON(w, http.StatusOK, &AppSyncResult{OK: true})
 	})
-}
-
-// shouldSync is used to ensure that only one app sync process runs per AppSyncPeriod duration.
-func (c *Controller) shouldSync(ctx context.Context) (bool, error) {
-	cStat, err := c.db.CreateCleanup(appSyncLock)
-	if err != nil {
-		return false, fmt.Errorf("failed to create appsync lock: %w", err)
-	}
-
-	if cStat.NotBefore.After(time.Now().UTC()) {
-		return false, nil
-	}
-
-	// Attempt to advance the generation.
-	if _, err = c.db.ClaimCleanup(cStat, c.config.AppSyncMinimumPeriod); err != nil {
-		return false, fmt.Errorf("failed to claim appsync lock: %w", err)
-	}
-	return true, nil
 }
 
 // syncApps looks up the realm and associated list of MobileApps for each entry

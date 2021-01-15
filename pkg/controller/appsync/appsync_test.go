@@ -16,7 +16,6 @@ package appsync
 
 import (
 	"testing"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -30,39 +29,6 @@ func TestMain(m *testing.M) {
 	testDatabaseInstance = database.MustTestInstance()
 	defer testDatabaseInstance.MustClose()
 	m.Run()
-}
-
-func TestShouldSync(t *testing.T) {
-	t.Parallel()
-
-	period := 1 * time.Second
-
-	ctx := project.TestContext(t)
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	config := &config.AppSyncConfig{
-		AppSyncMinimumPeriod: period,
-	}
-	c, _ := New(config, db, nil)
-
-	if ok, err := c.shouldSync(ctx); err != nil {
-		t.Fatal(err)
-	} else if !ok {
-		t.Fatalf("failed to claim app sync lock when available")
-	}
-
-	if ok, err := c.shouldSync(ctx); err != nil {
-		t.Fatal(err)
-	} else if ok {
-		t.Fatalf("allowed to claim lock when it should not be available")
-	}
-
-	time.Sleep(period)
-
-	if ok, err := c.shouldSync(ctx); err != nil {
-		t.Fatal(err)
-	} else if !ok {
-		t.Fatalf("failed to claim app sync lock when available")
-	}
 }
 
 func TestAppSync(t *testing.T) {

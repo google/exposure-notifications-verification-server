@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,45 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appsync syncs the published list of mobile apps to this server's db.
-package appsync
+// Package statspuller pulls statistics from the key server.
+package statspuller
 
 import (
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-const (
-	playStoreHost = `play.google.com/store/apps/details`
-
-	appSyncLock = "appSyncLock"
-)
-
-// Controller is a controller for the appsync service.
+// Controller is a stats controller.
 type Controller struct {
-	config *config.AppSyncConfig
+	config *config.StatsPullerConfig
 	db     *database.Database
 	h      render.Renderer
-
-	appSyncClient *clients.AppSyncClient
 }
 
-// New creates a new appsync controller.
-func New(config *config.AppSyncConfig, db *database.Database, h render.Renderer) (*Controller, error) {
-	appSyncClient, err := clients.NewAppSyncClient(config.AppSyncURL,
-		clients.WithTimeout(config.Timeout),
-		clients.WithMaxBodySize(config.FileSizeLimitBytes))
-	if err != nil {
-		return nil, err
-	}
-
+// New creates a new stats-pull controller.
+func New(cfg *config.StatsPullerConfig, db *database.Database, h render.Renderer) *Controller {
 	return &Controller{
-		config: config,
+		config: cfg,
 		db:     db,
 		h:      h,
-
-		appSyncClient: appSyncClient,
-	}, nil
+	}
 }

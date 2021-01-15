@@ -254,6 +254,38 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
   ]
 }
 
+resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
+  project      = var.project
+  combiner     = "OR"
+  display_name = "UpstreamUserRecreates"
+  conditions {
+    display_name = "Upstream users that should have existed but did not and we re-created"
+    condition_monitoring_query_language {
+      duration = "600s"
+      query    = <<-EOT
+      fetch generic_task :: custom.googleapis.com/opencensus/en-verification-server/user/upstream_user_recreate
+      | align rate(5m)
+      | every 1m
+      | group_by [resource.project_id],
+          [val: aggregate(value.alert_count)]
+      | condition val > 5
+      EOT
+      trigger {
+        count = 1
+      }
+    }
+  }
+  documentation {
+    content   = "${local.playbook_prefix}/UpstreamUserRecreates.md"
+    mime_type = "text/markdown"
+  }
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
+
 resource "google_monitoring_alert_policy" "HumanAccessedSecret" {
   count = var.alert_on_human_accessed_secret ? 1 : 0
 
