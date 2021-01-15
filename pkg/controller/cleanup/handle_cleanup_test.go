@@ -28,40 +28,6 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func Test_shouldCleanup(t *testing.T) {
-	t.Parallel()
-
-	period := 1 * time.Second
-
-	ctx := project.TestContext(t)
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-	config := &config.CleanupConfig{
-		CleanupMinPeriod: period,
-	}
-	c := New(config, db, nil, nil)
-
-	if ok, err := c.shouldCleanup(ctx); err != nil {
-		t.Fatal(err)
-	} else if !ok {
-		t.Fatalf("failed to claim lock when available")
-	}
-
-	if ok, err := c.shouldCleanup(ctx); err != nil {
-		t.Fatal(err)
-	} else if ok {
-		t.Fatalf("allowed to claim lock when it should not be available")
-	}
-
-	time.Sleep(period)
-
-	if ok, err := c.shouldCleanup(ctx); err != nil {
-		t.Fatal(err)
-	} else if !ok {
-		t.Fatalf("failed to claim lock when available")
-	}
-}
-
 func TestHandleCleanup(t *testing.T) {
 	t.Parallel()
 

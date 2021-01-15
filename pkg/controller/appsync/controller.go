@@ -22,6 +22,12 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
+const (
+	playStoreHost = `play.google.com/store/apps/details`
+
+	appSyncLock = "appsync"
+)
+
 // Controller is a controller for the appsync service.
 type Controller struct {
 	config *config.AppSyncConfig

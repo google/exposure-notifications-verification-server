@@ -18,20 +18,52 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
-func TestDatabase_CreateCleanup(t *testing.T) {
+func TestTryLock(t *testing.T) {
+	t.Parallel()
+
+	lockName := "lockName"
+	period := 1 * time.Second
+
+	ctx := project.TestContext(t)
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	if ok, err := db.TryLock(ctx, lockName, period); err != nil {
+		t.Fatal(err)
+	} else if !ok {
+		t.Fatalf("failed to claim app sync lock when available")
+	}
+
+	if ok, err := db.TryLock(ctx, lockName, period); err != nil {
+		t.Fatal(err)
+	} else if ok {
+		t.Fatalf("allowed to claim lock when it should not be available")
+	}
+
+	time.Sleep(period)
+
+	if ok, err := db.TryLock(ctx, lockName, period); err != nil {
+		t.Fatal(err)
+	} else if !ok {
+		t.Fatalf("failed to claim app sync lock when available")
+	}
+}
+
+func TestDatabase_CreateLock(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	cleanup1, err := db.CreateCleanup("x")
+	cleanup1, err := db.CreateLock("x")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// If the cleanup already exists, it's a noop
-	cleanup2, err := db.CreateCleanup("x")
+	cleanup2, err := db.CreateLock("x")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,17 +73,17 @@ func TestDatabase_CreateCleanup(t *testing.T) {
 	}
 }
 
-func TestDatabase_FindCleanupStatus(t *testing.T) {
+func TestDatabase_FindLockStatus(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	want, err := db.CreateCleanup("x")
+	want, err := db.CreateLock("x")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := db.FindCleanupStatus("x")
+	got, err := db.FindLockStatus("x")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,14 +93,14 @@ func TestDatabase_FindCleanupStatus(t *testing.T) {
 	}
 }
 
-func TestDatabase_ClaimCleanup(t *testing.T) {
+func TestDatabase_ClaimLock(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no_exist", func(t *testing.T) {
 		t.Parallel()
 
 		db, _ := testDatabaseInstance.NewDatabase(t, nil)
-		cleanup, err := db.ClaimCleanup(&CleanupStatus{Type: "nope"}, 5*time.Second)
+		cleanup, err := db.ClaimLock(&CleanupStatus{Type: "nope"}, 5*time.Second)
 		if !IsNotFound(err) {
 			t.Errorf("expected error, got: %v: %v", err, cleanup)
 		}
@@ -79,11 +111,11 @@ func TestDatabase_ClaimCleanup(t *testing.T) {
 
 		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-		if _, err := db.CreateCleanup("dirty"); err != nil {
+		if _, err := db.CreateLock("dirty"); err != nil {
 			t.Fatal(err)
 		}
 
-		_, err := db.ClaimCleanup(&CleanupStatus{
+		_, err := db.ClaimLock(&CleanupStatus{
 			Type:       "dirty",
 			Generation: 2,
 		}, 1*time.Second)
@@ -97,11 +129,11 @@ func TestDatabase_ClaimCleanup(t *testing.T) {
 
 		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-		if _, err := db.CreateCleanup("dirty"); err != nil {
+		if _, err := db.CreateLock("dirty"); err != nil {
 			t.Fatal(err)
 		}
 
-		cleanup, err := db.ClaimCleanup(&CleanupStatus{
+		cleanup, err := db.ClaimLock(&CleanupStatus{
 			Type:       "dirty",
 			Generation: 1,
 		}, 1*time.Second)

@@ -34,7 +34,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		ok, err := c.db.ShouldSync(ctx, statsPullerLock, c.config.StatsPullerMinPeriod)
+		ok, err := c.db.TryLock(ctx, statsPullerLock, c.config.StatsPullerMinPeriod)
 		if err != nil {
 			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
 				OK:     false,

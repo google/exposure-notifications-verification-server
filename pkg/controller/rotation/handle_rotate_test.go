@@ -27,39 +27,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-func Test_shouldRotate(t *testing.T) {
-	t.Parallel()
-
-	ttl := 1 * time.Second
-
-	ctx := project.TestContext(t)
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	config := &config.RotationConfig{
-		MinTTL: ttl,
-	}
-	c := New(config, db, nil, nil)
-
-	if ok, err := c.shouldRotate(ctx); err != nil {
-		t.Fatal(err)
-	} else if !ok {
-		t.Fatalf("failed to claim lock when available")
-	}
-
-	if ok, err := c.shouldRotate(ctx); err != nil {
-		t.Fatal(err)
-	} else if ok {
-		t.Fatalf("allowed to claim lock when it should not be available")
-	}
-
-	time.Sleep(ttl)
-
-	if ok, err := c.shouldRotate(ctx); err != nil {
-		t.Fatal(err)
-	} else if !ok {
-		t.Fatalf("failed to claim lock when available")
-	}
-}
-
 func TestHandleRotate(t *testing.T) {
 	t.Parallel()
 
