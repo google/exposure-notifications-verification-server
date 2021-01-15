@@ -17,7 +17,6 @@ package database
 import (
 	"time"
 
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/lib/pq"
 )
 
@@ -33,11 +32,9 @@ type KeyServerStats struct {
 	IsSystem bool `gorm:"column:is_system; type:bool; not null; default:false;"`
 
 	// KeyServerURL allows a realm to override the system's URL with its own
-	KeyServerURL string `gorm:"column:key_server_url; type:varchar(150); default: '';"`
+	KeyServerURL string `gorm:"column:key_server_url; type:text; default: '';"`
 	// KeyServerAudience allows a realm to override the system's audience
-	KeyServerAudience string `gorm:"column:key_server_audience; type:varchar(150); default: '';"`
-
-	Stats []*KeyServerStatsDay `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
+	KeyServerAudience string `gorm:"column:key_server_audience; type:text; default: '';"`
 }
 
 // KeyServerStatsDay represents statistics for each day
@@ -52,7 +49,8 @@ type KeyServerStatsDay struct {
 	Day time.Time `gorm:"column:day; primary_key;"`
 
 	// PublishRequests is a count of requests per OS
-	PublishRequests postgres.Hstore `gorm:"column:publish_requests; type:hstore;"`
+	// where the index corresponds to the value of OSType
+	PublishRequests pq.Int64Array `gorm:"column:publish_requests; type:bigint[];"`
 
 	TotalTEKsPublished int64 `gorm:"column:total_teks_published; type:bigint; not null; default: 0;"`
 
@@ -74,6 +72,7 @@ type KeyServerStatsDay struct {
 	RequestsMissingOnsetDate int64 `gorm:"column:request_missing_onset_date; type:bigint; not null; default: 0;"`
 }
 
+// GetKeyServerStats retrieves the configuration for gathering key-server statistics
 func (db *Database) GetKeyServerStats(realmID uint) (*KeyServerStats, error) {
 	var stats KeyServerStats
 	if err := db.db.
@@ -85,10 +84,12 @@ func (db *Database) GetKeyServerStats(realmID uint) (*KeyServerStats, error) {
 	return &stats, nil
 }
 
+// SaveKeyServerStats stores the configuration for gathering key-server statistics
 func (db *Database) SaveKeyServerStats(stats *KeyServerStats) error {
 	return db.db.Save(stats).Error
 }
 
+// GetKeyServerStatsDay retrieves a single day of key-server statistics
 func (db *Database) GetKeyServerStatsDay(realmID uint, day time.Time) (*KeyServerStatsDay, error) {
 	var stats KeyServerStatsDay
 	if err := db.db.
@@ -101,6 +102,7 @@ func (db *Database) GetKeyServerStatsDay(realmID uint, day time.Time) (*KeyServe
 	return &stats, nil
 }
 
+// SaveKeyServerStatsDay stores a single day of key-server statistics
 func (db *Database) SaveKeyServerStatsDay(day *KeyServerStatsDay) error {
 	return db.db.Save(day).Error
 }
