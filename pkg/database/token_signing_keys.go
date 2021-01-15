@@ -50,12 +50,12 @@ type TokenSigningKey struct {
 // Ensure signing key can be an audited.
 var _ Auditable = (*TokenSigningKey)(nil)
 
-// AuditID is how the user is stored in the audit entry.
+// AuditID is how the token signing key is stored in the audit entry.
 func (k *TokenSigningKey) AuditID() string {
 	return fmt.Sprintf("token_signing_key:%d", k.ID)
 }
 
-// AuditDisplay is how the user will be displayed in audit entries.
+// AuditDisplay is how the token signing key will be displayed in audit entries.
 func (k *TokenSigningKey) AuditDisplay() string {
 	return fmt.Sprintf("%d (%s)", k.ID, k.KeyVersionID)
 }
@@ -107,8 +107,61 @@ func (db *Database) ListTokenSigningKeys() ([]*TokenSigningKey, error) {
 
 // SaveTokenSigningKey saves the token signing key.
 func (db *Database) SaveTokenSigningKey(key *TokenSigningKey, actor Auditable) error {
-	// TODO(sethvargo): auditing
-	return db.db.Save(key).Error
+	if key == nil {
+		return fmt.Errorf("provided key is nil")
+	}
+
+	if actor == nil {
+		return fmt.Errorf("auditing actor is nil")
+	}
+
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var audits []*AuditEntry
+
+		// Look up the existing record so we can do a diff and generate audit
+		// entries.
+		var existing TokenSigningKey
+		if err := tx.
+			Set("gorm::query_option", "FOR UPDATE").
+			Model(&TokenSigningKey{}).
+			Where("id = ?", key.ID).
+			First(&existing).
+			Error; err != nil && !IsNotFound(err) {
+			return fmt.Errorf("failed to get existing token signing key")
+		}
+
+		// Save
+		if err := tx.Save(key).Error; err != nil {
+			return fmt.Errorf("failed to save token signing key: %w", err)
+		}
+
+		// Brand new?
+		if existing.ID == 0 {
+			audit := BuildAuditEntry(actor, "created token signing key", key, 0)
+			audits = append(audits, audit)
+		} else {
+			if old, new := existing.KeyVersionID, key.KeyVersionID; old != new {
+				audit := BuildAuditEntry(actor, "updated key version id", key, 0)
+				audit.Diff = stringDiff(old, new)
+				audits = append(audits, audit)
+			}
+
+			if old, new := existing.IsActive, key.IsActive; old != new {
+				audit := BuildAuditEntry(actor, "updated active state", key, 0)
+				audit.Diff = boolDiff(old, new)
+				audits = append(audits, audit)
+			}
+		}
+
+		// Save all audits
+		for _, audit := range audits {
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audits: %w", err)
+			}
+		}
+
+		return nil
+	})
 }
 
 // ActivateTokenSigningKey activates the signing key with the provided database
