@@ -14,7 +14,7 @@ to share within the exposure notifications system.
 
 -   `ens` : describes that the exposure notifications application to be opened.
 
--   `a` : activate exposure notifications. 
+-   `onboard` : activate exposure notifications. 
 
 -   `v` : verify, currently this is the only available action.
 
@@ -30,14 +30,14 @@ to share within the exposure notifications system.
 
 ### Modes
 
--  `a` - Activate mode supports region (`r`) as an optional parameter.
+-  `onboard` - Activate / onboarding mode supports region (`r`) as an optional parameter.
 
 -  `v` - Supports region (`r`) and code (`c`) as required parameters.
 
 ## Encoding considerations
 
 Use URL encoding if applicable. This URI is intended to be sent over SMS. While
-there is no stricit limit on length, it is recommended that the greeting text
+there is no strict limit on length, it is recommended that the greeting text
 combined with the URI not exceed 160 characters in total.
 
 ## Examples
@@ -67,7 +67,7 @@ ens://v?r=AU-NSW&c=abcdefgh12345678
 ### Activation, region chosen on device.
 
 ```text
-ens://a
+ens://onboard
 ```
 
 ### Activation, region in URI
@@ -75,5 +75,5 @@ ens://a
 For the State of Washington, in the United States:
 
 ```text
-ens://a?r=WA-WA
+ens://onboard?r=WA-WA
 ```
