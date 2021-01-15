@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleShowResetPassword() http.Handler {
@@ -73,8 +74,14 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 				return
 			}
 
-			controller.InternalError(w, r, c.h, err)
-			return
+			// Re-create the firebase user if it does not exist.
+			// We have seen this disappear if a user never logs-on after being invited
+			if created, _ := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", false, nil); created {
+				stats.Record(ctx, controller.MFirebaseRecreates.M(1))
+			} else {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
 		}
 
 		// nil composer falls back to firebase and no custom message.
