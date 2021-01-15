@@ -14,7 +14,7 @@
 
 resource "google_service_account" "stats-puller" {
   project      = var.project
-  account_id   = "en-verification-stats-puller-sa"
+  account_id   = "en-ver-stats-puller-sa"
   display_name = "Verification stats-puller"
 }
 
