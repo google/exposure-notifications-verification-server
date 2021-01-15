@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	statsPullerLock = "statspuller"
+	statsPullerLock = "stats-puller" 
 )
 
 // HandlePullStats pulls key-server statistics.
