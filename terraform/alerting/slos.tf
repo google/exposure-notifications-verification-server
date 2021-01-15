@@ -40,6 +40,7 @@ locals {
     server = merge(local.default_per_service_slo,
       { enable_latency_alert = true,
     latency_threshold = 2000 })
+    stats-puller = local.default_per_service_slo
   }
 }
 
