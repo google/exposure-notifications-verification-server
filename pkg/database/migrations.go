@@ -2002,8 +2002,24 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00088-KeyServerStats",
 			Migrate: func(tx *gorm.DB) error {
-				err := tx.AutoMigrate(&KeyServerStats{}, &KeyServerStatsDay{}).Error
-				return err
+				return multiExec(tx,
+					`CREATE TABLE key_server_stats (
+						realm_id INTEGER,
+						is_system BOOL NOT NULL DEFAULT FALSE,
+						key_server_url TEXT,
+						key_server_audience TEXT,
+						PRIMARY KEY (realm_id))`,
+					`CREATE TABLE key_server_stats_days (
+						realm_id INTEGER,
+						day TIMESTAMP WITH TIME ZONE,
+						publish_requests BIGINT[],
+						total_teks_published BIGINT NOT NULL DEFAULT 0,
+						revision_requests BIGINT NOT NULL DEFAULT 0,
+						tek_age_distribution BIGINT[],
+						onset_to_upload_distribution BIGINT[],
+						request_missing_onset_date BIGINT NOT NULL DEFAULT 0,
+						PRIMARY KEY (realm_id, day))`,
+				)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				if err := tx.DropTableIfExists(&KeyServerStats{}, &KeyServerStatsDay{}).Error; err != nil {

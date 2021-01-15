@@ -32,9 +32,9 @@ type KeyServerStats struct {
 	IsSystem bool `gorm:"column:is_system; type:bool; not null; default:false;"`
 
 	// KeyServerURL allows a realm to override the system's URL with its own
-	KeyServerURL string `gorm:"column:key_server_url; type:text; default: '';"`
+	KeyServerURL string `gorm:"column:key_server_url; type:text;"`
 	// KeyServerAudience allows a realm to override the system's audience
-	KeyServerAudience string `gorm:"column:key_server_audience; type:text; default: '';"`
+	KeyServerAudience string `gorm:"column:key_server_audience; type:text;"`
 }
 
 // KeyServerStatsDay represents statistics for each day
@@ -104,5 +104,5 @@ func (db *Database) GetKeyServerStatsDay(realmID uint, day time.Time) (*KeyServe
 
 // SaveKeyServerStatsDay stores a single day of key-server statistics
 func (db *Database) SaveKeyServerStatsDay(day *KeyServerStatsDay) error {
-	return db.db.Save(day).Error
+	return db.db.Debug().Save(day).Error
 }
