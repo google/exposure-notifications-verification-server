@@ -77,7 +77,12 @@
 
                 <span>{{$event.Action}}</span>
 
-                <span class="text-primary text-nowrap text-truncate">{{$event.TargetDisplay}}</span>
+                <span class="text-primary text-nowrap text-truncate">
+                  {{$event.TargetDisplay}}
+                  {{if $event.RealmID}}
+                    on realm {{$event.RealmID}}
+                  {{end}}
+                </span>
 
                 {{if $event.Diff}}
                 <br>
