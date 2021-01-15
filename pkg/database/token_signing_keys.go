@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
+	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 )
 
@@ -34,6 +36,10 @@ type TokenSigningKey struct {
 
 	// KeyVersionID is the full name of the signing key version.
 	KeyVersionID string
+
+	// UUID is the uuid of the key. This is used as the `kid` header value in
+	// JWTs.
+	UUID string `gorm:"column:uuid; default:null;"`
 
 	// IsActive returns true if this signing key is the active one, false
 	// otherwise. There's a database-level constraint that only one row can have
@@ -52,12 +58,12 @@ var _ Auditable = (*TokenSigningKey)(nil)
 
 // AuditID is how the token signing key is stored in the audit entry.
 func (k *TokenSigningKey) AuditID() string {
-	return fmt.Sprintf("token_signing_key:%d", k.ID)
+	return fmt.Sprintf("token_signing_key:%s", k.UUID)
 }
 
 // AuditDisplay is how the token signing key will be displayed in audit entries.
 func (k *TokenSigningKey) AuditDisplay() string {
-	return fmt.Sprintf("%d (%s)", k.ID, k.KeyVersionID)
+	return fmt.Sprintf("%s (%s)", k.UUID, k.KeyVersionID)
 }
 
 // FindTokenSigningKey finds the given key by database ID. It returns an error
@@ -74,6 +80,46 @@ func (db *Database) FindTokenSigningKey(id interface{}) (*TokenSigningKey, error
 	return &key, nil
 }
 
+// FindTokenSigningKeyByUUID finds the given key by database ID. It returns an error
+// if the record is not found.
+func (db *Database) FindTokenSigningKeyByUUID(uuidStr string) (*TokenSigningKey, error) {
+	// Postgres returns an error if the provided input is not a valid UUID.
+	parsed, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	var key TokenSigningKey
+	if err := db.db.
+		Model(&TokenSigningKey{}).
+		Where("uuid = ?", parsed.String()).
+		First(&key).
+		Error; err != nil {
+		return nil, err
+	}
+	return &key, nil
+}
+
+// FindTokenSigningKeyByUUIDCached is like FindTokenSigningKeyByUUID, but the
+// results are cached for a short period to alleviate load on the database.
+func (db *Database) FindTokenSigningKeyByUUIDCached(ctx context.Context, cacher cache.Cacher, uuidStr string) (*TokenSigningKey, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var key *TokenSigningKey
+	cacheKey := &cache.Key{
+		Namespace: "token_signing_keys:by_id",
+		Key:       uuidStr,
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &key, 30*time.Minute, func() (interface{}, error) {
+		return db.FindTokenSigningKeyByUUID(uuidStr)
+	}); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
 // ActiveTokenSigningKey returns the currently-active token signing key. If no
 // key is currently marked as active, it returns NotFound.
 func (db *Database) ActiveTokenSigningKey() (*TokenSigningKey, error) {
@@ -88,6 +134,26 @@ func (db *Database) ActiveTokenSigningKey() (*TokenSigningKey, error) {
 	return &key, nil
 }
 
+// ActiveTokenSigningKeyCached is like ActiveTokenSigningKey, but the results
+// are cached for a short period to alleviate load on the database.
+func (db *Database) ActiveTokenSigningKeyCached(ctx context.Context, cacher cache.Cacher) (*TokenSigningKey, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var key *TokenSigningKey
+	cacheKey := &cache.Key{
+		Namespace: "token_signing_keys:active",
+		Key:       "value",
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &key, 5*time.Minute, func() (interface{}, error) {
+		return db.ActiveTokenSigningKey()
+	}); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
 // ListTokenSigningKeys lists all keys sorted by their active state, then
 // creation state descending. If there are no keys, it returns an empty list. To
 // get the current active signing key, use ActiveTokenSigningKey.
@@ -95,6 +161,7 @@ func (db *Database) ListTokenSigningKeys() ([]*TokenSigningKey, error) {
 	var keys []*TokenSigningKey
 	if err := db.db.
 		Model(&TokenSigningKey{}).
+		Order("token_signing_keys.is_active DESC, id DESC").
 		Find(&keys).
 		Error; err != nil {
 		if IsNotFound(err) {

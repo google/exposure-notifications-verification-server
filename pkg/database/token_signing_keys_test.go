@@ -56,6 +56,48 @@ func TestDatabase_FindTokenSigningKey(t *testing.T) {
 	})
 }
 
+func TestDatabase_FindTokenSigningKeyByUUID(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	t.Run("invalid", func(t *testing.T) {
+		t.Parallel()
+
+		if _, err := db.FindTokenSigningKeyByUUID("invalid"); !IsNotFound(err) {
+			t.Errorf("expected err to be NotFound, got %v", err)
+		}
+	})
+
+	t.Run("not_exist", func(t *testing.T) {
+		t.Parallel()
+
+		if _, err := db.FindTokenSigningKeyByUUID("00000000-0000-0000-0000-000000000000"); !IsNotFound(err) {
+			t.Errorf("expected err to be NotFound, got %v", err)
+		}
+	})
+
+	t.Run("finds", func(t *testing.T) {
+		t.Parallel()
+
+		key := &TokenSigningKey{
+			KeyVersionID: "foo/bar/baz",
+		}
+		if err := db.SaveTokenSigningKey(key, SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
+		result, err := db.FindTokenSigningKeyByUUID(key.UUID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := result.UUID, result.UUID; got != want {
+			t.Errorf("expected %s to be %s", got, want)
+		}
+	})
+}
+
 func TestDatabase_ActiveTokenSigningKey(t *testing.T) {
 	t.Parallel()
 

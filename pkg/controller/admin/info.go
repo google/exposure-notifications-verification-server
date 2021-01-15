@@ -24,7 +24,16 @@ import (
 func (c *Controller) HandleInfoShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
 		m := controller.TemplateMapFromContext(ctx)
+
+		tokenSigningKeys, err := c.db.ListTokenSigningKeys()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		m["tokenSigningKeys"] = tokenSigningKeys
+
 		m.Title("Info - System Admin")
 		c.h.RenderHTML(w, "admin/info", m)
 	})

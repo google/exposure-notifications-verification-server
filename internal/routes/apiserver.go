@@ -123,10 +123,7 @@ func APIServer(
 		sub.Use(rateLimit)
 
 		// POST /api/verify
-		verifyapiController, err := verifyapi.New(ctx, cfg, db, h, tokenSigner)
-		if err != nil {
-			return nil, closer, fmt.Errorf("failed to create verify api controller: %w", err)
-		}
+		verifyapiController := verifyapi.New(cfg, db, cacher, tokenSigner, h)
 		sub.Handle("", verifyapiController.HandleVerify()).Methods("POST")
 	}
 

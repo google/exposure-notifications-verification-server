@@ -28,14 +28,15 @@ type cacheItem struct {
 }
 
 var caches = map[string]*cacheItem{
-	"apps:":            {"Mobile apps", "Registered mobile apps for the redirector service"},
-	"authorized_apps:": {"API keys", "Authentication for API keys"},
-	"jwks:":            {"JWKs", "JSON web key sets"},
-	"memberships:":     {"Memberships", "All membership information"},
-	"public_keys:":     {"Public keys", "PEM data from upstream key provider"},
-	"realms:":          {"Realms", "All realm data"},
-	"stats:":           {"Statistics", "API key, user, and realm statistics"},
-	"users:":           {"Users", "All user data"},
+	"apps:":               {"Mobile apps", "Registered mobile apps for the redirector service"},
+	"authorized_apps:":    {"API keys", "Authentication for API keys"},
+	"jwks:":               {"JWKs", "JSON web key sets"},
+	"memberships:":        {"Memberships", "All membership information"},
+	"public_keys:":        {"Public keys", "PEM data from upstream key provider"},
+	"realms:":             {"Realms", "All realm data"},
+	"stats:":              {"Statistics", "API key, user, and realm statistics"},
+	"token_signing_keys:": {"Token signing keys", "All token signing keys, including currently active"},
+	"users:":              {"Users", "All user data"},
 }
 
 // HandleCachesIndex shows the caches page.

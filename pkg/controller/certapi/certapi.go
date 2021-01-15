@@ -17,8 +17,6 @@ package certapi
 
 import (
 	"context"
-	"crypto"
-	"errors"
 	"fmt"
 
 	vcache "github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -38,6 +36,7 @@ import (
 type Controller struct {
 	config      *config.APIServerConfig
 	db          *database.Database
+	cacher      vcache.Cacher
 	h           render.Renderer
 	pubKeyCache *keyutils.PublicKeyCache // Cache of public keys for verification token verification.
 	signerCache *cache.Cache             // Cache signers on a per-realm basis.
@@ -59,6 +58,7 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 	return &Controller{
 		config:      config,
 		db:          db,
+		cacher:      cacher,
 		h:           h,
 		pubKeyCache: pubKeyCache,
 		signerCache: signerCache,
@@ -69,7 +69,7 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 // Parses and validates the token against the configured keyID and public key.
 // A map of valid 'kid' values is supported.
 // If the token is valid the token id (`tid') and subject (`sub`) claims are returned.
-func (c *Controller) validateToken(ctx context.Context, verToken string, publicKeys map[string]crypto.PublicKey) (string, *database.Subject, error) {
+func (c *Controller) validateToken(ctx context.Context, verToken string) (string, *database.Subject, error) {
 	logger := logging.FromContext(ctx).Named("certapi.validateToken")
 
 	parser := &jwt.Parser{
@@ -80,22 +80,36 @@ func (c *Controller) validateToken(ctx context.Context, verToken string, publicK
 		kidHeader := token.Header[verifyapi.KeyIDHeader]
 		kid, ok := kidHeader.(string)
 		if !ok {
-			err := errors.New("missing 'kid' header in token")
-			logger.Infow("invalid verification token", "error", err)
-			return nil, err
+			return nil, fmt.Errorf("missing 'kid' header in token")
 		}
-		publicKey, ok := publicKeys[kid]
-		if !ok {
-			err := fmt.Errorf("no public key exists for kid %q", kid)
-			logger.Infow("invalid verification token", "error", err)
-			return nil, err
+
+		tokenSigningKey, err := c.db.FindTokenSigningKeyByUUIDCached(ctx, c.cacher, kid)
+		if err != nil {
+			if database.IsNotFound(err) {
+				// Fallback to searching the pre-database keys, which were specified via
+				// environment variables.
+				//
+				// TODO(sethvargo): remove in 0.22+
+				keyID, ok := c.config.TokenSigning.FindKeyByKid(kid)
+				if !ok {
+					return nil, fmt.Errorf("no key corresponds to kid %q", kid)
+				}
+				tokenSigningKey = &database.TokenSigningKey{KeyVersionID: keyID}
+			}
+			return nil, fmt.Errorf("failed to lookup token signing key: %w", err)
+		}
+
+		publicKey, err := c.pubKeyCache.GetPublicKey(ctx, tokenSigningKey.KeyVersionID, c.kms)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find public key for kid %q: %w", kid, err)
 		}
 		return publicKey, nil
 	})
 	if err != nil {
-		logger.Infow("invalid verification token", "error", err)
+		logger.Debugw("invalid verification token", "error", err)
 		return "", nil, fmt.Errorf("invalid verification token")
 	}
+
 	tokenClaims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok {
 		logger.Infow("invalid verification token", "error", "claims are not StandardClaims")
