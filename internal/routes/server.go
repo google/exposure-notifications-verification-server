@@ -274,7 +274,7 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		statsController := stats.New(ctx, cacher, db, h)
+		statsController := stats.New(cacher, db, h)
 		statsRoutes(sub, statsController)
 	}
 
