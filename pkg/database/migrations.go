@@ -1980,6 +1980,19 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE realms DROP COLUMN IF EXISTS auto_rotate_certificate_key`)
 			},
 		},
+		{
+			ID: "00087-KeyServerStats",
+			Migrate: func(tx *gorm.DB) error {
+				err := tx.AutoMigrate(&KeyServerStats{}, &KeyServerStatsDay{}).Error
+				return err
+			},
+			Rollback: func(tx *gorm.DB) error {
+				if err := tx.DropTableIfExists(&KeyServerStats{}, &KeyServerStatsDay{}).Error; err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	}
 }
 

@@ -21,7 +21,7 @@ import (
 )
 
 // TokenSigningConfig represents the settings for system-wide certificate
-// signing. These should be used if you are managing certifiate keys externally.
+// signing. These should be used if you are managing certificate keys externally.
 type TokenSigningConfig struct {
 	// Keys determines the key manager configuration for this token signing
 	// configuration.
