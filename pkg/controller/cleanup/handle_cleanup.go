@@ -51,7 +51,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 			return
 		}
 		if !ok {
-			c.h.RenderJSON(w, http.StatusTooManyRequests, &CleanupResult{
+			c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
 				OK:     false,
 				Errors: []error{fmt.Errorf("too early")},
 			})
