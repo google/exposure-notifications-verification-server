@@ -116,7 +116,7 @@ func AdminAPI(
 		sub.Use(requireStatsAPIKey)
 		sub.Use(processFirewall)
 
-		statsController := stats.New(ctx, cacher, db, h)
+		statsController := stats.New(cacher, db, h)
 		sub.Handle("/realm.csv", statsController.HandleRealmStats(stats.StatsTypeCSV)).Methods("GET")
 		sub.Handle("/realm.json", statsController.HandleRealmStats(stats.StatsTypeJSON)).Methods("GET")
 

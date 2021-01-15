@@ -558,3 +558,54 @@ steps:
       --keyversion "${_BINAUTHZ_KEY_VERSION}"
   waitFor:
   - 'push-server'
+
+
+
+#
+# stats-puller
+#
+- id: 'build-stats-puller'
+  name: 'golang:1.15.2'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/stats-puller'
+  - './cmd/stats-puller'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-stats-puller'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/stats-puller:${_TAG}'
+  - '--build-arg=SERVICE=stats-puller'
+  - '.'
+  waitFor:
+  - 'build-stats-puller'
+
+- id: 'push-stats-puller'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/stats-puller:${_TAG}'
+
+- id: 'attest-stats-puller'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/stats-puller:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-stats-puller'

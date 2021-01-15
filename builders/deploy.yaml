@@ -212,3 +212,25 @@ steps:
       --no-traffic
   waitFor:
   - '-'
+
+
+#
+# stats-puller
+#
+- id: 'deploy-stats-puller'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run deploy "stats-puller" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --image "gcr.io/${PROJECT_ID}/${_REPO}/stats-puller:${_TAG}" \
+      --no-traffic
+  waitFor:
+  - '-'

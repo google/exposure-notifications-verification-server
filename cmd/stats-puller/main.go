@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This server implements scheduled key-rotation. The server itself is unauthenticated
+// This server implements the key-server statistics puller. The server itself is unauthenticated
 // and should not be deployed as a public service.
 package main
 
@@ -23,10 +23,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/rotation"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/statspuller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -62,7 +61,7 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	cfg, err := config.NewRotationConfig(ctx)
+	cfg, err := config.NewStatsPullerConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
@@ -97,16 +96,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	// Get token key manager.
-	tokenSigner, err := keys.KeyManagerFor(ctx, &cfg.TokenSigning.Keys)
-	if err != nil {
-		return fmt.Errorf("failed to token signing key manager: %w", err)
-	}
-	tokenSignerTyp, ok := tokenSigner.(keys.SigningKeyManager)
-	if !ok {
-		return fmt.Errorf("token signing key manage is not a signing key manager (is %T)", tokenSigner)
-	}
-
 	// Create the router
 	r := mux.NewRouter()
 
@@ -121,8 +110,8 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	rotationController := rotation.New(cfg, db, tokenSignerTyp, h)
-	r.Handle("/", rotationController.HandleRotate()).Methods("GET")
+	statsController := statspuller.New(cfg, db, h)
+	r.Handle("/", statsController.HandlePullStats()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {
