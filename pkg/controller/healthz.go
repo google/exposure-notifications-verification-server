@@ -21,8 +21,10 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+
 	"github.com/sethvargo/go-retry"
 )
 
@@ -52,8 +54,6 @@ func HandleHealthz(db *database.Database, h render.Renderer) http.Handler {
 				InternalError(w, r, h, fmt.Errorf("failed to ping db: %w", err))
 				return
 			}
-		case "alerts":
-			// TODO(ych): fire a metric and configure an alert
 		default:
 			logger.Warnw("unknown service", "service", service)
 		}

@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controller
+package user
 
 import (
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
@@ -23,20 +23,20 @@ import (
 	"go.opencensus.io/stats/view"
 )
 
-const metricPrefix = observability.MetricRoot + "/server/login"
-
-var (
-	MFirebaseRecreates = stats.Int64(metricPrefix+"/fb_recreates", "firebase user recreates", stats.UnitDimensionless)
-)
+var mUpstreamUserRecreates *stats.Int64Measure
 
 func init() {
-	enobservability.CollectViews([]*view.View{
-		{
-			Name:        metricPrefix + "/fb_recreate_count",
-			Measure:     MFirebaseRecreates,
-			Description: "The count of firebase user recreations",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		},
-	}...)
+	{
+		name := observability.MetricRoot + "/user/upstream_user_recreate"
+		mUpstreamUserRecreates = stats.Int64(name, "user was re-created in auth provider", stats.UnitDimensionless)
+		enobservability.CollectViews([]*view.View{
+			{
+				Name:        name + "_count",
+				Measure:     mUpstreamUserRecreates,
+				Description: "Count of users that were re-created in the upstream auth provider",
+				TagKeys:     observability.CommonTagKeys(),
+				Aggregation: view.Count(),
+			},
+		}...)
+	}
 }

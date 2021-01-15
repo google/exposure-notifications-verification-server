@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
+	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleResetPassword() http.Handler {
@@ -57,6 +58,13 @@ func (c *Controller) HandleResetPassword() http.Handler {
 
 			controller.InternalError(w, r, c.h, err)
 			return
+		}
+
+		// Ensure the upstream user exists. We have seen upstream users disappear in
+		// certain auth providers if they don't log on for some period of time after
+		// being invited to the system.
+		if created, _ := c.authProvider.CreateUser(ctx, user.Name, user.Email, "", false, nil); created {
+			stats.Record(ctx, mUpstreamUserRecreates.M(1))
 		}
 
 		// Build the emailer.
