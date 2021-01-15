@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	statsPullerLock = "stats-puller" 
+	statsPullerLock = "statsPullerLock"
 )
 
 // HandlePullStats pulls key-server statistics.
@@ -43,7 +43,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 			return
 		}
 		if !ok {
-			c.h.RenderJSON(w, http.StatusTooManyRequests, &Result{
+			c.h.RenderJSON(w, http.StatusOK, &Result{
 				OK:     false,
 				Errors: []string{"too early"},
 			})
