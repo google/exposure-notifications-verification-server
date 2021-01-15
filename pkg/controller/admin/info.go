@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 // HandleInfoShow renders the list of system admins.
@@ -28,14 +27,12 @@ func (c *Controller) HandleInfoShow() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 
-		activeTokenSigningKey, err := c.db.ActiveTokenSigningKey()
-		if err != nil && !database.IsNotFound(err) {
+		tokenSigningKeys, err := c.db.ListTokenSigningKeys()
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
-		if activeTokenSigningKey != nil {
-			m["activeTokenSigningKey"] = activeTokenSigningKey
-		}
+		m["tokenSigningKeys"] = tokenSigningKeys
 
 		m.Title("Info - System Admin")
 		c.h.RenderHTML(w, "admin/info", m)

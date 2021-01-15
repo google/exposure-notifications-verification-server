@@ -161,6 +161,7 @@ func (db *Database) ListTokenSigningKeys() ([]*TokenSigningKey, error) {
 	var keys []*TokenSigningKey
 	if err := db.db.
 		Model(&TokenSigningKey{}).
+		Order("token_signing_keys.is_active DESC, id DESC").
 		Find(&keys).
 		Error; err != nil {
 		if IsNotFound(err) {
