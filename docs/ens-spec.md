@@ -14,6 +14,8 @@ to share within the exposure notifications system.
 
 -   `ens` : describes that the exposure notifications application to be opened.
 
+-   `a` : activate exposure notifications. 
+
 -   `v` : verify, currently this is the only available action.
 
 -   `r` : region, the region that this verification code is for.
@@ -25,6 +27,12 @@ to share within the exposure notifications system.
         (dash) followed by the 2 or 3 character subdivision code.
 
 -   `c` : verification code to validate the diagnosis.
+
+### Modes
+
+-  `a` - Activate mode supports region (`r`) as an optional parameter.
+
+-  `v` - Supports region (`r`) and code (`c`) as required parameters.
 
 ## Encoding considerations
 
@@ -54,4 +62,18 @@ And for State of New South Wales in Austraila:
 
 ```text
 ens://v?r=AU-NSW&c=abcdefgh12345678
+```
+
+### Activation, region chosen on device.
+
+```text
+ens://a
+```
+
+### Activation, region in URI
+
+For the State of Washington, in the United States:
+
+```text
+ens://a?r=WA-WA
 ```
