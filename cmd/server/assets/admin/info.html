@@ -19,8 +19,23 @@
           <dt>Build ID</dt>
           <dd>{{.buildID}}</dd>
 
-          <dt>Build Tag</dt>
+          <dt>Build tag</dt>
           <dd>{{.buildTag}}</dd>
+
+          <dt>Token signing key</dt>
+          {{if $key := .activeTokenSigningKey}}
+            <dd class="mb-0">
+              kid: <span class="text-monospace user-select-all">{{$key.UUID}}</span>
+            </dd>
+            <dd class="mb-0">
+              key: <span class="text-monospace user-select-all">{{$key.KeyVersionID}}</span>
+            </dd>
+            <dd>
+              created: <span class="text-monospace user-select-all" data-timestamp="{{$key.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">{{$key.CreatedAt.Format "2006-02-01 15:04"}}</span>
+            </dd>
+          {{else}}
+            <dd>not configured</dd>
+          {{end}}
         </dl>
       </div>
     </div>
