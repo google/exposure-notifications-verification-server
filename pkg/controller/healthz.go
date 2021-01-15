@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"go.opencensus.io/stats"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -55,10 +54,6 @@ func HandleHealthz(db *database.Database, h render.Renderer) http.Handler {
 				InternalError(w, r, h, fmt.Errorf("failed to ping db: %w", err))
 				return
 			}
-		case "alerts":
-			// Alerts increments a metric that fires an alert after some interval. It
-			// is used to test the alerting setup.
-			stats.Record(ctx, mHealthAlert.M(1))
 		default:
 			logger.Warnw("unknown service", "service", service)
 		}
