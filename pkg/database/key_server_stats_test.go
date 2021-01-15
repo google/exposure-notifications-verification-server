@@ -29,9 +29,9 @@ func TestSaveKeyServerStats(t *testing.T) {
 	}
 
 	err = db.SaveKeyServerStats(&KeyServerStats{
-		RealmID:           realm.ID,
-		KeyServerURL:      "TestKeyServerURL",
-		KeyServerAudience: "TestAud",
+		RealmID:                   realm.ID,
+		KeyServerURLOverride:      "TestKeyServerURL",
+		KeyServerAudienceOverride: "TestAud",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -41,7 +41,7 @@ func TestSaveKeyServerStats(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := stats.KeyServerURL, "TestKeyServerURL"; got != want {
+	if got, want := stats.KeyServerURLOverride, "TestKeyServerURL"; got != want {
 		t.Errorf("failed retrieving KeyServerStats. got %s, wanted %s", got, want)
 	}
 }

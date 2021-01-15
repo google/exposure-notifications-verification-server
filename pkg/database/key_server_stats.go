@@ -28,10 +28,10 @@ type KeyServerStats struct {
 	// RealmId that these stats belong to.
 	RealmID uint `gorm:"column:realm_id; primary_key; type:integer; not null;"`
 
-	// KeyServerURL allows a realm to override the system's URL with its own
-	KeyServerURL string `gorm:"column:key_server_url; type:text;"`
+	// KeyServerURLOverride allows a realm to override the system's URL with its own
+	KeyServerURLOverride string `gorm:"column:key_server_url_override; type:text;"`
 	// KeyServerAudience allows a realm to override the system's audience
-	KeyServerAudience string `gorm:"column:key_server_audience; type:text;"`
+	KeyServerAudienceOverride string `gorm:"column:key_server_audience_override; type:text;"`
 }
 
 // KeyServerStatsDay represents statistics for each day
@@ -71,7 +71,7 @@ type KeyServerStatsDay struct {
 
 // BeforeSave runs validations. If there are errors, the save fails.
 func (kss *KeyServerStats) BeforeSave(tx *gorm.DB) error {
-	if kss.RealmID == 0 && (kss.KeyServerURL == "" || kss.KeyServerAudience == "") {
+	if kss.RealmID == 0 && (kss.KeyServerURLOverride == "" || kss.KeyServerAudienceOverride == "") {
 		kss.AddError("realm_id", "the system realm must have a key server and audience")
 	}
 

@@ -2005,8 +2005,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return multiExec(tx,
 					`CREATE TABLE key_server_stats (
 						realm_id INTEGER,
-						key_server_url TEXT,
-						key_server_audience TEXT,
+						key_server_url_override TEXT,
+						key_server_audience_override TEXT,
 						PRIMARY KEY (realm_id))`,
 					`CREATE TABLE key_server_stats_days (
 						realm_id INTEGER,
