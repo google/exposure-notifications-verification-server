@@ -40,7 +40,7 @@ func TestShouldSync(t *testing.T) {
 	ctx := project.TestContext(t)
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	config := &config.AppSyncConfig{
-		AppSyncMinimumPeriod: period,
+		AppSyncMinPeriod: period,
 	}
 	c, _ := New(config, db, nil)
 

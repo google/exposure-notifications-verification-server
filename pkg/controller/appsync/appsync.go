@@ -105,7 +105,7 @@ func (c *Controller) shouldSync(ctx context.Context) (bool, error) {
 	}
 
 	// Attempt to advance the generation.
-	if _, err = c.db.ClaimCleanup(cStat, c.config.AppSyncMinimumPeriod); err != nil {
+	if _, err = c.db.ClaimCleanup(cStat, c.config.AppSyncMinPeriod); err != nil {
 		return false, fmt.Errorf("failed to claim appsync lock: %w", err)
 	}
 	return true, nil

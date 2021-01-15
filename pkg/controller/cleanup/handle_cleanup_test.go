@@ -37,7 +37,7 @@ func Test_shouldCleanup(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	config := &config.CleanupConfig{
-		CleanupPeriod: period,
+		CleanupMinPeriod: period,
 	}
 	c := New(config, db, nil, nil)
 

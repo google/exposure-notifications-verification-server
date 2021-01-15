@@ -15,7 +15,9 @@
 package database
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -25,8 +27,6 @@ var (
 	ErrCleanupWrongGeneration = errors.New("cleanup wrong generation")
 )
 
-var CleanupName = "cleanup"
-
 // CleanupStatus represents a distributed lock that spaces operations out.
 // These are only self expring locks (NotBefore) and are not explicitly
 // released.
@@ -35,6 +35,24 @@ type CleanupStatus struct {
 	Type       string `gorm:"type:varchar(50);unique_index"`
 	Generation uint
 	NotBefore  time.Time
+}
+
+// ShouldSync is used to ensure that only one app sync process runs per AppSyncPeriod duration.
+func (db *Database) ShouldSync(ctx context.Context, lockName string, lockDuration time.Duration) (bool, error) {
+	cStat, err := db.CreateCleanup(lockName)
+	if err != nil {
+		return false, fmt.Errorf("failed to create %s lock: %w", lockName, err)
+	}
+
+	if cStat.NotBefore.After(time.Now().UTC()) {
+		return false, nil
+	}
+
+	// Attempt to advance the generation.
+	if _, err = db.ClaimCleanup(cStat, lockDuration); err != nil {
+		return false, fmt.Errorf("failed to claim %s lock: %w", lockName, err)
+	}
+	return true, nil
 }
 
 // CreateCleanup is used to create a new 'cleanup' type/row in the database.

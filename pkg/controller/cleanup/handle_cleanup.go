@@ -21,12 +21,13 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
+
+const cleanupName = "cleanup"
 
 func (c *Controller) HandleCleanup() http.Handler {
 	type CleanupResult struct {
@@ -187,7 +188,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 }
 
 func (c *Controller) shouldCleanup(ctx context.Context) (bool, error) {
-	cStat, err := c.db.CreateCleanup(database.CleanupName)
+	cStat, err := c.db.CreateCleanup(cleanupName)
 	if err != nil {
 		return false, fmt.Errorf("failed to create cleanup: %w", err)
 	}
@@ -197,7 +198,7 @@ func (c *Controller) shouldCleanup(ctx context.Context) (bool, error) {
 	}
 
 	// Attempt to advance the generation.
-	if _, err = c.db.ClaimCleanup(cStat, c.config.CleanupPeriod); err != nil {
+	if _, err = c.db.ClaimCleanup(cStat, c.config.CleanupMinPeriod); err != nil {
 		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
 		return false, fmt.Errorf("failed to claim cleanup: %w", err)
 	}
