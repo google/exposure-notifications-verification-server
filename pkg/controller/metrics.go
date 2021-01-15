@@ -23,20 +23,20 @@ import (
 	"go.opencensus.io/stats/view"
 )
 
-const metricPrefix = observability.MetricRoot + "/server/login"
-
-var (
-	MFirebaseRecreates = stats.Int64(metricPrefix+"/fb_recreates", "firebase user recreates", stats.UnitDimensionless)
-)
+var mHealthAlert *stats.Int64Measure
 
 func init() {
-	enobservability.CollectViews([]*view.View{
-		{
-			Name:        metricPrefix + "/fb_recreate_count",
-			Measure:     MFirebaseRecreates,
-			Description: "The count of firebase user recreations",
-			TagKeys:     observability.CommonTagKeys(),
-			Aggregation: view.Count(),
-		},
-	}...)
+	{
+		name := observability.MetricRoot + "/health/alert"
+		mHealthAlert = stats.Int64(name, "manual alerts triggered from health check", stats.UnitDimensionless)
+		enobservability.CollectViews([]*view.View{
+			{
+				Name:        name + "_count",
+				Measure:     mHealthAlert,
+				Description: "Count of manual alerts triggered from health check query param",
+				TagKeys:     observability.CommonTagKeys(),
+				Aggregation: view.Count(),
+			},
+		}...)
+	}
 }

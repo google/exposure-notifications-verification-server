@@ -254,6 +254,38 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
   ]
 }
 
+resource "google_monitoring_alert_policy" "ManuallyTriggeredAlert" {
+  project      = var.project
+  combiner     = "OR"
+  display_name = "ManuallyTriggeredAlert"
+  conditions {
+    display_name = "Manually triggered alert from /health query parameter"
+    condition_monitoring_query_language {
+      duration = "600s"
+      query    = <<-EOT
+      fetch generic_task :: custom.googleapis.com/opencensus/en-verification-server/health/alert
+      | align rate(5m)
+      | every 1m
+      | group_by [resource.project_id],
+          [val: aggregate(value.alert_count)]
+      | condition val > 0
+      EOT
+      trigger {
+        count = 1
+      }
+    }
+  }
+  documentation {
+    content   = "${local.playbook_prefix}/ManuallyTriggeredAlert.md"
+    mime_type = "text/markdown"
+  }
+  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
+
 resource "google_monitoring_alert_policy" "HumanAccessedSecret" {
   count = var.alert_on_human_accessed_secret ? 1 : 0
 
