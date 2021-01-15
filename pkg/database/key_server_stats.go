@@ -89,17 +89,20 @@ func (db *Database) SaveKeyServerStats(stats *KeyServerStats) error {
 	return db.db.Save(stats).Error
 }
 
-// GetKeyServerStatsDay retrieves a single day of key-server statistics
-func (db *Database) GetKeyServerStatsDay(realmID uint, day time.Time) (*KeyServerStatsDay, error) {
-	var stats KeyServerStatsDay
+// ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
+func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyServerStatsDay, error) {
+	thirtyDaysAgo := time.Now().Add(-30 * 24 * time.Hour)
+	var stats []*KeyServerStatsDay
 	if err := db.db.
-		Where("realm_id = ?", realmID).
-		Where("day = ?", day).
-		First(&stats).
+		Model(&KeyServerStatsDay{}).
+		Where("realm_id = ? AND day >= ?", realmID, thirtyDaysAgo).
+		Order("day DESC").
+		Limit(30).
+		Find(&stats).
 		Error; err != nil {
 		return nil, err
 	}
-	return &stats, nil
+	return stats, nil
 }
 
 // SaveKeyServerStatsDay stores a single day of key-server statistics

@@ -67,14 +67,14 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stats, err := db.GetKeyServerStatsDay(realm.ID, now)
+	stats, err := db.ListKeyServerStatsDays(realm.ID, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := stats.TotalTEKsPublished, int64(50); got != want {
+	if got, want := stats[0].TotalTEKsPublished, int64(50); got != want {
 		t.Errorf("failed retrieving KeyServerStats. got %d, wanted %d", got, want)
 	}
-	if got, want := stats.TEKAgeDistribution[4], int64(5); got != want {
+	if got, want := stats[0].TEKAgeDistribution[4], int64(5); got != want {
 		t.Errorf("failed retrieving KeyServerStats. got %d, wanted %d", got, want)
 	}
 }
