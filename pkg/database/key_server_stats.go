@@ -17,6 +17,7 @@ package database
 import (
 	"time"
 
+	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 )
 
@@ -26,10 +27,6 @@ type KeyServerStats struct {
 
 	// RealmId that these stats belong to.
 	RealmID uint `gorm:"column:realm_id; primary_key; type:integer; not null;"`
-
-	// IsSystem determines if this is a system-level stats configuration. There can
-	// only be one system-level stats configuration.
-	IsSystem bool `gorm:"column:is_system; type:bool; not null; default:false;"`
 
 	// KeyServerURL allows a realm to override the system's URL with its own
 	KeyServerURL string `gorm:"column:key_server_url; type:text;"`
@@ -70,6 +67,24 @@ type KeyServerStatsDay struct {
 	// RequestsMissingOnsetDate is the number of publish requests where no onset date
 	// was provided. These request are not included in the onset to upload distribution.
 	RequestsMissingOnsetDate int64 `gorm:"column:request_missing_onset_date; type:bigint; not null; default: 0;"`
+}
+
+// BeforeSave runs validations. If there are errors, the save fails.
+func (kss *KeyServerStats) BeforeSave(tx *gorm.DB) error {
+	if kss.RealmID == 0 && (kss.KeyServerURL == "" || kss.KeyServerAudience == "") {
+		kss.AddError("realm_id", "the system realm must have a key server and audience")
+	}
+
+	return kss.ErrorOrNil()
+}
+
+// BeforeSave runs validations. If there are errors, the save fails.
+func (kssd *KeyServerStatsDay) BeforeSave(tx *gorm.DB) error {
+	if kssd.RealmID == 0 {
+		kssd.AddError("realm_id", "statistics may not be saved on the system realm")
+	}
+
+	return kssd.ErrorOrNil()
 }
 
 // GetKeyServerStats retrieves the configuration for gathering key-server statistics
