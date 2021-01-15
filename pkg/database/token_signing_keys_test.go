@@ -159,6 +159,31 @@ func TestDatabase_RotateTokenSigningKey(t *testing.T) {
 	}
 }
 
+func TestDatabase_SaveTokenSigningKey(t *testing.T) {
+	t.Parallel()
+
+	t.Run("audits", func(t *testing.T) {
+		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+		key := &TokenSigningKey{
+			KeyVersionID: "foo/bar/baz",
+		}
+		if err := db.SaveTokenSigningKey(key, SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
+		audits, _, err := db.ListAudits(nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := len(audits), 1; got != want {
+			t.Errorf("expected %d audits, got %d: %#v", want, got, audits)
+		}
+	})
+}
+
 func TestDatabase_PurgeTokenSigningKeys(t *testing.T) {
 	t.Parallel()
 
@@ -274,7 +299,7 @@ func TestDatabase_ActivateTokenSigningKey(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got, want := len(audits), 1; got != want {
+		if got, want := len(audits), 2; got != want {
 			t.Errorf("expected %d audits, got %d: %#v", want, got, audits)
 		}
 	})
