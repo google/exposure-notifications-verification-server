@@ -134,6 +134,9 @@ func (c *Controller) HandleVerify() http.Handler {
 			Subject:   subject.String(),
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+
+		// TODO(sethvargo): begin pulling this key from the token_signing_keys
+		// database instead.
 		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigning.ActiveKeyID()
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {

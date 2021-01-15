@@ -31,20 +31,28 @@ type CleanupConfig struct {
 	Database      database.Config
 	Observability observability.Config
 
+	// TokenSigning is the token signing configuration to purge old keys in the
+	// key manager when they are cleaned.
+	TokenSigning TokenSigningConfig
+
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
 	DevMode bool `env:"DEV_MODE"`
 
+	// Port is the port on which to bind.
 	Port string `env:"PORT,default=8080"`
-
-	RateLimit uint64 `env:"RATE_LIMIT,default=60"`
 
 	// Cleanup config
 	AuditEntryMaxAge    time.Duration `env:"AUDIT_ENTRY_MAX_AGE, default=720h"`
 	AuthorizedAppMaxAge time.Duration `env:"AUTHORIZED_APP_MAX_AGE, default=336h"`
 	CleanupPeriod       time.Duration `env:"CLEANUP_PERIOD, default=15m"`
 	MobileAppMaxAge     time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
-	UserPurgeMaxAge     time.Duration `env:"USER_PURGE_MAX_AGE, default=720h"`
+
+	// SigningTokenKeyMaxAge is the maximum amount of time that a rotated signing
+	// token key should remain unpurged.
+	SigningTokenKeyMaxAge time.Duration `env:"SIGNING_TOKEN_KEY_MAX_AGE, default=36h"`
+
+	UserPurgeMaxAge time.Duration `env:"USER_PURGE_MAX_AGE, default=720h"`
 	// VerificationCodeMaxAge is the period in which the full code should be available.
 	// After this time it will be recycled. The code will be zeroed out, but its status persist.
 	VerificationCodeMaxAge time.Duration `env:"VERIFICATION_CODE_MAX_AGE, default=48h"`

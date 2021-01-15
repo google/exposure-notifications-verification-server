@@ -462,6 +462,56 @@ steps:
 
 
 #
+# rotation
+#
+- id: 'build-rotation'
+  name: 'golang:1.15.2'
+  args:
+  - 'go'
+  - 'build'
+  - '-trimpath'
+  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
+  - '-o=./bin/rotation'
+  - './cmd/rotation'
+  waitFor:
+  - 'download-modules'
+
+- id: 'dockerize-rotation'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/service.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/rotation:${_TAG}'
+  - '--build-arg=SERVICE=rotation'
+  - '.'
+  waitFor:
+  - 'build-rotation'
+
+- id: 'push-rotation'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/rotation:${_TAG}'
+
+- id: 'attest-rotation'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/rotation:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-rotation'
+
+
+#
 # server
 #
 - id: 'build-server'

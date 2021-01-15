@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -33,18 +34,20 @@ import (
 
 // Controller is a controller for the cleanup service.
 type Controller struct {
-	config *config.CleanupConfig
-	db     *database.Database
-	h      render.Renderer
+	config                 *config.CleanupConfig
+	db                     *database.Database
+	signingTokenKeyManager keys.SigningKeyManager
+	h                      render.Renderer
 }
 
 // New creates a new cleanup controller.
-func New(ctx context.Context, config *config.CleanupConfig, db *database.Database, h render.Renderer) (*Controller, error) {
+func New(config *config.CleanupConfig, db *database.Database, signingTokenKeyManager keys.SigningKeyManager, h render.Renderer) *Controller {
 	return &Controller{
-		config: config,
-		db:     db,
-		h:      h,
-	}, nil
+		config:                 config,
+		db:                     db,
+		signingTokenKeyManager: signingTokenKeyManager,
+		h:                      h,
+	}
 }
 
 func (c *Controller) shouldCleanup(ctx context.Context) (bool, error) {
@@ -93,6 +96,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 				OK:     false,
 				Errors: []error{fmt.Errorf("too early")},
 			})
+			return
 		}
 
 		// Construct a multi-error. If one of the purges fails, we still want to
@@ -188,6 +192,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 				result = observability.ResultError("FAILED")
 			} else {
 				logger.Infow("purged user entries", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
+
+		// Token signing keys
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "TOKEN_SIGNING_KEY")
+			if count, err := c.db.PurgeTokenSigningKeys(ctx, c.signingTokenKeyManager, c.config.SigningTokenKeyMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge token signing keys: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged token signing keys", "count", count)
 				result = observability.ResultOK()
 			}
 		}()

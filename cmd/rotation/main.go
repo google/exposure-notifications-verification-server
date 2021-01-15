@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/rotation"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
@@ -62,7 +62,7 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	cfg, err := config.NewCleanupConfig(ctx)
+	cfg, err := config.NewRotationConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to process config: %w", err)
 	}
@@ -121,8 +121,8 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	cleanupController := cleanup.New(cfg, db, tokenSignerTyp, h)
-	r.Handle("/", cleanupController.HandleCleanup()).Methods("GET")
+	rotationController := rotation.New(cfg, db, tokenSignerTyp, h)
+	r.Handle("/", rotationController.HandleRotate()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {
