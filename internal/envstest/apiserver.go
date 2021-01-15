@@ -77,6 +77,9 @@ func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstan
 	// Create the token key manager. We need both the signing key and the IDs, so
 	// we cannot use the helper here.
 	tokenSigningKey := keys.TestSigningKey(tb, harness.KeyManager)
+	if _, err := harness.Database.RotateTokenSigningKey(ctx, certTyp, tokenSigningKey, database.SystemTest); err != nil {
+		tb.Fatal(err)
+	}
 
 	// Create the config.
 	cfg := &config.APIServerConfig{

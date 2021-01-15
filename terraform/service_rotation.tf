@@ -200,7 +200,7 @@ resource "google_cloud_run_service_iam_member" "rotation-invoker" {
 resource "google_cloud_scheduler_job" "rotation-worker" {
   name             = "rotation-worker"
   region           = var.cloudscheduler_location
-  schedule         = "0 */6 * * *"
+  schedule         = "*/5 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
