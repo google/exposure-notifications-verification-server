@@ -14,7 +14,7 @@ to share within the exposure notifications system.
 
 -   `ens` : describes that the exposure notifications application to be opened.
 
--   `onboard` : activate exposure notifications. 
+-   `onboard` : activate onboarding for exposure notifications. 
 
 -   `v` : verify, currently this is the only available action.
 
@@ -25,6 +25,7 @@ to share within the exposure notifications system.
     -   For country level, the 2 character code is used.
     -   If sub-regions are being used, this should be 2 character country, '-'
         (dash) followed by the 2 or 3 character subdivision code.
+    -   Region codes are case insensitive.
 
 -   `c` : verification code to validate the diagnosis.
 
@@ -75,5 +76,5 @@ ens://onboard
 For the State of Washington, in the United States:
 
 ```text
-ens://onboard?r=WA-WA
+ens://onboard?r=US-WA
 ```
