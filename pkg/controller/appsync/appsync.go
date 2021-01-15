@@ -56,7 +56,7 @@ func (c *Controller) HandleSync() http.Handler {
 			return
 		}
 		if !ok {
-			c.h.RenderJSON(w, http.StatusTooManyRequests, &AppSyncResult{
+			c.h.RenderJSON(w, http.StatusOK, &AppSyncResult{
 				OK:     false,
 				Errors: []string{"too early"},
 			})
