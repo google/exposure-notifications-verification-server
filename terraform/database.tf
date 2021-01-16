@@ -387,7 +387,7 @@ resource "google_cloud_scheduler_job" "backup-database-worker" {
   name             = "backup-database-worker"
   region           = var.cloudscheduler_location
   schedule         = var.database_backup_schedule
-  time_zone        = "America/Los_Angeles"
+  time_zone        = "UTC"
   attempt_deadline = "1800s"
 
   retry_config {
