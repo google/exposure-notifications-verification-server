@@ -736,6 +736,15 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
 		t.Fatal(err)
 	}
+
+	// Purge the deleted key.
+	count, err := db.PurgeSigningKeys(time.Millisecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatalf("expected 1 record to be purged, got: %v", count)
+	}
 }
 
 func TestRealm_ListMemberships(t *testing.T) {

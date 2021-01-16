@@ -16,6 +16,7 @@ package database
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jinzhu/gorm"
 )
@@ -37,4 +38,17 @@ type SigningKey struct {
 // GetKID returns the 'kid' field value to use in signing JWTs.
 func (s *SigningKey) GetKID() string {
 	return fmt.Sprintf("r%dv%d", s.RealmID, s.ID)
+}
+
+// PurgeSigningKeys will purge soft deleted keys that have been soft deleted for maxAge duration.
+func (db *Database) PurgeSigningKeys(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+	// Delete users who were created/updated before the expiry time.
+	rtn := db.db.Unscoped().
+		Where("deleted_at < ?", deleteBefore).
+		Delete(&SigningKey{})
+	return rtn.RowsAffected, rtn.Error
 }
