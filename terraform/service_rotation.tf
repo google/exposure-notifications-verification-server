@@ -213,7 +213,7 @@ resource "google_cloud_scheduler_job" "rotation-worker" {
   name             = "rotation-worker"
   region           = var.cloudscheduler_location
   schedule         = "*/5 * * * *"
-  time_zone        = "UTC"
+  time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
   retry_config {
@@ -240,7 +240,7 @@ resource "google_cloud_scheduler_job" "realm-key-rotation-worker" {
   name             = "realm-key-rotation-worker"
   region           = var.cloudscheduler_location
   schedule         = "2,32 * * * *"
-  time_zone        = "UTC"
+  time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
   retry_config {

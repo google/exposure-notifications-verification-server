@@ -204,8 +204,8 @@ resource "google_cloud_run_service_iam_member" "appsync-invoker" {
 resource "google_cloud_scheduler_job" "appsync-worker" {
   name             = "appsync-worker"
   region           = var.cloudscheduler_location
-  schedule         = "20 18 * * *"
-  time_zone        = "UTC"
+  schedule         = "20 11 * * *"
+  time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
   retry_config {

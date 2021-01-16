@@ -201,7 +201,7 @@ resource "google_cloud_scheduler_job" "stats-puller-worker" {
   name             = "stats-puller-worker"
   region           = var.cloudscheduler_location
   schedule         = "30 * * * *"
-  time_zone        = "UTC"
+  time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
   retry_config {

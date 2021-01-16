@@ -75,8 +75,8 @@ resource "google_cloud_run_service_iam_member" "docker-mirror-invoker" {
 resource "google_cloud_scheduler_job" "docker-mirror-worker" {
   name             = "docker-mirror-worker"
   region           = var.cloudscheduler_location
-  schedule         = "0 18 * * *"
-  time_zone        = "UTC"
+  schedule         = "0 11 * * *"
+  time_zone        = "America/Los_Angeles"
   attempt_deadline = "900s"
 
   http_target {
