@@ -20,9 +20,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+
+	"github.com/google/exposure-notifications-server/pkg/logging"
+
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
@@ -31,8 +34,8 @@ import (
 // HandleVerificationRotate handles verification certificate key rotation.
 func (c *Controller) HandleVerificationRotate() http.Handler {
 	type Result struct {
-		OK     bool    `json:"ok"`
-		Errors []error `json:"errors,omitempty"`
+		OK     bool     `json:"ok"`
+		Errors []string `json:"errors,omitempty"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +49,7 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 			logger.Errorw("failed to obtain lock", "lock", verificationRotationLock, "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
 				OK:     false,
-				Errors: []error{err},
+				Errors: []string{err.Error()},
 			})
 			return
 		}
@@ -54,7 +57,7 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
 			c.h.RenderJSON(w, http.StatusOK, &Result{
 				OK:     false,
-				Errors: []error{fmt.Errorf("too early")},
+				Errors: []string{"too early"},
 			})
 			return
 		}
@@ -83,7 +86,7 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 				logger.Errorw("failed to rotate verification keys", "errors", errs)
 				c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
 					OK:     false,
-					Errors: errs,
+					Errors: project.ErrorsToStrings(errs),
 				})
 				return
 			}
