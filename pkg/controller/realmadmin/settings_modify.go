@@ -59,6 +59,10 @@ type formData struct {
 	RegionCode     string `form:"region_code"`
 	WelcomeMessage string `form:"welcome_message"`
 
+	AllowKeyServerStats       bool   `form:"allow_key_server_stats"`
+	KeyServerURLOverride      string `form:"key_server_url"`
+	KeyServerAudienceOverride string `form:"key_server_audience"`
+
 	Codes                     bool               `form:"codes"`
 	AllowedTestTypes          database.TestType  `form:"allowed_test_types"`
 	AllowBulkUpload           bool               `form:"allow_bulk"`
@@ -142,8 +146,26 @@ func (c *Controller) HandleSettings() http.Handler {
 			}
 		}
 
+		statsConfig, err := c.db.GetKeyServerStats(currentRealm.ID)
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		smsConfig, err := currentRealm.SMSConfig(c.db)
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		emailConfig, err := currentRealm.EmailConfig(c.db)
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		if r.Method == http.MethodGet {
-			c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
+			c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -158,7 +180,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		if err := controller.BindForm(w, r, &form); err != nil {
 			currentRealm.AddError("", err.Error())
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
+			c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -167,6 +189,36 @@ func (c *Controller) HandleSettings() http.Handler {
 			currentRealm.Name = form.Name
 			currentRealm.RegionCode = form.RegionCode
 			currentRealm.WelcomeMessage = form.WelcomeMessage
+
+			if form.AllowKeyServerStats {
+				if statsConfig == nil {
+					// There's no record or the existing record was the system config so we
+					// want to create our own.
+					statsConfig = &database.KeyServerStats{
+						RealmID:                   currentRealm.ID,
+						KeyServerURLOverride:      form.KeyServerURLOverride,
+						KeyServerAudienceOverride: form.KeyServerAudienceOverride,
+					}
+				} else {
+					statsConfig.KeyServerURLOverride = form.KeyServerURLOverride
+					statsConfig.KeyServerAudienceOverride = form.KeyServerAudienceOverride
+				}
+
+				if err := c.db.SaveKeyServerStats(statsConfig); err != nil {
+					if database.IsValidationError(err) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
+						return
+					}
+
+					controller.InternalError(w, r, c.h, err)
+					return
+				}
+			} else if statsConfig != nil {
+				if err := c.db.DeleteKeyServerStats(currentRealm.ID); err != nil {
+					controller.InternalError(w, r, c.h, err)
+				}
+			}
 		}
 
 		// Codes
@@ -214,7 +266,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				currentRealm.AddError("allowedCIDRsAdminAPI", err.Error())
 				w.WriteHeader(http.StatusUnprocessableEntity)
-				c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
+				c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
 				return
 			}
 			currentRealm.AllowedCIDRsAdminAPI = allowedCIDRsAdminADPI
@@ -223,7 +275,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				currentRealm.AddError("allowedCIDRsAPIServer", err.Error())
 				w.WriteHeader(http.StatusUnprocessableEntity)
-				c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
+				c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
 				return
 			}
 			currentRealm.AllowedCIDRsAPIServer = allowedCIDRsAPIServer
@@ -232,7 +284,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			if err != nil {
 				currentRealm.AddError("allowedCIDRsServer", err.Error())
 				w.WriteHeader(http.StatusUnprocessableEntity)
-				c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
+				c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
 				return
 			}
 			currentRealm.AllowedCIDRsServer = allowedCIDRsServer
@@ -274,7 +326,7 @@ func (c *Controller) HandleSettings() http.Handler {
 		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)
-				c.renderSettings(ctx, w, r, currentRealm, nil, nil, quotaLimit, quotaRemaining)
+				c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
 				return
 			}
 
@@ -284,12 +336,6 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		// SMS
 		if form.SMS && !form.UseSystemSMSConfig {
-			// Fetch the existing SMS config record, if one exists
-			smsConfig, err := currentRealm.SMSConfig(c.db)
-			if err != nil && !database.IsNotFound(err) {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
 			if smsConfig != nil && !smsConfig.IsSystem {
 				// We have an existing record and the existing record is NOT the system
 				// record.
@@ -315,7 +361,7 @@ func (c *Controller) HandleSettings() http.Handler {
 				if err := c.db.SaveSMSConfig(smsConfig); err != nil {
 					if database.IsValidationError(err) {
 						w.WriteHeader(http.StatusUnprocessableEntity)
-						c.renderSettings(ctx, w, r, currentRealm, smsConfig, nil, quotaLimit, quotaRemaining)
+						c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
 						return
 					}
 
@@ -327,12 +373,6 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		// Email
 		if form.Email && !form.UseSystemEmailConfig {
-			// Fetch the existing Email config record, if one exists
-			emailConfig, err := currentRealm.EmailConfig(c.db)
-			if err != nil && !database.IsNotFound(err) {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
 			if emailConfig != nil && !emailConfig.IsSystem {
 				// We have an existing record and the existing record is NOT the system
 				// record.
@@ -360,7 +400,7 @@ func (c *Controller) HandleSettings() http.Handler {
 				if err := c.db.SaveEmailConfig(emailConfig); err != nil {
 					if database.IsValidationError(err) {
 						w.WriteHeader(http.StatusUnprocessableEntity)
-						c.renderSettings(ctx, w, r, currentRealm, nil, emailConfig, quotaLimit, quotaRemaining)
+						c.renderSettings(ctx, w, r, currentRealm, smsConfig, emailConfig, statsConfig, quotaLimit, quotaRemaining)
 						return
 					}
 

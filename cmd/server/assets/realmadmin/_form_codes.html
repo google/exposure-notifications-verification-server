@@ -39,6 +39,7 @@
     </div>
   </div>
 
+  <hr>
   <div class="form-group">
     <label>Allowed test types</label>
     {{if not $realm.EnableENExpress}}
@@ -86,6 +87,7 @@
     </div>
   </div>
 
+  <hr>
   <div class="form-group">
     <label>Date configuration</label>
     <div class="form-group">
@@ -117,6 +119,7 @@
     </div>
   </div>
 
+  <hr>
   <div class="form-group">
     <label for="code-length">Short code length</label>
     {{if $realm.EnableENExpress}}
@@ -197,6 +200,8 @@
       </small>
     {{end}}
   </div>
+
+  <hr>
   <div>
     <div class="btn-grou dropright pb-2">
       {{if $realm.ErrorsFor "smsTextTemplate"}}<span class="text-danger oi oi-warning"></span>{{end}}

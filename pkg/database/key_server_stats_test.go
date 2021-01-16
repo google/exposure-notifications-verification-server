@@ -44,6 +44,16 @@ func TestSaveKeyServerStats(t *testing.T) {
 	if got, want := stats.KeyServerURLOverride, "TestKeyServerURL"; got != want {
 		t.Errorf("failed retrieving KeyServerStats. got %s, wanted %s", got, want)
 	}
+
+	err = db.DeleteKeyServerStats(realm.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.GetKeyServerStats(realm.ID)
+	if err != nil && !IsNotFound(err) {
+		t.Fatal(err)
+	}
 }
 
 func TestSaveKeyServerStatsDay(t *testing.T) {

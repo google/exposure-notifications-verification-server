@@ -104,6 +104,14 @@ func (db *Database) SaveKeyServerStats(stats *KeyServerStats) error {
 	return db.db.Save(stats).Error
 }
 
+// DeleteKeyServerStats disables gathering key-server statistics and removes the entry
+func (db *Database) DeleteKeyServerStats(realmID uint) error {
+	return db.db.Unscoped().
+		Where("realm_id = ?", realmID).
+		Delete(&KeyServerStats{}).
+		Error
+}
+
 // ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
 func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyServerStatsDay, error) {
 	thirtyDaysAgo := time.Now().Add(-30 * 24 * time.Hour)
