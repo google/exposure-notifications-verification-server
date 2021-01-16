@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -45,18 +46,26 @@ func (c *Controller) HandleManualRotate() http.Handler {
 		currentUser := membership.User
 
 		if !currentRealm.AutoRotateCertificateKey {
-			flash.Alert("Already in manual key rotation mode")
-		} else {
-			currentRealm.AutoRotateCertificateKey = false
-			if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
-				flash.Error("Error disabling automatic key rotation on realm: %v", err)
-				c.renderShow(ctx, w, r, currentRealm)
-				return
-			} else {
-				flash.Alert("Successfully reverted to manual signing key rotation.")
-			}
+			currentRealm.AddError("", "Already in manual key rotation mode")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderShow(ctx, w, r, currentRealm)
+			return
 		}
 
+		currentRealm.AutoRotateCertificateKey = false
+		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
+			if database.IsNotFound(err) || database.IsValidationError(err) {
+				currentRealm.AddError("", err.Error())
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderShow(ctx, w, r, currentRealm)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		flash.Alert("Successfully reverted to manual signing key rotation.")
 		c.redirectShow(ctx, w, r)
 	})
 }

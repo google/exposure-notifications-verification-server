@@ -17,6 +17,7 @@ package pagination
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -46,6 +47,13 @@ type PageParams struct {
 
 	// Limit is the per-page limit.
 	Limit uint64
+}
+
+// UnlimitedResults is a paginator that doesn't do pagination and returns all
+// results (up to (1<<63)-1).
+var UnlimitedResults = &PageParams{
+	Page:  1,
+	Limit: math.MaxInt64,
 }
 
 // FromRequest builds the PageParams from an http.Request. If there are no

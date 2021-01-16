@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,6 +32,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -189,6 +191,9 @@ func NewTestInstance() (*TestInstance, error) {
 		Keys: keys.Config{
 			KeyManagerType: keys.KeyManagerTypeFilesystem,
 		},
+
+		CertificateSigningKeyRing:        filepath.Join(project.Root(), "local", "test", "certificates"),
+		MaxCertificateSigningKeyVersions: 5,
 	}
 
 	// Parse configuration and override with test data.
@@ -277,8 +282,6 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher) (*Databas
 		tb.Fatalf("failed to load database configuration: %s", err)
 	}
 	db.keyManager = keys.TestKeyManager(tb)
-	db.config.CertificateSigningKeyRing = "certificates"
-	db.config.MaxCertificateSigningKeyVersions = 5
 	db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
 
 	// Try to establish a connection to the database.
