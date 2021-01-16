@@ -178,6 +178,14 @@ func WithRealmSearch(q string) Scope {
 	}
 }
 
+// WithRealmAutoKeyRotationEnabled filters by realms which have the auto key
+// rotation enabled/disabled depending on the boolean.
+func WithRealmAutoKeyRotationEnabled(b bool) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("auto_rotate_certificate_key = ?", b)
+	}
+}
+
 // WithoutAuditTest excludes audit entries related to test entries created from
 // SystemTest.
 func WithoutAuditTest() Scope {

@@ -28,16 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-type testUser struct{}
-
-func (t *testUser) AuditID() string {
-	return "1"
-}
-
-func (t *testUser) AuditDisplay() string {
-	return "system"
-}
-
 func TestHandleVerificationRotation(t *testing.T) {
 	t.Parallel()
 
@@ -51,7 +41,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 	realm.CertificateIssuer = "iss"
 	realm.CertificateAudience = "aud"
 	realm.CertificateDuration = database.FromDuration(time.Second)
-	if err := db.SaveRealm(realm, &testUser{}); err != nil {
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 

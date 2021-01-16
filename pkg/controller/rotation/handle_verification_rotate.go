@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -65,7 +66,7 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 
 		var merr *multierror.Error
 
-		realms, err := c.db.ListRealmsWithAutoKeyRotation()
+		realms, _, err := c.db.ListRealms(pagination.UnlimitedResults, database.WithRealmAutoKeyRotationEnabled(true))
 		if err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("unable to list realms to rotate signing keys: %w", err))
 		}
