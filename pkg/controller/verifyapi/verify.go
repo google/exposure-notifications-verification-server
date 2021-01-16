@@ -73,6 +73,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		// TODO(mikehelmick|sethvargo) - remove the fallback code after
 		legacySigningOK := c.config.TokenSigning.AllowLegacyTokenSigning
 		legacyKey := c.config.TokenSigning.TokenSigningKeys[0]
+		// lint:ignore SA1019 - will removed in next release.
 		legacyKID := c.config.TokenSigning.TokenSigningKeyIDs[0]
 
 		// Get the currently active key.
