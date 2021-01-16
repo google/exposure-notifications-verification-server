@@ -52,6 +52,9 @@ type CleanupConfig struct {
 	// token key should remain unpurged.
 	SigningTokenKeyMaxAge time.Duration `env:"SIGNING_TOKEN_KEY_MAX_AGE, default=36h"`
 
+	// KeyServerStatsMaxAge is the maximum amount of time to retain key-server stats.
+	KeyServerStatsMaxAge time.Duration `env:"SIGNING_TOKEN_KEY_MAX_AGE, default=720h"`
+
 	UserPurgeMaxAge time.Duration `env:"USER_PURGE_MAX_AGE, default=720h"`
 	// VerificationCodeMaxAge is the period in which the full code should be available.
 	// After this time it will be recycled. The code will be zeroed out, but its status persist.

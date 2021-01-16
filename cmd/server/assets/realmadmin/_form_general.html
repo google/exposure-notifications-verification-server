@@ -56,6 +56,8 @@
     </small>
   </div>
 
+  {{/*TODO(whaught): knock this out at v0.21.0*/}}
+  {{if .devMode}}
   <hr>
   <div class="form-group">
     <div class="form-check">
@@ -65,7 +67,7 @@
         Enable key-server statistics
         <small class="form-text text-muted mb-3">
           Checking this box will allow this realm to collect statistics from the key-server about codes
-          that this realm has issued.
+          that this realm has issued. This may need to be disclosed your applications privacy policy.
         </small>
       </label>
     </div>
@@ -90,6 +92,8 @@
       The key-server audience. This overrides the default value of the server and should be left empty to use the default.
     </small>
   </div>
+  {{end}}
+
 
   <div class="mt-4">
     <input type="submit" class="btn btn-primary btn-block" value="Update general settings" />

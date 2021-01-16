@@ -87,4 +87,30 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 	if got, want := stats[0].TEKAgeDistribution[4], int64(5); got != want {
 		t.Errorf("failed retrieving KeyServerStats. got %d, wanted %d", got, want)
 	}
+
+	err = db.SaveKeyServerStatsDay(&KeyServerStatsDay{
+		RealmID:            realm.ID,
+		Day:                now.Add(-50 * 24 * time.Hour),
+		TotalTEKsPublished: 50,
+		TEKAgeDistribution: []int64{1, 2, 3, 4, 5},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stats, err = db.ListKeyServerStatsDays(realm.ID, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stats) > 1 {
+		t.Error("stats older than 30 days should not be retrieved")
+	}
+
+	rows, err := db.DeleteOldKeyServerStatsDays()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rows != 1 {
+		t.Errorf("expected purged row, got %d", rows)
+	}
 }
