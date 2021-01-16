@@ -87,6 +87,7 @@ func TestShowAdminRealms(t *testing.T) {
 		chromedp.Submit(`form#new-form`, chromedp.ByQuery),
 
 		/* ----- Test Search -----  */
+		chromedp.Click(`a#realms`, chromedp.ByQuery),
 		// Wait for render.
 		chromedp.WaitVisible(`body#admin-realms-index`, chromedp.ByQuery),
 
