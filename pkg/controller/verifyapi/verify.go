@@ -71,7 +71,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		}
 
 		// TODO(mikehelmick|sethvargo) - remove the fallback code after
-		legacySigningOK := c.config.TokenSigning.AllowLegacyTokenSigning
+		fallbackToLgecyKey := true
 		legacyKey := c.config.TokenSigning.TokenSigningKeys[0]
 		//lint:ignore SA1019 will removed in next release.
 		legacyKID := c.config.TokenSigning.TokenSigningKeyIDs[0]
@@ -79,7 +79,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		// Get the currently active key.
 		activeTokenSigningKey, err := c.db.ActiveTokenSigningKeyCached(ctx, c.cacher)
 		if err != nil {
-			if legacySigningOK {
+			if database.IsNotFound(err) {
 				logger.Errorw("no token signing key in database, falling back to legacy signing key", "error", err)
 			} else {
 				logger.Errorw("failed to get active token signing key", "error", err)
@@ -91,12 +91,12 @@ func (c *Controller) HandleVerify() http.Handler {
 			}
 		} else {
 			// No need to fallback to legacy signing, the key was loaded from the database.
-			legacySigningOK = false
+			fallbackToLgecyKey = false
 		}
 
 		// Get the signer based on the key configuration.
 		keyRef := ""
-		if legacySigningOK {
+		if fallbackToLgecyKey {
 			keyRef = legacyKey
 		} else {
 			keyRef = activeTokenSigningKey.KeyVersionID
@@ -166,7 +166,7 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		// Set the JWT kid to the database record ID. We will use this to lookup the
 		// appropriate record to verify.
-		if legacySigningOK {
+		if fallbackToLgecyKey {
 			token.Header[verifyapi.KeyIDHeader] = legacyKID
 		} else {
 			token.Header[verifyapi.KeyIDHeader] = activeTokenSigningKey.UUID

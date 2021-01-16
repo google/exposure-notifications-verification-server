@@ -28,11 +28,6 @@ type TokenSigningConfig struct {
 	// configuration.
 	Keys keys.Config `env:", prefix=TOKEN_"`
 
-	// AllowLegacyTokenSigning allows for temporarily allowing the legacy configuration to
-	// work as it did pre v 0.20.
-	// TODO(mikehelmick|sethvargo): Remove in v0.21
-	AllowLegacyTokenSigning bool `env:"ALLOW_LEGACY_TOKEN_SIGNING, default=true"`
-
 	// TokenSigningKeys is the parent token signing key (not the actual signing
 	// version). It is an array for backwards-compatibility, but in practice it
 	// should only have one element.
