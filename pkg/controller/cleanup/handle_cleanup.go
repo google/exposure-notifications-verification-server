@@ -169,6 +169,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
+		// Verification signing key references.
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "VERIFICATION_SIGNING_KEY")
+			if count, err := c.db.PurgeSigningKeys(c.config.VerificationSigningKeyMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge token signing keys: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged token signing keys", "count", count)
+				result = observability.ResultOK()
+			}
+		}()
+
 		// If there are any errors, return them
 		if merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {
