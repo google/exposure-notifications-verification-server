@@ -110,7 +110,10 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	statsController := statspuller.New(cfg, db, h)
+	statsController, err := statspuller.New(cfg, db, h)
+	if err != nil {
+		return fmt.Errorf("failed to stats controller: %w", err)
+	}
 	r.Handle("/", statsController.HandlePullStats()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)

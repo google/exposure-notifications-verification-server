@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
 const (
@@ -52,6 +53,13 @@ func (c *Controller) HandlePullStats() http.Handler {
 
 		logger := logging.FromContext(ctx).Named("rotation.HandlePullStats")
 		logger.Debug("no-op stats pull") // TODO(whaught): remove this and put in logic
+
+		// Get all of the realms with stats configured
+		_, err = c.db.ListKeyServerStats()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
 
 		c.h.RenderJSON(w, http.StatusOK, &Result{
 			OK: true,

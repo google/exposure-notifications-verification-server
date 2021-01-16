@@ -112,14 +112,11 @@ func (db *Database) DeleteKeyServerStats(realmID uint) error {
 		Error
 }
 
-// ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
-func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyServerStatsDay, error) {
-	var stats []*KeyServerStatsDay
+// ListKeyServerStats retrieves the key-server statistics configuration for all realms
+func (db *Database) ListKeyServerStats() ([]*KeyServerStats, error) {
+	var stats []*KeyServerStats
 	if err := db.db.
 		Model(&KeyServerStatsDay{}).
-		Where("realm_id = ?", realmID).
-		Order("day DESC").
-		Limit(30).
 		Find(&stats).
 		Error; err != nil {
 		return nil, err
@@ -142,4 +139,19 @@ func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, er
 		Where("day < ?", a).
 		Delete(&KeyServerStatsDay{})
 	return rtn.RowsAffected, rtn.Error
+}
+
+// ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
+func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyServerStatsDay, error) {
+	var stats []*KeyServerStatsDay
+	if err := db.db.
+		Model(&KeyServerStatsDay{}).
+		Where("realm_id = ?", realmID).
+		Order("day DESC").
+		Limit(30).
+		Find(&stats).
+		Error; err != nil {
+		return nil, err
+	}
+	return stats, nil
 }

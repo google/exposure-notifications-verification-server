@@ -47,6 +47,14 @@ func TestSaveKeyServerStats(t *testing.T) {
 		t.Errorf("failed retrieving KeyServerStats. got %s, wanted %s", got, want)
 	}
 
+	list, err := db.ListKeyServerStats()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := list[0].RealmID, stats.RealmID; got != want {
+		t.Errorf("failed listing the stats configs. got realm %d, wanted realm %d", got, want)
+	}
+
 	err = db.DeleteKeyServerStats(realm.ID)
 	if err != nil {
 		t.Fatal(err)
