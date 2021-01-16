@@ -28,7 +28,7 @@ import (
 	"go.opencensus.io/tag"
 )
 
-// HandleRotate handles key rotation.
+// HandleVerificationRotate handles verification certificate key rotation.
 func (c *Controller) HandleVerificationRotate() http.Handler {
 	type Result struct {
 		OK     bool    `json:"ok"`
