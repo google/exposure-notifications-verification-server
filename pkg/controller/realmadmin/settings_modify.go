@@ -217,6 +217,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			} else if statsConfig != nil {
 				if err := c.db.DeleteKeyServerStats(currentRealm.ID); err != nil {
 					controller.InternalError(w, r, c.h, err)
+					return
 				}
 			}
 		}
