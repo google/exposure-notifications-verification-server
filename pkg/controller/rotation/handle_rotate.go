@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
@@ -67,19 +68,19 @@ func (c *Controller) HandleRotate() http.Handler {
 			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 
 			existing, err := c.db.ActiveTokenSigningKey()
-			if err != nil {
+			if err != nil && !database.IsNotFound(err) {
 				merr = multierror.Append(merr, fmt.Errorf("failed to lookup existing signing key: %w", err))
 				result = observability.ResultError("FAILED")
 				return
 			}
-			if age, max := time.Now().UTC().Sub(existing.CreatedAt), c.config.TokenSigningKeyMaxAge; age < max {
-				logger.Debugw("token signing key does not require rotation", "age", age, "max", max)
-				return
+			if existing != nil {
+				if age, max := time.Now().UTC().Sub(existing.CreatedAt), c.config.TokenSigningKeyMaxAge; age < max {
+					logger.Debugw("token signing key does not require rotation", "age", age, "max", max)
+					return
+				}
 			}
 
-			// TODO(sethvargo): figure out what to do with .TokenSigningKeys since it
-			// can be an array.
-			key, err := c.db.RotateTokenSigningKey(ctx, c.keyManager, c.config.TokenSigning.ActiveKey(), RotationActor)
+			key, err := c.db.RotateTokenSigningKey(ctx, c.keyManager, c.config.TokenSigning.ParentKeyName(), RotationActor)
 			if err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to rotate token signing key: %w", err))
 				result = observability.ResultError("FAILED")

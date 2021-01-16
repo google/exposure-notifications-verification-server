@@ -50,7 +50,6 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
-
 		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
@@ -71,8 +70,19 @@ func (c *Controller) HandleVerify() http.Handler {
 			return
 		}
 
-		// Get the signer based on Key configuration.
-		signer, err := c.kms.NewSigner(ctx, c.config.TokenSigning.ActiveKey())
+		// Get the currently active key.
+		activeTokenSigningKey, err := c.db.ActiveTokenSigningKeyCached(ctx, c.cacher)
+		if err != nil {
+			logger.Errorw("failed to get active token signing key", "error", err)
+			blame = observability.BlameServer
+			result = observability.ResultError("FAILED_TO_GET_ACTIVE_TOKEN_SIGNING_KEY")
+
+			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
+			return
+		}
+
+		// Get the signer based on the key configuration.
+		signer, err := c.kms.NewSigner(ctx, activeTokenSigningKey.KeyVersionID)
 		if err != nil {
 			logger.Errorw("failed to get signer", "error", err)
 			blame = observability.BlameServer
@@ -135,9 +145,10 @@ func (c *Controller) HandleVerify() http.Handler {
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 
-		// TODO(sethvargo): begin pulling this key from the token_signing_keys
-		// database instead.
-		token.Header[verifyapi.KeyIDHeader] = c.config.TokenSigning.ActiveKeyID()
+		// Set the JWT kid to the database record ID. We will use this to lookup the
+		// appropriate record to verify.
+		token.Header[verifyapi.KeyIDHeader] = activeTokenSigningKey.UUID
+
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
 			logger.Errorw("failed to sign token", "error", err)

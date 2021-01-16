@@ -32,7 +32,8 @@ type TemplateData struct {
 
 func (c *Controller) renderSettings(
 	ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm,
-	smsConfig *database.SMSConfig, emailConfig *database.EmailConfig, quotaLimit, quotaRemaining uint64) {
+	smsConfig *database.SMSConfig, emailConfig *database.EmailConfig, keyServerStats *database.KeyServerStats,
+	quotaLimit, quotaRemaining uint64) {
 	if smsConfig == nil {
 		var err error
 		smsConfig, err = realm.SMSConfig(c.db)
@@ -55,6 +56,10 @@ func (c *Controller) renderSettings(
 			}
 			emailConfig = &database.EmailConfig{SMTPPort: "587"}
 		}
+	}
+
+	if keyServerStats == nil {
+		keyServerStats = &database.KeyServerStats{}
 	}
 
 	// Look up the sms from numbers.
@@ -124,6 +129,7 @@ func (c *Controller) renderSettings(
 	m["smsFromNumbers"] = smsFromNumbers
 	m["smsTemplates"] = templates
 	m["emailConfig"] = emailConfig
+	m["statsConfig"] = keyServerStats
 	m["countries"] = database.Countries
 	m["testTypes"] = map[string]database.TestType{
 		"confirmed": database.TestTypeConfirmed,

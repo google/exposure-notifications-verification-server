@@ -19,8 +19,46 @@
           <dt>Build ID</dt>
           <dd>{{.buildID}}</dd>
 
-          <dt>Build Tag</dt>
+          <dt>Build tag</dt>
           <dd>{{.buildTag}}</dd>
+
+          <dt>Token signing keys</dt>
+          {{if $keys := .tokenSigningKeys}}
+            <dd>
+              <table class="small table table-bordered table-striped table-fixed mt-2">
+                <thead>
+                  <tr>
+                    <th width="40"></th>
+                    <th width="305">Key ID (kid)</th>
+                    <th>Key version</th>
+                    <th width="165">Created at</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{range $key := $keys}}
+                    <tr>
+                      <td class="text-center">
+                        {{if $key.IsActive}}
+                          <span class="oi oi-check" aria-hidden="true" data-toggle="tooltip" title="Active key"></span>
+                        {{end}}
+                      </td>
+                      <td class="text-monospace user-select-all">
+                        {{$key.UUID}}
+                      </td>
+                      <td class="text-monospace user-select-all">
+                        {{$key.KeyVersionID}}
+                      </td>
+                      <td>
+                        <span data-timestamp="{{$key.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">{{$key.CreatedAt.Format "2006-02-01 15:04"}}</span>
+                      </td>
+                    </tr>
+                  {{end}}
+                </tbody>
+              </table>
+            </dd>
+          {{else}}
+            <dd>not configured</dd>
+          {{end}}
         </dl>
       </div>
     </div>
