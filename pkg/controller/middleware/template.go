@@ -38,6 +38,7 @@ func PopulateTemplateVariables(config *config.ServerConfig) mux.MiddlewareFunc {
 			m["buildID"] = buildinfo.BuildID
 			m["buildTag"] = buildinfo.BuildTag
 			m["maintenanceMode"] = config.MaintenanceMode
+			m["devMode"] = config.DevMode
 
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)

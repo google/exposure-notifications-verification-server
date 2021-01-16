@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+const thirtyDays = 30 * 24 * time.Hour
+
 func TestSaveKeyServerStats(t *testing.T) {
 	t.Parallel()
 
@@ -86,5 +88,31 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 	}
 	if got, want := stats[0].TEKAgeDistribution[4], int64(5); got != want {
 		t.Errorf("failed retrieving KeyServerStats. got %d, wanted %d", got, want)
+	}
+
+	err = db.SaveKeyServerStatsDay(&KeyServerStatsDay{
+		RealmID:            realm.ID,
+		Day:                now.Add(-50 * 24 * time.Hour),
+		TotalTEKsPublished: 50,
+		TEKAgeDistribution: []int64{1, 2, 3, 4, 5},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stats, err = db.ListKeyServerStatsDays(realm.ID, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(stats), 2; got != want {
+		t.Errorf("incorrect number of stats. got %d, want %d", got, want)
+	}
+
+	rows, err := db.DeleteOldKeyServerStatsDays(thirtyDays)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rows != 1 {
+		t.Errorf("expected purged row, got %d", rows)
 	}
 }

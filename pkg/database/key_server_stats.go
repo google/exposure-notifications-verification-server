@@ -114,11 +114,10 @@ func (db *Database) DeleteKeyServerStats(realmID uint) error {
 
 // ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
 func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyServerStatsDay, error) {
-	thirtyDaysAgo := time.Now().Add(-30 * 24 * time.Hour)
 	var stats []*KeyServerStatsDay
 	if err := db.db.
 		Model(&KeyServerStatsDay{}).
-		Where("realm_id = ? AND day >= ?", realmID, thirtyDaysAgo).
+		Where("realm_id = ?", realmID).
 		Order("day DESC").
 		Limit(30).
 		Find(&stats).
@@ -131,4 +130,13 @@ func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyS
 // SaveKeyServerStatsDay stores a single day of key-server statistics
 func (db *Database) SaveKeyServerStatsDay(day *KeyServerStatsDay) error {
 	return db.db.Debug().Save(day).Error
+}
+
+// DeleteOldKeyServerStatsDays deletes rows from KeyServerStatsDays that are older than 30 days
+func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, error) {
+	a := time.Now().UTC().Add(-maxAge)
+	rtn := db.db.Unscoped().
+		Where("day < ?", a).
+		Delete(&KeyServerStatsDay{})
+	return rtn.RowsAffected, rtn.Error
 }
