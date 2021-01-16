@@ -104,8 +104,8 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stats) > 1 {
-		t.Error("stats older than 30 days should not be retrieved")
+	if got, want := len(stats), 2; got != want {
+		t.Errorf("incorrect number of stats. got %d, want %d", got, want)
 	}
 
 	rows, err := db.DeleteOldKeyServerStatsDays(thirtyDays)
