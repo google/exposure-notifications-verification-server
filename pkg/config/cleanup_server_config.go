@@ -46,14 +46,13 @@ type CleanupConfig struct {
 	AuditEntryMaxAge    time.Duration `env:"AUDIT_ENTRY_MAX_AGE, default=720h"`
 	AuthorizedAppMaxAge time.Duration `env:"AUTHORIZED_APP_MAX_AGE, default=336h"`
 	CleanupMinPeriod    time.Duration `env:"CLEANUP_MIN_PERIOD, default=15m"`
-	MobileAppMaxAge     time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
+	// KeyServerStatsMaxAge is the maximum amount of time to retain key-server stats.
+	KeyServerStatsMaxAge time.Duration `env:"KEY_SERVER_STATS_MAX_AGE, default=720h"`
+	MobileAppMaxAge      time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
 
 	// SigningTokenKeyMaxAge is the maximum amount of time that a rotated signing
 	// token key should remain unpurged.
 	SigningTokenKeyMaxAge time.Duration `env:"SIGNING_TOKEN_KEY_MAX_AGE, default=36h"`
-
-	// KeyServerStatsMaxAge is the maximum amount of time to retain key-server stats.
-	KeyServerStatsMaxAge time.Duration `env:"SIGNING_TOKEN_KEY_MAX_AGE, default=720h"`
 
 	UserPurgeMaxAge time.Duration `env:"USER_PURGE_MAX_AGE, default=720h"`
 	// VerificationCodeMaxAge is the period in which the full code should be available.
