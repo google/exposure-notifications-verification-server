@@ -50,10 +50,10 @@ type PageParams struct {
 }
 
 // UnlimitedResults is a paginator that doesn't do pagination and returns all
-// results (up to (1<<64)-1).
+// results (up to (1<<63)-1).
 var UnlimitedResults = &PageParams{
 	Page:  1,
-	Limit: math.MaxUint64,
+	Limit: math.MaxInt64,
 }
 
 // FromRequest builds the PageParams from an http.Request. If there are no
