@@ -46,9 +46,9 @@ func (db *Database) PurgeSigningKeys(maxAge time.Duration) (int64, error) {
 		maxAge = -1 * maxAge
 	}
 	deleteBefore := time.Now().UTC().Add(maxAge)
-	// Delete users who were created/updated before the expiry time.
-	rtn := db.db.Unscoped().
-		Where("deleted_at < ?", deleteBefore).
+
+	result := db.db.Unscoped().
+		Where("deleted_at IS NOT NULL AND deleted_at < ?", deleteBefore).
 		Delete(&SigningKey{})
-	return rtn.RowsAffected, rtn.Error
+	return result.RowsAffected, result.Error
 }
