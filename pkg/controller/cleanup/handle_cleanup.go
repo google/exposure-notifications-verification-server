@@ -178,7 +178,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 				result = observability.ResultError("FAILED")
 			} else {
 				logger.Infow("purged token signing keys", "count", count)
-        result = observability.ResultOK()
+				result = observability.ResultOK()
 			}
 		}()
 
