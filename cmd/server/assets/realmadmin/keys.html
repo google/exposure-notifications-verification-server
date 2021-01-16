@@ -214,21 +214,47 @@
           Realm public keys
         </div>
         <div class="card-body">
-          <p>To rotate your verification certificate signing key:</p>
-          <ol class="mb-3">
-            <li class="mb-1">Create a new key by clicking the button below.</li>
-            <li class="mb-1">Communicate that key version and public key to your <em>key server</em> operator.</li>
-            <li class="mb-1">Activate the new key in this system.</li>
-          </ol>
-
-          {{if ge (len .realmKeys) .maximumKeyVersions }}
+          {{if $realm.AutoRotateCertificateKey}}
             <div class="alert alert-warning">
-              There is a limit of {{.maximumKeyVersions}} key versions. Destroy an existing key version to create another.
-            </div>
+              <p>This realm is automatically rotating verification certificate signing keys. If 
+                desired, you can
+                <a href="/realm/keys/manual" data-method="POST"
+                  data-confirm="Are you sure you want revert to manual key rotation?">revert to manual key rotation.</a>
+              </p>
+            </div>  
+
           {{else}}
-            <a href="/realm/keys/create" data-method="POST" class="btn btn-primary btn-block">
-              Create new signing key version
-            </a>
+            <div class="alert alert-info">
+              <p><strong>Enable automatic key rotation</strong>.
+              It is possible to have the system automatically rotate your verification certificate signing key.
+              This is highly recommended, but requires that your key server is configured using the JWKS public key
+              discover doc. 
+              <a href="/realm/keys/automatic" data-method="POST"
+                data-confirm="Are you sure you want to enable automatic key rotation?
+
+Have you had your key server operator configure public key import through the JWKS public key discovery document?
+                
+Failure to do so in advance will prevent your application users from sharing temporary exposure keys.">
+                Enable automatic verification certificate key rotation.</a>
+              </p>
+            </div>
+
+            <p>To manual rotate your verification certificate signing key:</p>
+            <ol class="mb-3">
+              <li class="mb-1">Create a new key by clicking the button below.</li>
+              <li class="mb-1">Communicate that key version and public key to your <em>key server</em> operator.</li>
+              <li class="mb-1">Activate the new key in this system.</li>
+            </ol>
+
+            {{if ge (len .realmKeys) .maximumKeyVersions }}
+              <div class="alert alert-warning">
+                There is a limit of {{.maximumKeyVersions}} key versions. Destroy an existing key version to create another.
+              </div>
+            {{else}}
+              <a href="/realm/keys/create" data-method="POST" class="btn btn-primary btn-block">
+                Create new signing key version
+              </a>
+            {{end}}
           {{end}}
 
           {{if .realmKeys}}
@@ -266,6 +292,7 @@
                         Your server operator may ask for this.
                       </small>
 
+                      {{if not $realm.AutoRotateCertificateKey}}
                       {{if not $rk.Active}}
                       <div class="row mt-3 align-items-end h-100">
                         <div class="col">
@@ -289,6 +316,7 @@
                           </form>
                         </div>
                       </div>
+                      {{end}}
                       {{end}}
                     </td>
                   </tr>

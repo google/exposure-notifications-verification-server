@@ -42,7 +42,7 @@ func (c *Controller) HandleRotate() http.Handler {
 
 		var merr *multierror.Error
 
-		ok, err := c.db.TryLock(ctx, rotationLock, c.config.MinTTL)
+		ok, err := c.db.TryLock(ctx, tokenRotationLock, c.config.MinTTL)
 		if err != nil {
 			logger.Errorw("failed to run shouldRotate", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{

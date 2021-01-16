@@ -389,6 +389,8 @@ func realmkeysRoutes(r *mux.Router, c *realmkeys.Controller) {
 	r.Handle("/keys/{id:[0-9]+}", c.HandleDestroy()).Methods("DELETE")
 	r.Handle("/keys/create", c.HandleCreateKey()).Methods("POST")
 	r.Handle("/keys/upgrade", c.HandleUpgrade()).Methods("POST")
+	r.Handle("/keys/automatic", c.HandleAutomaticRotate()).Methods("POST")
+	r.Handle("/keys/manual", c.HandleManualRotate()).Methods("POST")
 	r.Handle("/keys/save", c.HandleSave()).Methods("POST")
 	r.Handle("/keys/activate", c.HandleActivate()).Methods("POST")
 }

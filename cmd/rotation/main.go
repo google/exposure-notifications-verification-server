@@ -123,6 +123,7 @@ func realMain(ctx context.Context) error {
 
 	rotationController := rotation.New(cfg, db, tokenSignerTyp, h)
 	r.Handle("/", rotationController.HandleRotate()).Methods("GET")
+	r.Handle("/realms", rotationController.HandleVerificationRotate()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {

@@ -22,7 +22,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-const rotationLock = "rotation"
+const (
+	tokenRotationLock        = "tokenRotationLock"
+	verificationRotationLock = "verificationRotationLock"
+)
 
 type Controller struct {
 	config     *config.RotationConfig

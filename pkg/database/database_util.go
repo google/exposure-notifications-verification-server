@@ -277,6 +277,8 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher) (*Databas
 		tb.Fatalf("failed to load database configuration: %s", err)
 	}
 	db.keyManager = keys.TestKeyManager(tb)
+	db.config.CertificateSigningKeyRing = "certificates"
+	db.config.MaxCertificateSigningKeyVersions = 5
 	db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
 
 	// Try to establish a connection to the database.

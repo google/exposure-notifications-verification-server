@@ -223,3 +223,30 @@ resource "google_cloud_scheduler_job" "rotation-worker" {
     google_project_service.services["cloudscheduler.googleapis.com"],
   ]
 }
+
+resource "google_cloud_scheduler_job" "realm-key-rotation-worker" {
+  name             = "realm-key-rotation-worker"
+  region           = var.cloudscheduler_location
+  schedule         = "2,32 * * * *"
+  time_zone        = "America/Los_Angeles"
+  attempt_deadline = "600s"
+
+  retry_config {
+    retry_count = 1
+  }
+
+  http_target {
+    http_method = "GET"
+    uri         = "${google_cloud_run_service.rotation.status.0.url}/realms"
+    oidc_token {
+      audience              = google_cloud_run_service.rotation.status.0.url
+      service_account_email = google_service_account.rotation-invoker.email
+    }
+  }
+
+  depends_on = [
+    google_app_engine_application.app,
+    google_cloud_run_service_iam_member.rotation-invoker,
+    google_project_service.services["cloudscheduler.googleapis.com"],
+  ]
+}

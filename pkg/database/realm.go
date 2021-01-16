@@ -738,7 +738,8 @@ func (r *Realm) SetActiveSigningKey(db *Database, id uint) (string, error) {
 			Table("signing_keys").
 			Where("realm_id = ?", r.ID).
 			Where("id != ?", id).
-			Update("active", false).
+			Where("deleted_at IS NULL").
+			Update(map[string]interface{}{"active": false, "updated_at": time.Now().UTC()}).
 			Error; err != nil {
 			return fmt.Errorf("failed to mark existing keys as inactive: %w", err)
 		}
@@ -967,6 +968,18 @@ func (db *Database) FindRealmByRegionOrID(val string) (*Realm, error) {
 		return db.FindRealm(val)
 	}
 	return db.FindRealmByRegion(val)
+}
+
+// ListRealmsWithAutoKeyRotation returns all realms that have automatic key rotation enabled.
+func (db *Database) ListRealmsWithAutoKeyRotation() ([]*Realm, error) {
+	var realms []*Realm
+	if err := db.db.
+		Model(&Realm{}).
+		Where("auto_rotate_certificate_key = ?", true).
+		Find(&realms).Error; err != nil {
+		return nil, fmt.Errorf("list auto rotate realms: %w", err)
+	}
+	return realms, nil
 }
 
 // ListRealms lists all available realms in the system.
