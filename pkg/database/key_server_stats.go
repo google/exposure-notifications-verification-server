@@ -134,7 +134,7 @@ func (db *Database) SaveKeyServerStatsDay(day *KeyServerStatsDay) error {
 
 // DeleteOldKeyServerStatsDays deletes rows from KeyServerStatsDays that are older than 30 days
 func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, error) {
-	a := time.Now().Add(-maxAge)
+	a := time.Now().UTC().Add(-maxAge)
 	rtn := db.db.Unscoped().
 		Where("day < ?", a).
 		Delete(&KeyServerStatsDay{})
