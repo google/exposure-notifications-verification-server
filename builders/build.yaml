@@ -65,20 +65,23 @@ steps:
   - 'download-modules'
 
 #
-# adminapi
+# build all binaries at once
 #
-- id: 'build-adminapi'
+- id: 'build'
   name: 'golang:1.15.2'
   args:
   - 'go'
   - 'build'
   - '-trimpath'
   - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/adminapi'
-  - './cmd/adminapi'
+  - '-o=./bin/'
+  - './cmd/...'
   waitFor:
   - 'download-modules'
 
+#
+# adminapi
+#
 - id: 'dockerize-adminapi'
   name: 'docker:19'
   args:
@@ -88,7 +91,7 @@ steps:
   - '--build-arg=SERVICE=adminapi'
   - '.'
   waitFor:
-  - 'build-adminapi'
+  - 'build'
 
 - id: 'push-adminapi'
   name: 'docker:19'
@@ -116,18 +119,6 @@ steps:
 #
 # apiserver
 #
-- id: 'build-apiserver'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/apiserver'
-  - './cmd/apiserver'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-apiserver'
   name: 'docker:19'
   args:
@@ -137,7 +128,7 @@ steps:
   - '--build-arg=SERVICE=apiserver'
   - '.'
   waitFor:
-  - 'build-apiserver'
+  - 'build'
 
 - id: 'push-apiserver'
   name: 'docker:19'
@@ -166,18 +157,6 @@ steps:
 #
 # appsync
 #
-- id: 'build-appsync'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/appsync'
-  - './cmd/appsync'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-appsync'
   name: 'docker:19'
   args:
@@ -187,7 +166,7 @@ steps:
   - '--build-arg=SERVICE=appsync'
   - '.'
   waitFor:
-  - 'build-appsync'
+  - 'build'
 
 - id: 'push-appsync'
   name: 'docker:19'
@@ -216,18 +195,6 @@ steps:
 #
 # cleanup
 #
-- id: 'build-cleanup'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/cleanup'
-  - './cmd/cleanup'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-cleanup'
   name: 'docker:19'
   args:
@@ -237,7 +204,7 @@ steps:
   - '--build-arg=SERVICE=cleanup'
   - '.'
   waitFor:
-  - 'build-cleanup'
+  - 'build'
 
 - id: 'push-cleanup'
   name: 'docker:19'
@@ -266,18 +233,6 @@ steps:
 #
 # e2e-runner
 #
-- id: 'build-e2e-runner'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/e2e-runner'
-  - './cmd/e2e-runner'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-e2e-runner'
   name: 'docker:19'
   args:
@@ -287,7 +242,7 @@ steps:
   - '--build-arg=SERVICE=e2e-runner'
   - '.'
   waitFor:
-  - 'build-e2e-runner'
+  - 'build'
 
 - id: 'push-e2e-runner'
   name: 'docker:19'
@@ -316,18 +271,6 @@ steps:
 #
 # enx-redirect
 #
-- id: 'build-enx-redirect'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/enx-redirect'
-  - './cmd/enx-redirect'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-enx-redirect'
   name: 'docker:19'
   args:
@@ -336,7 +279,7 @@ steps:
   - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}'
   - '.'
   waitFor:
-  - 'build-enx-redirect'
+  - 'build'
 
 - id: 'push-enx-redirect'
   name: 'docker:19'
@@ -365,18 +308,6 @@ steps:
 #
 # migrate
 #
-- id: 'build-migrate'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/migrate'
-  - './cmd/migrate'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-migrate'
   name: 'docker:19'
   args:
@@ -385,7 +316,7 @@ steps:
   - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
   - '.'
   waitFor:
-  - 'build-migrate'
+  - 'build'
 
 - id: 'push-migrate'
   name: 'docker:19'
@@ -414,18 +345,6 @@ steps:
 #
 # modeler
 #
-- id: 'build-modeler'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/modeler'
-  - './cmd/modeler'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-modeler'
   name: 'docker:19'
   args:
@@ -435,7 +354,7 @@ steps:
   - '--build-arg=SERVICE=modeler'
   - '.'
   waitFor:
-  - 'build-modeler'
+  - 'build'
 
 - id: 'push-modeler'
   name: 'docker:19'
@@ -464,18 +383,6 @@ steps:
 #
 # rotation
 #
-- id: 'build-rotation'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/rotation'
-  - './cmd/rotation'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-rotation'
   name: 'docker:19'
   args:
@@ -485,7 +392,7 @@ steps:
   - '--build-arg=SERVICE=rotation'
   - '.'
   waitFor:
-  - 'build-rotation'
+  - 'build'
 
 - id: 'push-rotation'
   name: 'docker:19'
@@ -514,18 +421,6 @@ steps:
 #
 # server
 #
-- id: 'build-server'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/server'
-  - './cmd/server'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-server'
   name: 'docker:19'
   args:
@@ -534,7 +429,7 @@ steps:
   - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'
   - '.'
   waitFor:
-  - 'build-server'
+  - 'build'
 
 - id: 'push-server'
   name: 'docker:19'
@@ -560,22 +455,9 @@ steps:
   - 'push-server'
 
 
-
 #
 # stats-puller
 #
-- id: 'build-stats-puller'
-  name: 'golang:1.15.2'
-  args:
-  - 'go'
-  - 'build'
-  - '-trimpath'
-  - '-ldflags=-s -w -X=${_REPO}/pkg/buildinfo.BuildID=${BUILD_ID} -X=${_REPO}/pkg/buildinfo.BuildTag=${_TAG} -extldflags=-static'
-  - '-o=./bin/stats-puller'
-  - './cmd/stats-puller'
-  waitFor:
-  - 'download-modules'
-
 - id: 'dockerize-stats-puller'
   name: 'docker:19'
   args:
@@ -585,7 +467,7 @@ steps:
   - '--build-arg=SERVICE=stats-puller'
   - '.'
   waitFor:
-  - 'build-stats-puller'
+  - 'build'
 
 - id: 'push-stats-puller'
   name: 'docker:19'
