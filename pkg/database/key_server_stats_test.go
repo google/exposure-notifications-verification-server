@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+const thirtyDays = 30 * 24 * time.Hour
+
 func TestSaveKeyServerStats(t *testing.T) {
 	t.Parallel()
 
@@ -106,7 +108,7 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 		t.Error("stats older than 30 days should not be retrieved")
 	}
 
-	rows, err := db.DeleteOldKeyServerStatsDays()
+	rows, err := db.DeleteOldKeyServerStatsDays(thirtyDays)
 	if err != nil {
 		t.Fatal(err)
 	}

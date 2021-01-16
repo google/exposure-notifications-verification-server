@@ -21,8 +21,6 @@ import (
 	"github.com/lib/pq"
 )
 
-const thirtyDays = 30 * 24 * time.Hour
-
 // KeyServerStats represents statistics for a key-server for this realm
 type KeyServerStats struct {
 	Errorable
