@@ -46,9 +46,9 @@ func NewIntegrationSuite(tb testing.TB) *IntegrationSuite {
 	apiServerConfig := NewAPIServerConfig(tb, testDatabaseInstance)
 
 	// Point everything at the same database, cacher, and key manager.
-	apiServerConfig.Database = adminAPIServerConfig.Database
-	apiServerConfig.Cacher = adminAPIServerConfig.Cacher
-	apiServerConfig.RateLimiter = adminAPIServerConfig.RateLimiter
+	adminAPIServerConfig.Database = apiServerConfig.Database
+	adminAPIServerConfig.Cacher = apiServerConfig.Cacher
+	adminAPIServerConfig.RateLimiter = apiServerConfig.RateLimiter
 
 	db := adminAPIServerConfig.Database
 

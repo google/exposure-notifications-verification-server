@@ -117,7 +117,7 @@ There are two types of "users" for the system:
     permissions in the realm determine their level of access. Most users will
     only have permission to issue codes. However, some users will have control
     over administering the realm, viewing statistics, inviting other realm
-    users, or updating realm settings. See the [realm admininistration
+    users, or updating realm settings. See the [realm administration
     guide](realm-admin-guide.md) for more information.
 
 When bootstrapping a new system, a default system administrator with the email
@@ -305,7 +305,23 @@ lifetime is short, it is probably safe to remove the key beyond 30 days.
 If you are using Terraform, increment the `db_verification_code_hmac_count` by 1.
 
 
-### Certificate and token signing keys
+### Token signing keys
+
+**Recommended frequency:** automatic
+
+The system automatically rotates token signing keys every 30 days.
+
+When bootstrapping a new system from scratch, it can take up to 5 minutes for
+the initial token signing key to become available. To expedite this process, you
+can manually invoke the `rotation` scheduler job:
+
+```sh
+gcloud scheduler jobs run "rotation" \
+  --project "${PROJECT_ID}"
+```
+
+
+### Certificate signing keys
 
 **Recommended frequency:** on demand
 

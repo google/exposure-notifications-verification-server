@@ -31,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/jinzhu/gorm"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/sethvargo/go-envconfig"
@@ -86,6 +87,23 @@ func realMain(ctx context.Context) error {
 	firebaseAuth, err := fb.Auth(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to configure firebase: %w", err)
+	}
+
+	// System token signing key
+	var tokenConfig config.TokenSigningConfig
+	if err := config.ProcessWith(ctx, &tokenConfig, envconfig.OsLookuper()); err != nil {
+		return fmt.Errorf("failed to process token signing config: %w", err)
+	}
+	tokenKeyManager, err := keys.KeyManagerFor(ctx, &tokenConfig.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create token key manager: %w", err)
+	}
+	tokenKeyManagerTyp, ok := tokenKeyManager.(keys.SigningKeyManager)
+	if !ok {
+		return fmt.Errorf("token signing key manager is not SigningKeyManager (got %T)", tokenKeyManager)
+	}
+	if _, err := db.RotateTokenSigningKey(ctx, tokenKeyManagerTyp, tokenConfig.ParentKeyName(), database.SystemTest); err != nil {
+		return fmt.Errorf("failed to rotate token signing key: %w", err)
 	}
 
 	// Create a realm

@@ -2000,7 +2000,18 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 		},
 		{
-			ID: "00088-KeyServerStats",
+			ID: "00088-AddUUIDToTokenSigningKeys",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE token_signing_keys ADD COLUMN uuid UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4()`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE IF EXISTS token_signing_keys`)
+			},
+		},
+		{
+			ID: "00089-KeyServerStats",
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`CREATE TABLE key_server_stats (

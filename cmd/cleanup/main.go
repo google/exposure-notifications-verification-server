@@ -104,7 +104,7 @@ func realMain(ctx context.Context) error {
 	}
 	tokenSignerTyp, ok := tokenSigner.(keys.SigningKeyManager)
 	if !ok {
-		return fmt.Errorf("token signing key manage is not a signing key manager (is %T)", tokenSigner)
+		return fmt.Errorf("token signing key manager is not a signing key manager (is %T)", tokenSigner)
 	}
 
 	// Create the router

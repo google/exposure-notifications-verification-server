@@ -77,6 +77,8 @@ locals {
     CERTIFICATE_SIGNING_KEY     = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
     CERTIFICATE_SIGNING_KEYRING = google_kms_key_ring.verification.self_link
 
+    # TODO(sethvargo): in 0.22+, this should be the parent crypto key (not the
+    # cryptp key version).
     TOKEN_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
     TOKEN_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
   }
