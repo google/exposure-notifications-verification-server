@@ -230,7 +230,7 @@ resource "google_cloud_run_service_iam_member" "modeler-invoker" {
 resource "google_cloud_scheduler_job" "modeler-worker" {
   name             = "modeler-worker"
   region           = var.cloudscheduler_location
-  schedule         = "0 0 * * *"
+  schedule         = "10 18 * * *"
   time_zone        = "UTC"
   attempt_deadline = "600s"
 

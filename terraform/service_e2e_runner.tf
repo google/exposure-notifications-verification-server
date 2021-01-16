@@ -205,7 +205,7 @@ resource "google_cloud_scheduler_job" "e2e-default-workflow" {
   name             = "e2e-default-workflow"
   region           = var.cloudscheduler_location
   schedule         = "0,10,20,30,40,50,55 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = "UTC"
   attempt_deadline = "30s"
 
   retry_config {
@@ -232,7 +232,7 @@ resource "google_cloud_scheduler_job" "e2e-revise-workflow" {
   name             = "e2e-revise-workflow"
   region           = var.cloudscheduler_location
   schedule         = "0,5,15,25,35,45,55 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = "UTC"
   attempt_deadline = "30s"
 
   retry_config {
@@ -259,7 +259,7 @@ resource "google_cloud_scheduler_job" "e2e-enx-redirect-workflow" {
   name             = "e2e-enx-redirect-workflow"
   region           = var.cloudscheduler_location
   schedule         = "0,5,15,25,35,45,55 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = "UTC"
   attempt_deadline = "30s"
 
   retry_config {
