@@ -34,7 +34,4 @@ type CertificateSigningConfig struct {
 	CertificateIssuer       string        `env:"CERTIFICATE_ISSUER, default=diagnosis-verification-example"`
 	CertificateAudience     string        `env:"CERTIFICATE_AUDIENCE, default=exposure-notifications-server"`
 	CertificateDuration     time.Duration `env:"CERTIFICATE_DURATION, default=15m"`
-	// EnableAutoRotation indicates if auto rotation settings should be shown in the UI.
-	// This will become the default in v0.21.0 of the verification server.
-	EnableAutoRotation bool `env:"ENABLE_VERIFICATION_KEY_AUTO_ROTATION, default=false"`
 }

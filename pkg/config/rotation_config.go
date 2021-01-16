@@ -51,6 +51,13 @@ type RotationConfig struct {
 
 	// TokenSigningKeyMaxAge is the maximum age for a token signing key.
 	TokenSigningKeyMaxAge time.Duration `env:"TOKEN_SIGNING_KEY_MAX_AGE, default=720h"` // 30 days
+
+	// Verification rotation frequency.
+	VerificationSigningKeyMaxAge time.Duration `env:"VERIFICATION_SIGNING_KEY_MAX_AGE, default=720h"` // 30 days
+	// How long to wait to activate a new key after creation. This gives
+	// the upstream key server time to import the new allowed public key.
+	// A deactivated key will also be kept for this time period.
+	VerificationActivationDelay time.Duration `env:"VERIFICATION_ACTIVATION_DELAY, default=1h"`
 }
 
 // NewRotationConfig returns the config for the rotation service.
