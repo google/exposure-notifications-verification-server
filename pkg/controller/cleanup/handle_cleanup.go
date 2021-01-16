@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
@@ -28,8 +29,8 @@ import (
 
 func (c *Controller) HandleCleanup() http.Handler {
 	type CleanupResult struct {
-		OK     bool    `json:"ok"`
-		Errors []error `json:"errors,omitempty"`
+		OK     bool     `json:"ok"`
+		Errors []string `json:"errors,omitempty"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +45,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 			logger.Errorw("failed to run shouldCleanup", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
 				OK:     false,
-				Errors: []error{err},
+				Errors: []string{err.Error()},
 			})
 			return
 		}
@@ -52,7 +53,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
 			c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
 				OK:     false,
-				Errors: []error{fmt.Errorf("too early")},
+				Errors: []string{"too early"},
 			})
 			return
 		}
@@ -174,7 +175,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 				logger.Errorw("failed to cleanup", "errors", errs)
 				c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
 					OK:     false,
-					Errors: errs,
+					Errors: project.ErrorsToStrings(errs),
 				})
 				return
 			}
