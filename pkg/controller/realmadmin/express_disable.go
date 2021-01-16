@@ -49,7 +49,7 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 		if !currentRealm.EnableENExpress {
 			currentRealm.AddError("", fmt.Sprintf("%s is not current enrolled in EN Express", currentRealm.Name))
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
+			c.renderSettings(ctx, w, r, currentRealm, nil, nil, nil, 0, 0)
 			return
 		}
 
@@ -58,7 +58,7 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)
-				c.renderSettings(ctx, w, r, currentRealm, nil, nil, 0, 0)
+				c.renderSettings(ctx, w, r, currentRealm, nil, nil, nil, 0, 0)
 				return
 			}
 

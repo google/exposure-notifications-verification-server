@@ -2,6 +2,7 @@
 
 {{$realm := .realm}}
 {{$testTypes := .testTypes}}
+{{$statsConfig := .statsConfig}}
 
 <p class="mb-4">
   These are common settings that apply to all of {{$realm.Name}}.
@@ -52,6 +53,41 @@
       This field supports the common <a
       href="https://daringfireball.net/projects/markdown/syntax">markdown</a>
       standard.
+    </small>
+  </div>
+
+  <hr>
+  <div class="form-group">
+    <div class="form-check">
+      <input type="checkbox" name="allow_key_server_stats" id="allow-key-server-stats" class="form-check-input"
+        value="true" {{checkedIf (ne $statsConfig.RealmID 0)}} />
+      <label for="allow-bulk-true" class="form-check-label">
+        Enable key-server statistics
+        <small class="form-text text-muted mb-3">
+          Checking this box will allow this realm to collect statistics from the key-server about codes
+          that this realm has issued.
+        </small>
+      </label>
+    </div>
+  </div>
+
+  <div class="form-label-group">
+    <input type="text" name="key_server_url" id="key-server-url" class="form-control{{if $statsConfig.ErrorsFor "keyServerURLOverride"}} is-invalid{{end}}"
+      value="{{$statsConfig.KeyServerURLOverride}}" placeholder="Key server"/>
+    <label for="name">Key-server URL override</label>
+    {{template "errorable" $statsConfig.ErrorsFor "keyServerURLOverride"}}
+    <small class="form-text text-muted">
+      A key-server url to gather statistics from. This overrides the default value of the server and should be left empty to use the default.
+    </small>
+  </div>
+
+  <div class="form-label-group">
+    <input type="text" name="key_server_audience" id="key-server-audience" class="form-control{{if $statsConfig.ErrorsFor "keyServerAudienceOverride"}} is-invalid{{end}}"
+      value="{{$statsConfig.KeyServerAudienceOverride}}" placeholder="Audience"/>
+    <label for="name">Audience override</label>
+    {{template "errorable" $statsConfig.ErrorsFor "keyServerAudienceOverride"}}
+    <small class="form-text text-muted">
+      The key-server audience. This overrides the default value of the server and should be left empty to use the default.
     </small>
   </div>
 
