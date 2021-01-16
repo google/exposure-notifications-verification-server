@@ -178,6 +178,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 				result = observability.ResultError("FAILED")
 			} else {
 				logger.Infow("purged token signing keys", "count", count)
+        result = observability.ResultOK()
+			}
+		}()
+
+		// Key server stats
+		func() {
+			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "KEY_SERVER_STATS")
+			if count, err := c.db.DeleteOldKeyServerStatsDays(c.config.KeyServerStatsMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge key-server stats: %w", err))
+				result = observability.ResultError("FAILED")
+			} else {
+				logger.Infow("purged key-server stats", "count", count)
 				result = observability.ResultOK()
 			}
 		}()
