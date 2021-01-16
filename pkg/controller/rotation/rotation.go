@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	tokenRotationLock        = "rotation"
+	tokenRotationLock        = "tokenRotationLock"
 	verificationRotationLock = "verificationRotationLock"
 )
 
