@@ -18,6 +18,7 @@ package main
 import (
 	"context"
 	"flag"
+	"os"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
@@ -41,6 +42,9 @@ func main() {
 
 	ctx, done := signalcontext.OnInterrupt()
 
+	if os.Getenv("LOG_LEVEL") == "" {
+		os.Setenv("LOG_LEVEL", "DEBUG")
+	}
 	logger := logging.NewLoggerFromEnv().Named("get-certificate")
 	ctx = logging.WithLogger(ctx, logger)
 

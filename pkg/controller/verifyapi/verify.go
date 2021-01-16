@@ -70,19 +70,38 @@ func (c *Controller) HandleVerify() http.Handler {
 			return
 		}
 
+		// TODO(mikehelmick|sethvargo) - remove the fallback code after
+		fallbackToLgecyKey := true
+		legacyKey := c.config.TokenSigning.TokenSigningKeys[0]
+		//lint:ignore SA1019 will removed in next release.
+		legacyKID := c.config.TokenSigning.TokenSigningKeyIDs[0]
+
 		// Get the currently active key.
 		activeTokenSigningKey, err := c.db.ActiveTokenSigningKeyCached(ctx, c.cacher)
 		if err != nil {
-			logger.Errorw("failed to get active token signing key", "error", err)
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_GET_ACTIVE_TOKEN_SIGNING_KEY")
+			if database.IsNotFound(err) {
+				logger.Errorw("no token signing key in database, falling back to legacy signing key", "error", err)
+			} else {
+				logger.Errorw("failed to get active token signing key", "error", err)
+				blame = observability.BlameServer
+				result = observability.ResultError("FAILED_TO_GET_ACTIVE_TOKEN_SIGNING_KEY")
 
-			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
-			return
+				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
+				return
+			}
+		} else {
+			// No need to fallback to legacy signing, the key was loaded from the database.
+			fallbackToLgecyKey = false
 		}
 
 		// Get the signer based on the key configuration.
-		signer, err := c.kms.NewSigner(ctx, activeTokenSigningKey.KeyVersionID)
+		keyRef := ""
+		if fallbackToLgecyKey {
+			keyRef = legacyKey
+		} else {
+			keyRef = activeTokenSigningKey.KeyVersionID
+		}
+		signer, err := c.kms.NewSigner(ctx, keyRef)
 		if err != nil {
 			logger.Errorw("failed to get signer", "error", err)
 			blame = observability.BlameServer
@@ -147,7 +166,11 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		// Set the JWT kid to the database record ID. We will use this to lookup the
 		// appropriate record to verify.
-		token.Header[verifyapi.KeyIDHeader] = activeTokenSigningKey.UUID
+		if fallbackToLgecyKey {
+			token.Header[verifyapi.KeyIDHeader] = legacyKID
+		} else {
+			token.Header[verifyapi.KeyIDHeader] = activeTokenSigningKey.UUID
+		}
 
 		signedJWT, err := jwthelper.SignJWT(token, signer)
 		if err != nil {
