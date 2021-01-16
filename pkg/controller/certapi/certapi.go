@@ -95,8 +95,9 @@ func (c *Controller) validateToken(ctx context.Context, verToken string) (string
 					return nil, fmt.Errorf("no key corresponds to kid %q", kid)
 				}
 				tokenSigningKey = &database.TokenSigningKey{KeyVersionID: keyID}
+			} else {
+				return nil, fmt.Errorf("failed to lookup token signing key: %w", err)
 			}
-			return nil, fmt.Errorf("failed to lookup token signing key: %w", err)
 		}
 
 		publicKey, err := c.pubKeyCache.GetPublicKey(ctx, tokenSigningKey.KeyVersionID, c.kms)
