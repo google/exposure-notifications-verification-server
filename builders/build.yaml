@@ -67,6 +67,12 @@ steps:
 #
 # build all binaries at once
 #
+- id: 'mkdir-bin'
+  name: 'bash:5'
+  args:
+  - 'mkdir'
+  - 'bin'
+
 - id: 'build'
   name: 'golang:1.15.2'
   args:
@@ -77,6 +83,7 @@ steps:
   - '-o=./bin/'
   - './cmd/...'
   waitFor:
+  - 'mkdir-bin'
   - 'download-modules'
 
 #
