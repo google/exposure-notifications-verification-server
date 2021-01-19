@@ -12,6 +12,11 @@
     - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
   - [`/api/batch-issue`](#apibatch-issue)
     - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
+  - [`/api/checkcodestatus`](#apicheckcodestatus)
+  - [`/api/expirecode`](#apiexpirecode)
+  - [`/api/stats/*` (preview)](#apistats-preview)
+- [Chaffing requests](#chaffing-requests)
+- [Response codes overview](#response-codes-overview)
 
 <!-- /TOC -->
 
@@ -331,7 +336,7 @@ eg.
   error: "the first code failed",
   errorCode: "missing_date",
 }
-``
+```
 
 **BatchIssueCodeRequest**
 
