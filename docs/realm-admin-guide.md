@@ -16,7 +16,8 @@
 - [ENX redirector service](#enx-redirector-service)
 - [Mobile apps](#mobile-apps)
 - [Rotating certificate signing keys](#rotating-certificate-signing-keys)
-  - [Step 1 - Create a new signing key version](#step-1---create-a-new-signing-key-version)
+  - [Automatic Rotation](#automatic-rotation)
+  - [Manual Rotation](#manual-rotation)
 
 <!-- /TOC -->
 
