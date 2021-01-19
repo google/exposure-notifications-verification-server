@@ -141,6 +141,8 @@ func (t *Token) Subject() *Subject {
 // ClaimToken looks up the token by ID, verifies that it is not expired and that
 // the specified subject matches the parameters that were configured when issued.
 func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID string, subject *Subject) error {
+	t = t.UTC()
+
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
 		var tok Token
 		if err := tx.
@@ -209,6 +211,8 @@ func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID stri
 //
 // The long term token can be used later to sign keys when they are submitted.
 func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp, verCode string, acceptTypes api.AcceptTypes, expireAfter time.Duration) (*Token, error) {
+	t = t.UTC()
+
 	hmacedCodes, err := db.generateVerificationCodeHMACs(verCode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
@@ -313,7 +317,7 @@ func (db *Database) PurgeTokens(maxAge time.Duration) (int64, error) {
 // updateStatsCodeInvalid updates the statistics, increasing the number of codes
 // that were invalid.
 func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t)
+	t = timeutils.UTCMidnight(t.UTC())
 
 	realmSQL := `
 			INSERT INTO realm_stats(date, realm_id, codes_invalid)
@@ -339,7 +343,7 @@ func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp) 
 // updateStatsCodeClaimed updates the statistics, increasing the number of codes
 // claimed.
 func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t)
+	t = timeutils.UTCMidnight(t.UTC())
 
 	realmSQL := `
 			INSERT INTO realm_stats(date, realm_id, codes_claimed)
@@ -365,7 +369,7 @@ func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp) 
 // updateStatsTokenInvalid updates the statistics, increasing the number of
 // tokens that were invalid.
 func (db *Database) updateStatsTokenInvalid(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t)
+	t = timeutils.UTCMidnight(t.UTC())
 
 	realmSQL := `
 			INSERT INTO realm_stats(date, realm_id, tokens_invalid)
@@ -391,7 +395,7 @@ func (db *Database) updateStatsTokenInvalid(t time.Time, authApp *AuthorizedApp)
 // updateStatsTokenClaimed updates the statistics, increasing the number of
 // tokens claimed.
 func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t)
+	t = timeutils.UTCMidnight(t.UTC())
 
 	realmSQL := `
 			INSERT INTO realm_stats(date, realm_id, tokens_claimed)
