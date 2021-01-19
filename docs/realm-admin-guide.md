@@ -254,11 +254,36 @@ Store and App Store respectively, separate from this system.
 
 Periodically, you will want to rotate the certificate signing key for your verification certificates.
 
-This is done from the 'Signing Keys' screen.
+This is done from the 'Signing Keys' screen. There are two modes of operation (1) automatic rotation
+and (2) manual rotation. If your key server supports it, automatic rotation is recommended.
 
 ![settings](images/admin/menu_signing.png "Click on your name and select 'Signing Keys'")
 
-### Step 1 - Create a new signing key version
+### Automatic Rotation
+
+🛑 ⚠️ **WARNING** Before moving forward, please ensure that your key sever is configured
+to use your realm's public key discovery (JWKS) document. **Failure to do so will make it so
+your application users will not be able to share their keys.**
+
+Once you have confirmed that public key discovery is set up directly, click the "Enable automatic
+verification certificate key rotation." link (as pictured below).
+
+![api keys](images/admin/signing-auto-01.png "Enable automatic rotation")
+
+You will then be asked to confirm that pubic key discovery is set up correctly.
+
+![api keys](images/admin/signing-auto-02.png "Enable automatic rotation confirmation")
+
+When automatic rotation is enabled, the "Realm public keys" section will be changed to:
+
+![api keys](images/admin/signing-auto-03.png "Automatic rotation enabled")
+
+If you visit this page ever 30d, you should see that there is a different set of available/active
+public keys.
+
+The first rotation will start between 60 and 90 minutes after you enable rotation.
+
+### Manual Rotation
 
 Click the "Create a new signing key version" button. This will _create_ but not make active a new key.
 
