@@ -319,18 +319,26 @@ func TestDecideRedirect(t *testing.T) {
 			appStoreData: &appLinkNeither,
 			expected:     "",
 		},
+		{
+			name:         "android_onboarding",
+			url:          "https://moosylvania.gov/",
+			enxEnabled:   false,
+			userAgent:    userAgentAndroid,
+			appStoreData: &appLinkNeither,
+			expected:     "market://search?q=exposure%20notifications",
+		},
 
 		// iOS
 		{
 			name:         "ios_both",
-			url:          "https://ios.example.com/store/moosylvania",
+			url:          "https://ios.example.com/store/moosylvania?c=123456",
 			userAgent:    userAgentIOS,
 			appStoreData: &appLinkBoth,
 			expected:     "https://ios.example.com/store/moosylvania",
 		},
 		{
 			name:         "ios_both_relative",
-			url:          "https://ios.example.com/store/moosylvania",
+			url:          "https://ios.example.com/store/moosylvania?c=123456",
 			altURL:       &relativePinURL,
 			userAgent:    userAgentIOS,
 			appStoreData: &appLinkBoth,
@@ -352,14 +360,30 @@ func TestDecideRedirect(t *testing.T) {
 			appStoreData: &appLinkNeither,
 			expected:     "",
 		},
+		{
+			name:         "ios_onboarding",
+			url:          "https://moosylvania.gov/",
+			enxEnabled:   false,
+			userAgent:    userAgentIOS,
+			appStoreData: &appLinkNeither,
+			expected:     "ens://onboarding",
+		},
 
 		// Other
 		{
-			name:         "windows",
+			name:         "other",
 			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
 			userAgent:    userAgentNeither,
 			appStoreData: &appLinkBoth,
 			expected:     "",
+		},
+		// Other
+		{
+			name:         "other_onboarding",
+			url:          "https://moosylvania.gov/",
+			userAgent:    userAgentNeither,
+			appStoreData: &appLinkBoth,
+			expected:     "https://www.google.com/covid19/exposurenotifications/",
 		},
 	}
 

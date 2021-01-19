@@ -30,30 +30,66 @@ func isIOS(userAgent string) bool {
 }
 
 // decideRedirect selects where to redirect based on several signals.
-func decideRedirect(region, userAgent string, url *url.URL, enxEnabled bool, appStoreData AppStoreData) (string, bool) {
+func decideRedirect(region, userAgent string, u *url.URL, enxEnabled bool, appStoreData AppStoreData) (string, bool) {
 	// Canonicalize path as lowercase.
-	path := strings.ToLower(url.Path)
+	path := strings.ToLower(u.Path)
 
 	// Check for browser type.
 	onAndroid := isAndroid(userAgent)
 	onIOS := isIOS(userAgent)
 
+	// Extract the query params, if any. If there are no query params, the request
+	// is treated as an onboarding request.
+	query := u.Query()
+	noQuery := len(query) == 0
+
 	// On Android redirect to Play Store if App Link doesn't trigger and an a link
 	// is set up.
-	if onAndroid && appStoreData.AndroidAppID != "" && appStoreData.AndroidURL != "" {
-		intent := buildIntentURL(path, url.Query(), region, appStoreData.AndroidAppID, appStoreData.AndroidURL)
-		return intent, true
+	if onAndroid {
+		if noQuery {
+			if v := appStoreData.AndroidURL; v != "" {
+				return v, true
+			}
+			return androidOnboardingRedirect, true
+		}
+
+		if appStoreData.AndroidAppID != "" && appStoreData.AndroidURL != "" {
+			intent := buildIntentURL(path, query, region, appStoreData.AndroidAppID, appStoreData.AndroidURL)
+			return intent, true
+		}
+
+		if enxEnabled {
+			return buildEnsURL(path, query, region), true
+		}
+
+		return "", false
 	}
 
 	// On iOS redirect to App Store if App Link doesn't trigger and an a link is
 	// set up.
-	if onIOS && appStoreData.IOSURL != "" {
-		return appStoreData.IOSURL, true
+	if onIOS {
+		if noQuery {
+			if v := appStoreData.IOSURL; v != "" {
+				return v, true
+			}
+			return iosOnboardingRedirect, true
+		}
+
+		if appStoreData.IOSURL != "" {
+			return appStoreData.IOSURL, true
+		}
+
+		if enxEnabled {
+			return buildEnsURL(path, query, region), true
+		}
+
+		return "", false
 	}
 
-	// If enx is enabled, return that URL.
-	if enxEnabled && (onAndroid || onIOS) {
-		return buildEnsURL(path, url.Query(), region), true
+	// If we got this far, it's an unknown device with no query params, redirect
+	// to the generic marketing page.
+	if noQuery {
+		return genericOnboardingRedirect, true
 	}
 
 	// The request included no matching metadata, do nothing.
