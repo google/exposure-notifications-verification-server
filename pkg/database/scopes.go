@@ -201,6 +201,13 @@ func WithAppOS(os OSType) Scope {
 	}
 }
 
+// WithAuthorizedAppType returns a scope that filters by the given type.
+func WithAuthorizedAppType(typ APIKeyType) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("api_key_type = ?", typ)
+	}
+}
+
 // WithAuthorizedAppSearch returns a scope that adds querying for API keys by
 // name and preview, case-insensitive. It's only applicable to functions that
 // query AuthorizedApp.
