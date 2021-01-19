@@ -324,8 +324,8 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 			issuingAppID := uint(0)
 			issuingExternalID := ""
 
-			// Random determine if this was issued by an app (60% chance).
-			if rand.Intn(10) <= 6 {
+			// Random determine if this was issued by an app.
+			if percentChance(60) {
 				issuingAppID = randomAdminAuthorizedApp().ID
 
 				// Random determine if the code had an external audit.
@@ -343,6 +343,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 			code := fmt.Sprintf("%08d", rand.Intn(99999999))
 			longCode := fmt.Sprintf("%015d", rand.Intn(999999999999999))
 			testDate := now.Add(-48 * time.Hour)
+			testType := "confirmed"
 
 			verificationCode := &database.VerificationCode{
 				Model: gorm.Model{
@@ -353,7 +354,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 				ExpiresAt:     now.Add(15 * time.Minute),
 				LongCode:      longCode,
 				LongExpiresAt: now.Add(24 * time.Hour),
-				TestType:      "confirmed",
+				TestType:      testType,
 				SymptomDate:   &testDate,
 				TestDate:      &testDate,
 
@@ -366,21 +367,54 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 				return fmt.Errorf("failed to create verification code: %w", err)
 			}
 
-			// 40% chance that the code is claimed
-			if rand.Intn(10) <= 4 {
+			// Determine if a code is claimed.
+			if percentChance(90) {
 				accept := map[string]struct{}{
 					api.TestTypeConfirmed: {},
 					api.TestTypeLikely:    {},
 					api.TestTypeNegative:  {},
 				}
-				if _, err := db.VerifyCodeAndIssueToken(randomDeviceAuthorizedApp(), code, accept, 24*time.Hour); err != nil {
-					return fmt.Errorf("failed to claim token: %w", err)
+
+				// Some percentage of codes will fail to claim - force this by changing
+				// the allowed test types to exclude "confirmed".
+				if percentChance(30) {
+					delete(accept, api.TestTypeConfirmed)
+				}
+
+				app := randomDeviceAuthorizedApp()
+
+				token, err := db.VerifyCodeAndIssueToken(date, app, code, accept, 24*time.Hour)
+				if err != nil {
+					continue
+				}
+
+				// Determine if token is exchanged.
+				if percentChance(90) {
+					testType := testType
+
+					// Determine if token claim should fail. Override the testType to
+					// force the subject to mismatch.
+					if percentChance(20) {
+						testType = "likely"
+					}
+
+					if err := db.ClaimToken(date, app, token.TokenID, &database.Subject{
+						TestType:    testType,
+						SymptomDate: &testDate,
+						TestDate:    &testDate,
+					}); err != nil {
+						continue
+					}
 				}
 			}
 		}
 	}
 
 	return nil
+}
+
+func percentChance(d int) bool {
+	return rand.Intn(100) <= d
 }
 
 func createFirebaseUser(ctx context.Context, firebaseAuth *firebaseauth.Client, user *database.User) error {

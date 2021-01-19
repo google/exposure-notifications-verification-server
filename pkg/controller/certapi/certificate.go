@@ -139,7 +139,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 
 		// Do the transactional update to the database last so that if it fails, the
 		// client can retry.
-		if err := c.db.ClaimToken(authApp, tokenID, subject); err != nil {
+		if err := c.db.ClaimToken(now, authApp, tokenID, subject); err != nil {
 			blame = observability.BlameClient
 			switch {
 			case errors.Is(err, database.ErrTokenExpired):

@@ -297,6 +297,8 @@ func TestIssueToken(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
 
+			now := time.Now().UTC()
+
 			// Create the verification. We do this here instead of inside the test
 			// struct to mitigate as much time drift as possible. It also ensures we
 			// get a new VerificationCode on each invocation.
@@ -318,7 +320,7 @@ func TestIssueToken(t *testing.T) {
 				time.Sleep(tc.Delay)
 			}
 
-			tok, err := db.VerifyCodeAndIssueToken(authApp, code, tc.Accept, tc.TokenAge)
+			tok, err := db.VerifyCodeAndIssueToken(now, authApp, code, tc.Accept, tc.TokenAge)
 			if err != nil {
 				if tc.Error == "" {
 					t.Fatalf("error issuing token: %v", err)
@@ -357,7 +359,7 @@ func TestIssueToken(t *testing.T) {
 				if err != nil {
 					t.Fatalf("unable to parse subject: %v", err)
 				}
-				if err := db.ClaimToken(authApp, got.TokenID, subject); err != nil && tc.ClaimError == "" {
+				if err := db.ClaimToken(now, authApp, got.TokenID, subject); err != nil && tc.ClaimError == "" {
 					t.Fatalf("unexpected error claiming token: %v", err)
 				} else if tc.ClaimError != "" {
 					if err == nil {
