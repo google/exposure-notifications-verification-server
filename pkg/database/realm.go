@@ -1443,7 +1443,10 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 			d.date AS date,
 			$1 AS realm_id,
 			COALESCE(s.codes_issued, 0) AS codes_issued,
-			COALESCE(s.codes_claimed, 0) AS codes_claimed
+			COALESCE(s.codes_claimed, 0) AS codes_claimed,
+			COALESCE(s.codes_invalid, 0) AS codes_invalid,
+			COALESCE(s.tokens_claimed, 0) AS tokens_claimed,
+			COALESCE(s.tokens_invalid, 0) AS tokens_invalid
 		FROM (
 			SELECT date::date FROM generate_series($2, $3, '1 day'::interval) date
 		) d

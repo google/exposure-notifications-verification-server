@@ -336,7 +336,7 @@ eg.
   error: "the first code failed",
   errorCode: "missing_date",
 }
-``
+```
 
 **BatchIssueCodeRequest**
 
@@ -468,7 +468,7 @@ notice!**
 This path includes realm-level statistics for the past 30 days.
 
 -   `/api/stats/realm.{csv,json}` - Daily statistics for the realm, including
-    codes issued, codes claimed, and daily active users (if enabled).
+    codes issued, codes claimed, tokens claimed, and invalid attempts.
 
 -   `/api/stats/realm/users.{csv,json}` - Daily statistics for codes issued by
     realm user. These statistics only include codes issued by humans logged into

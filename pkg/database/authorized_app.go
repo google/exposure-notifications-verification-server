@@ -15,6 +15,7 @@
 package database
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha512"
@@ -27,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/jinzhu/gorm"
 )
 
@@ -192,10 +194,9 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 
 // Stats returns the usage statistics for this app. If no stats exist, it
 // returns an empty array.
-func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) (AuthorizedAppStats, error) {
-	start = timeutils.UTCMidnight(start)
-	stop = timeutils.UTCMidnight(stop)
-
+func (a *AuthorizedApp) Stats(db *Database) (AuthorizedAppStats, error) {
+	stop := timeutils.Midnight(time.Now().UTC())
+	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
@@ -208,7 +209,11 @@ func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) (AuthorizedAp
 			d.date AS date,
 			$1 AS authorized_app_id,
 			$2 AS authorized_app_name,
-			COALESCE(s.codes_issued, 0) AS codes_issued
+			COALESCE(s.codes_issued, 0) AS codes_issued,
+			COALESCE(s.codes_claimed, 0) AS codes_claimed,
+			COALESCE(s.codes_invalid, 0) AS codes_invalid,
+			COALESCE(s.tokens_claimed, 0) AS tokens_claimed,
+			COALESCE(s.tokens_invalid, 0) AS tokens_invalid
 		FROM (
 			SELECT date::date FROM generate_series($3, $4, '1 day'::interval) date
 		) d
@@ -220,6 +225,25 @@ func (a *AuthorizedApp) Stats(db *Database, start, stop time.Time) (AuthorizedAp
 		if IsNotFound(err) {
 			return stats, nil
 		}
+		return nil, err
+	}
+	return stats, nil
+}
+
+// StatsCached is stats, but cached.
+func (a *AuthorizedApp) StatsCached(ctx context.Context, db *Database, cacher cache.Cacher) (AuthorizedAppStats, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var stats AuthorizedAppStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:app",
+		Key:       strconv.FormatUint(uint64(a.ID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return a.Stats(db)
+	}); err != nil {
 		return nil, err
 	}
 	return stats, nil
