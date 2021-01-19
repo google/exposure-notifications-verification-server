@@ -14,7 +14,7 @@ to share within the exposure notifications system.
 
 -   `ens` : describes that the exposure notifications application to be opened.
 
--   `onboard` : activate onboarding for exposure notifications. 
+-   `onboarding` : activate onboarding for exposure notifications. 
 
 -   `v` : verify, currently this is the only available action.
 
@@ -31,7 +31,7 @@ to share within the exposure notifications system.
 
 ### Modes
 
--  `onboard` - Activate / onboarding mode. No additional parameters are supported.
+-  `onboarding` - Activate / onboarding mode. No additional parameters are supported.
 
 -  `v` - Supports region (`r`) and code (`c`) as required parameters.
 
@@ -67,9 +67,9 @@ ens://v?r=AU-NSW&c=abcdefgh12345678
 
 ### Activation, region chosen on device.
 
-The `onboard` command does not support any other parameters.
+The `onboarding` command does not support any other parameters.
 
 ```text
-ens://onboard
+ens://onboarding
 ```
 
