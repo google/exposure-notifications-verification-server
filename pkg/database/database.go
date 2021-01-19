@@ -149,12 +149,16 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	// opencenusus stats.
 	var rawSQL *sql.DB
 	if err := withRetries(ctx, func(ctx context.Context) error {
-		var err error
-		rawSQL, err = sql.Open("ocsql", c.ConnectionString())
+		s, err := sql.Open("ocsql", c.ConnectionString())
 		if err != nil {
+			return fmt.Errorf("failed to open sql connection: %w", err)
+		}
+
+		if err := s.Ping(); err != nil {
 			return retry.RetryableError(err)
 		}
-		db.statsCloser = ocsql.RecordStats(rawSQL, 5*time.Second)
+
+		rawSQL = s
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to create sql connection: %w", err)
@@ -162,6 +166,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	if rawSQL == nil {
 		return fmt.Errorf("failed to create database connection")
 	}
+	db.statsCloser = ocsql.RecordStats(rawSQL, 5*time.Second)
 
 	// Set connection configuration.
 	rawSQL.SetConnMaxLifetime(c.MaxConnectionLifetime)
@@ -169,13 +174,14 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	var rawDB *gorm.DB
 	if err := withRetries(ctx, func(ctx context.Context) error {
-		var err error
 		// Need to give postgres dialect as otherwise gorm starts running
 		// in compatibility mode
-		rawDB, err = gorm.Open("postgres", rawSQL)
+		d, err := gorm.Open("postgres", rawSQL)
 		if err != nil {
 			return retry.RetryableError(err)
 		}
+
+		rawDB = d
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to initialize gorm: %w", err)
@@ -594,7 +600,7 @@ func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) 
 // withRetries is a helper for creating a backoff with capped retries, useful
 // for retrying database queries.
 func withRetries(ctx context.Context, f retry.RetryFunc) error {
-	b, err := retry.NewConstant(500 * time.Millisecond)
+	b, err := retry.NewConstant(1 * time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to configure backoff: %w", err)
 	}
