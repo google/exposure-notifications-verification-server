@@ -147,24 +147,18 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	// Establish a connection to the database. We use this later to register
 	// opencenusus stats.
-	var rawSQL *sql.DB
+	rawSQL, err := sql.Open("ocsql", c.ConnectionString())
+	if err != nil {
+		return fmt.Errorf("failed to open sql connection: %w", err)
+	}
 	if err := withRetries(ctx, func(ctx context.Context) error {
-		s, err := sql.Open("ocsql", c.ConnectionString())
-		if err != nil {
-			return fmt.Errorf("failed to open sql connection: %w", err)
-		}
-
-		if err := s.Ping(); err != nil {
+		if err := rawSQL.Ping(); err != nil {
 			return retry.RetryableError(err)
 		}
-
-		rawSQL = s
 		return nil
 	}); err != nil {
+		defer rawSQL.Close()
 		return fmt.Errorf("failed to create sql connection: %w", err)
-	}
-	if rawSQL == nil {
-		return fmt.Errorf("failed to create database connection")
 	}
 	db.statsCloser = ocsql.RecordStats(rawSQL, 5*time.Second)
 
@@ -180,13 +174,14 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 		if err != nil {
 			return retry.RetryableError(err)
 		}
-
 		rawDB = d
 		return nil
 	}); err != nil {
+		defer rawSQL.Close()
 		return fmt.Errorf("failed to initialize gorm: %w", err)
 	}
 	if rawDB == nil {
+		defer rawSQL.Close()
 		return fmt.Errorf("failed to initialize gorm")
 	}
 
