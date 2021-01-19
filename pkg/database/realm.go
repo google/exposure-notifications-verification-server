@@ -970,18 +970,6 @@ func (db *Database) FindRealmByRegionOrID(val string) (*Realm, error) {
 	return db.FindRealmByRegion(val)
 }
 
-// ListRealmsWithAutoKeyRotation returns all realms that have automatic key rotation enabled.
-func (db *Database) ListRealmsWithAutoKeyRotation() ([]*Realm, error) {
-	var realms []*Realm
-	if err := db.db.
-		Model(&Realm{}).
-		Where("auto_rotate_certificate_key = ?", true).
-		Find(&realms).Error; err != nil {
-		return nil, fmt.Errorf("list auto rotate realms: %w", err)
-	}
-	return realms, nil
-}
-
 // ListRealms lists all available realms in the system.
 func (db *Database) ListRealms(p *pagination.PageParams, scopes ...Scope) ([]*Realm, *pagination.Paginator, error) {
 	var realms []*Realm
@@ -1455,7 +1443,10 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 			d.date AS date,
 			$1 AS realm_id,
 			COALESCE(s.codes_issued, 0) AS codes_issued,
-			COALESCE(s.codes_claimed, 0) AS codes_claimed
+			COALESCE(s.codes_claimed, 0) AS codes_claimed,
+			COALESCE(s.codes_invalid, 0) AS codes_invalid,
+			COALESCE(s.tokens_claimed, 0) AS tokens_claimed,
+			COALESCE(s.tokens_invalid, 0) AS tokens_invalid
 		FROM (
 			SELECT date::date FROM generate_series($2, $3, '1 day'::interval) date
 		) d

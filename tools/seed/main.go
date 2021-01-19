@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"math/rand"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/jinzhu/gorm"
 
@@ -38,7 +40,13 @@ import (
 	"github.com/sethvargo/go-signalcontext"
 )
 
+var (
+	flagStats = flag.Bool("stats", false, "generate codes and statistics")
+)
+
 func main() {
+	flag.Parse()
+
 	ctx, done := signalcontext.OnInterrupt()
 
 	logger := logging.NewLoggerFromEnv().Named("seed")
@@ -200,18 +208,16 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("enabled super", "super", super)
 
-	// Create a device API key
-	deviceAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
-		Name:       "Corona Capture",
-		APIKeyType: database.APIKeyTypeDevice,
-	}, admin)
-	if err != nil {
-		return fmt.Errorf("failed to create device api key: %w", err)
-	}
-	logger.Infow("created device api key", "key", deviceAPIKey)
-	deviceAuthorizedApp, err := db.FindAuthorizedAppByAPIKey(deviceAPIKey)
-	if err != nil {
-		return fmt.Errorf("failed to lookup device api id: %w", err)
+	// Create device API keys
+	for _, name := range []string{"Corona Capture", "Tracing Tracker"} {
+		deviceAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
+			Name:       name,
+			APIKeyType: database.APIKeyTypeDevice,
+		}, admin)
+		if err != nil {
+			return fmt.Errorf("failed to create device api key: %w", err)
+		}
+		logger.Infow("created device api key", "key", deviceAPIKey)
 	}
 
 	// Create some Apps
@@ -240,22 +246,58 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Create an admin API key
-	adminAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
-		Name:       "Tracing Tracker",
-		APIKeyType: database.APIKeyTypeAdmin,
-	}, admin)
-	if err != nil {
-		return fmt.Errorf("failed to create admin api key: %w", err)
-	}
-	logger.Infow("created device api key", "key", adminAPIKey)
-	adminAuthorizedApp, err := db.FindAuthorizedAppByAPIKey(adminAPIKey)
-	if err != nil {
-		return fmt.Errorf("failed to lookup admin api id: %w", err)
+	for _, name := range []string{"Closet Cloud", "Internal Health System"} {
+		adminAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
+			Name:       name,
+			APIKeyType: database.APIKeyTypeAdmin,
+		}, admin)
+		if err != nil {
+			return fmt.Errorf("failed to create admin api key: %w", err)
+		}
+		logger.Infow("created admin api key", "key", adminAPIKey)
 	}
 
-	// Generate some codes
+	if *flagStats {
+		if err := generateCodesAndStats(db, realm1); err != nil {
+			return fmt.Errorf("failed to generate stats: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// generateCodesAndStats exercises the system for the past 30 days with random
+// values to simulate data that might appear in the real world. This is
+// primarily used to test statistics and graphs.
+func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 	now := time.Now().UTC()
-	users := []*database.User{user, unverified, super, admin}
+
+	users, _, err := db.ListUsers(pagination.UnlimitedResults)
+	if err != nil {
+		return fmt.Errorf("failed to list users: %w", err)
+	}
+	randomUser := func() *database.User {
+		return users[rand.Intn(len(users))]
+	}
+
+	adminAuthorizedApps, _, err := realm.ListAuthorizedApps(db, pagination.UnlimitedResults,
+		database.WithAuthorizedAppType(database.APIKeyTypeAdmin))
+	if err != nil {
+		return fmt.Errorf("failed to list admin authorized apps: %w", err)
+	}
+	randomAdminAuthorizedApp := func() *database.AuthorizedApp {
+		return adminAuthorizedApps[rand.Intn(len(adminAuthorizedApps))]
+	}
+
+	deviceAuthorizedApps, _, err := realm.ListAuthorizedApps(db, pagination.UnlimitedResults,
+		database.WithAuthorizedAppType(database.APIKeyTypeDevice))
+	if err != nil {
+		return fmt.Errorf("failed to list device authorized apps: %w", err)
+	}
+	randomDeviceAuthorizedApp := func() *database.AuthorizedApp {
+		return deviceAuthorizedApps[rand.Intn(len(deviceAuthorizedApps))]
+	}
+
 	externalIDs := make([]string, 4)
 	for i := range externalIDs {
 		b := make([]byte, 8)
@@ -264,9 +306,17 @@ func realMain(ctx context.Context) error {
 		}
 		externalIDs[i] = hex.EncodeToString(b)
 	}
+	randomExternalID := func() string {
+		return externalIDs[rand.Intn(len(externalIDs))]
+	}
+
+	// Temporarily disable gorm logging, it's very chatty and increases the seed
+	// time significantly.
+	db.RawDB().LogMode(false)
+	defer db.RawDB().LogMode(true)
 
 	for day := 1; day <= 30; day++ {
-		max := rand.Intn(50)
+		max := rand.Intn(150)
 		for i := 0; i < max; i++ {
 			date := now.Add(time.Duration(day) * -24 * time.Hour)
 
@@ -274,9 +324,9 @@ func realMain(ctx context.Context) error {
 			issuingAppID := uint(0)
 			issuingExternalID := ""
 
-			// Random determine if this was issued by an app (60% chance).
-			if rand.Intn(10) <= 6 {
-				issuingAppID = adminAuthorizedApp.ID
+			// Random determine if this was issued by an app.
+			if percentChance(60) {
+				issuingAppID = randomAdminAuthorizedApp().ID
 
 				// Random determine if the code had an external audit.
 				if rand.Intn(2) == 0 {
@@ -284,26 +334,27 @@ func realMain(ctx context.Context) error {
 					if _, err := rand.Read(b); err != nil {
 						return fmt.Errorf("failed to read rand: %w", err)
 					}
-					issuingExternalID = externalIDs[rand.Intn(len(externalIDs))]
+					issuingExternalID = randomExternalID()
 				}
 			} else {
-				issuingUserID = users[rand.Intn(len(users))].ID
+				issuingUserID = randomUser().ID
 			}
 
 			code := fmt.Sprintf("%08d", rand.Intn(99999999))
 			longCode := fmt.Sprintf("%015d", rand.Intn(999999999999999))
 			testDate := now.Add(-48 * time.Hour)
+			testType := "confirmed"
 
 			verificationCode := &database.VerificationCode{
 				Model: gorm.Model{
 					CreatedAt: date,
 				},
-				RealmID:       realm1.ID,
+				RealmID:       realm.ID,
 				Code:          code,
 				ExpiresAt:     now.Add(15 * time.Minute),
 				LongCode:      longCode,
 				LongExpiresAt: now.Add(24 * time.Hour),
-				TestType:      "confirmed",
+				TestType:      testType,
 				SymptomDate:   &testDate,
 				TestDate:      &testDate,
 
@@ -312,25 +363,58 @@ func realMain(ctx context.Context) error {
 				IssuingExternalID: issuingExternalID,
 			}
 			// If a verification code already exists, it will fail to save, and we retry.
-			if err := db.SaveVerificationCode(verificationCode, realm1); err != nil {
+			if err := db.SaveVerificationCode(verificationCode, realm); err != nil {
 				return fmt.Errorf("failed to create verification code: %w", err)
 			}
 
-			// 40% chance that the code is claimed
-			if rand.Intn(10) <= 4 {
+			// Determine if a code is claimed.
+			if percentChance(90) {
 				accept := map[string]struct{}{
 					api.TestTypeConfirmed: {},
 					api.TestTypeLikely:    {},
 					api.TestTypeNegative:  {},
 				}
-				if _, err := db.VerifyCodeAndIssueToken(deviceAuthorizedApp, code, accept, 24*time.Hour); err != nil {
-					return fmt.Errorf("failed to claim token: %w", err)
+
+				// Some percentage of codes will fail to claim - force this by changing
+				// the allowed test types to exclude "confirmed".
+				if percentChance(30) {
+					delete(accept, api.TestTypeConfirmed)
+				}
+
+				app := randomDeviceAuthorizedApp()
+
+				token, err := db.VerifyCodeAndIssueToken(date, app, code, accept, 24*time.Hour)
+				if err != nil {
+					continue
+				}
+
+				// Determine if token is exchanged.
+				if percentChance(90) {
+					testType := testType
+
+					// Determine if token claim should fail. Override the testType to
+					// force the subject to mismatch.
+					if percentChance(20) {
+						testType = "likely"
+					}
+
+					if err := db.ClaimToken(date, app, token.TokenID, &database.Subject{
+						TestType:    testType,
+						SymptomDate: &testDate,
+						TestDate:    &testDate,
+					}); err != nil {
+						continue
+					}
 				}
 			}
 		}
 	}
 
 	return nil
+}
+
+func percentChance(d int) bool {
+	return rand.Intn(100) <= d
 }
 
 func createFirebaseUser(ctx context.Context, firebaseAuth *firebaseauth.Client, user *database.User) error {

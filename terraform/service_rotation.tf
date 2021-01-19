@@ -55,6 +55,18 @@ resource "google_project_iam_member" "rotation-observability" {
   member  = "serviceAccount:${google_service_account.rotation.email}"
 }
 
+resource "google_kms_key_ring_iam_member" "rotation-verification-key-admin" {
+  key_ring_id = google_kms_key_ring.verification.self_link
+  role        = "roles/cloudkms.admin"
+  member      = "serviceAccount:${google_service_account.rotation.email}"
+}
+
+resource "google_kms_key_ring_iam_member" "rotation-verification-key-signer-verifier" {
+  key_ring_id = google_kms_key_ring.verification.self_link
+  role        = "roles/cloudkms.signerVerifier"
+  member      = "serviceAccount:${google_service_account.rotation.email}"
+}
+
 resource "google_kms_crypto_key_iam_member" "rotation-database-encrypter" {
   crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
@@ -225,8 +237,10 @@ resource "google_cloud_scheduler_job" "rotation-worker" {
 }
 
 resource "google_cloud_scheduler_job" "realm-key-rotation-worker" {
-  name             = "realm-key-rotation-worker"
-  region           = var.cloudscheduler_location
+  name   = "realm-key-rotation-worker"
+  region = var.cloudscheduler_location
+
+  // This schedule is offset from the token rotation schedule.
   schedule         = "2,32 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"

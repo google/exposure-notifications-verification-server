@@ -31,6 +31,8 @@ import (
 func TestHandleIssue_IssueCode(t *testing.T) {
 	t.Parallel()
 
+	now := time.Now().UTC()
+
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	realm, user, session, err := harness.ProvisionAndLogin()
@@ -98,7 +100,7 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 
 	// Exchange the code for a verification certificate.
 	allowedTypes := api.AcceptTypes{api.TestTypeConfirmed: struct{}{}}
-	token, err := harness.Database.VerifyCodeAndIssueToken(authApp, code, allowedTypes, 30*time.Minute)
+	token, err := harness.Database.VerifyCodeAndIssueToken(now, authApp, code, allowedTypes, 30*time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}

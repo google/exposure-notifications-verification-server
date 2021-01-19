@@ -91,6 +91,8 @@
       View or edit the verification certificate signing keys for <strong>{{$realm.Name}}</strong> below.
     </p>
 
+    {{template "errorSummary" $realm}}
+
     {{if not $realm.UseRealmCertificateKey}}
       {{template "systemkeys" .}}
     {{end}}
@@ -216,24 +218,24 @@
         <div class="card-body">
           {{if $realm.AutoRotateCertificateKey}}
             <div class="alert alert-warning">
-              <p>This realm is automatically rotating verification certificate signing keys. If 
+              <p>This realm is automatically rotating verification certificate signing keys. If
                 desired, you can
                 <a href="/realm/keys/manual" data-method="POST"
                   data-confirm="Are you sure you want revert to manual key rotation?">revert to manual key rotation.</a>
               </p>
-            </div>  
+            </div>
 
           {{else}}
             <div class="alert alert-info">
               <p><strong>Enable automatic key rotation</strong>.
               It is possible to have the system automatically rotate your verification certificate signing key.
               This is highly recommended, but requires that your key server is configured using the JWKS public key
-              discover doc. 
+              discover doc.
               <a href="/realm/keys/automatic" data-method="POST"
                 data-confirm="Are you sure you want to enable automatic key rotation?
 
 Have you had your key server operator configure public key import through the JWKS public key discovery document?
-                
+
 Failure to do so in advance will prevent your application users from sharing temporary exposure keys.">
                 Enable automatic verification certificate key rotation.</a>
               </p>

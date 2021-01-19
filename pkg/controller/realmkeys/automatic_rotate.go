@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -45,21 +46,33 @@ func (c *Controller) HandleAutomaticRotate() http.Handler {
 		currentUser := membership.User
 
 		if !currentRealm.UseRealmCertificateKey {
-			flash.Error("You must upgrade to realm specific signing keys before enabling automatic rotation.")
-
-		} else if currentRealm.AutoRotateCertificateKey {
-			flash.Alert("Automatic key rotation is already enabled")
-		} else {
-			currentRealm.AutoRotateCertificateKey = true
-			if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
-				flash.Error("Error enabling automatic key rotation on realm: %v", err)
-				c.renderShow(ctx, w, r, currentRealm)
-				return
-			} else {
-				flash.Alert("Successfully switched to automatic signing key rotation.")
-			}
+			currentRealm.AddError("", "You must upgrade to realm-specific signing keys before enabling automatic rotation.")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderShow(ctx, w, r, currentRealm)
+			return
 		}
 
+		if currentRealm.AutoRotateCertificateKey {
+			currentRealm.AddError("", "Automatic key rotation is already enabled")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderShow(ctx, w, r, currentRealm)
+			return
+		}
+
+		currentRealm.AutoRotateCertificateKey = true
+		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
+			if database.IsNotFound(err) || database.IsValidationError(err) {
+				currentRealm.AddError("", err.Error())
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderShow(ctx, w, r, currentRealm)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		flash.Alert("Successfully switched to automatic signing key rotation.")
 		c.redirectShow(ctx, w, r)
 	})
 }
