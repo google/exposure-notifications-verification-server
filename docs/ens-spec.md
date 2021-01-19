@@ -14,6 +14,8 @@ to share within the exposure notifications system.
 
 -   `ens` : describes that the exposure notifications application to be opened.
 
+-   `onboard` : activate onboarding for exposure notifications. 
+
 -   `v` : verify, currently this is the only available action.
 
 -   `r` : region, the region that this verification code is for.
@@ -23,13 +25,20 @@ to share within the exposure notifications system.
     -   For country level, the 2 character code is used.
     -   If sub-regions are being used, this should be 2 character country, '-'
         (dash) followed by the 2 or 3 character subdivision code.
+    -   Region codes are case insensitive.
 
 -   `c` : verification code to validate the diagnosis.
+
+### Modes
+
+-  `onboard` - Activate / onboarding mode. No additional parameters are supported.
+
+-  `v` - Supports region (`r`) and code (`c`) as required parameters.
 
 ## Encoding considerations
 
 Use URL encoding if applicable. This URI is intended to be sent over SMS. While
-there is no stricit limit on length, it is recommended that the greeting text
+there is no strict limit on length, it is recommended that the greeting text
 combined with the URI not exceed 160 characters in total.
 
 ## Examples
@@ -55,3 +64,12 @@ And for State of New South Wales in Austraila:
 ```text
 ens://v?r=AU-NSW&c=abcdefgh12345678
 ```
+
+### Activation, region chosen on device.
+
+The `onboard` command does not support any other parameters.
+
+```text
+ens://onboard
+```
+
