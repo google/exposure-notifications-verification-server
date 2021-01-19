@@ -112,11 +112,11 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 func (v *VerificationCode) updateStats(scope *gorm.Scope, increment bool) {
 	date := timeutils.Midnight(v.CreatedAt)
 
-	var incString string
+	var inc rune
 	if increment {
-		incString = "+ 1"
+		inc = '+'
 	} else {
-		incString = "- 1"
+		inc = '-'
 	}
 
 	// If the issuer was a user, update the user stats for the day.
@@ -125,8 +125,8 @@ func (v *VerificationCode) updateStats(scope *gorm.Scope, increment bool) {
 			INSERT INTO user_stats (date, realm_id, user_id, codes_issued)
 				VALUES ($1, $2, $3, 1)
 			ON CONFLICT (date, realm_id, user_id) DO UPDATE
-				SET codes_issued = user_stats.codes_issued %s
-		`, incString)
+				SET codes_issued = user_stats.codes_issued %c 1
+		`, inc)
 
 		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
@@ -139,8 +139,8 @@ func (v *VerificationCode) updateStats(scope *gorm.Scope, increment bool) {
 			INSERT INTO external_issuer_stats (date, realm_id, issuer_id, codes_issued)
 				VALUES ($1, $2, $3, 1)
 			ON CONFLICT (date, realm_id, issuer_id) DO UPDATE
-				SET codes_issued = external_issuer_stats.codes_issued %s
-		`, incString)
+				SET codes_issued = external_issuer_stats.codes_issued %c 1
+		`, inc)
 
 		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingExternalID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update audit stats: %v", err))
@@ -153,8 +153,8 @@ func (v *VerificationCode) updateStats(scope *gorm.Scope, increment bool) {
 			INSERT INTO authorized_app_stats (date, authorized_app_id, codes_issued)
 				VALUES ($1, $2, 1)
 			ON CONFLICT (date, authorized_app_id) DO UPDATE
-				SET codes_issued = authorized_app_stats.codes_issued %s
-		`, incString)
+				SET codes_issued = authorized_app_stats.codes_issued %c 1
+		`, inc)
 
 		if err := scope.DB().Exec(sql, date, v.IssuingAppID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
@@ -167,8 +167,8 @@ func (v *VerificationCode) updateStats(scope *gorm.Scope, increment bool) {
 			INSERT INTO realm_stats(date, realm_id, codes_issued)
 				VALUES ($1, $2, 1)
 			ON CONFLICT (date, realm_id) DO UPDATE
-				SET codes_issued = realm_stats.codes_issued %s
-		`, incString)
+				SET codes_issued = realm_stats.codes_issued %c 1
+		`, inc)
 
 		if err := scope.DB().Exec(sql, date, v.RealmID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
