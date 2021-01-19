@@ -317,7 +317,7 @@ func (db *Database) PurgeTokens(maxAge time.Duration) (int64, error) {
 // updateStatsCodeInvalid updates the statistics, increasing the number of codes
 // that were invalid.
 func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t.UTC())
+	t = timeutils.UTCMidnight(t)
 
 	realmSQL := `
 			INSERT INTO realm_stats(date, realm_id, codes_invalid)
@@ -343,7 +343,7 @@ func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp) 
 // updateStatsCodeClaimed updates the statistics, increasing the number of codes
 // claimed.
 func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t.UTC())
+	t = timeutils.UTCMidnight(t)
 
 	realmSQL := `
 			INSERT INTO realm_stats(date, realm_id, codes_claimed)
@@ -369,7 +369,7 @@ func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp) 
 // updateStatsTokenInvalid updates the statistics, increasing the number of
 // tokens that were invalid.
 func (db *Database) updateStatsTokenInvalid(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t.UTC())
+	t = timeutils.UTCMidnight(t)
 
 	realmSQL := `
 			INSERT INTO realm_stats(date, realm_id, tokens_invalid)
@@ -395,7 +395,7 @@ func (db *Database) updateStatsTokenInvalid(t time.Time, authApp *AuthorizedApp)
 // updateStatsTokenClaimed updates the statistics, increasing the number of
 // tokens claimed.
 func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t.UTC())
+	t = timeutils.UTCMidnight(t)
 
 	realmSQL := `
 			INSERT INTO realm_stats(date, realm_id, tokens_claimed)
