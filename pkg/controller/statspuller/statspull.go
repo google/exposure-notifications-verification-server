@@ -31,11 +31,11 @@ type Controller struct {
 }
 
 // New creates a new stats-pull controller.
-func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, h render.Renderer) (*Controller, error) {
+func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, h render.Renderer) *Controller {
 	return &Controller{
 		defaultKeyServerClient: client,
 		config:                 cfg,
 		db:                     db,
 		h:                      h,
-	}, nil
+	}
 }
