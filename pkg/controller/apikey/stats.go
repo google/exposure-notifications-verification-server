@@ -15,22 +15,17 @@
 package apikey
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
-
-const statsCacheTimeout = 30 * time.Minute
 
 func (c *Controller) HandleStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +61,7 @@ func (c *Controller) HandleStats() http.Handler {
 			return
 		}
 
-		stats, err := c.getStats(ctx, authApp, currentRealm)
+		stats, err := authApp.StatsCached(ctx, c.db, c.cacher)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -87,21 +82,4 @@ func (c *Controller) HandleStats() http.Handler {
 			return
 		}
 	})
-}
-
-func (c *Controller) getStats(ctx context.Context, authApp *database.AuthorizedApp, realm *database.Realm) (database.AuthorizedAppStats, error) {
-	now := time.Now().UTC()
-	past := now.Add(-30 * 24 * time.Hour)
-
-	var stats database.AuthorizedAppStats
-	cacheKey := &cache.Key{
-		Namespace: "stats:app",
-		Key:       strconv.FormatUint(uint64(authApp.ID), 10),
-	}
-	if err := c.cacher.Fetch(ctx, cacheKey, &stats, statsCacheTimeout, func() (interface{}, error) {
-		return authApp.Stats(c.db, past, now)
-	}); err != nil {
-		return nil, err
-	}
-	return stats, nil
 }

@@ -61,7 +61,11 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 
-	if err := w.Write([]string{"date", "codes_issued", "codes_claimed"}); err != nil {
+	if err := w.Write([]string{
+		"date",
+		"codes_issued", "codes_claimed", "codes_invalid",
+		"tokens_claimed", "tokens_invalid",
+	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
@@ -70,6 +74,9 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 			stat.Date.Format(project.RFC3339Date),
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
 			strconv.FormatUint(uint64(stat.CodesClaimed), 10),
+			strconv.FormatUint(uint64(stat.CodesInvalid), 10),
+			strconv.FormatUint(uint64(stat.TokensClaimed), 10),
+			strconv.FormatUint(uint64(stat.TokensInvalid), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -94,8 +101,11 @@ type jsonRealmStatStats struct {
 }
 
 type jsonRealmStatStatsData struct {
-	CodesIssued  uint `json:"codes_issued"`
-	CodesClaimed uint `json:"codes_claimed"`
+	CodesIssued   uint `json:"codes_issued"`
+	CodesClaimed  uint `json:"codes_claimed"`
+	CodesInvalid  uint `json:"codes_invalid"`
+	TokensClaimed uint `json:"tokens_claimed"`
+	TokensInvalid uint `json:"tokens_invalid"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -110,8 +120,11 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 		stats = append(stats, &jsonRealmStatStats{
 			Date: stat.Date,
 			Data: &jsonRealmStatStatsData{
-				CodesIssued:  stat.CodesIssued,
-				CodesClaimed: stat.CodesClaimed,
+				CodesIssued:   stat.CodesIssued,
+				CodesClaimed:  stat.CodesClaimed,
+				CodesInvalid:  stat.CodesInvalid,
+				TokensClaimed: stat.TokensClaimed,
+				TokensInvalid: stat.TokensInvalid,
 			},
 		})
 	}
@@ -144,10 +157,13 @@ func (s *RealmStats) UnmarshalJSON(b []byte) error {
 
 	for _, stat := range result.Stats {
 		*s = append(*s, &RealmStat{
-			Date:         stat.Date,
-			RealmID:      result.RealmID,
-			CodesIssued:  stat.Data.CodesIssued,
-			CodesClaimed: stat.Data.CodesClaimed,
+			Date:          stat.Date,
+			RealmID:       result.RealmID,
+			CodesIssued:   stat.Data.CodesIssued,
+			CodesClaimed:  stat.Data.CodesClaimed,
+			CodesInvalid:  stat.Data.CodesInvalid,
+			TokensClaimed: stat.Data.TokensClaimed,
+			TokensInvalid: stat.Data.TokensInvalid,
 		})
 	}
 

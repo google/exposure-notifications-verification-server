@@ -12,11 +12,6 @@
     - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
   - [`/api/batch-issue`](#apibatch-issue)
     - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
-  - [`/api/checkcodestatus`](#apicheckcodestatus)
-  - [`/api/expirecode`](#apiexpirecode)
-  - [`/api/stats/*` (preview)](#apistats-preview)
-- [Chaffing requests](#chaffing-requests)
-- [Response codes overview](#response-codes-overview)
 
 <!-- /TOC -->
 
@@ -468,7 +463,7 @@ notice!**
 This path includes realm-level statistics for the past 30 days.
 
 -   `/api/stats/realm.{csv,json}` - Daily statistics for the realm, including
-    codes issued, codes claimed, and daily active users (if enabled).
+    codes issued, codes claimed, tokens claimed, and invalid attempts.
 
 -   `/api/stats/realm/users.{csv,json}` - Daily statistics for codes issued by
     realm user. These statistics only include codes issued by humans logged into

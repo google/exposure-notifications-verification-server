@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/jinzhu/gorm"
 )
@@ -164,13 +163,11 @@ func TestAuthorizedApp_Stats(t *testing.T) {
 
 	// Ensure graph is contiguous.
 	{
-		stop := timeutils.Midnight(time.Now().UTC())
-		start := stop.Add(6 * -24 * time.Hour)
-		stats, err := authorizedApp.Stats(db, start, stop)
+		stats, err := authorizedApp.Stats(db)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got, want := len(stats), 7; got != want {
+		if got, want := len(stats), 30; got < want {
 			t.Errorf("expected stats for %d days, got %d", want, got)
 		}
 	}

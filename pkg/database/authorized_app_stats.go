@@ -66,7 +66,11 @@ func (s AuthorizedAppStats) MarshalCSV() ([]byte, error) {
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 
-	if err := w.Write([]string{"date", "authorized_app_id", "authorized_app_name", "codes_issued"}); err != nil {
+	if err := w.Write([]string{
+		"date", "authorized_app_id", "authorized_app_name",
+		"codes_issued", "codes_claimed", "codes_invalid",
+		"tokens_claimed", "tokens_invalid",
+	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
@@ -76,6 +80,10 @@ func (s AuthorizedAppStats) MarshalCSV() ([]byte, error) {
 			strconv.FormatUint(uint64(stat.AuthorizedAppID), 10),
 			stat.AuthorizedAppName,
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
+			strconv.FormatUint(uint64(stat.CodesClaimed), 10),
+			strconv.FormatUint(uint64(stat.CodesInvalid), 10),
+			strconv.FormatUint(uint64(stat.TokensClaimed), 10),
+			strconv.FormatUint(uint64(stat.TokensInvalid), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -101,7 +109,11 @@ type jsonAuthorizedAppStatstats struct {
 }
 
 type jsonAuthorizedAppStatstatsData struct {
-	CodesIssued uint `json:"codes_issued"`
+	CodesIssued   uint `json:"codes_issued"`
+	CodesClaimed  uint `json:"codes_claimed"`
+	CodesInvalid  uint `json:"codes_invalid"`
+	TokensClaimed uint `json:"tokens_claimed"`
+	TokensInvalid uint `json:"tokens_invalid"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -116,7 +128,11 @@ func (s AuthorizedAppStats) MarshalJSON() ([]byte, error) {
 		stats = append(stats, &jsonAuthorizedAppStatstats{
 			Date: stat.Date,
 			Data: &jsonAuthorizedAppStatstatsData{
-				CodesIssued: stat.CodesIssued,
+				CodesIssued:   stat.CodesIssued,
+				CodesClaimed:  stat.CodesClaimed,
+				CodesInvalid:  stat.CodesInvalid,
+				TokensClaimed: stat.TokensClaimed,
+				TokensInvalid: stat.TokensInvalid,
 			},
 		})
 	}
@@ -154,6 +170,10 @@ func (s *AuthorizedAppStats) UnmarshalJSON(b []byte) error {
 			AuthorizedAppID:   result.AuthorizedAppID,
 			AuthorizedAppName: result.AuthorizedAppName,
 			CodesIssued:       stat.Data.CodesIssued,
+			CodesClaimed:      stat.Data.CodesClaimed,
+			CodesInvalid:      stat.Data.CodesInvalid,
+			TokensClaimed:     stat.Data.TokensClaimed,
+			TokensInvalid:     stat.Data.TokensInvalid,
 		})
 	}
 
