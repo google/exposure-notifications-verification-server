@@ -16,6 +16,7 @@
 package statspuller
 
 import (
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -28,14 +29,16 @@ type Controller struct {
 	config                 *config.StatsPullerConfig
 	db                     *database.Database
 	h                      render.Renderer
+	kms                    keys.KeyManager
 }
 
 // New creates a new stats-pull controller.
-func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, h render.Renderer) *Controller {
+func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, kms keys.KeyManager, h render.Renderer) *Controller {
 	return &Controller{
-		defaultKeyServerClient: client,
 		config:                 cfg,
 		db:                     db,
+		defaultKeyServerClient: client,
+		kms:                    kms,
 		h:                      h,
 	}
 }

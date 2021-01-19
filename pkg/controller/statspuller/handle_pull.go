@@ -16,8 +16,12 @@ package statspuller
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
+	v1 "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
@@ -55,10 +59,60 @@ func (c *Controller) HandlePullStats() http.Handler {
 		logger.Debug("no-op stats pull") // TODO(whaught): remove this and put in logic
 
 		// Get all of the realms with stats configured
-		_, err = c.db.ListKeyServerStats()
+		statsConfigs, err := c.db.ListKeyServerStats()
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
+		}
+
+		for _, realmStat := range statsConfigs {
+			audience := c.config.CertificateSigning.CertificateAudience
+			if realmStat.KeyServerAudienceOverride != "" {
+				audience = realmStat.KeyServerAudienceOverride
+			}
+
+			var err error
+			client := c.defaultKeyServerClient
+			if realmStat.KeyServerURLOverride != "" {
+				client, err = clients.NewKeyServerClient(
+					realmStat.KeyServerURLOverride,
+					c.config.KeyServerAPIKey,
+					clients.WithTimeout(c.config.Timeout),
+					clients.WithMaxBodySize(c.config.FileSizeLimitBytes))
+				if err != nil {
+					logger.Errorw("failed to create key server client", "error", err)
+					continue
+				}
+			}
+
+			s, err := c.getSignerForRealm(ctx, realmStat.RealmID)
+			if err != nil {
+				logger.Errorw("failed to retrieve signer for realm", "realmID", realmStat.RealmID)
+				continue
+			}
+
+			now := time.Now().UTC()
+			claims := &jwt.StandardClaims{
+				Audience:  audience,
+				ExpiresAt: now.Add(time.Minute).Unix(),
+				IssuedAt:  now.Unix(),
+				Issuer:    s.Issuer,
+			}
+			token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+			token.Header["kid"] = s.KeyID
+
+			jwtString, err := token.SignedString(c.config.CertificateSigning.CertificateSigningKey)
+			if err != nil {
+				logger.Errorw("failed to sign JWT", "error", err)
+				continue
+			}
+
+			_, err = client.Stats(ctx, &v1.StatsRequest{}, jwtString)
+			if err != nil {
+				logger.Errorw("failed make stats call", "error", err)
+			}
+
+			// TODO(whaught): interpret the response and store
 		}
 
 		c.h.RenderJSON(w, http.StatusOK, &Result{

@@ -27,6 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/statspuller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -120,7 +121,12 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create key server client: %w", err)
 	}
 
-	statsController := statspuller.New(cfg, db, client, h)
+	certificateSigner, err := keys.KeyManagerFor(ctx, &cfg.CertificateSigning.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create certificate key manager: %w", err)
+	}
+
+	statsController := statspuller.New(cfg, db, client,certificateSigner, h)
 	r.Handle("/", statsController.HandlePullStats()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)
