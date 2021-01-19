@@ -48,6 +48,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		ctx := r.Context()
 		logger := logging.FromContext(ctx).Named("verifyapi.HandleVerify")
 
+		now := time.Now().UTC()
+
 		var blame = observability.BlameNone
 		var result = observability.ResultOK()
 		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
@@ -124,7 +126,7 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		// Exchange the short term verification code for a long term verification token.
 		// The token can be used to sign TEKs later.
-		verificationToken, err := c.db.VerifyCodeAndIssueToken(authApp, request.VerificationCode, acceptTypes, c.config.VerificationTokenDuration)
+		verificationToken, err := c.db.VerifyCodeAndIssueToken(now, authApp, request.VerificationCode, acceptTypes, c.config.VerificationTokenDuration)
 		if err != nil {
 			blame = observability.BlameClient
 			switch {
@@ -153,7 +155,6 @@ func (c *Controller) HandleVerify() http.Handler {
 		}
 
 		subject := verificationToken.Subject()
-		now := time.Now().UTC()
 		claims := &jwt.StandardClaims{
 			Audience:  c.config.TokenSigning.TokenIssuer,
 			ExpiresAt: now.Add(c.config.VerificationTokenDuration).Unix(),
