@@ -86,7 +86,7 @@ func (c *Controller) SendSMS(ctx context.Context, request *api.IssueCodeRequest,
 
 		if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 			// Delete the token
-			if err := c.db.DeleteVerificationCode(result.VerCode.Code); err != nil {
+			if err := c.db.DeleteVerificationCode(result.VerCode); err != nil {
 				logger.Errorw("failed to delete verification code", "error", err)
 				// fallthrough to the error
 			}

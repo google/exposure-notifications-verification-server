@@ -332,7 +332,7 @@ func TestDeleteVerificationCode(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := NewRealmWithDefaults("Test Realm")
 
-	code := VerificationCode{
+	code := &VerificationCode{
 		Code:          "12345678",
 		LongCode:      "12345678",
 		TestType:      "confirmed",
@@ -340,11 +340,11 @@ func TestDeleteVerificationCode(t *testing.T) {
 		LongExpiresAt: time.Now().Add(time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(&code, realm); err != nil {
+	if err := db.SaveVerificationCode(code, realm); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := db.DeleteVerificationCode("12345678"); err != nil {
+	if err := db.DeleteVerificationCode(&VerificationCode{Code: "12345678"}); err != nil {
 		t.Fatal(err)
 	}
 

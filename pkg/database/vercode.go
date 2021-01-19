@@ -106,16 +106,27 @@ func (v *VerificationCode) BeforeSave(tx *gorm.DB) error {
 // to update statistics about usage. If the executions fail, an error is logged
 // but the transaction continues. This is called automatically by gorm.
 func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
+	v.updateStats(scope, true)
+}
+
+func (v *VerificationCode) updateStats(scope *gorm.Scope, increment bool) {
 	date := timeutils.Midnight(v.CreatedAt)
+
+	var incString string
+	if increment {
+		incString = "+ 1"
+	} else {
+		incString = "- 1"
+	}
 
 	// If the issuer was a user, update the user stats for the day.
 	if v.IssuingUserID != 0 {
-		sql := `
+		sql := fmt.Sprintf(`
 			INSERT INTO user_stats (date, realm_id, user_id, codes_issued)
 				VALUES ($1, $2, $3, 1)
 			ON CONFLICT (date, realm_id, user_id) DO UPDATE
-				SET codes_issued = user_stats.codes_issued + 1
-		`
+				SET codes_issued = user_stats.codes_issued %s
+		`, incString)
 
 		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
@@ -124,12 +135,12 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 
 	// If the request was an API request, we might have an external issuer ID.
 	if len(v.IssuingExternalID) != 0 {
-		sql := `
+		sql := fmt.Sprintf(`
 			INSERT INTO external_issuer_stats (date, realm_id, issuer_id, codes_issued)
 				VALUES ($1, $2, $3, 1)
 			ON CONFLICT (date, realm_id, issuer_id) DO UPDATE
-				SET codes_issued = external_issuer_stats.codes_issued + 1
-		`
+				SET codes_issued = external_issuer_stats.codes_issued %s
+		`, incString)
 
 		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingExternalID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update audit stats: %v", err))
@@ -138,12 +149,12 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 
 	// If the issuer was a app, update the app stats for the day.
 	if v.IssuingAppID != 0 {
-		sql := `
+		sql := fmt.Sprintf(`
 			INSERT INTO authorized_app_stats (date, authorized_app_id, codes_issued)
 				VALUES ($1, $2, 1)
 			ON CONFLICT (date, authorized_app_id) DO UPDATE
-				SET codes_issued = authorized_app_stats.codes_issued + 1
-		`
+				SET codes_issued = authorized_app_stats.codes_issued %s
+		`, incString)
 
 		if err := scope.DB().Exec(sql, date, v.IssuingAppID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
@@ -152,12 +163,12 @@ func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
 
 	// Update the per-realm stats.
 	if v.RealmID != 0 {
-		sql := `
+		sql := fmt.Sprintf(`
 			INSERT INTO realm_stats(date, realm_id, codes_issued)
 				VALUES ($1, $2, 1)
 			ON CONFLICT (date, realm_id) DO UPDATE
-				SET codes_issued = realm_stats.codes_issued + 1
-		`
+				SET codes_issued = realm_stats.codes_issued %s
+		`, incString)
 
 		if err := scope.DB().Exec(sql, date, v.RealmID).Error; err != nil {
 			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
@@ -329,16 +340,23 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) err
 }
 
 // DeleteVerificationCode deletes the code if it exists. This is a hard delete.
-func (db *Database) DeleteVerificationCode(code string) error {
-	hmacedCodes, err := db.generateVerificationCodeHMACs(code)
+// this also decrements stats - it is used to invalidate an issued code in the event of failure
+// and should not be used as a part of regular cleanup.
+func (db *Database) DeleteVerificationCode(vc *VerificationCode) error {
+	hmacedCodes, err := db.generateVerificationCodeHMACs(vc.Code)
 	if err != nil {
 		return fmt.Errorf("failed to create hmac: %w", err)
 	}
 
-	return db.db.Unscoped().
+	res := db.db.Unscoped().
 		Where("code IN (?) OR long_code IN (?)", hmacedCodes, hmacedCodes).
-		Delete(&VerificationCode{}).
-		Error
+		Delete(&VerificationCode{})
+
+	if res.Error == nil && res.RowsAffected > 0 {
+		vc.updateStats(db.db.Unscoped().NewScope(&VerificationCode{}), false) // unwind stats
+	}
+
+	return res.Error
 }
 
 // RecycleVerificationCodes sets to null code and long_code values
