@@ -31,7 +31,7 @@ to share within the exposure notifications system.
 
 ### Modes
 
--  `onboard` - Activate / onboarding mode supports region (`r`) as an optional parameter.
+-  `onboard` - Activate / onboarding mode. No additional parameters are supported.
 
 -  `v` - Supports region (`r`) and code (`c`) as required parameters.
 
@@ -67,14 +67,9 @@ ens://v?r=AU-NSW&c=abcdefgh12345678
 
 ### Activation, region chosen on device.
 
+The `onboard` command does not support any other parameters.
+
 ```text
 ens://onboard
 ```
 
-### Activation, region in URI
-
-For the State of Washington, in the United States:
-
-```text
-ens://onboard?r=US-WA
-```
