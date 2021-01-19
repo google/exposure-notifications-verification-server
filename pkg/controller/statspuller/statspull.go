@@ -31,16 +31,7 @@ type Controller struct {
 }
 
 // New creates a new stats-pull controller.
-func New(cfg *config.StatsPullerConfig, db *database.Database, h render.Renderer) (*Controller, error) {
-	client, err := clients.NewKeyServerClient(
-		cfg.KeyServerURL,
-		cfg.KeyServerAPIKey,
-		clients.WithTimeout(cfg.Timeout),
-		clients.WithMaxBodySize(cfg.FileSizeLimitBytes))
-	if err != nil {
-		return nil, err
-	}
-
+func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, h render.Renderer) (*Controller, error) {
 	return &Controller{
 		defaultKeyServerClient: client,
 		config:                 cfg,

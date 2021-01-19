@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
@@ -110,10 +111,16 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	statsController, err := statspuller.New(cfg, db, h)
+	client, err := clients.NewKeyServerClient(
+		cfg.KeyServerURL,
+		cfg.KeyServerAPIKey,
+		clients.WithTimeout(cfg.Timeout),
+		clients.WithMaxBodySize(cfg.FileSizeLimitBytes))
 	if err != nil {
-		return fmt.Errorf("failed to stats controller: %w", err)
+		return fmt.Errorf("failed to create key server client: %w", err)
 	}
+
+	statsController := statspuller.New(cfg, db, client, h)
 	r.Handle("/", statsController.HandlePullStats()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)
