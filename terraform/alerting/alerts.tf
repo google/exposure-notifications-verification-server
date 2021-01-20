@@ -267,8 +267,7 @@ resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
       generic_task :: custom.googleapis.com/opencensus/en-verification-server/user/upstream_user_recreate_count
       | align rate(5m)
       | every 1m
-      | group_by [metric.realm],
-          [val: aggregate(value.upstream_user_recreate_count)]
+      | group_by [], [val: aggregate(value.upstream_user_recreate_count)]
       | condition val > 5
       EOT
       trigger {
