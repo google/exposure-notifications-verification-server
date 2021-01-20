@@ -57,9 +57,6 @@ func (c *Controller) HandlePullStats() http.Handler {
 			return
 		}
 
-		logger := logging.FromContext(ctx).Named("rotation.HandlePullStats")
-		logger.Debug("no-op stats pull") // TODO(whaught): remove this and put in logic
-
 		// Get all of the realms with stats configured
 		statsConfigs, err := c.db.ListKeyServerStats()
 		if err != nil {
@@ -67,6 +64,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 			return
 		}
 
+		logger := logging.FromContext(ctx).Named("rotation.HandlePullStats")
 		for _, realmStat := range statsConfigs {
 			realmID := realmStat.RealmID
 
