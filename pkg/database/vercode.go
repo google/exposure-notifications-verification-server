@@ -15,6 +15,7 @@
 package database
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/base64"
@@ -23,8 +24,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 )
 
@@ -100,69 +103,6 @@ func (v *VerificationCode) BeforeSave(tx *gorm.DB) error {
 		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
 	}
 	return nil
-}
-
-// AfterCreate runs after the verification code has been saved, primarily used
-// to update statistics about usage. If the executions fail, an error is logged
-// but the transaction continues. This is called automatically by gorm.
-func (v *VerificationCode) AfterCreate(scope *gorm.Scope) {
-	date := timeutils.Midnight(v.CreatedAt)
-
-	// If the issuer was a user, update the user stats for the day.
-	if v.IssuingUserID != 0 {
-		sql := `
-			INSERT INTO user_stats (date, realm_id, user_id, codes_issued)
-				VALUES ($1, $2, $3, 1)
-			ON CONFLICT (date, realm_id, user_id) DO UPDATE
-				SET codes_issued = user_stats.codes_issued + 1
-		`
-
-		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
-			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
-		}
-	}
-
-	// If the request was an API request, we might have an external issuer ID.
-	if len(v.IssuingExternalID) != 0 {
-		sql := `
-			INSERT INTO external_issuer_stats (date, realm_id, issuer_id, codes_issued)
-				VALUES ($1, $2, $3, 1)
-			ON CONFLICT (date, realm_id, issuer_id) DO UPDATE
-				SET codes_issued = external_issuer_stats.codes_issued + 1
-		`
-
-		if err := scope.DB().Exec(sql, date, v.RealmID, v.IssuingExternalID).Error; err != nil {
-			scope.Log(fmt.Sprintf("failed to update audit stats: %v", err))
-		}
-	}
-
-	// If the issuer was a app, update the app stats for the day.
-	if v.IssuingAppID != 0 {
-		sql := `
-			INSERT INTO authorized_app_stats (date, authorized_app_id, codes_issued)
-				VALUES ($1, $2, 1)
-			ON CONFLICT (date, authorized_app_id) DO UPDATE
-				SET codes_issued = authorized_app_stats.codes_issued + 1
-		`
-
-		if err := scope.DB().Exec(sql, date, v.IssuingAppID).Error; err != nil {
-			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
-		}
-	}
-
-	// Update the per-realm stats.
-	if v.RealmID != 0 {
-		sql := `
-			INSERT INTO realm_stats(date, realm_id, codes_issued)
-				VALUES ($1, $2, 1)
-			ON CONFLICT (date, realm_id) DO UPDATE
-				SET codes_issued = realm_stats.codes_issued + 1
-		`
-
-		if err := scope.DB().Exec(sql, date, v.RealmID).Error; err != nil {
-			scope.Log(fmt.Sprintf("failed to update stats: %v", err))
-		}
-	}
 }
 
 // FormatSymptomDate returns YYYY-MM-DD formatted test date, or "" if nil.
@@ -339,6 +279,79 @@ func (db *Database) DeleteVerificationCode(code string) error {
 		Where("code IN (?) OR long_code IN (?)", hmacedCodes, hmacedCodes).
 		Delete(&VerificationCode{}).
 		Error
+}
+
+// UpdateStats increments VerificationCode statistics incrementing stats but the number issued.
+func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode) {
+	issued := len(codes)
+	if issued == 0 {
+		return
+	}
+	v := codes[0]
+
+	date := timeutils.Midnight(v.CreatedAt)
+	var merr *multierror.Error
+
+	// If the issuer was a user, update the user stats for the day.
+	if v.IssuingUserID != 0 {
+		sql := fmt.Sprintf(`
+			INSERT INTO user_stats (date, realm_id, user_id, codes_issued)
+				VALUES ($1, $2, $3, 1)
+			ON CONFLICT (date, realm_id, user_id) DO UPDATE
+				SET codes_issued = user_stats.codes_issued + %d
+		`, issued)
+
+		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
+			multierror.Append(merr, fmt.Errorf("failed to update stats: %v", err))
+		}
+	}
+
+	// If the request was an API request, we might have an external issuer ID.
+	if len(v.IssuingExternalID) != 0 {
+		sql := fmt.Sprintf(`
+			INSERT INTO external_issuer_stats (date, realm_id, issuer_id, codes_issued)
+				VALUES ($1, $2, $3, 1)
+			ON CONFLICT (date, realm_id, issuer_id) DO UPDATE
+				SET codes_issued = external_issuer_stats.codes_issued + %d
+		`, issued)
+
+		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingExternalID).Error; err != nil {
+			multierror.Append(merr, fmt.Errorf("failed to update audit stats: %v", err))
+		}
+	}
+
+	// If the issuer was a app, update the app stats for the day.
+	if v.IssuingAppID != 0 {
+		sql := fmt.Sprintf(`
+			INSERT INTO authorized_app_stats (date, authorized_app_id, codes_issued)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, authorized_app_id) DO UPDATE
+				SET codes_issued = authorized_app_stats.codes_issued + %d
+		`, issued)
+
+		if err := db.db.Exec(sql, date, v.IssuingAppID).Error; err != nil {
+			multierror.Append(merr, fmt.Errorf("failed to update stats: %v", err))
+		}
+	}
+
+	// Update the per-realm stats.
+	if v.RealmID != 0 {
+		sql := fmt.Sprintf(`
+			INSERT INTO realm_stats(date, realm_id, codes_issued)
+				VALUES ($1, $2, 1)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET codes_issued = realm_stats.codes_issued + %d
+		`, issued)
+
+		if err := db.db.Exec(sql, date, v.RealmID).Error; err != nil {
+			multierror.Append(merr, fmt.Errorf("failed to update stats: %v", err))
+		}
+	}
+
+	if err := merr.ErrorOrNil(); err != nil {
+		logger := logging.FromContext(ctx).Named("issueapi.recordStats")
+		logger.Warnw("failed to record stats", "error", err)
+	}
 }
 
 // RecycleVerificationCodes sets to null code and long_code values

@@ -86,5 +86,17 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 
 	wg.Wait() // wait the SMS work group to finish
 
+	c.recordStats(ctx, results)
 	return results
+}
+
+// recordStats increments stats for successfully issued codes
+func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
+	codes := make([]*database.VerificationCode, 0, len(results))
+	for _, result := range results {
+		if result.ErrorReturn == nil {
+			codes = append(codes, result.VerCode)
+		}
+	}
+	c.db.UpdateStats(ctx, codes...)
 }
