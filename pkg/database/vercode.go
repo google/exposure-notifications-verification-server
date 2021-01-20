@@ -282,7 +282,7 @@ func (db *Database) DeleteVerificationCode(code string) error {
 }
 
 // UpdateStats increments VerificationCode statistics incrementing stats but the number issued.
-func (db *Database) UpdateStats(ctx context.Context, codes []*VerificationCode) {
+func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode) {
 	issued := len(codes)
 	if issued == 0 {
 		return

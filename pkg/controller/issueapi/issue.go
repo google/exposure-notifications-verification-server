@@ -98,5 +98,5 @@ func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
 			codes = append(codes, result.VerCode)
 		}
 	}
-	c.db.UpdateStats(ctx, codes)
+	c.db.UpdateStats(ctx, codes...)
 }

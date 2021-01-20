@@ -443,6 +443,7 @@ func TestStatDates(t *testing.T) {
 	// smokescreen.
 	t.Parallel()
 
+	ctx := project.TestContext(t)
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := NewRealmWithDefaults("Test Realm")
 
@@ -475,9 +476,7 @@ func TestStatDates(t *testing.T) {
 		}
 
 		test.code.Code = "111111"
-		if err := db.UpdateStats(test.code, 1); err != nil {
-			t.Fatal(err)
-		}
+		db.UpdateStats(ctx, test.code)
 
 		{
 			var stats []*RealmUserStat
