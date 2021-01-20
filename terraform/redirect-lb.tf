@@ -116,10 +116,10 @@ resource "google_compute_managed_ssl_certificate" "enx-redirect-root" {
   description = "Controlled by Terraform"
 
   managed {
-    domains = compact([
+    domains = distinct(compact([
       var.enx_redirect_domain,
       var.enx_onboarding_domain,
-    ])
+    ]))
   }
 
   # This is to prevent destroying the cert while it's still attached to the load
