@@ -124,7 +124,10 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create certificate key manager: %w", err)
 	}
 
-	statsController := statspuller.New(cfg, db, client, certificateSigner, h)
+	statsController, err := statspuller.New(cfg, db, client, certificateSigner, h)
+	if err != nil {
+		return fmt.Errorf("failed to stats controller: %w", err)
+	}
 	r.Handle("/", statsController.HandlePullStats()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)

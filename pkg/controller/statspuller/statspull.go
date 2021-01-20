@@ -16,6 +16,9 @@
 package statspuller
 
 import (
+	"fmt"
+
+	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -30,15 +33,23 @@ type Controller struct {
 	db                     *database.Database
 	h                      render.Renderer
 	kms                    keys.KeyManager
+	signerCache            *cache.Cache
 }
 
 // New creates a new stats-pull controller.
-func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, kms keys.KeyManager, h render.Renderer) *Controller {
+func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, kms keys.KeyManager, h render.Renderer) (*Controller, error) {
+	// This has to be in-memory because the signer has state and connection pools.
+	signerCache, err := cache.New(cfg.CertificateSigning.SignerCacheDuration)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
+	}
+
 	return &Controller{
 		config:                 cfg,
 		db:                     db,
 		defaultKeyServerClient: client,
 		kms:                    kms,
+		signerCache:            signerCache,
 		h:                      h,
-	}
+	}, nil
 }

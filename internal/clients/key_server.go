@@ -44,7 +44,9 @@ func (c *KeyServerClient) Stats(ctx context.Context, in *keyserver.StatsRequest,
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
+	if authToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
+	}
 
 	var out keyserver.StatsResponse
 	if err := c.doOK(req, &out); err != nil {

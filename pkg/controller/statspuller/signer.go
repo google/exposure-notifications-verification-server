@@ -27,38 +27,49 @@ type SignerInfo struct {
 }
 
 func (c *Controller) getSignerForRealm(ctx context.Context, realmID uint) (*SignerInfo, error) {
-	realm, err := c.db.FindRealm(realmID)
+	signerCache, err := c.signerCache.WriteThruLookup(fmt.Sprintf("%d", realmID),
+		func() (interface{}, error) {
+			realm, err := c.db.FindRealm(realmID)
+			if err != nil {
+				return nil, fmt.Errorf("unable to load realm settings: %w", err)
+			}
+
+			if !realm.UseRealmCertificateKey {
+				// This realm is using the system key.
+				signer, err := c.kms.NewSigner(ctx, c.config.CertificateSigning.CertificateSigningKey)
+				if err != nil {
+					return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %d: %w", realmID, err)
+				}
+				return &SignerInfo{
+					Signer: signer,
+					KeyID:  c.config.CertificateSigning.CertificateSigningKeyID,
+					Issuer: c.config.CertificateSigning.CertificateIssuer,
+				}, nil
+			}
+
+			// Realm has custom signing keys.
+			signingKey, err := realm.GetCurrentSigningKey(c.db)
+			if err != nil || signingKey == nil {
+				return nil, fmt.Errorf("unable to find current signing key for realm: %v: %w", realm.Model.ID, err)
+			}
+
+			// load the crypto.Signer for this keyID
+			signer, err := c.kms.NewSigner(ctx, signingKey.KeyID)
+			if err != nil {
+				return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %d: %w", realmID, err)
+			}
+			return &SignerInfo{
+				Signer: signer,
+				KeyID:  signingKey.GetKID(),
+				Issuer: realm.CertificateIssuer,
+			}, nil
+		})
 	if err != nil {
-		return nil, fmt.Errorf("unable to load realm settings: %w", err)
+		return nil, fmt.Errorf("unable to get signer for realmID: %d: %w", realmID, err)
 	}
-
-	if !realm.UseRealmCertificateKey {
-		// This realm is using the system key.
-		signer, err := c.kms.NewSigner(ctx, c.config.CertificateSigning.CertificateSigningKey)
-		if err != nil {
-			return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %d: %w", realmID, err)
-		}
-		return &SignerInfo{
-			Signer: signer,
-			KeyID:  c.config.CertificateSigning.CertificateSigningKeyID,
-			Issuer: c.config.CertificateSigning.CertificateIssuer,
-		}, nil
+	signer, ok := signerCache.(*SignerInfo)
+	if !ok {
+		return nil, fmt.Errorf("certificate signer in wrong format for realmID: %d: %w", realmID, err)
 	}
-
-	// Realm has custom signing keys.
-	signingKey, err := realm.GetCurrentSigningKey(c.db)
-	if err != nil || signingKey == nil {
-		return nil, fmt.Errorf("unable to find current signing key for realm: %v: %w", realm.Model.ID, err)
-	}
-
-	// load the crypto.Signer for this keyID
-	signer, err := c.kms.NewSigner(ctx, signingKey.KeyID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %d: %w", realmID, err)
-	}
-	return &SignerInfo{
-		Signer: signer,
-		KeyID:  signingKey.GetKID(),
-		Issuer: realm.CertificateIssuer,
-	}, nil
+	return signer, nil
 }
