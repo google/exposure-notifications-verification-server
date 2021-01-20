@@ -3,16 +3,16 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    Codes issued &amp; claimed
+    Codes issued, claimed, &amp; invalid
   </div>
   <div id="dashboard_div">
-    <div id="filter_div" class="container d-flex w-100" style="padding-left: 50px;"></div>
-    <div id="chart_div" class="container d-flex h-100 w-100" style="min-height:400px;">
-      <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+    <div id="chart_div" class="h-100 w-100" style="min-height:325px;">
+      <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
     </div>
+    <div id="filter_div" class="text-right" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#realm-modal">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#realm-codes-modal">Learn more about this chart</a>
     <span>
       <span class="mr-1">Export as:</span>
       <a href="/stats/realm.csv" class="mr-1">CSV</a>
@@ -21,11 +21,11 @@
   </small>
 </div>
 
-<div class="modal fade" id="realm-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="realm-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Codes issued &amp; claimed</h5>
+        <h5 class="modal-title">Codes issued, claimed, &amp; invalid</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -49,6 +49,34 @@
           be claimed by the end user using the API. Typically the iOS or
           Android application is responsible for claiming the code.
         </p>
+
+        <strong>Invalid</strong>
+        <p>
+          This line tracks the total number of codes that were rejected by the
+          system. This includes codes that were incorrectly entered
+          (typographical error) and codes that have expired.
+        </p>
+
+        <hr>
+
+        <strong>Inferring this data</strong>
+        <ul>
+          <li>
+            <em>Issued codes</em> does not necessarily correspond to the number
+            of patients notified. A single patient could be notified multiple
+            times, while another patient could never receive their notification
+            due to an SMS error.
+          </li>
+          <li>
+            A large number of <em>invalid codes</em> likely corresponds to short
+            codes expiring. You should increase the short code timeout or switch
+            to long codes.
+          </li>
+          <li>
+            The delta between <em>codes issued</em> and <em>codes claimed</em>
+            can be used as a rudimentary measure of adoption.
+          </li>
+        </ul>
       </div>
     </div>
   </div>
@@ -73,13 +101,16 @@
         return;
       }
 
+      var tenDaysAgo = new Date(data.statistics[data.statistics.length-10].date);
+
       var dataTable = new google.visualization.DataTable();
       dataTable.addColumn('date', 'Date');
       dataTable.addColumn('number', 'Issued');
       dataTable.addColumn('number', 'Claimed');
+      dataTable.addColumn('number', 'Invalid');
 
       data.statistics.reverse().forEach(function(row) {
-        dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed]);
+        dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid]);
       });
 
       let dateFormatter = new google.visualization.DateFormat({
@@ -89,53 +120,62 @@
 
       var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
 
-      var dateSlider = new google.visualization.ControlWrapper({
-          'controlType': 'DateRangeFilter',
-          'containerId': 'filter_div',
-          'options': {
-            'filterColumnLabel': 'Date',
-          }
+      var filter = new google.visualization.ControlWrapper({
+          controlType: 'ChartRangeFilter',
+          containerId: 'filter_div',
+          state: {
+            range: {
+              start: tenDaysAgo,
+            },
+          },
+          options: {
+            filterColumnIndex: 0,
+            series: {
+              0: {
+                opacity: 0,
+              }
+            },
+            ui: {
+              chartType: 'LineChart',
+              chartOptions: {
+                colors: ['#dddddd'],
+                chartArea: {
+                  width: '100%',
+                  height: '100%',
+                  top: 0,
+                  right: 40,
+                  bottom: 20,
+                  left: 60,
+                },
+                hAxis: { format: 'M/d' },
+              },
+              chartView: {
+                columns: [0,1],
+              },
+            },
+          },
         });
 
       var realmChart = new google.visualization.ChartWrapper({
-        'chartType': 'LineChart',
-        'containerId': 'chart_div',
-        'options': {
-          colors: ['#007bff', '#ff7b00'],
+        chartType: 'LineChart',
+        containerId: 'chart_div',
+        options: {
+          colors: ['#007bff', '#28a745', '#dc3545'],
           chartArea: {
-            left: 60, // leave room for y-axis labels
-            width: '100%'
+            left: 60,
+            right: 40,
+            bottom: 5,
+            top: 40,
+            width: '100%',
+            height: '300',
           },
-          hAxis: { format: 'M/d' },
+          hAxis: { textPosition: 'none' },
           legend: { position: 'top' },
           width: '100%',
-          pointsVisible: true,
-          trendlines: {
-            0: {
-              color: '#16f5f1',
-              opacity: 0.5,
-              lineWidth: 3,
-              labelInLegend: 'Issue Trend',
-              visibleInLegend: true,
-              type: 'polynomial',
-              degree: 4,
-              pointsVisible: false,
-            },
-            1: {
-              color: '#ffe100',
-              opacity: 0.5,
-              lineWidth: 3,
-              labelInLegend: 'Claim Trend',
-              visibleInLegend: true,
-              type: 'polynomial',
-              degree: 4,
-              pointsVisible: false,
-            }
-          }
-        }
+        },
       });
 
-      dashboard.bind(dateSlider, realmChart);
+      dashboard.bind(filter, realmChart);
       dashboard.draw(dataTable);
     })
     .fail(function(xhr, status, err) {
