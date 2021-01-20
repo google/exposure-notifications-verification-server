@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 )
@@ -68,11 +69,6 @@ func (c *Controller) HandlePullStats() http.Handler {
 		for _, realmStat := range statsConfigs {
 			realmID := realmStat.RealmID
 
-			audience := c.config.CertificateSigning.CertificateAudience
-			if realmStat.KeyServerAudienceOverride != "" {
-				audience = realmStat.KeyServerAudienceOverride
-			}
-
 			var err error
 			client := c.defaultKeyServerClient
 			if realmStat.KeyServerURLOverride != "" {
@@ -86,10 +82,15 @@ func (c *Controller) HandlePullStats() http.Handler {
 				}
 			}
 
-			s, err := c.getSignerForRealm(ctx, realmID)
+			s, err := certapi.GetSignerForRealm(ctx, realmID, c.config.CertificateSigning, c.signerCache, c.db, c.kms)
 			if err != nil {
 				logger.Errorw("failed to retrieve signer for realm", "realmID", realmID)
 				continue
+			}
+
+			audience := s.Audience
+			if realmStat.KeyServerAudienceOverride != "" {
+				audience = realmStat.KeyServerAudienceOverride
 			}
 
 			now := time.Now().UTC()
@@ -120,6 +121,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 				}
 
 				pr := make([]int64, 3)
+				pr[database.OSTypeUnknown] = d.PublishRequests.UnknownPlatform
 				pr[database.OSTypeIOS] = d.PublishRequests.IOS
 				pr[database.OSTypeAndroid] = d.PublishRequests.Android
 

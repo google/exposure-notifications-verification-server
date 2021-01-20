@@ -42,7 +42,7 @@ func (o OSType) Display() string {
 }
 
 const (
-	OSTypeInvalid OSType = iota
+	OSTypeUnknown OSType = iota
 	OSTypeIOS
 	OSTypeAndroid
 )
