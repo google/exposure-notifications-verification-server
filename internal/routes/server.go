@@ -362,8 +362,6 @@ func apikeyRoutes(r *mux.Router, c *apikey.Controller) {
 	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
 	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods("PATCH")
 	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods("PATCH")
-	r.Handle("/{id:[0-9]+}/stats.json", c.HandleStats()).Methods("GET")
-	r.Handle("/{id:[0-9]+}/stats.csv", c.HandleStats()).Methods("GET")
 }
 
 // userRoutes are the user routes.
@@ -405,6 +403,9 @@ func statsRoutes(r *mux.Router, c *stats.Controller) {
 
 	r.Handle("/realm/users/{id}.csv", c.HandleRealmUserStats(stats.StatsTypeCSV)).Methods("GET")
 	r.Handle("/realm/users/{id}.json", c.HandleRealmUserStats(stats.StatsTypeJSON)).Methods("GET")
+
+	r.Handle("/realm/api-keys/{id}.csv", c.HandleRealmAuthorizedAppStats(stats.StatsTypeCSV)).Methods("GET")
+	r.Handle("/realm/api-keys/{id}.json", c.HandleRealmAuthorizedAppStats(stats.StatsTypeJSON)).Methods("GET")
 
 	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
 	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")

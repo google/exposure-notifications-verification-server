@@ -209,19 +209,20 @@ func (a *AuthorizedApp) Stats(db *Database) (AuthorizedAppStats, error) {
 			d.date AS date,
 			$1 AS authorized_app_id,
 			$2 AS authorized_app_name,
+			$3 AS authorized_app_type,
 			COALESCE(s.codes_issued, 0) AS codes_issued,
 			COALESCE(s.codes_claimed, 0) AS codes_claimed,
 			COALESCE(s.codes_invalid, 0) AS codes_invalid,
 			COALESCE(s.tokens_claimed, 0) AS tokens_claimed,
 			COALESCE(s.tokens_invalid, 0) AS tokens_invalid
 		FROM (
-			SELECT date::date FROM generate_series($3, $4, '1 day'::interval) date
+			SELECT date::date FROM generate_series($4, $5, '1 day'::interval) date
 		) d
 		LEFT JOIN authorized_app_stats s ON s.authorized_app_id = $1 AND s.date = d.date
 		ORDER BY date DESC`
 
 	var stats []*AuthorizedAppStat
-	if err := db.db.Raw(sql, a.ID, a.Name, start, stop).Scan(&stats).Error; err != nil {
+	if err := db.db.Raw(sql, a.ID, a.Name, a.APIKeyType.Display(), start, stop).Scan(&stats).Error; err != nil {
 		if IsNotFound(err) {
 			return stats, nil
 		}

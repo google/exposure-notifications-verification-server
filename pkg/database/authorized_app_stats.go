@@ -54,6 +54,7 @@ type AuthorizedAppStat struct {
 	// Non-database fields, these are added via the stats lookup using the join
 	// table.
 	AuthorizedAppName string `gorm:"-"`
+	AuthorizedAppType string `gorm:"-"`
 }
 
 // MarshalCSV returns bytes in CSV format.
@@ -67,7 +68,7 @@ func (s AuthorizedAppStats) MarshalCSV() ([]byte, error) {
 	w := csv.NewWriter(&b)
 
 	if err := w.Write([]string{
-		"date", "authorized_app_id", "authorized_app_name",
+		"date", "authorized_app_id", "authorized_app_name", "authorized_app_type",
 		"codes_issued", "codes_claimed", "codes_invalid",
 		"tokens_claimed", "tokens_invalid",
 	}); err != nil {
@@ -79,6 +80,7 @@ func (s AuthorizedAppStats) MarshalCSV() ([]byte, error) {
 			stat.Date.Format(project.RFC3339Date),
 			strconv.FormatUint(uint64(stat.AuthorizedAppID), 10),
 			stat.AuthorizedAppName,
+			stat.AuthorizedAppType,
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
 			strconv.FormatUint(uint64(stat.CodesClaimed), 10),
 			strconv.FormatUint(uint64(stat.CodesInvalid), 10),
@@ -100,6 +102,7 @@ func (s AuthorizedAppStats) MarshalCSV() ([]byte, error) {
 type jsonAuthorizedAppStat struct {
 	AuthorizedAppID   uint                          `json:"authorized_app_id"`
 	AuthorizedAppName string                        `json:"authorized_app_name"`
+	AuthorizedAppType string                        `json:"authorized_app_type"`
 	Stats             []*jsonAuthorizedAppStatstats `json:"statistics"`
 }
 
@@ -145,6 +148,7 @@ func (s AuthorizedAppStats) MarshalJSON() ([]byte, error) {
 	var result jsonAuthorizedAppStat
 	result.AuthorizedAppID = s[0].AuthorizedAppID
 	result.AuthorizedAppName = s[0].AuthorizedAppName
+	result.AuthorizedAppType = s[0].AuthorizedAppType
 	result.Stats = stats
 
 	b, err := json.Marshal(result)
@@ -169,6 +173,7 @@ func (s *AuthorizedAppStats) UnmarshalJSON(b []byte) error {
 			Date:              stat.Date,
 			AuthorizedAppID:   result.AuthorizedAppID,
 			AuthorizedAppName: result.AuthorizedAppName,
+			AuthorizedAppType: result.AuthorizedAppType,
 			CodesIssued:       stat.Data.CodesIssued,
 			CodesClaimed:      stat.Data.CodesClaimed,
 			CodesInvalid:      stat.Data.CodesInvalid,

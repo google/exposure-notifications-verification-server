@@ -479,6 +479,11 @@ This path includes realm-level statistics for the past 30 days.
     that human user logged into the verification system for the currently
     authorized realm.
 
+-   `/api/stats/realm/api-keys/:id.{csv,json}` - Daily statistics for the API
+    key with the given ID. For _admin_ API keys, the statistics will include
+    codes issued. For _device_ API keys, the statistics will include codes
+    claimed and codes invalid.
+
 -   `/api/stats/realm/external-issusers.{csv,json}` - Daily statistics for codes
     issued by external issuers. These statistics only include codes issued by
     the API where an `externalIssuer` field was provided.

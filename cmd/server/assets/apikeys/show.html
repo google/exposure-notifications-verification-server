@@ -12,6 +12,7 @@
 
 <head>
   {{template "head" .}}
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 
 <body id="apikeys-show" class="tab-content">
@@ -70,113 +71,166 @@
       </div>
     </div>
 
-    {{if $authApp.IsAdminType}}
-      <div class="card mb-3 shadow-sm">
-        <div class="card-header">
-          <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-          Statistics
-        </div>
-        <div class="card-body">
-          <div id="apikey_stats_chart" class="container d-flex h-100 w-100" style="min-height:300px;">
-            <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">
+        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+        Statistics
+      </div>
+      <div id="apikey_stats_chart" class="h-100 w-100" style="min-height:325px;">
+        <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+      </div>
+      <small class="card-footer d-flex justify-content-between text-muted">
+        <span>
+          This data is refreshed every 30 minutes.
+          <a href="#" data-toggle="modal" data-target="#apikey-stats-modal">Learn more</a>
+        </span>
+        <span>
+          <span class="mr-1">Export as:</span>
+          <a href="/stats/realm/api-keys/{{$authApp.ID}}.csv" class="mr-1">CSV</a>
+          <a href="/stats/realm/api-keys/{{$authApp.ID}}.json">JSON</a>
+        </span>
+      </small>
+    </div>
+
+    <div class="modal fade" id="apikey-stats-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Statistics for {{$authApp.Name}}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body mb-n3">
+            <p>
+              This chart reflects statistics for {{$authApp.Name}}.
+            </p>
+            <ul>
+              <li>
+                <strong>admin</strong> API keys will show the number of codes
+                issued.
+              </li>
+              <li>
+                <strong>device</strong> API keys will show the number of codes
+                claimed, codes invalid, tokens claimed, and tokens invalid.
+              </li>
+              <li>
+                <strong>stats</strong> API keys will not show any statistics
+                (they are used to <em>retrieve</em> statistics).
+              </li>
+            </ul>
           </div>
         </div>
-        <small class="card-footer d-flex justify-content-between text-muted">
-          <span>
-            This data is refreshed every 30 minutes.
-            <a href="#" data-toggle="modal" data-target="#apikey-stats-modal">Learn more</a>
-          </span>
-          <span>
-            <span class="mr-1">Export as:</span>
-            <a href="/realm/apikeys/{{$authApp.ID}}/stats.csv" class="mr-1">CSV</a>
-            <a href="/realm/apikeys/{{$authApp.ID}}/stats.json">JSON</a>
-          </span>
-        </small>
       </div>
+    </div>
+  </main>
 
-      <div class="modal fade" id="apikey-stats-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Codes issued by {{$authApp.Name}}</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body mb-n3">
-              <p>
-                This chart reflects the number of codes issued by
-                {{$authApp.Name}}.
-              </p>
-              <p>
-                This chart does <u>not</u> include codes that were issued by users
-                via the UI or codes that were issued using a different API key.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+  <script type="text/javascript">
+    let $div = $('#apikey_stats_chart');
 
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <script>
-      let userStatsChartDiv = document.getElementById('apikey_stats_chart');
-      let dateFormatter;
+    google.charts.load('current', {
+      packages: ['corechart'],
+      callback: drawAPIKeyChart,
+    });
 
-      google.charts.load('current', {
-        packages: ['corechart'],
-        callback: function() {
-          dateFormatter = new google.visualization.DateFormat({
-            pattern: 'MMM dd',
-          });
+    function drawAPIKeyChart() {
+      $.ajax({
+        url: '/stats/realm/api-keys/{{$authApp.ID}}.json',
+        dataType: 'json',
+      })
+      .done(function(data, status, xhr) {
+        if (!data.statistics) {
+          $div.find('p').text('No data yet.');
+          return;
+        }
 
-          drawStats();
-        },
+        switch (data.authorized_app_type) {
+          case 'admin':
+            drawAdminStats(data);
+            break;
+          case 'device':
+            drawDeviceStats(data);
+            break;
+          case 'stats':
+            $div.find('p').text('Statistics API keys do not produce statistics.');
+            break;
+          default:
+            $div.find('p').text('Unknown API key type');
+            break;
+        }
+      })
+      .fail(function(xhr, status, err) {
+        flash.error('Failed to render realm stats: ' + err);
+      });
+    }
+
+    function drawAdminStats(data) {
+      var dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('date', 'Date');
+      dataTable.addColumn('number', 'Issued');
+
+      data.statistics.reverse().forEach(function(row) {
+        dataTable.addRow([utcDate(row.date), row.data.codes_issued]);
       });
 
-      function drawStats() {
-        $.ajax({
-          url: '/realm/apikeys/{{$authApp.ID}}/stats.json',
-          dataType: 'json',
-        })
-        .done(function(data, status, xhr) {
-          if (!data.statistics) {
-            $(userStatsChartDiv).find('p').text('This API key has not yet issued any codes.');
-            return;
-          }
+      let dateFormatter = new google.visualization.DateFormat({
+        pattern: 'MMM dd',
+      });
+      dateFormatter.format(dataTable, 0);
 
-          var dataTable = new google.visualization.DataTable();
-          dataTable.addColumn('date', 'Date');
-          dataTable.addColumn('number', 'Issued');
+      let options = {
+        colors: ['#28a745', '#dc3545'],
+        chartArea: {
+          left: 60,
+          right: 40,
+          bottom: 40,
+          top: 40,
+          width: '100%',
+          height: '300',
+        },
+        hAxis: { format: 'M/d' },
+        legend: { position: 'top' },
+      };
 
-          data.statistics.reverse().forEach(function(row) {
-            dataTable.addRow([utcDate(row.date), row.data.codes_issued]);
-          });
+      let chart = new google.visualization.LineChart($div.get(0));
+      chart.draw(dataTable, options);
+    }
 
-          dateFormatter.format(dataTable, 0);
+    function drawDeviceStats(data) {
+      var dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('date', 'Date');
+      dataTable.addColumn('number', 'Codes claimed');
+      dataTable.addColumn('number', 'Codes invalid');
+      dataTable.addColumn('number', 'Tokens claimed');
+      dataTable.addColumn('number', 'Tokens invalid');
 
-          let options = {
-            colors: ['#007bff'],
-            chartArea: {
-              left: 60, // leave room for y-axis labels
-              top: 20,
-              bottom: 20,
-              width: '100%',
-              height: '100%',
-            },
-            hAxis: { format: 'M/d' },
-            legend: 'none',
-          };
+      data.statistics.reverse().forEach(function(row) {
+        dataTable.addRow([utcDate(row.date), row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed, row.data.tokens_invalid]);
+      });
 
-          let chart = new google.visualization.LineChart(userStatsChartDiv);
-          chart.draw(dataTable, options);
-        })
-        .fail(function(xhr, status, err) {
-          flash.error('Failed to render API key stats: ' + err);
-        });
-      }
-    </script>
-  {{end}}
+      let dateFormatter = new google.visualization.DateFormat({
+        pattern: 'MMM dd',
+      });
+      dateFormatter.format(dataTable, 0);
+
+      let options = {
+        colors: ['#28a745', '#dc3545', '#17a2b8', '#ffc107'],
+        chartArea: {
+          left: 60,
+          right: 40,
+          bottom: 40,
+          top: 40,
+          width: '100%',
+          height: '300',
+        },
+        hAxis: { format: 'M/d' },
+        legend: { position: 'top' },
+      };
+
+      let chart = new google.visualization.LineChart($div.get(0));
+      chart.draw(dataTable, options);
+    }
+  </script>
 </body>
 
 </html>
