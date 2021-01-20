@@ -112,10 +112,8 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	client, err := clients.NewKeyServerClient(
-		cfg.KeyServerURL,
-		cfg.KeyServerAPIKey,
-		clients.WithTimeout(cfg.Timeout),
+	client, err := clients.NewKeyServerClient(cfg.KeyServerURL, cfg.KeyServerAPIKey,
+		clients.WithTimeout(cfg.DownloadTimeout),
 		clients.WithMaxBodySize(cfg.FileSizeLimitBytes))
 	if err != nil {
 		return fmt.Errorf("failed to create key server client: %w", err)
@@ -126,7 +124,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create certificate key manager: %w", err)
 	}
 
-	statsController := statspuller.New(cfg, db, client,certificateSigner, h)
+	statsController := statspuller.New(cfg, db, client, certificateSigner, h)
 	r.Handle("/", statsController.HandlePullStats()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)

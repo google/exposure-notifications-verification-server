@@ -27,8 +27,6 @@ type SignerInfo struct {
 }
 
 func (c *Controller) getSignerForRealm(ctx context.Context, realmID uint) (*SignerInfo, error) {
-	sRealmID := fmt.Sprintf("%d", realmID)
-
 	realm, err := c.db.FindRealm(realmID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load realm settings: %w", err)
@@ -38,7 +36,7 @@ func (c *Controller) getSignerForRealm(ctx context.Context, realmID uint) (*Sign
 		// This realm is using the system key.
 		signer, err := c.kms.NewSigner(ctx, c.config.CertificateSigning.CertificateSigningKey)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %v: %w", sRealmID, err)
+			return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %d: %w", realmID, err)
 		}
 		return &SignerInfo{
 			Signer: signer,
@@ -56,7 +54,7 @@ func (c *Controller) getSignerForRealm(ctx context.Context, realmID uint) (*Sign
 	// load the crypto.Signer for this keyID
 	signer, err := c.kms.NewSigner(ctx, signingKey.KeyID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %v: %w", sRealmID, err)
+		return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %d: %w", realmID, err)
 	}
 	return &SignerInfo{
 		Signer: signer,

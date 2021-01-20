@@ -81,7 +81,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 				client, err = clients.NewKeyServerClient(
 					realmStat.KeyServerURLOverride,
 					c.config.KeyServerAPIKey,
-					clients.WithTimeout(c.config.Timeout),
+					clients.WithTimeout(c.config.DownloadTimeout),
 					clients.WithMaxBodySize(c.config.FileSizeLimitBytes))
 				if err != nil {
 					logger.Errorw("failed to create key server client", "error", err)
@@ -98,7 +98,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 			now := time.Now().UTC()
 			claims := &jwt.StandardClaims{
 				Audience:  audience,
-				ExpiresAt: now.Add(time.Minute).Unix(),
+				ExpiresAt: now.Add(5 * time.Minute).UTC().Unix(),
 				IssuedAt:  now.Unix(),
 				Issuer:    s.Issuer,
 			}
@@ -118,6 +118,10 @@ func (c *Controller) HandlePullStats() http.Handler {
 			}
 
 			for _, d := range resp.Days {
+				if d == nil {
+					continue
+				}
+
 				pr := make([]int64, 3)
 				pr[database.OSTypeIOS] = d.PublishRequests.IOS
 				pr[database.OSTypeAndroid] = d.PublishRequests.Android

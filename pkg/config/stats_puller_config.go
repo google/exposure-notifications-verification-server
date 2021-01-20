@@ -35,10 +35,10 @@ type StatsPullerConfig struct {
 	CertificateSigning CertificateSigningConfig
 
 	// KeyServerURL is the default URL of the key server - individual realms may override it
-	KeyServerURL       string        `env:"KEY_SERVER_URL"`
-	KeyServerAPIKey    string        `env:"KEY_SERVER_API_KEY"`
+	KeyServerURL       string        `env:"KEY_SERVER_URL, required"`
+	KeyServerAPIKey    string        `env:"KEY_SERVER_API_KEY, required"`
 	FileSizeLimitBytes int64         `env:"STATS_PULLER_SIZE_LIMIT, default=64000"`
-	Timeout            time.Duration `env:"STATS_PULLER_TIMEOUT, default=1m"`
+	DownloadTimeout    time.Duration `env:"STATS_PULLER_DOWNLOAD_TIMEOUT, default=1m"`
 
 	// Port is the port upon which to bind.
 	Port string `env:"PORT, default=8080"`
