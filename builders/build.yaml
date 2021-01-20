@@ -105,6 +105,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/adminapi:${_TAG}'
+  waitFor:
+  - 'dockerize-adminapi'
 
 - id: 'attest-adminapi'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -142,6 +144,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/apiserver:${_TAG}'
+  waitFor:
+  - 'dockerize-apiserver'
 
 - id: 'attest-apiserver'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -180,6 +184,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/appsync:${_TAG}'
+  waitFor:
+  - 'dockerize-appsync'
 
 - id: 'attest-appsync'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -218,6 +224,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/cleanup:${_TAG}'
+  waitFor:
+  - 'dockerize-cleanup'
 
 - id: 'attest-cleanup'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -256,6 +264,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/e2e-runner:${_TAG}'
+  waitFor:
+  - 'dockerize-e2e-runner'
 
 - id: 'attest-e2e-runner'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -293,6 +303,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}'
+  waitFor:
+  - 'dockerize-enx-redirect'
 
 - id: 'attest-enx-redirect'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -330,6 +342,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/migrate:${_TAG}'
+  waitFor:
+  - 'dockerize-migrate'
 
 - id: 'attest-migrate'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -368,6 +382,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/modeler:${_TAG}'
+  waitFor:
+  - 'dockerize-modeler'
 
 - id: 'attest-modeler'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -406,6 +422,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/rotation:${_TAG}'
+  waitFor:
+  - 'dockerize-rotation'
 
 - id: 'attest-rotation'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -443,6 +461,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'
+  waitFor:
+  - 'dockerize-server'
 
 - id: 'attest-server'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
@@ -481,6 +501,8 @@ steps:
   args:
   - 'push'
   - 'gcr.io/${PROJECT_ID}/${_REPO}/stats-puller:${_TAG}'
+  waitFor:
+  - 'dockerize-stats-puller'
 
 - id: 'attest-stats-puller'
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:307.0.0'
