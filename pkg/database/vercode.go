@@ -27,7 +27,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/hashicorp/go-multierror"
 	"github.com/jinzhu/gorm"
 )
 
@@ -287,10 +286,9 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 	if issued == 0 {
 		return
 	}
+	logger := logging.FromContext(ctx).Named("issueapi.recordStats")
 	v := codes[0]
-
 	date := timeutils.Midnight(v.CreatedAt)
-	var merr *multierror.Error
 
 	// If the issuer was a user, update the user stats for the day.
 	if v.IssuingUserID != 0 {
@@ -302,7 +300,7 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 		`, issued)
 
 		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
-			multierror.Append(merr, fmt.Errorf("failed to update stats: %v", err))
+			logger.Warnw("failed to update user stats", "error", err)
 		}
 	}
 
@@ -316,7 +314,7 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 		`, issued)
 
 		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingExternalID).Error; err != nil {
-			multierror.Append(merr, fmt.Errorf("failed to update audit stats: %v", err))
+			logger.Warnw("failed to update external-issuer stats", "error", err)
 		}
 	}
 
@@ -330,7 +328,7 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 		`, issued)
 
 		if err := db.db.Exec(sql, date, v.IssuingAppID).Error; err != nil {
-			multierror.Append(merr, fmt.Errorf("failed to update stats: %v", err))
+			logger.Warnw("failed to update authorized app stats", "error", err)
 		}
 	}
 
@@ -344,13 +342,8 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 		`, issued)
 
 		if err := db.db.Exec(sql, date, v.RealmID).Error; err != nil {
-			multierror.Append(merr, fmt.Errorf("failed to update stats: %v", err))
+			logger.Warnw("failed to update realm stats", "error", err)
 		}
-	}
-
-	if err := merr.ErrorOrNil(); err != nil {
-		logger := logging.FromContext(ctx).Named("issueapi.recordStats")
-		logger.Warnw("failed to record stats", "error", err)
 	}
 }
 
