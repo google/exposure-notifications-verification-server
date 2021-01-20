@@ -78,7 +78,6 @@ func (c *Controller) HandlePullStats() http.Handler {
 			if realmStat.KeyServerURLOverride != "" {
 				client, err = clients.NewKeyServerClient(
 					realmStat.KeyServerURLOverride,
-					c.config.KeyServerAPIKey,
 					clients.WithTimeout(c.config.DownloadTimeout),
 					clients.WithMaxBodySize(c.config.FileSizeLimitBytes))
 				if err != nil {

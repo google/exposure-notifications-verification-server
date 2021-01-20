@@ -112,7 +112,7 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	client, err := clients.NewKeyServerClient(cfg.KeyServerURL, cfg.KeyServerAPIKey,
+	client, err := clients.NewKeyServerClient(cfg.KeyServerURL,
 		clients.WithTimeout(cfg.DownloadTimeout),
 		clients.WithMaxBodySize(cfg.FileSizeLimitBytes))
 	if err != nil {

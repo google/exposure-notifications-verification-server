@@ -27,8 +27,8 @@ type KeyServerClient struct {
 }
 
 // NewKeyServerClient creates a new key-server http client.
-func NewKeyServerClient(base, apiKey string, opts ...Option) (*KeyServerClient, error) {
-	client, err := newClient(base, apiKey, opts...)
+func NewKeyServerClient(base string, opts ...Option) (*KeyServerClient, error) {
+	client, err := newClient(base, "", opts...)
 	if err != nil {
 		return nil, err
 	}

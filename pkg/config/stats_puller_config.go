@@ -36,7 +36,6 @@ type StatsPullerConfig struct {
 
 	// KeyServerURL is the default URL of the key server - individual realms may override it
 	KeyServerURL       string        `env:"KEY_SERVER_URL, required"`
-	KeyServerAPIKey    string        `env:"KEY_SERVER_API_KEY, required"`
 	FileSizeLimitBytes int64         `env:"STATS_PULLER_SIZE_LIMIT, default=64000"`
 	DownloadTimeout    time.Duration `env:"STATS_PULLER_DOWNLOAD_TIMEOUT, default=1m"`
 
