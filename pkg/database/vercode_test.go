@@ -437,12 +437,13 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	}
 }
 
-func TestStatDatesOnCreate(t *testing.T) {
+func TestStatDates(t *testing.T) {
 	// Please note, this test is NOT exhaustive. A better engineer would try
 	// all dates, and a bunch of corner cases. This is intended as a
 	// smokescreen.
 	t.Parallel()
 
+	ctx := project.TestContext(t)
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := NewRealmWithDefaults("Test Realm")
 
@@ -473,6 +474,9 @@ func TestStatDatesOnCreate(t *testing.T) {
 		if err := db.SaveVerificationCode(test.code, realm); err != nil {
 			t.Fatalf("[%d] error saving code: %v", i, err)
 		}
+
+		test.code.Code = "111111"
+		db.UpdateStats(ctx, test.code)
 
 		{
 			var stats []*RealmUserStat
