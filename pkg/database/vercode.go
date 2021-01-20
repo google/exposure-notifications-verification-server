@@ -15,6 +15,7 @@
 package database
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/base64"
@@ -23,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/hashicorp/go-multierror"
@@ -280,7 +282,13 @@ func (db *Database) DeleteVerificationCode(code string) error {
 }
 
 // UpdateStats increments VerificationCode statistics incrementing stats but the number issued.
-func (db *Database) UpdateStats(v *VerificationCode, issued int) error {
+func (db *Database) UpdateStats(ctx context.Context, codes []*VerificationCode) {
+	issued := len(codes)
+	if issued == 0 {
+		return
+	}
+	v := codes[0]
+
 	date := timeutils.Midnight(v.CreatedAt)
 	var merr *multierror.Error
 
@@ -340,7 +348,10 @@ func (db *Database) UpdateStats(v *VerificationCode, issued int) error {
 		}
 	}
 
-	return merr.ErrorOrNil()
+	if err := merr.ErrorOrNil(); err != nil {
+		logger := logging.FromContext(ctx).Named("issueapi.recordStats")
+		logger.Warnw("failed to record stats", "error", err)
+	}
 }
 
 // RecycleVerificationCodes sets to null code and long_code values

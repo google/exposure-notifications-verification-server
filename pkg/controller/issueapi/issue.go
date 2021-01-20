@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -93,20 +92,11 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 
 // recordStats increments stats for successfully issued codes
 func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
-	// Count successes and update stats
-	var code *database.VerificationCode
-	count := 0
+	codes := make([]*database.VerificationCode, 0, len(results))
 	for _, result := range results {
-		if result.ErrorReturn != nil {
-			continue
-		}
-		code = result.VerCode
-		count++
-	}
-	if count > 0 {
-		if err := c.db.UpdateStats(code, count); err != nil {
-			logger := logging.FromContext(ctx).Named("issueapi.recordStats")
-			logger.Warnw("failed to record stats", "error", err)
+		if result.ErrorReturn == nil {
+			codes = append(codes, result.VerCode)
 		}
 	}
+	c.db.UpdateStats(ctx, codes)
 }
