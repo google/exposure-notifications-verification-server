@@ -437,7 +437,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	}
 }
 
-func TestStatDatesOnCreate(t *testing.T) {
+func TestStatDates(t *testing.T) {
 	// Please note, this test is NOT exhaustive. A better engineer would try
 	// all dates, and a bunch of corner cases. This is intended as a
 	// smokescreen.
@@ -472,6 +472,11 @@ func TestStatDatesOnCreate(t *testing.T) {
 	for i, test := range tests {
 		if err := db.SaveVerificationCode(test.code, realm); err != nil {
 			t.Fatalf("[%d] error saving code: %v", i, err)
+		}
+
+		test.code.Code = "111111"
+		if err := db.UpdateStats(test.code, 1); err != nil {
+			t.Fatal(err)
 		}
 
 		{

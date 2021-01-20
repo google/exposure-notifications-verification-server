@@ -304,7 +304,7 @@ func (db *Database) UpdateStats(v *VerificationCode, issued int) error {
 			INSERT INTO external_issuer_stats (date, realm_id, issuer_id, codes_issued)
 				VALUES ($1, $2, $3, 1)
 			ON CONFLICT (date, realm_id, issuer_id) DO UPDATE
-				, issued)SET codes_issued = external_issuer_stats.codes_issued + %d
+				SET codes_issued = external_issuer_stats.codes_issued + %d
 		`, issued)
 
 		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingExternalID).Error; err != nil {
