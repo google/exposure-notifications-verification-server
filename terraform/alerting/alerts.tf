@@ -263,11 +263,12 @@ resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
     condition_monitoring_query_language {
       duration = "600s"
       query    = <<-EOT
-      fetch generic_task :: custom.googleapis.com/opencensus/en-verification-server/user/upstream_user_recreate
+      fetch
+      generic_task :: custom.googleapis.com/opencensus/en-verification-server/user/upstream_user_recreate_count
       | align rate(5m)
       | every 1m
-      | group_by [resource.project_id],
-          [val: aggregate(value.alert_count)]
+      | group_by [metric.realm],
+          [val: aggregate(value.upstream_user_recreate_count)]
       | condition val > 5
       EOT
       trigger {
