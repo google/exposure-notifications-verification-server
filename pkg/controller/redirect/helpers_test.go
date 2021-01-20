@@ -275,12 +275,11 @@ func TestDecideRedirect(t *testing.T) {
 		Path: "/v",
 	}
 	q := relativePinURL.Query()
-	q.Set("c", "1234567890abcdef")
+	q.Set("c", "123456")
 	relativePinURL.RawQuery = q.Encode()
 
 	cases := []struct {
 		name         string
-		host         string
 		url          string
 		altURL       *url.URL
 		enxEnabled   bool
@@ -291,46 +290,54 @@ func TestDecideRedirect(t *testing.T) {
 		// Android
 		{
 			name:         "android_both",
-			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			url:          "https://moosylvania.gov/v?c=123456",
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkBoth,
-			expected:     "intent://v?c=1234567890abcdef&r=US-MOO" + expectedSuffix,
+			expected:     "intent://v?c=123456&r=US-MOO" + expectedSuffix,
 		},
 		{
 			name:         "android_both_relative",
 			altURL:       &relativePinURL,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkBoth,
-			expected:     "intent://v?c=1234567890abcdef&r=US-MOO" + expectedSuffix,
+			expected:     "intent://v?c=123456&r=US-MOO" + expectedSuffix,
 		},
 		{
 			name:         "android_no_applink_enx",
-			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			url:          "https://moosylvania.gov/v?c=123456",
 			enxEnabled:   true,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkNeither,
-			expected:     "ens://v?c=1234567890abcdef&r=US-MOO",
+			expected:     "ens://v?c=123456&r=US-MOO",
 		},
 		{
 			name:         "android_no_applink",
-			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			url:          "https://moosylvania.gov/v?c=123456",
 			enxEnabled:   false,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkNeither,
 			expected:     "",
 		},
+		{
+			name:         "android_onboarding",
+			url:          "https://moosylvania.gov/",
+			enxEnabled:   false,
+			userAgent:    userAgentAndroid,
+			appStoreData: &appLinkNeither,
+			expected:     "market://search?q=exposure%20notifications",
+		},
 
 		// iOS
 		{
 			name:         "ios_both",
-			url:          "https://ios.example.com/store/moosylvania",
+			url:          "https://moosylvania.gov/v?c=123456",
 			userAgent:    userAgentIOS,
 			appStoreData: &appLinkBoth,
 			expected:     "https://ios.example.com/store/moosylvania",
 		},
 		{
 			name:         "ios_both_relative",
-			url:          "https://ios.example.com/store/moosylvania",
+			url:          "https://moosylvania.gov/v?c=123456",
 			altURL:       &relativePinURL,
 			userAgent:    userAgentIOS,
 			appStoreData: &appLinkBoth,
@@ -338,28 +345,44 @@ func TestDecideRedirect(t *testing.T) {
 		},
 		{
 			name:         "ios_no_applink_enx",
-			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			url:          "https://moosylvania.gov/v?c=123456",
 			enxEnabled:   true,
 			userAgent:    userAgentIOS,
 			appStoreData: &appLinkNeither,
-			expected:     "ens://v?c=1234567890abcdef&r=US-MOO",
+			expected:     "ens://v?c=123456&r=US-MOO",
 		},
 		{
 			name:         "ios_no_applink",
-			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			url:          "https://moosylvania.gov/v?c=123456",
 			enxEnabled:   false,
 			userAgent:    userAgentIOS,
 			appStoreData: &appLinkNeither,
 			expected:     "",
 		},
+		{
+			name:         "ios_onboarding",
+			url:          "https://moosylvania.gov/",
+			enxEnabled:   false,
+			userAgent:    userAgentIOS,
+			appStoreData: &appLinkNeither,
+			expected:     "ens://onboarding",
+		},
 
 		// Other
 		{
-			name:         "windows",
-			url:          "https://moosylvania.gov/v?c=1234567890abcdef",
+			name:         "other",
+			url:          "https://moosylvania.gov/v?c=123456",
 			userAgent:    userAgentNeither,
 			appStoreData: &appLinkBoth,
 			expected:     "",
+		},
+		// Other
+		{
+			name:         "other_onboarding",
+			url:          "https://moosylvania.gov/",
+			userAgent:    userAgentNeither,
+			appStoreData: &appLinkBoth,
+			expected:     "https://www.google.com/covid19/exposurenotifications/",
 		},
 	}
 

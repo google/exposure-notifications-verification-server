@@ -25,6 +25,14 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
+const (
+	// androidOnboardingRedirect and iosOnboardingRedirect are the URLs to
+	// redirect to for onboarding.
+	androidOnboardingRedirect = "market://search?q=exposure%20notifications"
+	iosOnboardingRedirect     = "ens://onboarding"
+	genericOnboardingRedirect = "https://www.google.com/covid19/exposurenotifications/"
+)
+
 type Controller struct {
 	config           *config.RedirectConfig
 	cacher           cache.Cacher

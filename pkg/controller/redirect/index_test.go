@@ -36,8 +36,9 @@ func TestIndex(t *testing.T) {
 
 	// Create config.
 	cfg := &config.RedirectConfig{
-		AssetsPath: filepath.Join(project.Root(), "cmd", "enx-redirect", "assets"),
-		DevMode:    true,
+		AssetsPath:       filepath.Join(project.Root(), "cmd", "enx-redirect", "assets"),
+		DevMode:          true,
+		OnboardingDomain: "onboard.me",
 		HostnameConfig: map[string]string{
 			"bad":    "nope",
 			"realm1": "aa",
@@ -122,11 +123,101 @@ func TestIndex(t *testing.T) {
 		return http.ErrUseLastResponse
 	}
 
+	// Onboarding, android
+	t.Run("onboarding/android", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Host = "onboard.me"
+		req.Header.Set("User-Agent", "android")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 303; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+
+		if got, want := resp.Header.Get("Location"), "market://search?q=exposure%20notifications"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
+	// Onboarding, ios
+	t.Run("onboarding/ios", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Host = "onboard.me"
+		req.Header.Set("User-Agent", "iphone")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 303; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+
+		if got, want := resp.Header.Get("Location"), "ens://onboarding"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
+	// Onboarding, unknown
+	t.Run("onboarding/unknown", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Host = "onboard.me"
+		req.Header.Set("User-Agent", "bananarama")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 303; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+
+		if got, want := resp.Header.Get("Location"), "https://www.google.com/covid19/exposurenotifications/"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
 	// Bad path
 	t.Run("bad_path", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/css/view/main/gift.css", nil)
+		req, err := http.NewRequest("GET", srv.URL+"/css/appiew/main/gift.css", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -197,7 +288,7 @@ func TestIndex(t *testing.T) {
 	t.Run("matching_region_no_apps", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL, nil)
+		req, err := http.NewRequest("GET", srv.URL+"/app?c=123456", nil)
 		req.Host = "realm1"
 		if err != nil {
 			t.Fatal(err)
@@ -217,11 +308,41 @@ func TestIndex(t *testing.T) {
 		}
 	})
 
-	// Not a mobile user agent returns a 404
+	// Not a mobile user agent with no query redirects to marketing
 	t.Run("not_mobile_user_agent", func(t *testing.T) {
 		t.Parallel()
 
 		req, err := http.NewRequest("GET", srv.URL, nil)
+		req.Host = "realm2"
+		req.Header.Set("User-Agent", "bananarama")
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		if got, want := resp.StatusCode, 303; got != want {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Errorf("expected %d to be %d: %s", got, want, body)
+		}
+
+		exp := "https://www.google.com/covid19/exposurenotifications/"
+		if got, want := resp.Header.Get("Location"), exp; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
+	// Not a mobile user agent with a code returns a 404
+	t.Run("not_mobile_user_agent", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest("GET", srv.URL+"/app?c=123456", nil)
 		req.Host = "realm2"
 		req.Header.Set("User-Agent", "bananarama")
 		if err != nil {
@@ -246,7 +367,7 @@ func TestIndex(t *testing.T) {
 	t.Run("android_redirect", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL, nil)
+		req, err := http.NewRequest("GET", srv.URL+"/app?c=123456", nil)
 		req.Host = "realm2"
 		req.Header.Set("User-Agent", "android")
 		if err != nil {
@@ -266,7 +387,7 @@ func TestIndex(t *testing.T) {
 			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
 
-		exp := "intent:?r=BB#Intent;scheme=ens;package=com.example.app2;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=https%3A%2F%2Fapp2.example.com%2F;end"
+		exp := "intent://app?c=123456&r=BB#Intent;scheme=ens;package=com.example.app2;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=https%3A%2F%2Fapp2.example.com%2F;end"
 		if got, want := resp.Header.Get("Location"), exp; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
@@ -276,7 +397,7 @@ func TestIndex(t *testing.T) {
 	t.Run("android_redirect_enx", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/app", nil)
+		req, err := http.NewRequest("GET", srv.URL+"/app?c=123456", nil)
 		req.Host = "realm3"
 		req.Header.Set("User-Agent", "android")
 		if err != nil {
@@ -296,7 +417,7 @@ func TestIndex(t *testing.T) {
 			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
 
-		if got, want := resp.Header.Get("Location"), "ens://app?r=CC"; got != want {
+		if got, want := resp.Header.Get("Location"), "ens://app?c=123456&r=CC"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
 	})
@@ -305,7 +426,7 @@ func TestIndex(t *testing.T) {
 	t.Run("ios_redirect", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL, nil)
+		req, err := http.NewRequest("GET", srv.URL+"/app?c=123456", nil)
 		req.Host = "realm2"
 		req.Header.Set("User-Agent", "iphone")
 		if err != nil {
@@ -334,7 +455,7 @@ func TestIndex(t *testing.T) {
 	t.Run("ios_redirect_enx", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/app", nil)
+		req, err := http.NewRequest("GET", srv.URL+"/app?c=123456", nil)
 		req.Host = "realm3"
 		req.Header.Set("User-Agent", "iphone")
 		if err != nil {
@@ -354,7 +475,7 @@ func TestIndex(t *testing.T) {
 			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
 
-		if got, want := resp.Header.Get("Location"), "ens://app?r=CC"; got != want {
+		if got, want := resp.Header.Get("Location"), "ens://app?c=123456&r=CC"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
 	})

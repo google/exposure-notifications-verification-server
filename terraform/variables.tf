@@ -190,6 +190,12 @@ variable "adminapi_hosts" {
   description = "List of domains upon which the adminapi is served."
 }
 
+variable "enx_onboarding_domain" {
+  type        = string
+  default     = ""
+  description = "Domain on which to serve onboarding redirects."
+}
+
 variable "enx_redirect_domain" {
   type        = string
   default     = ""

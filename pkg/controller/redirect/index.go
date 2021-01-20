@@ -37,6 +37,22 @@ func (c *Controller) HandleIndex() http.Handler {
 			baseHost = host
 		}
 
+		// Check if this is the naked domain.
+		if baseHost == c.config.OnboardingDomain {
+			if isAndroid(r.UserAgent()) {
+				http.Redirect(w, r, androidOnboardingRedirect, http.StatusSeeOther)
+				return
+			}
+
+			if isIOS(r.UserAgent()) {
+				http.Redirect(w, r, iosOnboardingRedirect, http.StatusSeeOther)
+				return
+			}
+
+			http.Redirect(w, r, genericOnboardingRedirect, http.StatusSeeOther)
+			return
+		}
+
 		var hostRegion string = ""
 		for hostname, region := range c.hostnameToRegion {
 			if hostname == baseHost {
