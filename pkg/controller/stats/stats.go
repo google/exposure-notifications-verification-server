@@ -18,6 +18,7 @@ package stats
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -27,6 +28,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
+
+// notFilenameRe is a regular expression that matches non-filename characters.
+var notFilenameRe = regexp.MustCompile(`[^A-Za-z0-9]+`)
 
 // StatsType represents a type of stat.
 type StatsType int64
