@@ -23,6 +23,8 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 )
 
 const (
@@ -66,6 +68,8 @@ func (c *Controller) HandlePullStats() http.Handler {
 		}
 
 		for _, realmStat := range statsConfigs {
+			realmID := realmStat.RealmID
+
 			audience := c.config.CertificateSigning.CertificateAudience
 			if realmStat.KeyServerAudienceOverride != "" {
 				audience = realmStat.KeyServerAudienceOverride
@@ -85,9 +89,9 @@ func (c *Controller) HandlePullStats() http.Handler {
 				}
 			}
 
-			s, err := c.getSignerForRealm(ctx, realmStat.RealmID)
+			s, err := c.getSignerForRealm(ctx, realmID)
 			if err != nil {
-				logger.Errorw("failed to retrieve signer for realm", "realmID", realmStat.RealmID)
+				logger.Errorw("failed to retrieve signer for realm", "realmID", realmID)
 				continue
 			}
 
@@ -101,18 +105,37 @@ func (c *Controller) HandlePullStats() http.Handler {
 			token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 			token.Header["kid"] = s.KeyID
 
-			jwtString, err := token.SignedString(c.config.CertificateSigning.CertificateSigningKey)
+			signedJWT, err := jwthelper.SignJWT(token, s.Signer)
 			if err != nil {
-				logger.Errorw("failed to sign JWT", "error", err)
+				logger.Errorw("failed to stat-pull token", "error", err)
 				continue
 			}
 
-			_, err = client.Stats(ctx, &v1.StatsRequest{}, jwtString)
+			resp, err := client.Stats(ctx, &v1.StatsRequest{}, signedJWT)
 			if err != nil {
 				logger.Errorw("failed make stats call", "error", err)
+				continue
 			}
 
-			// TODO(whaught): interpret the response and store
+			for _, d := range resp.Days {
+				pr := make([]int64, 3)
+				pr[database.OSTypeIOS] = d.PublishRequests.IOS
+				pr[database.OSTypeAndroid] = d.PublishRequests.Android
+
+				day := &database.KeyServerStatsDay{
+					RealmID:                   realmID,
+					Day:                       d.Day,
+					PublishRequests:           pr,
+					TotalTEKsPublished:        d.TotalTEKsPublished,
+					RevisionRequests:          d.RevisionRequests,
+					TEKAgeDistribution:        d.TEKAgeDistribution,
+					OnsetToUploadDistribution: d.OnsetToUploadDistribution,
+					RequestsMissingOnsetDate:  d.RequestsMissingOnsetDate,
+				}
+				if err = c.db.SaveKeyServerStatsDay(day); err != nil {
+					logger.Errorw("failed saving stats day", "error", err)
+				}
+			}
 		}
 
 		c.h.RenderJSON(w, http.StatusOK, &Result{

@@ -33,7 +33,7 @@ import (
 // Needed for taking a verification token back in and issuing a certificate.
 
 // SignJWT takes a JWT structure, extracts the signing string and signs it with the
-// provided signer. The base64 serialzied JWT is returned.
+// provided signer. The base64 serialized JWT is returned.
 func SignJWT(token *jwt.Token, signer crypto.Signer) (string, error) {
 	signingString, err := token.SigningString()
 	if err != nil {
