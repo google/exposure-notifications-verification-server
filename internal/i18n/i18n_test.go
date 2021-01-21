@@ -21,8 +21,11 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+
 	"github.com/leonelquinteros/gotext"
 )
+
+var localesPath = filepath.Join(project.Root(), "internal", "i18n", "locales")
 
 // TestI18n_matching constructs the superset of all i18n strings and then
 // ensures all translation files define said strings.
@@ -77,5 +80,103 @@ func TestI18n_matching(t *testing.T) {
 				t.Errorf("locale %q is missing translation %q", loc, k)
 			}
 		}
+	}
+}
+
+func TestLocaleMap_Lookup(t *testing.T) {
+	t.Parallel()
+
+	langOf := func(l *gotext.Locale) string {
+		return reflect.ValueOf(l).Elem().FieldByName("lang").String()
+	}
+
+	localeMap, err := Load(localesPath, WithReloading(true))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("found", func(t *testing.T) {
+		t.Parallel()
+
+		name := langOf(localeMap.Lookup("es"))
+		if got, want := name, "es"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
+	t.Run("not_found", func(t *testing.T) {
+		t.Parallel()
+
+		name := langOf(localeMap.Lookup("totes_not_a_real_language"))
+		if got, want := name, "en"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+}
+
+func TestLocaleMap_Canonicalize(t *testing.T) {
+	t.Parallel()
+
+	localeMap, err := Load(localesPath, WithReloading(true))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		in  string
+		exp string
+		err bool
+	}{
+		{
+			in:  "zzzzzzzzz",
+			err: true,
+		},
+		{
+			in:  "us",
+			err: true,
+		},
+		{
+			in:  "en-us",
+			exp: "en",
+		},
+		{
+			in:  "en-US",
+			exp: "en",
+		},
+		{
+			in:  "en-US, de",
+			exp: "en",
+		},
+		{
+			in:  "en-zz",
+			err: true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.in, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := localeMap.Canonicalize(tc.in)
+			if (err != nil) != tc.err {
+				t.Fatal(err)
+			}
+
+			if got, want := result, tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestLocaleMap_Load(t *testing.T) {
+	t.Parallel()
+
+	// Successfully loading is tested in all other functions indirectly.
+
+	if _, err := Load("/not/a/real/directory", WithReloading(true)); err == nil {
+		t.Fatal("expected error")
 	}
 }

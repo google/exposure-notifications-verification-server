@@ -75,16 +75,29 @@ func (l *LocaleMap) Lookup(ids ...string) *gotext.Locale {
 }
 
 // Canonicalize converts the given ID to the expected name.
-func (l *LocaleMap) Canonicalize(id string) (string, error) {
+func (l *LocaleMap) Canonicalize(id string) (result string, retErr error) {
+	// go/text panics when given an invalid language. These are often supplied by
+	// users or browsers: https://github.com/golang/text/pull/17
+	defer func() {
+		if r := recover(); r != nil {
+			retErr = fmt.Errorf("unknown language %q", id)
+			return
+		}
+	}()
+
 	desired, _, err := language.ParseAcceptLanguage(id)
 	if err != nil {
-		return "", err
+		retErr = err
+		return
 	}
 	if tag, _, conf := l.matcher.Match(desired...); conf != language.No {
 		raw, _, _ := tag.Raw()
-		return raw.String(), nil
+		result = raw.String()
+		return
 	}
-	return "", fmt.Errorf("unknown language %q", id)
+
+	retErr = fmt.Errorf("malformed language %q", id)
+	return
 }
 
 // load loads the locales into the LocaleMap. Callers must take out a mutex
