@@ -18,6 +18,14 @@ import (
 	"testing"
 )
 
+func TestRoot(t *testing.T) {
+	t.Parallel()
+
+	if got := Root(); got == "" {
+		t.Errorf("expected root")
+	}
+}
+
 func TestAllDigits(t *testing.T) {
 	t.Parallel()
 
