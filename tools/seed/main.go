@@ -35,6 +35,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-signalcontext"
@@ -424,9 +425,7 @@ func generateKeyServerStats(db *database.Database, realm *database.Realm) error 
 		return fmt.Errorf("failed create stats config: %w", err)
 	}
 
-	year, month, day := time.Now().UTC().Date()
-	midnight := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
-
+	midnight := timeutils.UTCMidnight(time.Now())
 	for day := 0; day < 30; day++ {
 		date := midnight.Add(time.Duration(day) * -24 * time.Hour)
 
