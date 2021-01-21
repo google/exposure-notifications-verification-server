@@ -268,7 +268,7 @@ resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
       | align rate(5m)
       | every 1m
       | group_by [], [val: sum(value.upstream_user_recreate_count)]
-      | condition val > 5 'Hz'
+      | condition val > 5 '1/s'
       EOT
       trigger {
         count = 1
