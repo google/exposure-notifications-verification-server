@@ -21,7 +21,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var _ ManagedKey = (*SMSSigningKey)(nil)
+var _ RealmManagedKey = (*SMSSigningKey)(nil)
 
 // SMSSigningKey represents a reference to a KMS backed signing key
 // version for SMS payload signing.
@@ -30,7 +30,7 @@ type SMSSigningKey struct {
 	Errorable
 
 	// A signing key belongs to exactly one realm.
-	RealmID uint `gorm:"index:realm"`
+	RealmID uint
 
 	// Reference to an exact version of a key in the KMS
 	KeyID  string
@@ -39,7 +39,7 @@ type SMSSigningKey struct {
 
 // GetKID returns the 'kid' field value to use in signing JWTs.
 func (s *SMSSigningKey) GetKID() string {
-	return fmt.Sprintf("r%dv%d", s.RealmID, s.ID)
+	return fmt.Sprintf("r%dmv%d", s.RealmID, s.ID)
 }
 
 func (s *SMSSigningKey) ManagedKeyID() string {
@@ -60,6 +60,14 @@ func (s *SMSSigningKey) SetManagedKeyID(keyID string) {
 
 func (s *SMSSigningKey) SetActive(active bool) {
 	s.Active = active
+}
+
+func (s *SMSSigningKey) Table() string {
+	return "sms_signing_keys"
+}
+
+func (s *SMSSigningKey) Purpose() string {
+	return "SMS"
 }
 
 // PurgeSMSSigningKeys will purge soft deleted keys that have been soft deleted for maxAge duration.

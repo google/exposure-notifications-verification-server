@@ -21,7 +21,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var _ ManagedKey = (*SigningKey)(nil)
+var _ RealmManagedKey = (*SigningKey)(nil)
 
 // SigningKey represents a reference to a KMS backed signing key
 // version for verification certificate signing.
@@ -60,6 +60,14 @@ func (s *SigningKey) SetManagedKeyID(keyID string) {
 
 func (s *SigningKey) SetActive(active bool) {
 	s.Active = active
+}
+
+func (s *SigningKey) Table() string {
+	return "signing_keys"
+}
+
+func (s *SigningKey) Purpose() string {
+	return "certificate"
 }
 
 // PurgeSigningKeys will purge soft deleted keys that have been soft deleted for maxAge duration.

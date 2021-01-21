@@ -24,7 +24,16 @@ type ManagedKey interface {
 	// IsActive() returns true if this key is active
 	IsActive() bool
 
-	SetRealmID(id uint)
 	SetManagedKeyID(keyID string)
 	SetActive(active bool)
+
+	// These are expected to be static across all instances of an implementing type.
+	Table() string
+	Purpose() string
+}
+
+// RealmManagedKey indicates that this key is owned by a realm.
+type RealmManagedKey interface {
+	ManagedKey
+	SetRealmID(id uint)
 }
