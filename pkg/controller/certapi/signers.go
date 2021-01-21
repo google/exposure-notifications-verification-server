@@ -56,7 +56,7 @@ func (c *Controller) getSignerForRealm(ctx context.Context, authApp *database.Au
 			}
 
 			// Relam has custom signing keys.
-			signingKey, err := realm.GetCurrentSigningKey(c.db)
+			signingKey, err := realm.CurrentSigningKey(c.db)
 			if err != nil || signingKey == nil {
 				return nil, fmt.Errorf("unable to find current signing key for realm: %v: %w", realm.Model.ID, err)
 			}

@@ -2038,6 +2038,28 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return nil
 			},
 		},
+		{
+			ID: "00090-AddSMSSigningKeys",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`CREATE TABLE sms_signing_keys (
+						id BIGSERIAL,
+						created_at TIMESTAMP WITH TIME ZONE,
+						updated_at TIMESTAMP WITH TIME ZONE,
+						deleted_at TIMESTAMP WITH TIME ZONE,
+						realm_id INTEGER NOT NULL,
+						key_id TEXT NOT NULL,
+						active BOOLEAN NOT NULL DEFAULT false,
+						PRIMARY KEY (id))`,
+					`CREATE INDEX idx_sms_signing_keys_realm ON sms_signing_keys (realm_id)`,
+					`CREATE UNIQUE INDEX uix_sms_signing_keys_active ON sms_signing_keys (realm_id, active) WHERE (active IS TRUE)`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE IF EXISTS sms_signing_keys`)
+			},
+		},
 	}
 }
 

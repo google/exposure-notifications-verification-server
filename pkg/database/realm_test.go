@@ -716,7 +716,7 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if got, want := err.Error(), "too many available signing keys"; !strings.Contains(got, want) {
+	if got, want := err.Error(), "too many available certificate signing keys"; !strings.Contains(got, want) {
 		t.Errorf("expected %q to contain %q", got, want)
 	}
 
@@ -733,12 +733,98 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	}
 
 	// Third should succeed now
-	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+	thirdKID, err := realm1.CreateSigningKeyVersion(ctx, db)
+	if err != nil {
 		t.Fatal(err)
+	}
+
+	// Make that key active
+	list, err = realm1.ListSigningKeys(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Find that key and activate it.
+	for _, k := range list {
+		if k.GetKID() == thirdKID {
+			realm1.SetActiveSigningKey(db, k.ID)
+		}
 	}
 
 	// Purge the deleted key.
 	count, err := db.PurgeSigningKeys(time.Millisecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatalf("expected 1 record to be purged, got: %v", count)
+	}
+}
+
+func TestRealm_CreateSMSSigningKeyVersion(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	db.config.CertificateSigningKeyRing = filepath.Join(project.Root(), "local", "test", "realm")
+	db.config.MaxCertificateSigningKeyVersions = 2
+
+	realm1 := NewRealmWithDefaults("realm1")
+	if err := db.SaveRealm(realm1, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	// First creates ok
+	if _, err := realm1.CreateSMSSigningKeyVersion(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	// Second creates ok
+	if _, err := realm1.CreateSMSSigningKeyVersion(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	// Third fails over quota
+	_, err := realm1.CreateSMSSigningKeyVersion(ctx, db)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if got, want := err.Error(), "too many available SMS signing keys"; !strings.Contains(got, want) {
+		t.Errorf("expected %q to contain %q", got, want)
+	}
+
+	// Delete one
+	list, err := realm1.ListSMSSigningKeys(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) < 1 {
+		t.Fatal("empty list")
+	}
+	if err := realm1.DestroySMSSigningKeyVersion(ctx, db, list[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Third should succeed now
+	thirdKID, err := realm1.CreateSMSSigningKeyVersion(ctx, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Make that key active
+	list, err = realm1.ListSMSSigningKeys(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Find that key and activate it.
+	for _, k := range list {
+		if k.GetKID() == thirdKID {
+			realm1.SetActiveSMSSigningKey(db, k.ID)
+		}
+	}
+
+	// Purge the deleted key.
+	count, err := db.PurgeSMSSigningKeys(time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
