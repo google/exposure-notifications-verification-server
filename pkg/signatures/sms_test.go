@@ -89,12 +89,12 @@ func Test_smsSignatureString(t *testing.T) {
 		{
 			name: "default",
 			in:   smsSignatureString(time.Unix(0, 0), SMSPurposeENReport, "+11111111111", "Hello world"),
-			exp:  "EN Report.+11111111111.1970-01-01.Hello world",
+			exp:  "EN Report.+11111111111.1970-01-01.Hello world Authorization: ",
 		},
 		{
 			name: "default",
 			in:   smsSignatureString(time.Unix(0, 0).In(time.FixedZone("Test/Test", -10000000)), SMSPurposeENReport, "+11111111111", "Hello world"),
-			exp:  "EN Report.+11111111111.1970-01-01.Hello world",
+			exp:  "EN Report.+11111111111.1970-01-01.Hello world Authorization: ",
 		},
 	}
 

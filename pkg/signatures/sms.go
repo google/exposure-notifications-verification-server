@@ -26,6 +26,9 @@ import (
 )
 
 const (
+	// authPrefix is the beginning of the authorization bit.
+	authPrefix = " Authorization: "
+
 	// Dot represents a period, which is used as a separator in some signatures.
 	dot = "."
 )
@@ -49,7 +52,7 @@ func SMSSignature(signer crypto.Signer, keyID string, t time.Time, purpose SMSPu
 	}
 	sig := base64.RawStdEncoding.EncodeToString(b)
 
-	return keyID + dot + sig, nil
+	return authPrefix + keyID + dot + sig, nil
 }
 
 // smsSignatureString builds the string that is to be signed. The provided date
@@ -58,5 +61,5 @@ func SMSSignature(signer crypto.Signer, keyID string, t time.Time, purpose SMSPu
 // including any codes and links.
 func smsSignatureString(t time.Time, purpose SMSPurpose, phone, body string) string {
 	t = t.UTC()
-	return string(purpose) + dot + phone + dot + t.Format(project.RFC3339Date) + dot + body
+	return string(purpose) + dot + phone + dot + t.Format(project.RFC3339Date) + dot + body + authPrefix
 }
