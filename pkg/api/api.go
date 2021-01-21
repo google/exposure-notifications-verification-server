@@ -17,6 +17,7 @@
 package api
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -156,9 +157,7 @@ func (p Padding) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON is a custom JSON unmarshaler for padding.
 // The field is meaningless bytes, so this is just a passthrough.
 func (p *Padding) UnmarshalJSON(b []byte) error {
-	if l := len(b); l > 2 {
-		*p = b[1 : l-2] // remove outer quotes
-	}
+	*p = bytes.Trim(b, `"`)
 	return nil
 }
 
