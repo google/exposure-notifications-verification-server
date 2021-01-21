@@ -128,6 +128,7 @@ resource "null_resource" "build" {
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
     google_storage_bucket_iam_member.cloudbuild-cache,
+    google_binary_authorization_attestor_iam_member.ci-attestor,
   ]
 }
 

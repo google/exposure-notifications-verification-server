@@ -64,7 +64,7 @@ func GetSignerForRealm(ctx context.Context, realmID uint,
 			}
 
 			// Realm has custom signing keys.
-			signingKey, err := realm.GetCurrentSigningKey(db)
+			signingKey, err := realm.CurrentSigningKey(db)
 			if err != nil || signingKey == nil {
 				return nil, fmt.Errorf("unable to find current signing key for realm: %v: %w", realm.Model.ID, err)
 			}

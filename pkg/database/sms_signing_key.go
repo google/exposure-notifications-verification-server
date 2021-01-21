@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var _ RealmManagedKey = (*SigningKey)(nil)
+var _ RealmManagedKey = (*SMSSigningKey)(nil)
 
-// SigningKey represents a reference to a KMS backed signing key
-// version for verification certificate signing.
-type SigningKey struct {
+// SMSSigningKey represents a reference to a KMS backed signing key
+// version for SMS payload signing.
+type SMSSigningKey struct {
 	gorm.Model
 	Errorable
 
 	// A signing key belongs to exactly one realm.
-	RealmID uint `gorm:"index:realm"`
+	RealmID uint
 
 	// Reference to an exact version of a key in the KMS
 	KeyID  string
@@ -38,40 +38,40 @@ type SigningKey struct {
 }
 
 // GetKID returns the 'kid' field value to use in signing JWTs.
-func (s *SigningKey) GetKID() string {
-	return fmt.Sprintf("r%dv%d", s.RealmID, s.ID)
+func (s *SMSSigningKey) GetKID() string {
+	return fmt.Sprintf("r%dmv%d", s.RealmID, s.ID)
 }
 
-func (s *SigningKey) ManagedKeyID() string {
+func (s *SMSSigningKey) ManagedKeyID() string {
 	return s.KeyID
 }
 
-func (s *SigningKey) IsActive() bool {
+func (s *SMSSigningKey) IsActive() bool {
 	return s.Active
 }
 
-func (s *SigningKey) SetRealmID(id uint) {
+func (s *SMSSigningKey) SetRealmID(id uint) {
 	s.RealmID = id
 }
 
-func (s *SigningKey) SetManagedKeyID(keyID string) {
+func (s *SMSSigningKey) SetManagedKeyID(keyID string) {
 	s.KeyID = keyID
 }
 
-func (s *SigningKey) SetActive(active bool) {
+func (s *SMSSigningKey) SetActive(active bool) {
 	s.Active = active
 }
 
-func (s *SigningKey) Table() string {
-	return "signing_keys"
+func (s *SMSSigningKey) Table() string {
+	return "sms_signing_keys"
 }
 
-func (s *SigningKey) Purpose() string {
-	return "certificate"
+func (s *SMSSigningKey) Purpose() string {
+	return "SMS"
 }
 
-// PurgeSigningKeys will purge soft deleted keys that have been soft deleted for maxAge duration.
-func (db *Database) PurgeSigningKeys(maxAge time.Duration) (int64, error) {
+// PurgeSMSSigningKeys will purge soft deleted keys that have been soft deleted for maxAge duration.
+func (db *Database) PurgeSMSSigningKeys(maxAge time.Duration) (int64, error) {
 	if maxAge > 0 {
 		maxAge = -1 * maxAge
 	}
@@ -79,6 +79,6 @@ func (db *Database) PurgeSigningKeys(maxAge time.Duration) (int64, error) {
 
 	result := db.db.Unscoped().
 		Where("deleted_at IS NOT NULL AND deleted_at < ?", deleteBefore).
-		Delete(&SigningKey{})
+		Delete(&SMSSigningKey{})
 	return result.RowsAffected, result.Error
 }
