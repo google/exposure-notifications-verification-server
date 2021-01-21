@@ -261,6 +261,10 @@ func realMain(ctx context.Context) error {
 		if err := generateCodesAndStats(db, realm1); err != nil {
 			return fmt.Errorf("failed to generate stats: %w", err)
 		}
+
+		if err := generateKeyServerStats(db, realm1); err != nil {
+			return fmt.Errorf("failed to generate key-server stats: %w", err)
+		}
 	}
 
 	return nil
@@ -411,6 +415,43 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 	}
 
 	return nil
+}
+
+// generateKeyServerStats generates stats normally gathered from a key-server. This is
+// primarily used to test statistics and graphs.
+func generateKeyServerStats(db *database.Database, realm *database.Realm) error {
+	if err := db.SaveKeyServerStats(&database.KeyServerStats{RealmID: realm.ID}); err != nil {
+		return fmt.Errorf("failed create stats config: %w", err)
+	}
+
+	nowish := time.Now().Add(-5 * time.Minute)
+	for day := 0; day < 30; day++ {
+		date := nowish.Add(time.Duration(day) * -24 * time.Hour)
+
+		day := &database.KeyServerStatsDay{
+			RealmID:                   realm.ID,
+			Day:                       date,
+			PublishRequests:           randArr63n(3000, 3),
+			TotalTEKsPublished:        rand.Int63n(10000),
+			RevisionRequests:          rand.Int63n(1000),
+			TEKAgeDistribution:        randArr63n(1500, 16),
+			OnsetToUploadDistribution: randArr63n(15, 30),
+			RequestsMissingOnsetDate:  rand.Int63n(100),
+		}
+		if err := db.SaveKeyServerStatsDay(day); err != nil {
+			return fmt.Errorf("failed create stats day: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func randArr63n(n, len int64) []int64 {
+	arr := make([]int64, len)
+	for i := int64(0); i < len; i++ {
+		arr[i] = rand.Int63n(n)
+	}
+	return arr
 }
 
 func percentChance(d int) bool {
