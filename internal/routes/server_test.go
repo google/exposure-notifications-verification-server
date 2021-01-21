@@ -119,12 +119,6 @@ func TestRoutes_apikeyRoutes(t *testing.T) {
 		{
 			req: httptest.NewRequest("PATCH", "/12345/enable", nil),
 		},
-		{
-			req: httptest.NewRequest("GET", "/12345/stats.json", nil),
-		},
-		{
-			req: httptest.NewRequest("GET", "/12345/stats.csv", nil),
-		},
 	}
 
 	for _, tc := range cases {
@@ -236,6 +230,12 @@ func TestRoutes_statsRoutes(t *testing.T) {
 		},
 		{
 			req: httptest.NewRequest("GET", "/realm/users/12345.json", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm/api-keys/12345.csv", nil),
+		},
+		{
+			req: httptest.NewRequest("GET", "/realm/api-keys/12345.json", nil),
 		},
 		{
 			req: httptest.NewRequest("GET", "/realm/external-issuers.csv", nil),

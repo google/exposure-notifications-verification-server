@@ -46,10 +46,11 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 					TokensClaimed:     3,
 					TokensInvalid:     1,
 					AuthorizedAppName: "Appy",
+					AuthorizedAppType: "device",
 				},
 			},
-			exp: `date,authorized_app_id,authorized_app_name,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
-2020-02-03,1,Appy,10,4,2,3,1
+			exp: `date,authorized_app_id,authorized_app_name,authorized_app_type,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
+2020-02-03,1,Appy,device,10,4,2,3,1
 `,
 		},
 		{
@@ -64,6 +65,7 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 					TokensClaimed:     4,
 					TokensInvalid:     2,
 					AuthorizedAppName: "Appy",
+					AuthorizedAppType: "device",
 				},
 				{
 					Date:              time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
@@ -74,6 +76,7 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 					TokensClaimed:     3,
 					TokensInvalid:     2,
 					AuthorizedAppName: "Mc",
+					AuthorizedAppType: "admin",
 				},
 				{
 					Date:              time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
@@ -84,12 +87,13 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 					TokensClaimed:     6,
 					TokensInvalid:     2,
 					AuthorizedAppName: "Apperson",
+					AuthorizedAppType: "stats",
 				},
 			},
-			exp: `date,authorized_app_id,authorized_app_name,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
-2020-02-03,1,Appy,10,10,2,4,2
-2020-02-04,1,Mc,45,44,5,3,2
-2020-02-05,1,Apperson,15,13,4,6,2
+			exp: `date,authorized_app_id,authorized_app_name,authorized_app_type,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
+2020-02-03,1,Appy,device,10,10,2,4,2
+2020-02-04,1,Mc,admin,45,44,5,3,2
+2020-02-05,1,Apperson,stats,15,13,4,6,2
 `,
 		},
 	}

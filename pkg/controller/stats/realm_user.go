@@ -17,7 +17,6 @@ package stats
 
 import (
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -29,8 +28,6 @@ import (
 // HandleRealmUserStats renders statistics for a single user in the current
 // realm.
 func (c *Controller) HandleRealmUserStats(typ StatsType) http.Handler {
-	re := regexp.MustCompile(`[^A-Za-z0-9]`)
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -60,7 +57,7 @@ func (c *Controller) HandleRealmUserStats(typ StatsType) http.Handler {
 
 		switch typ {
 		case StatsTypeCSV:
-			filename := re.ReplaceAllString(strings.ToLower(user.Name), "-")
+			filename := notFilenameRe.ReplaceAllString(strings.ToLower(user.Name), "-")
 			c.h.RenderCSV(w, http.StatusOK, csvFilename(filename), stats)
 			return
 		case StatsTypeJSON:

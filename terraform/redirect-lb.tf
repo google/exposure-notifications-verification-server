@@ -14,6 +14,11 @@
 
 locals {
   enable_enx_redirect = length(var.enx_redirect_domain_map) > 0
+
+  redirect_root_domains = distinct(compact([
+    var.enx_redirect_domain,
+    var.enx_onboarding_domain,
+  ]))
 }
 
 resource "google_compute_global_address" "verification-enx-redirect" {
@@ -108,15 +113,23 @@ resource "google_compute_global_forwarding_rule" "enx-redirect-https" {
   target                = google_compute_target_https_proxy.enx-redirect-https[0].id
 }
 
+resource "random_id" "redirect-root-certs" {
+  byte_length = 3
+
+  keepers = {
+    domains = join(",", local.redirect_root_domains)
+  }
+}
+
 resource "google_compute_managed_ssl_certificate" "enx-redirect-root" {
   count    = local.enable_enx_redirect ? 1 : 0
   provider = google-beta
 
-  name        = "verification-enx-redirect-cert-root"
+  name        = "verification-enx-redirect-root-${random_id.redirect-root-certs.hex}"
   description = "Controlled by Terraform"
 
   managed {
-    domains = ["www.${var.enx_redirect_domain}"]
+    domains = local.redirect_root_domains
   }
 
   # This is to prevent destroying the cert while it's still attached to the load
@@ -175,4 +188,3 @@ resource "google_compute_managed_ssl_certificate" "enx-redirect-next" {
     google_project_service.services["compute.googleapis.com"],
   ]
 }
-
