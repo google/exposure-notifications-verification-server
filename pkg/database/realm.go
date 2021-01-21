@@ -700,7 +700,6 @@ func (r *Realm) CurrentSigningKey(db *Database) (*SigningKey, error) {
 	if err := db.db.
 		Where("realm_id = ?", r.ID).
 		Where("active = ?", true).
-		Order("signing_keys.created_at DESC").
 		First(&signingKey).
 		Error; err != nil {
 		return nil, fmt.Errorf("unable to find signing key: %w", err)
@@ -716,7 +715,6 @@ func (r *Realm) CurrentSMSSigningKey(db *Database) (*SMSSigningKey, error) {
 	if err := db.db.
 		Where("realm_id = ?", r.ID).
 		Where("active = ?", true).
-		Order("sms_signing_keys.created_at DESC").
 		First(&signingKey).
 		Error; err != nil {
 		return nil, fmt.Errorf("unable to find signing key: %w", err)
@@ -1433,16 +1431,14 @@ func (r *Realm) createdManagedSigningKey(ctx context.Context, db *Database, keyI
 // and the key manager. ID is the primary key ID from the database. If the id
 // does not exist, it does nothing.
 func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id interface{}) error {
-	signingKey := &SigningKey{}
-	return r.destroyManagedSigningKey(ctx, db, id, "signing_keys", "certificate", signingKey)
+	return r.destroyManagedSigningKey(ctx, db, id, &SigningKey{})
 }
 
 func (r *Realm) DestroySMSSigningKeyVersion(ctx context.Context, db *Database, id interface{}) error {
-	signingKey := &SMSSigningKey{}
-	return r.destroyManagedSigningKey(ctx, db, id, "sms_signing_keys", "SMS", signingKey)
+	return r.destroyManagedSigningKey(ctx, db, id, &SMSSigningKey{})
 }
 
-func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id interface{}, table, purpose string, signingKey ManagedKey) error {
+func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id interface{}, signingKey ManagedKey) error {
 	manager := db.signingKeyManager
 	if manager == nil {
 		return ErrNoSigningKeyManager
@@ -1452,7 +1448,7 @@ func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id i
 		// Load the signing key to ensure it actually exists.
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
-			Table(table).
+			Table(signingKey.Table()).
 			Where("id = ?", id).
 			Where("realm_id = ?", r.ID).
 			First(signingKey).
@@ -1460,28 +1456,28 @@ func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id i
 			if IsNotFound(err) {
 				return nil
 			}
-			return fmt.Errorf("failed to load %s signing key: %w", purpose, err)
+			return fmt.Errorf("failed to load %s signing key: %w", signingKey.Purpose(), err)
 		}
 
 		if signingKey.IsActive() {
-			return fmt.Errorf("cannot destroy active %s signing key", purpose)
+			return fmt.Errorf("cannot destroy active %s signing key", signingKey.Purpose())
 		}
 
 		// Delete the signing key from the key manager - we want to do this in the
 		// transaction so, if it fails, we can rollback and try again.
 		if err := manager.DestroyKeyVersion(ctx, signingKey.ManagedKeyID()); err != nil {
-			return fmt.Errorf("failed to destroy %s signing key in key manager: %w", purpose, err)
+			return fmt.Errorf("failed to destroy %s signing key in key manager: %w", signingKey.Purpose(), err)
 		}
 
 		// Successfully deleted from the key manager, now remove the record.
 		if err := tx.Delete(signingKey).Error; err != nil {
 			return fmt.Errorf("successfully destroyed %s signing key in key manager, "+
-				"but failed to delete signing key from database: %w", purpose, err)
+				"but failed to delete signing key from database: %w", signingKey.Purpose(), err)
 		}
 
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to destroy %s signing key version: %w", purpose, err)
+		return fmt.Errorf("failed to destroy %s signing key version: %w", signingKey.Purpose(), err)
 	}
 
 	return nil
