@@ -424,9 +424,11 @@ func generateKeyServerStats(db *database.Database, realm *database.Realm) error 
 		return fmt.Errorf("failed create stats config: %w", err)
 	}
 
-	nowish := time.Now().UTC().Add(-5 * time.Minute)
+	year, month, day := time.Now().UTC().Date()
+	midnight := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+
 	for day := 0; day < 30; day++ {
-		date := nowish.Add(time.Duration(day) * -24 * time.Hour)
+		date := midnight.Add(time.Duration(day) * -24 * time.Hour)
 
 		day := &database.KeyServerStatsDay{
 			RealmID:                   realm.ID,
