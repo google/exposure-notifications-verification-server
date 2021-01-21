@@ -26,10 +26,6 @@ import (
 )
 
 const (
-	// authPrefix is the string to prepend to the authentication
-	// signature.
-	authPrefix = "Authentication: "
-
 	// Dot represents a period, which is used as a separator in some signatures.
 	dot = "."
 )
@@ -44,7 +40,6 @@ const (
 
 // SMSSignature returns the signature of the message uses the provided signer.
 func SMSSignature(signer crypto.Signer, keyID string, t time.Time, purpose SMSPurpose, phone, body string) (string, error) {
-	t = t.UTC()
 	signingString := smsSignatureString(t, purpose, phone, body)
 
 	digest := sha256.Sum256([]byte(signingString))
@@ -54,7 +49,7 @@ func SMSSignature(signer crypto.Signer, keyID string, t time.Time, purpose SMSPu
 	}
 	sig := base64.RawStdEncoding.EncodeToString(b)
 
-	return authPrefix + t.Format(project.RFC3339Date) + dot + keyID + dot + sig, nil
+	return keyID + dot + sig, nil
 }
 
 // smsSignatureString builds the string that is to be signed. The provided date
