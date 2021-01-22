@@ -98,41 +98,50 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to configure firebase: %w", err)
 	}
 
-	// System token signing key
-	var tokenConfig config.TokenSigningConfig
-	if err := config.ProcessWith(ctx, &tokenConfig, envconfig.OsLookuper()); err != nil {
-		return fmt.Errorf("failed to process token signing config: %w", err)
-	}
-	tokenKeyManager, err := keys.KeyManagerFor(ctx, &tokenConfig.Keys)
+	// Create a realm
+	var realm1 *database.Realm
+	realm1, err = db.FindRealmByName("Narnia")
 	if err != nil {
-		return fmt.Errorf("failed to create token key manager: %w", err)
-	}
-	tokenKeyManagerTyp, ok := tokenKeyManager.(keys.SigningKeyManager)
-	if !ok {
-		return fmt.Errorf("token signing key manager is not SigningKeyManager (got %T)", tokenKeyManager)
-	}
-	if _, err := db.RotateTokenSigningKey(ctx, tokenKeyManagerTyp, tokenConfig.ParentKeyName(), database.SystemTest); err != nil {
-		return fmt.Errorf("failed to rotate token signing key: %w", err)
+		if database.IsNotFound(err) {
+			realm1 = database.NewRealmWithDefaults("Narnia")
+			realm1.RegionCode = "US-PA"
+			realm1.AbusePreventionEnabled = true
+			if err := db.SaveRealm(realm1, database.System); err != nil {
+				return fmt.Errorf("failed to create realm: %w: %v", err, realm1.ErrorMessages())
+			}
+			logger.Infow("created realm", "realm", realm1)
+		} else {
+			return fmt.Errorf("failed to find realm: %w: %v", err, realm1.ErrorMessages())
+		}
 	}
 
-	// Create a realm
-	realm1 := database.NewRealmWithDefaults("Narnia")
-	realm1.RegionCode = "US-PA"
-	realm1.AbusePreventionEnabled = true
-	if err := db.SaveRealm(realm1, database.System); err != nil {
-		return fmt.Errorf("failed to create realm: %w: %v", err, realm1.ErrorMessages())
+	if *flagStats {
+		if err := generateCodesAndStats(db, realm1); err != nil {
+			return fmt.Errorf("failed to generate stats: %w", err)
+		}
+
+		if err := generateKeyServerStats(db, realm1); err != nil {
+			return fmt.Errorf("failed to generate key-server stats: %w", err)
+		}
 	}
-	logger.Infow("created realm", "realm", realm1)
 
 	// Create another realm
-	realm2 := database.NewRealmWithDefaults("Wonderland")
-	realm2.AllowedTestTypes = database.TestTypeLikely | database.TestTypeConfirmed
-	realm2.RegionCode = "US-WA"
-	realm2.AbusePreventionEnabled = true
-	if err := db.SaveRealm(realm2, database.System); err != nil {
-		return fmt.Errorf("failed to create realm: %w: %v", err, realm2.ErrorMessages())
+	var realm2 *database.Realm
+	realm2, err = db.FindRealmByName("Wonderland")
+	if err != nil {
+		if database.IsNotFound(err) {
+			realm2 = database.NewRealmWithDefaults("Wonderland")
+			realm2.AllowedTestTypes = database.TestTypeLikely | database.TestTypeConfirmed
+			realm2.RegionCode = "US-WA"
+			realm2.AbusePreventionEnabled = true
+			if err := db.SaveRealm(realm2, database.System); err != nil {
+				return fmt.Errorf("failed to create realm: %w: %v", err, realm2.ErrorMessages())
+			}
+			logger.Infow("created realm", "realm", realm2)
+		} else {
+			return fmt.Errorf("failed to find realm: %w: %v", err, realm1.ErrorMessages())
+		}
 	}
-	logger.Infow("created realm", "realm", realm2)
 
 	// Create some system sms from numbers
 	if err := db.CreateOrUpdateSMSFromNumbers([]*database.SMSFromNumber{
@@ -258,14 +267,21 @@ func realMain(ctx context.Context) error {
 		logger.Infow("created admin api key", "key", adminAPIKey)
 	}
 
-	if *flagStats {
-		if err := generateCodesAndStats(db, realm1); err != nil {
-			return fmt.Errorf("failed to generate stats: %w", err)
-		}
-
-		if err := generateKeyServerStats(db, realm1); err != nil {
-			return fmt.Errorf("failed to generate key-server stats: %w", err)
-		}
+	// System token signing key
+	var tokenConfig config.TokenSigningConfig
+	if err := config.ProcessWith(ctx, &tokenConfig, envconfig.OsLookuper()); err != nil {
+		return fmt.Errorf("failed to process token signing config: %w", err)
+	}
+	tokenKeyManager, err := keys.KeyManagerFor(ctx, &tokenConfig.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create token key manager: %w", err)
+	}
+	tokenKeyManagerTyp, ok := tokenKeyManager.(keys.SigningKeyManager)
+	if !ok {
+		return fmt.Errorf("token signing key manager is not SigningKeyManager (got %T)", tokenKeyManager)
+	}
+	if _, err := db.RotateTokenSigningKey(ctx, tokenKeyManagerTyp, tokenConfig.ParentKeyName(), database.SystemTest); err != nil {
+		return fmt.Errorf("failed to rotate token signing key: %w", err)
 	}
 
 	return nil
