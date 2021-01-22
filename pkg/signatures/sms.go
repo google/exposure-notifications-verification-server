@@ -26,11 +26,10 @@ import (
 )
 
 const (
-	// authPrefix is the beginning of the authorization bit.
-	authPrefix = " Authorization: "
-
-	// Dot represents a period, which is used as a separator in some signatures.
-	dot = "."
+	// dot represents a period and colon represents a colon, which are used as a
+	// separator in some signatures.
+	dot   = "."
+	colon = ":"
 )
 
 // SMSPurpose is an SMS purpose, used in signature calculation.
@@ -43,16 +42,17 @@ const (
 
 // SMSSignature returns the signature of the message uses the provided signer.
 func SMSSignature(signer crypto.Signer, keyID string, t time.Time, purpose SMSPurpose, phone, body string) (string, error) {
+	t = t.UTC()
 	signingString := smsSignatureString(t, purpose, phone, body)
 
 	digest := sha256.Sum256([]byte(signingString))
-	b, err := signer.Sign(rand.Reader, digest[:], nil)
+	sig, err := signer.Sign(rand.Reader, digest[:], nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to sign sms: %w", err)
 	}
-	sig := base64.RawStdEncoding.EncodeToString(b)
 
-	return authPrefix + keyID + dot + sig, nil
+	date := t.Format(project.RFC3339Date)
+	return b64([]byte(date)) + colon + b64([]byte(keyID)) + colon + b64(sig), nil
 }
 
 // smsSignatureString builds the string that is to be signed. The provided date
@@ -61,5 +61,10 @@ func SMSSignature(signer crypto.Signer, keyID string, t time.Time, purpose SMSPu
 // including any codes and links.
 func smsSignatureString(t time.Time, purpose SMSPurpose, phone, body string) string {
 	t = t.UTC()
-	return string(purpose) + dot + phone + dot + t.Format(project.RFC3339Date) + dot + body + authPrefix
+	return string(purpose) + dot + phone + dot + t.Format(project.RFC3339Date) + dot + body
+}
+
+// b64 is a helper that does base64 encoding for signatures.
+func b64(in []byte) string {
+	return base64.RawStdEncoding.EncodeToString(in)
 }

@@ -60,19 +60,46 @@ func Test_SMSSignature(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			parts := strings.Split(result, ".")
-			last := parts[len(parts)-1]
+			parts := strings.Split(result, ":")
 
-			b, err := base64.RawStdEncoding.DecodeString(last)
-			if err != nil {
-				t.Fatal(err)
-			}
+			for i, part := range parts {
+				switch i {
+				case 0:
+					// First part is date
+					b, err := base64.RawStdEncoding.DecodeString(part)
+					if err != nil {
+						t.Fatal(err)
+					}
 
-			signingString := smsSignatureString(tc.time, SMSPurposeENReport, tc.phone, tc.body)
-			digest := sha256.Sum256([]byte(signingString))
+					date := tc.time.UTC().Format("2006-01-02")
+					if got, want := string(b), date; got != want {
+						t.Errorf("expected %q to be %q", got, want)
+					}
+				case 1:
+					// Second part is key id
+					b, err := base64.RawStdEncoding.DecodeString(part)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if got, want := string(b), tc.keyID; got != want {
+						t.Errorf("expected %q to be %q", got, want)
+					}
+				case 2:
+					// Third part is signature
+					b, err := base64.RawStdEncoding.DecodeString(part)
+					if err != nil {
+						t.Fatal(err)
+					}
 
-			if !ecdsa.VerifyASN1(&key.PublicKey, digest[:], b) {
-				t.Error("did not verify")
+					signingString := smsSignatureString(tc.time, SMSPurposeENReport, tc.phone, tc.body)
+					digest := sha256.Sum256([]byte(signingString))
+
+					if !ecdsa.VerifyASN1(&key.PublicKey, digest[:], b) {
+						t.Error("did not verify")
+					}
+				default:
+					t.Fatalf("too many parts: %#v", parts)
+				}
 			}
 		})
 	}
@@ -89,12 +116,12 @@ func Test_smsSignatureString(t *testing.T) {
 		{
 			name: "default",
 			in:   smsSignatureString(time.Unix(0, 0), SMSPurposeENReport, "+11111111111", "Hello world"),
-			exp:  "EN Report.+11111111111.1970-01-01.Hello world Authorization: ",
+			exp:  "EN Report.+11111111111.1970-01-01.Hello world",
 		},
 		{
 			name: "default",
 			in:   smsSignatureString(time.Unix(0, 0).In(time.FixedZone("Test/Test", -10000000)), SMSPurposeENReport, "+11111111111", "Hello world"),
-			exp:  "EN Report.+11111111111.1970-01-01.Hello world Authorization: ",
+			exp:  "EN Report.+11111111111.1970-01-01.Hello world",
 		},
 	}
 
