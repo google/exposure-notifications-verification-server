@@ -1486,7 +1486,7 @@ func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id i
 // Stats returns the 30-day usage statistics for this realm. If no stats exist,
 // returns an empty array.
 func (r *Realm) Stats(db *Database) (RealmStats, error) {
-	stop := timeutils.Midnight(time.Now().UTC())
+	stop := timeutils.UTCMidnight(time.Now())
 	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
@@ -1539,7 +1539,7 @@ func (r *Realm) StatsCached(ctx context.Context, db *Database, cacher cache.Cach
 // ExternalIssuerStats returns the 30-day external issuer stats for this realm.
 // If no stats exist, returns an empty slice.
 func (r *Realm) ExternalIssuerStats(db *Database) (ExternalIssuerStats, error) {
-	stop := timeutils.Midnight(time.Now().UTC())
+	stop := timeutils.UTCMidnight(time.Now())
 	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
@@ -1600,7 +1600,7 @@ func (r *Realm) ExternalIssuerStatsCached(ctx context.Context, db *Database, cac
 
 // UserStats returns the 30-day stats by user.
 func (r *Realm) UserStats(db *Database) (RealmUserStats, error) {
-	stop := timeutils.Midnight(time.Now().UTC())
+	stop := timeutils.UTCMidnight(time.Now())
 	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange

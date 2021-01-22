@@ -195,7 +195,7 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 // Stats returns the usage statistics for this app. If no stats exist, it
 // returns an empty array.
 func (a *AuthorizedApp) Stats(db *Database) (AuthorizedAppStats, error) {
-	stop := timeutils.Midnight(time.Now().UTC())
+	stop := timeutils.UTCMidnight(time.Now())
 	start := stop.Add(30 * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
