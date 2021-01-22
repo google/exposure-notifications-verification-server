@@ -119,22 +119,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 				if d == nil {
 					continue
 				}
-
-				pr := make([]int64, 3)
-				pr[database.OSTypeUnknown] = d.PublishRequests.UnknownPlatform
-				pr[database.OSTypeIOS] = d.PublishRequests.IOS
-				pr[database.OSTypeAndroid] = d.PublishRequests.Android
-
-				day := &database.KeyServerStatsDay{
-					RealmID:                   realmID,
-					Day:                       d.Day,
-					PublishRequests:           pr,
-					TotalTEKsPublished:        d.TotalTEKsPublished,
-					RevisionRequests:          d.RevisionRequests,
-					TEKAgeDistribution:        d.TEKAgeDistribution,
-					OnsetToUploadDistribution: d.OnsetToUploadDistribution,
-					RequestsMissingOnsetDate:  d.RequestsMissingOnsetDate,
-				}
+				day := database.MakeKeyServerStatsDay(realmID, d)
 				if err = c.db.SaveKeyServerStatsDay(day); err != nil {
 					logger.Errorw("failed saving stats day", "error", err)
 				}

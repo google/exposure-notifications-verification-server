@@ -159,14 +159,14 @@ func (db *Database) ListKeyServerStatsDays(realmID uint) ([]*KeyServerStatsDay, 
 }
 
 // MakeKeyServerStatsDay creates a storage struct from a key-server StatsDay response
-func (r *Realm) MakeKeyServerStatsDay(d *keyserver.StatsDay) *KeyServerStatsDay {
+func MakeKeyServerStatsDay(realmID uint, d *keyserver.StatsDay) *KeyServerStatsDay {
 	pr := make([]int64, 3)
 	pr[OSTypeUnknown] = d.PublishRequests.UnknownPlatform
 	pr[OSTypeIOS] = d.PublishRequests.IOS
 	pr[OSTypeAndroid] = d.PublishRequests.Android
 
 	return &KeyServerStatsDay{
-		RealmID:                   r.ID,
+		RealmID:                   realmID,
 		Day:                       d.Day,
 		PublishRequests:           pr,
 		TotalTEKsPublished:        d.TotalTEKsPublished,
