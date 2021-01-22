@@ -409,6 +409,8 @@ func statsRoutes(r *mux.Router, c *stats.Controller) {
 
 	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
 	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")
+
+	r.Handle("/realm/key-server-stats.json", c.HandleKeyServerStats(stats.StatsTypeJSON)).Methods("GET")
 }
 
 // realmadminRoutes are the realm admin routes.

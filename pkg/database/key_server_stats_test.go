@@ -79,7 +79,7 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stats, err := db.ListKeyServerStatsDays(realm.ID, now)
+	stats, err := db.ListKeyServerStatsDays(realm.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

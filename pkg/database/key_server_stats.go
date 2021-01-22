@@ -113,7 +113,7 @@ func (db *Database) DeleteKeyServerStats(realmID uint) error {
 }
 
 // ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
-func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyServerStatsDay, error) {
+func (db *Database) ListKeyServerStatsDays(realmID uint) ([]*KeyServerStatsDay, error) {
 	var stats []*KeyServerStatsDay
 	if err := db.db.
 		Model(&KeyServerStatsDay{}).
