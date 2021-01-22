@@ -41,7 +41,11 @@ func (c *Controller) HandleStats() http.Handler {
 			return
 		}
 
+		s, err := c.db.GetKeyServerStats(membership.RealmID)
+		hasKeyServerStats := err == nil && s != nil
+
 		m := controller.TemplateMapFromContext(ctx)
+		m["hasKeyServerStats"] = hasKeyServerStats
 		m.Title("Realm stats")
 		c.h.RenderHTML(w, "realmadmin/stats", m)
 	})

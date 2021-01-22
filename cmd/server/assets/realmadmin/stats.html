@@ -35,7 +35,9 @@
 
     {{template "realmadmin/_stats_tokens" .}}
 
+    {{if .hasKeyServerStats}}
     {{template "realmadmin/_stats_keyserver" .}}
+    {{end}}
   </main>
 </body>
 </html>
