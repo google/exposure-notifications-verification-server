@@ -17,13 +17,254 @@ package cache
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"hash"
 	"reflect"
 	"testing"
 	"time"
 )
+
+func TestKeyCompute(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		fn   KeyFunc
+		ns   string
+		exp  string
+		err  bool
+	}{
+		{
+			name: "no_func_no_namespace",
+			fn:   nil,
+			ns:   "",
+			exp:  "key",
+		},
+		{
+			name: "no_func_namespace",
+			fn:   nil,
+			ns:   "ns",
+			exp:  "ns:key",
+		},
+		{
+			name: "func_no_namespace",
+			fn: func(s string) (string, error) {
+				return s + "xx", nil
+			},
+			ns:  "",
+			exp: "keyxx",
+		},
+		{
+			name: "func_namespace",
+			fn: func(s string) (string, error) {
+				return s + "xx", nil
+			},
+			ns:  "ns",
+			exp: "ns:keyxx",
+		},
+		{
+			name: "func_error",
+			fn: func(s string) (string, error) {
+				return "", fmt.Errorf("oops")
+			},
+			err: true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			k := &Key{
+				Namespace: tc.ns,
+				Key:       "key",
+			}
+
+			result, err := k.Compute(tc.fn)
+			if (err != nil) != tc.err {
+				t.Fatal(err)
+			}
+
+			if got, want := result, tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestMultiKeyFunc(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		fns  []KeyFunc
+		exp  string
+		err  bool
+	}{
+		{
+			name: "empty",
+			fns:  nil,
+			exp:  "key",
+		},
+		{
+			name: "nil_func",
+			fns:  []KeyFunc{nil},
+			exp:  "key",
+		},
+		{
+			name: "single",
+			fns: []KeyFunc{
+				func(s string) (string, error) {
+					return s + "xx", nil
+				},
+			},
+			exp: "keyxx",
+		},
+		{
+			name: "multi",
+			fns: []KeyFunc{
+				func(s string) (string, error) {
+					return s + "xx", nil
+				},
+				func(s string) (string, error) {
+					return "yy" + s, nil
+				},
+			},
+			exp: "yykeyxx",
+		},
+		{
+			name: "error",
+			fns: []KeyFunc{
+				func(s string) (string, error) {
+					return s + "xx", nil
+				},
+				func(s string) (string, error) {
+					return "", fmt.Errorf("oops")
+				},
+			},
+			err: true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			fn := MultiKeyFunc(tc.fns...)
+			result, err := fn("key")
+			if (err != nil) != tc.err {
+				t.Fatal(err)
+			}
+
+			if got, want := result, tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+type hashFailer struct{}
+
+func (h *hashFailer) Write(_ []byte) (int, error) { return 0, fmt.Errorf("nope") }
+func (h *hashFailer) Sum(_ []byte) []byte         { return nil }
+func (h *hashFailer) Reset()                      {}
+func (h *hashFailer) Size() int                   { return 0 }
+func (h *hashFailer) BlockSize() int              { return 0 }
+
+var hashFailerFn = func() hash.Hash {
+	return &hashFailer{}
+}
+
+func TestHashKeyFunc(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		hash func() hash.Hash
+		exp  string
+		err  bool
+	}{
+		{
+			name: "sha256",
+			hash: sha256.New,
+			exp:  "2c70e12b7a0646f92279f427c7b38e7334d8e5389cff167a1dc30e73f826b683",
+		},
+		{
+			name: "error",
+			hash: hashFailerFn,
+			err:  true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			fn := HashKeyFunc(tc.hash)
+			result, err := fn("key")
+			if (err != nil) != tc.err {
+				t.Fatal(err)
+			}
+
+			if got, want := result, tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestHMACKeyFunc(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		hash func() hash.Hash
+		exp  string
+		err  bool
+	}{
+		{
+			name: "sha256",
+			hash: sha256.New,
+			exp:  "96de09a0f8699191b28587118ac57df88bbf6c2d0c131d196dcd90f7efd68c93",
+		},
+		{
+			name: "error",
+			hash: hashFailerFn,
+			err:  true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			fn := HMACKeyFunc(tc.hash, []byte("secret"))
+			result, err := fn("key")
+			if (err != nil) != tc.err {
+				t.Fatal(err)
+			}
+
+			if got, want := result, tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+type testCycleStruct struct {
+	Me *testCycleStruct `json:"me"`
+}
 
 type testStruct struct {
 	Public string
@@ -134,6 +375,9 @@ func exerciseCacher(t *testing.T, cacher Cacher) {
 			t.Errorf("expected %#v to be %#v", err, ErrStopped)
 		}
 		if err := cacher.Delete(ctx, key); !errors.Is(err, ErrStopped) {
+			t.Errorf("expected %#v to be %#v", err, ErrStopped)
+		}
+		if err := cacher.DeletePrefix(ctx, "foo"); !errors.Is(err, ErrStopped) {
 			t.Errorf("expected %#v to be %#v", err, ErrStopped)
 		}
 		if err := cacher.Fetch(ctx, key, nil, 0, nil); !errors.Is(err, ErrStopped) {

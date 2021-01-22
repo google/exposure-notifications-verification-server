@@ -75,6 +75,10 @@ func MultiKeyFunc(fns ...KeyFunc) KeyFunc {
 	return func(in string) (string, error) {
 		var err error
 		for _, fn := range fns {
+			if fn == nil {
+				continue
+			}
+
 			in, err = fn(in)
 			if err != nil {
 				return "", err
