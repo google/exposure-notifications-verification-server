@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,11 +29,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
 
-func TestAdminCaches(t *testing.T) {
+func TestAdminInfo(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -46,81 +45,37 @@ func TestAdminCaches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c := admin.New(cfg, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+	// c := admin.New(cfg, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
 
-	t.Run("middleware", func(t *testing.T) {
-		t.Parallel()
-		envstest.ExerciseSessionMissing(t, c.HandleCachesClear())
-	})
-
-	t.Run("not_found", func(t *testing.T) {
+	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleCachesClear()).Methods("PUT")
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		session := &sessions.Session{
-			Values: map[interface{}]interface{}{},
-		}
-
-		ctx := ctx
-		ctx = controller.WithSession(ctx, session)
-
-		r := httptest.NewRequest("PUT", "/1", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-		r.Header.Set("Referer", "https://example.com/foo/bar")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
-
-		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
-		}
-		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
-		}
-
-		flash := controller.Flash(session)
-		errs := flash.Errors()
-		if got, want := len(errs), 1; got != want {
-			t.Errorf("expected %d errors, got %d", want, got)
-		}
-		if got, want := errs[0], "Unknown cache type"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
-		}
-	})
-
-	t.Run("clears", func(t *testing.T) {
-		t.Parallel()
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleCachesClear()).Methods("PUT")
+		c := admin.New(cfg, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		r := httptest.NewRequest("PUT", "/realms:", nil)
+		r := httptest.NewRequest("PUT", "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
-		r.Header.Set("Referer", "https://example.com/foo/bar")
 
 		w := httptest.NewRecorder()
 
-		mux.ServeHTTP(w, r)
+		c.HandleInfoShow().ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d: %#v", got, want, w.Header())
 		}
-		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})
 
-	t.Run("renders", func(t *testing.T) {
+	t.Run("updates", func(t *testing.T) {
 		t.Parallel()
 
 		_, _, session, err := harness.ProvisionAndLogin()
@@ -143,10 +98,10 @@ func TestAdminCaches(t *testing.T) {
 			browser.SetCookie(cookie),
 
 			// Visit /admin
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/caches`),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/info`),
 
 			// Wait for render.
-			chromedp.WaitVisible(`body#admin-caches-index`, chromedp.ByQuery),
+			chromedp.WaitVisible(`body#admin-info`, chromedp.ByQuery),
 		); err != nil {
 			t.Fatal(err)
 		}
