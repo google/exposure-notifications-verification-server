@@ -18,8 +18,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/jinzhu/gorm"
 )
 
 const thirtyDays = 30 * 24 * time.Hour
@@ -131,10 +129,9 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 func TestConvertStatsDay(t *testing.T) {
 	t.Parallel()
 
-	realm := &Realm{Model: gorm.Model{ID: 1}}
 	now := time.Now()
 	day := &KeyServerStatsDay{
-		RealmID:            realm.ID,
+		RealmID:            1,
 		Day:                now,
 		TotalTEKsPublished: 50,
 		PublishRequests:    []int64{1, 2, 3},
@@ -142,7 +139,7 @@ func TestConvertStatsDay(t *testing.T) {
 	}
 
 	resp := day.ToResponse()
-	roundTripped := realm.MakeKeyServerStatsDay(resp)
+	roundTripped := MakeKeyServerStatsDay(1, resp)
 
 	if !reflect.DeepEqual(day, roundTripped) {
 		t.Errorf("round trip failed. got %#v want %#v", roundTripped, day)
