@@ -19,6 +19,8 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+
+	keyserver "github.com/google/exposure-notifications-server/pkg/api/v1"
 )
 
 // HandleKeyServerStats renders statistics for the current realm's associate key-server.
@@ -31,10 +33,15 @@ func (c *Controller) HandleKeyServerStats(typ StatsType) http.Handler {
 			return
 		}
 
-		stats, err := c.db.ListKeyServerStatsDays(currentRealm.ID)
+		days, err := c.db.ListKeyServerStatsDays(currentRealm.ID)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
+		}
+
+		stats := make([]*keyserver.StatsDay, len(days))
+		for i, d := range days {
+			stats[i] = d.ToResponse()
 		}
 
 		switch typ {

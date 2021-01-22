@@ -17,6 +17,8 @@ package database
 import (
 	"time"
 
+	keyserver "github.com/google/exposure-notifications-server/pkg/api/v1"
+
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 )
@@ -139,4 +141,40 @@ func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, er
 		Where("day < ?", a).
 		Delete(&KeyServerStatsDay{})
 	return rtn.RowsAffected, rtn.Error
+}
+
+// MakeKeyServerStatsDay creates a storage struct from a key-server StatsDay response
+func (r *Realm) MakeKeyServerStatsDay(d *keyserver.StatsDay) *KeyServerStatsDay {
+	pr := make([]int64, 3)
+	pr[OSTypeInvalid] = d.PublishRequests.UnknownPlatform
+	pr[OSTypeIOS] = d.PublishRequests.IOS
+	pr[OSTypeAndroid] = d.PublishRequests.Android
+
+	return &KeyServerStatsDay{
+		RealmID:                   r.ID,
+		Day:                       d.Day,
+		PublishRequests:           pr,
+		TotalTEKsPublished:        d.TotalTEKsPublished,
+		RevisionRequests:          d.RevisionRequests,
+		TEKAgeDistribution:        d.TEKAgeDistribution,
+		OnsetToUploadDistribution: d.OnsetToUploadDistribution,
+		RequestsMissingOnsetDate:  d.RequestsMissingOnsetDate,
+	}
+}
+
+// ToResponse makes a json-marshallable StatsDay from a KetServerStatsDay
+func (kssd *KeyServerStatsDay) ToResponse() *keyserver.StatsDay {
+	return &keyserver.StatsDay{
+		Day: kssd.Day,
+		PublishRequests: keyserver.PublishRequests{
+			UnknownPlatform: kssd.PublishRequests[OSTypeInvalid],
+			IOS:             kssd.PublishRequests[OSTypeIOS],
+			Android:         kssd.PublishRequests[OSTypeAndroid],
+		},
+		TotalTEKsPublished:        kssd.TotalTEKsPublished,
+		RevisionRequests:          kssd.RevisionRequests,
+		TEKAgeDistribution:        kssd.TEKAgeDistribution,
+		OnsetToUploadDistribution: kssd.OnsetToUploadDistribution,
+		RequestsMissingOnsetDate:  kssd.RequestsMissingOnsetDate,
+	}
 }
