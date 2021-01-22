@@ -33,7 +33,7 @@ func (c *Controller) HandleKeyServerStats(typ StatsType) http.Handler {
 			return
 		}
 
-		days, err := c.db.ListKeyServerStatsDays(currentRealm.ID)
+		days, err := c.db.ListKeyServerStatsDaysCached(ctx, currentRealm.ID, c.cacher)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

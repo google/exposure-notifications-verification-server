@@ -15,9 +15,12 @@
 package database
 
 import (
+	"context"
+	"strconv"
 	"time"
 
 	keyserver "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
@@ -141,6 +144,21 @@ func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, er
 		Where("day < ?", a).
 		Delete(&KeyServerStatsDay{})
 	return rtn.RowsAffected, rtn.Error
+}
+
+// ListKeyServerStatsDaysCached retrieves the last 30 days of key-server statistics
+func (db *Database) ListKeyServerStatsDaysCached(ctx context.Context, realmID uint, cacher cache.Cacher) ([]*KeyServerStatsDay, error) {
+	var stats []*KeyServerStatsDay
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:key_server",
+		Key:       strconv.FormatUint(uint64(realmID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return db.ListKeyServerStatsDays(realmID)
+	}); err != nil {
+		return nil, err
+	}
+	return stats, nil
 }
 
 // ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
