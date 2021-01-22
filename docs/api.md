@@ -96,14 +96,20 @@ Exchange a verification code for a long term verification token.
 **VerifyCodeResponse**
 
 ```json
+http 200
 {
   "testtype": "<test type string>",
   "symptomDate": "YYYY-MM-DD",
   "testDate": "YYYY-MM-DD",
   "token": "<JWT verification token>",
+  "padding": "<bytes>"
+}
+
+or
+
+{
   "error": "",
   "errorCode": "",
-  "padding": "<bytes>"
 }
 ```
 
@@ -157,11 +163,17 @@ Exchange a verification token for a verification certificate (for sending to a k
 **VerificationCertificateResponse**
 
 ```json
+http 200
 {
   "certificate": "<JWT verification certificate>",
+  "padding": "<bytes>"
+}
+
+or
+
+{
   "error": "",
   "errorCode": "",
-  "padding": "<bytes>"
 }
 ```
 
@@ -240,6 +252,7 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
 **IssueCodeResponse**
 
 ```json
+http 200
 {
   "uuid": "string UUID",
   "code": "short verification code",
@@ -249,6 +262,11 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   "expiresAtTimestamp": 0,
   "longExpiresAt": "RFC1123 UTC timestamp",
   "longExpiresAtTimestamp": 0,
+}
+
+or
+
+{
   "error": "descriptive error message",
   "errorCode": "well defined error code from api.go",
 }
@@ -378,16 +396,16 @@ for each code response. The index of each responses will match the index of the 
       "expiresAtTimestamp": 0,
       "longExpiresAt": "RFC1123 UTC timestamp",
       "longExpiresAtTimestamp": 0,
-      "error": "descriptive error message",
-      "errorCode": "well defined error code from api.go",
+      "error": "[optional] descriptive error message",
+      "errorCode": "[optional] well defined error code from api.go",
     },
     {
       ...
     },
   ],
   "padding": "<bytes>"
-  "error": "descriptive error message",
-  "errorCode": "well defined error code from api.go",
+  "error": "[optional] descriptive error message. The first seen error from 'codes'",
+  "errorCode": "[optional] well defined error code from api.go. The first-seen errorCode of 'codes'",
 }
 ```
 
@@ -412,13 +430,19 @@ Checks the status of a previous issued code, looking up by UUID.
 **CheckCodeStatusResponse**
 
 ```json
+http 200
 {
   "claimed": false,
   "expiresAtTimestamp": 0,
   "longExpiresAtTimestamp": 0,
+  "padding": "<bytes>"
+}
+
+or
+
+{
   "error": "descriptive error message",
   "errorCode": "well defined error code from api.go",
-  "padding": "<bytes>"
 }
 ```
 
@@ -440,13 +464,19 @@ Expires an unclaimed code. If the code has been claimed an error is returned.
 **ExpireCodeRequest**
 
 ```json
+http 200
 {
   "uuid": "UUID of the code to expire",
   "expiresAtTimestamp": 0,
   "longExpiresAtTimestamp": 0,
+  "padding": "<bytes>"
+}
+
+or
+
+{
   "error": "descriptive error message",
   "errorCode": "well defined error code from api.go",
-  "padding": "<bytes>"
 }
 ```
 
