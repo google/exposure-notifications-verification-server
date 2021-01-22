@@ -139,14 +139,22 @@
     var dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'Date');
     dataTable.addColumn('number', 'Unknown OS');
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
     dataTable.addColumn('number', 'Android');
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
     dataTable.addColumn('number', 'IOS');
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
 
     data.statistics.reverse().forEach(function(row) {
+      let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
+
       dataTable.addRow([utcDate(row.day),
         row.publish_requests.unknown,
+        "<strong>Unknown:</strong>" + row.publish_requests.unknown + " " +(row.publish_requests.unknown / total * 100).toPrecision(3) + "%",
         row.publish_requests.android,
+        "<strong>Android:</strong>" + row.publish_requests.android + " " + (row.publish_requests.android / total * 10).toPrecision(3) + "%",
         row.publish_requests.ios,
+        "<strong>IOS:</strong>" + row.publish_requests.ios + " " + (row.publish_requests.ios / total * 100).toPrecision(3) + "%",
       ]);
     });
 
@@ -168,6 +176,7 @@
       hAxis: { format: 'M/d' },
       legend: { position: 'top' },
       isStacked: true,
+      tooltip: {isHtml: true},
     };
 
     let chart = new google.visualization.ColumnChart($div.get(0));
