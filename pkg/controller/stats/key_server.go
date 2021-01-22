@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,46 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realmadmin
+package stats
 
 import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+
+	keyserver "github.com/google/exposure-notifications-server/pkg/api/v1"
 )
 
-func (c *Controller) HandleStats() http.Handler {
+// HandleKeyServerStats renders statistics for the current realm's associate key-server.
+func (c *Controller) HandleKeyServerStats(typ StatsType) http.Handler {
+	type retStats struct {
+		Stats []*keyserver.StatsDay `json:"statistics"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-
-		membership := controller.MembershipFromContext(ctx)
-		if membership == nil {
-			controller.MissingMembership(w, r, c.h)
-			return
-		}
-		if !membership.Can(rbac.StatsRead) {
+		currentRealm, ok := authorizeFromContext(ctx, rbac.StatsRead, rbac.UserRead)
+		if !ok {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 
-		s, err := c.db.GetKeyServerStats(membership.RealmID)
-		if err != nil && !database.IsNotFound(err) {
+		days, err := c.db.ListKeyServerStatsDaysCached(ctx, currentRealm.ID, c.cacher)
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
-		hasKeyServerStats := err == nil && s != nil
 
-		m := controller.TemplateMapFromContext(ctx)
-		m["hasKeyServerStats"] = hasKeyServerStats
-		m.Title("Realm stats")
-		c.h.RenderHTML(w, "realmadmin/stats", m)
+		stats := make([]*keyserver.StatsDay, len(days))
+		for i, d := range days {
+			stats[i] = d.ToResponse()
+		}
+
+		switch typ {
+		case StatsTypeJSON:
+			c.h.RenderJSON(w, http.StatusOK, retStats{Stats: stats})
+			return
+		default:
+			controller.NotFound(w, r, c.h)
+			return
+		}
 	})
 }

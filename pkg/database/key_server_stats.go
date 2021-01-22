@@ -15,7 +15,12 @@
 package database
 
 import (
+	"context"
+	"strconv"
 	"time"
+
+	keyserver "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
@@ -141,8 +146,23 @@ func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, er
 	return rtn.RowsAffected, rtn.Error
 }
 
+// ListKeyServerStatsDaysCached retrieves the last 30 days of key-server statistics
+func (db *Database) ListKeyServerStatsDaysCached(ctx context.Context, realmID uint, cacher cache.Cacher) ([]*KeyServerStatsDay, error) {
+	var stats []*KeyServerStatsDay
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:key_server",
+		Key:       strconv.FormatUint(uint64(realmID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return db.ListKeyServerStatsDays(realmID)
+	}); err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
 // ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
-func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyServerStatsDay, error) {
+func (db *Database) ListKeyServerStatsDays(realmID uint) ([]*KeyServerStatsDay, error) {
 	var stats []*KeyServerStatsDay
 	if err := db.db.
 		Model(&KeyServerStatsDay{}).
@@ -154,4 +174,43 @@ func (db *Database) ListKeyServerStatsDays(realmID uint, day time.Time) ([]*KeyS
 		return nil, err
 	}
 	return stats, nil
+}
+
+// MakeKeyServerStatsDay creates a storage struct from a key-server StatsDay response
+func MakeKeyServerStatsDay(realmID uint, d *keyserver.StatsDay) *KeyServerStatsDay {
+	pr := make([]int64, 3)
+	pr[OSTypeUnknown] = d.PublishRequests.UnknownPlatform
+	pr[OSTypeIOS] = d.PublishRequests.IOS
+	pr[OSTypeAndroid] = d.PublishRequests.Android
+
+	return &KeyServerStatsDay{
+		RealmID:                   realmID,
+		Day:                       d.Day,
+		PublishRequests:           pr,
+		TotalTEKsPublished:        d.TotalTEKsPublished,
+		RevisionRequests:          d.RevisionRequests,
+		TEKAgeDistribution:        d.TEKAgeDistribution,
+		OnsetToUploadDistribution: d.OnsetToUploadDistribution,
+		RequestsMissingOnsetDate:  d.RequestsMissingOnsetDate,
+	}
+}
+
+// ToResponse makes a json-marshallable StatsDay from a KetServerStatsDay
+func (kssd *KeyServerStatsDay) ToResponse() *keyserver.StatsDay {
+	reqs := keyserver.PublishRequests{}
+	if l := len(kssd.PublishRequests); l == 3 {
+		reqs.UnknownPlatform = kssd.PublishRequests[OSTypeUnknown]
+		reqs.IOS = kssd.PublishRequests[OSTypeIOS]
+		reqs.Android = kssd.PublishRequests[OSTypeAndroid]
+	}
+
+	return &keyserver.StatsDay{
+		Day:                       kssd.Day,
+		PublishRequests:           reqs,
+		TotalTEKsPublished:        kssd.TotalTEKsPublished,
+		RevisionRequests:          kssd.RevisionRequests,
+		TEKAgeDistribution:        kssd.TEKAgeDistribution,
+		OnsetToUploadDistribution: kssd.OnsetToUploadDistribution,
+		RequestsMissingOnsetDate:  kssd.RequestsMissingOnsetDate,
+	}
 }

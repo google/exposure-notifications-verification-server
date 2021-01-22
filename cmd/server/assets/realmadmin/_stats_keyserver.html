@@ -1,0 +1,118 @@
+{{define "realmadmin/_stats_keyserver"}}
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    Key server stats
+  </div>
+  <div id="keyserver_chart_div" class="h-100 w-100" style="min-height:325px;">
+    <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+  </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-toggle="modal" data-target="#keyserver-stats-modal">Learn more about this chart</a>
+    <span>
+      <span class="mr-1">Export as:</span>
+      <a href="/stats/realm/key-server.json">JSON</a>
+    </span>
+  </small>
+</div>
+
+<div class="modal fade" id="keyserver-stats-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Key server stats</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph reflects data from the key-server from for this realm,
+          grouped by UTC day.
+        </p>
+
+        <strong>Total TEKs published</strong>
+        <p>
+          This line tracks the total number of TEKs published to the key-server.
+          This is expected to be similar to the number of tokens claimed on the verification server.
+        </p>
+
+        <strong>Requests with revisions</strong>
+        <p>
+          This line tracks the total number of publish requests that contained
+          at least one TEK revision
+        </p>
+
+        <strong>Request missing onset</strong>
+        <p>
+          This line tracks the total number of publish requests where no onset date
+          was provided. These request are not included in the onset to upload distribution.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  google.charts.load('current', {
+    packages: ['corechart'],
+    callback: drawRealmCharts,
+  });
+
+  function drawRealmCharts() {
+    $.ajax({
+      url: '/stats/realm/key-server.json',
+      dataType: 'json',
+    })
+    .done(function(data, status, xhr) {
+      let $div = $('#keyserver_chart_div');
+
+      if (!data.statistics) {
+        $div.find('p').text('No data yet.');
+        return;
+      }
+
+      var dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('date', 'Date');
+      dataTable.addColumn('number', 'TEKs published');
+      dataTable.addColumn('number', 'Revision requests');
+      dataTable.addColumn('number', 'Requests missing onset');
+
+      data.statistics.reverse().forEach(function(row) {
+        dataTable.addRow([utcDate(row.day),
+          row.total_teks_published,
+          row.requests_with_revisions,
+          row.requests_missing_onset_date,
+        ]);
+      });
+
+      let dateFormatter = new google.visualization.DateFormat({
+        pattern: 'MMM dd',
+      });
+      dateFormatter.format(dataTable, 0);
+
+      let options = {
+        colors: ['#28a745', '#a76e28', '#a72898'],
+        chartArea: {
+          left: 60,
+          right: 40,
+          bottom: 40,
+          top: 40,
+          width: '100%',
+          height: '300',
+        },
+        hAxis: { format: 'M/d' },
+        legend: { position: 'top' },
+      };
+
+      let chart = new google.visualization.LineChart($div.get(0));
+      chart.draw(dataTable, options);
+    })
+    .fail(function(xhr, status, err) {
+      flash.error('Failed to render key-server stats: ' + err);
+    });
+  }
+</script>
+
+{{end}}

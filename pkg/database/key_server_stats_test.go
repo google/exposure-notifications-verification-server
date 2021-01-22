@@ -15,6 +15,7 @@
 package database
 
 import (
+	"reflect"
 	"testing"
 	"time"
 )
@@ -87,7 +88,7 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stats, err := db.ListKeyServerStatsDays(realm.ID, now)
+	stats, err := db.ListKeyServerStatsDays(realm.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +109,7 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stats, err = db.ListKeyServerStatsDays(realm.ID, now)
+	stats, err = db.ListKeyServerStatsDays(realm.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,5 +123,25 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 	}
 	if rows != 1 {
 		t.Errorf("expected purged row, got %d", rows)
+	}
+}
+
+func TestConvertStatsDay(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now()
+	day := &KeyServerStatsDay{
+		RealmID:            1,
+		Day:                now,
+		TotalTEKsPublished: 50,
+		PublishRequests:    []int64{1, 2, 3},
+		TEKAgeDistribution: []int64{1, 2, 3, 4, 5},
+	}
+
+	resp := day.ToResponse()
+	roundTripped := MakeKeyServerStatsDay(1, resp)
+
+	if !reflect.DeepEqual(day, roundTripped) {
+		t.Errorf("round trip failed. got %#v want %#v", roundTripped, day)
 	}
 }

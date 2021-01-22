@@ -288,7 +288,7 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 	}
 	logger := logging.FromContext(ctx).Named("issueapi.recordStats")
 	v := codes[0]
-	date := timeutils.Midnight(v.CreatedAt)
+	date := timeutils.UTCMidnight(v.CreatedAt)
 
 	// If the issuer was a user, update the user stats for the day.
 	if v.IssuingUserID != 0 {
