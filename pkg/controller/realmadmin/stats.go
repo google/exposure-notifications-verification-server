@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -42,6 +43,10 @@ func (c *Controller) HandleStats() http.Handler {
 		}
 
 		s, err := c.db.GetKeyServerStats(membership.RealmID)
+		if err != nil && !database.IsNotFound(err) {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
 		hasKeyServerStats := err == nil && s != nil
 
 		m := controller.TemplateMapFromContext(ctx)
