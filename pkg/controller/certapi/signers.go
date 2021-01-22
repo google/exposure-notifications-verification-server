@@ -20,6 +20,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/cache"
+	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -31,40 +34,45 @@ type SignerInfo struct {
 	Duration time.Duration
 }
 
-func (c *Controller) getSignerForRealm(ctx context.Context, authApp *database.AuthorizedApp) (*SignerInfo, error) {
-	sRealmID := fmt.Sprintf("%d", authApp.RealmID)
-	signerCache, err := c.signerCache.WriteThruLookup(sRealmID,
+func (c *Controller) getSignerForAuthApp(ctx context.Context, authApp *database.AuthorizedApp) (*SignerInfo, error) {
+	return GetSignerForRealm(ctx, authApp.RealmID, c.config.CertificateSigning, c.signerCache, c.db, c.kms)
+}
+
+// GetSignerForRealm gets the certificate signer info for the given realm.
+func GetSignerForRealm(ctx context.Context, realmID uint,
+	cfg config.CertificateSigningConfig, cache *cache.Cache, db *database.Database, kms keys.KeyManager) (*SignerInfo, error) {
+	signerCache, err := cache.WriteThruLookup(fmt.Sprintf("%d", realmID),
 		func() (interface{}, error) {
-			realm, err := authApp.Realm(c.db)
+			realm, err := db.FindRealm(realmID)
 			if err != nil {
 				return nil, fmt.Errorf("unable to load realm settings: %w", err)
 			}
 
 			if !realm.UseRealmCertificateKey {
 				// This realm is using the system key.
-				signer, err := c.kms.NewSigner(ctx, c.config.CertificateSigning.CertificateSigningKey)
+				signer, err := kms.NewSigner(ctx, cfg.CertificateSigningKey)
 				if err != nil {
-					return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %v: %w", sRealmID, err)
+					return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %d: %w", realmID, err)
 				}
 				return &SignerInfo{
 					Signer:   signer,
-					KeyID:    c.config.CertificateSigning.CertificateSigningKeyID,
-					Issuer:   c.config.CertificateSigning.CertificateIssuer,
-					Audience: c.config.CertificateSigning.CertificateAudience,
-					Duration: c.config.CertificateSigning.CertificateDuration,
+					KeyID:    cfg.CertificateSigningKeyID,
+					Issuer:   cfg.CertificateIssuer,
+					Audience: cfg.CertificateAudience,
+					Duration: cfg.CertificateDuration,
 				}, nil
 			}
 
-			// Relam has custom signing keys.
-			signingKey, err := realm.CurrentSigningKey(c.db)
+			// Realm has custom signing keys.
+			signingKey, err := realm.CurrentSigningKey(db)
 			if err != nil || signingKey == nil {
 				return nil, fmt.Errorf("unable to find current signing key for realm: %v: %w", realm.Model.ID, err)
 			}
 
 			// load the crypto.Signer for this keyID
-			signer, err := c.kms.NewSigner(ctx, signingKey.KeyID)
+			signer, err := kms.NewSigner(ctx, signingKey.KeyID)
 			if err != nil {
-				return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %v: %w", sRealmID, err)
+				return nil, fmt.Errorf("unable to get signing key from key manager: realmId: %d: %w", realmID, err)
 			}
 			return &SignerInfo{
 				Signer:   signer,
@@ -75,11 +83,11 @@ func (c *Controller) getSignerForRealm(ctx context.Context, authApp *database.Au
 			}, nil
 		})
 	if err != nil {
-		return nil, fmt.Errorf("unable to get signer for realmID: %v: %w", sRealmID, err)
+		return nil, fmt.Errorf("unable to get signer for realmID: %d: %w", realmID, err)
 	}
 	signer, ok := signerCache.(*SignerInfo)
 	if !ok {
-		return nil, fmt.Errorf("certificate signer in wrong format for realmID: %v: %w", sRealmID, err)
+		return nil, fmt.Errorf("certificate signer in wrong format for realmID: %d: %w", realmID, err)
 	}
 	return signer, nil
 }
