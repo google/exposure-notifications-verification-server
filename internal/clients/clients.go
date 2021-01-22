@@ -39,7 +39,7 @@ func WithTimeout(d time.Duration) Option {
 	}
 }
 
-// WithMaxBodySize sets a custom max body sixe for each request. The default is
+// WithMaxBodySize sets a custom max body size for each request. The default is
 // 64kib.
 func WithMaxBodySize(max int64) Option {
 	return func(c *client) *client {

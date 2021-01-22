@@ -16,8 +16,6 @@
 package admin
 
 import (
-	"context"
-
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -36,7 +34,6 @@ type Controller struct {
 }
 
 func New(
-	ctx context.Context,
 	config *config.ServerConfig,
 	cacher cache.Cacher,
 	db *database.Database,

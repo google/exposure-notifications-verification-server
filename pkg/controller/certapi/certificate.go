@@ -98,7 +98,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 
 		// determine the correct signing key to use.
-		signerInfo, err := c.getSignerForRealm(ctx, authApp)
+		signerInfo, err := c.getSignerForAuthApp(ctx, authApp)
 		if err != nil {
 			logger.Errorw("failed to get signer", "error", err)
 			// FIXME: should we blame server here?

@@ -31,6 +31,14 @@ type StatsPullerConfig struct {
 	Database      database.Config
 	Observability observability.Config
 
+	// Certificate signing
+	CertificateSigning CertificateSigningConfig
+
+	// KeyServerURL is the default URL of the key server - individual realms may override it
+	KeyServerURL       string        `env:"KEY_SERVER_URL, required"`
+	FileSizeLimitBytes int64         `env:"STATS_PULLER_SIZE_LIMIT, default=64000"`
+	DownloadTimeout    time.Duration `env:"STATS_PULLER_DOWNLOAD_TIMEOUT, default=1m"`
+
 	// Port is the port upon which to bind.
 	Port string `env:"PORT, default=8080"`
 

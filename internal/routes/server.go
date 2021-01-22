@@ -319,7 +319,7 @@ func Server(
 		sub.Use(requireSystemAdmin)
 		sub.Use(rateLimit)
 
-		adminController := admin.New(ctx, cfg, cacher, db, authProvider, limiterStore, h)
+		adminController := admin.New(cfg, cacher, db, authProvider, limiterStore, h)
 		systemAdminRoutes(sub, adminController)
 	}
 

@@ -16,8 +16,16 @@ package statspuller
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
+	v1 "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 )
 
 const (
@@ -50,8 +58,88 @@ func (c *Controller) HandlePullStats() http.Handler {
 			return
 		}
 
+		// Get all of the realms with stats configured
+		statsConfigs, err := c.db.ListKeyServerStats()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		logger := logging.FromContext(ctx).Named("rotation.HandlePullStats")
-		logger.Debug("no-op stats pull") // TODO(whaught): remove this and put in logic
+		for _, realmStat := range statsConfigs {
+			realmID := realmStat.RealmID
+
+			var err error
+			client := c.defaultKeyServerClient
+			if realmStat.KeyServerURLOverride != "" {
+				client, err = clients.NewKeyServerClient(
+					realmStat.KeyServerURLOverride,
+					clients.WithTimeout(c.config.DownloadTimeout),
+					clients.WithMaxBodySize(c.config.FileSizeLimitBytes))
+				if err != nil {
+					logger.Errorw("failed to create key server client", "error", err)
+					continue
+				}
+			}
+
+			s, err := certapi.GetSignerForRealm(ctx, realmID, c.config.CertificateSigning, c.signerCache, c.db, c.kms)
+			if err != nil {
+				logger.Errorw("failed to retrieve signer for realm", "realmID", realmID)
+				continue
+			}
+
+			audience := s.Audience
+			if realmStat.KeyServerAudienceOverride != "" {
+				audience = realmStat.KeyServerAudienceOverride
+			}
+
+			now := time.Now().UTC()
+			claims := &jwt.StandardClaims{
+				Audience:  audience,
+				ExpiresAt: now.Add(5 * time.Minute).UTC().Unix(),
+				IssuedAt:  now.Unix(),
+				Issuer:    s.Issuer,
+			}
+			token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+			token.Header["kid"] = s.KeyID
+
+			signedJWT, err := jwthelper.SignJWT(token, s.Signer)
+			if err != nil {
+				logger.Errorw("failed to stat-pull token", "error", err)
+				continue
+			}
+
+			resp, err := client.Stats(ctx, &v1.StatsRequest{}, signedJWT)
+			if err != nil {
+				logger.Errorw("failed make stats call", "error", err)
+				continue
+			}
+
+			for _, d := range resp.Days {
+				if d == nil {
+					continue
+				}
+
+				pr := make([]int64, 3)
+				pr[database.OSTypeUnknown] = d.PublishRequests.UnknownPlatform
+				pr[database.OSTypeIOS] = d.PublishRequests.IOS
+				pr[database.OSTypeAndroid] = d.PublishRequests.Android
+
+				day := &database.KeyServerStatsDay{
+					RealmID:                   realmID,
+					Day:                       d.Day,
+					PublishRequests:           pr,
+					TotalTEKsPublished:        d.TotalTEKsPublished,
+					RevisionRequests:          d.RevisionRequests,
+					TEKAgeDistribution:        d.TEKAgeDistribution,
+					OnsetToUploadDistribution: d.OnsetToUploadDistribution,
+					RequestsMissingOnsetDate:  d.RequestsMissingOnsetDate,
+				}
+				if err = c.db.SaveKeyServerStatsDay(day); err != nil {
+					logger.Errorw("failed saving stats day", "error", err)
+				}
+			}
+		}
 
 		c.h.RenderJSON(w, http.StatusOK, &Result{
 			OK: true,

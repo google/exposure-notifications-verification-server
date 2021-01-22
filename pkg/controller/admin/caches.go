@@ -64,13 +64,13 @@ func (c *Controller) HandleCachesClear() http.Handler {
 		item, ok := caches[id]
 		if !ok {
 			flash.Error("Unknown cache type: %q", id)
-			c.renderCachesIndex(ctx, w)
+			controller.Back(w, r, c.h)
 			return
 		}
 
 		if err := c.cacher.DeletePrefix(ctx, id); err != nil {
 			flash.Error("Failed to clear cache for %s: %v", item.Name, err)
-			c.renderCachesIndex(ctx, w)
+			controller.Back(w, r, c.h)
 			return
 		}
 

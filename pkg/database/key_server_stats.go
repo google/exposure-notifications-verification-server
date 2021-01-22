@@ -114,6 +114,35 @@ func (db *Database) DeleteKeyServerStats(realmID uint) error {
 		Error
 }
 
+// ListKeyServerStats retrieves the key-server statistics configuration for all realms
+func (db *Database) ListKeyServerStats() ([]*KeyServerStats, error) {
+	var stats []*KeyServerStats
+	if err := db.db.
+		Model(&KeyServerStatsDay{}).
+		Find(&stats).
+		Error; err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
+// SaveKeyServerStatsDay stores a single day of key-server statistics
+func (db *Database) SaveKeyServerStatsDay(day *KeyServerStatsDay) error {
+	return db.db.Debug().Save(day).Error
+}
+
+// DeleteOldKeyServerStatsDays deletes rows from KeyServerStatsDays that are older than 30 days
+func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	a := time.Now().UTC().Add(maxAge)
+	rtn := db.db.Unscoped().
+		Where("day < ?", a).
+		Delete(&KeyServerStatsDay{})
+	return rtn.RowsAffected, rtn.Error
+}
+
 // ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
 func (db *Database) ListKeyServerStatsDays(realmID uint) ([]*KeyServerStatsDay, error) {
 	var stats []*KeyServerStatsDay
@@ -129,24 +158,10 @@ func (db *Database) ListKeyServerStatsDays(realmID uint) ([]*KeyServerStatsDay, 
 	return stats, nil
 }
 
-// SaveKeyServerStatsDay stores a single day of key-server statistics
-func (db *Database) SaveKeyServerStatsDay(day *KeyServerStatsDay) error {
-	return db.db.Debug().Save(day).Error
-}
-
-// DeleteOldKeyServerStatsDays deletes rows from KeyServerStatsDays that are older than 30 days
-func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, error) {
-	a := time.Now().UTC().Add(-maxAge)
-	rtn := db.db.Unscoped().
-		Where("day < ?", a).
-		Delete(&KeyServerStatsDay{})
-	return rtn.RowsAffected, rtn.Error
-}
-
 // MakeKeyServerStatsDay creates a storage struct from a key-server StatsDay response
 func (r *Realm) MakeKeyServerStatsDay(d *keyserver.StatsDay) *KeyServerStatsDay {
 	pr := make([]int64, 3)
-	pr[OSTypeInvalid] = d.PublishRequests.UnknownPlatform
+	pr[OSTypeUnknown] = d.PublishRequests.UnknownPlatform
 	pr[OSTypeIOS] = d.PublishRequests.IOS
 	pr[OSTypeAndroid] = d.PublishRequests.Android
 
@@ -166,7 +181,7 @@ func (r *Realm) MakeKeyServerStatsDay(d *keyserver.StatsDay) *KeyServerStatsDay 
 func (kssd *KeyServerStatsDay) ToResponse() *keyserver.StatsDay {
 	reqs := keyserver.PublishRequests{}
 	if l := len(kssd.PublishRequests); l == 3 {
-		reqs.UnknownPlatform = kssd.PublishRequests[OSTypeInvalid]
+		reqs.UnknownPlatform = kssd.PublishRequests[OSTypeUnknown]
 		reqs.IOS = kssd.PublishRequests[OSTypeIOS]
 		reqs.Android = kssd.PublishRequests[OSTypeAndroid]
 	}

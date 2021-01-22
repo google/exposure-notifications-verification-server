@@ -32,7 +32,7 @@ func TestOSType(t *testing.T) {
 		t   OSType
 		exp int
 	}{
-		{OSTypeInvalid, 0},
+		{OSTypeUnknown, 0},
 		{OSTypeIOS, 1},
 		{OSTypeAndroid, 2},
 	}
@@ -57,7 +57,7 @@ func TestOSType_Display(t *testing.T) {
 		t   OSType
 		exp string
 	}{
-		{OSTypeInvalid, "Unknown"},
+		{OSTypeUnknown, "Unknown"},
 		{OSTypeIOS, "iOS"},
 		{OSTypeAndroid, "Android"},
 		{1991, "Unknown"},

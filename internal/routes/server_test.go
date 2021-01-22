@@ -18,11 +18,54 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
+
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
 	"github.com/gorilla/mux"
+	"github.com/sethvargo/go-limiter/memorystore"
 )
+
+func TestServer(t *testing.T) {
+	t.Parallel()
+
+	ctx := project.TestContext(t)
+
+	cfg := &config.ServerConfig{
+		LocalesPath: filepath.Join(project.Root(), "internal", "i18n", "locales"),
+	}
+	db := &database.Database{}
+	cacher, err := cache.NewNoop()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authProvider, err := auth.NewLocal(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	limiterStore, err := memorystore.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	signer := keys.TestKeyManager(t)
+
+	mux, err := Server(ctx, cfg, db, authProvider, cacher, signer, limiterStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = mux
+}
 
 func TestRoutes_codesRoutes(t *testing.T) {
 	t.Parallel()

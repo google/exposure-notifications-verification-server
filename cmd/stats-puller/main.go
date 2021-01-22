@@ -20,12 +20,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/statspuller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -110,7 +112,22 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
-	statsController := statspuller.New(cfg, db, h)
+	client, err := clients.NewKeyServerClient(cfg.KeyServerURL,
+		clients.WithTimeout(cfg.DownloadTimeout),
+		clients.WithMaxBodySize(cfg.FileSizeLimitBytes))
+	if err != nil {
+		return fmt.Errorf("failed to create key server client: %w", err)
+	}
+
+	certificateSigner, err := keys.KeyManagerFor(ctx, &cfg.CertificateSigning.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create certificate key manager: %w", err)
+	}
+
+	statsController, err := statspuller.New(cfg, db, client, certificateSigner, h)
+	if err != nil {
+		return fmt.Errorf("failed to stats controller: %w", err)
+	}
 	r.Handle("/", statsController.HandlePullStats()).Methods("GET")
 
 	srv, err := server.New(cfg.Port)
