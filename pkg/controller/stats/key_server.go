@@ -25,6 +25,10 @@ import (
 
 // HandleKeyServerStats renders statistics for the current realm's associate key-server.
 func (c *Controller) HandleKeyServerStats(typ StatsType) http.Handler {
+	type retStats struct {
+		Stats []*keyserver.StatsDay `json:"statistics"`
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		currentRealm, ok := authorizeFromContext(ctx, rbac.StatsRead, rbac.UserRead)
@@ -46,7 +50,7 @@ func (c *Controller) HandleKeyServerStats(typ StatsType) http.Handler {
 
 		switch typ {
 		case StatsTypeJSON:
-			c.h.RenderJSON(w, http.StatusOK, stats)
+			c.h.RenderJSON(w, http.StatusOK, retStats{Stats: stats})
 			return
 		default:
 			controller.NotFound(w, r, c.h)
