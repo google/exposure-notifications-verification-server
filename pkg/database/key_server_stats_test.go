@@ -15,8 +15,11 @@
 package database
 
 import (
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/jinzhu/gorm"
 )
 
 const thirtyDays = 30 * 24 * time.Hour
@@ -114,5 +117,26 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 	}
 	if rows != 1 {
 		t.Errorf("expected purged row, got %d", rows)
+	}
+}
+
+func TestConvertStatsDay(t *testing.T) {
+	t.Parallel()
+
+	realm := &Realm{Model: gorm.Model{ID: 1}}
+	now := time.Now()
+	day := &KeyServerStatsDay{
+		RealmID:            realm.ID,
+		Day:                now,
+		TotalTEKsPublished: 50,
+		PublishRequests:    []int64{1, 2, 3},
+		TEKAgeDistribution: []int64{1, 2, 3, 4, 5},
+	}
+
+	resp := day.ToResponse()
+	roundTripped := realm.MakeKeyServerStatsDay(resp)
+
+	if !reflect.DeepEqual(day, roundTripped) {
+		t.Errorf("round trip failed. got %#v want %#v", roundTripped, day)
 	}
 }

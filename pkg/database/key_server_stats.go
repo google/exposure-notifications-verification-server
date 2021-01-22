@@ -164,13 +164,16 @@ func (r *Realm) MakeKeyServerStatsDay(d *keyserver.StatsDay) *KeyServerStatsDay 
 
 // ToResponse makes a json-marshallable StatsDay from a KetServerStatsDay
 func (kssd *KeyServerStatsDay) ToResponse() *keyserver.StatsDay {
+	reqs := keyserver.PublishRequests{}
+	if l := len(kssd.PublishRequests); l == 3 {
+		reqs.UnknownPlatform = kssd.PublishRequests[OSTypeInvalid]
+		reqs.IOS = kssd.PublishRequests[OSTypeIOS]
+		reqs.Android = kssd.PublishRequests[OSTypeAndroid]
+	}
+
 	return &keyserver.StatsDay{
-		Day: kssd.Day,
-		PublishRequests: keyserver.PublishRequests{
-			UnknownPlatform: kssd.PublishRequests[OSTypeInvalid],
-			IOS:             kssd.PublishRequests[OSTypeIOS],
-			Android:         kssd.PublishRequests[OSTypeAndroid],
-		},
+		Day:                       kssd.Day,
+		PublishRequests:           reqs,
 		TotalTEKsPublished:        kssd.TotalTEKsPublished,
 		RevisionRequests:          kssd.RevisionRequests,
 		TEKAgeDistribution:        kssd.TEKAgeDistribution,
