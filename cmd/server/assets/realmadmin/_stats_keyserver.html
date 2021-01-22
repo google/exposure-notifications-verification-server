@@ -5,7 +5,16 @@
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
     Key server stats
   </div>
+  <div class="card-body">
+    <h5 class="card-title">Publish requests</h5>
+  </div>
   <div id="keyserver_chart_div" class="h-100 w-100" style="min-height:325px;">
+    <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+  </div>
+  <div class="card-body">
+    <h5 class="card-title">Publish requests by OS</h5>
+  </div>
+  <div id="keyserver_os_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
@@ -66,52 +75,103 @@
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
-      let $div = $('#keyserver_chart_div');
-
-      if (!data.statistics) {
-        $div.find('p').text('No data yet.');
-        return;
-      }
-
-      var dataTable = new google.visualization.DataTable();
-      dataTable.addColumn('date', 'Date');
-      dataTable.addColumn('number', 'TEKs published');
-      dataTable.addColumn('number', 'Revision requests');
-      dataTable.addColumn('number', 'Requests missing onset');
-
-      data.statistics.reverse().forEach(function(row) {
-        dataTable.addRow([utcDate(row.day),
-          row.total_teks_published,
-          row.requests_with_revisions,
-          row.requests_missing_onset_date,
-        ]);
-      });
-
-      let dateFormatter = new google.visualization.DateFormat({
-        pattern: 'MMM dd',
-      });
-      dateFormatter.format(dataTable, 0);
-
-      let options = {
-        colors: ['#28a745', '#a76e28', '#a72898'],
-        chartArea: {
-          left: 60,
-          right: 40,
-          bottom: 40,
-          top: 40,
-          width: '100%',
-          height: '300',
-        },
-        hAxis: { format: 'M/d' },
-        legend: { position: 'top' },
-      };
-
-      let chart = new google.visualization.LineChart($div.get(0));
-      chart.draw(dataTable, options);
+      drawStatsChart(data);
+      drawOSChart(data);
     })
     .fail(function(xhr, status, err) {
       flash.error('Failed to render key-server stats: ' + err);
     });
+  }
+
+  function drawStatsChart(data) {
+    let $div = $('#keyserver_chart_div');
+
+    if (!data.statistics) {
+      $div.find('p').text('No data yet.');
+      return;
+    }
+
+    var dataTable = new google.visualization.DataTable();
+    dataTable.addColumn('date', 'Date');
+    dataTable.addColumn('number', 'TEKs published');
+    dataTable.addColumn('number', 'Revision requests');
+    dataTable.addColumn('number', 'Requests missing onset');
+
+    data.statistics.reverse().forEach(function(row) {
+      dataTable.addRow([utcDate(row.day),
+        row.total_teks_published,
+        row.requests_with_revisions,
+        row.requests_missing_onset_date,
+      ]);
+    });
+
+    let dateFormatter = new google.visualization.DateFormat({
+      pattern: 'MMM dd',
+    });
+    dateFormatter.format(dataTable, 0);
+
+    let options = {
+      colors: ['#28a745', '#a76e28', '#a72898'],
+      chartArea: {
+        left: 60,
+        right: 40,
+        bottom: 40,
+        top: 40,
+        width: '100%',
+        height: '300',
+      },
+      hAxis: { format: 'M/d' },
+      legend: { position: 'top' },
+    };
+
+    let chart = new google.visualization.LineChart($div.get(0));
+    chart.draw(dataTable, options);
+  }
+
+  function drawOSChart(data) {
+    let $div = $('#keyserver_os_chart_div');
+
+    if (!data.statistics) {
+      $div.find('p').text('No data yet.');
+      return;
+    }
+
+    var dataTable = new google.visualization.DataTable();
+    dataTable.addColumn('date', 'Date');
+    dataTable.addColumn('number', 'Unknown OS');
+    dataTable.addColumn('number', 'Android');
+    dataTable.addColumn('number', 'IOS');
+
+    data.statistics.reverse().forEach(function(row) {
+      dataTable.addRow([utcDate(row.day),
+        row.publish_requests.unknown,
+        row.publish_requests.android,
+        row.publish_requests.ios,
+      ]);
+    });
+
+    let dateFormatter = new google.visualization.DateFormat({
+      pattern: 'MMM dd',
+    });
+    dateFormatter.format(dataTable, 0);
+
+    let options = {
+      colors: ['#28a745', '#a76e28', '#a72898'],
+      chartArea: {
+        left: 60,
+        right: 40,
+        bottom: 40,
+        top: 40,
+        width: '100%',
+        height: '300',
+      },
+      hAxis: { format: 'M/d' },
+      legend: { position: 'top' },
+      isStacked: true,
+    };
+
+    let chart = new google.visualization.ColumnChart($div.get(0));
+    chart.draw(dataTable, options);
   }
 </script>
 
