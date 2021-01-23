@@ -114,9 +114,6 @@
     });
   }
 
-  let statsChart;
-  let statsOptions;
-  let statsData;
   function drawStatsChart(data) {
     let $div = $('#keyserver_chart_div');
 
@@ -126,7 +123,7 @@
     }
     stats = data.statistics;
 
-    statsData = new google.visualization.DataTable();
+    let statsData = new google.visualization.DataTable();
     statsData.addColumn('date', 'Date');
     statsData.addColumn('number', 'TEKs published');
     statsData.addColumn('number', 'Revision requests');
@@ -145,7 +142,7 @@
     });
     dateFormatter.format(statsData, 0);
 
-    statsOptions = {
+    let statsOptions = {
       colors: ['#28a745', '#a76e28', '#a72898'],
       chartArea: {
         left: 60,
@@ -159,14 +156,16 @@
       legend: { position: 'top' },
     };
 
-    statsChart = new google.visualization.LineChart($div.get(0));
+    let statsChart = new google.visualization.LineChart($div.get(0));
     statsChart.draw(statsData, statsOptions);
+    redrawCharts.push({
+      chart: statsChart,
+      data: statsData,
+      options: statsOptions,
+    });
   }
 
 
-  let osChart;
-  let osOptions;
-  let osData;
   function drawOSChart(data) {
     let $div = $('#keyserver_os_chart_div');
 
@@ -176,7 +175,7 @@
     }
     stats = data.statistics;
 
-    osData = new google.visualization.DataTable();
+    let osData = new google.visualization.DataTable();
     osData.addColumn('date', 'Date');
     osData.addColumn('number', 'Unknown OS');
     osData.addColumn({type:'string', role:'tooltip', p: {html: true}})
@@ -203,7 +202,7 @@
     });
     dateFormatter.format(osData, 0);
 
-    osOptions = {
+    let osOptions = {
       colors: ['#6c757d', '#28a745', '#007bff'],
       chartArea: {
         left: 60,
@@ -222,8 +221,13 @@
       tooltip: {isHtml: true},
     };
 
-    osChart = new google.visualization.ColumnChart($div.get(0));
+    let osChart = new google.visualization.ColumnChart($div.get(0));
     osChart.draw(osData, osOptions);
+    redrawCharts.push({
+      chart: osChart,
+      data: osData,
+      options: osOptions,
+    });
   }
 
   let tekChart;
@@ -267,6 +271,11 @@
     tekChart = new google.visualization.ColumnChart($div.get(0));
     tekData = getTEKDataTable(0);
     tekChart.draw(tekData, tekOptions);
+    redrawCharts.push({
+      chart: tekChart,
+      data: tekData,
+      options: tekOptions,
+    });
   }
 
   function getTEKDataTable(dateIndex) {
@@ -325,6 +334,11 @@
     onsetChart = new google.visualization.ColumnChart($div.get(0));
     onsetData = getOnsetDataTable(0);
     onsetChart.draw(onsetData, onsetOptions);
+    redrawCharts.push({
+      chart: onsetChart,
+      data: onsetData,
+      options: onsetOptions,
+    });
   }
 
   function getOnsetDataTable(dateIndex) {
@@ -375,34 +389,6 @@
         onsetData = getOnsetDataTable(indx);
         onsetChart.draw(onsetData, onsetOptions);
     });
-
-    let redrawPending = false;
-    let windowWidth;
-    $(window).resize(function() {
-      let w = $(window).width();
-      if (w != windowWidth) {
-        windowWidth = w;
-      } else {
-        return;
-      }
-
-      if (!redrawPending) {
-        redrawPending = true;
-        setTimeout(function(){
-          redraw();
-          redrawPending = false;
-        }, 300);
-      }
-    });
-
-    function redraw(){
-      statsChart.draw(statsData, statsOptions);
-      osChart.draw(osData, osOptions);
-      tekOptions.animation = null;
-      tekChart.draw(tekData, tekOptions);
-      onsetOptions.animation = null;
-      onsetChart.draw(onsetData, onsetOptions);
-    }
   });
 </script>
 
