@@ -39,6 +39,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/stats"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-limiter"
@@ -293,16 +294,15 @@ func Server(
 		realmadminController := realmadmin.New(cfg, db, limiterStore, h)
 		realmadminRoutes(sub, realmadminController)
 
-		realmkeysController, err := realmkeys.New(ctx, cfg, db, certificateSigner, cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create realmkeys controller: %w", err)
+			return nil, err
 		}
+
+		realmkeysController := realmkeys.New(ctx, cfg, db, certificateSigner, publicKeyCache, h)
 		realmkeysRoutes(sub, realmkeysController)
 
-		realmSMSKeysController, err := smskeys.New(ctx, cfg, db, cacher, h)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create smskeys controller: %w", err)
-		}
+		realmSMSKeysController := smskeys.New(ctx, cfg, db, publicKeyCache, h)
 		authenticatedSMSEnabled := middleware.OnlyIfEnabled(cfg.Features.EnableAuthenticatedSMS, h)
 		realmSMSkeysRoutes(sub, realmSMSKeysController, authenticatedSMSEnabled)
 	}

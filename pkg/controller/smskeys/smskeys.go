@@ -18,7 +18,6 @@ package smskeys
 import (
 	"context"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
@@ -34,16 +33,11 @@ type Controller struct {
 }
 
 // New creates a new Controller
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
-	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, config.CertificateSigning.PublicKeyCacheDuration)
-	if err != nil {
-		return nil, err
-	}
-
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
 	return &Controller{
 		config:         config,
 		db:             db,
 		h:              h,
 		publicKeyCache: publicKeyCache,
-	}, nil
+	}
 }
