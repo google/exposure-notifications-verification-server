@@ -40,6 +40,9 @@ func PopulateTemplateVariables(config *config.ServerConfig) mux.MiddlewareFunc {
 			m["maintenanceMode"] = config.MaintenanceMode
 			m["devMode"] = config.DevMode
 
+			// Add in any feature flags.
+			m = config.Features.AddToTemplate(m)
+
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)
 			r = r.Clone(ctx)

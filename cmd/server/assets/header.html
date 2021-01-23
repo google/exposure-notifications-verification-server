@@ -141,11 +141,13 @@ aria-expanded="false" aria-label="Toggle navigation">
               {{t $.locale "nav.signing-keys"}}
             </a>
           {{end}}
-          {{if $currentMembership.Can rbac.SettingsRead}}
-            {{$showRealmMenu = true}}
-            <a class="dropdown-item {{if .currentPath.IsDir "/realm/smskeys"}}active{{end}}" href="/realm/smskeys">
-              {{t $.locale "nav.sms-signing-keys"}}
-            </a>
+          {{if .enableAuthenticatedSMS}}
+            {{if $currentMembership.Can rbac.SettingsRead}}
+              {{$showRealmMenu = true}}
+              <a class="dropdown-item {{if .currentPath.IsDir "/realm/smskeys"}}active{{end}}" href="/realm/smskeys">
+                {{t $.locale "nav.sms-signing-keys"}}
+              </a>
+            {{end}}
           {{end}}
           {{if $currentMembership.Can rbac.StatsRead}}
             {{$showRealmMenu = true}}
