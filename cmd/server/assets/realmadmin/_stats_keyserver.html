@@ -257,15 +257,11 @@
 
   $(function() {
     $('#slide-div').append($slider)
-    let startPos = $slider.val();
 
-    $slider.on("change", function(event) {
-        endPos = stats.length - $slider.val();
-        if (startPos != endPos) {
-          options.title = stats[endPos].day.split("T")[0];
-          chart.draw(getDataTable(endPos), options);
-        }
-        startPos = endPos;
+    $slider.on("input", function(event) {
+        let indx = stats.length - $slider.val();
+        options.title = stats[indx].day.split("T")[0];
+        chart.draw(getDataTable(indx), options);
     });
 });
 </script>
