@@ -2060,6 +2060,18 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`DROP TABLE IF EXISTS sms_signing_keys`)
 			},
 		},
+		{
+			ID: "00091-AddRealmAAuthenticatedSMSSetting",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS use_authenticated_sms BOOLEAN DEFAULT false`,
+					`ALTER TABLE realms ALTER COLUMN use_authenticated_sms SET NOT NULL`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS use_authenticated_sms`)
+			},
+		},
 	}
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,37 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package realmkeys contains web controllers for realm certificate key management.
-package realmkeys
+// Package smskeys contains web controllers for realm certificate key management.
+package smskeys
 
 import (
 	"context"
 
-	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
+// Controller has handlers HTTP actions realted to SMS signing key management.
 type Controller struct {
 	config         *config.ServerConfig
 	db             *database.Database
 	h              render.Renderer
 	publicKeyCache *keyutils.PublicKeyCache
-
-	// systemCertificateKeyManager is the key manager used for system
-	// certificates. It is not used with per-realm keys.
-	systemCertificateKeyManager keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
+// New creates a new Controller
+func New(ctx context.Context, config *config.ServerConfig, db *database.Database, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
 	return &Controller{
 		config:         config,
 		db:             db,
 		h:              h,
 		publicKeyCache: publicKeyCache,
-
-		systemCertificateKeyManager: systemCertificationKeyManager,
 	}
 }

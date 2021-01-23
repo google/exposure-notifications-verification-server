@@ -35,9 +35,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/stats"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/sethvargo/go-limiter"
@@ -292,11 +294,17 @@ func Server(
 		realmadminController := realmadmin.New(cfg, db, limiterStore, h)
 		realmadminRoutes(sub, realmadminController)
 
-		realmkeysController, err := realmkeys.New(ctx, cfg, db, certificateSigner, cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create realmkeys controller: %w", err)
+			return nil, err
 		}
+
+		realmkeysController := realmkeys.New(ctx, cfg, db, certificateSigner, publicKeyCache, h)
 		realmkeysRoutes(sub, realmkeysController)
+
+		realmSMSKeysController := smskeys.New(ctx, cfg, db, publicKeyCache, h)
+		authenticatedSMSEnabled := middleware.OnlyIfEnabled(cfg.Features.EnableAuthenticatedSMS, h)
+		realmSMSkeysRoutes(sub, realmSMSKeysController, authenticatedSMSEnabled)
 	}
 
 	// JWKs
@@ -391,6 +399,16 @@ func realmkeysRoutes(r *mux.Router, c *realmkeys.Controller) {
 	r.Handle("/keys/manual", c.HandleManualRotate()).Methods("POST")
 	r.Handle("/keys/save", c.HandleSave()).Methods("POST")
 	r.Handle("/keys/activate", c.HandleActivate()).Methods("POST")
+}
+
+// realmSMSkeysRoutes are the realm key routes.
+func realmSMSkeysRoutes(r *mux.Router, c *smskeys.Controller, enabledCheck mux.MiddlewareFunc) {
+	r.Handle("/sms-keys", enabledCheck(c.HandleIndex())).Methods("GET")
+	r.Handle("/sms-keys/enable", enabledCheck(c.HandleEnable())).Methods("POST")
+	r.Handle("/sms-keys/disable", enabledCheck(c.HandleDisable())).Methods("POST")
+	r.Handle("/sms-keys/create", enabledCheck(c.HandleCreateKey())).Methods("POST")
+	r.Handle("/sms-keys/{id:[0-9]+}", enabledCheck(c.HandleDestroy())).Methods("DELETE")
+	r.Handle("/sms-keys/activate", enabledCheck(c.HandleActivate())).Methods("POST")
 }
 
 // statsRoutes are the statistics routes, rooted at /stats.
