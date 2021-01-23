@@ -67,43 +67,6 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
   ]
 }
 
-resource "google_monitoring_alert_policy" "five_xx" {
-  project      = var.project
-  display_name = "Elevated500s"
-  combiner     = "OR"
-  conditions {
-    display_name = "Elevated 5xx on Verification Server"
-    condition_monitoring_query_language {
-      duration = "300s"
-      query    = <<-EOT
-      fetch
-      cloud_run_revision :: run.googleapis.com/request_count
-      | filter
-      (resource.service_name != 'e2e-runner')
-      && (metric.response_code_class == '5xx')
-      | align rate(1m)
-      | every 1m
-      | group_by [resource.service_name], [val: sum(value.request_count)]
-      | condition val > 2 '1/s'
-      EOT
-      trigger {
-        count = 1
-      }
-    }
-  }
-
-  documentation {
-    content   = "${local.playbook_prefix}/Elevated500s.md"
-    mime_type = "text/markdown"
-  }
-
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
-
-  depends_on = [
-    null_resource.manual-step-to-enable-workspace,
-  ]
-}
-
 resource "google_monitoring_alert_policy" "probers" {
   project = var.project
 
