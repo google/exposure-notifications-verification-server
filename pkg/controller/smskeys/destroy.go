@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,36 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realmkeys
+package smskeys
 
 import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleIndex() http.Handler {
+func (c *Controller) HandleDestroy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		vars := mux.Vars(r)
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
 
 		membership := controller.MembershipFromContext(ctx)
 		if membership == nil {
 			controller.MissingMembership(w, r, c.h)
 			return
 		}
-		if !membership.Can(rbac.SettingsRead) {
+		if !membership.Can(rbac.SettingsWrite) {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 		currentRealm := membership.Realm
 
-		c.renderShow(ctx, w, r, currentRealm)
+		if err := currentRealm.DestroySMSSigningKeyVersion(ctx, c.db, vars["id"]); err != nil {
+			flash.Error("Failed to destroy SMS signing key version: %v", err)
+			c.renderShow(ctx, w, r, currentRealm)
+			return
+		}
+
+		flash.Alert("Successfully destroyed SMS signing key!")
+		c.redirectShow(ctx, w, r)
 	})
 }

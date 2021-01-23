@@ -186,6 +186,10 @@ type Realm struct {
 	SMSFromNumberID    uint  `gorm:"-"`
 	SMSFromNumberIDPtr *uint `gorm:"column:sms_from_number_id; type:integer;"`
 
+	// UseAuthenticatedSMS indicates if this realm wants to sign text messages that are sent
+	// containing verification codes.
+	UseAuthenticatedSMS bool `gorm:"column:use_authenticated_sms; type:bool; not null; default:false;"`
+
 	// EmailInviteTemplate is the template for inviting new users.
 	EmailInviteTemplate string `gorm:"type:text;"`
 
