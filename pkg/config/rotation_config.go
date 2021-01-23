@@ -30,6 +30,7 @@ import (
 type RotationConfig struct {
 	Database      database.Config
 	Observability observability.Config
+	Features      FeatureConfig
 
 	// Port is the port upon which to bind.
 	Port string `env:"PORT, default=8080"`

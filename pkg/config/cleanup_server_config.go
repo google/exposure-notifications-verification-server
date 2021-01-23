@@ -30,6 +30,7 @@ import (
 type CleanupConfig struct {
 	Database      database.Config
 	Observability observability.Config
+	Features      FeatureConfig
 
 	// TokenSigning is the token signing configuration to purge old keys in the
 	// key manager when they are cleaned.
