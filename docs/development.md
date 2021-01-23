@@ -109,6 +109,10 @@ represent best practices.
     export CERTIFICATE_KEY_FILESYSTEM_ROOT="$(pwd)/local"
     export CERTIFICATE_SIGNING_KEY="TODO" # (e.g. "/system/certificate-signing/1122334455")
 
+    # Configure sms key management.
+    export SMS_KEY_MANAGER="FILESYSTEM"
+    export SMS_KEY_FILESYSTEM_ROOT="$(pwd)/local"
+
     # Configure token key management. The TOKEN_SIGNING_KEY should be the value
     # output in the previous step.
     export TOKEN_KEY_MANAGER="FILESYSTEM"

@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -34,6 +35,7 @@ type AdminAPIServerResponse struct {
 	Config      *config.AdminAPIServerConfig
 	Database    *database.Database
 	Cacher      cache.Cacher
+	KeyManager  keys.KeyManager
 	RateLimiter limiter.Store
 	Server      *server.Server
 }
@@ -50,6 +52,7 @@ type AdminAPIServerConfigResponse struct {
 	Config      *config.AdminAPIServerConfig
 	Database    *database.Database
 	Cacher      cache.Cacher
+	KeyManager  keys.KeyManager
 	RateLimiter limiter.Store
 }
 
@@ -82,6 +85,7 @@ func NewAdminAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestI
 		Config:      cfg,
 		Database:    harness.Database,
 		Cacher:      harness.Cacher,
+		KeyManager:  harness.KeyManager,
 		RateLimiter: harness.RateLimiter,
 	}
 }
@@ -89,7 +93,7 @@ func NewAdminAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestI
 // NewServer creates a new server.
 func (r *AdminAPIServerConfigResponse) NewServer(tb testing.TB) *AdminAPIServerResponse {
 	ctx := context.Background()
-	mux, err := routes.AdminAPI(ctx, r.Config, r.Database, r.Cacher, r.RateLimiter)
+	mux, err := routes.AdminAPI(ctx, r.Config, r.Database, r.Cacher, r.KeyManager, r.RateLimiter)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -100,6 +104,7 @@ func (r *AdminAPIServerConfigResponse) NewServer(tb testing.TB) *AdminAPIServerR
 		Config:      r.Config,
 		Database:    r.Database,
 		Cacher:      r.Cacher,
+		KeyManager:  r.KeyManager,
 		RateLimiter: r.RateLimiter,
 		Server:      srv,
 	}

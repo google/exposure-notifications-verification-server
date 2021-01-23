@@ -60,7 +60,7 @@ func TestServer(t *testing.T) {
 
 	signer := keys.TestKeyManager(t)
 
-	mux, err := Server(ctx, cfg, db, authProvider, cacher, signer, limiterStore)
+	mux, err := Server(ctx, cfg, db, authProvider, cacher, signer, signer, limiterStore)
 	if err != nil {
 		t.Fatal(err)
 	}

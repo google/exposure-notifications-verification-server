@@ -37,6 +37,9 @@ type AdminAPIServerConfig struct {
 	Cache         cache.Config
 	Features      FeatureConfig
 
+	// SMSSigning defines the SMS signing configuration.
+	SMSSigning SMSSigningConfig
+
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
 	DevMode bool `env:"DEV_MODE"`

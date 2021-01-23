@@ -59,6 +59,7 @@ func Server(
 	authProvider auth.Provider,
 	cacher cache.Cacher,
 	certificateSigner keys.KeyManager,
+	smsSigner keys.KeyManager,
 	limiterStore limiter.Store,
 ) (http.Handler, error) {
 	// Setup sessions
@@ -212,7 +213,7 @@ func Server(
 		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
 
 		// API for creating new verification codes. Called via AJAX.
-		issueapiController := issueapi.New(cfg, db, limiterStore, h)
+		issueapiController := issueapi.New(cfg, db, limiterStore, smsSigner, h)
 		sub.Handle("/issue", issueapiController.HandleIssueUI()).Methods("POST")
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueUI()).Methods("POST")
 

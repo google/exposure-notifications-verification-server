@@ -62,7 +62,7 @@ func TestIssue(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, h)
+	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, harness.KeyManager, h)
 	handler := c.HandleIssueAPI()
 
 	cases := []struct {

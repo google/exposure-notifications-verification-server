@@ -70,8 +70,8 @@ func TestSMS_sendSMS(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := testCfg.Database
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := harness.Database
 
 	realm, err := db.FindRealm(1)
 	if err != nil {
@@ -97,7 +97,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 
 	ctx = controller.WithMembership(ctx, membership)
-	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
 
 	request := &api.IssueCodeRequest{
 		TestType:    "confirmed",

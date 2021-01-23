@@ -44,9 +44,9 @@ func TestIssueMalformed(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, err := testCfg.Database.FindRealm(1)
+	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestIssueMalformed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := issueapi.New(testCfg.Config, testCfg.Database, testCfg.RateLimiter, r)
+	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, harness.KeyManager, r)
 
 	cases := []struct {
 		name       string

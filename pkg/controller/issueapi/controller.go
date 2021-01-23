@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
@@ -32,19 +33,21 @@ import (
 )
 
 type Controller struct {
-	config  config.IssueAPIConfig
-	db      *database.Database
-	h       render.Renderer
-	limiter limiter.Store
+	config    config.IssueAPIConfig
+	db        *database.Database
+	limiter   limiter.Store
+	smsSigner keys.KeyManager
+	h         render.Renderer
 }
 
 // New creates a new IssueAPI controller.
-func New(config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
+func New(config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h render.Renderer) *Controller {
 	return &Controller{
-		config:  config,
-		db:      db,
-		h:       h,
-		limiter: limiter,
+		config:    config,
+		db:        db,
+		limiter:   limiter,
+		smsSigner: smsSigner,
+		h:         h,
 	}
 }
 

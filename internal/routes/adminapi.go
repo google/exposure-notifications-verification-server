@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -41,6 +42,7 @@ func AdminAPI(
 	cfg *config.AdminAPIServerConfig,
 	db *database.Database,
 	cacher cache.Cacher,
+	smsSigner keys.KeyManager,
 	limiterStore limiter.Store,
 ) (http.Handler, error) {
 	// Create the router
@@ -101,7 +103,7 @@ func AdminAPI(
 		sub.Use(requireAdminAPIKey)
 		sub.Use(processFirewall)
 
-		issueapiController := issueapi.New(cfg, db, limiterStore, h)
+		issueapiController := issueapi.New(cfg, db, limiterStore, smsSigner, h)
 		sub.Handle("/issue", issueapiController.HandleIssueAPI()).Methods("POST")
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueAPI()).Methods("POST")
 

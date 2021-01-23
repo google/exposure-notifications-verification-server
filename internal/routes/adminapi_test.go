@@ -17,6 +17,7 @@ package routes
 import (
 	"testing"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -42,7 +43,9 @@ func TestAdminAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mux, err := AdminAPI(ctx, cfg, db, cacher, limiterStore)
+	signer := keys.TestKeyManager(t)
+
+	mux, err := AdminAPI(ctx, cfg, db, cacher, signer, limiterStore)
 	if err != nil {
 		t.Fatal(err)
 	}

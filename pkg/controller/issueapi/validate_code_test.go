@@ -33,8 +33,8 @@ func TestValidate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := testCfg.Database
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := harness.Database
 
 	realm, err := db.FindRealm(1)
 	if err != nil {
@@ -61,12 +61,12 @@ func TestValidate(t *testing.T) {
 	ctx = controller.WithAuthorizedApp(ctx, authApp)
 	ctx = controller.WithMembership(ctx, &database.Membership{UserID: 456})
 
-	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 
 	maxDate := timeutils.UTCMidnight(time.Now())
-	minDate := timeutils.Midnight(maxDate.Add(-1 * testCfg.Config.GetAllowedSymptomAge()))
+	minDate := timeutils.Midnight(maxDate.Add(-1 * harness.Config.GetAllowedSymptomAge()))
 
 	cases := []struct {
 		name           string
