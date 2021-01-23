@@ -752,7 +752,7 @@ func (r *Realm) setActiveManagedSigningKey(db *Database, id uint, signingKey Rea
 			First(signingKey).
 			Error; err != nil {
 			if IsNotFound(err) {
-				return fmt.Errorf("%s key to activate does not exist", signingKey.Purpose())
+				return fmt.Errorf("%s key to activate does not exist: %w", signingKey.Purpose(), err)
 			}
 			return fmt.Errorf("failed to find newly active key: %w", err)
 		}

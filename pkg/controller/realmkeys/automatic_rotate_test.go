@@ -51,7 +51,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -66,7 +66,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -105,7 +105,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -148,7 +148,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -188,7 +188,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		realm := database.NewRealmWithDefaults("test")

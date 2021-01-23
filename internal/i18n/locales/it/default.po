@@ -31,8 +31,8 @@ msgstr "Registro eventi"
 msgid "nav.signing-keys"
 msgstr "Chiavi di firma"
 
-msgid "nav.sms-signing-keys"
-msgstr "Chiavi di firma SMS"
+msgid "nav.authenticated-sms"
+msgstr "SMS autenticato"
 
 msgid "nav.statistics"
 msgstr "Statistiche"

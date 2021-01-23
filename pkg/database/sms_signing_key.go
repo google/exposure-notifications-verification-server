@@ -37,6 +37,19 @@ type SMSSigningKey struct {
 	Active bool
 }
 
+// FindSMSSigningKey finds an SMS signing key by the provided database id.
+func (db *Database) FindSMSSigningKey(id interface{}) (*SMSSigningKey, error) {
+	var key SMSSigningKey
+	if err := db.db.
+		Model(&SMSSigningKey{}).
+		Where("id = ?", id).
+		First(&key).
+		Error; err != nil {
+		return nil, err
+	}
+	return &key, nil
+}
+
 // GetKID returns the 'kid' field value to use in signing JWTs.
 func (s *SMSSigningKey) GetKID() string {
 	return fmt.Sprintf("r%dv%dsms", s.RealmID, s.ID)

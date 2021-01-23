@@ -16,8 +16,6 @@
 package realmkeys
 
 import (
-	"context"
-
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -36,9 +34,9 @@ type Controller struct {
 	systemCertificateKeyManager keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
+func New(cfg *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
 	return &Controller{
-		config:         config,
+		config:         cfg,
 		db:             db,
 		h:              h,
 		publicKeyCache: publicKeyCache,

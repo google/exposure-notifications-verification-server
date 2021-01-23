@@ -246,6 +246,42 @@ func TestRoutes_realmkeysRoutes(t *testing.T) {
 	}
 }
 
+func TestRoutes_realmSMSkeysRoutes(t *testing.T) {
+	t.Parallel()
+
+	m := mux.NewRouter()
+	realmSMSkeysRoutes(m, nil)
+
+	cases := []struct {
+		req  *http.Request
+		vars map[string]string
+	}{
+		{
+			req: httptest.NewRequest("GET", "/sms-keys", nil),
+		},
+		{
+			req: httptest.NewRequest("POST", "/sms-keys", nil),
+		},
+		{
+			req: httptest.NewRequest("PUT", "/sms-keys/enable", nil),
+		},
+		{
+			req: httptest.NewRequest("PUT", "/sms-keys/disable", nil),
+		},
+		{
+			req: httptest.NewRequest("POST", "/sms-keys/activate", nil),
+		},
+		{
+			req:  httptest.NewRequest("DELETE", "/sms-keys/12345", nil),
+			vars: map[string]string{"id": "12345"},
+		},
+	}
+
+	for _, tc := range cases {
+		testRoute(t, m, tc.req, tc.vars)
+	}
+}
+
 func TestRoutes_statsRoutes(t *testing.T) {
 	t.Parallel()
 
