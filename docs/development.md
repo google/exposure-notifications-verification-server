@@ -198,3 +198,19 @@ for your account by visiting:
 
 This will skip the actual sending of SMS codes for 2-factor auth and allow you
 to instead set a static challenge response code. Do not do this in production.
+
+### Feature Flags
+
+For functionality that is ready for test environments but not yet ready for default
+on in production, that functionality should be guarded by a feature flag.
+
+Define the new flag in [pkg/config/feature_config.go](https://github.com/google/exposure-notifications-verification-server/blob/main/pkg/config/feature_config.go).
+
+The feature config is available in the config struct of all servers.
+
+For the UI server (`server`), flags values are automatically added to the
+template variables for use in the HTML templates.
+
+If a whole controller should be controlled by this flag, you should install the
+[enabled](https://github.com/google/exposure-notifications-verification-server/blob/main/pkg/controller/middleware/enabled.go)
+middleware with the corect boolean value at route configuration time.

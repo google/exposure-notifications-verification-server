@@ -32,6 +32,7 @@ type RedirectConfig struct {
 	Database      database.Config
 	Observability observability.Config
 	Cache         cache.Config
+	Features      FeatureConfig
 
 	Port string `env:"PORT, default=8080"`
 

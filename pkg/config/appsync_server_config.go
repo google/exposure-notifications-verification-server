@@ -32,6 +32,7 @@ import (
 type AppSyncConfig struct {
 	Database      database.Config
 	Observability observability.Config
+	Features      FeatureConfig
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.

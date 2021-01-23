@@ -30,6 +30,7 @@ import (
 type StatsPullerConfig struct {
 	Database      database.Config
 	Observability observability.Config
+	Features      FeatureConfig
 
 	// Certificate signing
 	CertificateSigning CertificateSigningConfig
