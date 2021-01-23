@@ -115,16 +115,6 @@ func realMain(ctx context.Context) error {
 		}
 	}
 
-	if *flagStats {
-		if err := generateCodesAndStats(db, realm1); err != nil {
-			return fmt.Errorf("failed to generate stats: %w", err)
-		}
-
-		if err := generateKeyServerStats(db, realm1); err != nil {
-			return fmt.Errorf("failed to generate key-server stats: %w", err)
-		}
-	}
-
 	// Create another realm
 	var realm2 *database.Realm
 	realm2, err = db.FindRealmByName("Wonderland")
@@ -265,6 +255,16 @@ func realMain(ctx context.Context) error {
 			return fmt.Errorf("failed to create admin api key: %w", err)
 		}
 		logger.Infow("created admin api key", "key", adminAPIKey)
+	}
+
+	if *flagStats {
+		if err := generateCodesAndStats(db, realm1); err != nil {
+			return fmt.Errorf("failed to generate stats: %w", err)
+		}
+
+		if err := generateKeyServerStats(db, realm1); err != nil {
+			return fmt.Errorf("failed to generate key-server stats: %w", err)
+		}
 	}
 
 	// System token signing key
