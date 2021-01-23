@@ -123,14 +123,14 @@
     }
     stats = data.statistics;
 
-    let statsData = new google.visualization.DataTable();
-    statsData.addColumn('date', 'Date');
-    statsData.addColumn('number', 'TEKs published');
-    statsData.addColumn('number', 'Revision requests');
-    statsData.addColumn('number', 'Requests missing onset');
+    let dataTable = new google.visualization.DataTable();
+    dataTable.addColumn('date', 'Date');
+    dataTable.addColumn('number', 'TEKs published');
+    dataTable.addColumn('number', 'Revision requests');
+    dataTable.addColumn('number', 'Requests missing onset');
 
     stats.reverse().forEach(function(row) {
-      statsData.addRow([utcDate(row.day),
+      dataTable.addRow([utcDate(row.day),
         row.total_teks_published,
         row.requests_with_revisions,
         row.requests_missing_onset_date,
@@ -140,9 +140,9 @@
     let dateFormatter = new google.visualization.DateFormat({
       pattern: 'MMM dd',
     });
-    dateFormatter.format(statsData, 0);
+    dateFormatter.format(dataTable, 0);
 
-    let statsOptions = {
+    let options = {
       colors: ['#28a745', '#a76e28', '#a72898'],
       chartArea: {
         left: 60,
@@ -156,12 +156,12 @@
       legend: { position: 'top' },
     };
 
-    let statsChart = new google.visualization.LineChart($div.get(0));
-    statsChart.draw(statsData, statsOptions);
+    let chart = new google.visualization.LineChart($div.get(0));
+    chart.draw(dataTable, options);
     redrawCharts.push({
-      chart: statsChart,
-      data: statsData,
-      options: statsOptions,
+      chart: chart,
+      data: dataTable,
+      options: options,
     });
   }
 
@@ -175,19 +175,19 @@
     }
     stats = data.statistics;
 
-    let osData = new google.visualization.DataTable();
-    osData.addColumn('date', 'Date');
-    osData.addColumn('number', 'Unknown OS');
-    osData.addColumn({type:'string', role:'tooltip', p: {html: true}})
-    osData.addColumn('number', 'Android');
-    osData.addColumn({type:'string', role:'tooltip', p: {html: true}})
-    osData.addColumn('number', 'IOS');
-    osData.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    let dataTable = new google.visualization.DataTable();
+    dataTable.addColumn('date', 'Date');
+    dataTable.addColumn('number', 'Unknown OS');
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    dataTable.addColumn('number', 'Android');
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    dataTable.addColumn('number', 'IOS');
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
 
     stats.reverse().forEach(function(row) {
       let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
 
-      osData.addRow([utcDate(row.day),
+      dataTable.addRow([utcDate(row.day),
         row.publish_requests.unknown,
         "<strong>Unknown:</strong>" + row.publish_requests.unknown + " " +(row.publish_requests.unknown / total * 100).toPrecision(3) + "%",
         row.publish_requests.android,
@@ -200,9 +200,9 @@
     let dateFormatter = new google.visualization.DateFormat({
       pattern: 'MMM dd',
     });
-    dateFormatter.format(osData, 0);
+    dateFormatter.format(dataTable, 0);
 
-    let osOptions = {
+    let options = {
       colors: ['#6c757d', '#28a745', '#007bff'],
       chartArea: {
         left: 60,
@@ -221,12 +221,12 @@
       tooltip: {isHtml: true},
     };
 
-    let osChart = new google.visualization.ColumnChart($div.get(0));
-    osChart.draw(osData, osOptions);
+    let chart = new google.visualization.ColumnChart($div.get(0));
+    chart.draw(dataTable, options);
     redrawCharts.push({
-      chart: osChart,
-      data: osData,
-      options: osOptions,
+      chart: chart,
+      data: dataTable,
+      options: options,
     });
   }
 
