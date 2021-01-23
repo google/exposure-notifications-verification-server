@@ -37,7 +37,7 @@
               {{if $realm.UseAuthenticatedSMS}}
                 <div class="alert alert-success">
                   <p>This realm is signing outgoing SMS containing verification codes.
-                    <a href="/realm/smskeys/disable" data-method="POST"
+                    <a href="/realm/sms-keys/disable" data-method="POST"
                     data-confirm="Are you sure you want disable Authenticated SMS?">Disable Authenticated SMS.</a>
                   </p>
                 </div>
@@ -50,7 +50,7 @@
                     If you enable this, your verification messages will be broken into multiple SMS segments,
                     which could incur additional cost. <br/>
                     This feature is not currently available on Android Exposure Notifications Express.
-                    <a href="/realm/smskeys/enable" data-method="POST"
+                    <a href="/realm/sms-keys/enable" data-method="POST"
                     data-confirm="Are you sure you want enable Authenticated SMS?">Enable Authenticated SMS.</a>
                   </p>
                 </div>
@@ -107,7 +107,7 @@
                 There is a limit of {{.maximumKeyVersions}} key versions. Destroy an existing key version to create another.
               </div>
             {{else}}
-              <a href="/realm/smskeys/create" data-method="POST" class="btn btn-primary btn-block">
+              <a href="/realm/sms-keys/create" data-method="POST" class="btn btn-primary btn-block">
                 Create new signing key version
               </a>
             {{end}}
@@ -150,7 +150,7 @@
                       {{if not $rk.Active}}
                       <div class="row mt-3 align-items-end h-100">
                         <div class="col">
-                          <a href="/realm/smskeys/{{$rk.ID}}"
+                          <a href="/realm/sms-keys/{{$rk.ID}}"
                             class="text-danger"
                             data-method="DELETE"
                             data-confirm="Are you sure you want to destroy this key? This action is irreversible!"
@@ -161,7 +161,7 @@
                         </div>
 
                         <div class="col">
-                          <form method="POST" action="/realm/smskeys/activate">
+                          <form method="POST" action="/realm/sms-keys/activate">
                             {{ $csrfField }}
                             <input type="hidden" name="id" value="{{$rk.ID}}" />
                             <a href="#" class="btn btn-primary float-right" data-confirm="Have you already shared this new version and public key with Apple and Google?" data-submit-form>

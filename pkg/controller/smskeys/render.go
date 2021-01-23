@@ -25,7 +25,7 @@ import (
 )
 
 func (c *Controller) redirectShow(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/realm/smskeys", http.StatusSeeOther)
+	http.Redirect(w, r, "/realm/sms-keys", http.StatusSeeOther)
 }
 
 func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm) {

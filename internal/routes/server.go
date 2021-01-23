@@ -403,12 +403,12 @@ func realmkeysRoutes(r *mux.Router, c *realmkeys.Controller) {
 
 // realmSMSkeysRoutes are the realm key routes.
 func realmSMSkeysRoutes(r *mux.Router, c *smskeys.Controller, enabledCheck mux.MiddlewareFunc) {
-	r.Handle("/smskeys", enabledCheck(c.HandleIndex())).Methods("GET")
-	r.Handle("/smskeys/enable", enabledCheck(c.HandleEnable())).Methods("POST")
-	r.Handle("/smskeys/disable", enabledCheck(c.HandleDisable())).Methods("POST")
-	r.Handle("/smskeys/create", enabledCheck(c.HandleCreateKey())).Methods("POST")
-	r.Handle("/smskeys/{id:[0-9]+}", enabledCheck(c.HandleDestroy())).Methods("DELETE")
-	r.Handle("/smskeys/activate", enabledCheck(c.HandleActivate())).Methods("POST")
+	r.Handle("/sms-keys", enabledCheck(c.HandleIndex())).Methods("GET")
+	r.Handle("/sms-keys/enable", enabledCheck(c.HandleEnable())).Methods("POST")
+	r.Handle("/sms-keys/disable", enabledCheck(c.HandleDisable())).Methods("POST")
+	r.Handle("/sms-keys/create", enabledCheck(c.HandleCreateKey())).Methods("POST")
+	r.Handle("/sms-keys/{id:[0-9]+}", enabledCheck(c.HandleDestroy())).Methods("DELETE")
+	r.Handle("/sms-keys/activate", enabledCheck(c.HandleActivate())).Methods("POST")
 }
 
 // statsRoutes are the statistics routes, rooted at /stats.
