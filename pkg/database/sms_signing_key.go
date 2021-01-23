@@ -39,7 +39,7 @@ type SMSSigningKey struct {
 
 // GetKID returns the 'kid' field value to use in signing JWTs.
 func (s *SMSSigningKey) GetKID() string {
-	return fmt.Sprintf("r%dv%ds", s.RealmID, s.ID)
+	return fmt.Sprintf("r%dv%dsms", s.RealmID, s.ID)
 }
 
 func (s *SMSSigningKey) ManagedKeyID() string {
