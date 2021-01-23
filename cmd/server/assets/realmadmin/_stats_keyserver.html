@@ -202,7 +202,10 @@
         width: '100%',
         height: '300',
       },
-      hAxis: { format: 'M/d' },
+      hAxis: {
+        format: 'M/d',
+        gridlines: { color: 'transparent' },
+      },
       legend: { position: 'top' },
       isStacked: true,
       tooltip: {isHtml: true},
@@ -240,7 +243,12 @@
         easing: 'inAndOut',
       },
       legend: { position: 'none' },
-      hAxis: {title: 'Days old'},
+      hAxis: {
+        title: 'Days old',
+        gridlines: { color: 'transparent' },
+        ticks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+        showTextEvery: 1,
+      },
       titlePosition: "out",
       title: stats[0].day.split("T")[0],
     };
@@ -296,7 +304,12 @@
         easing: 'inAndOut',
       },
       legend: { position: 'none' },
-      hAxis: {title: 'Days from onset to upload'},
+      hAxis: {
+        title: 'Days from onset to upload',
+        gridlines: { color: 'transparent' },
+        ticks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],
+        showTextEvery: 1,
+      },
       titlePosition: "out",
       title: stats[0].day.split("T")[0],
     };
