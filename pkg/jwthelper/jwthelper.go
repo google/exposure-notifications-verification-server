@@ -48,7 +48,7 @@ func SignJWT(token *jwt.Token, signer crypto.Signer) (string, error) {
 
 	// Unpack the ASN1 signature. ECDSA signers are supposed to return this format
 	// https://golang.org/pkg/crypto/#Signer
-	// All suporrted signers in thise codebase are verified to return ASN1.
+	// All supported signers in thise codebase are verified to return ASN1.
 	var parsedSig struct{ R, S *big.Int }
 	// ASN1 is not the expected format for an ES256 JWT signature.
 	// The output format is specified here, https://tools.ietf.org/html/rfc7518#section-3.4
