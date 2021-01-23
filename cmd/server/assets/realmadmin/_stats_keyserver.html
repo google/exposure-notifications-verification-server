@@ -23,7 +23,15 @@
   <div id="keyserver_tek_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
-  <div class="slidecontainer" id="slide-div">
+  <div class="slidecontainer" id="tek_slide_div">
+  </div>
+  <div class="card-body">
+    <h5 class="card-title">Onset to upload distribution</h5>
+  </div>
+  <div id="keyserver_onset_chart_div" class="h-100 w-100" style="min-height:325px;">
+    <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+  </div>
+  <div class="slidecontainer" id="onset_slide_div">
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
     <a href="#" data-toggle="modal" data-target="#keyserver-stats-modal">Learn more about this chart</a>
@@ -80,6 +88,9 @@
   let $slider =
     $(`<input type="range" min="1" class="slider w-100" id="tek_slider">`);
 
+  let $onsetSlider =
+    $(`<input type="range" min="1" class="slider w-100" id="onset_slider">`);
+
   function drawRealmCharts() {
     $.ajax({
       url: '/stats/realm/key-server.json',
@@ -88,10 +99,13 @@
     .done(function(data, status, xhr) {
       $slider.attr('max', data.statistics.length);
       $slider.attr('value',data.statistics.length);
+      $onsetSlider.attr('max', data.statistics.length);
+      $onsetSlider.attr('value',data.statistics.length);
 
       drawStatsChart(data);
       drawOSChart(data);
       drawTEKAgeChart(data);
+      drawOnsetToUploadChart(data);
     })
     .fail(function(xhr, status, err) {
       flash.error('Failed to render key-server stats: ' + err);
@@ -255,12 +269,75 @@
     return dataTable;
   }
 
+  let onsetChart;
+  let onsetOptions;
+  function drawOnsetToUploadChart(data) {
+    let $div = $('#keyserver_onset_chart_div');
+
+    if (!data.statistics) {
+      $div.find('p').text('No data yet.');
+      return;
+    }
+    stats = data.statistics;
+
+    onsetOptions = {
+      colors: ['#007bff'],
+      chartArea: {
+        left: 60,
+        right: 40,
+        bottom: 40,
+        top: 40,
+        width: '100%',
+        height: '300',
+      },
+      animation:{
+        startup: false,
+        duration: 500,
+        easing: 'inAndOut',
+      },
+      legend: { position: 'none' },
+      hAxis: {title: 'Days from onset to upload'},
+      titlePosition: "out",
+      title: stats[0].day.split("T")[0],
+    };
+
+    onsetChart = new google.visualization.ColumnChart($div.get(0));
+    onsetChart.draw(getOnsetDataTable(0), onsetOptions);
+  }
+
+  function getOnsetDataTable(dateIndex) {
+    let dataTable = new google.visualization.DataTable();
+    dataTable.addColumn('number', 'days');
+    dataTable.addColumn('number', 'count');
+    dataTable.addColumn({type:'string', role:'style'})
+    dataTable.addColumn({type:'string', role:'annotation'})
+
+    let row = stats[dateIndex];
+    let i;
+    for (i = 0; i < row.onset_to_upload_distribution.length; i++) {
+      let r = [i+1, row.onset_to_upload_distribution[i],"",""]
+      if (i == 30) {
+        r[2] = "#6c757d";
+        r[3] = ">30 days";
+      }
+      dataTable.addRow(r);
+    }
+    return dataTable;
+  }
+
   $(function() {
-    $('#slide-div').append($slider)
+    $('#tek_slide_div').append($slider)
     $slider.on("input", function(event) {
         let indx = stats.length - $slider.val();
         tekOptions.title = stats[indx].day.split("T")[0];
         tekChart.draw(getTEKDataTable(indx), tekOptions);
+    });
+
+    $('#onset_slide_div').append($onsetSlider)
+    $onsetSlider.on("input", function(event) {
+        let indx = stats.length - $onsetSlider.val();
+        onsetOptions.title = stats[indx].day.split("T")[0];
+        onsetChart.draw(getOnsetDataTable(indx), onsetOptions);
     });
 });
 </script>
