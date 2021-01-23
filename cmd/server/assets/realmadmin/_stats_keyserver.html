@@ -377,7 +377,15 @@
     });
 
     let redrawPending = false;
+    let windowWidth;
     $(window).resize(function() {
+      let w = $(window).width();
+      if (w != windowWidth) {
+        windowWidth = w;
+      } else {
+        return;
+      }
+
       if (!redrawPending) {
         redrawPending = true;
         setTimeout(function(){
