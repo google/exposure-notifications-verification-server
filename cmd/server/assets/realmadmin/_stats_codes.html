@@ -101,9 +101,9 @@
         return;
       }
 
-      var tenDaysAgo = new Date(data.statistics[data.statistics.length-10].date);
+      let tenDaysAgo = new Date(data.statistics[data.statistics.length-10].date);
 
-      var dataTable = new google.visualization.DataTable();
+      let dataTable = new google.visualization.DataTable();
       dataTable.addColumn('date', 'Date');
       dataTable.addColumn('number', 'Issued');
       dataTable.addColumn('number', 'Claimed');
@@ -118,9 +118,9 @@
       });
       dateFormatter.format(dataTable, 0);
 
-      var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
+      let dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
 
-      var filter = new google.visualization.ControlWrapper({
+      let filter = new google.visualization.ControlWrapper({
           controlType: 'ChartRangeFilter',
           containerId: 'filter_div',
           state: {
@@ -156,7 +156,7 @@
           },
         });
 
-      var realmChart = new google.visualization.ChartWrapper({
+      let realmChart = new google.visualization.ChartWrapper({
         chartType: 'LineChart',
         containerId: 'chart_div',
         options: {

@@ -452,7 +452,7 @@ func generateKeyServerStats(db *database.Database, realm *database.Realm) error 
 			TotalTEKsPublished:        rand.Int63n(10000),
 			RevisionRequests:          rand.Int63n(1000),
 			TEKAgeDistribution:        randArr63n(1500, 16),
-			OnsetToUploadDistribution: randArr63n(15, 30),
+			OnsetToUploadDistribution: randArr63n(15, 31),
 			RequestsMissingOnsetDate:  rand.Int63n(100),
 		}
 		if err := db.SaveKeyServerStatsDay(day); err != nil {
