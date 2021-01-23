@@ -177,6 +177,10 @@
 
       dashboard.bind(filter, realmChart);
       dashboard.draw(dataTable);
+      redrawCharts.push({
+        chart: dashboard,
+        data: dataTable,
+      });
     })
     .fail(function(xhr, status, err) {
       flash.error('Failed to render realm stats: ' + err);

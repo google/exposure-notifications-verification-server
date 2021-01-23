@@ -39,6 +39,41 @@
     {{template "realmadmin/_stats_keyserver" .}}
     {{end}}
   </main>
+
+  <script type="text/javascript">
+  var redrawCharts = [];
+
+  $(function() {
+    let redrawPending = false;
+    let windowWidth = 0;
+    $(window).resize(function() {
+      let w = $(window).width();
+      if (w != windowWidth) {
+        windowWidth = w;
+      } else {
+        return;
+      }
+
+      if (!redrawPending) {
+        redrawPending = true;
+        setTimeout(function(){
+          redraw();
+          redrawPending = false;
+        }, 300);
+      }
+    });
+
+    function redraw(){
+      let c
+      for (c of redrawCharts) {
+        if (c.options) {
+          c.options.animation = null;
+        }
+        c.chart.draw(c.data, c.options)
+      }
+    }
+  });
+  </script>
 </body>
 </html>
 {{end}}

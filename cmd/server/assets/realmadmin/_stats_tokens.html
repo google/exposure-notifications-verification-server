@@ -110,6 +110,11 @@
 
       let chart = new google.visualization.LineChart($div.get(0));
       chart.draw(dataTable, options);
+      redrawCharts.push({
+        chart: chart,
+        data: dataTable,
+        options: options,
+      });
     })
     .fail(function(xhr, status, err) {
       flash.error('Failed to render realm stats: ' + err);
