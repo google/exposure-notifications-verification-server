@@ -67,8 +67,8 @@ func TestHandleDestroy(t *testing.T) {
 		}
 		handler := c.HandleDestroy()
 
-		realm := database.NewRealmWithDefaults("test")
-		if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
 			t.Fatal(err)
 		}
 		// Create 2 signing keys - we need to destroy the non-active one.

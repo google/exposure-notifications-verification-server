@@ -15,8 +15,10 @@
 package smskeys
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
@@ -57,7 +59,9 @@ func (c *Controller) HandleActivate() http.Handler {
 
 		kid, err := currentRealm.SetActiveSMSSigningKey(c.db, form.SigningKeyID)
 		if err != nil {
-			flash.Error("Unable to set active SMS signing key: %v", err)
+			logging.FromContext(ctx).Errorw("realm.SetActiveSMSSigningKey", "error", err)
+			currentRealm.AddError("", fmt.Sprintf("Unable to set active SMS signing key: %v", err))
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}

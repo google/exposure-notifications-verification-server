@@ -65,8 +65,8 @@ func TestHandleCreate(t *testing.T) {
 		}
 		handler := c.HandleCreateKey()
 
-		realm := database.NewRealmWithDefaults("test")
-		if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
 			t.Fatal(err)
 		}
 
