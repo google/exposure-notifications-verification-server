@@ -63,21 +63,14 @@ func ScrubPhoneNumbers(s string) string {
 	return noScrubs
 }
 
-func (c *Controller) SendSMS(ctx context.Context, request *api.IssueCodeRequest, result *IssueResult, realm *database.Realm) error {
+func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProvider sms.Provider, request *api.IssueCodeRequest, result *IssueResult) error {
 	if request.Phone == "" {
 		return nil
-	}
-	smsProvider, err := realm.SMSProvider(c.db)
-	if smsProvider == nil {
-		return nil
-	}
-	if err != nil {
-		return err
 	}
 
 	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
 	smsStart := time.Now()
-	err = func() error {
+	err := func() error {
 		message, err := realm.BuildSMSText(result.VerCode.Code, result.VerCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
 			result.obsResult = observability.ResultError("FAILED_TO_BUILD_SMS")

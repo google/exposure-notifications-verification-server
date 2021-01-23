@@ -16,12 +16,15 @@ package issueapi
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 	"go.opencensus.io/tag"
 )
 
@@ -59,6 +62,7 @@ func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest
 
 func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
 	realm := controller.RealmFromContext(ctx)
+
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, req := range requests {
@@ -70,23 +74,31 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 		results[i] = c.IssueCode(ctx, vCode, realm)
 	}
 
-	// Send SMS messages
-	var wg sync.WaitGroup
-	for i, result := range results {
-		if result.ErrorReturn != nil {
-			continue
-		}
+	defer c.recordStats(ctx, results)
 
-		wg.Add(1)
-		go func(request *api.IssueCodeRequest, r *IssueResult) {
-			defer wg.Done()
-			c.SendSMS(ctx, request, r, realm)
-		}(requests[i], result)
+	// Send SMS messages if there's an SMS provider.
+	smsProvider, err := c.smsProviderFor(ctx, realm)
+	if err != nil {
+		for _, result := range results {
+			result.ErrorReturn = api.InternalError()
+		}
+	}
+	if smsProvider != nil {
+		var wg sync.WaitGroup
+		for i, result := range results {
+			if result.ErrorReturn != nil {
+				continue
+			}
+
+			wg.Add(1)
+			go func(request *api.IssueCodeRequest, r *IssueResult) {
+				defer wg.Done()
+				c.SendSMS(ctx, realm, smsProvider, request, r)
+			}(requests[i], result)
+		}
+		wg.Wait()
 	}
 
-	wg.Wait() // wait the SMS work group to finish
-
-	c.recordStats(ctx, results)
 	return results
 }
 
@@ -99,4 +111,25 @@ func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
 		}
 	}
 	c.db.UpdateStats(ctx, codes...)
+}
+
+// smsProviderFor returns the sms provider for the given realm. It pulls the
+// value from a local in-memory cache.
+func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm) (sms.Provider, error) {
+	logger := logging.FromContext(ctx).Named("issueapi.smsProviderFor")
+
+	key := fmt.Sprintf("realm:%d:sms_provider", realm.ID)
+	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
+		return realm.SMSProvider(c.db)
+	})
+	if err != nil {
+		logger.Errorw("failed to get sms provider", "error", err)
+		return nil, err
+	}
+	typ, ok := result.(sms.Provider)
+	if !ok {
+		return nil, fmt.Errorf("invalid type %T", result)
+	}
+
+	return typ, nil
 }
