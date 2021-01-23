@@ -80,6 +80,8 @@
 </div>
 
 <script type="text/javascript">
+  let stats;
+
   google.charts.load('current', {
     packages: ['corechart'],
     callback: drawRealmCharts,
@@ -112,6 +114,9 @@
     });
   }
 
+  let statsChart;
+  let statsOptions;
+  let statsData;
   function drawStatsChart(data) {
     let $div = $('#keyserver_chart_div');
 
@@ -119,15 +124,16 @@
       $div.find('p').text('No data yet.');
       return;
     }
+    stats = data.statistics;
 
-    let dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('date', 'Date');
-    dataTable.addColumn('number', 'TEKs published');
-    dataTable.addColumn('number', 'Revision requests');
-    dataTable.addColumn('number', 'Requests missing onset');
+    statsData = new google.visualization.DataTable();
+    statsData.addColumn('date', 'Date');
+    statsData.addColumn('number', 'TEKs published');
+    statsData.addColumn('number', 'Revision requests');
+    statsData.addColumn('number', 'Requests missing onset');
 
-    data.statistics.reverse().forEach(function(row) {
-      dataTable.addRow([utcDate(row.day),
+    stats.reverse().forEach(function(row) {
+      statsData.addRow([utcDate(row.day),
         row.total_teks_published,
         row.requests_with_revisions,
         row.requests_missing_onset_date,
@@ -137,9 +143,9 @@
     let dateFormatter = new google.visualization.DateFormat({
       pattern: 'MMM dd',
     });
-    dateFormatter.format(dataTable, 0);
+    dateFormatter.format(statsData, 0);
 
-    let options = {
+    statsOptions = {
       colors: ['#28a745', '#a76e28', '#a72898'],
       chartArea: {
         left: 60,
@@ -153,10 +159,14 @@
       legend: { position: 'top' },
     };
 
-    let chart = new google.visualization.LineChart($div.get(0));
-    chart.draw(dataTable, options);
+    statsChart = new google.visualization.LineChart($div.get(0));
+    statsChart.draw(statsData, statsOptions);
   }
 
+
+  let osChart;
+  let osOptions;
+  let osData;
   function drawOSChart(data) {
     let $div = $('#keyserver_os_chart_div');
 
@@ -164,20 +174,21 @@
       $div.find('p').text('No data yet.');
       return;
     }
+    stats = data.statistics;
 
-    let dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('date', 'Date');
-    dataTable.addColumn('number', 'Unknown OS');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
-    dataTable.addColumn('number', 'Android');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
-    dataTable.addColumn('number', 'IOS');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    osData = new google.visualization.DataTable();
+    osData.addColumn('date', 'Date');
+    osData.addColumn('number', 'Unknown OS');
+    osData.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    osData.addColumn('number', 'Android');
+    osData.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    osData.addColumn('number', 'IOS');
+    osData.addColumn({type:'string', role:'tooltip', p: {html: true}})
 
-    data.statistics.reverse().forEach(function(row) {
+    stats.reverse().forEach(function(row) {
       let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
 
-      dataTable.addRow([utcDate(row.day),
+      osData.addRow([utcDate(row.day),
         row.publish_requests.unknown,
         "<strong>Unknown:</strong>" + row.publish_requests.unknown + " " +(row.publish_requests.unknown / total * 100).toPrecision(3) + "%",
         row.publish_requests.android,
@@ -190,9 +201,9 @@
     let dateFormatter = new google.visualization.DateFormat({
       pattern: 'MMM dd',
     });
-    dateFormatter.format(dataTable, 0);
+    dateFormatter.format(osData, 0);
 
-    let options = {
+    osOptions = {
       colors: ['#6c757d', '#28a745', '#007bff'],
       chartArea: {
         left: 60,
@@ -211,13 +222,13 @@
       tooltip: {isHtml: true},
     };
 
-    let chart = new google.visualization.ColumnChart($div.get(0));
-    chart.draw(dataTable, options);
+    osChart = new google.visualization.ColumnChart($div.get(0));
+    osChart.draw(osData, osOptions);
   }
 
   let tekChart;
   let tekOptions;
-  let stats;
+  let tekData;
   function drawTEKAgeChart(data) {
     let $div = $('#keyserver_tek_chart_div');
 
@@ -254,7 +265,8 @@
     };
 
     tekChart = new google.visualization.ColumnChart($div.get(0));
-    tekChart.draw(getTEKDataTable(0), tekOptions);
+    tekData = getTEKDataTable(0);
+    tekChart.draw(tekData, tekOptions);
   }
 
   function getTEKDataTable(dateIndex) {
@@ -279,6 +291,7 @@
 
   let onsetChart;
   let onsetOptions;
+  let onsetData;
   function drawOnsetToUploadChart(data) {
     let $div = $('#keyserver_onset_chart_div');
 
@@ -298,11 +311,6 @@
         width: '100%',
         height: '300',
       },
-      animation:{
-        startup: false,
-        duration: 500,
-        easing: 'inAndOut',
-      },
       legend: { position: 'none' },
       hAxis: {
         title: 'Days from onset to upload',
@@ -315,7 +323,8 @@
     };
 
     onsetChart = new google.visualization.ColumnChart($div.get(0));
-    onsetChart.draw(getOnsetDataTable(0), onsetOptions);
+    onsetData = getOnsetDataTable(0);
+    onsetChart.draw(onsetData, onsetOptions);
   }
 
   function getOnsetDataTable(dateIndex) {
@@ -343,16 +352,51 @@
     $slider.on("input", function(event) {
         let indx = stats.length - $slider.val();
         tekOptions.title = stats[indx].day.split("T")[0];
-        tekChart.draw(getTEKDataTable(indx), tekOptions);
+        tekOptions.animation = {
+          startup: false,
+          duration: 500,
+          easing: 'inAndOut',
+        };
+        tekData = getTEKDataTable(indx);
+
+        tekChart.draw(tekData, tekOptions);
     });
 
     $('#onset_slide_div').append($onsetSlider)
     $onsetSlider.on("input", function(event) {
         let indx = stats.length - $onsetSlider.val();
         onsetOptions.title = stats[indx].day.split("T")[0];
-        onsetChart.draw(getOnsetDataTable(indx), onsetOptions);
+        onsetOptions.animation = {
+          startup: false,
+          duration: 500,
+          easing: 'inAndOut',
+        };
+
+        onsetData = getOnsetDataTable(indx);
+        onsetChart.draw(onsetData, onsetOptions);
     });
-});
+
+    let redrawPending = false;
+    $(window).resize(function() {
+      if (!redrawPending) {
+        redrawPending = true;
+        setTimeout(function(){
+          redraw();
+          redrawPending = false;
+        }, 300);
+      }
+    });
+
+    function redraw(){
+      statsChart.draw(statsData, statsOptions);
+      osChart.draw(osData, osOptions);
+      tekOptions.animation = null;
+      tekChart.draw(tekData, tekOptions);
+      onsetOptions.animation = null;
+      onsetChart.draw(onsetData, onsetOptions);
+      resizePending = false;
+    }
+  });
 </script>
 
 {{end}}
