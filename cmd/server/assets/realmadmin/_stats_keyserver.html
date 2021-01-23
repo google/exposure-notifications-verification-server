@@ -199,8 +199,8 @@
     chart.draw(dataTable, options);
   }
 
-  let chart;
-  let options;
+  let tekChart;
+  let tekOptions;
   let stats;
   function drawTEKAgeChart(data) {
     let $div = $('#keyserver_tek_chart_div');
@@ -211,7 +211,7 @@
     }
     stats = data.statistics;
 
-    options = {
+    tekOptions = {
       colors: ['#007bff'],
       chartArea: {
         left: 60,
@@ -231,11 +231,11 @@
       title: stats[0].day.split("T")[0],
     };
 
-    chart = new google.visualization.ColumnChart($div.get(0));
-    chart.draw(getDataTable(0), options);
+    tekChart = new google.visualization.ColumnChart($div.get(0));
+    tekChart.draw(getTEKDataTable(0), tekOptions);
   }
 
-  function getDataTable(dateIndex) {
+  function getTEKDataTable(dateIndex) {
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('number', 'days');
     dataTable.addColumn('number', 'count');
@@ -257,11 +257,10 @@
 
   $(function() {
     $('#slide-div').append($slider)
-
     $slider.on("input", function(event) {
         let indx = stats.length - $slider.val();
-        options.title = stats[indx].day.split("T")[0];
-        chart.draw(getDataTable(indx), options);
+        tekOptions.title = stats[indx].day.split("T")[0];
+        tekChart.draw(getTEKDataTable(indx), tekOptions);
     });
 });
 </script>
