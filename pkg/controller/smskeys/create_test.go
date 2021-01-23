@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
@@ -45,10 +46,11 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		c, err := smskeys.New(ctx, cfg, harness.Database, harness.Cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c := smskeys.New(ctx, cfg, harness.Database, publicKeyCache, h)
 		handler := c.HandleCreateKey()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -59,10 +61,11 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("create_first", func(t *testing.T) {
 		t.Parallel()
 
-		c, err := smskeys.New(ctx, cfg, harness.Database, harness.Cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c := smskeys.New(ctx, cfg, harness.Database, publicKeyCache, h)
 		handler := c.HandleCreateKey()
 
 		realm, err := harness.Database.FindRealm(1)

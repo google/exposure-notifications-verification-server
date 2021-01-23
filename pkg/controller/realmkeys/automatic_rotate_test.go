@@ -25,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
@@ -46,10 +47,11 @@ func TestHandleAutomaticRotate(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		c, err := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, harness.Cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -60,10 +62,11 @@ func TestHandleAutomaticRotate(t *testing.T) {
 	t.Run("not_realm_specific_keys", func(t *testing.T) {
 		t.Parallel()
 
-		c, err := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, harness.Cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -98,10 +101,11 @@ func TestHandleAutomaticRotate(t *testing.T) {
 	t.Run("already_enabled", func(t *testing.T) {
 		t.Parallel()
 
-		c, err := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, harness.Cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -140,10 +144,11 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		c, err := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, harness.Cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -179,10 +184,11 @@ func TestHandleAutomaticRotate(t *testing.T) {
 	t.Run("enables", func(t *testing.T) {
 		t.Parallel()
 
-		c, err := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, harness.Cacher, h)
+		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c := realmkeys.New(ctx, cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
 		handler := c.HandleAutomaticRotate()
 
 		realm := database.NewRealmWithDefaults("test")
