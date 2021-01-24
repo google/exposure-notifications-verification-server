@@ -37,9 +37,9 @@ type Controller struct {
 	config     config.IssueAPIConfig
 	db         *database.Database
 	localCache *cache.Cache
+	limiter    limiter.Store
 	smsSigner  keys.KeyManager
 	h          render.Renderer
-	limiter    limiter.Store
 }
 
 // New creates a new IssueAPI controller.
@@ -50,9 +50,9 @@ func New(cfg config.IssueAPIConfig, db *database.Database, limiter limiter.Store
 		config:     cfg,
 		db:         db,
 		localCache: localCache,
+		limiter:    limiter,
 		smsSigner:  smsSigner,
 		h:          h,
-		limiter:    limiter,
 	}
 }
 
