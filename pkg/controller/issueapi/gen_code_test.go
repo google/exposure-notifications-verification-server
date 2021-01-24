@@ -75,8 +75,8 @@ func TestCommitCode(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := testCfg.Database
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := harness.Database
 
 	realm, err := db.FindRealm(1)
 	if err != nil {
@@ -84,7 +84,7 @@ func TestCommitCode(t *testing.T) {
 	}
 	ctx = controller.WithRealm(ctx, realm)
 
-	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)
@@ -138,8 +138,8 @@ func TestIssueCode(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := testCfg.Database
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := harness.Database
 
 	// Enable quota on the realm
 	realm, err := db.FindRealm(1)
@@ -164,15 +164,15 @@ func TestIssueCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	key, err := realm.QuotaKey(testCfg.Config.GetRateLimitConfig().HMACKey)
+	key, err := realm.QuotaKey(harness.Config.GetRateLimitConfig().HMACKey)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := testCfg.RateLimiter.Set(ctx, key, 0, time.Hour); err != nil {
+	if err := harness.RateLimiter.Set(ctx, key, 0, time.Hour); err != nil {
 		t.Fatal(err)
 	}
 
-	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour)
 	expires := time.Now().UTC().Add(48 * time.Hour)
@@ -218,7 +218,7 @@ func TestIssueCode(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			testCfg.Config.EnforceRealmQuotas = tc.enforceRealmQuotas
+			harness.Config.EnforceRealmQuotas = tc.enforceRealmQuotas
 			result := c.IssueCode(ctx, tc.vCode, realm)
 
 			if tc.responseErr == "" {

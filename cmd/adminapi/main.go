@@ -29,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 	"github.com/gorilla/handlers"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
@@ -98,6 +99,12 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	// Setup signers
+	smsSigner, err := keys.KeyManagerFor(ctx, &cfg.SMSSigning.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create sms key manager: %w", err)
+	}
+
 	// Setup rate limiter
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)
 	if err != nil {
@@ -106,7 +113,7 @@ func realMain(ctx context.Context) error {
 	defer limiterStore.Close(ctx)
 
 	// Setup routes
-	mux, err := routes.AdminAPI(ctx, cfg, db, cacher, limiterStore)
+	mux, err := routes.AdminAPI(ctx, cfg, db, cacher, smsSigner, limiterStore)
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
 	}

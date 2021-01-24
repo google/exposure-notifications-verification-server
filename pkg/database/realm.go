@@ -711,9 +711,9 @@ func (r *Realm) CurrentSigningKey(db *Database) (*SigningKey, error) {
 	return &signingKey, nil
 }
 
-// CurrentSMSSigningKey returns the currently active SMS signing key, the one marked
-// active in the database. If there is more than one active, the most recently
-// created one wins. Should not occur due to transactional update.
+// CurrentSMSSigningKey returns the currently active SMS signing key, the one
+// marked active in the database. There cannot be more than one active key due
+// to a database-level constraint.
 func (r *Realm) CurrentSMSSigningKey(db *Database) (*SMSSigningKey, error) {
 	var signingKey SMSSigningKey
 	if err := db.db.

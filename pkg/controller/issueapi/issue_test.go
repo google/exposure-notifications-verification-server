@@ -32,8 +32,8 @@ func TestIssueOne(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	testCfg := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := testCfg.Database
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := harness.Database
 
 	realm, err := db.FindRealm(1)
 	if err != nil {
@@ -61,7 +61,7 @@ func TestIssueOne(t *testing.T) {
 	if err := db.SaveVerificationCode(existingCode, realm); err != nil {
 		t.Fatal(err)
 	}
-	c := issueapi.New(testCfg.Config, db, testCfg.RateLimiter, nil)
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 	cases := []struct {
 		name           string

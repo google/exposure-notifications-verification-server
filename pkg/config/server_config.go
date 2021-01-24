@@ -53,6 +53,12 @@ type ServerConfig struct {
 	Cache         cache.Config
 	Features      FeatureConfig
 
+	// Certificate signing key settings, needed for public key / settings display.
+	CertificateSigning CertificateSigningConfig
+
+	// SMSSigning defines the SMS signing configuration.
+	SMSSigning SMSSigningConfig
+
 	Port string `env:"PORT,default=8080"`
 
 	// Login Config
@@ -87,9 +93,6 @@ type ServerConfig struct {
 	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
 	// This repository contains a redirect service that can be used for this purpose.
 	ENExpressRedirectDomain string `env:"ENX_REDIRECT_DOMAIN"`
-
-	// Certificate signing key settings, needed for public key / settings display.
-	CertificateSigning CertificateSigningConfig
 
 	// If Dev mode is true, cookies aren't required to be sent over secure channels.
 	// This includes CSRF protection base cookie. You want this false in production (the default).

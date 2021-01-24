@@ -103,6 +103,10 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create certificate key manager: %w", err)
 	}
+	smsSigner, err := keys.KeyManagerFor(ctx, &cfg.SMSSigning.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create sms key manager: %w", err)
+	}
 
 	// Setup rate limiter
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)
@@ -118,7 +122,7 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Setup routes
-	mux, err := routes.Server(ctx, cfg, db, authProvider, cacher, certificateSigner, limiterStore)
+	mux, err := routes.Server(ctx, cfg, db, authProvider, cacher, certificateSigner, smsSigner, limiterStore)
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
 	}

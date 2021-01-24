@@ -236,7 +236,7 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 
 func (r *ServerConfigResponse) NewServer(tb testing.TB) *TestServerResponse {
 	ctx := context.Background()
-	mux, err := routes.Server(ctx, r.Config, r.Database, r.AuthProvider, r.Cacher, r.KeyManager, r.RateLimiter)
+	mux, err := routes.Server(ctx, r.Config, r.Database, r.AuthProvider, r.Cacher, r.KeyManager, r.KeyManager, r.RateLimiter)
 	if err != nil {
 		tb.Fatal(err)
 	}
