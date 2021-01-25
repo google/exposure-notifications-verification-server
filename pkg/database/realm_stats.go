@@ -31,9 +31,6 @@ import (
 
 var _ icsv.Marshaler = (RealmStats)(nil)
 
-var codeClaimBuckets []time.Duration = []time.Duration{
-	time.Minute, 5 * time.Minute, 15 * time.Minute, 30 * time.Minute, time.Hour, 2 * time.Hour, 3 * time.Hour, 6 * time.Hour, 12 * time.Hour, 24 * time.Hour}
-
 // RealmStats represents a logical collection of stats of a realm.
 type RealmStats []*RealmStat
 
