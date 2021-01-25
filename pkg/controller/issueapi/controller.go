@@ -27,27 +27,32 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"go.opencensus.io/tag"
 
+	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/sethvargo/go-limiter"
+	"go.opencensus.io/tag"
 )
 
 type Controller struct {
-	config    config.IssueAPIConfig
-	db        *database.Database
-	limiter   limiter.Store
-	smsSigner keys.KeyManager
-	h         render.Renderer
+	config     config.IssueAPIConfig
+	db         *database.Database
+	localCache *cache.Cache
+	limiter    limiter.Store
+	smsSigner  keys.KeyManager
+	h          render.Renderer
 }
 
 // New creates a new IssueAPI controller.
-func New(config config.IssueAPIConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h render.Renderer) *Controller {
+func New(cfg config.IssueAPIConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h render.Renderer) *Controller {
+	localCache, _ := cache.New(5 * time.Minute)
+
 	return &Controller{
-		config:    config,
-		db:        db,
-		limiter:   limiter,
-		smsSigner: smsSigner,
-		h:         h,
+		config:     cfg,
+		db:         db,
+		localCache: localCache,
+		limiter:    limiter,
+		smsSigner:  smsSigner,
+		h:          h,
 	}
 }
 

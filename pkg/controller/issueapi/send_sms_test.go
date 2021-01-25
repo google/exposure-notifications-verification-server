@@ -90,6 +90,11 @@ func TestSMS_sendSMS(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	smsProvider, err := realm.SMSProvider(harness.Database)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	membership := &database.Membership{
 		RealmID:     realm.ID,
 		Realm:       realm,
@@ -126,7 +131,7 @@ func TestSMS_sendSMS(t *testing.T) {
 
 	// Successful SMS send
 
-	if err := c.SendSMS(ctx, request, result, realm); err != nil {
+	if err := c.SendSMS(ctx, realm, smsProvider, request, result); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); err != nil {
@@ -134,12 +139,11 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 
 	// Failed SMS send
-
-	smsConfig.ProviderType = sms.ProviderType(sms.ProviderTypeNoopFail)
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
+	failingSMSProvider, err := sms.NewNoopFail(ctx)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := c.SendSMS(ctx, request, result, realm); err != sms.ErrNoop {
+	if err := c.SendSMS(ctx, realm, failingSMSProvider, request, result); err != sms.ErrNoop {
 		t.Errorf("expected sms failure. got %v want %v", err, sms.ErrNoop)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {
