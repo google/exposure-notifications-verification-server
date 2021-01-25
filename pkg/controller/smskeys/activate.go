@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -47,26 +47,30 @@ func (c *Controller) HandleActivate() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
 		currentRealm := membership.Realm
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
+			currentRealm.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
 
 		kid, err := currentRealm.SetActiveSMSSigningKey(c.db, form.SigningKeyID)
 		if err != nil {
-			logging.FromContext(ctx).Errorw("realm.SetActiveSMSSigningKey", "error", err)
-			currentRealm.AddError("", fmt.Sprintf("Unable to set active SMS signing key: %v", err))
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			c.renderShow(ctx, w, r, currentRealm)
+			if database.IsNotFound(err) || database.IsValidationError(err) {
+				currentRealm.AddError("", fmt.Sprintf("Failed to set active SMS signing key: %s", err))
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderShow(ctx, w, r, currentRealm)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
-		flash.Alert("Updated active SMS signing key to %q", kid)
 
+		flash.Alert("Updated active SMS signing key to %q", kid)
 		c.redirectShow(ctx, w, r)
 	})
 }

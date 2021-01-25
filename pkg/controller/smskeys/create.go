@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -45,12 +46,18 @@ func (c *Controller) HandleCreateKey() http.Handler {
 
 		kid, err := currentRealm.CreateSMSSigningKeyVersion(ctx, c.db)
 		if err != nil {
-			flash.Error("Unable to create a new SMS signing key: %v", err)
-			c.renderShow(ctx, w, r, currentRealm)
+			if database.IsNotFound(err) || database.IsValidationError(err) {
+				currentRealm.AddError("", err.Error())
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderShow(ctx, w, r, currentRealm)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		flash.Alert("Created new key ID %q. Communicate the new key material (below) to Google and Apple.", kid)
+		flash.Alert("Successfully created new key %q", kid)
 		c.redirectShow(ctx, w, r)
 	})
 }

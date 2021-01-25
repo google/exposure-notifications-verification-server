@@ -16,8 +16,6 @@
 package smskeys
 
 import (
-	"context"
-
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
@@ -33,7 +31,7 @@ type Controller struct {
 }
 
 // New creates a new Controller
-func New(ctx context.Context, config *config.ServerConfig, db *database.Database, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
+func New(config *config.ServerConfig, db *database.Database, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
 	return &Controller{
 		config:         config,
 		db:             db,

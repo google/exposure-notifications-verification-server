@@ -31,8 +31,8 @@ msgstr "Bitácora de eventos"
 msgid "nav.signing-keys"
 msgstr "Llaves firmantes"
 
-msgid "nav.sms-signing-keys"
-msgstr "Llaves firmantes de SMS"
+msgid "nav.authenticated-sms"
+msgstr "SMS autenticados"
 
 msgid "nav.statistics"
 msgstr "Estadísticas"

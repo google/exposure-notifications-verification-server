@@ -17,6 +17,7 @@ package smskeys_test
 import (
 	"fmt"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
@@ -38,21 +39,27 @@ func TestHandleDestroy(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	realm, user, _, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	cfg := &config.ServerConfig{}
 
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := smskeys.New(ctx, cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
 		handler := c.HandleDestroy()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -60,20 +67,48 @@ func TestHandleDestroy(t *testing.T) {
 		envstest.ExercisePermissionMissing(t, handler)
 	})
 
+	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
+
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+		harness.Database.SetRawDB(envstest.NewFailingDatabase())
+
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		handler := c.HandleDestroy()
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.SettingsWrite,
+		})
+
+		r := httptest.NewRequest("PUT", "/", nil)
+		r = r.Clone(ctx)
+		r = mux.SetURLVars(r, map[string]string{"id": "123456"})
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
+
 	t.Run("destroy", func(t *testing.T) {
 		t.Parallel()
 
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := smskeys.New(ctx, cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
 		handler := c.HandleDestroy()
 
-		realm, err := harness.Database.FindRealm(1)
-		if err != nil {
-			t.Fatal(err)
-		}
 		// Create 2 signing keys - we need to destroy the non-active one.
 		if _, err := realm.CreateSMSSigningKeyVersion(ctx, harness.Database); err != nil {
 			t.Fatal(err)
@@ -97,7 +132,7 @@ func TestHandleDestroy(t *testing.T) {
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        &database.User{},
+			User:        user,
 			Permissions: rbac.SettingsWrite,
 		})
 

@@ -28,6 +28,6 @@ type FeatureConfig struct {
 // AddToTemplate takes TemplateMap and writes the status of all known
 // feature flags for use in HTML templates.
 func (f *FeatureConfig) AddToTemplate(m controller.TemplateMap) controller.TemplateMap {
-	m["enableAuthenticatedSMS"] = f.EnableAuthenticatedSMS
+	m["features"] = f
 	return m
 }
