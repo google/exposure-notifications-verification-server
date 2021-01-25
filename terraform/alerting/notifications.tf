@@ -11,7 +11,7 @@ resource "google_monitoring_notification_channel" "paging" {
   for_each = var.alert-notification-channel-paging
 }
 
-resource "google_monitoring_notification_channel" "nonpaging" {
+resource "google_monitoring_notification_channel" "non-paging" {
   provider     = google-beta
   project      = var.project
   display_name = "Non-paging Notification Channel"
