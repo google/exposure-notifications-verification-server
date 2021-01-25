@@ -83,6 +83,7 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 			result.ErrorReturn = api.InternalError()
 		}
 	}
+
 	if smsProvider != nil {
 		var wg sync.WaitGroup
 		for i, result := range results {
@@ -125,6 +126,10 @@ func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm) 
 	if err != nil {
 		logger.Errorw("failed to get sms provider", "error", err)
 		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
 	}
 	typ, ok := result.(sms.Provider)
 	if !ok {

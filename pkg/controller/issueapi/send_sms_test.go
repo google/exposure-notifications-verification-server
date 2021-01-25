@@ -139,12 +139,11 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 
 	// Failed SMS send
-
-	smsConfig.ProviderType = sms.ProviderType(sms.ProviderTypeNoopFail)
-	if err := db.SaveSMSConfig(smsConfig); err != nil {
+	failingSMSProvider, err := sms.NewNoopFail(ctx)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := c.SendSMS(ctx, realm, smsProvider, request, result); err != sms.ErrNoop {
+	if err := c.SendSMS(ctx, realm, failingSMSProvider, request, result); err != sms.ErrNoop {
 		t.Errorf("expected sms failure. got %v want %v", err, sms.ErrNoop)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {
