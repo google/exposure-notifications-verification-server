@@ -40,8 +40,11 @@ func (c *Controller) HandleSync() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		logger := logging.FromContext(ctx).Named("appsync.HandleSync")
+
 		ok, err := c.db.TryLock(ctx, appSyncLock, c.config.AppSyncMinPeriod)
 		if err != nil {
+			logger.Errorw("failed to acquire lock", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
 				OK:     false,
 				Errors: []string{err.Error()},
@@ -49,6 +52,7 @@ func (c *Controller) HandleSync() http.Handler {
 			return
 		}
 		if !ok {
+			logger.Debugw("skipping (too early)")
 			c.h.RenderJSON(w, http.StatusOK, &AppSyncResult{
 				OK:     false,
 				Errors: []string{"too early"},

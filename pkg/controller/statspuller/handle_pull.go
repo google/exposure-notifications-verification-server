@@ -42,8 +42,11 @@ func (c *Controller) HandlePullStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		logger := logging.FromContext(ctx).Named("statspuller.HandlePullStats")
+
 		ok, err := c.db.TryLock(ctx, statsPullerLock, c.config.StatsPullerMinPeriod)
 		if err != nil {
+			logger.Errorw("failed to acquite lock", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
 				OK:     false,
 				Errors: []string{err.Error()},
@@ -51,6 +54,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 			return
 		}
 		if !ok {
+			logger.Debugw("skipping (too early)")
 			c.h.RenderJSON(w, http.StatusOK, &Result{
 				OK:     false,
 				Errors: []string{"too early"},
@@ -65,7 +69,6 @@ func (c *Controller) HandlePullStats() http.Handler {
 			return
 		}
 
-		logger := logging.FromContext(ctx).Named("rotation.HandlePullStats")
 		for _, realmStat := range statsConfigs {
 			realmID := realmStat.RealmID
 
