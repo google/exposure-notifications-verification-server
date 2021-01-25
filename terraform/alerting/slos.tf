@@ -60,7 +60,7 @@ module "services" {
 module "latency-alerts" {
   source = "./module.latency-alert"
 
-  notification_channels = google_monitoring_notification_channel.channels
+  notification_channels = google_monitoring_notification_channel.paging
 
   project           = var.project
   for_each          = merge(local.service_configs, var.slo_thresholds_overrides)
@@ -75,7 +75,7 @@ module "availability-slos" {
   source = "./module.availability-slo"
 
   project               = var.project
-  notification_channels = google_monitoring_notification_channel.channels
+  notification_channels = google_monitoring_notification_channel.paging
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 
@@ -92,7 +92,7 @@ module "latency-slos" {
 
   project = var.project
 
-  notification_channels = google_monitoring_notification_channel.channels
+  notification_channels = google_monitoring_notification_channel.paging
 
   for_each = merge(local.service_configs, var.slo_thresholds_overrides)
 

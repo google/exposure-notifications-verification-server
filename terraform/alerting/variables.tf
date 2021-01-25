@@ -30,7 +30,7 @@ variable "https-forwarding-rule" {
   description = "GCP Cloud Load Balancer forwarding rule name."
 }
 
-variable "alert-notification-channels" {
+variable "alert-notification-channel-paging" {
   type = map(any)
   default = {
     email = {
@@ -40,12 +40,30 @@ variable "alert-notification-channels" {
     }
     slack = {
       labels = {
-        channel_name = "#foo"
-        auth_token   = "abr"
+        channel_name = "#paging-channel"
+        auth_token   = "paging-token"
       }
     }
   }
-  description = "Notification channels"
+  description = "Paging notification channel"
+}
+
+variable "alert-notification-channel-non-paging" {
+  type = map(any)
+  default = {
+    email = {
+      labels = {
+        email_address = "nobody@example.com"
+      }
+    }
+    slack = {
+      labels = {
+        channel_name = "#non-paging-channel"
+        auth_token   = "non-paging channel"
+      }
+    }
+  }
+  description = "Non-paging notification channel"
 }
 
 variable "slo_thresholds_overrides" {
