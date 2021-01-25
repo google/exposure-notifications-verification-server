@@ -21,5 +21,5 @@ resource "google_monitoring_notification_channel" "non-paging" {
     null_resource.manual-step-to-enable-workspace
   ]
 
-  for_each = var.alert-notification-channel-nonpaging
+  for_each = var.alert-notification-channel-non-paging
 }

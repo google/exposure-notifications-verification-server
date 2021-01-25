@@ -48,7 +48,7 @@ variable "alert-notification-channel-paging" {
   description = "Paging notification channel"
 }
 
-variable "alert-notification-channel-nonpaging" {
+variable "alert-notification-channel-non-paging" {
   type = map(any)
   default = {
     email = {
