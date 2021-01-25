@@ -38,54 +38,58 @@ func TestRealmStats_MarshalCSV(t *testing.T) {
 			name: "single",
 			stats: []*RealmStat{
 				{
-					Date:          time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					RealmID:       1,
-					CodesIssued:   10,
-					CodesClaimed:  9,
-					CodesInvalid:  1,
-					TokensClaimed: 7,
-					TokensInvalid: 2,
+					Date:                  time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					RealmID:               1,
+					CodesIssued:           10,
+					CodesClaimed:          9,
+					CodesInvalid:          1,
+					TokensClaimed:         7,
+					TokensInvalid:         2,
+					CodeClaimDistribution: []int32{1, 3, 4},
 				},
 			},
-			exp: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
-2020-02-03,10,9,1,7,2
+			exp: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid,codes_claimed_age_distribution
+2020-02-03,10,9,1,7,2,1|3|4
 `,
 		},
 		{
 			name: "multi",
 			stats: []*RealmStat{
 				{
-					Date:          time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					RealmID:       1,
-					CodesIssued:   10,
-					CodesClaimed:  9,
-					CodesInvalid:  1,
-					TokensClaimed: 7,
-					TokensInvalid: 2,
+					Date:                  time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					RealmID:               1,
+					CodesIssued:           10,
+					CodesClaimed:          9,
+					CodesInvalid:          1,
+					TokensClaimed:         7,
+					TokensInvalid:         2,
+					CodeClaimDistribution: []int32{1, 2, 3},
 				},
 				{
-					Date:          time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
-					RealmID:       1,
-					CodesIssued:   45,
-					CodesClaimed:  30,
-					CodesInvalid:  29,
-					TokensClaimed: 27,
-					TokensInvalid: 2,
+					Date:                  time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
+					RealmID:               1,
+					CodesIssued:           45,
+					CodesClaimed:          30,
+					CodesInvalid:          29,
+					TokensClaimed:         27,
+					TokensInvalid:         2,
+					CodeClaimDistribution: []int32{4, 5, 6},
 				},
 				{
-					Date:          time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
-					RealmID:       1,
-					CodesIssued:   15,
-					CodesClaimed:  2,
-					CodesInvalid:  0,
-					TokensClaimed: 2,
-					TokensInvalid: 0,
+					Date:                  time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
+					RealmID:               1,
+					CodesIssued:           15,
+					CodesClaimed:          2,
+					CodesInvalid:          0,
+					TokensClaimed:         2,
+					TokensInvalid:         0,
+					CodeClaimDistribution: []int32{7, 8, 9},
 				},
 			},
-			exp: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
-2020-02-03,10,9,1,7,2
-2020-02-04,45,30,29,27,2
-2020-02-05,15,2,0,2,0
+			exp: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid,codes_claimed_age_distribution
+2020-02-03,10,9,1,7,2,1|2|3
+2020-02-04,45,30,29,27,2,4|5|6
+2020-02-05,15,2,0,2,0,7|8|9
 `,
 		},
 	}
@@ -102,6 +106,16 @@ func TestRealmStats_MarshalCSV(t *testing.T) {
 			}
 			if diff := cmp.Diff(string(b), tc.exp); diff != "" {
 				t.Errorf("bad csv (+got, -want): %s", diff)
+			}
+
+			b, err = tc.stats.MarshalJSON()
+			if err != nil {
+				t.Fatal(err)
+			}
+			a := &RealmStats{}
+			err = a.UnmarshalJSON(b)
+			if err != nil {
+				t.Fatal(err)
 			}
 		})
 	}
