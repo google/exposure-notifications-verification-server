@@ -61,6 +61,18 @@ resource "google_kms_crypto_key_iam_member" "cleanup-database-encrypter" {
   member        = "serviceAccount:${google_service_account.cleanup.email}"
 }
 
+resource "google_kms_crypto_key_iam_member" "admin-cert-signing-keys" {
+  crypto_key_id = google_kms_crypto_key.certificate-signer.self_link
+  role          = "roles/cloudkms.admin"
+  member        = "serviceAccount:${google_service_account.cleanup.email}"
+}
+
+resource "google_kms_crypto_key_iam_member" "admin-token-signing-keys" {
+  crypto_key_id = google_kms_crypto_key.token-signer.self_link
+  role          = "roles/cloudkms.admin"
+  member        = "serviceAccount:${google_service_account.cleanup.email}"
+}
+
 resource "google_secret_manager_secret_iam_member" "cleanup-db-apikey-db-hmac" {
   secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
   role      = "roles/secretmanager.secretAccessor"
