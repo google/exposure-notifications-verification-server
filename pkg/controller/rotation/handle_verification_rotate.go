@@ -22,14 +22,11 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/hashicorp/go-multierror"
-	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 )
 
 // HandleVerificationRotate handles verification certificate key rotation.
@@ -47,7 +44,7 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 
 		ok, err := c.db.TryLock(ctx, verificationRotationLock, c.config.MinTTL)
 		if err != nil {
-			logger.Errorw("failed to obtain lock", "lock", verificationRotationLock, "error", err)
+			logger.Errorw("failed to acquire lock", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
 				OK:     false,
 				Errors: []string{err.Error()},
@@ -55,14 +52,13 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 			return
 		}
 		if !ok {
-			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
+			logger.Debugw("skipping (too early)")
 			c.h.RenderJSON(w, http.StatusOK, &Result{
 				OK:     false,
 				Errors: []string{"too early"},
 			})
 			return
 		}
-		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
 
 		var merr *multierror.Error
 

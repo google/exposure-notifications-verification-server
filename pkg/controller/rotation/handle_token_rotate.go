@@ -24,7 +24,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/hashicorp/go-multierror"
-	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
 
@@ -44,7 +43,7 @@ func (c *Controller) HandleRotate() http.Handler {
 
 		ok, err := c.db.TryLock(ctx, tokenRotationLock, c.config.MinTTL)
 		if err != nil {
-			logger.Errorw("failed to run shouldRotate", "error", err)
+			logger.Errorw("failed to acquire lock", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
 				OK:     false,
 				Errors: []string{err.Error()},
@@ -52,14 +51,13 @@ func (c *Controller) HandleRotate() http.Handler {
 			return
 		}
 		if !ok {
-			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
+			logger.Debugw("skipping (too early)")
 			c.h.RenderJSON(w, http.StatusOK, &Result{
 				OK:     false,
 				Errors: []string{"too early"},
 			})
 			return
 		}
-		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
 
 		// Token signing keys
 		func() {
