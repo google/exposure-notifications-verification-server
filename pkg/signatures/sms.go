@@ -30,6 +30,9 @@ const (
 	// separator in some signatures.
 	dot   = "."
 	colon = ":"
+
+	// authPrefix is the prefix to the authentication bits.
+	authPrefix = "\nAuthentication:"
 )
 
 // SMSPurpose is an SMS purpose, used in signature calculation.
@@ -40,10 +43,13 @@ const (
 	SMSPurposeENReport SMSPurpose = "EN Report"
 )
 
-// SMSSignature returns the signature of the message uses the provided signer.
-func SMSSignature(signer crypto.Signer, keyID string, t time.Time, purpose SMSPurpose, phone, body string) (string, error) {
+// SignSMS returns a new SMS message with the embedded signature using the
+// provided signer.
+func SignSMS(signer crypto.Signer, keyID string, t time.Time, purpose SMSPurpose, phone, body string) (string, error) {
 	t = t.UTC()
-	signingString := smsSignatureString(t, purpose, phone, body)
+
+	newBody := body + authPrefix
+	signingString := smsSignatureString(t, purpose, phone, newBody)
 
 	digest := sha256.Sum256([]byte(signingString))
 	sig, err := signer.Sign(rand.Reader, digest[:], nil)
@@ -52,7 +58,7 @@ func SMSSignature(signer crypto.Signer, keyID string, t time.Time, purpose SMSPu
 	}
 
 	date := t.Format(project.RFC3339Date)
-	return b64([]byte(date)) + colon + b64([]byte(keyID)) + colon + b64(sig), nil
+	return newBody + b64([]byte(date)) + colon + b64([]byte(keyID)) + colon + b64(sig), nil
 }
 
 // smsSignatureString builds the string that is to be signed. The provided date

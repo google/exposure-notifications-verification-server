@@ -217,4 +217,4 @@ template variables for use in the HTML templates.
 
 If a whole controller should be controlled by this flag, you should install the
 [enabled](https://github.com/google/exposure-notifications-verification-server/blob/main/pkg/controller/middleware/enabled.go)
-middleware with the corect boolean value at route configuration time.
+middleware with the correct boolean value at route configuration time.

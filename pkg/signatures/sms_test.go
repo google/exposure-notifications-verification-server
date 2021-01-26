@@ -55,7 +55,7 @@ func Test_SMSSignature(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := SMSSignature(key, tc.keyID, tc.time, SMSPurposeENReport, tc.phone, tc.body)
+			result, err := SignSMS(key, tc.keyID, tc.time, SMSPurposeENReport, tc.phone, tc.body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -65,7 +65,12 @@ func Test_SMSSignature(t *testing.T) {
 			for i, part := range parts {
 				switch i {
 				case 0:
-					// First part is date
+					// First is "Authentication:"
+					if !strings.HasSuffix(part, "\nAuthentication") {
+						t.Errorf("missing authentication prefix: %q", part)
+					}
+				case 1:
+					// Next is date
 					b, err := base64.RawStdEncoding.DecodeString(part)
 					if err != nil {
 						t.Fatal(err)
@@ -75,8 +80,8 @@ func Test_SMSSignature(t *testing.T) {
 					if got, want := string(b), date; got != want {
 						t.Errorf("expected %q to be %q", got, want)
 					}
-				case 1:
-					// Second part is key id
+				case 2:
+					// Next is key id
 					b, err := base64.RawStdEncoding.DecodeString(part)
 					if err != nil {
 						t.Fatal(err)
@@ -84,14 +89,14 @@ func Test_SMSSignature(t *testing.T) {
 					if got, want := string(b), tc.keyID; got != want {
 						t.Errorf("expected %q to be %q", got, want)
 					}
-				case 2:
-					// Third part is signature
+				case 3:
+					// Next is signature
 					b, err := base64.RawStdEncoding.DecodeString(part)
 					if err != nil {
 						t.Fatal(err)
 					}
 
-					signingString := smsSignatureString(tc.time, SMSPurposeENReport, tc.phone, tc.body)
+					signingString := smsSignatureString(tc.time, SMSPurposeENReport, tc.phone, tc.body+authPrefix)
 					digest := sha256.Sum256([]byte(signingString))
 
 					if !ecdsa.VerifyASN1(&key.PublicKey, digest[:], b) {

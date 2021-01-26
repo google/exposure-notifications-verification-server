@@ -706,7 +706,7 @@ func (r *Realm) CurrentSigningKey(db *Database) (*SigningKey, error) {
 		Where("active = ?", true).
 		First(&signingKey).
 		Error; err != nil {
-		return nil, fmt.Errorf("unable to find signing key: %w", err)
+		return nil, fmt.Errorf("failed to find signing key: %w", err)
 	}
 	return &signingKey, nil
 }
@@ -721,7 +721,7 @@ func (r *Realm) CurrentSMSSigningKey(db *Database) (*SMSSigningKey, error) {
 		Where("active = ?", true).
 		First(&signingKey).
 		Error; err != nil {
-		return nil, fmt.Errorf("unable to find signing key: %w", err)
+		return nil, fmt.Errorf("failed to find signing key: %w", err)
 	}
 	return &signingKey, nil
 }

@@ -15,6 +15,9 @@
 package issueapi_test
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"net/http"
 	"strings"
@@ -95,6 +98,12 @@ func TestSMS_sendSMS(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	smsSigner, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	smsKeyID := "test"
+
 	membership := &database.Membership{
 		RealmID:     realm.ID,
 		Realm:       realm,
@@ -130,8 +139,15 @@ func TestSMS_sendSMS(t *testing.T) {
 	result.VerCode.LongCode = "00000001ABC"
 
 	// Successful SMS send
+	if err := c.SendSMS(ctx, realm, smsProvider, nil, "", request, result); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); err != nil {
+		t.Errorf("couldn't find code got %s: %v", result.VerCode.UUID, err)
+	}
 
-	if err := c.SendSMS(ctx, realm, smsProvider, request, result); err != nil {
+	// Successful SMS send with signature
+	if err := c.SendSMS(ctx, realm, smsProvider, smsSigner, smsKeyID, request, result); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); err != nil {
@@ -143,7 +159,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := c.SendSMS(ctx, realm, failingSMSProvider, request, result); err != sms.ErrNoop {
+	if err := c.SendSMS(ctx, realm, failingSMSProvider, nil, "", request, result); err != sms.ErrNoop {
 		t.Errorf("expected sms failure. got %v want %v", err, sms.ErrNoop)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {
