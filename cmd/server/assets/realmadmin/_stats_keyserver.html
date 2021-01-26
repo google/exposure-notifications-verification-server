@@ -100,10 +100,10 @@
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
-      $slider.attr('max', data.statistics.length);
-      $slider.attr('value',data.statistics.length);
-      $onsetSlider.attr('max', data.statistics.length);
-      $onsetSlider.attr('value',data.statistics.length);
+      $slider.attr('max', data.length);
+      $slider.attr('value',data.length);
+      $onsetSlider.attr('max', data.length);
+      $onsetSlider.attr('value',data.length);
 
       drawStatsChart(data);
       drawOSChart(data);
@@ -118,11 +118,11 @@
   function drawStatsChart(data) {
     let $div = $('#keyserver_chart_div');
 
-    if (!data.statistics) {
+    if (!data.length) {
       $div.find('p').text('No data yet.');
       return;
     }
-    stats = data.statistics;
+    stats = data;
 
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'Date');
@@ -170,11 +170,11 @@
   function drawOSChart(data) {
     let $div = $('#keyserver_os_chart_div');
 
-    if (!data.statistics) {
+    if (!data.length) {
       $div.find('p').text('No data yet.');
       return;
     }
-    stats = data.statistics;
+    stats = data;
 
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'Date');
@@ -237,11 +237,11 @@
   function drawTEKAgeChart(data) {
     let $div = $('#keyserver_tek_chart_div');
 
-    if (!data.statistics) {
+    if (!data.length) {
       $div.find('p').text('No data yet.');
       return;
     }
-    stats = data.statistics;
+    stats = data;
 
     tekOptions = {
       colors: ['#329262'],
@@ -305,11 +305,11 @@
   function drawOnsetToUploadChart(data) {
     let $div = $('#keyserver_onset_chart_div');
 
-    if (!data.statistics) {
+    if (!data.length) {
       $div.find('p').text('No data yet.');
       return;
     }
-    stats = data.statistics;
+    stats = data;
 
     onsetOptions = {
       colors: ['#316395'],
