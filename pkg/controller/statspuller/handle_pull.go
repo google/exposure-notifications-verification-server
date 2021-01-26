@@ -87,7 +87,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 
 			s, err := certapi.GetSignerForRealm(ctx, realmID, c.config.CertificateSigning, c.signerCache, c.db, c.kms)
 			if err != nil {
-				logger.Errorw("failed to retrieve signer for realm", "realmID", realmID)
+				logger.Errorw("failed to retrieve signer for realm", "realmID", realmID, "error", err)
 				continue
 			}
 
