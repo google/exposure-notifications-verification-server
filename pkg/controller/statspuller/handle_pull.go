@@ -91,7 +91,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 				continue
 			}
 
-			audience := s.Audience
+			audience := c.config.KeyServerStatsAudience
 			if realmStat.KeyServerAudienceOverride != "" {
 				audience = realmStat.KeyServerAudienceOverride
 			}
