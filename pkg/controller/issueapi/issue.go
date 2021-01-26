@@ -16,6 +16,7 @@ package issueapi
 
 import (
 	"context"
+	"crypto"
 	"fmt"
 	"sync"
 	"time"
@@ -63,6 +64,9 @@ func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest
 func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
 	realm := controller.RealmFromContext(ctx)
 
+	logger := logging.FromContext(ctx).Named("issueapi.IssueMany").
+		With("realm", realm.ID)
+
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, req := range requests {
@@ -79,9 +83,17 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 	// Send SMS messages if there's an SMS provider.
 	smsProvider, err := c.smsProviderFor(ctx, realm)
 	if err != nil {
-		for _, result := range results {
-			result.ErrorReturn = api.InternalError()
-		}
+		logger.Errorw("failed to get sms provider", "error", err)
+		errorAll(results, api.InternalError())
+		return results
+	}
+
+	// Sign messages if the realm has it enabled.
+	smsSigner, keyID, err := c.smsSignerFor(ctx, realm)
+	if err != nil {
+		logger.Errorw("failed to get sms signer", "error", err)
+		errorAll(results, api.InternalError())
+		return results
 	}
 
 	if smsProvider != nil {
@@ -94,7 +106,7 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 			wg.Add(1)
 			go func(request *api.IssueCodeRequest, r *IssueResult) {
 				defer wg.Done()
-				c.SendSMS(ctx, realm, smsProvider, request, r)
+				c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r)
 			}(requests[i], result)
 		}
 		wg.Wait()
@@ -117,14 +129,11 @@ func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
 // smsProviderFor returns the sms provider for the given realm. It pulls the
 // value from a local in-memory cache.
 func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm) (sms.Provider, error) {
-	logger := logging.FromContext(ctx).Named("issueapi.smsProviderFor")
-
 	key := fmt.Sprintf("realm:%d:sms_provider", realm.ID)
 	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
 		return realm.SMSProvider(c.db)
 	})
 	if err != nil {
-		logger.Errorw("failed to get sms provider", "error", err)
 		return nil, err
 	}
 
@@ -137,4 +146,56 @@ func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm) 
 	}
 
 	return typ, nil
+}
+
+// smsSignerFor returns the sms signer for the given realm. It pulls the value
+// from a local in-memory cache.
+func (c *Controller) smsSignerFor(ctx context.Context, realm *database.Realm) (crypto.Signer, string, error) {
+	// Do not create a signer if the realm does not sign SMS.
+	if !realm.UseAuthenticatedSMS {
+		return nil, "", nil
+	}
+
+	type cachedSMSSigner struct {
+		signer crypto.Signer
+		keyID  string
+	}
+
+	key := fmt.Sprintf("realm:%d:sms_signer", realm.ID)
+	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
+		signingKey, err := realm.CurrentSMSSigningKey(c.db)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current sms signing key: %w", err)
+		}
+
+		smsSigner, err := c.smsSigner.NewSigner(ctx, signingKey.KeyID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create signer: %w", err)
+		}
+
+		return &cachedSMSSigner{
+			signer: smsSigner,
+			keyID:  signingKey.GetKID(),
+		}, nil
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	if result == nil {
+		return nil, "", nil
+	}
+	typ, ok := result.(*cachedSMSSigner)
+	if !ok {
+		return nil, "", fmt.Errorf("invalid type %T", result)
+	}
+
+	return typ.signer, typ.keyID, nil
+}
+
+// errorAll sets the ErrorReturn on all results to the provided value.
+func errorAll(results []*IssueResult, err *api.ErrorReturn) {
+	for _, result := range results {
+		result.ErrorReturn = err
+	}
 }

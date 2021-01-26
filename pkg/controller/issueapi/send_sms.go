@@ -16,6 +16,7 @@ package issueapi
 
 import (
 	"context"
+	"crypto"
 	"net/http"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/signatures"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
@@ -63,7 +65,7 @@ func ScrubPhoneNumbers(s string) string {
 	return noScrubs
 }
 
-func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProvider sms.Provider, request *api.IssueCodeRequest, result *IssueResult) error {
+func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProvider sms.Provider, signer crypto.Signer, keyID string, request *api.IssueCodeRequest, result *IssueResult) error {
 	if request.Phone == "" {
 		return nil
 	}
@@ -75,6 +77,17 @@ func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProv
 		if err != nil {
 			result.obsResult = observability.ResultError("FAILED_TO_BUILD_SMS")
 			return err
+		}
+
+		// A signer will only be provided if the realm has configured and enabled
+		// SMS signing.
+		if signer != nil {
+			var err error
+			message, err = signatures.SignSMS(signer, keyID, smsStart, signatures.SMSPurposeENReport, request.Phone, message)
+			if err != nil {
+				result.obsResult = observability.ResultError("FAILED_TO_SIGN_SMS")
+				return err
+			}
 		}
 
 		if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
