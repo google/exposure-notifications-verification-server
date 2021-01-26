@@ -430,6 +430,7 @@ func statsRoutes(r *mux.Router, c *stats.Controller) {
 	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
 	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")
 
+	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.StatsTypeCSV)).Methods("GET")
 	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.StatsTypeJSON)).Methods("GET")
 }
 

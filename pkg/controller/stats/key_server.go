@@ -43,14 +43,17 @@ func (c *Controller) HandleKeyServerStats(typ StatsType) http.Handler {
 			return
 		}
 
-		stats := make([]*keyserver.StatsDay, len(days))
+		stats := make(keyserver.StatsDays, len(days))
 		for i, d := range days {
 			stats[i] = d.ToResponse()
 		}
 
 		switch typ {
+		case StatsTypeCSV:
+			c.h.RenderCSV(w, http.StatusOK, csvFilename("key-server-stats"), stats)
+			return
 		case StatsTypeJSON:
-			c.h.RenderJSON(w, http.StatusOK, retStats{Stats: stats})
+			c.h.RenderJSON(w, http.StatusOK, stats)
 			return
 		default:
 			controller.NotFound(w, r, c.h)
