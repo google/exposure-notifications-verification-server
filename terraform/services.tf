@@ -37,10 +37,12 @@ locals {
   }
 
   database_config = {
-    DB_KEY_MANAGER                    = "GOOGLE_CLOUD_KMS"
-    DB_APIKEY_DATABASE_KEY            = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
-    DB_APIKEY_SIGNATURE_KEY           = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
-    DB_ENCRYPTION_KEY                 = google_kms_crypto_key.database-encrypter.self_link
+    DB_KEY_MANAGER          = "GOOGLE_CLOUD_KMS"
+    DB_APIKEY_DATABASE_KEY  = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
+    DB_APIKEY_SIGNATURE_KEY = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
+    DB_ENCRYPTION_KEY       = google_kms_crypto_key.database-encrypter.self_link
+    DB_KEYRING              = google_kms_key_ring.verification.self_link
+
     DB_HOST                           = google_sql_database_instance.db-inst.private_ip_address
     DB_NAME                           = google_sql_database.db.name
     DB_PASSWORD                       = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
@@ -73,9 +75,8 @@ locals {
   }
 
   signing_config = {
-    CERTIFICATE_KEY_MANAGER     = "GOOGLE_CLOUD_KMS"
-    CERTIFICATE_SIGNING_KEY     = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
-    CERTIFICATE_SIGNING_KEYRING = google_kms_key_ring.verification.self_link
+    CERTIFICATE_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
+    CERTIFICATE_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
 
     SMS_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
 

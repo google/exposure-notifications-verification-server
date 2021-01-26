@@ -119,11 +119,11 @@ represent best practices.
     export TOKEN_KEY_FILESYSTEM_ROOT="$(pwd)/local"
     export TOKEN_SIGNING_KEY="TODO" # (e.g. "/system/token-signing/1122334455")
 
-    # Configure the database key manager. The CERTIFICATE_SIGNING_KEYRING and
-    # DB_ENCRYPTION_KEY should be the values output in the previous step.
+    # Configure the database key manager. The DB_KEYRING and DB_ENCRYPTION_KEY
+    # should be the values output in the previous step.
     export DB_KEY_MANAGER="FILESYSTEM"
     export DB_KEY_FILESYSTEM_ROOT="$(pwd)/local"
-    export CERTIFICATE_SIGNING_KEYRING="TODO" # (e.g. "/realm")
+    export DB_KEYRING="TODO" # (e.g. "/realm")
     export DB_ENCRYPTION_KEY="TODO" # (e.g. "/system/database-encryption")
 
     # Use an in-memory key manager for encrypting values in the database. Create
