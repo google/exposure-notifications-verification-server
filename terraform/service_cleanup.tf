@@ -168,6 +168,8 @@ resource "google_cloud_run_service" "cleanup" {
     google_secret_manager_secret_iam_member.cleanup-db,
     google_project_iam_member.cleanup-observability,
     google_kms_crypto_key_iam_member.cleanup-database-encrypter,
+    google_kms_crypto_key_iam_member.admin-cert-signing-keys,
+    google_kms_crypto_key_iam_member.admin-token-signing-keys,
     google_secret_manager_secret_iam_member.cleanup-db-apikey-db-hmac,
     google_secret_manager_secret_iam_member.cleanup-db-apikey-sig-hmac,
     google_secret_manager_secret_iam_member.cleanup-db-verification-code-hmac,
