@@ -131,7 +131,7 @@ func AdminAPI(
 		sub.Handle("/realm/external-issuers.csv", statsController.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
 		sub.Handle("/realm/external-issuers.json", statsController.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")
 
-		r.Handle("/realm/key-server.json", statsController.HandleKeyServerStats(stats.StatsTypeJSON)).Methods("GET")
+		sub.Handle("/realm/key-server.json", statsController.HandleKeyServerStats(stats.StatsTypeJSON)).Methods("GET")
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be
