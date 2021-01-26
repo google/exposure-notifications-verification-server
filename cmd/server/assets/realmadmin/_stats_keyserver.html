@@ -266,7 +266,7 @@
         showTextEvery: 1,
       },
       titlePosition: "out",
-      title: stats[0].day.split("T")[0],
+      title: "7 days from " + stats[0].day.split("T")[0],
     };
 
     tekChart = new google.visualization.ColumnChart($div.get(0));
@@ -338,7 +338,7 @@
         showTextEvery: 1,
       },
       titlePosition: "out",
-      title: stats[0].day.split("T")[0],
+      title: "7 days from " + stats[0].day.split("T")[0],
     };
 
     onsetChart = new google.visualization.ColumnChart($div.get(0));
@@ -384,7 +384,7 @@
     $('#tek_slide_div').append($slider)
     $slider.on("input", function(event) {
         let indx = stats.length - $slider.val();
-        tekOptions.title = stats[indx].day.split("T")[0];
+        tekOptions.title = "7 days from " + stats[indx].day.split("T")[0];
         tekOptions.animation = {
           startup: false,
           duration: 500,
@@ -398,7 +398,7 @@
     $('#onset_slide_div').append($onsetSlider)
     $onsetSlider.on("input", function(event) {
         let indx = stats.length - $onsetSlider.val();
-        onsetOptions.title = stats[indx].day.split("T")[0];
+        onsetOptions.title = "7 days from " + stats[indx].day.split("T")[0];
         onsetOptions.animation = {
           startup: false,
           duration: 500,
