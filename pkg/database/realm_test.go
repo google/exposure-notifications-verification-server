@@ -693,8 +693,8 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	ctx := context.Background()
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	db.config.CertificateSigningKeyRing = filepath.Join(project.Root(), "local", "test", "realm")
-	db.config.MaxCertificateSigningKeyVersions = 2
+	db.config.KeyRing = filepath.Join(project.Root(), "local", "test", "realm")
+	db.config.MaxKeyVersions = 2
 
 	realm1 := NewRealmWithDefaults("realm1")
 	if err := db.SaveRealm(realm1, SystemTest); err != nil {
@@ -766,8 +766,8 @@ func TestRealm_CreateSMSSigningKeyVersion(t *testing.T) {
 	ctx := context.Background()
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	db.config.CertificateSigningKeyRing = filepath.Join(project.Root(), "local", "test", "realm")
-	db.config.MaxCertificateSigningKeyVersions = 2
+	db.config.KeyRing = filepath.Join(project.Root(), "local", "test", "realm")
+	db.config.MaxKeyVersions = 2
 
 	realm1 := NewRealmWithDefaults("realm1")
 	if err := db.SaveRealm(realm1, SystemTest); err != nil {

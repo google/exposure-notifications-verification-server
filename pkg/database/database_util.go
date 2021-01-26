@@ -192,8 +192,8 @@ func NewTestInstance() (*TestInstance, error) {
 			KeyManagerType: keys.KeyManagerTypeFilesystem,
 		},
 
-		CertificateSigningKeyRing:        filepath.Join(project.Root(), "local", "test", "certificates"),
-		MaxCertificateSigningKeyVersions: 5,
+		KeyRing:        filepath.Join(project.Root(), "local", "test", "certificates"),
+		MaxKeyVersions: 5,
 	}
 
 	// Parse configuration and override with test data.

@@ -1320,11 +1320,15 @@ func (r *Realm) CanUpgradeToRealmSigningKeys() bool {
 	return r.CertificateIssuer != "" && r.CertificateAudience != ""
 }
 
-func (r *Realm) SigningKeyID() string {
+// certificateSigningKMSKeyName is the unique name of the certificate signing
+// key in the upstream KMS.
+func (r *Realm) certificateSigningKMSKeyName() string {
 	return fmt.Sprintf("realm-%d", r.ID)
 }
 
-func (r *Realm) SMSSigningKeyID() string {
+// smsSigningKMSKeyName is the unique name of the SMS signing key in the
+// upstream KMS.
+func (r *Realm) smsSigningKMSKeyName() string {
 	return fmt.Sprintf("realm-sms-%d", r.ID)
 }
 
@@ -1334,13 +1338,13 @@ func (r *Realm) SMSSigningKeyID() string {
 // updating the signing key in the database fails, the key is NOT deleted from
 // the key manager.
 func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database) (string, error) {
-	return r.createdManagedSigningKey(ctx, db, r.SigningKeyID(), &SigningKey{})
+	return r.createdManagedSigningKey(ctx, db, r.certificateSigningKMSKeyName(), &SigningKey{})
 }
 
 // CreateSMSSigningKeyVersion creates a new SMS signing key versino on the key manager
 // and saves a reference to the new key version in the database.
 func (r *Realm) CreateSMSSigningKeyVersion(ctx context.Context, db *Database) (string, error) {
-	return r.createdManagedSigningKey(ctx, db, r.SMSSigningKeyID(), &SMSSigningKey{})
+	return r.createdManagedSigningKey(ctx, db, r.smsSigningKMSKeyName(), &SMSSigningKey{})
 }
 
 func (r *Realm) createdManagedSigningKey(ctx context.Context, db *Database, keyID string, signingKey RealmManagedKey) (string, error) {
@@ -1349,9 +1353,9 @@ func (r *Realm) createdManagedSigningKey(ctx context.Context, db *Database, keyI
 		return "", ErrNoSigningKeyManager
 	}
 
-	parent := db.config.CertificateSigningKeyRing
+	parent := db.config.KeyRing
 	if parent == "" {
-		return "", fmt.Errorf("missing CERTIFICATE_SIGNING_KEYRING")
+		return "", fmt.Errorf("missing DB_KEYRING")
 	}
 
 	name := keyID
@@ -1373,7 +1377,7 @@ func (r *Realm) createdManagedSigningKey(ctx context.Context, db *Database, keyI
 			return "", fmt.Errorf("failed to count existing %s signing keys: %w", signingKey.Purpose(), err)
 		}
 	}
-	if max := db.config.MaxCertificateSigningKeyVersions; count >= max {
+	if max := db.config.MaxKeyVersions; count >= max {
 		return "", fmt.Errorf("too many available %s signing keys (maximum: %d)", signingKey.Purpose(), max)
 	}
 

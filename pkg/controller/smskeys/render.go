@@ -41,7 +41,7 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 
 	m["realmKeys"] = keys
 
-	maximumKeyVersions := c.db.MaxCertificateSigningKeyVersions()
+	maximumKeyVersions := c.db.MaxKeyVersions()
 	m["maximumKeyVersions"] = maximumKeyVersions
 
 	publicKeys := make(map[string]string)

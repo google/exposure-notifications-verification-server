@@ -51,14 +51,12 @@ type Config struct {
 	// that are encrypted via a KMS.
 	Keys keys.Config `env:",prefix=DB_"`
 
-	// The KMS managed KeyRing that per-realm certificate signing keys are
-	// created on.
-	CertificateSigningKeyRing string `env:"CERTIFICATE_SIGNING_KEYRING"`
+	// KeyRing is the KMS keyring to use for managing KMS keys.
+	KeyRing string `env:"DB_KEYRING"`
 
-	// MaxCertificateSigningKeyVersions is the maximum number of certificate
-	// signing key versions per realm. This is enforced at the database layer, not
-	// the upstream KMS.
-	MaxCertificateSigningKeyVersions int64 `env:"MAX_CERTIFICATE_SIGNING_KEY_VERSIONS, default=5"`
+	// MaxKeyVersions is the maximum number of signing key versions for a type,
+	// per realm. This is enforced at the database layer, not the upstream KMS.
+	MaxKeyVersions int64 `env:"DB_MAX_KEY_VERSIONS, default=5"`
 
 	// EncryptionKey is the reference to an encryption/decryption key to use when
 	// for application-layer encryption before values are persisted to the

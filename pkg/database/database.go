@@ -93,9 +93,9 @@ func (db *Database) SupportsPerRealmSigning() bool {
 	return db.signingKeyManager != nil
 }
 
-// MaxCertificateSigningKeyVersions returns the configured maximum.
-func (db *Database) MaxCertificateSigningKeyVersions() int64 {
-	return db.config.MaxCertificateSigningKeyVersions
+// MaxKeyVersions returns the configured maximum.
+func (db *Database) MaxKeyVersions() int64 {
+	return db.config.MaxKeyVersions
 }
 
 func (db *Database) KeyManager() keys.KeyManager {

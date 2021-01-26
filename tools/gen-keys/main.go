@@ -98,8 +98,8 @@ func realMain(ctx context.Context) error {
 
 	// Print realm-specific certificate signing ring
 	{
-		fmt.Printf("\nRealm signing key ring:\n\n")
-		fmt.Printf("    export CERTIFICATE_SIGNING_KEYRING=\"%s\"\n", "/realm")
+		fmt.Printf("\nDatabase key ring:\n\n")
+		fmt.Printf("    export DB_KEYRING=\"%s\"\n", "/realm")
 	}
 
 	// Create token keys
