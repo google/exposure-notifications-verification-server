@@ -209,7 +209,7 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
