@@ -60,7 +60,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
     content   = "${local.playbook_prefix}/E2ETestErrorRatioHigh.md"
     mime_type = "text/markdown"
   }
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -95,7 +95,7 @@ resource "google_monitoring_alert_policy" "probers" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -130,7 +130,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -175,7 +175,7 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -190,9 +190,8 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
   conditions {
     display_name = "Cloud Scheduler Job Error Ratio"
     condition_monitoring_query_language {
-      duration = "900s"
-      # Uses rate(5m). See the reasoning above.
-      query = <<-EOT
+      duration = "1s"
+      query    = <<-EOT
       fetch cloud_scheduler_job::logging.googleapis.com/log_entry_count
       | filter (metric.severity == 'ERROR')
       | align rate(5m)
@@ -210,7 +209,7 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -242,7 +241,7 @@ resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
     content   = "${local.playbook_prefix}/UpstreamUserRecreates.md"
     mime_type = "text/markdown"
   }
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -283,7 +282,7 @@ resource "google_monitoring_alert_policy" "HumanAccessedSecret" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -324,7 +323,7 @@ resource "google_monitoring_alert_policy" "HumanDecryptedValue" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.channels) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,

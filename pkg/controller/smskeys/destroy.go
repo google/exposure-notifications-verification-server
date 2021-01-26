@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
@@ -46,12 +47,18 @@ func (c *Controller) HandleDestroy() http.Handler {
 		currentRealm := membership.Realm
 
 		if err := currentRealm.DestroySMSSigningKeyVersion(ctx, c.db, vars["id"]); err != nil {
-			flash.Error("Failed to destroy SMS signing key version: %v", err)
-			c.renderShow(ctx, w, r, currentRealm)
+			if database.IsNotFound(err) || database.IsValidationError(err) {
+				currentRealm.AddError("", err.Error())
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderShow(ctx, w, r, currentRealm)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		flash.Alert("Successfully destroyed SMS signing key!")
+		flash.Alert("Successfully destroyed SMS signing key")
 		c.redirectShow(ctx, w, r)
 	})
 }

@@ -23,7 +23,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 USER nobody
 COPY ./bin/enx-redirect /server
-COPY ./cmd/enx-redirect/assets /assets
+COPY --chown=65534:65534 ./cmd/enx-redirect/assets /assets
 COPY --from=builder /var/run /var/run
 COPY --from=builder /var/run/secrets /var/run/secrets
 

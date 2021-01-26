@@ -31,8 +31,8 @@ msgstr "Journal d'événements"
 msgid "nav.signing-keys"
 msgstr "Clés de signature"
 
-msgid "nav.sms-signing-keys"
-msgstr "Clés de signature SMS"
+msgid "nav.authenticated-sms"
+msgstr "SMS authentifié"
 
 msgid "nav.statistics"
 msgstr "Statistiques"

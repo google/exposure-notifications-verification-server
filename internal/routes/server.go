@@ -300,12 +300,13 @@ func Server(
 			return nil, err
 		}
 
-		realmkeysController := realmkeys.New(ctx, cfg, db, certificateSigner, publicKeyCache, h)
+		realmkeysController := realmkeys.New(cfg, db, certificateSigner, publicKeyCache, h)
 		realmkeysRoutes(sub, realmkeysController)
 
-		realmSMSKeysController := smskeys.New(ctx, cfg, db, publicKeyCache, h)
-		authenticatedSMSEnabled := middleware.OnlyIfEnabled(cfg.Features.EnableAuthenticatedSMS, h)
-		realmSMSkeysRoutes(sub, realmSMSKeysController, authenticatedSMSEnabled)
+		realmSMSKeysController := smskeys.New(cfg, db, publicKeyCache, h)
+		if cfg.Features.EnableAuthenticatedSMS {
+			realmSMSkeysRoutes(sub, realmSMSKeysController)
+		}
 	}
 
 	// JWKs
@@ -403,13 +404,13 @@ func realmkeysRoutes(r *mux.Router, c *realmkeys.Controller) {
 }
 
 // realmSMSkeysRoutes are the realm key routes.
-func realmSMSkeysRoutes(r *mux.Router, c *smskeys.Controller, enabledCheck mux.MiddlewareFunc) {
-	r.Handle("/sms-keys", enabledCheck(c.HandleIndex())).Methods("GET")
-	r.Handle("/sms-keys/enable", enabledCheck(c.HandleEnable())).Methods("POST")
-	r.Handle("/sms-keys/disable", enabledCheck(c.HandleDisable())).Methods("POST")
-	r.Handle("/sms-keys/create", enabledCheck(c.HandleCreateKey())).Methods("POST")
-	r.Handle("/sms-keys/{id:[0-9]+}", enabledCheck(c.HandleDestroy())).Methods("DELETE")
-	r.Handle("/sms-keys/activate", enabledCheck(c.HandleActivate())).Methods("POST")
+func realmSMSkeysRoutes(r *mux.Router, c *smskeys.Controller) {
+	r.Handle("/sms-keys", c.HandleIndex()).Methods("GET")
+	r.Handle("/sms-keys", c.HandleCreateKey()).Methods("POST")
+	r.Handle("/sms-keys/enable", c.HandleEnable()).Methods("PUT")
+	r.Handle("/sms-keys/disable", c.HandleDisable()).Methods("PUT")
+	r.Handle("/sms-keys/{id:[0-9]+}", c.HandleDestroy()).Methods("DELETE")
+	r.Handle("/sms-keys/activate", c.HandleActivate()).Methods("POST")
 }
 
 // statsRoutes are the statistics routes, rooted at /stats.
@@ -429,6 +430,7 @@ func statsRoutes(r *mux.Router, c *stats.Controller) {
 	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
 	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")
 
+	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.StatsTypeCSV)).Methods("GET")
 	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.StatsTypeJSON)).Methods("GET")
 }
 

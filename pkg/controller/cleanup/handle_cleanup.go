@@ -23,7 +23,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/hashicorp/go-multierror"
-	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
 
@@ -42,7 +41,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 
 		ok, err := c.db.TryLock(ctx, cleanupName, c.config.CleanupMinPeriod)
 		if err != nil {
-			logger.Errorw("failed to run shouldCleanup", "error", err)
+			logger.Errorw("failed to acquire lock", "error", err)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
 				OK:     false,
 				Errors: []string{err.Error()},
@@ -50,14 +49,13 @@ func (c *Controller) HandleCleanup() http.Handler {
 			return
 		}
 		if !ok {
-			stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultNotOK()}, mClaimRequests.M(1))
+			logger.Debugw("skipping (too early)")
 			c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
 				OK:     false,
 				Errors: []string{"too early"},
 			})
 			return
 		}
-		stats.RecordWithTags(ctx, []tag.Mutator{observability.ResultOK()}, mClaimRequests.M(1))
 
 		// Construct a multi-error. If one of the purges fails, we still want to
 		// attempt the other purges.

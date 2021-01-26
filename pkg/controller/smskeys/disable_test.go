@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package realmkeys_test
+package smskeys_test
 
 import (
 	"net/http/httptest"
@@ -23,7 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
@@ -31,69 +31,33 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-func TestHandleManualRotate(t *testing.T) {
+func TestHandleDisable(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
+
+	cfg := &config.ServerConfig{}
+
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cfg := &config.ServerConfig{}
-
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
-		handler := c.HandleManualRotate()
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		handler := c.HandleDisable()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
-	})
-
-	t.Run("not_enabled", func(t *testing.T) {
-		t.Parallel()
-
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
-		handler := c.HandleManualRotate()
-
-		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm: &database.Realm{
-				AutoRotateCertificateKey: false,
-			},
-			User:        &database.User{},
-			Permissions: rbac.SettingsWrite,
-		})
-
-		r := httptest.NewRequest("PUT", "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		handler.ServeHTTP(w, r)
-		w.Flush()
-
-		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Already in manual key rotation mode"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
-		}
 	})
 
 	t.Run("internal_error", func(t *testing.T) {
@@ -102,18 +66,14 @@ func TestHandleManualRotate(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
-		handler := c.HandleManualRotate()
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		handler := c.HandleDisable()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
-				AutoRotateCertificateKey: true,
+				UseAuthenticatedSMS: true,
 			},
 			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
@@ -121,7 +81,8 @@ func TestHandleManualRotate(t *testing.T) {
 
 		r := httptest.NewRequest("PUT", "/", nil)
 		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
 
@@ -136,21 +97,17 @@ func TestHandleManualRotate(t *testing.T) {
 		}
 	})
 
-	t.Run("enables", func(t *testing.T) {
+	t.Run("disables", func(t *testing.T) {
 		t.Parallel()
 
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
+		realm, err := harness.Database.FindRealm(1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
-		handler := c.HandleManualRotate()
+		realm.UseAuthenticatedSMS = true
 
-		realm := database.NewRealmWithDefaults("test")
-		realm.AutoRotateCertificateKey = true
-		if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		handler := c.HandleDisable()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -162,26 +119,20 @@ func TestHandleManualRotate(t *testing.T) {
 
 		r := httptest.NewRequest("PUT", "/", nil)
 		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
-		}
-		if got, want := w.Header().Get("Location"), "/realm/keys"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
-		}
-
-		updatedRealm, err := harness.Database.FindRealm(realm.ID)
+		updatedRealm, err := harness.Database.FindRealm(1)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if got, want := updatedRealm.AutoRotateCertificateKey, false; got != want {
+		if got, want := updatedRealm.UseAuthenticatedSMS, false; got != want {
 			t.Errorf("expected %t to be %t", got, want)
 		}
 	})

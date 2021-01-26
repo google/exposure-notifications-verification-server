@@ -36,9 +36,12 @@ type StatsPullerConfig struct {
 	CertificateSigning CertificateSigningConfig
 
 	// KeyServerURL is the default URL of the key server - individual realms may override it
-	KeyServerURL       string        `env:"KEY_SERVER_URL, required"`
-	FileSizeLimitBytes int64         `env:"STATS_PULLER_SIZE_LIMIT, default=64000"`
-	DownloadTimeout    time.Duration `env:"STATS_PULLER_DOWNLOAD_TIMEOUT, default=1m"`
+	KeyServerURL string `env:"KEY_SERVER_URL, required"`
+	// The audience value to send to the keyserver.
+	// Default matches: https://github.com/google/exposure-notifications-server/blob/main/internal/verification/config.go
+	KeyServerStatsAudience string        `env:"KEY_SERVER_STATS_AUDIENCE, default=keyserver"`
+	FileSizeLimitBytes     int64         `env:"STATS_PULLER_SIZE_LIMIT, default=64000"`
+	DownloadTimeout        time.Duration `env:"STATS_PULLER_DOWNLOAD_TIMEOUT, default=1m"`
 
 	// Port is the port upon which to bind.
 	Port string `env:"PORT, default=8080"`

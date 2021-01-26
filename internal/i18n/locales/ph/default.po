@@ -31,8 +31,8 @@ msgstr "Event log"
 msgid "nav.signing-keys"
 msgstr "Signing keys"
 
-msgid "nav.sms-signing-keys"
-msgstr "SMS Signing keys"
+msgid "nav.authenticated-sms"
+msgstr "Pinatunayan ang SMS"
 
 msgid "nav.statistics"
 msgstr "Statistics"

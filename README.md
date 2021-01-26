@@ -40,37 +40,9 @@ for a verification system:
 
 	  -   The Verification Certificate is also a JWT
 
-
-### Architecture diagram
-
-![Verification Flow](https://developers.google.com/android/exposure-notifications/images/verification-flow.svg)
-
-### Architecture details
-
--   This application is comprised of the following services which are designed
-    to be serverless and scale independently:
-
-    -   `cmd/server` - Web UI for creating verification codes
-
-    -   `cmd/apiserver` - Server for mobile device applications to do
-        verification
-
-    -   `cmd/adminapi` - (optional) Server for connecting existing PHA
-        applications to the verification system.
-
-    -   `cmd/cleanup` - Server for cleaning up old data. Required in order to
-        recycle and reuse verification codes over a longer period of time.
-
--   PostgreSQL database for shared state. Other databases may work, but we only
-    aim to support Postgres at this time.
-
--   Redis for caching and distributed rate limiting.
-
--   Identity Platform for login.
-
-
 ## More resources
 
+-   [Architecture](docs/architecture.md)
 -   [API guide](docs/api.md)
 -   [Exposure Notifications Express SMS / Deep Link Handling](docs/link_handling.md)
 -   [Realm administration guide](docs/realm-admin-guide.md)

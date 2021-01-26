@@ -23,8 +23,8 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 USER nobody
 COPY ./bin/server /server
-COPY ./cmd/server/assets /assets
-COPY ./internal/i18n/locales /locales
+COPY --chown=65534:65534 ./cmd/server/assets /assets
+COPY --chown=65534:65534 ./internal/i18n/locales /locales
 COPY --from=builder /var/run /var/run
 COPY --from=builder /var/run/secrets /var/run/secrets
 

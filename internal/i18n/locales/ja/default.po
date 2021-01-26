@@ -31,8 +31,8 @@ msgstr "イベントログ"
 msgid "nav.signing-keys"
 msgstr "署名鍵"
 
-msgid "nav.sms-signing-keys"
-msgstr "SMS 署名鍵"
+msgid "nav.authenticated-sms"
+msgstr "認証されたSMS"
 
 msgid "nav.statistics"
 msgstr "統計"

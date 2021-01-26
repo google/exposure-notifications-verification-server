@@ -51,7 +51,7 @@ func TestHandleIndex(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := smskeys.New(ctx, cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
 		handler := c.HandleIndex()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -66,7 +66,7 @@ func TestHandleIndex(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := smskeys.New(ctx, cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
 		handler := c.HandleIndex()
 
 		realm, err := harness.Database.FindRealm(1)
