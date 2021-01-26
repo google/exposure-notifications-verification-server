@@ -25,10 +25,6 @@ import (
 
 // HandleKeyServerStats renders statistics for the current realm's associate key-server.
 func (c *Controller) HandleKeyServerStats(typ StatsType) http.Handler {
-	type retStats struct {
-		Stats []*keyserver.StatsDay `json:"statistics"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		currentRealm, ok := authorizeFromContext(ctx, rbac.StatsRead, rbac.UserRead)
