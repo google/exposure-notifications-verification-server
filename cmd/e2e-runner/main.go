@@ -258,8 +258,13 @@ func handleENXRedirect(client *clients.ENXRedirectClient, h render.Renderer) htt
 			return
 		}
 		defer unknownHTTPResp.Body.Close()
-		if got, want := unknownHTTPResp.StatusCode, 404; got != want {
+		if got, want := unknownHTTPResp.StatusCode, 303; got != want {
 			renderJSONError(w, r, h, fmt.Errorf("expected unknown redirect code %d to be %d", got, want))
+			return
+		}
+		// expecting generic onboarding redirect
+		if got, want := iosHTTPResp.Header.Get("Location"), "https://www.google.com/covid19/exposurenotifications"; !strings.Contains(got, want) {
+			renderJSONError(w, r, h, fmt.Errorf("expected unknown redirect location %q to contain %q", got, want))
 			return
 		}
 
