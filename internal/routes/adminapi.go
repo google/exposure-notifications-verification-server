@@ -131,6 +131,7 @@ func AdminAPI(
 		sub.Handle("/realm/external-issuers.csv", statsController.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
 		sub.Handle("/realm/external-issuers.json", statsController.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")
 
+		sub.Handle("/realm/key-server.csv", statsController.HandleKeyServerStats(stats.StatsTypeCSV)).Methods("GET")
 		sub.Handle("/realm/key-server.json", statsController.HandleKeyServerStats(stats.StatsTypeJSON)).Methods("GET")
 	}
 
