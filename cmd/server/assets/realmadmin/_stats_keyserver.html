@@ -18,7 +18,7 @@
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
   <div class="card-body">
-    <h5 class="card-title">TEK age distribution</h5>
+    <h5 class="card-title">TEK age distribution (last 7 days)</h5>
   </div>
   <div id="keyserver_tek_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -26,7 +26,7 @@
   <div class="slidecontainer" id="tek_slide_div">
   </div>
   <div class="card-body">
-    <h5 class="card-title">Onset to upload distribution</h5>
+    <h5 class="card-title">Onset to upload distribution (last 7 days)</h5>
   </div>
   <div id="keyserver_onset_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -89,10 +89,10 @@
   });
 
   let $slider =
-    $(`<input type="range" min="1" class="slider w-100" id="tek_slider">`);
+    $(`<input type="range" min="8" class="slider w-100" id="tek_slider">`);
 
   let $onsetSlider =
-    $(`<input type="range" min="1" class="slider w-100" id="onset_slider">`);
+    $(`<input type="range" min="8" class="slider w-100" id="onset_slider">`);
 
   function drawRealmCharts() {
     $.ajax({
@@ -286,10 +286,19 @@
     dataTable.addColumn({type:'string', role:'style'})
     dataTable.addColumn({type:'string', role:'annotation'})
 
-    let row = stats[dateIndex];
+    // sum over last 7 days for smoothing
+    let table = new Array(stats[dateIndex].tek_age_distribution.length).fill(0);
     let i;
-    for (i = 0; i < row.tek_age_distribution.length; i++) {
-      let r = [i+1, row.tek_age_distribution[i],"",""]
+    for (i = dateIndex; i >= 0 && i >= dateIndex - 7; i--) {
+      let row = stats[i];
+      let j;
+      for (j = 0; j < row.tek_age_distribution.length; j++) {
+        table[j] += row.tek_age_distribution[j];
+      }
+    }
+
+    for (i = 0; i < table.length; i++) {
+      let r = [i+1, table[i],"",""]
       if (i == 15) {
         r[2] = "#6c757d";
         r[3] = ">15 days";
@@ -349,10 +358,19 @@
     dataTable.addColumn({type:'string', role:'style'})
     dataTable.addColumn({type:'string', role:'annotation'})
 
-    let row = stats[dateIndex];
+    // sum over last 7 days for smoothing
+    let table = new Array(stats[dateIndex].onset_to_upload_distribution.length).fill(0);
     let i;
-    for (i = 0; i < row.onset_to_upload_distribution.length; i++) {
-      let r = [i+1, row.onset_to_upload_distribution[i],"",""]
+    for (i = dateIndex; i >= 0 && i >= dateIndex - 7; i--) {
+      let row = stats[i];
+      let j;
+      for (j = 0; j < row.onset_to_upload_distribution.length; j++) {
+        table[j] += row.onset_to_upload_distribution[j];
+      }
+    }
+
+    for (i = 0; i < table.length; i++) {
+      let r = [i+1, table[i],"",""]
       if (i == 30) {
         r[2] = "#6c757d";
         r[3] = ">30 days";
