@@ -58,7 +58,7 @@ resource "google_project_iam_member" "stats-puller-observability" {
 resource "google_kms_key_ring_iam_member" "stats-puller-verification-signerverifier" {
   key_ring_id = google_kms_key_ring.verification.self_link
   role        = "roles/cloudkms.signerVerifier"
-  member      = "serviceAccount:${google_service_account.puller.email}"
+  member      = "serviceAccount:${google_service_account.stats-puller.email}"
 }
 
 resource "google_kms_crypto_key_iam_member" "stats-puller-database-encrypter" {
