@@ -18,7 +18,7 @@
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
   <div class="card-body">
-    <h5 class="card-title">TEK age distribution (7 day sum)</h5>
+    <h5 class="card-title">TEK age distribution <span class="sum-title">(7 day sum)</span></h5>
   </div>
   <div id="keyserver_tek_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -26,7 +26,7 @@
   <div class="slidecontainer" id="tek_slide_div">
   </div>
   <div class="card-body">
-    <h5 class="card-title">Onset to upload distribution (7 day sum)</h5>
+    <h5 class="card-title">Onset to upload distribution <span class="sum-title">(7 day sum)</span></h5>
   </div>
   <div id="keyserver_onset_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -82,17 +82,35 @@
 
 <script type="text/javascript">
   let stats;
+  let smoothing = 7;
+
+  let $slider =
+    $(`<input type="range" class="slider w-100" id="tek_slider">`);
+  let $onsetSlider =
+    $(`<input type="range" class="slider w-100" id="onset_slider">`);
+
+  $(function() {
+    let $smoothDrop = $('#smooth-drop');
+
+    $smoothDrop.on("click", function(event) {
+      event.preventDefault();
+      smoothing = $smoothDrop.val();
+      $('.sum-title').text(`(${smoothing} day sum)`)
+
+      let max = $slider.attr('max')
+      $slider.attr('min', Math.min(smoothing, max));
+      $onsetSlider.attr('min', Math.min(smoothing, max));
+      $slider.val(max);
+      $onsetSlider.val(max);
+      $slider.trigger("input");
+      $onsetSlider.trigger("input");
+    });
+  });
 
   google.charts.load('current', {
     packages: ['corechart'],
     callback: drawRealmCharts,
   });
-
-  let $slider =
-    $(`<input type="range" min="8" class="slider w-100" id="tek_slider">`);
-
-  let $onsetSlider =
-    $(`<input type="range" min="8" class="slider w-100" id="onset_slider">`);
 
   function drawRealmCharts() {
     $.ajax({
@@ -100,8 +118,10 @@
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
+      $slider.attr('min', Math.min(smoothing, data.length));
       $slider.attr('max', data.length);
       $slider.attr('value',data.length);
+      $slider.attr('min', Math.min(smoothing, data.length));
       $onsetSlider.attr('max', data.length);
       $onsetSlider.attr('value',data.length);
 
@@ -266,7 +286,7 @@
         showTextEvery: 1,
       },
       titlePosition: "out",
-      title: "7 days from " + stats[0].day.split("T")[0],
+      title: `${smoothing} days from ` + stats[0].day.split("T")[0],
     };
 
     tekChart = new google.visualization.ColumnChart($div.get(0));
@@ -286,10 +306,10 @@
     dataTable.addColumn({type:'string', role:'style'})
     dataTable.addColumn({type:'string', role:'annotation'})
 
-    // sum over last 7 days for smoothing
+    // sum over last ${smoothing} days
     let table = new Array(stats[dateIndex].tek_age_distribution.length).fill(0);
     let i;
-    for (i = dateIndex; i <= dateIndex + 7 && i < stats.length; i++) {
+    for (i = dateIndex; i <= dateIndex + smoothing && i < stats.length; i++) {
       let row = stats[i];
       let j;
       for (j = 0; j < row.tek_age_distribution.length; j++) {
@@ -338,7 +358,7 @@
         showTextEvery: 1,
       },
       titlePosition: "out",
-      title: "7 days from " + stats[0].day.split("T")[0],
+      title: `${smoothing} days from ` + stats[0].day.split("T")[0],
     };
 
     onsetChart = new google.visualization.ColumnChart($div.get(0));
@@ -358,10 +378,10 @@
     dataTable.addColumn({type:'string', role:'style'})
     dataTable.addColumn({type:'string', role:'annotation'})
 
-    // sum over last 7 days for smoothing
+    // sum over last ${smoothing} days
     let table = new Array(stats[dateIndex].onset_to_upload_distribution.length).fill(0);
     let i;
-    for (i = dateIndex; i <= dateIndex + 7 && i < stats.length; i++) {
+    for (i = dateIndex; i <= dateIndex + smoothing && i < stats.length; i++) {
       let row = stats[i];
       let j;
       for (j = 0; j < row.onset_to_upload_distribution.length; j++) {
@@ -384,7 +404,7 @@
     $('#tek_slide_div').append($slider)
     $slider.on("input", function(event) {
         let indx = stats.length - $slider.val();
-        tekOptions.title = "7 days from " + stats[indx].day.split("T")[0];
+        tekOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
         tekOptions.animation = {
           startup: false,
           duration: 500,
@@ -398,7 +418,7 @@
     $('#onset_slide_div').append($onsetSlider)
     $onsetSlider.on("input", function(event) {
         let indx = stats.length - $onsetSlider.val();
-        onsetOptions.title = "7 days from " + stats[indx].day.split("T")[0];
+        onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
         onsetOptions.animation = {
           startup: false,
           duration: 500,
