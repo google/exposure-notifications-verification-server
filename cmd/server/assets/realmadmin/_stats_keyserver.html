@@ -379,30 +379,36 @@
   $(function() {
     $('#tek_slide_div').append($slider)
     $slider.on("input", function(event) {
-        let indx = stats.length - $slider.val();
-        tekOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
-        tekOptions.animation = {
-          startup: false,
-          duration: 500,
-          easing: 'inAndOut',
-        };
-        tekData = getTEKDataTable(indx);
+      if (!stats) {
+        return
+      }
+      let indx = stats.length - $slider.val();
+      tekOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
+      tekOptions.animation = {
+        startup: false,
+        duration: 500,
+        easing: 'inAndOut',
+      };
+      tekData = getTEKDataTable(indx);
 
-        tekChart.draw(tekData, tekOptions);
+      tekChart.draw(tekData, tekOptions);
     });
 
     $('#onset_slide_div').append($onsetSlider)
     $onsetSlider.on("input", function(event) {
-        let indx = stats.length - $onsetSlider.val();
-        onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
-        onsetOptions.animation = {
-          startup: false,
-          duration: 500,
-          easing: 'inAndOut',
-        };
+      if (!stats) {
+        return
+      }
+      let indx = stats.length - $onsetSlider.val();
+      onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
+      onsetOptions.animation = {
+        startup: false,
+        duration: 500,
+        easing: 'inAndOut',
+      };
 
-        onsetData = getOnsetDataTable(indx);
-        onsetChart.draw(onsetData, onsetOptions);
+      onsetData = getOnsetDataTable(indx);
+      onsetChart.draw(onsetData, onsetOptions);
     });
   });
 </script>

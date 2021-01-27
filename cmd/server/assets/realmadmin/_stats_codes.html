@@ -276,16 +276,19 @@ function drawClaimChart(data) {
   $(function() {
     $('#issue_age_slide_div').append($issueAgeSlider)
     $issueAgeSlider.on("input", function(event) {
-        let indx = stats.length - $issueAgeSlider.val();
-        onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
-        onsetOptions.animation = {
-          startup: false,
-          duration: 500,
-          easing: 'inAndOut',
-        };
+      if (!claimStats) {
+        return
+      }
+      let indx = stats.length - $issueAgeSlider.val();
+      onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
+      onsetOptions.animation = {
+        startup: false,
+        duration: 500,
+        easing: 'inAndOut',
+      };
 
-        ageData = getClaimAgeDataTable(0);
-        ageChart.draw(ageData, ageOptions);
+      ageData = getClaimAgeDataTable(0);
+      ageChart.draw(ageData, ageOptions);
     });
   });
 </script>
