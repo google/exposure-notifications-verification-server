@@ -62,7 +62,7 @@ type RealmStat struct {
 	CodeClaimAgeDistribution pq.Int32Array `gorm:"column:code_claim_age_distribution; type:int[];"`
 
 	// CodeClaimMeanAge tracks the average age to claim a code.
-	CodeClaimMeanAge DurationSeconds `gorm:"column:codes_claimed_age_avg; type:bigint; not null; default: 0;"`
+	CodeClaimMeanAge DurationSeconds `gorm:"column:code_claim_mean_age; type:bigint; not null; default: 0;"`
 }
 
 // MarshalCSV returns bytes in CSV format.
