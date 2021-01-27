@@ -9,14 +9,14 @@
     <div class="row float-right">
       <span class="mt-2 mr-1">Smoothing</span>
       <div class="dropdown">
-        <button class="btn btn-info dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <button class="btn btn-info dropdown-toggle" type="button" id="smooth-drop" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           1 week
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          <a class="dropdown-item" href="#">1 day</a>
-          <a class="dropdown-item active" href="#">1 week</a>
-          <a class="dropdown-item" href="#">2 weeks</a>
-          <a class="dropdown-item" href="#">4 week</a>
+          <a class="dropdown-item" onclick='changeSmooth(7, "smooth-1d");' id="smooth-1d">1 day</a>
+          <a class="dropdown-item active" onclick='changeSmooth(7, "smooth-1w");' id="smooth-1w">1 week</a>
+          <a class="dropdown-item" onclick='changeSmooth(7, "smooth-2w");' id="smooth-2w">2 weeks</a>
+          <a class="dropdown-item" onclick='changeSmooth(7, "smooth-4w");' id="smooth-4w">4 week</a>
         </div>
       </div>
     </div>
@@ -98,16 +98,34 @@
   let stats;
   let smoothing = 7;
 
-  google.charts.load('current', {
-    packages: ['corechart'],
-    callback: drawRealmCharts,
-  });
-
   let $slider =
     $(`<input type="range" min="${smoothing + 1}" class="slider w-100" id="tek_slider">`);
 
   let $onsetSlider =
     $(`<input type="range" min="${smoothing + 1}" class="slider w-100" id="onset_slider">`);
+
+  let $activeSmooth = $('#smooth-1w');
+  let $smoothDrop = $('#smooth-drop');
+
+  function changeSmooth(t, id) {
+    smoothing = t;
+    let $newActive = $('#'+id);
+    $newActive.addClass('active');
+    $activeSmooth.removeClass('active');
+    $activeSmooth = $newActive;
+
+    $smoothDrop.text($activeSmooth.text());
+
+    $slider.attr('min', smoothing + 1);
+    $onsetSlider.attr('min', smoothing + 1);
+
+    redraw(chartData);
+  }
+
+  google.charts.load('current', {
+    packages: ['corechart'],
+    callback: drawRealmCharts,
+  });
 
   function drawRealmCharts() {
     $.ajax({

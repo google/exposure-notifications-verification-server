@@ -1036,19 +1036,19 @@ function redrawCharts(chartsData, timeout) {
     if (!redrawPending) {
       redrawPending = true;
       setTimeout(function() {
-        redraw();
+        redraw(chartsData);
         redrawPending = false;
       }, timeout);
     }
   });
+}
 
-  function redraw() {
-    let c;
-    for (c of chartsData) {
-      if (c.options) {
-        c.options.animation = null;
-      }
-      c.chart.draw(c.data, c.options);
+function redraw(d) {
+  let c;
+  for (c of d) {
+    if (c.options) {
+      c.options.animation = null;
     }
+    c.chart.draw(c.data, c.options);
   }
 }
