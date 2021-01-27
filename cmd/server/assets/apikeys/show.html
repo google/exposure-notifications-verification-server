@@ -126,6 +126,9 @@
   </main>
 
   <script type="text/javascript">
+    var chartData = [];
+    $(() => redrawCharts(chartData, 300));
+
     let $div = $('#apikey_stats_chart');
 
     google.charts.load('current', {
@@ -194,6 +197,11 @@
 
       let chart = new google.visualization.LineChart($div.get(0));
       chart.draw(dataTable, options);
+      chartData.push({
+        chart: chart,
+        data: dataTable,
+        options: options,
+      });
     }
 
     function drawDeviceStats(data) {

@@ -159,7 +159,7 @@
 
     let chart = new google.visualization.LineChart($div.get(0));
     chart.draw(dataTable, options);
-    redrawCharts.push({
+    chartData.push({
       chart: chart,
       data: dataTable,
       options: options,
@@ -224,7 +224,7 @@
 
     let chart = new google.visualization.ColumnChart($div.get(0));
     chart.draw(dataTable, options);
-    redrawCharts.push({
+    chartData.push({
       chart: chart,
       data: dataTable,
       options: options,
@@ -272,7 +272,7 @@
     tekChart = new google.visualization.ColumnChart($div.get(0));
     tekData = getTEKDataTable(0);
     tekChart.draw(tekData, tekOptions);
-    redrawCharts.push({
+    chartData.push({
       chart: tekChart,
       data: tekData,
       options: tekOptions,
@@ -344,7 +344,7 @@
     onsetChart = new google.visualization.ColumnChart($div.get(0));
     onsetData = getOnsetDataTable(0);
     onsetChart.draw(onsetData, onsetOptions);
-    redrawCharts.push({
+    chartData.push({
       chart: onsetChart,
       data: onsetData,
       options: onsetOptions,
