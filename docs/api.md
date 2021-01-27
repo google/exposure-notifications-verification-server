@@ -534,7 +534,8 @@ Chaff requests:
 * SHOULD send a valid JSON body with random padding similar in size as the rest
   of the client requests so that chaff requests appear the same on the wire as
   other valid requests.
-* SHOULD send chaff requests for both `/verify` and `/certificate` endpoints.
+* SHOULD send chaff requests for both `/verify`, `/certificate`, and key server
+  stats endpoints.
 
 To initiate a chaff request, set the `X-Chaff` header on your request:
 
@@ -560,7 +561,7 @@ client **MUST NOT** process or parse. The response will not be a valid JSON
 object.
 
 Client's should sporadically issue chaff requests to mirror real-world usage
-for both the `/verify` and `/certificate` endpoints.
+for both the `/verify`, `/certificate`, and key server stats endpoints.
 
 # Response codes overview
 
