@@ -38,58 +38,62 @@ func TestRealmStats_MarshalCSV(t *testing.T) {
 			name: "single",
 			stats: []*RealmStat{
 				{
-					Date:                  time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					RealmID:               1,
-					CodesIssued:           10,
-					CodesClaimed:          9,
-					CodesInvalid:          1,
-					TokensClaimed:         7,
-					TokensInvalid:         2,
-					CodeClaimDistribution: []int32{1, 3, 4},
+					Date:                     time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					RealmID:                  1,
+					CodesIssued:              10,
+					CodesClaimed:             9,
+					CodesInvalid:             1,
+					TokensClaimed:            7,
+					TokensInvalid:            2,
+					CodeClaimMeanAge:         FromDuration(time.Minute),
+					CodeClaimAgeDistribution: []int32{1, 3, 4},
 				},
 			},
-			exp: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid,codes_claimed_age_distribution
-2020-02-03,10,9,1,7,2,1|3|4
+			exp: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid,code_claim_mean_age_seconds,code_claim_age_distribution
+2020-02-03,10,9,1,7,2,60,1|3|4
 `,
 		},
 		{
 			name: "multi",
 			stats: []*RealmStat{
 				{
-					Date:                  time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					RealmID:               1,
-					CodesIssued:           10,
-					CodesClaimed:          9,
-					CodesInvalid:          1,
-					TokensClaimed:         7,
-					TokensInvalid:         2,
-					CodeClaimDistribution: []int32{1, 2, 3},
+					Date:                     time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					RealmID:                  1,
+					CodesIssued:              10,
+					CodesClaimed:             9,
+					CodesInvalid:             1,
+					TokensClaimed:            7,
+					TokensInvalid:            2,
+					CodeClaimMeanAge:         FromDuration(time.Minute),
+					CodeClaimAgeDistribution: []int32{1, 2, 3},
 				},
 				{
-					Date:                  time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
-					RealmID:               1,
-					CodesIssued:           45,
-					CodesClaimed:          30,
-					CodesInvalid:          29,
-					TokensClaimed:         27,
-					TokensInvalid:         2,
-					CodeClaimDistribution: []int32{4, 5, 6},
+					Date:                     time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
+					RealmID:                  1,
+					CodesIssued:              45,
+					CodesClaimed:             30,
+					CodesInvalid:             29,
+					TokensClaimed:            27,
+					TokensInvalid:            2,
+					CodeClaimMeanAge:         FromDuration(time.Hour),
+					CodeClaimAgeDistribution: []int32{4, 5, 6},
 				},
 				{
-					Date:                  time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
-					RealmID:               1,
-					CodesIssued:           15,
-					CodesClaimed:          2,
-					CodesInvalid:          0,
-					TokensClaimed:         2,
-					TokensInvalid:         0,
-					CodeClaimDistribution: []int32{7, 8, 9},
+					Date:                     time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
+					RealmID:                  1,
+					CodesIssued:              15,
+					CodesClaimed:             2,
+					CodesInvalid:             0,
+					TokensClaimed:            2,
+					TokensInvalid:            0,
+					CodeClaimMeanAge:         FromDuration(time.Millisecond),
+					CodeClaimAgeDistribution: []int32{7, 8, 9},
 				},
 			},
-			exp: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid,codes_claimed_age_distribution
-2020-02-03,10,9,1,7,2,1|2|3
-2020-02-04,45,30,29,27,2,4|5|6
-2020-02-05,15,2,0,2,0,7|8|9
+			exp: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid,code_claim_mean_age_seconds,code_claim_age_distribution
+2020-02-03,10,9,1,7,2,60,1|2|3
+2020-02-04,45,30,29,27,2,3600,4|5|6
+2020-02-05,15,2,0,2,0,0,7|8|9
 `,
 		},
 	}

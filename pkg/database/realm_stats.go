@@ -57,9 +57,12 @@ type RealmStat struct {
 	TokensClaimed uint `gorm:"column:tokens_claimed; type:integer; not null; default:0;"`
 	TokensInvalid uint `gorm:"column:tokens_invalid; type:integer; not null; default:0;"`
 
-	// CodeClaimDistribution shows a distribution of time from code issue to claim.
+	// CodeClaimAgeDistribution shows a distribution of time from code issue to claim.
 	// Buckets are: 1m, 5m, 15m, 30m, 1h, 2h, 3h, 6h, 12h, 24h, >24h
-	CodeClaimDistribution pq.Int32Array `gorm:"column:codes_claimed_age_distribution; type:int[];"`
+	CodeClaimAgeDistribution pq.Int32Array `gorm:"column:code_claim_age_distribution; type:int[];"`
+
+	// CodeClaimMeanAge tracks the average age to claim a code.
+	CodeClaimMeanAge DurationSeconds `gorm:"column:codes_claimed_age_avg; type:bigint; not null; default: 0;"`
 }
 
 // MarshalCSV returns bytes in CSV format.
@@ -75,7 +78,7 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 	if err := w.Write([]string{
 		"date",
 		"codes_issued", "codes_claimed", "codes_invalid",
-		"tokens_claimed", "tokens_invalid", "codes_claimed_age_distribution",
+		"tokens_claimed", "tokens_invalid", "code_claim_mean_age_seconds", "code_claim_age_distribution",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -88,7 +91,8 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 			strconv.FormatUint(uint64(stat.CodesInvalid), 10),
 			strconv.FormatUint(uint64(stat.TokensClaimed), 10),
 			strconv.FormatUint(uint64(stat.TokensInvalid), 10),
-			join(stat.CodeClaimDistribution, "|"),
+			strconv.FormatUint(uint64(stat.CodeClaimMeanAge.Duration.Seconds()), 10),
+			join(stat.CodeClaimAgeDistribution, "|"),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -129,7 +133,8 @@ type jsonRealmStatStatsData struct {
 	CodesInvalid          uint    `json:"codes_invalid"`
 	TokensClaimed         uint    `json:"tokens_claimed"`
 	TokensInvalid         uint    `json:"tokens_invalid"`
-	CodeClaimDistribution []int32 `json:"codes_claimed_age_distribution"`
+	CodeClaimMeanAge      uint    `json:"code_claim_mean_age_seconds"`
+	CodeClaimDistribution []int32 `json:"code_claim_age_distribution"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -149,7 +154,8 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 				CodesInvalid:          stat.CodesInvalid,
 				TokensClaimed:         stat.TokensClaimed,
 				TokensInvalid:         stat.TokensInvalid,
-				CodeClaimDistribution: stat.CodeClaimDistribution,
+				CodeClaimMeanAge:      uint(stat.CodeClaimMeanAge.Duration.Seconds()),
+				CodeClaimDistribution: stat.CodeClaimAgeDistribution,
 			},
 		})
 	}
@@ -182,14 +188,15 @@ func (s *RealmStats) UnmarshalJSON(b []byte) error {
 
 	for _, stat := range result.Stats {
 		*s = append(*s, &RealmStat{
-			Date:                  stat.Date,
-			RealmID:               result.RealmID,
-			CodesIssued:           stat.Data.CodesIssued,
-			CodesClaimed:          stat.Data.CodesClaimed,
-			CodesInvalid:          stat.Data.CodesInvalid,
-			TokensClaimed:         stat.Data.TokensClaimed,
-			TokensInvalid:         stat.Data.TokensInvalid,
-			CodeClaimDistribution: stat.Data.CodeClaimDistribution,
+			Date:                     stat.Date,
+			RealmID:                  result.RealmID,
+			CodesIssued:              stat.Data.CodesIssued,
+			CodesClaimed:             stat.Data.CodesClaimed,
+			CodesInvalid:             stat.Data.CodesInvalid,
+			TokensClaimed:            stat.Data.TokensClaimed,
+			TokensInvalid:            stat.Data.TokensInvalid,
+			CodeClaimMeanAge:         FromDuration(time.Duration(stat.Data.CodeClaimMeanAge) * time.Second),
+			CodeClaimAgeDistribution: stat.Data.CodeClaimDistribution,
 		})
 	}
 
