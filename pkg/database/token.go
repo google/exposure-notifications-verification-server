@@ -219,10 +219,10 @@ func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp,
 	}
 
 	var tok *Token
+	var vc VerificationCode
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
 		// Load the verification code - do quick expiry and claim checks.
 		// Also lock the row for update.
-		var vc VerificationCode
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where("realm_id = ?", authApp.RealmID).
@@ -286,7 +286,7 @@ func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp,
 		return nil, err
 	}
 
-	go db.updateStatsCodeClaimed(t, authApp)
+	go db.updateStatsCodeClaimed(t, authApp, &vc)
 	return tok, nil
 }
 
@@ -342,17 +342,51 @@ func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp) 
 
 // updateStatsCodeClaimed updates the statistics, increasing the number of codes
 // claimed.
-func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp) {
-	t = timeutils.UTCMidnight(t)
+func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp, vc *VerificationCode) {
+	midnight := timeutils.UTCMidnight(t)
 
-	realmSQL := `
-			INSERT INTO realm_stats(date, realm_id, codes_claimed)
-				VALUES ($1, $2, 1)
-			ON CONFLICT (date, realm_id) DO UPDATE
-				SET codes_claimed = realm_stats.codes_claimed + 1
-		`
-	if err := db.db.Exec(realmSQL, t, authApp.RealmID).Error; err != nil {
-		db.logger.Errorw("failed to update realm stats claimed", "error", err)
+	if err := db.db.Transaction(func(tx *gorm.DB) error {
+		var existing RealmStat
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Table("realm_stats").
+			Where("realm_id = ?", authApp.RealmID).
+			Where("date = ?", midnight).
+			Take(&existing).
+			Error; err != nil && !IsNotFound(err) {
+			return err
+		}
+
+		existing.CodesClaimed++
+		if len(existing.CodeClaimDistribution) == 0 {
+			existing.CodeClaimDistribution = make([]int32, len(claimDistributionBuckets))
+		}
+
+		sinceIssue := t.Sub(vc.IssuedAt)
+		for i, bucket := range claimDistributionBuckets {
+			if sinceIssue <= bucket {
+				existing.CodeClaimDistribution[i]++
+				break
+			}
+		}
+
+		sel := tx.Table("realm_stats").
+			Where("realm_id = ?", authApp.RealmID).
+			Where("date = ?", midnight)
+		if existing.RealmID == 0 {
+			existing.RealmID = authApp.RealmID
+			existing.Date = midnight
+			if err := sel.Create(&existing).Error; err != nil {
+				return err
+			}
+		} else {
+			if err := sel.Update(&existing).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		db.logger.Errorw("failed to save realm stats code claimed", "error", err)
 	}
 
 	authAppSQL := `
@@ -361,8 +395,8 @@ func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp) 
 			ON CONFLICT (date, authorized_app_id) DO UPDATE
 				SET codes_claimed = authorized_app_stats.codes_claimed + 1
 		`
-	if err := db.db.Exec(authAppSQL, t, authApp.ID).Error; err != nil {
-		db.logger.Errorw("failed to update authorized app stats claimed", "error", err)
+	if err := db.db.Exec(authAppSQL, midnight, authApp.ID).Error; err != nil {
+		db.logger.Errorw("failed to update authorized app stats code claimed", "error", err)
 	}
 }
 
@@ -397,31 +431,14 @@ func (db *Database) updateStatsTokenInvalid(t time.Time, authApp *AuthorizedApp)
 func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp) {
 	t = timeutils.UTCMidnight(t)
 
-	if err := db.db.Transaction(func(tx *gorm.DB) error {
-		var existing RealmStat
-		if err := tx.
-			Set("gorm:query_option", "FOR UPDATE").
-			Table("realm_stats").
-			Where("realm_id = ?", authApp.RealmID).
-			Where("date = ?", t).
-			Take(&existing).
-			Error; err != nil && !IsNotFound(err) {
-			return err
-		}
-
-		realmSQL := fmt.Sprintf(`
-			INSERT INTO realm_stats(date, realm_id, tokens_claimed)
+	realmSQL := `
+		INSERT INTO realm_stats(date, realm_id, tokens_claimed)
 				VALUES ($1, $2, 1)
 			ON CONFLICT (date, realm_id) DO UPDATE
-				SET tokens_claimed = %d
-		`, existing.TokensClaimed+1)
-
-		if err := tx.Exec(realmSQL, t, authApp.RealmID).Error; err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		db.logger.Errorw("failed to save realm stats", "error", err)
+				SET tokens_claimed = realm_stats.tokens_claimed + 1
+		`
+	if err := db.db.Exec(realmSQL, t, authApp.RealmID).Error; err != nil {
+		db.logger.Errorw("failed to update realm stats token claimed", "error", err)
 	}
 
 	authAppSQL := `
@@ -431,6 +448,6 @@ func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp)
 				SET tokens_claimed = authorized_app_stats.tokens_claimed + 1
 		`
 	if err := db.db.Exec(authAppSQL, t, authApp.ID).Error; err != nil {
-		db.logger.Errorw("failed to update authorized app stats", "error", err)
+		db.logger.Errorw("failed to update authorized app stats token claimed", "error", err)
 	}
 }

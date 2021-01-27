@@ -2075,12 +2075,14 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00092-AddClaimDistributionToRealmStats",
 			Migrate: func(tx *gorm.DB) error {
-				sql := `ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS codes_claimed_age_distribution INTEGER[]`
-				return tx.Exec(sql).Error
+				return multiExec(tx,
+					`ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS codes_claimed_age_distribution INTEGER[]`,
+					`ALTER TABLE verification_codes ADD COLUMN IF NOT EXISTS issued_at TIMESTAMPTZ`)
 			},
 			Rollback: func(tx *gorm.DB) error {
-				sql := `ALTER TABLE realm_stats DROP COLUMN IF EXISTS codes_claimed_age_distribution`
-				return tx.Exec(sql).Error
+				return multiExec(tx,
+					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS codes_claimed_age_distribution`,
+					`ALTER TABLE verification_codes DROP COLUMN IF EXISTS issued_at TIMESTAMPTZ`)
 			},
 		},
 	}

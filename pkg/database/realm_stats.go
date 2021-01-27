@@ -34,6 +34,11 @@ var _ icsv.Marshaler = (RealmStats)(nil)
 // RealmStats represents a logical collection of stats of a realm.
 type RealmStats []*RealmStat
 
+var claimDistributionBuckets = []time.Duration{
+	time.Minute, 5 * time.Minute, 25 * time.Minute, 30 * time.Minute, time.Hour,
+	2 * time.Hour, 3 * time.Hour, 6 * time.Hour, 12 * time.Hour, 24 * time.Hour, 336 * time.Hour,
+}
+
 // RealmStat represents statistics related to a user in the database.
 type RealmStat struct {
 	Date    time.Time `gorm:"column:date; type:date; not null;"`

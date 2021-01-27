@@ -72,6 +72,7 @@ type VerificationCode struct {
 	TestType      string `gorm:"type:varchar(20)"`
 	SymptomDate   *time.Time
 	TestDate      *time.Time
+	IssuedAt      time.Time
 	ExpiresAt     time.Time
 	LongExpiresAt time.Time
 
