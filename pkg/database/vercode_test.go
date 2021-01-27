@@ -447,7 +447,7 @@ func TestStatDates(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := NewRealmWithDefaults("Test Realm")
 
-	now := time.Now()
+	now := time.Now().UTC()
 	nowStr := now.Format(project.RFC3339Date)
 
 	tests := []struct {
