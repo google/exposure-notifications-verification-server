@@ -82,30 +82,6 @@
 
 <script type="text/javascript">
   let stats;
-  let smoothing = 7;
-
-  let $slider =
-    $(`<input type="range" class="slider w-100" id="tek_slider">`);
-  let $onsetSlider =
-    $(`<input type="range" class="slider w-100" id="onset_slider">`);
-
-  $(function() {
-    let $smoothDrop = $('#smooth-drop');
-
-    $smoothDrop.on("click", function(event) {
-      event.preventDefault();
-      smoothing = $smoothDrop.val();
-      $('.sum-title').text(`(${smoothing} day sum)`)
-
-      let max = $slider.attr('max')
-      $slider.attr('min', Math.min(smoothing, max));
-      $onsetSlider.attr('min', Math.min(smoothing, max));
-      $slider.val(max);
-      $onsetSlider.val(max);
-      $slider.trigger("input");
-      $onsetSlider.trigger("input");
-    });
-  });
 
   google.charts.load('current', {
     packages: ['corechart'],
