@@ -6,20 +6,6 @@
     Key server stats
   </div>
   <div class="card-body">
-    <div class="row float-right">
-      <span class="mt-2 mr-1">Smoothing</span>
-      <div class="dropdown">
-        <button class="btn btn-info dropdown-toggle" type="button" id="smooth-drop" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          1 week
-        </button>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          <a class="dropdown-item" onclick='changeSmooth(7, "smooth-1d");' id="smooth-1d">1 day</a>
-          <a class="dropdown-item active" onclick='changeSmooth(7, "smooth-1w");' id="smooth-1w">1 week</a>
-          <a class="dropdown-item" onclick='changeSmooth(7, "smooth-2w");' id="smooth-2w">2 weeks</a>
-          <a class="dropdown-item" onclick='changeSmooth(7, "smooth-4w");' id="smooth-4w">4 week</a>
-        </div>
-      </div>
-    </div>
     <h5 class="card-title">Publish requests</h5>
   </div>
   <div id="keyserver_chart_div" class="h-100 w-100" style="min-height:325px;">
@@ -32,7 +18,7 @@
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
   <div class="card-body">
-    <h5 class="card-title">TEK age distribution (7 day sum)</h5>
+    <h5 class="card-title">TEK age distribution <span class="sum-title">(7 day sum)</span></h5>
   </div>
   <div id="keyserver_tek_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -40,7 +26,7 @@
   <div class="slidecontainer" id="tek_slide_div">
   </div>
   <div class="card-body">
-    <h5 class="card-title">Onset to upload distribution (7 day sum)</h5>
+    <h5 class="card-title">Onset to upload distribution <span class="sum-title">>(7 day sum)</span></h5>
   </div>
   <div id="keyserver_onset_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -99,28 +85,27 @@
   let smoothing = 7;
 
   let $slider =
-    $(`<input type="range" min="${smoothing + 1}" class="slider w-100" id="tek_slider">`);
-
+    $(`<input type="range" class="slider w-100" id="tek_slider">`);
   let $onsetSlider =
-    $(`<input type="range" min="${smoothing + 1}" class="slider w-100" id="onset_slider">`);
+    $(`<input type="range" class="slider w-100" id="onset_slider">`);
 
-  let $activeSmooth = $('#smooth-1w');
-  let $smoothDrop = $('#smooth-drop');
+  $(function() {
+    let $smoothDrop = $('#smooth-drop');
 
-  function changeSmooth(t, id) {
-    smoothing = t;
-    let $newActive = $('#'+id);
-    $newActive.addClass('active');
-    $activeSmooth.removeClass('active');
-    $activeSmooth = $newActive;
+    $smoothDrop.on("click", function(event) {
+      event.preventDefault();
+      smoothing = $smoothDrop.val();
+      $('.sum-title').text(`(${smoothing} day sum)`)
 
-    $smoothDrop.text($activeSmooth.text());
-
-    $slider.attr('min', smoothing + 1);
-    $onsetSlider.attr('min', smoothing + 1);
-
-    redraw(chartData);
-  }
+      let max = $slider.attr('max')
+      $slider.attr('min', Math.min(smoothing, max));
+      $onsetSlider.attr('min', Math.min(smoothing, max));
+      $slider.val(max);
+      $onsetSlider.val(max);
+      $slider.trigger("input");
+      $onsetSlider.trigger("input");
+    });
+  });
 
   google.charts.load('current', {
     packages: ['corechart'],
@@ -133,8 +118,10 @@
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
+      $slider.attr('min', Math.min(smoothing, data.length));
       $slider.attr('max', data.length);
       $slider.attr('value',data.length);
+      $slider.attr('min', Math.min(smoothing, data.length));
       $onsetSlider.attr('max', data.length);
       $onsetSlider.attr('value',data.length);
 
@@ -299,7 +286,7 @@
         showTextEvery: 1,
       },
       titlePosition: "out",
-      title: "${smoothing} days from " + stats[0].day.split("T")[0],
+      title: `${smoothing} days from ` + stats[0].day.split("T")[0],
     };
 
     tekChart = new google.visualization.ColumnChart($div.get(0));
@@ -371,7 +358,7 @@
         showTextEvery: 1,
       },
       titlePosition: "out",
-      title: "${smoothing} days from " + stats[0].day.split("T")[0],
+      title: `${smoothing} days from ` + stats[0].day.split("T")[0],
     };
 
     onsetChart = new google.visualization.ColumnChart($div.get(0));
