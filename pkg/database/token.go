@@ -361,6 +361,7 @@ func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp, 
 			existing.CodeClaimAgeDistribution = make([]int32, len(claimDistributionBuckets))
 		}
 
+		// Update claim age distribution
 		sinceIssue := t.Sub(vc.CreatedAt)
 		for i, bucket := range claimDistributionBuckets {
 			if sinceIssue <= bucket {
@@ -369,9 +370,11 @@ func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp, 
 			}
 		}
 
+		// Update claim age mean
 		avg := float64(int64(existing.CodeClaimMeanAge.Duration)*int64(existing.CodesClaimed)+int64(sinceIssue)) / float64(existing.CodesClaimed+1)
 		existing.CodeClaimMeanAge = FromDuration(time.Duration(avg))
 
+		// Update total codes claimed
 		existing.CodesClaimed++
 
 		sel := tx.Table("realm_stats").
