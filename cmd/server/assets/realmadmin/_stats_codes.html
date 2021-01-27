@@ -11,6 +11,14 @@
     </div>
     <div id="filter_div" class="text-right" style="height: 75px;"></div>
   </div>
+  <div class="card-body">
+    <h5 class="card-title">Issue to claim age distribution <span class="sum-title">(7 day sum)</span></h5>
+  </div>
+  <div id="issue_age_dist_chart_div" class="h-100 w-100" style="min-height:325px;">
+    <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+  </div>
+  <div class="slidecontainer" id="issue_age_slide_div">
+  </div>
   <small class="card-footer d-flex justify-content-between text-muted">
     <a href="#" data-toggle="modal" data-target="#realm-codes-modal">Learn more about this chart</a>
     <span>
@@ -83,6 +91,8 @@
 </div>
 
 <script type="text/javascript">
+  let claimStats;
+
   google.charts.load('current', {
     packages: ['corechart', 'controls'],
     callback: drawRealmCharts,
@@ -94,98 +104,193 @@
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
-      let $realmChartDiv = $('#realm_chart');
-
-      if (!data.statistics) {
-        $realmChartDiv.find('p').text('No data yet.');
-        return;
-      }
-
-      let tenDaysAgo = new Date(data.statistics[data.statistics.length-10].date);
-
-      let dataTable = new google.visualization.DataTable();
-      dataTable.addColumn('date', 'Date');
-      dataTable.addColumn('number', 'Issued');
-      dataTable.addColumn('number', 'Claimed');
-      dataTable.addColumn('number', 'Invalid');
-
-      data.statistics.reverse().forEach(function(row) {
-        dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid]);
-      });
-
-      let dateFormatter = new google.visualization.DateFormat({
-        pattern: 'MMM dd',
-      });
-      dateFormatter.format(dataTable, 0);
-
-      let dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
-
-      let filter = new google.visualization.ControlWrapper({
-          controlType: 'ChartRangeFilter',
-          containerId: 'filter_div',
-          state: {
-            range: {
-              start: tenDaysAgo,
-            },
-          },
-          options: {
-            filterColumnIndex: 0,
-            series: {
-              0: {
-                opacity: 0,
-              }
-            },
-            ui: {
-              chartType: 'LineChart',
-              chartOptions: {
-                colors: ['#dddddd'],
-                chartArea: {
-                  width: '100%',
-                  height: '100%',
-                  top: 0,
-                  right: 40,
-                  bottom: 20,
-                  left: 60,
-                },
-                hAxis: { format: 'M/d' },
-              },
-              chartView: {
-                columns: [0,1],
-              },
-            },
-          },
-        });
-
-      let realmChart = new google.visualization.ChartWrapper({
-        chartType: 'LineChart',
-        containerId: 'chart_div',
-        options: {
-          colors: ['#007bff', '#28a745', '#dc3545'],
-          chartArea: {
-            left: 60,
-            right: 40,
-            bottom: 5,
-            top: 40,
-            width: '100%',
-            height: '300',
-          },
-          hAxis: { textPosition: 'none' },
-          legend: { position: 'top' },
-          width: '100%',
-        },
-      });
-
-      dashboard.bind(filter, realmChart);
-      dashboard.draw(dataTable);
-      chartData.push({
-        chart: dashboard,
-        data: dataTable,
-      });
-    })
-    .fail(function(xhr, status, err) {
+      drawClaimChart(data);
+      drawClaimAgeChart(data);
+    }).fail(function(xhr, status, err) {
       flash.error('Failed to render realm stats: ' + err);
     });
   }
+
+function drawClaimChart(data) {
+  let $realmChartDiv = $('#realm_chart');
+
+  if (!data.statistics) {
+    $realmChartDiv.find('p').text('No data yet.');
+    return;
+  }
+
+  let tenDaysAgo = new Date(data.statistics[data.statistics.length-10].date);
+
+  let dataTable = new google.visualization.DataTable();
+  dataTable.addColumn('date', 'Date');
+  dataTable.addColumn('number', 'Issued');
+  dataTable.addColumn('number', 'Claimed');
+  dataTable.addColumn('number', 'Invalid');
+
+  data.statistics.reverse().forEach(function(row) {
+    dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid]);
+  });
+
+  let dateFormatter = new google.visualization.DateFormat({
+    pattern: 'MMM dd',
+  });
+  dateFormatter.format(dataTable, 0);
+
+  let dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
+
+  let filter = new google.visualization.ControlWrapper({
+      controlType: 'ChartRangeFilter',
+      containerId: 'filter_div',
+      state: {
+        range: {
+          start: tenDaysAgo,
+        },
+      },
+      options: {
+        filterColumnIndex: 0,
+        series: {
+          0: {
+            opacity: 0,
+          }
+        },
+        ui: {
+          chartType: 'LineChart',
+          chartOptions: {
+            colors: ['#dddddd'],
+            chartArea: {
+              width: '100%',
+              height: '100%',
+              top: 0,
+              right: 40,
+              bottom: 20,
+              left: 60,
+            },
+            hAxis: { format: 'M/d' },
+          },
+          chartView: {
+            columns: [0,1],
+          },
+        },
+      },
+    });
+
+  let realmChart = new google.visualization.ChartWrapper({
+    chartType: 'LineChart',
+    containerId: 'chart_div',
+    options: {
+      colors: ['#007bff', '#28a745', '#dc3545'],
+      chartArea: {
+        left: 60,
+        right: 40,
+        bottom: 5,
+        top: 40,
+        width: '100%',
+        height: '300',
+      },
+      hAxis: { textPosition: 'none' },
+      legend: { position: 'top' },
+      width: '100%',
+    },
+  });
+
+  dashboard.bind(filter, realmChart);
+  dashboard.draw(dataTable);
+  chartData.push({
+    chart: dashboard,
+    data: dataTable,
+  });
+}
+
+  let ageChart;
+  let ageOptions;
+  let ageData;
+  function drawClaimAgeChart(data) {
+    let $div = $('#issue_age_dist_chart_div');
+
+    if (!data.statistics || !data.statistics[0].code_claim_age_distribution) {
+      $div.find('p').text('No data yet.');
+      return;
+    }
+    claimStats = data.statistics
+
+    ageOptions = {
+      colors: ['#316395'],
+      chartArea: {
+        left: 60,
+        right: 40,
+        bottom: 40,
+        top: 40,
+        width: '100%',
+        height: '300',
+      },
+      legend: { position: 'none' },
+      hAxis: {
+        title: 'Days from issue to claim',
+        gridlines: { color: 'transparent' },
+        ticks: [1,2,3,4,5,6,7,8,9,10],
+        showTextEvery: 1,
+      },
+      titlePosition: "out",
+      title: `${smoothing} days from ` + claimStats[0].date.split("T")[0],
+    };
+
+    ageChart = new google.visualization.ColumnChart($div.get(0));
+    ageData = getClaimAgeDataTable(0);
+    ageChart.draw(ageData, ageOptions);
+    chartData.push({
+      chart: ageChart,
+      data: ageData,
+      options: ageOptions,
+    });
+  }
+
+  function getClaimAgeDataTable(dateIndex) {
+    let dataTable = new google.visualization.DataTable();
+    dataTable.addColumn('number', 'days');
+    dataTable.addColumn('number', 'count');
+    dataTable.addColumn({type:'string', role:'style'})
+    dataTable.addColumn({type:'string', role:'annotation'})
+
+    // sum over last ${smoothing} days
+    let table = new Array(claimStats[dateIndex].code_claim_age_distribution.length).fill(0);
+    let i;
+    for (i = dateIndex; i <= dateIndex + smoothing && i < claimStats.length; i++) {
+      let row = claimStats[i];
+      let j;
+      for (j = 0; j < row.code_claim_age_distribution.length; j++) {
+        table[j] += row.code_claim_age_distribution[j];
+      }
+    }
+
+    for (i = 0; i < table.length; i++) {
+      let r = [i+1, table[i],"",""]
+      if (i == 11) {
+        r[2] = "#6c757d";
+        r[3] = ">1 day";
+      }
+      dataTable.addRow(r);
+    }
+    return dataTable;
+  }
+
+  $(function() {
+    $('#issue_age_slide_div').append($issueAgeSlider)
+    $issueAgeSlider.on("input", function(event) {
+      if (!claimStats) {
+        return
+      }
+      let indx = stats.length - $issueAgeSlider.val();
+      onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
+      onsetOptions.animation = {
+        startup: false,
+        duration: 500,
+        easing: 'inAndOut',
+      };
+
+      ageData = getClaimAgeDataTable(0);
+      ageChart.draw(ageData, ageOptions);
+    });
+  });
 </script>
 
 {{end}}

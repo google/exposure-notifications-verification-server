@@ -82,30 +82,6 @@
 
 <script type="text/javascript">
   let stats;
-  let smoothing = 7;
-
-  let $slider =
-    $(`<input type="range" class="slider w-100" id="tek_slider">`);
-  let $onsetSlider =
-    $(`<input type="range" class="slider w-100" id="onset_slider">`);
-
-  $(function() {
-    let $smoothDrop = $('#smooth-drop');
-
-    $smoothDrop.on("click", function(event) {
-      event.preventDefault();
-      smoothing = $smoothDrop.val();
-      $('.sum-title').text(`(${smoothing} day sum)`)
-
-      let max = $slider.attr('max')
-      $slider.attr('min', Math.min(smoothing, max));
-      $onsetSlider.attr('min', Math.min(smoothing, max));
-      $slider.val(max);
-      $onsetSlider.val(max);
-      $slider.trigger("input");
-      $onsetSlider.trigger("input");
-    });
-  });
 
   google.charts.load('current', {
     packages: ['corechart'],
@@ -403,30 +379,36 @@
   $(function() {
     $('#tek_slide_div').append($slider)
     $slider.on("input", function(event) {
-        let indx = stats.length - $slider.val();
-        tekOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
-        tekOptions.animation = {
-          startup: false,
-          duration: 500,
-          easing: 'inAndOut',
-        };
-        tekData = getTEKDataTable(indx);
+      if (!stats) {
+        return
+      }
+      let indx = stats.length - $slider.val();
+      tekOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
+      tekOptions.animation = {
+        startup: false,
+        duration: 500,
+        easing: 'inAndOut',
+      };
+      tekData = getTEKDataTable(indx);
 
-        tekChart.draw(tekData, tekOptions);
+      tekChart.draw(tekData, tekOptions);
     });
 
     $('#onset_slide_div').append($onsetSlider)
     $onsetSlider.on("input", function(event) {
-        let indx = stats.length - $onsetSlider.val();
-        onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
-        onsetOptions.animation = {
-          startup: false,
-          duration: 500,
-          easing: 'inAndOut',
-        };
+      if (!stats) {
+        return
+      }
+      let indx = stats.length - $onsetSlider.val();
+      onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
+      onsetOptions.animation = {
+        startup: false,
+        duration: 500,
+        easing: 'inAndOut',
+      };
 
-        onsetData = getOnsetDataTable(indx);
-        onsetChart.draw(onsetData, onsetOptions);
+      onsetData = getOnsetDataTable(indx);
+      onsetChart.draw(onsetData, onsetOptions);
     });
   });
 </script>

@@ -56,7 +56,34 @@
 
   <script type="text/javascript">
     var chartData = [];
+    let smoothing = 7;
+
+    let $slider =
+      $(`<input type="range" class="slider w-100" id="tek_slider">`);
+    let $onsetSlider =
+      $(`<input type="range" class="slider w-100" id="onset_slider">`);
+    let $issueAgeSlider =
+      $(`<input type="range" class="slider w-100" id="issue_age_slider">`);
+
     $(() => redrawCharts(chartData, 300));
+
+    $(function() {
+    let $smoothDrop = $('#smooth-drop');
+
+    $smoothDrop.on("click", function(event) {
+      event.preventDefault();
+      smoothing = $smoothDrop.val();
+      $('.sum-title').text(`(${smoothing} day sum)`)
+
+      let max = $slider.attr('max')
+      $slider.attr('min', Math.min(smoothing, max));
+      $onsetSlider.attr('min', Math.min(smoothing, max));
+      $slider.val(max);
+      $onsetSlider.val(max);
+      $slider.trigger("input");
+      $onsetSlider.trigger("input");
+    });
+  });
   </script>
 </body>
 </html>
