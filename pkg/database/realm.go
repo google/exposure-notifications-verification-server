@@ -729,18 +729,18 @@ func (r *Realm) CurrentSMSSigningKey(db *Database) (*SMSSigningKey, error) {
 // SetActiveSigningKey sets a specific signing key to active=true for the realm,
 // and transactionally sets all other signing keys to inactive. It accepts the
 // database primary key ID but returns the KID of the now-active key.
-func (r *Realm) SetActiveSigningKey(db *Database, id uint) (string, error) {
-	return r.setActiveManagedSigningKey(db, id, &SigningKey{})
+func (r *Realm) SetActiveSigningKey(db *Database, id uint, actor Auditable) (string, error) {
+	return r.setActiveManagedSigningKey(db, id, &SigningKey{}, actor)
 }
 
 // SetActiveSMSSigningKey sets a specific signing key to active=true for the realm,
 // and transactionally sets all other signing keys to inactive. It accepts the
 // database primary key ID but returns the KID of the now-active key.
-func (r *Realm) SetActiveSMSSigningKey(db *Database, id uint) (string, error) {
-	return r.setActiveManagedSigningKey(db, id, &SMSSigningKey{})
+func (r *Realm) SetActiveSMSSigningKey(db *Database, id uint, actor Auditable) (string, error) {
+	return r.setActiveManagedSigningKey(db, id, &SMSSigningKey{}, actor)
 }
 
-func (r *Realm) setActiveManagedSigningKey(db *Database, id uint, signingKey RealmManagedKey) (string, error) {
+func (r *Realm) setActiveManagedSigningKey(db *Database, id uint, signingKey RealmManagedKey, actor Auditable) (string, error) {
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
 		// Find the key that should be active - do this first to ensure that the
 		// provided PK id is actually valid.
@@ -773,6 +773,13 @@ func (r *Realm) setActiveManagedSigningKey(db *Database, id uint, signingKey Rea
 		if err := tx.Save(signingKey).Error; err != nil {
 			return fmt.Errorf("failed to mark new %s key as active: %w", signingKey.Purpose(), err)
 		}
+
+		// Generate an audit
+		audit := BuildAuditEntry(actor, "updated active signing key", signingKey, r.ID)
+		if err := tx.Save(audit).Error; err != nil {
+			return fmt.Errorf("failed to save audits: %w", err)
+		}
+
 		return nil
 	}); err != nil {
 		return "", err
@@ -1135,6 +1142,12 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 				audits = append(audits, audit)
 			}
 
+			if existing.UseAuthenticatedSMS != r.UseAuthenticatedSMS {
+				audit := BuildAuditEntry(actor, "updated use authenticated SMS", r, r.ID)
+				audit.Diff = boolDiff(existing.UseAuthenticatedSMS, r.UseAuthenticatedSMS)
+				audits = append(audits, audit)
+			}
+
 			if existing.EmailInviteTemplate != r.EmailInviteTemplate {
 				audit := BuildAuditEntry(actor, "updated email invite template", r, r.ID)
 				audit.Diff = stringDiff(existing.EmailInviteTemplate, r.EmailInviteTemplate)
@@ -1249,6 +1262,12 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 				audits = append(audits, audit)
 			}
 
+			if existing.AutoRotateCertificateKey != r.AutoRotateCertificateKey {
+				audit := BuildAuditEntry(actor, "updated auto-rotate certificate keys", r, r.ID)
+				audit.Diff = boolDiff(existing.AutoRotateCertificateKey, r.AutoRotateCertificateKey)
+				audits = append(audits, audit)
+			}
+
 			if existing.EnableENExpress != r.EnableENExpress {
 				audit := BuildAuditEntry(actor, "updated enable ENX", r, r.ID)
 				audit.Diff = boolDiff(existing.EnableENExpress, r.EnableENExpress)
@@ -1337,17 +1356,17 @@ func (r *Realm) smsSigningKMSKeyName() string {
 // key in the key manager fails, the database is not updated. However, if
 // updating the signing key in the database fails, the key is NOT deleted from
 // the key manager.
-func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database) (string, error) {
-	return r.createdManagedSigningKey(ctx, db, r.certificateSigningKMSKeyName(), &SigningKey{})
+func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database, actor Auditable) (string, error) {
+	return r.createManagedSigningKey(ctx, db, r.certificateSigningKMSKeyName(), &SigningKey{}, actor)
 }
 
 // CreateSMSSigningKeyVersion creates a new SMS signing key versino on the key manager
 // and saves a reference to the new key version in the database.
-func (r *Realm) CreateSMSSigningKeyVersion(ctx context.Context, db *Database) (string, error) {
-	return r.createdManagedSigningKey(ctx, db, r.smsSigningKMSKeyName(), &SMSSigningKey{})
+func (r *Realm) CreateSMSSigningKeyVersion(ctx context.Context, db *Database, actor Auditable) (string, error) {
+	return r.createManagedSigningKey(ctx, db, r.smsSigningKMSKeyName(), &SMSSigningKey{}, actor)
 }
 
-func (r *Realm) createdManagedSigningKey(ctx context.Context, db *Database, keyID string, signingKey RealmManagedKey) (string, error) {
+func (r *Realm) createManagedSigningKey(ctx context.Context, db *Database, keyID string, signingKey RealmManagedKey, actor Auditable) (string, error) {
 	manager := db.signingKeyManager
 	if manager == nil {
 		return "", ErrNoSigningKeyManager
@@ -1427,6 +1446,13 @@ func (r *Realm) createdManagedSigningKey(ctx context.Context, db *Database, keyI
 		if err := tx.Save(signingKey).Error; err != nil {
 			return fmt.Errorf("failed to save reference to %s signing key: %w", signingKey.Purpose(), err)
 		}
+
+		// Generate an audit
+		audit := BuildAuditEntry(actor, "created signing key", signingKey, r.ID)
+		if err := tx.Save(audit).Error; err != nil {
+			return fmt.Errorf("failed to save audits: %w", err)
+		}
+
 		return nil
 	}); err != nil {
 		return "", err
@@ -1438,15 +1464,15 @@ func (r *Realm) createdManagedSigningKey(ctx context.Context, db *Database, keyI
 // DestroySigningKeyVersion destroys the given key version in both the database
 // and the key manager. ID is the primary key ID from the database. If the id
 // does not exist, it does nothing.
-func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id interface{}) error {
-	return r.destroyManagedSigningKey(ctx, db, id, &SigningKey{})
+func (r *Realm) DestroySigningKeyVersion(ctx context.Context, db *Database, id interface{}, actor Auditable) error {
+	return r.destroyManagedSigningKey(ctx, db, id, &SigningKey{}, actor)
 }
 
-func (r *Realm) DestroySMSSigningKeyVersion(ctx context.Context, db *Database, id interface{}) error {
-	return r.destroyManagedSigningKey(ctx, db, id, &SMSSigningKey{})
+func (r *Realm) DestroySMSSigningKeyVersion(ctx context.Context, db *Database, id interface{}, actor Auditable) error {
+	return r.destroyManagedSigningKey(ctx, db, id, &SMSSigningKey{}, actor)
 }
 
-func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id interface{}, signingKey ManagedKey) error {
+func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id interface{}, signingKey ManagedKey, actor Auditable) error {
 	manager := db.signingKeyManager
 	if manager == nil {
 		return ErrNoSigningKeyManager
@@ -1481,6 +1507,12 @@ func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id i
 		if err := tx.Delete(signingKey).Error; err != nil {
 			return fmt.Errorf("successfully destroyed %s signing key in key manager, "+
 				"but failed to delete signing key from database: %w", signingKey.Purpose(), err)
+		}
+
+		// Generate an audit
+		audit := BuildAuditEntry(actor, "destrited signing key", signingKey, r.ID)
+		if err := tx.Save(audit).Error; err != nil {
+			return fmt.Errorf("failed to save audits: %w", err)
 		}
 
 		return nil

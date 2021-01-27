@@ -37,6 +37,16 @@ type SigningKey struct {
 	Active bool
 }
 
+// AuditID is how the signing key is stored in the audit entry.
+func (s *SigningKey) AuditID() string {
+	return fmt.Sprintf("certificate_signing_key:%d", s.ID)
+}
+
+// AuditDisplay is how the signing key will be displayed in audit entries.
+func (s *SigningKey) AuditDisplay() string {
+	return fmt.Sprintf("certificate signing key (%s)", s.GetKID())
+}
+
 // GetKID returns the 'kid' field value to use in signing JWTs.
 func (s *SigningKey) GetKID() string {
 	return fmt.Sprintf("r%dv%d", s.RealmID, s.ID)

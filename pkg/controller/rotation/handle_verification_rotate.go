@@ -109,7 +109,7 @@ func (c *Controller) createNewKeys(ctx context.Context, realms []*database.Realm
 		}
 		// if there isn't a key, or the most recently created key is "too old" - create a new key.
 		if len(keys) == 0 || (keys[0].Active && keys[0].CreatedAt.Add(c.config.VerificationSigningKeyMaxAge).Before(now)) {
-			if _, err := realm.CreateSigningKeyVersion(ctx, c.db); err != nil {
+			if _, err := realm.CreateSigningKeyVersion(ctx, c.db, RotationActor); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("unable to create signing key for realm %d: %w", realm.ID, err))
 				continue
 			}
@@ -139,7 +139,7 @@ func (c *Controller) activateKeys(ctx context.Context, realms []*database.Realm)
 
 		// If most recent key isn't active - see if it is old enough to become active
 		if !keys[0].Active && keys[0].CreatedAt.Add(c.config.VerificationActivationDelay).Before(now) {
-			if _, err := realm.SetActiveSigningKey(c.db, keys[0].ID); err != nil {
+			if _, err := realm.SetActiveSigningKey(c.db, keys[0].ID, RotationActor); err != nil {
 				logger.Errorw("unable to set active signing key for realm", "realm", realm.ID, "error", err)
 				merr = multierror.Append(merr, err)
 				continue
@@ -152,7 +152,7 @@ func (c *Controller) activateKeys(ctx context.Context, realms []*database.Realm)
 		if len(keys) > 1 {
 			for i := 1; i < len(keys); i++ {
 				if !keys[i].Active && keys[i].UpdatedAt.Add(c.config.VerificationActivationDelay).Before(now) {
-					if err := realm.DestroySigningKeyVersion(ctx, c.db, keys[i].ID); err != nil {
+					if err := realm.DestroySigningKeyVersion(ctx, c.db, keys[i].ID, RotationActor); err != nil {
 						logger.Errorw("failed to destroy signing key", "realm", realm.ID, "error", err)
 						merr = multierror.Append(merr, err)
 						continue

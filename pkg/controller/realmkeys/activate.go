@@ -45,7 +45,7 @@ func (c *Controller) HandleActivate() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
-
+		currentUser := membership.User
 		currentRealm := membership.Realm
 
 		var form FormData
@@ -55,7 +55,7 @@ func (c *Controller) HandleActivate() http.Handler {
 			return
 		}
 
-		kid, err := currentRealm.SetActiveSigningKey(c.db, form.SigningKeyID)
+		kid, err := currentRealm.SetActiveSigningKey(c.db, form.SigningKeyID, currentUser)
 		if err != nil {
 			flash.Error("Unable to set active signing key: %v", err)
 			c.renderShow(ctx, w, r, currentRealm)

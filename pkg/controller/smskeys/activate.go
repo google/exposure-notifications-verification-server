@@ -47,6 +47,7 @@ func (c *Controller) HandleActivate() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentUser := membership.User
 		currentRealm := membership.Realm
 
 		var form FormData
@@ -57,7 +58,7 @@ func (c *Controller) HandleActivate() http.Handler {
 			return
 		}
 
-		kid, err := currentRealm.SetActiveSMSSigningKey(c.db, form.SigningKeyID)
+		kid, err := currentRealm.SetActiveSMSSigningKey(c.db, form.SigningKeyID, currentUser)
 		if err != nil {
 			if database.IsNotFound(err) || database.IsValidationError(err) {
 				currentRealm.AddError("", fmt.Sprintf("Failed to set active SMS signing key: %s", err))

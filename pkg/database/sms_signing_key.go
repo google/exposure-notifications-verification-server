@@ -50,6 +50,16 @@ func (db *Database) FindSMSSigningKey(id interface{}) (*SMSSigningKey, error) {
 	return &key, nil
 }
 
+// AuditID is how the signing key is stored in the audit entry.
+func (s *SMSSigningKey) AuditID() string {
+	return fmt.Sprintf("sms_signing_key:%d", s.ID)
+}
+
+// AuditDisplay is how the signing key will be displayed in audit entries.
+func (s *SMSSigningKey) AuditDisplay() string {
+	return fmt.Sprintf("sms signing key (%s)", s.GetKID())
+}
+
 // GetKID returns the 'kid' field value to use in signing JWTs.
 func (s *SMSSigningKey) GetKID() string {
 	return fmt.Sprintf("r%dv%dsms", s.RealmID, s.ID)

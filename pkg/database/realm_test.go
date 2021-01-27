@@ -702,17 +702,17 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	}
 
 	// First creates ok
-	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+	if _, err := realm1.CreateSigningKeyVersion(ctx, db, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
 	// Second creates ok
-	if _, err := realm1.CreateSigningKeyVersion(ctx, db); err != nil {
+	if _, err := realm1.CreateSigningKeyVersion(ctx, db, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
 	// Third fails over quota
-	_, err := realm1.CreateSigningKeyVersion(ctx, db)
+	_, err := realm1.CreateSigningKeyVersion(ctx, db, SystemTest)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -728,12 +728,12 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	if len(list) < 1 {
 		t.Fatal("empty list")
 	}
-	if err := realm1.DestroySigningKeyVersion(ctx, db, list[0].ID); err != nil {
+	if err := realm1.DestroySigningKeyVersion(ctx, db, list[0].ID, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
 	// Third should succeed now
-	thirdKID, err := realm1.CreateSigningKeyVersion(ctx, db)
+	thirdKID, err := realm1.CreateSigningKeyVersion(ctx, db, SystemTest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -746,7 +746,7 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	// Find that key and activate it.
 	for _, k := range list {
 		if k.GetKID() == thirdKID {
-			realm1.SetActiveSigningKey(db, k.ID)
+			realm1.SetActiveSigningKey(db, k.ID, SystemTest)
 		}
 	}
 
@@ -775,17 +775,17 @@ func TestRealm_CreateSMSSigningKeyVersion(t *testing.T) {
 	}
 
 	// First creates ok
-	if _, err := realm1.CreateSMSSigningKeyVersion(ctx, db); err != nil {
+	if _, err := realm1.CreateSMSSigningKeyVersion(ctx, db, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
 	// Second creates ok
-	if _, err := realm1.CreateSMSSigningKeyVersion(ctx, db); err != nil {
+	if _, err := realm1.CreateSMSSigningKeyVersion(ctx, db, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
 	// Third fails over quota
-	_, err := realm1.CreateSMSSigningKeyVersion(ctx, db)
+	_, err := realm1.CreateSMSSigningKeyVersion(ctx, db, SystemTest)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -801,12 +801,12 @@ func TestRealm_CreateSMSSigningKeyVersion(t *testing.T) {
 	if len(list) < 1 {
 		t.Fatal("empty list")
 	}
-	if err := realm1.DestroySMSSigningKeyVersion(ctx, db, list[0].ID); err != nil {
+	if err := realm1.DestroySMSSigningKeyVersion(ctx, db, list[0].ID, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
 	// Third should succeed now
-	thirdKID, err := realm1.CreateSMSSigningKeyVersion(ctx, db)
+	thirdKID, err := realm1.CreateSMSSigningKeyVersion(ctx, db, SystemTest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -819,7 +819,7 @@ func TestRealm_CreateSMSSigningKeyVersion(t *testing.T) {
 	// Find that key and activate it.
 	for _, k := range list {
 		if k.GetKID() == thirdKID {
-			realm1.SetActiveSMSSigningKey(db, k.ID)
+			realm1.SetActiveSMSSigningKey(db, k.ID, SystemTest)
 		}
 	}
 

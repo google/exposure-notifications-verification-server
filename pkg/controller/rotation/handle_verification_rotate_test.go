@@ -64,7 +64,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 	c := New(config, db, keyManagerSigner, h)
 
 	// create the initial signing key version, which will make it active.
-	if _, err := realm.CreateSigningKeyVersion(ctx, db); err != nil {
+	if _, err := realm.CreateSigningKeyVersion(ctx, db, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
 	// Initial state - 1 active signing key.

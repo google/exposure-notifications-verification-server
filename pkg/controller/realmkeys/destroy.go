@@ -43,9 +43,10 @@ func (c *Controller) HandleDestroy() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentUser := membership.User
 		currentRealm := membership.Realm
 
-		if err := currentRealm.DestroySigningKeyVersion(ctx, c.db, vars["id"]); err != nil {
+		if err := currentRealm.DestroySigningKeyVersion(ctx, c.db, vars["id"], currentUser); err != nil {
 			flash.Error("Failed to destroy signing key version: %v", err)
 			c.renderShow(ctx, w, r, currentRealm)
 			return

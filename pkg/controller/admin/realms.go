@@ -146,7 +146,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 
 		if realm.UseRealmCertificateKey {
 			// If we are using realm specific keys - we need to create the first one.
-			keyID, err := realm.CreateSigningKeyVersion(ctx, c.db)
+			keyID, err := realm.CreateSigningKeyVersion(ctx, c.db, currentUser)
 			if err != nil {
 				flash.Error("Failed to create signing keys for realm. This can be done from the realm's admin screens.")
 				http.Redirect(w, r, "/admin/realms", http.StatusSeeOther)
