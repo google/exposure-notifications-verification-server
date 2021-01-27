@@ -1044,7 +1044,7 @@ function redrawCharts(chartsData, timeout) {
 
   function redraw() {
     let c;
-    for (c of d) {
+    for (c of chartsData) {
       if (c.options) {
         c.options.animation = null;
       }
