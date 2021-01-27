@@ -35,7 +35,7 @@ var _ icsv.Marshaler = (RealmStats)(nil)
 type RealmStats []*RealmStat
 
 var claimDistributionBuckets = []time.Duration{
-	time.Minute, 5 * time.Minute, 25 * time.Minute, 30 * time.Minute, time.Hour,
+	time.Minute, 5 * time.Minute, 15 * time.Minute, 30 * time.Minute, time.Hour,
 	2 * time.Hour, 3 * time.Hour, 6 * time.Hour, 12 * time.Hour, 24 * time.Hour, 336 * time.Hour,
 }
 

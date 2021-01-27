@@ -362,7 +362,7 @@ func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp, 
 			existing.CodeClaimDistribution = make([]int32, len(claimDistributionBuckets))
 		}
 
-		sinceIssue := t.Sub(vc.IssuedAt)
+		sinceIssue := t.Sub(vc.CreatedAt)
 		for i, bucket := range claimDistributionBuckets {
 			if sinceIssue <= bucket {
 				existing.CodeClaimDistribution[i]++

@@ -39,7 +39,6 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.Iss
 		RealmID:           realm.ID,
 		IssuingExternalID: request.ExternalIssuerID,
 		TestType:          strings.ToLower(request.TestType),
-		IssuedAt:          now,
 		ExpiresAt:         now.Add(realm.CodeDuration.Duration),
 		LongExpiresAt:     now.Add(realm.LongCodeDuration.Duration),
 	}
