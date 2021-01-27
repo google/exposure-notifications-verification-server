@@ -1540,15 +1540,14 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 			COALESCE(s.codes_claimed, 0) AS codes_claimed,
 			COALESCE(s.codes_invalid, 0) AS codes_invalid,
 			COALESCE(s.tokens_claimed, 0) AS tokens_claimed,
-			COALESCE(s.tokens_invalid, 0) AS tokens_invalid
+			COALESCE(s.tokens_invalid, 0) AS tokens_invalid,
+			s.code_claim_age_distribution AS code_claim_age_distribution,
 			COALESCE(s.code_claim_mean_age, 0) AS code_claim_mean_age
 		FROM (
 			SELECT date::date FROM generate_series($2, $3, '1 day'::interval) date
 		) d
 		LEFT JOIN realm_stats s ON s.realm_id = $1 AND s.date = d.date
 		ORDER BY date DESC`
-
-	// HELP - how do I load code_claim_age_distribution
 
 	var stats []*RealmStat
 	if err := db.db.Raw(sql, r.ID, start, stop).Scan(&stats).Error; err != nil {
