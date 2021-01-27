@@ -1021,3 +1021,34 @@ function showSuccessfulCode(request, code, line) {
   $row.append($('<td/>').text(code.uuid));
   $successTableBody.append($row);
 }
+
+function redrawCharts(chartsData, timeout) {
+  let redrawPending = false;
+  let windowWidth = 0;
+  $(window).resize(function() {
+    let w = $(window).width();
+    if (w != windowWidth) {
+      windowWidth = w;
+    } else {
+      return;
+    }
+
+    if (!redrawPending) {
+      redrawPending = true;
+      setTimeout(function() {
+        redraw();
+        redrawPending = false;
+      }, timeout);
+    }
+  });
+
+  function redraw() {
+    let c;
+    for (c of chartsData) {
+      if (c.options) {
+        c.options.animation = null;
+      }
+      c.chart.draw(c.data, c.options);
+    }
+  }
+}

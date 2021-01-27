@@ -127,6 +127,9 @@
   </main>
 
   <script type="text/javascript">
+    var chartData = [];
+    $(() => redrawCharts(chartData, 300));
+
     google.charts.load('current', {
       packages: ['corechart'],
       callback: drawRealmCharts,
@@ -172,6 +175,11 @@
 
         let chart = new google.visualization.LineChart($userStatsChart.get(0));
         chart.draw(dataTable, options);
+        chartData.push({
+          chart: chart,
+          data: dataTable,
+          options: options,
+        });
       })
       .fail(function(xhr, status, err) {
         flash.error('Failed to render realm stats: ' + err);
