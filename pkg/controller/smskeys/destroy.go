@@ -44,9 +44,10 @@ func (c *Controller) HandleDestroy() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentUser := membership.User
 		currentRealm := membership.Realm
 
-		if err := currentRealm.DestroySMSSigningKeyVersion(ctx, c.db, vars["id"]); err != nil {
+		if err := currentRealm.DestroySMSSigningKeyVersion(ctx, c.db, vars["id"], currentUser); err != nil {
 			if database.IsNotFound(err) || database.IsValidationError(err) {
 				currentRealm.AddError("", err.Error())
 				w.WriteHeader(http.StatusUnprocessableEntity)

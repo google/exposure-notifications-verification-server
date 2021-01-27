@@ -141,7 +141,7 @@ func TestHandleActivate(t *testing.T) {
 	t.Run("activates", func(t *testing.T) {
 		t.Parallel()
 
-		if _, err := realm.CreateSMSSigningKeyVersion(ctx, harness.Database); err != nil {
+		if _, err := realm.CreateSMSSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 

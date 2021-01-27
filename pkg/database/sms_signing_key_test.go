@@ -38,7 +38,7 @@ func TestDatabase_FindSMSSigningKey(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if _, err := realm.CreateSMSSigningKeyVersion(ctx, db); err != nil {
+		if _, err := realm.CreateSMSSigningKeyVersion(ctx, db, SystemTest); err != nil {
 			t.Fatal(err)
 		}
 

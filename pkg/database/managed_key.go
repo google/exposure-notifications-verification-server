@@ -17,6 +17,8 @@ package database
 // ManagedKey is an interface that allows for a realm to manage signing keys
 // for different purposes.
 type ManagedKey interface {
+	Auditable
+
 	// GetKID returns the public key version string
 	GetKID() string
 	// ManagedKeyID returns the reference to the key ID in the KMS.

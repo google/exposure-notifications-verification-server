@@ -110,10 +110,10 @@ func TestHandleDestroy(t *testing.T) {
 		handler := c.HandleDestroy()
 
 		// Create 2 signing keys - we need to destroy the non-active one.
-		if _, err := realm.CreateSMSSigningKeyVersion(ctx, harness.Database); err != nil {
+		if _, err := realm.CreateSMSSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := realm.CreateSMSSigningKeyVersion(ctx, harness.Database); err != nil {
+		if _, err := realm.CreateSMSSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 

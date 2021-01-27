@@ -42,9 +42,10 @@ func (c *Controller) HandleCreateKey() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentUser := membership.User
 		currentRealm := membership.Realm
 
-		kid, err := currentRealm.CreateSMSSigningKeyVersion(ctx, c.db)
+		kid, err := currentRealm.CreateSMSSigningKeyVersion(ctx, c.db, currentUser)
 		if err != nil {
 			if database.IsNotFound(err) || database.IsValidationError(err) {
 				currentRealm.AddError("", err.Error())

@@ -41,9 +41,10 @@ func (c *Controller) HandleCreateKey() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentUser := membership.User
 		currentRealm := membership.Realm
 
-		kid, err := currentRealm.CreateSigningKeyVersion(ctx, c.db)
+		kid, err := currentRealm.CreateSigningKeyVersion(ctx, c.db, currentUser)
 		if err != nil {
 			flash.Error("Unable to create a new signing key: %v", err)
 			c.renderShow(ctx, w, r, currentRealm)
