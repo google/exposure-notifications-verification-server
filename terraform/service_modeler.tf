@@ -21,38 +21,14 @@ resource "google_service_account" "modeler" {
 resource "google_service_account_iam_member" "cloudbuild-deploy-modeler" {
   service_account_id = google_service_account.modeler.id
   role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
-
-  depends_on = [
-    google_project_service.services["cloudbuild.googleapis.com"],
-    google_project_service.services["iam.googleapis.com"],
-  ]
-}
-
-resource "google_secret_manager_secret_iam_member" "modeler-db" {
-  for_each = toset([
-    "sslcert",
-    "sslkey",
-    "sslrootcert",
-    "password",
-  ])
-
-  secret_id = google_secret_manager_secret.db-secret[each.key].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.modeler.email}"
+  member             = "serviceAccount:${data.google_service_account.cloudbuild.email}"
 }
 
 resource "google_project_iam_member" "modeler-observability" {
-  for_each = toset([
-    "roles/cloudtrace.agent",
-    "roles/logging.logWriter",
-    "roles/monitoring.metricWriter",
-    "roles/stackdriver.resourceMetadata.writer",
-  ])
-
-  project = var.project
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.modeler.email}"
+  for_each = local.observability_iam_roles
+  project  = var.project
+  role     = each.key
+  member   = "serviceAccount:${google_service_account.modeler.email}"
 }
 
 resource "google_kms_crypto_key_iam_member" "modeler-database-encrypter" {
@@ -61,32 +37,16 @@ resource "google_kms_crypto_key_iam_member" "modeler-database-encrypter" {
   member        = "serviceAccount:${google_service_account.modeler.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "modeler-db-apikey-db-hmac" {
-  secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.modeler.email}"
+locals {
+  modeler_secrets = flatten([
+    local.database_secrets,
+    local.redis_secrets,
+  ])
 }
 
-resource "google_secret_manager_secret_iam_member" "modeler-db-apikey-sig-hmac" {
-  secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.modeler.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "modeler-db-verification-code-hmac" {
-  secret_id = google_secret_manager_secret.db-verification-code-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.modeler.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "modeler-cache-hmac-key" {
-  secret_id = google_secret_manager_secret.cache-hmac-key.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.modeler.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "modeler-ratelimit-hmac-key" {
-  secret_id = google_secret_manager_secret.ratelimit-hmac-key.id
+resource "google_secret_manager_secret_iam_member" "modeler-secrets" {
+  count     = length(local.modeler_secrets)
+  secret_id = element(local.modeler_secrets, count.index)
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.modeler.email}"
 }
@@ -151,15 +111,10 @@ resource "google_cloud_run_service" "modeler" {
   depends_on = [
     google_project_service.services["run.googleapis.com"],
 
-    google_service_account_iam_member.cloudbuild-deploy-modeler,
-    google_secret_manager_secret_iam_member.modeler-db,
-    google_project_iam_member.modeler-observability,
     google_kms_crypto_key_iam_member.modeler-database-encrypter,
-    google_secret_manager_secret_iam_member.modeler-db-apikey-db-hmac,
-    google_secret_manager_secret_iam_member.modeler-db-apikey-sig-hmac,
-    google_secret_manager_secret_iam_member.modeler-db-verification-code-hmac,
-    google_secret_manager_secret_iam_member.modeler-cache-hmac-key,
-    google_secret_manager_secret_iam_member.modeler-ratelimit-hmac-key,
+    google_project_iam_member.modeler-observability,
+    google_secret_manager_secret_iam_member.modeler-secrets,
+    google_service_account_iam_member.cloudbuild-deploy-modeler,
 
     null_resource.build,
     null_resource.migrate,
@@ -167,12 +122,12 @@ resource "google_cloud_run_service" "modeler" {
 
   lifecycle {
     ignore_changes = [
-      template[0].metadata[0].annotations["client.knative.dev/user-image"],
-      template[0].metadata[0].annotations["run.googleapis.com/client-name"],
-      template[0].metadata[0].annotations["run.googleapis.com/client-version"],
-      template[0].spec[0].containers[0].image,
+      metadata[0].annotations["client.knative.dev/user-image"],
+      metadata[0].annotations["run.googleapis.com/client-name"],
+      metadata[0].annotations["run.googleapis.com/client-version"],
       metadata[0].annotations["run.googleapis.com/ingress-status"],
       metadata[0].labels["cloud.googleapis.com/location"],
+      template[0].spec[0].containers[0].image,
     ]
   }
 }
@@ -201,7 +156,8 @@ resource "google_compute_backend_service" "modeler" {
   }
   security_policy = google_compute_security_policy.cloud-armor.name
   log_config {
-    enable = var.enable_lb_logging
+    enable      = var.enable_lb_logging
+    sample_rate = 1
   }
 }
 

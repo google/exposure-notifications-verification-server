@@ -12,6 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  # redis_secrets is the list of secrets required to connect to and utilize the
+  # cache.
+  redis_secrets = flatten([
+    google_secret_manager_secret.cache-hmac-key.id,
+    google_secret_manager_secret.ratelimit-hmac-key.id,
+  ])
+}
+
 resource "google_redis_instance" "cache" {
   name           = var.redis_name
   tier           = "STANDARD_HA"

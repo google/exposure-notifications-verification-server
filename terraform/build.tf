@@ -39,5 +39,15 @@ resource "google_storage_bucket" "cloudbuild-cache" {
 resource "google_storage_bucket_iam_member" "cloudbuild-cache" {
   bucket = google_storage_bucket.cloudbuild-cache.name
   role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+  member = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+}
+
+
+data "google_service_account" "cloudbuild" {
+  account_id = "${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.services["iam.googleaips.com"],
+    google_project_service.services["cloudbuild.googleaips.com"],
+  ]
 }

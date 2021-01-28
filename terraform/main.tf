@@ -135,7 +135,7 @@ resource "null_resource" "build" {
 resource "google_project_iam_member" "cloudbuild-deploy" {
   project = var.project
   role    = "roles/run.admin"
-  member  = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+  member  = "serviceAccount:${data.google_service_account.cloudbuild.email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],

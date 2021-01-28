@@ -21,38 +21,14 @@ resource "google_service_account" "stats-puller" {
 resource "google_service_account_iam_member" "cloudbuild-deploy-stats-puller" {
   service_account_id = google_service_account.stats-puller.id
   role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
-
-  depends_on = [
-    google_project_service.services["cloudbuild.googleapis.com"],
-    google_project_service.services["iam.googleapis.com"],
-  ]
-}
-
-resource "google_secret_manager_secret_iam_member" "stats-puller-db" {
-  for_each = toset([
-    "sslcert",
-    "sslkey",
-    "sslrootcert",
-    "password",
-  ])
-
-  secret_id = google_secret_manager_secret.db-secret[each.key].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.stats-puller.email}"
+  member             = "serviceAccount:${data.google_service_account.cloudbuild.email}"
 }
 
 resource "google_project_iam_member" "stats-puller-observability" {
-  for_each = toset([
-    "roles/cloudtrace.agent",
-    "roles/logging.logWriter",
-    "roles/monitoring.metricWriter",
-    "roles/stackdriver.resourceMetadata.writer",
-  ])
-
-  project = var.project
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.stats-puller.email}"
+  for_each = local.observability_iam_roles
+  project  = var.project
+  role     = each.key
+  member   = "serviceAccount:${google_service_account.stats-puller.email}"
 }
 
 resource "google_kms_key_ring_iam_member" "stats-puller-verification-signerverifier" {
@@ -67,32 +43,16 @@ resource "google_kms_crypto_key_iam_member" "stats-puller-database-encrypter" {
   member        = "serviceAccount:${google_service_account.stats-puller.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "stats-puller-db-apikey-db-hmac" {
-  secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.stats-puller.email}"
+locals {
+  stats_puller_secrets = flatten([
+    local.database_secrets,
+    local.redis_secrets,
+  ])
 }
 
-resource "google_secret_manager_secret_iam_member" "stats-puller-db-apikey-sig-hmac" {
-  secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.stats-puller.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "stats-puller-db-verification-code-hmac" {
-  secret_id = google_secret_manager_secret.db-verification-code-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.stats-puller.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "stats-puller-cache-hmac-key" {
-  secret_id = google_secret_manager_secret.cache-hmac-key.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.stats-puller.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "stats-puller-ratelimit-hmac-key" {
-  secret_id = google_secret_manager_secret.ratelimit-hmac-key.id
+resource "google_secret_manager_secret_iam_member" "stats-puller-secrets" {
+  count     = length(local.stats_puller_secrets)
+  secret_id = element(local.stats_puller_secrets, count.index)
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.stats-puller.email}"
 }
@@ -156,14 +116,10 @@ resource "google_cloud_run_service" "stats-puller" {
   depends_on = [
     google_project_service.services["run.googleapis.com"],
 
-    google_secret_manager_secret_iam_member.stats-puller-db,
-    google_project_iam_member.stats-puller-observability,
     google_kms_crypto_key_iam_member.stats-puller-database-encrypter,
-    google_secret_manager_secret_iam_member.stats-puller-db-apikey-db-hmac,
-    google_secret_manager_secret_iam_member.stats-puller-db-apikey-sig-hmac,
-    google_secret_manager_secret_iam_member.stats-puller-db-verification-code-hmac,
-    google_secret_manager_secret_iam_member.stats-puller-cache-hmac-key,
-    google_secret_manager_secret_iam_member.stats-puller-ratelimit-hmac-key,
+    google_kms_key_ring_iam_member.stats-puller-verification-signerverifier,
+    google_project_iam_member.stats-puller-observability,
+    google_secret_manager_secret_iam_member.stats-puller-secrets,
 
     null_resource.build,
     null_resource.migrate,
@@ -224,7 +180,6 @@ resource "google_cloud_scheduler_job" "stats-puller-worker" {
   }
 
   depends_on = [
-    google_kms_key_ring_iam_member.kms-signerverifier,
     google_app_engine_application.app,
     google_cloud_run_service_iam_member.stats-puller-invoker,
     google_project_service.services["cloudscheduler.googleapis.com"],
