@@ -14,7 +14,7 @@
     - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
   - [`/api/checkcodestatus`](#apicheckcodestatus)
   - [`/api/expirecode`](#apiexpirecode)
-  - [`/api/stats/*` (preview)](#apistats-preview)
+  - [`/api/stats/*`](#apistats)
 - [Chaffing requests](#chaffing-requests)
 - [Response codes overview](#response-codes-overview)
 
@@ -489,13 +489,11 @@ The timestamps are updated to the new expiration time (which will be in the
 past).
 
 
-## `/api/stats/*` (preview)
+## `/api/stats/*`
 
-**The statistics API are currently in preview. They are not covered by our
-backwards-compatibility promise and the APIs are subject to change without
-notice!**
-
-This path includes realm-level statistics for the past 30 days.
+The statistics APIs are forward-compatible. That means no fields will be
+_removed_ or _changed_ without prior notice, but the API may _add_ new fields or
+endpoints without notice.
 
 -   `/api/stats/realm.{csv,json}` - Daily statistics for the realm, including
     codes issued, codes claimed, tokens claimed, and invalid attempts.
