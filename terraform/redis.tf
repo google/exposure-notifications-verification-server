@@ -16,6 +16,7 @@ locals {
   # redis_secrets is the list of secrets required to connect to and utilize the
   # cache.
   redis_secrets = flatten([
+    google_secret_manager_secret.redis-auth.id,
     google_secret_manager_secret.cache-hmac-key.id,
     google_secret_manager_secret.ratelimit-hmac-key.id,
   ])
@@ -33,10 +34,29 @@ resource "google_redis_instance" "cache" {
   connect_mode       = "PRIVATE_SERVICE_ACCESS"
 
   redis_version = "REDIS_5_0"
+  auth_enabled  = true
 
   depends_on = [
     google_project_service.services["redis.googleapis.com"],
   ]
+}
+
+# Create secret for the auth string
+resource "google_secret_manager_secret" "redis-auth" {
+  secret_id = "redis-auth"
+
+  replication {
+    automatic = true
+  }
+
+  depends_on = [
+    google_project_service.services["secretmanager.googleapis.com"],
+  ]
+}
+
+resource "google_secret_manager_secret_version" "redis-auth" {
+  secret      = google_secret_manager_secret.redis-auth.id
+  secret_data = google_redis_instance.cache.auth_string
 }
 
 # Create secret for the HMAC cache keys

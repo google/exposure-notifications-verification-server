@@ -30,10 +30,11 @@ locals {
   }
 
   cache_config = {
-    CACHE_TYPE       = "REDIS"
-    CACHE_HMAC_KEY   = "secret://${google_secret_manager_secret_version.cache-hmac-key.id}"
-    CACHE_REDIS_HOST = google_redis_instance.cache.host
-    CACHE_REDIS_PORT = google_redis_instance.cache.port
+    CACHE_TYPE           = "REDIS"
+    CACHE_HMAC_KEY       = "secret://${google_secret_manager_secret_version.cache-hmac-key.id}"
+    CACHE_REDIS_HOST     = google_redis_instance.cache.host
+    CACHE_REDIS_PORT     = google_redis_instance.cache.port
+    CACHE_REDIS_PASSWORD = "secret://${google_secret_manager_secret_version.redis-auth.id}"
   }
 
   database_config = {
@@ -66,12 +67,13 @@ locals {
   }
 
   rate_limit_config = {
-    RATE_LIMIT_HMAC_KEY   = "secret://${google_secret_manager_secret_version.ratelimit-hmac-key.id}"
-    RATE_LIMIT_TYPE       = "REDIS"
-    RATE_LIMIT_TOKENS     = "60"
-    RATE_LIMIT_INTERVAL   = "1m"
-    RATE_LIMIT_REDIS_HOST = google_redis_instance.cache.host
-    RATE_LIMIT_REDIS_PORT = google_redis_instance.cache.port
+    RATE_LIMIT_HMAC_KEY       = "secret://${google_secret_manager_secret_version.ratelimit-hmac-key.id}"
+    RATE_LIMIT_TYPE           = "REDIS"
+    RATE_LIMIT_TOKENS         = "60"
+    RATE_LIMIT_INTERVAL       = "1m"
+    RATE_LIMIT_REDIS_HOST     = google_redis_instance.cache.host
+    RATE_LIMIT_REDIS_PORT     = google_redis_instance.cache.port
+    RATE_LIMIT_REDIS_PASSWORD = "secret://${google_secret_manager_secret_version.redis-auth.id}"
   }
 
   signing_config = {
