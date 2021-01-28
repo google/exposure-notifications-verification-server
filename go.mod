@@ -7,6 +7,7 @@ require (
 	cloud.google.com/go/firestore v1.4.0 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.7.1-0.20200615190824-f8c219d2d895 // indirect
 	contrib.go.opencensus.io/exporter/prometheus v0.2.1-0.20200609204449-6bcf6f8577f0 // indirect
+	contrib.go.opencensus.io/exporter/stackdriver v0.13.5 // indirect
 	contrib.go.opencensus.io/integrations/ocsql v0.1.7
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Azure/azure-sdk-for-go v49.2.0+incompatible // indirect
