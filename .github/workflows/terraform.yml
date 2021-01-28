@@ -20,7 +20,7 @@ jobs:
     - name: 'setup-terraform'
       uses: 'hashicorp/setup-terraform@v1'
       with:
-        terraform_version: '0.14.2'
+        terraform_version: '0.14.5'
 
     - name: 'init'
       working-directory: './terraform'
@@ -46,7 +46,7 @@ jobs:
     - name: 'setup-terraform'
       uses: 'hashicorp/setup-terraform@v1'
       with:
-        terraform_version: '0.14.2'
+        terraform_version: '0.14.5'
 
     - name: 'init'
       working-directory: './terraform/alerting'
@@ -72,7 +72,7 @@ jobs:
     - name: 'setup-terraform'
       uses: 'hashicorp/setup-terraform@v1'
       with:
-        terraform_version: '0.14.2'
+        terraform_version: '0.14.5'
 
     - name: 'init'
       working-directory: './terraform/mirror'
@@ -98,7 +98,7 @@ jobs:
     - name: 'setup-terraform'
       uses: 'hashicorp/setup-terraform@v1'
       with:
-        terraform_version: '0.14.2'
+        terraform_version: '0.14.5'
 
     - name: 'init'
       working-directory: './terraform-e2e-ci'

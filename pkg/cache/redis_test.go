@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/ory/dockertest"
 	"github.com/sethvargo/go-retry"
 )
@@ -46,10 +47,15 @@ func TestRedis(t *testing.T) {
 
 	// Determine the container image to use.
 	repo, tag := redisRepo(t)
+	password, err := project.RandomHexString(16)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: repo,
 		Tag:        tag,
+		Cmd:        []string{"redis-server", "--requirepass", password},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -68,7 +74,8 @@ func TestRedis(t *testing.T) {
 
 	// Create the cacher
 	cacher, err := NewRedis(&RedisConfig{
-		Address: host + ":" + port,
+		Address:  host + ":" + port,
+		Password: password,
 	})
 	if err != nil {
 		t.Fatal(err)
