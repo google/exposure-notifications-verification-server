@@ -323,14 +323,11 @@
       }
     }
 
-    maxVAxisTEKAge = 1;
     for (i = 0; i < table.length; i++) {
       if (table[i] > maxVAxisTEKAge) {
         maxVAxisTEKAge = table[i];
       }
-    }
 
-    for (i = 0; i < table.length; i++) {
       let r = [i+1, table[i],"",""]
       if (i == 15) {
         r[2] = "#6c757d";
