@@ -70,7 +70,7 @@
     $(function() {
     let $smoothDrop = $('#smooth-drop');
 
-    $smoothDrop.on("click", function(event) {
+    $smoothDrop.on("change", function(event) {
       event.preventDefault();
       smoothing = $smoothDrop.val();
       $('.sum-title').text(`(${smoothing} day sum)`)
