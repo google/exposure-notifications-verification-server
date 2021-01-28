@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jinzhu/gorm"
 )
 
 func TestSubject(t *testing.T) {
@@ -380,6 +381,70 @@ func TestIssueToken(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestUpdateStatsAgeDistrib(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm := NewRealmWithDefaults("Test Realm")
+	app := &AuthorizedApp{
+		RealmID: realm.ID,
+	}
+
+	now := time.Now().UTC()
+	nowStr := now.Format(project.RFC3339Date)
+
+	tests := []struct {
+		name          string
+		code          *VerificationCode
+		statDate      string
+		expectAverage time.Duration
+	}{
+		{
+			"test day old",
+			&VerificationCode{
+				Model: gorm.Model{
+					CreatedAt: now.Add(-24 * time.Hour),
+				},
+				Code: "111111",
+			},
+			nowStr,
+			24 * time.Hour,
+		},
+	}
+
+	for i, test := range tests {
+		test.code.Code = "111111"
+		db.updateStatsAgeDistrib(now, app, test.code)
+
+		{
+			var stats []*RealmStat
+			if err := db.db.
+				Model(&RealmStats{}).
+				Select("*").
+				Scan(&stats).
+				Error; err != nil {
+				if IsNotFound(err) {
+					t.Fatalf("[%d] Error grabbing realm stats %v", i, err)
+				}
+			}
+			if len(stats) != 1 {
+				t.Fatalf("[%d] expected one user stat", i)
+			}
+			if stats[0].CodeClaimMeanAge.Duration != test.expectAverage {
+				t.Errorf("[%d] expected stat.CodeClaimMeanAge = %d, expected %d", i,
+					stats[0].CodeClaimMeanAge.Duration, test.expectAverage)
+			}
+			if stats[0].CodeClaimAgeDistribution[9] != 1 {
+				t.Errorf("[%d] expected stat.CodeClaimAgeDistribution = %v, expected %d", i,
+					stats[0].CodeClaimAgeDistribution, 1)
+			}
+			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
+				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+		}
 	}
 }
 
