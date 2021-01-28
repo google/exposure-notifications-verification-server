@@ -78,10 +78,13 @@
       let max = $slider.attr('max')
       $slider.attr('min', Math.min(smoothing, max));
       $onsetSlider.attr('min', Math.min(smoothing, max));
+      $issueAgeSlider.attr('min', Math.min(smoothing, max));
       $slider.val(max);
       $onsetSlider.val(max);
+      $issueAgeSlider.val(max);
       $slider.trigger("input");
       $onsetSlider.trigger("input");
+      $issueAgeSlider.trigger("input");
     });
   });
   </script>

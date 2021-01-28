@@ -116,6 +116,10 @@
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
+      $issueAgeSlider.attr('min', Math.min(smoothing, data.length));
+      $issueAgeSlider.attr('max', data.length);
+      $issueAgeSlider.attr('value',data.length);
+
       drawClaimChart(data);
       drawMeanClaimAgeChart(data);
       drawClaimAgeChart(data);
@@ -329,7 +333,8 @@
       hAxis: {
         title: 'Days from issue to claim',
         gridlines: { color: 'transparent' },
-        ticks: [1,2,3,4,5,6,7,8,9,10],
+        ticks: [{v:1, f:'1m'}, {v:2, f:'5m'}, {v:3, f:'15m'}, {v:4, f:'30m'}, {v:5, f:'1h'},
+          {v:6, f:'2h'}, {v:7, f:'3h'}, {v:8, f:'6h'}, {v:9, f:'24h'}, {v:10, f:'>24h'}],
         showTextEvery: 1,
       },
       titlePosition: "out",
@@ -366,7 +371,7 @@
 
     for (i = 0; i < table.length; i++) {
       let r = [i+1, table[i],"",""]
-      if (i == 11) {
+      if (i == 9) {
         r[2] = "#6c757d";
         r[3] = ">1 day";
       }
@@ -389,7 +394,7 @@
         easing: 'inAndOut',
       };
 
-      ageData = getClaimAgeDataTable(0);
+      ageData = getClaimAgeDataTable(indx);
       ageChart.draw(ageData, ageOptions);
     });
   });
