@@ -477,10 +477,8 @@ func TestUpdateStatsAgeDistrib(t *testing.T) {
 					t.Errorf("expected stat.CodeClaimAgeDistribution got = %v, expected %v", stat.CodeClaimAgeDistribution, tc.expectBuckets)
 				}
 
-				for i, v := range stat.CodeClaimAgeDistribution {
-					if v != tc.expectBuckets[i] {
-						t.Errorf("expected index %d stat.CodeClaimAgeDistribution got = %d, expected %d", i, v, tc.expectBuckets[i])
-					}
+				if int(stat.CodesClaimed) != len(tc.codes) {
+					t.Errorf("expected stat.CodesClaimed got = %v, expected %v", stat.CodesClaimed, len(tc.codes))
 				}
 			}
 		})
