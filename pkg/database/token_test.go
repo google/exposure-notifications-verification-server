@@ -15,6 +15,7 @@
 package database
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -24,6 +25,8 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 )
 
 func TestSubject(t *testing.T) {
@@ -377,6 +380,105 @@ func TestIssueToken(t *testing.T) {
 					if !got.Used {
 						t.Fatalf("claimed token is not marked as used")
 					}
+				}
+			}
+		})
+	}
+}
+
+func TestUpdateStatsAgeDistrib(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	app := &AuthorizedApp{
+		RealmID: 1,
+	}
+
+	now := time.Now().UTC()
+	nowStr := now.Format(project.RFC3339Date)
+
+	cases := []struct {
+		name          string
+		codes         []*VerificationCode
+		statDate      string
+		expectAverage time.Duration
+		expectBuckets pq.Int32Array
+	}{
+		{
+			"test day old",
+			[]*VerificationCode{
+				{
+					Model: gorm.Model{
+						CreatedAt: now.Add(-24 * time.Hour),
+					},
+					Code: "111111",
+				},
+				{
+					Model: gorm.Model{
+						CreatedAt: now.Add(-48 * time.Hour),
+					},
+					Code: "222222",
+				},
+				{
+					Model: gorm.Model{
+						CreatedAt: now.Add(-4 * time.Hour),
+					},
+					Code: "333333",
+				},
+				{
+					Model: gorm.Model{
+						CreatedAt: now,
+					},
+					Code: "444444",
+				},
+			},
+			nowStr,
+			(24 + 48 + 4 + 0) * time.Hour / 4,
+			pq.Int32Array([]int32{1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1}),
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			for _, code := range tc.codes {
+				db.updateStatsAgeDistrib(now, app, code)
+			}
+
+			{
+				var stats []*RealmStat
+				if err := db.db.
+					Model(&RealmStats{}).
+					Select("*").
+					Scan(&stats).
+					Error; err != nil {
+					if IsNotFound(err) {
+						t.Fatalf("error grabbing realm stats %v", err)
+					}
+				}
+
+				if len(stats) != 1 {
+					t.Fatalf("expected one user stat")
+				}
+				stat := stats[0] // we're only expecting one
+
+				if f := stat.Date.Format(project.RFC3339Date); f != tc.statDate {
+					t.Errorf("expected stat.Date got = %s, expected %s", f, tc.statDate)
+				}
+				if stat.CodeClaimMeanAge.Duration != tc.expectAverage {
+					t.Errorf("expected stat.CodeClaimMeanAge = %d, expected %d",
+						stat.CodeClaimMeanAge.Duration, tc.expectAverage)
+				}
+
+				if !reflect.DeepEqual(stat.CodeClaimAgeDistribution, tc.expectBuckets) {
+					t.Errorf("expected stat.CodeClaimAgeDistribution got = %v, expected %v", stat.CodeClaimAgeDistribution, tc.expectBuckets)
+				}
+
+				if int(stat.CodesClaimed) != len(tc.codes) {
+					t.Errorf("expected stat.CodesClaimed got = %v, expected %v", stat.CodesClaimed, len(tc.codes))
 				}
 			}
 		})

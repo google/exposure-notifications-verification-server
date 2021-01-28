@@ -289,7 +289,7 @@
     // sum over last ${smoothing} days
     let table = new Array(stats[dateIndex].tek_age_distribution.length).fill(0);
     let i;
-    for (i = dateIndex; i <= dateIndex + smoothing && i < stats.length; i++) {
+    for (i = dateIndex; i < dateIndex + smoothing && i < stats.length; i++) {
       let row = stats[i];
       let j;
       for (j = 0; j < row.tek_age_distribution.length; j++) {
@@ -361,7 +361,7 @@
     // sum over last ${smoothing} days
     let table = new Array(stats[dateIndex].onset_to_upload_distribution.length).fill(0);
     let i;
-    for (i = dateIndex; i <= dateIndex + smoothing && i < stats.length; i++) {
+    for (i = dateIndex; i < dateIndex + smoothing && i < stats.length; i++) {
       let row = stats[i];
       let j;
       for (j = 0; j < row.onset_to_upload_distribution.length; j++) {
