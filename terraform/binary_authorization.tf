@@ -79,7 +79,7 @@ resource "google_binary_authorization_attestor" "built-by-ci" {
 resource "google_project_iam_member" "ci-notes" {
   project = var.project
   role    = "roles/containeranalysis.notes.attacher"
-  member  = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member  = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
@@ -90,7 +90,7 @@ resource "google_binary_authorization_attestor_iam_member" "ci-attestor" {
   project  = var.project
   attestor = google_binary_authorization_attestor.built-by-ci.id
   role     = "roles/binaryauthorization.attestorsViewer"
-  member   = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member   = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
@@ -127,7 +127,7 @@ resource "google_kms_crypto_key_iam_binding" "ci-attest" {
   role          = "roles/cloudkms.signerVerifier"
 
   members = [
-    "serviceAccount:${data.google_service_account.cloudbuild.email}",
+    "serviceAccount:${local.cloudbuild_email}",
   ]
 
   depends_on = [

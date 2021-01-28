@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  cloudbuild_email = "${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+}
+
 resource "google_storage_bucket" "cloudbuild-cache" {
   project  = var.project
   name     = "${var.project}-cloudbuild-cache"
@@ -39,15 +43,5 @@ resource "google_storage_bucket" "cloudbuild-cache" {
 resource "google_storage_bucket_iam_member" "cloudbuild-cache" {
   bucket = google_storage_bucket.cloudbuild-cache.name
   role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${data.google_service_account.cloudbuild.email}"
-}
-
-
-data "google_service_account" "cloudbuild" {
-  account_id = "${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
-
-  depends_on = [
-    google_project_service.services["iam.googleaips.com"],
-    google_project_service.services["cloudbuild.googleaips.com"],
-  ]
+  member = "serviceAccount:${local.cloudbuild_email}"
 }

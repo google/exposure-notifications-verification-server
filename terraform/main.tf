@@ -135,7 +135,7 @@ resource "null_resource" "build" {
 resource "google_project_iam_member" "cloudbuild-deploy" {
   project = var.project
   role    = "roles/run.admin"
-  member  = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member  = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
@@ -191,7 +191,7 @@ export FIREBASE_STORAGE_BUCKET="${data.google_firebase_web_app_config.default.st
 export CACHE_TYPE="REDIS"
 export CACHE_REDIS_HOST="${google_redis_instance.cache.host}"
 export CACHE_REDIS_PORT="${google_redis_instance.cache.port}"
-export CACHE_REDIS_PASSWORD = "secret://${google_secret_manager_secret_version.redis-auth.id}"
+export CACHE_REDIS_PASSWORD="secret://${google_secret_manager_secret_version.redis-auth.id}"
 
 export RATE_LIMIT_TYPE="REDIS"
 export RATE_LIMIT_TOKENS="60"

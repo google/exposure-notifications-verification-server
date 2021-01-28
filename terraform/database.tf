@@ -254,7 +254,7 @@ resource "google_secret_manager_secret_version" "db-verification-code-hmac" {
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-pwd" {
   secret_id = google_secret_manager_secret.db-secret["password"].id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member    = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
@@ -264,7 +264,7 @@ resource "google_secret_manager_secret_iam_member" "cloudbuild-db-pwd" {
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-db-hmac" {
   secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member    = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
@@ -274,7 +274,7 @@ resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-db-hmac
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-sig-hmac" {
   secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member    = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
@@ -284,7 +284,7 @@ resource "google_secret_manager_secret_iam_member" "cloudbuild-db-apikey-sig-hma
 resource "google_secret_manager_secret_iam_member" "cloudbuild-db-verification-code-hmac" {
   secret_id = google_secret_manager_secret.db-verification-code-hmac.id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member    = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"],
@@ -295,7 +295,7 @@ resource "google_secret_manager_secret_iam_member" "cloudbuild-db-verification-c
 resource "google_project_iam_member" "cloudbuild-sql" {
   project = var.project
   role    = "roles/cloudsql.client"
-  member  = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member  = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"]
@@ -306,7 +306,7 @@ resource "google_project_iam_member" "cloudbuild-sql" {
 resource "google_kms_crypto_key_iam_member" "database-database-encrypter" {
   crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-  member        = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member        = "serviceAccount:${local.cloudbuild_email}"
 
   depends_on = [
     google_project_service.services["cloudbuild.googleapis.com"]
