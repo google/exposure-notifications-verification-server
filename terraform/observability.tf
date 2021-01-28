@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "random_id" "csrf-token" {
-  byte_length = 32
-}
 
-resource "google_secret_manager_secret" "csrf-token" {
-  secret_id = "csrf-token"
-
-  replication {
-    automatic = true
-  }
-
-  depends_on = [
-    google_project_service.services["secretmanager.googleapis.com"],
-  ]
-}
-
-resource "google_secret_manager_secret_version" "csrf-token-version" {
-  secret      = google_secret_manager_secret.csrf-token.id
-  secret_data = random_id.csrf-token.b64_std
+locals {
+  # observability_iam_roles is the list of IAM roles required for the service to
+  # participate in observability.
+  observability_iam_roles = toset([
+    "roles/cloudtrace.agent",
+    "roles/logging.logWriter",
+    "roles/monitoring.metricWriter",
+    "roles/stackdriver.resourceMetadata.writer",
+  ])
 }

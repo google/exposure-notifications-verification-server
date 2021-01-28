@@ -21,41 +21,17 @@ resource "google_service_account" "adminapi" {
 resource "google_service_account_iam_member" "cloudbuild-deploy-adminapi" {
   service_account_id = google_service_account.adminapi.id
   role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
-
-  depends_on = [
-    google_project_service.services["cloudbuild.googleapis.com"],
-    google_project_service.services["iam.googleapis.com"],
-  ]
-}
-
-resource "google_secret_manager_secret_iam_member" "adminapi-db" {
-  for_each = toset([
-    "sslcert",
-    "sslkey",
-    "sslrootcert",
-    "password",
-  ])
-
-  secret_id = google_secret_manager_secret.db-secret[each.key].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.adminapi.email}"
+  member             = "serviceAccount:${data.google_service_account.cloudbuild.email}"
 }
 
 resource "google_project_iam_member" "adminapi-observability" {
-  for_each = toset([
-    "roles/cloudtrace.agent",
-    "roles/logging.logWriter",
-    "roles/monitoring.metricWriter",
-    "roles/stackdriver.resourceMetadata.writer",
-  ])
-
-  project = var.project
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.adminapi.email}"
+  for_each = local.observability_iam_roles
+  project  = var.project
+  role     = each.key
+  member   = "serviceAccount:${google_service_account.adminapi.email}"
 }
 
-resource "google_kms_key_ring_iam_member" "adminapi-verification-key-signer-verifier" {
+resource "google_kms_key_ring_iam_member" "adminapi-verification-signer-verifier" {
   key_ring_id = google_kms_key_ring.verification.self_link
   role        = "roles/cloudkms.signerVerifier"
   member      = "serviceAccount:${google_service_account.adminapi.email}"
@@ -67,32 +43,16 @@ resource "google_kms_crypto_key_iam_member" "adminapi-database-encrypter" {
   member        = "serviceAccount:${google_service_account.adminapi.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "adminapi-db-apikey-db-hmac" {
-  secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.adminapi.email}"
+locals {
+  adminapi_secrets = flatten([
+    local.database_secrets,
+    local.redis_secrets,
+  ])
 }
 
-resource "google_secret_manager_secret_iam_member" "adminapi-db-apikey-sig-hmac" {
-  secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.adminapi.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "adminapi-db-verification-code-hmac" {
-  secret_id = google_secret_manager_secret.db-verification-code-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.adminapi.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "adminapi-cache-hmac-key" {
-  secret_id = google_secret_manager_secret.cache-hmac-key.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.adminapi.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "adminapi-ratelimit-hmac-key" {
-  secret_id = google_secret_manager_secret.ratelimit-hmac-key.id
+resource "google_secret_manager_secret_iam_member" "adminapi-secrets" {
+  count     = length(local.adminapi_secrets)
+  secret_id = element(local.adminapi_secrets, count.index)
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.adminapi.email}"
 }
@@ -160,14 +120,10 @@ resource "google_cloud_run_service" "adminapi" {
   depends_on = [
     google_project_service.services["run.googleapis.com"],
 
-    google_secret_manager_secret_iam_member.adminapi-db,
-    google_project_iam_member.adminapi-observability,
     google_kms_crypto_key_iam_member.adminapi-database-encrypter,
-    google_secret_manager_secret_iam_member.adminapi-db-apikey-db-hmac,
-    google_secret_manager_secret_iam_member.adminapi-db-apikey-sig-hmac,
-    google_secret_manager_secret_iam_member.adminapi-db-verification-code-hmac,
-    google_secret_manager_secret_iam_member.adminapi-cache-hmac-key,
-    google_secret_manager_secret_iam_member.adminapi-ratelimit-hmac-key,
+    google_kms_key_ring_iam_member.adminapi-verification-signer-verifier,
+    google_project_iam_member.adminapi-observability,
+    google_secret_manager_secret_iam_member.adminapi-secrets,
 
     null_resource.build,
     null_resource.migrate,
@@ -175,12 +131,12 @@ resource "google_cloud_run_service" "adminapi" {
 
   lifecycle {
     ignore_changes = [
-      template[0].metadata[0].annotations["client.knative.dev/user-image"],
-      template[0].metadata[0].annotations["run.googleapis.com/client-name"],
-      template[0].metadata[0].annotations["run.googleapis.com/client-version"],
-      template[0].spec[0].containers[0].image,
+      metadata[0].annotations["client.knative.dev/user-image"],
+      metadata[0].annotations["run.googleapis.com/client-name"],
+      metadata[0].annotations["run.googleapis.com/client-version"],
       metadata[0].annotations["run.googleapis.com/ingress-status"],
       metadata[0].labels["cloud.googleapis.com/location"],
+      template[0].spec[0].containers[0].image,
     ]
   }
 }
@@ -212,7 +168,8 @@ resource "google_compute_backend_service" "adminapi" {
   }
   security_policy = google_compute_security_policy.cloud-armor.name
   log_config {
-    enable = var.enable_lb_logging
+    enable      = var.enable_lb_logging
+    sample_rate = 1
   }
 }
 

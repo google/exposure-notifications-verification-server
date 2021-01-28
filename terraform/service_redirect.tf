@@ -22,38 +22,14 @@ resource "google_service_account" "enx-redirect" {
 resource "google_service_account_iam_member" "cloudbuild-deploy-enx-redirect" {
   service_account_id = google_service_account.enx-redirect.id
   role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
-
-  depends_on = [
-    google_project_service.services["cloudbuild.googleapis.com"],
-    google_project_service.services["iam.googleapis.com"],
-  ]
+  member             = "serviceAccount:${data.google_service_account.cloudbuild.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "enx-redirect-db" {
-  for_each = toset([
-    "sslcert",
-    "sslkey",
-    "sslrootcert",
-    "password",
-  ])
-
-  secret_id = google_secret_manager_secret.db-secret[each.key].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.enx-redirect.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "enx-redirect-csrf" {
-  secret_id = google_secret_manager_secret.csrf-token.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.enx-redirect.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "enx-redirect-cookie-hmac-key" {
-  provider  = google-beta
-  secret_id = google_secret_manager_secret.cookie-hmac-key.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.enx-redirect.email}"
+resource "google_project_iam_member" "enx-redirect-observability" {
+  for_each = local.observability_iam_roles
+  project  = var.project
+  role     = each.key
+  member   = "serviceAccount:${google_service_account.enx-redirect.email}"
 }
 
 resource "google_kms_key_ring_iam_member" "enx-redirect-verification-key-admin" {
@@ -74,41 +50,19 @@ resource "google_kms_crypto_key_iam_member" "enx-redirect-database-encrypter" {
   member        = "serviceAccount:${google_service_account.enx-redirect.email}"
 }
 
-resource "google_secret_manager_secret_iam_member" "enx-redirect-db-apikey-db-hmac" {
-  secret_id = google_secret_manager_secret.db-apikey-db-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.enx-redirect.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "enx-redirect-db-apikey-sig-hmac" {
-  secret_id = google_secret_manager_secret.db-apikey-sig-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.enx-redirect.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "enx-redirect-db-verification-code-hmac" {
-  secret_id = google_secret_manager_secret.db-verification-code-hmac.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.enx-redirect.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "enx-redirect-cache-hmac-key" {
-  secret_id = google_secret_manager_secret.cache-hmac-key.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.enx-redirect.email}"
-}
-
-resource "google_project_iam_member" "enx-redirect-observability" {
-  for_each = toset([
-    "roles/cloudtrace.agent",
-    "roles/logging.logWriter",
-    "roles/monitoring.metricWriter",
-    "roles/stackdriver.resourceMetadata.writer",
+locals {
+  enx_redirect_secrets = flatten([
+    local.database_secrets,
+    local.redis_secrets,
+    local.session_secrets,
   ])
+}
 
-  project = var.project
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.enx-redirect.email}"
+resource "google_secret_manager_secret_iam_member" "enx-redirect-secrets" {
+  count     = length(local.enx_redirect_secrets)
+  secret_id = element(local.enx_redirect_secrets, count.index)
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.enx-redirect.email}"
 }
 
 resource "google_cloud_run_service" "enx-redirect" {
@@ -171,17 +125,11 @@ resource "google_cloud_run_service" "enx-redirect" {
   depends_on = [
     google_project_service.services["run.googleapis.com"],
 
-    google_secret_manager_secret_iam_member.enx-redirect-db,
-    google_secret_manager_secret_iam_member.enx-redirect-csrf,
-    google_secret_manager_secret_iam_member.enx-redirect-cookie-hmac-key,
+    google_kms_crypto_key_iam_member.enx-redirect-database-encrypter,
     google_kms_key_ring_iam_member.enx-redirect-verification-key-admin,
     google_kms_key_ring_iam_member.enx-redirect-verification-key-signer-verifier,
-    google_kms_crypto_key_iam_member.enx-redirect-database-encrypter,
-    google_secret_manager_secret_iam_member.enx-redirect-db-apikey-db-hmac,
-    google_secret_manager_secret_iam_member.enx-redirect-db-apikey-sig-hmac,
-    google_secret_manager_secret_iam_member.enx-redirect-db-verification-code-hmac,
-    google_secret_manager_secret_iam_member.enx-redirect-cache-hmac-key,
     google_project_iam_member.enx-redirect-observability,
+    google_secret_manager_secret_iam_member.enx-redirect-secrets,
 
     null_resource.build,
     null_resource.migrate,
@@ -189,12 +137,12 @@ resource "google_cloud_run_service" "enx-redirect" {
 
   lifecycle {
     ignore_changes = [
-      template[0].metadata[0].annotations["client.knative.dev/user-image"],
-      template[0].metadata[0].annotations["run.googleapis.com/client-name"],
-      template[0].metadata[0].annotations["run.googleapis.com/client-version"],
-      template[0].spec[0].containers[0].image,
+      metadata[0].annotations["client.knative.dev/user-image"],
+      metadata[0].annotations["run.googleapis.com/client-name"],
+      metadata[0].annotations["run.googleapis.com/client-version"],
       metadata[0].annotations["run.googleapis.com/ingress-status"],
       metadata[0].labels["cloud.googleapis.com/location"],
+      template[0].spec[0].containers[0].image,
     ]
   }
 }
@@ -223,7 +171,8 @@ resource "google_compute_backend_service" "enx-redirect" {
   }
   security_policy = google_compute_security_policy.cloud-armor.name
   log_config {
-    enable = var.enable_lb_logging
+    enable      = var.enable_lb_logging
+    sample_rate = 1
   }
 }
 
