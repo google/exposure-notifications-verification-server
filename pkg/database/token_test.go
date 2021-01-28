@@ -15,6 +15,7 @@
 package database
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 )
 
 func TestSubject(t *testing.T) {
@@ -388,63 +390,100 @@ func TestUpdateStatsAgeDistrib(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	realm := NewRealmWithDefaults("Test Realm")
 	app := &AuthorizedApp{
-		RealmID: realm.ID,
+		RealmID: 1,
 	}
 
 	now := time.Now().UTC()
 	nowStr := now.Format(project.RFC3339Date)
 
-	tests := []struct {
+	cases := []struct {
 		name          string
-		code          *VerificationCode
+		codes         []*VerificationCode
 		statDate      string
 		expectAverage time.Duration
+		expectBuckets pq.Int32Array
 	}{
 		{
 			"test day old",
-			&VerificationCode{
-				Model: gorm.Model{
-					CreatedAt: now.Add(-24 * time.Hour),
+			[]*VerificationCode{
+				{
+					Model: gorm.Model{
+						CreatedAt: now.Add(-24 * time.Hour),
+					},
+					Code: "111111",
 				},
-				Code: "111111",
+				{
+					Model: gorm.Model{
+						CreatedAt: now.Add(-48 * time.Hour),
+					},
+					Code: "222222",
+				},
+				{
+					Model: gorm.Model{
+						CreatedAt: now.Add(-4 * time.Hour),
+					},
+					Code: "333333",
+				},
+				{
+					Model: gorm.Model{
+						CreatedAt: now,
+					},
+					Code: "444444",
+				},
 			},
 			nowStr,
-			24 * time.Hour,
+			(24 + 48 + 4 + 0) * time.Hour / 4,
+			pq.Int32Array([]int32{1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1}),
 		},
 	}
 
-	for i, test := range tests {
-		test.code.Code = "111111"
-		db.updateStatsAgeDistrib(now, app, test.code)
+	for _, tc := range cases {
+		tc := tc
 
-		{
-			var stats []*RealmStat
-			if err := db.db.
-				Model(&RealmStats{}).
-				Select("*").
-				Scan(&stats).
-				Error; err != nil {
-				if IsNotFound(err) {
-					t.Fatalf("[%d] Error grabbing realm stats %v", i, err)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			for _, code := range tc.codes {
+				db.updateStatsAgeDistrib(now, app, code)
+			}
+
+			{
+				var stats []*RealmStat
+				if err := db.db.
+					Model(&RealmStats{}).
+					Select("*").
+					Scan(&stats).
+					Error; err != nil {
+					if IsNotFound(err) {
+						t.Fatalf("error grabbing realm stats %v", err)
+					}
+				}
+
+				if len(stats) != 1 {
+					t.Fatalf("expected one user stat")
+				}
+				stat := stats[0] // we're only expecting one
+
+				if f := stat.Date.Format(project.RFC3339Date); f != tc.statDate {
+					t.Errorf("expected stat.Date got = %s, expected %s", f, tc.statDate)
+				}
+				if stat.CodeClaimMeanAge.Duration != tc.expectAverage {
+					t.Errorf("expected stat.CodeClaimMeanAge = %d, expected %d",
+						stat.CodeClaimMeanAge.Duration, tc.expectAverage)
+				}
+
+				if !reflect.DeepEqual(stat.CodeClaimAgeDistribution, tc.expectBuckets) {
+					t.Errorf("expected stat.CodeClaimAgeDistribution got = %v, expected %v", stat.CodeClaimAgeDistribution, tc.expectBuckets)
+				}
+
+				for i, v := range stat.CodeClaimAgeDistribution {
+					if v != tc.expectBuckets[i] {
+						t.Errorf("expected index %d stat.CodeClaimAgeDistribution got = %d, expected %d", i, v, tc.expectBuckets[i])
+					}
 				}
 			}
-			if len(stats) != 1 {
-				t.Fatalf("[%d] expected one user stat", i)
-			}
-			if stats[0].CodeClaimMeanAge.Duration != test.expectAverage {
-				t.Errorf("[%d] expected stat.CodeClaimMeanAge = %d, expected %d", i,
-					stats[0].CodeClaimMeanAge.Duration, test.expectAverage)
-			}
-			if stats[0].CodeClaimAgeDistribution[9] != 1 {
-				t.Errorf("[%d] expected stat.CodeClaimAgeDistribution = %v, expected %d", i,
-					stats[0].CodeClaimAgeDistribution, 1)
-			}
-			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
-				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
-			}
-		}
+		})
 	}
 }
 
