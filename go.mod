@@ -91,8 +91,3 @@ require (
 	k8s.io/api v0.18.7-rc.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v3 v3.0.1-0.20200706213357-43c19bbb7fba // indirect
 )
-
-// FIXME: remove once
-// https://github.com/census-ecosystem/opencensus-go-exporter-stackdriver/commit/1996040a78017ba96c8bd972de452a9a7df00a04
-// is included in a release.
-replace contrib.go.opencensus.io/exporter/stackdriver v0.13.4 => github.com/census-ecosystem/opencensus-go-exporter-stackdriver v0.0.0-20210120144749-1996040a7801
