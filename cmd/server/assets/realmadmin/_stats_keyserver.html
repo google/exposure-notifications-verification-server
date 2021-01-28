@@ -100,10 +100,10 @@
     .done(function(data, status, xhr) {
       $slider.attr('min', Math.min(smoothing, data.length));
       $slider.attr('max', data.length);
-      $slider.attr('value',data.length);
+      $slider.val(data.length);
       $onsetSlider.attr('min', Math.min(smoothing, data.length));
       $onsetSlider.attr('max', data.length);
-      $onsetSlider.attr('value',data.length);
+      $onsetSlider.val(data.length);
 
       drawStatsChart(data);
       drawOSChart(data);

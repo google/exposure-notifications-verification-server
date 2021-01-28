@@ -116,9 +116,11 @@
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
-      $issueAgeSlider.attr('min', Math.min(smoothing, data.length));
-      $issueAgeSlider.attr('max', data.length);
-      $issueAgeSlider.attr('value',data.length);
+      if (data.statistics) {
+        $issueAgeSlider.attr('min', Math.min(smoothing, data.statistics.length));
+        $issueAgeSlider.attr('max', data.statistics.length);
+        $issueAgeSlider.val(data.statistics.length);
+      }
 
       drawClaimChart(data);
       drawMeanClaimAgeChart(data);
@@ -387,8 +389,8 @@
         return
       }
       let indx = claimStats.length - $issueAgeSlider.val();
-      onsetOptions.title = `${smoothing} days from ` + claimStats[indx].date.split("T")[0];
-      onsetOptions.animation = {
+      ageOptions.title = `${smoothing} days from ` + claimStats[indx].date.split("T")[0];
+      ageOptions.animation = {
         startup: false,
         duration: 500,
         easing: 'inAndOut',
