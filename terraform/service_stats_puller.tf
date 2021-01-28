@@ -21,7 +21,7 @@ resource "google_service_account" "stats-puller" {
 resource "google_service_account_iam_member" "cloudbuild-deploy-stats-puller" {
   service_account_id = google_service_account.stats-puller.id
   role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member             = "serviceAccount:${local.cloudbuild_email}"
 }
 
 resource "google_project_iam_member" "stats-puller-observability" {

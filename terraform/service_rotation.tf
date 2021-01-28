@@ -21,7 +21,7 @@ resource "google_service_account" "rotation" {
 resource "google_service_account_iam_member" "cloudbuild-deploy-rotation" {
   service_account_id = google_service_account.rotation.id
   role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member             = "serviceAccount:${local.cloudbuild_email}"
 }
 
 resource "google_project_iam_member" "rotation-observability" {

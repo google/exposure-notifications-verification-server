@@ -22,7 +22,7 @@ resource "google_service_account" "enx-redirect" {
 resource "google_service_account_iam_member" "cloudbuild-deploy-enx-redirect" {
   service_account_id = google_service_account.enx-redirect.id
   role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${data.google_service_account.cloudbuild.email}"
+  member             = "serviceAccount:${local.cloudbuild_email}"
 }
 
 resource "google_project_iam_member" "enx-redirect-observability" {
