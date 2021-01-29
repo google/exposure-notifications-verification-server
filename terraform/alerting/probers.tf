@@ -22,7 +22,7 @@ resource "google_monitoring_uptime_check_config" "https" {
   period       = "60s"
 
   http_check {
-    path         = "/health"
+    path         = "/health?service=database"
     port         = "443"
     use_ssl      = true
     validate_ssl = true
