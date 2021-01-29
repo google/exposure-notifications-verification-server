@@ -58,7 +58,7 @@ func SignSMS(signer crypto.Signer, keyID string, t time.Time, purpose SMSPurpose
 	}
 
 	date := t.Format("0102")
-	return newBody + b64([]byte(date)) + colon + b64([]byte(keyID)) + colon + b64(sig), nil
+	return newBody + date + colon + keyID + colon + b64(sig), nil
 }
 
 // smsSignatureString builds the string that is to be signed. The provided date

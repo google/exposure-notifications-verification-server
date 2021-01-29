@@ -71,22 +71,13 @@ func Test_SMSSignature(t *testing.T) {
 					}
 				case 1:
 					// Next is date
-					b, err := base64.RawStdEncoding.DecodeString(part)
-					if err != nil {
-						t.Fatal(err)
-					}
-
 					date := tc.time.UTC().Format("0102")
-					if got, want := string(b), date; got != want {
+					if got, want := part, date; got != want {
 						t.Errorf("expected %q to be %q", got, want)
 					}
 				case 2:
 					// Next is key id
-					b, err := base64.RawStdEncoding.DecodeString(part)
-					if err != nil {
-						t.Fatal(err)
-					}
-					if got, want := string(b), tc.keyID; got != want {
+					if got, want := part, tc.keyID; got != want {
 						t.Errorf("expected %q to be %q", got, want)
 					}
 				case 3:
