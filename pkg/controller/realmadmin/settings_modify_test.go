@@ -499,7 +499,7 @@ func TestHandleSettings(t *testing.T) {
 	t.Run("email/validation_error", func(t *testing.T) {
 		t.Parallel()
 
-		realm := database.NewRealmWithDefaults("emai_validation")
+		realm := database.NewRealmWithDefaults("email_validation")
 		realm.EnableENExpress = false
 		if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
 			t.Fatal(err)
