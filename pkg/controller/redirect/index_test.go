@@ -36,9 +36,8 @@ func TestIndex(t *testing.T) {
 
 	// Create config.
 	cfg := &config.RedirectConfig{
-		AssetsPath:       filepath.Join(project.Root(), "cmd", "enx-redirect", "assets"),
-		DevMode:          true,
-		OnboardingDomain: "onboard.me",
+		AssetsPath: filepath.Join(project.Root(), "cmd", "enx-redirect", "assets"),
+		DevMode:    true,
 		HostnameConfig: map[string]string{
 			"bad":    "nope",
 			"realm1": "aa",
@@ -122,96 +121,6 @@ func TestIndex(t *testing.T) {
 	client.CheckRedirect = func(r *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
-
-	// Onboarding, android
-	t.Run("onboarding/android", func(t *testing.T) {
-		t.Parallel()
-
-		req, err := http.NewRequest("GET", srv.URL, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Host = "onboard.me"
-		req.Header.Set("User-Agent", "android")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer resp.Body.Close()
-
-		if got, want := resp.StatusCode, 303; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Errorf("expected %d to be %d: %s", got, want, body)
-		}
-
-		if got, want := resp.Header.Get("Location"), "market://search?q=exposure%20notifications"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
-		}
-	})
-
-	// Onboarding, ios
-	t.Run("onboarding/ios", func(t *testing.T) {
-		t.Parallel()
-
-		req, err := http.NewRequest("GET", srv.URL, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Host = "onboard.me"
-		req.Header.Set("User-Agent", "iphone")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer resp.Body.Close()
-
-		if got, want := resp.StatusCode, 303; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Errorf("expected %d to be %d: %s", got, want, body)
-		}
-
-		if got, want := resp.Header.Get("Location"), "ens://onboarding"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
-		}
-	})
-
-	// Onboarding, unknown
-	t.Run("onboarding/unknown", func(t *testing.T) {
-		t.Parallel()
-
-		req, err := http.NewRequest("GET", srv.URL, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Host = "onboard.me"
-		req.Header.Set("User-Agent", "bananarama")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer resp.Body.Close()
-
-		if got, want := resp.StatusCode, 303; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Errorf("expected %d to be %d: %s", got, want, body)
-		}
-
-		if got, want := resp.Header.Get("Location"), "https://www.google.com/covid19/exposurenotifications/"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
-		}
-	})
 
 	// Bad path
 	t.Run("bad_path", func(t *testing.T) {

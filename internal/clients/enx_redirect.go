@@ -150,7 +150,7 @@ func (c *ENXRedirectClient) RunE2E(ctx context.Context) error {
 	if got, want := unknownHTTPResp.StatusCode, 303; got != want {
 		return fmt.Errorf("expected unknown redirect code %d to be %d", got, want)
 	}
-	// expecting generic onboarding redirect
+	// expecting generic landing redirect
 	if got, want := unknownHTTPResp.Header.Get("Location"), "https://www.google.com/covid19/exposurenotifications"; !strings.Contains(got, want) {
 		return fmt.Errorf("expected unknown redirect location %q to contain %q", got, want)
 	}

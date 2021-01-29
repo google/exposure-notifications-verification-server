@@ -93,8 +93,7 @@ periodically via a distributed cron.
 
 The ENX redirect server serves Apple/Google `.well-known` association files for
 app links to allow PHAs to gracefully redirect users to an appropriate app store
-in the event their application is not installed. The redirect service also
-handles onboarding domains.
+in the event their application is not installed.
 
 
 ### Modeler Server

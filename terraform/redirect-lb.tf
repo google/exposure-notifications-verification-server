@@ -17,7 +17,6 @@ locals {
 
   redirect_root_domains = distinct(compact([
     var.enx_redirect_domain,
-    var.enx_onboarding_domain,
   ]))
 }
 
