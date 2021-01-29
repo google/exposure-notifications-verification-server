@@ -34,7 +34,7 @@
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#comingsoon">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#publish-by-os-modal">Learn more about this chart</a>
   </small>
 </div>
 
@@ -50,7 +50,7 @@
   </div>
   <datalist id="tek_slide_ticks"></datalist>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#comingsoon">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#tek-age-modal">Learn more about this chart</a>
   </small>
 </div>
 
@@ -66,7 +66,7 @@
   </div>
   <datalist id="onset_slide_ticks"></datalist>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#comingsoon">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#onset-to-upload-modal">Learn more about this chart</a>
   </small>
 </div>
 
@@ -74,7 +74,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Key server stats</h5>
+        <h5 class="modal-title">Publish requests</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -106,6 +106,64 @@
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="publish-by-os-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Publish requests by OS</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph shows counts of the number of publish requests broken down by the request operating system.
+          Hover over columns to see the percentage for each OS segment.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="tek-age-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">TEK age distribution</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph shows a distribution of the ages of temporary exposure keys.
+          Move the slider to see how the distribution has changed over time.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="onset-to-upload-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Onset-to-upload distribution</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph reflects the distribution of the time between the TEK's symptom onset time and when the key was uploaded.
+          Move the slider to see how the distribution has changed over time.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script type="text/javascript">
   let stats;

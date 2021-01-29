@@ -28,7 +28,7 @@
   <datalist id="issue_age_ticks"></datalist>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#comingsoon">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#issue-claim-dist-modal">Learn more about this chart</a>
   </small>
 </div>
 
@@ -44,7 +44,7 @@
     <div id="mean_claim_age_filter_div" class="text-right" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#comingsoon">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#issue-claim-mean-modal">Learn more about this chart</a>
   </small>
 </div>
 
@@ -104,6 +104,44 @@
             can be used as a rudimentary measure of adoption.
           </li>
         </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="issue-claim-dist-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Issue-to-claim age distribution</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph reflects the distribution of time between issuance of a new code to
+          the user claiming the code for a token.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="issue-claim-mean-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Mean issue-to-claim age</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph reflects the average time between issuance of a new code to
+          the user claiming the code for a token.
+        </p>
       </div>
     </div>
   </div>
