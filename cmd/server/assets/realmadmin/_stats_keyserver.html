@@ -109,16 +109,21 @@
       $onsetSlider.attr('step', 1);
       $onsetSlider.val(data.length);
   
-      $("#tektickmarks").empty();
+      let tekTicks = $("#tektickmarks");
+      tekTicks.empty();
       for (i = Math.min(smoothing, data.length); i < data.length; i++) {
-        let opt = '<option value="' + i + '" label="' + data[i].day.substring(0,10) + '"></option>';
-        $("#tektickmarks").append(opt);
+        let opt = $('<option/>');
+        opt.val(i);
+        opt.attr('label', data[i].day.substring(0,10));
+        tekTicks.append(opt);
       }
 
-      $("#onset_slide_ticks").empty();
+      let onsetTicks = $("#onset_slide_ticks");
+      onsetTicks.empty();
       for (i = 0; i < data.length; i++) {
-        let opt = '<option value="' + i + '"></option>';
-        $("#onset_slide_ticks").append(opt);
+        let opt = $('<option/>');
+        opt.val(i);
+        onsetTicks.append(opt);
       }
 
       drawStatsChart(data);
@@ -305,7 +310,13 @@
     });
   }
 
+  let dataTableCache = new Map()
   function getTEKDataTable(dateIndex) {
+    let key = "s" + smoothing + "i" + dateIndex;
+    if (dataTableCache.has(key)) {
+      return dataTableCache.get(key);
+    }
+
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('number', 'days');
     dataTable.addColumn('number', 'count');
@@ -335,6 +346,7 @@
       }
       dataTable.addRow(r);
     }
+    dataTableCache.set(key, dataTable);
     return dataTable;
   }
 
@@ -393,7 +405,13 @@
     });
   }
 
+  let onsetCache = new Map();
   function getOnsetDataTable(dateIndex) {
+    let key = "s" + smoothing + "i" + dateIndex;
+    if (onsetCache.has(key)) {
+      return onsetCache.get(key);
+    }
+
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('number', 'days');
     dataTable.addColumn('number', 'count');
@@ -422,6 +440,7 @@
         onsetVAxisMax = table[i];
       }
     }
+    onsetCache.set(key, dataTable);
     return dataTable;
   }
 
