@@ -30,8 +30,3 @@ variable "enable_fast_burn_alert" {
   description = "Whether to enable the fast error budget burn alert."
 }
 
-variable "enable_slow_burn_alert" {
-  type        = bool
-  description = "Whether to enable the slow error budget burn alert."
-}
-
