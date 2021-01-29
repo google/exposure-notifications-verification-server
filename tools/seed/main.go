@@ -339,7 +339,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 	for day := 1; day <= 30; day++ {
 		max := rand.Intn(150)
 		for i := 0; i < max; i++ {
-			date := now.Add(time.Duration(day) * -24 * time.Duration(rand.Intn(15)+1) * time.Hour)
+			date := now.Add(time.Duration(day) * -24 * time.Hour)
 
 			issuingUserID := uint(0)
 			issuingAppID := uint(0)
@@ -374,7 +374,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 				Code:          code,
 				ExpiresAt:     now.Add(15 * time.Minute),
 				LongCode:      longCode,
-				LongExpiresAt: now.Add(24 * time.Hour),
+				LongExpiresAt: now.Add(15 * 24 * time.Hour),
 				TestType:      testType,
 				SymptomDate:   &testDate,
 				TestDate:      &testDate,
@@ -404,7 +404,14 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 
 				app := randomDeviceAuthorizedApp()
 
-				token, err := db.VerifyCodeAndIssueToken(date, app, code, accept, 24*time.Hour)
+				// randomize issue to claim time
+				if rand.Intn(3) == 0 {
+					date = date.Add(time.Duration(rand.Intn(12))*time.Hour + time.Second)
+				} else {
+					date = date.Add(time.Duration(rand.Intn(60))*time.Minute + time.Second)
+				}
+
+				token, err := db.VerifyCodeAndIssueToken(date, app, longCode, accept, 24*time.Hour)
 				if err != nil {
 					continue
 				}
