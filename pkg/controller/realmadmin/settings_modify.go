@@ -63,24 +63,24 @@ type formData struct {
 	KeyServerURLOverride      string `form:"key_server_url"`
 	KeyServerAudienceOverride string `form:"key_server_audience"`
 
-	Codes                     bool               `form:"codes"`
-	AllowedTestTypes          database.TestType  `form:"allowed_test_types"`
-	AllowBulkUpload           bool               `form:"allow_bulk"`
-	RequireDate               bool               `form:"require_date"`
-	CodeLength                uint               `form:"code_length"`
-	CodeDurationMinutes       int64              `form:"code_duration"`
-	LongCodeLength            uint               `form:"long_code_length"`
-	LongCodeDurationHours     int64              `form:"long_code_duration"`
+	Codes                 bool              `form:"codes"`
+	AllowedTestTypes      database.TestType `form:"allowed_test_types"`
+	AllowBulkUpload       bool              `form:"allow_bulk"`
+	RequireDate           bool              `form:"require_date"`
+	CodeLength            uint              `form:"code_length"`
+	CodeDurationMinutes   int64             `form:"code_duration"`
+	LongCodeLength        uint              `form:"long_code_length"`
+	LongCodeDurationHours int64             `form:"long_code_duration"`
+
+	SMS                       bool               `form:"sms"`
+	UseSystemSMSConfig        bool               `form:"use_system_sms_config"`
+	SMSCountry                string             `form:"sms_country"`
+	SMSFromNumberID           uint               `form:"sms_from_number_id"`
+	TwilioAccountSid          string             `form:"twilio_account_sid"`
+	TwilioAuthToken           string             `form:"twilio_auth_token"`
+	TwilioFromNumber          string             `form:"twilio_from_number"`
 	SMSTextTemplate           string             `form:"-"`
 	SMSTextAlternateTemplates map[string]*string `form:"-"`
-
-	SMS                bool   `form:"sms"`
-	UseSystemSMSConfig bool   `form:"use_system_sms_config"`
-	SMSCountry         string `form:"sms_country"`
-	SMSFromNumberID    uint   `form:"sms_from_number_id"`
-	TwilioAccountSid   string `form:"twilio_account_sid"`
-	TwilioAuthToken    string `form:"twilio_auth_token"`
-	TwilioFromNumber   string `form:"twilio_from_number"`
 
 	Email                      bool   `form:"email"`
 	UseSystemEmailConfig       bool   `form:"use_system_email_config"`
@@ -224,12 +224,9 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		// Codes
 		if form.Codes {
-			parseSMSTextTemplates(r, &form)
 			currentRealm.AllowedTestTypes = form.AllowedTestTypes
 			currentRealm.RequireDate = form.RequireDate
 			currentRealm.AllowBulkUpload = form.AllowBulkUpload
-			currentRealm.SMSTextTemplate = form.SMSTextTemplate
-			currentRealm.SMSTextAlternateTemplates = postgres.Hstore(form.SMSTextAlternateTemplates)
 
 			// These fields can only be set if ENX is disabled
 			if !currentRealm.EnableENExpress {
@@ -242,9 +239,12 @@ func (c *Controller) HandleSettings() http.Handler {
 
 		// SMS
 		if form.SMS {
+			parseSMSTextTemplates(r, &form)
 			currentRealm.UseSystemSMSConfig = form.UseSystemSMSConfig
 			currentRealm.SMSCountry = form.SMSCountry
 			currentRealm.SMSFromNumberID = form.SMSFromNumberID
+			currentRealm.SMSTextTemplate = form.SMSTextTemplate
+			currentRealm.SMSTextAlternateTemplates = postgres.Hstore(form.SMSTextAlternateTemplates)
 		}
 
 		// Email
