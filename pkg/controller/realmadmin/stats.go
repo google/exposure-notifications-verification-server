@@ -51,6 +51,9 @@ func (c *Controller) HandleStats() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["hasKeyServerStats"] = hasKeyServerStats
+		if hasKeyServerStats && membership.Can(rbac.SettingsRead) {
+			m["keyServerOverride"] = s.KeyServerURLOverride
+		}
 		m.Title("Realm stats")
 		c.h.RenderHTML(w, "realmadmin/stats", m)
 	})
