@@ -76,7 +76,7 @@ func Test_SMSSignature(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					date := tc.time.UTC().Format("2006-01-02")
+					date := tc.time.UTC().Format("0102")
 					if got, want := string(b), date; got != want {
 						t.Errorf("expected %q to be %q", got, want)
 					}

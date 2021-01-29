@@ -57,7 +57,7 @@ func SignSMS(signer crypto.Signer, keyID string, t time.Time, purpose SMSPurpose
 		return "", fmt.Errorf("failed to sign sms: %w", err)
 	}
 
-	date := t.Format(project.RFC3339Date)
+	date := t.Format("0102")
 	return newBody + b64([]byte(date)) + colon + b64([]byte(keyID)) + colon + b64(sig), nil
 }
 
