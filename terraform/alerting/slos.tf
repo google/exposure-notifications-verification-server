@@ -15,11 +15,8 @@
 locals {
   default_per_service_slo = {
     enable_fast_burn_alert  = false
-    enable_slow_burn_alert  = false
     availability_goal       = 0.995
     enable_availability_slo = false
-    enable_latency_slo      = false # disabled by default due to low request volume; use latency alert for those
-    latency_goal            = 0.95
     latency_threshold       = 60000 # 60 seconds, in ms
     enable_latency_alert    = false
     latency_alert_duration  = 300000 # 5 minutes, in ms
@@ -54,7 +51,6 @@ module "services" {
   service_name      = each.key
   display_name      = each.key
   latency_threshold = each.value.latency_threshold
-  latency_goal      = each.value.latency_goal
 }
 
 module "latency-alerts" {
