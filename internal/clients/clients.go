@@ -119,6 +119,21 @@ func (c *client) doOK(req *http.Request, out interface{}) error {
 	return nil
 }
 
+// errorResponse is used to extract an error from the response, if it exists.
+// This is a fallback for when all else fails.
+type errorResponse struct {
+	Error1 string `json:"error"`
+	Error2 string `json:"Error"`
+}
+
+// Error returns the error string, if any.
+func (e *errorResponse) Error() string {
+	if e.Error1 != "" {
+		return e.Error1
+	}
+	return e.Error2
+}
+
 // do executes the request and decodes the result into out. It returns the http
 // response. It does NOT do error checking on the response code.
 func (c *client) do(req *http.Request, out interface{}) (*http.Response, error) {
@@ -128,21 +143,29 @@ func (c *client) do(req *http.Request, out interface{}) (*http.Response, error) 
 	}
 	defer resp.Body.Close()
 
-	r := io.LimitReader(resp.Body, c.maxBodySize)
-
 	errPrefix := fmt.Sprintf("%s %s - %d", strings.ToUpper(req.Method), req.URL.String(), resp.StatusCode)
+
+	r := io.LimitReader(resp.Body, c.maxBodySize)
+	body, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to read body: %w", errPrefix, err)
+	}
 
 	ct := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(ct, "application/json") {
-		b, _ := ioutil.ReadAll(r)
 		return nil, fmt.Errorf("%s: response content-type is not application/json (got %s): body: %s",
-			errPrefix, ct, string(b))
+			errPrefix, ct, body)
 	}
 
-	if err := json.NewDecoder(r).Decode(out); err != nil {
-		b, err := ioutil.ReadAll(r)
+	var errResp errorResponse
+	if err := json.Unmarshal(body, &errResp); err == nil && errResp.Error() != "" {
+		return nil, fmt.Errorf("%s: error response from API: %s, body: %s",
+			errPrefix, errResp.Error(), body)
+	}
+
+	if err := json.Unmarshal(body, out); err != nil {
 		return nil, fmt.Errorf("%s: failed to decode JSON response: %w: body: %s",
-			errPrefix, err, string(b))
+			errPrefix, err, body)
 	}
 	return resp, nil
 }
