@@ -44,10 +44,6 @@ type RedirectConfig struct {
 	// auto-reload is enabled.
 	DevMode bool `env:"DEV_MODE"`
 
-	// OnboardingDomain is the top-level ENX redirect domain (e.g. example.com).
-	// Requests routed to this domain trigger the generic onboarding flow.
-	OnboardingDomain string `env:"ONBOARDING_DOMAIN"`
-
 	// A map of hostnames to redirect to ens:// and a mapping to the region.
 	// For example to redirect
 	//   region.example.com to region US-AA
