@@ -10,10 +10,6 @@ variable "display_name" {
     type = string
 }
 
-variable "latency_goal" {
-  type = number
-}
-
 variable "latency_threshold" {
   type = number
 }
