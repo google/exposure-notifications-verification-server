@@ -84,23 +84,4 @@ module "availability-slos" {
   service_name           = each.key
   goal                   = each.value.availability_goal
   enable_fast_burn_alert = each.value.enable_fast_burn_alert
-  enable_slow_burn_alert = each.value.enable_slow_burn_alert
-}
-
-module "latency-slos" {
-  source = "./module.latency-slo"
-
-  project = var.project
-
-  notification_channels = google_monitoring_notification_channel.paging
-
-  for_each = merge(local.service_configs, var.slo_thresholds_overrides)
-
-  enabled                = each.value.enable_latency_slo
-  custom_service_id      = each.key
-  service_name           = each.key
-  goal                   = each.value.latency_goal
-  threshold              = each.value.latency_threshold
-  enable_fast_burn_alert = each.value.enable_fast_burn_alert
-  enable_slow_burn_alert = each.value.enable_slow_burn_alert
 }
