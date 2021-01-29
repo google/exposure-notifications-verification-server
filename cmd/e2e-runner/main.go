@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -31,7 +30,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
@@ -197,74 +195,8 @@ func handleENXRedirect(client *clients.ENXRedirectClient, h render.Renderer) htt
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// Android
-		androidResp, err := client.AndroidAssetLinks(ctx)
-		if err != nil {
-			renderJSONError(w, r, h, fmt.Errorf("android asset links: %w", err))
-			return
-		}
-		if len(androidResp) == 0 || androidResp[0].Target.PackageName == "" {
-			renderJSONError(w, r, h, fmt.Errorf("expected android assetlinks, got %#v", androidResp))
-			return
-		}
-
-		// iOS
-		iosResp, err := client.AppleSiteAssociation(ctx)
-		if err != nil {
-			renderJSONError(w, r, h, fmt.Errorf("apple site association: %w", err))
-			return
-		}
-		if iosResp == nil || len(iosResp.Applinks.Details) == 0 {
-			renderJSONError(w, r, h, fmt.Errorf("expected ios site association apps, got %#v", iosResp))
-			return
-		}
-
-		// Android redirect
-		androidHTTPResp, err := client.CheckRedirect(ctx, "android")
-		if err != nil {
-			renderJSONError(w, r, h, fmt.Errorf("android redirect: %w", err))
-			return
-		}
-		defer androidHTTPResp.Body.Close()
-		if got, want := androidHTTPResp.StatusCode, 303; got != want {
-			renderJSONError(w, r, h, fmt.Errorf("expected android redirect code %d to be %d", got, want))
-			return
-		}
-		if got, want := androidHTTPResp.Header.Get("Location"), "android.test.app"; !strings.Contains(got, want) {
-			controller.InternalError(w, r, h, fmt.Errorf("expected android redirect location %q to contain %q", got, want))
-			return
-		}
-
-		// iOS redirect
-		iosHTTPResp, err := client.CheckRedirect(ctx, "iphone")
-		if err != nil {
-			renderJSONError(w, r, h, fmt.Errorf("iphone redirect: %w", err))
-			return
-		}
-		defer iosHTTPResp.Body.Close()
-		if got, want := iosHTTPResp.StatusCode, 303; got != want {
-			renderJSONError(w, r, h, fmt.Errorf("expected ios redirect code %d to be %d", got, want))
-			return
-		}
-		if got, want := iosHTTPResp.Header.Get("Location"), "ios.test.app"; !strings.Contains(got, want) {
-			renderJSONError(w, r, h, fmt.Errorf("expected ios redirect location %q to contain %q", got, want))
-			return
-		}
-
-		// unknown redirect
-		unknownHTTPResp, err := client.CheckRedirect(ctx, "unknown")
-		if err != nil {
-			renderJSONError(w, r, h, fmt.Errorf("unknown redirect: %w", err))
-			return
-		}
-		defer unknownHTTPResp.Body.Close()
-		if got, want := unknownHTTPResp.StatusCode, 303; got != want {
-			renderJSONError(w, r, h, fmt.Errorf("expected unknown redirect code %d to be %d", got, want))
-			return
-		}
-		// expecting generic onboarding redirect
-		if got, want := unknownHTTPResp.Header.Get("Location"), "https://www.google.com/covid19/exposurenotifications"; !strings.Contains(got, want) {
-			renderJSONError(w, r, h, fmt.Errorf("expected unknown redirect location %q to contain %q", got, want))
+		if err := client.RunE2E(ctx); err != nil {
+			renderJSONError(w, r, h, err)
 			return
 		}
 

@@ -29,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 const (
@@ -37,12 +38,20 @@ const (
 	maxInterval    = 144
 )
 
+var testDatabaseInstance *database.TestInstance
+
+func TestMain(m *testing.M) {
+	testDatabaseInstance = database.MustTestInstance()
+	defer testDatabaseInstance.MustClose()
+	m.Run()
+}
+
 func TestIntegration(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
 
-	integrationSuite := envstest.NewIntegrationSuite(t)
+	integrationSuite := envstest.NewIntegrationSuite(t, testDatabaseInstance)
 	adminAPIClient := integrationSuite.AdminAPIServerClient()
 	apiServerClient := integrationSuite.APIServerClient()
 

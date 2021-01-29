@@ -48,6 +48,36 @@ func WithMaxBodySize(max int64) Option {
 	}
 }
 
+// WithHostOverride creates a new client that overrides the Host header.
+func WithHostOverride(host string) Option {
+	return func(c *client) *client {
+		ot := c.httpClient.Transport
+		c.httpClient.Transport = &hostOverrideRoundTripper{
+			host: host,
+			def:  ot,
+		}
+		return c
+	}
+}
+
+type hostOverrideRoundTripper struct {
+	host string
+	def  http.RoundTripper
+}
+
+func (h *hostOverrideRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	if h.host != "" {
+		r = r.Clone(context.Background())
+		r.Host = h.host
+	}
+
+	def := h.def
+	if def == nil {
+		def = http.DefaultTransport
+	}
+	return def.RoundTrip(r)
+}
+
 // client is a private client that handles the heavy lifting.
 type client struct {
 	httpClient  *http.Client

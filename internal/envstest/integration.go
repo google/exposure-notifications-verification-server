@@ -29,18 +29,8 @@ type IntegrationSuite struct {
 }
 
 // NewIntegrationSuite creates a new test suite for local integration testing.
-func NewIntegrationSuite(tb testing.TB) *IntegrationSuite {
+func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInstance) *IntegrationSuite {
 	tb.Helper()
-
-	testDatabaseInstance, err := database.NewTestInstance()
-	if err != nil {
-		tb.Fatal(err)
-	}
-	tb.Cleanup(func() {
-		if err := testDatabaseInstance.Close(); err != nil {
-			tb.Fatal(err)
-		}
-	})
 
 	adminAPIServerConfig := NewAdminAPIServerConfig(tb, testDatabaseInstance)
 	apiServerConfig := NewAPIServerConfig(tb, testDatabaseInstance)
