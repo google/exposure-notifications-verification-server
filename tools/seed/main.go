@@ -339,7 +339,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 	for day := 1; day <= 30; day++ {
 		max := rand.Intn(150)
 		for i := 0; i < max; i++ {
-			date := now.Add(time.Duration(day) * -24 * time.Hour)
+			date := now.Add(time.Duration(day) * -24 * time.Duration(rand.Intn(15)+1) * time.Hour)
 
 			issuingUserID := uint(0)
 			issuingAppID := uint(0)
