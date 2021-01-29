@@ -17,7 +17,7 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    Publish requests
+    TEK publish metrics
   </div>
   <div id="keyserver_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -30,7 +30,7 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    Publish requests by OS
+    Total publish requests (by device operating system)
   </div>
   <div id="keyserver_os_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -43,7 +43,7 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    TEK age distribution <span class="sum-title">(7 day sum)</span>
+    EN days active before upload <span class="sum-title">(7 day sum)</span>
   </div>
   <div id="keyserver_tek_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -78,7 +78,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Publish requests</h5>
+        <h5 class="modal-title">TEK publish metrics</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -89,7 +89,7 @@
           grouped by UTC day.
         </p>
 
-        <strong>Total TEKs published</strong>
+        <strong>Total # TEKs published</strong>
         <p>
           This line tracks the total number of TEKs published to the key-server.
           This is expected to be similar to the number of tokens claimed on the verification server.
@@ -115,7 +115,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Publish requests by OS</h5>
+        <h5 class="modal-title">Publish requests (by device operating system<)/h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -134,14 +134,14 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">TEK age distribution</h5>
+        <h5 class="modal-title">EN days active before upload</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body mb-n3">
         <p>
-          This graph shows a distribution of the ages of temporary exposure keys.
+          This graph shows a distribution of the ages of temporary exposure keys by how many days old each TEK is.
           Move the slider to see how the distribution has changed over time.
         </p>
       </div>
@@ -232,7 +232,7 @@
 
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'Date');
-    dataTable.addColumn('number', 'TEKs published');
+    dataTable.addColumn('number', 'Total # TEKs published');
     dataTable.addColumn('number', 'Revision requests');
     dataTable.addColumn('number', 'Requests missing onset');
 
@@ -372,7 +372,7 @@
       },
       legend: { position: 'none' },
       hAxis: {
-        title: 'Days old',
+        title: 'TEK days old',
         gridlines: { color: 'transparent' },
         ticks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
         showTextEvery: 1,
