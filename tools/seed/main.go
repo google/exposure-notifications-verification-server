@@ -405,7 +405,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 				app := randomDeviceAuthorizedApp()
 
 				// randomize issue to claim time
-				if rand.Intn(3) == 0 {
+				if percentChance(25) {
 					date = date.Add(time.Duration(rand.Intn(12))*time.Hour + time.Second)
 				} else {
 					date = date.Add(time.Duration(rand.Intn(60))*time.Minute + time.Second)
