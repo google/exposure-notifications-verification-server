@@ -63,12 +63,9 @@
     var chartData = [];
     let smoothing = 7;
 
-    let $slider =
-      $(`<input type="range" class="slider w-100" id="tek_slider" list="tek_slide_ticks">`);
-    let $onsetSlider =
-      $(`<input type="range" class="slider w-100" id="onset_slider" list="onset_slide_ticks">`);
-    let $issueAgeSlider =
-      $(`<input type="range" class="slider w-100" id="issue_age_slider" list="issue_age_ticks">`);
+    let $slider = $('#tek_slider');
+    let $onsetSlider = $('#onset_slider');
+    let $issueAgeSlider = $('#issue_age_slider');
 
     $(() => redrawCharts(chartData, 300));
 

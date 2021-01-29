@@ -24,8 +24,9 @@
   <div id="issue_age_dist_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
-  <div class="slidecontainer" id="issue_age_slide_div">
-  <datalist id="issue_age_ticks"></datalist>
+  <div class="slidecontainer pl-5 pr-5">
+    <input type="range" class="slider w-100" id="issue_age_slider" list="issue_age_ticks">
+    <datalist id="issue_age_ticks"></datalist>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
     <a href="#" data-toggle="modal" data-target="#issue-claim-dist-modal">Learn more about this chart</a>
@@ -456,7 +457,6 @@
   }
 
   $(function() {
-    $('#issue_age_slide_div').append($issueAgeSlider)
     $issueAgeSlider.on("input", function(event) {
       if (!claimStats) {
         return
