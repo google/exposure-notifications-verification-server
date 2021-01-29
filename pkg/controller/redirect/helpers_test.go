@@ -318,14 +318,6 @@ func TestDecideRedirect(t *testing.T) {
 			appStoreData: &appLinkNeither,
 			expected:     "",
 		},
-		{
-			name:         "android_onboarding",
-			url:          "https://moosylvania.gov/",
-			enxEnabled:   false,
-			userAgent:    userAgentAndroid,
-			appStoreData: &appLinkNeither,
-			expected:     "market://search?q=exposure%20notifications",
-		},
 
 		// iOS
 		{
@@ -359,14 +351,6 @@ func TestDecideRedirect(t *testing.T) {
 			appStoreData: &appLinkNeither,
 			expected:     "",
 		},
-		{
-			name:         "ios_onboarding",
-			url:          "https://moosylvania.gov/",
-			enxEnabled:   false,
-			userAgent:    userAgentIOS,
-			appStoreData: &appLinkNeither,
-			expected:     "ens://onboarding",
-		},
 
 		// Other
 		{
@@ -375,14 +359,6 @@ func TestDecideRedirect(t *testing.T) {
 			userAgent:    userAgentNeither,
 			appStoreData: &appLinkBoth,
 			expected:     "",
-		},
-		// Other
-		{
-			name:         "other_onboarding",
-			url:          "https://moosylvania.gov/",
-			userAgent:    userAgentNeither,
-			appStoreData: &appLinkBoth,
-			expected:     "https://www.google.com/covid19/exposurenotifications/",
 		},
 	}
 
