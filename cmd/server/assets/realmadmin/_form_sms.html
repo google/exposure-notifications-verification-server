@@ -117,9 +117,9 @@
   <hr>
 
   <div>
-    <div class="btn-grou dropright pb-2">
+    <div class="btn-group dropright pb-2">
       {{if $realm.ErrorsFor "smsTextTemplate"}}<span class="text-danger oi oi-warning"></span>{{end}}
-      <button type="button" id="sms-template-dropdown-title" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <button type="button" id="sms-template-dropdown-title" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         {{(index .smsTemplates 0).Label}}
       </button>
       <div class="dropdown-menu" id="sms-template-menu">
@@ -138,6 +138,7 @@
       Errors found for one or more SMS templates
     </div>
     {{end}}
+
     {{range $i, $v := .smsTemplates}}
     <div id="sms-template-{{$i}}-div" {{if ne $i 0}}class="d-none"{{end}}>
       <div class="form-label-group">
@@ -145,7 +146,7 @@
         <label for="sms-text-template">Template label</label>
       </div>
       <div class="form-label-group">
-        <textarea name="sms_text_template_{{$i}}" class="form-control text-monospace {{if $realm.ErrorsFor $v.Label}}is-invalid{{end}}"
+        <textarea name="sms_text_template_{{$i}}" class="form-control text-monospace {{if $realm.ErrorsFor $v.Label}}is-invalid{{end}} sms-text-template"
           rows="5" placeholder="SMS text template">{{$v.Value}}</textarea>
         <label for="sms-text-template">SMS text template</label>
       </div>
@@ -157,7 +158,19 @@
       <button class="btn btn-danger mb-3 {{if eq $i 0}}d-none{{end}}" type="button" {{if ne $i 0}}onClick="removeTemplate('sms-template-{{$i}}');"{{end}}>Delete template</button>
     </div>
     {{end}}
-    <span  id="templates-end"></span>
+    <span id="templates-end"></span>
+
+    <div id="sms-preview">
+      <p>
+        Below is a preview of how your message could appear on mobile devices.
+        Please note that many mobile carriers do not guarantee that messages are
+        delivered in the order in which they are sent. You should take special
+        care to ensure that no links occur across a message boundary.
+      </p>
+
+      <div id="message-bubbles" class="offset-sm-0 col-sm-12 offset-md-2 col-md-8 offset-lg-3 col-lg-6"></div>
+    </div>
+
     <small class="form-text text-muted">
       The SMS message will be constructed based on the template you provide. The overall
       length of of the SMS message should not exceed 160 characters, or your message will need to be split
@@ -258,5 +271,162 @@
     <input type="submit" id="update-sms" class="btn btn-primary btn-block" value="Update SMS settings" />
   </div>
 </form>
+
+<script type="text/javascript">
+  //
+  // SMS preview builder
+  //
+  $(function() {
+    function randShortCode(length) {
+      const chars = '0123456789';
+
+      let result = '';
+      for(let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    function randLongCode(length) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+      let result = '';
+      for(let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    function buildENSLink(longCode) {
+      {{if .enxRedirectDomain}}
+        return 'https://{{toLower $realm.RegionCode}}.{{.enxRedirectDomain}}/v?c='+longCode;
+      {{else}}
+        return 'ens://v?={{$realm.RegionCode}}&c='+longCode;
+      {{end}}
+    }
+
+    const smsLength = 153;
+    const smsSplitter = new RegExp(`.{1,${smsLength}}`, 'g');
+    const region = '{{$realm.RegionCode}}';
+    const shortCode = randShortCode({{$realm.CodeLength}});
+    const shortExpires = {{$realm.GetCodeDurationMinutes}};
+    const longCode = randLongCode({{$realm.LongCodeLength}});
+    const longExpires = {{$realm.GetLongCodeDurationHours}};
+    const ensLink = buildENSLink(longCode);
+    const $messageBubbles = $('div#message-bubbles');
+    const $messageBubble = $('<div class="alert alert-secondary" role="alert"></div>');
+
+    function buildTemplateSplits(target) {
+      $messageBubbles.empty();
+      if(!target) {
+        return;
+      }
+
+      let val = ($(target).val() || '').trim();
+      val = val.replace(/\[region\]/g, region);
+      val = val.replace(/\[code\]/g, shortCode);
+      val = val.replace(/\[expires\]/g, shortExpires);
+      val = val.replace(/\[longcode\]/g, longCode);
+      val = val.replace(/\[longexpires\]/g, longExpires);
+      val = val.replace(/\[enslink\]/g, ensLink);
+
+      let parts = val.match(smsSplitter);
+      if(!parts) {
+        return;
+      }
+
+      for(let i = 0; i < parts.length; i++) {
+        let msg = parts[i];
+        $messageBubble.clone().text(msg).appendTo($messageBubbles);
+      }
+    }
+
+    // When the textarea changes, rebuild the splits.
+    const $templates = $('textarea.sms-text-template');
+    $(document).on('keyup', $templates, function(e) {
+      buildTemplateSplits(e.target);
+    });
+
+    // On initial page load, build the split.
+    buildTemplateSplits($templates[0]);
+
+    //
+    // SMS templates builder
+    //
+    let $SMSDropdownTitle = $('#sms-template-dropdown-title');
+    let $SMSDropdownMenu = $('#sms-template-menu');
+    let $divider = $('#sms-template-dropdown-divider');
+    let $end = $('#templates-end');
+    let $defaultTemplate = $('#sms-template-0');
+    let $defaultTemplateDiv = $('#sms-template-0-div');
+    let $lastActive = $defaultTemplate;
+
+    $SMSDropdownMenu.children('a').each(
+      function(i) {
+        $(this).on('click', event => selectSMSTemplate($(this), event));
+      }
+    );
+
+    function removeTemplate(name) {
+      $('#sms-template-0').trigger("click");
+      $('#'+name).remove();
+      $('#'+name+'-div').remove();
+    }
+
+    function selectSMSTemplate($elem, event) {
+      event.preventDefault();
+
+      if ($lastActive == $elem) {
+        return;
+      }
+      if ($elem.attr('id') == "sms-template-new") {
+        $elem = newTemplate();
+      }
+
+      $elem.addClass('active');
+      $lastActive.removeClass('active');
+      $SMSDropdownTitle.text($elem.text());
+      $('#'+$lastActive.attr('id')+'-div').addClass('d-none');
+      $('#'+$elem.attr('id')+'-div').removeClass('d-none');
+      $lastActive = $elem;
+
+      $textarea = $('#'+$elem.attr('id')+'-div').find('textarea.sms-text-template');
+      buildTemplateSplits($textarea);
+    }
+
+    function newTemplate() {
+      let next = $SMSDropdownMenu.children().length - 2;
+      let $newTemplate = $defaultTemplate.clone();
+      $newTemplate.attr('id',`sms-template-${next}`);
+      $newTemplate.text(`SMS template ${next}`);
+      $newTemplate.on('click', event => selectSMSTemplate($newTemplate, event));
+      $newTemplate.insertBefore($divider);
+
+
+      let $newNode = $defaultTemplateDiv.clone();
+      $newNode.attr('id', `sms-template-${next}-div`);
+
+      let $label = $newNode.find('input');
+      $label.attr('readonly', false);
+      $label.attr('name', `sms_text_label_${next}`);
+      $label.val($newTemplate.text());
+      $label.on("change keyup paste", () => {
+        $$newTemplate.text($label.val());
+        $SMSDropdownTitle.text($label.val());
+      });
+
+      let $textArea = $newNode.find('textarea');
+      $textArea.attr('name', `sms_text_template_${next}`);
+      $textArea.val('Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)');
+
+      let $deleteButton = $newNode.find('button');
+      $deleteButton.click(() => removeTemplate(`sms-template-${next}`));
+      $deleteButton.removeClass('d-none');
+
+      $newNode.insertBefore($end);
+      return $newTemplate;
+    }
+  });
+</script>
 
 {{end}}
