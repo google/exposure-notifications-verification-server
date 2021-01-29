@@ -19,6 +19,7 @@
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
   <div class="slidecontainer" id="issue_age_slide_div">
+  <datalist id="issue_age_ticks"></datalist>
   </div>
 
   <div class="card-body">
@@ -121,6 +122,15 @@
         $issueAgeSlider.attr('max', data.statistics.length);
         $issueAgeSlider.val(data.statistics.length);
       }
+
+      let $ageTicks = $("#issue_age_ticks");
+      $ageTicks.empty();
+      for (i = 0; i < data.statistics.length; i++) {
+        let $opt = $('<option/>');
+        $opt.val(i);
+        $ageTicks.append($opt);
+      }
+
 
       drawClaimChart(data);
       drawMeanClaimAgeChart(data);
@@ -353,7 +363,13 @@
     });
   }
 
+  let ageCache = new Map();
   function getClaimAgeDataTable(dateIndex) {
+    let key = "s" + smoothing + "i" + dateIndex;
+    if (ageCache.has(key)) {
+      return ageCache.get(key);
+    }
+
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('number', 'days');
     dataTable.addColumn('number', 'count');
@@ -379,6 +395,7 @@
       }
       dataTable.addRow(r);
     }
+    ageCache.set(key, dataTable);
     return dataTable;
   }
 

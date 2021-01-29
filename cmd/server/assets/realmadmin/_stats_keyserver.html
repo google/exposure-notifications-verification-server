@@ -27,7 +27,7 @@
   </div>
   <div class="slidecontainer" id="tek_slide_div">
   </div>
-  <datalist id="tektickmarks"></datalist>
+  <datalist id="tek_slide_ticks"></datalist>
   <div class="card-body">
     <h5 class="card-title">Onset-to-upload distribution <span class="sum-title">(7 day sum)</span></h5>
   </div>
@@ -108,22 +108,22 @@
       $onsetSlider.attr('value',data.length);
       $onsetSlider.attr('step', 1);
       $onsetSlider.val(data.length);
-  
-      let tekTicks = $("#tektickmarks");
-      tekTicks.empty();
+
+      let $tekTicks = $("#tek_slide_ticks");
+      $tekTicks.empty();
       for (i = Math.min(smoothing, data.length); i < data.length; i++) {
-        let opt = $('<option/>');
-        opt.val(i);
-        opt.attr('label', data[i].day.substring(0,10));
-        tekTicks.append(opt);
+        let $opt = $('<option/>');
+        $opt.val(i);
+        $opt.attr('label', data[i].day.substring(0,10));
+        $tekTicks.append($opt);
       }
 
-      let onsetTicks = $("#onset_slide_ticks");
-      onsetTicks.empty();
+      let $tekTicks = $("#onset_slide_ticks");
+      $tekTicks.empty();
       for (i = 0; i < data.length; i++) {
-        let opt = $('<option/>');
-        opt.val(i);
-        onsetTicks.append(opt);
+        let $opt = $('<option/>');
+        $opt.val(i);
+        $onsetTicks.append($opt);
       }
 
       drawStatsChart(data);
@@ -300,8 +300,8 @@
       title: `${smoothing} days from ` + stats[0].day.split("T")[0],
     };
 
-    tekChart = new google.visualization.ColumnChart($div.get(0)); 
-    tekData = getTEKDataTable(0);   
+    tekChart = new google.visualization.ColumnChart($div.get(0));
+    tekData = getTEKDataTable(0);
     tekChart.draw(tekData, tekOptions);
     chartData.push({
       chart: tekChart,
@@ -350,7 +350,7 @@
     return dataTable;
   }
 
-  
+
   let onsetChart;
   let onsetOptions;
   let onsetData;
@@ -396,7 +396,7 @@
     };
 
     onsetChart = new google.visualization.ColumnChart($div.get(0));
-    onsetData = getOnsetDataTable(0);  
+    onsetData = getOnsetDataTable(0);
     onsetChart.draw(onsetData, onsetOptions);
     chartData.push({
       chart: onsetChart,
