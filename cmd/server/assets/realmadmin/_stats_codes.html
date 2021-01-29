@@ -322,6 +322,7 @@
   let ageChart;
   let ageOptions;
   let ageData;
+  let ageVMax = 1;
   function drawClaimAgeChart(data) {
     let $div = $('#issue_age_dist_chart_div');
 
@@ -330,6 +331,10 @@
       return;
     }
     claimStats = data.statistics
+
+    for (i = 0; i < claimStats.length - smoothing; i++) {
+      getClaimAgeDataTable(i);
+    }
 
     ageOptions = {
       colors: ['#316395'],
@@ -348,6 +353,10 @@
         ticks: [{v:1, f:'1m'}, {v:2, f:'5m'}, {v:3, f:'15m'}, {v:4, f:'30m'}, {v:5, f:'1h'},
           {v:6, f:'2h'}, {v:7, f:'3h'}, {v:8, f:'6h'}, {v:9, f:'12h'}, {v:10, f:'24h'}],
         showTextEvery: 1,
+      },
+      vAxis: {
+        minValue: 0,
+        maxValue: ageVMax,
       },
       titlePosition: "out",
       title: `${smoothing} days from ` + claimStats[0].date.split("T")[0],
@@ -388,6 +397,9 @@
     }
 
     for (i = 0; i < table.length; i++) {
+      if (table[i] > ageVMax) {
+        ageVMax = table[i]
+      }
       let r = [i+1, table[i],"",""]
       if (i == 9) {
         r[2] = "#6c757d";
