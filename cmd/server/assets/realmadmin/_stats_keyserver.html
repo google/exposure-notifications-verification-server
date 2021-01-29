@@ -46,9 +46,10 @@
   <div id="keyserver_tek_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
-  <div class="slidecontainer" id="tek_slide_div">
+  <div class="slidecontainer pr-5 pl-5">
+    <input type="range" class="slider w-100" id="tek_slider" list="tek_slide_ticks">
+    <datalist id="tek_slide_ticks"></datalist>
   </div>
-  <datalist id="tek_slide_ticks"></datalist>
   <small class="card-footer d-flex justify-content-between text-muted">
     <a href="#" data-toggle="modal" data-target="#tek-age-modal">Learn more about this chart</a>
   </small>
@@ -62,9 +63,10 @@
   <div id="keyserver_onset_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
-  <div class="slidecontainer" id="onset_slide_div">
+  <div class="slidecontainer pr-5 pl-5">
+    <input type="range" class="slider w-100" id="onset_slider" list="onset_slide_ticks"/>
+    <datalist id="onset_slide_ticks"></datalist>
   </div>
-  <datalist id="onset_slide_ticks"></datalist>
   <small class="card-footer d-flex justify-content-between text-muted">
     <a href="#" data-toggle="modal" data-target="#onset-to-upload-modal">Learn more about this chart</a>
   </small>
@@ -526,7 +528,6 @@
   }
 
   $(function() {
-    $('#tek_slide_div').append($slider)
     $slider.on("input", function(event) {
       if (!stats) {
         return
@@ -543,7 +544,6 @@
       tekChart.draw(tekData, tekOptions);
     });
 
-    $('#onset_slide_div').append($onsetSlider)
     $onsetSlider.on("input", function(event) {
       if (!stats) {
         return
