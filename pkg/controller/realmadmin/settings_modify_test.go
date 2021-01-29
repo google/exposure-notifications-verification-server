@@ -168,16 +168,14 @@ func TestHandleSettings(t *testing.T) {
 		})
 
 		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
-			"codes":               []string{"1"},
-			"allowed_test_types":  []string{"2"},
-			"require_date":        []string{"1"},
-			"allow_bulk":          []string{"1"},
-			"sms_text_label_0":    []string{"Default SMS template"},
-			"sms_text_template_0": []string{"[longcode]"},
-			"code_length":         []string{"7"},
-			"code_duration":       []string{"60"},
-			"long_code_length":    []string{"22"},
-			"long_code_duration":  []string{"24"},
+			"codes":              []string{"1"},
+			"allowed_test_types": []string{"2"},
+			"require_date":       []string{"1"},
+			"allow_bulk":         []string{"1"},
+			"code_length":        []string{"7"},
+			"code_duration":      []string{"60"},
+			"long_code_length":   []string{"22"},
+			"long_code_duration": []string{"24"},
 		}.Encode()))
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
@@ -205,9 +203,6 @@ func TestHandleSettings(t *testing.T) {
 		}
 		if got, want := realm.AllowBulkUpload, true; got != want {
 			t.Errorf("expected %t to be %t", got, want)
-		}
-		if got, want := realm.SMSTextTemplate, "[longcode]"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
 		}
 		if got, want := realm.CodeLength, uint(7); got != want {
 			t.Errorf("expected %d to be %d", got, want)
@@ -410,7 +405,7 @@ func TestHandleSettings(t *testing.T) {
 		}
 	})
 
-	t.Run("sms/validation_error", func(t *testing.T) {
+	t.Run("sms", func(t *testing.T) {
 		t.Parallel()
 
 		realm := database.NewRealmWithDefaults("sms")
@@ -431,8 +426,58 @@ func TestHandleSettings(t *testing.T) {
 		})
 
 		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
-			"sms":                []string{"1"},
-			"twilio_account_sid": []string{"abcd1234"},
+			"sms":                 []string{"1"},
+			"sms_text_label_0":    []string{"Default SMS template"},
+			"sms_text_template_0": []string{"[longcode]"},
+		}.Encode()))
+		r = r.Clone(ctx)
+		r.Header.Set("Accept", "text/html")
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 303; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+
+		realm, err := harness.Database.FindRealm(realm.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := realm.SMSTextTemplate, "[longcode]"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
+	t.Run("sms/validation_error", func(t *testing.T) {
+		t.Parallel()
+
+		realm := database.NewRealmWithDefaults("sms_validation")
+		realm.EnableENExpress = false
+		if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		handler := c.HandleSettings()
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
+		})
+
+		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+			"sms":                 []string{"1"},
+			"twilio_account_sid":  []string{"abcd1234"},
+			"sms_text_label_0":    []string{"Default SMS template"},
+			"sms_text_template_0": []string{"[longcode]"},
 		}.Encode()))
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
@@ -454,7 +499,7 @@ func TestHandleSettings(t *testing.T) {
 	t.Run("email/validation_error", func(t *testing.T) {
 		t.Parallel()
 
-		realm := database.NewRealmWithDefaults("email")
+		realm := database.NewRealmWithDefaults("emai_validation")
 		realm.EnableENExpress = false
 		if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
 			t.Fatal(err)
