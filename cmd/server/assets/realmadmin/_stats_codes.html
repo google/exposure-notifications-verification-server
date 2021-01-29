@@ -11,9 +11,20 @@
     </div>
     <div id="filter_div" class="text-right" style="height: 75px;"></div>
   </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-toggle="modal" data-target="#realm-codes-modal">Learn more about this chart</a>
+    <span>
+      <span class="mr-1">Export as:</span>
+      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.json" target="_blank">JSON</a>
+    </span>
+  </small>
+</div>
 
-  <div class="card-body">
-    <h5 class="card-title">Issue-to-claim age distribution <span class="sum-title">(7 day sum)</span></h5>
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    Issue-to-claim age distribution <span class="sum-title">(7 day sum)</span>
   </div>
   <div id="issue_age_dist_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -21,9 +32,20 @@
   <div class="slidecontainer" id="issue_age_slide_div">
   <datalist id="issue_age_ticks"></datalist>
   </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-toggle="modal" data-target="#comingsoon">Learn more about this chart</a>
+    <span>
+      <span class="mr-1">Export as:</span>
+      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.json" target="_blank">JSON</a>
+    </span>
+  </small>
+</div>
 
-  <div class="card-body">
-    <h5 class="card-title">Mean issue-to-claim age</h5>
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    Mean issue-to-claim age
   </div>
   <div id="mean_claim_age_div">
     <div id="mean_claim_age_chart_div" class="h-100 w-100" style="min-height:325px;">
@@ -31,9 +53,8 @@
     </div>
     <div id="mean_claim_age_filter_div" class="text-right" style="height: 75px;"></div>
   </div>
-
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#realm-codes-modal">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#comingsoon">Learn more about this chart</a>
     <span>
       <span class="mr-1">Export as:</span>
       <a href="/stats/realm.csv" class="mr-1">CSV</a>
