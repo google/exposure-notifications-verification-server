@@ -136,7 +136,7 @@ func TestHandleExport(t *testing.T) {
 			t.Errorf("expected %d to be %d", got, want)
 		}
 
-		d := time.Now().Format(project.RFC3339Date)
+		d := time.Now().UTC().Format(project.RFC3339Date)
 		exp := fmt.Sprintf(`name,email,joined
 System admin,super@example.com,%s
 User,user@example.com,%s
