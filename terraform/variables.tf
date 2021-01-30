@@ -148,6 +148,13 @@ variable "redis_alternative_location" {
   default = "us-central1-c"
 }
 
+variable "redis_enable_auth" {
+  type    = bool
+  default = false
+
+  description = "Enable Redis authentication. The default is false because not all redis versions support authentication."
+}
+
 variable "service_environment" {
   type    = map(map(string))
   default = {}
