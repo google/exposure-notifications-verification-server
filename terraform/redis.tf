@@ -34,7 +34,7 @@ resource "google_redis_instance" "cache" {
   connect_mode       = "PRIVATE_SERVICE_ACCESS"
 
   redis_version = "REDIS_5_0"
-  auth_enabled  = true
+  auth_enabled  = var.redis_enable_auth
 
   depends_on = [
     google_project_service.services["redis.googleapis.com"],
