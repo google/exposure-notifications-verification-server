@@ -306,7 +306,7 @@
     }
 
     const smsLength = 153;
-    const smsSplitter = new RegExp(`.{1,${smsLength}}`, 'g');
+    const smsSplitter = new RegExp(`.{1,${smsLength}}`, 'gms');
     const region = '{{$realm.RegionCode}}';
     const shortCode = randShortCode({{$realm.CodeLength}});
     const shortExpires = {{$realm.GetCodeDurationMinutes}};
