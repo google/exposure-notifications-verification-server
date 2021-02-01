@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"context"
+	"fmt"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -29,16 +30,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/chromedp/chromedp"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+
+	"github.com/chromedp/chromedp"
 )
 
-// This goes to the value of a <input type="datetime-local">
-const rfc3339PartialLocal = "2006-01-02T15:04:05"
-
-func TestAdminEvents(t *testing.T) {
+func TestAdminUsersIndex(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -66,24 +64,23 @@ func TestAdminEvents(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleEventsShow())
-		mux.Handle("/", c.HandleEventsShow())
+		mux.Handle("/{id}", c.HandleUsersIndex())
+		mux.Handle("/", c.HandleUsersIndex())
 
 		envstest.ExerciseSessionMissing(t, mux)
 		envstest.ExerciseBadPagination(t, &database.Membership{}, mux)
 	})
 
-	t.Run("list_internal_error", func(t *testing.T) {
+	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
 		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
-
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleEventsShow()).Methods("GET")
+		mux.Handle("/", c.HandleUsersIndex()).Methods("GET")
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -103,42 +100,12 @@ func TestAdminEvents(t *testing.T) {
 		}
 	})
 
-	t.Run("list_realm_internal_error", func(t *testing.T) {
-		t.Parallel()
-
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
-
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleEventsShow()).Methods("GET")
-
-		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
-		ctx = controller.WithUser(ctx, &database.User{})
-
-		r := httptest.NewRequest("GET", "/?realm_id=1", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
-
-		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
-		}
-	})
-
-	t.Run("lists_all", func(t *testing.T) {
+	t.Run("lists", func(t *testing.T) {
 		t.Parallel()
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleEventsShow()).Methods("GET")
+		mux.Handle("/", c.HandleUsersIndex()).Methods("GET")
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -158,18 +125,18 @@ func TestAdminEvents(t *testing.T) {
 		}
 	})
 
-	t.Run("lists_system", func(t *testing.T) {
+	t.Run("lists_sysadmins", func(t *testing.T) {
 		t.Parallel()
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleEventsShow()).Methods("GET")
+		mux.Handle("/", c.HandleUsersIndex()).Methods("GET")
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/?realm_id=0", nil)
+		r := httptest.NewRequest("GET", "/?filter=systemAdmins", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -196,53 +163,138 @@ func TestAdminEvents(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		eventTime, err := time.Parse(time.RFC3339, "2020-03-11T12:00:00Z")
-		if err != nil {
-			t.Fatal(err)
-		}
-		audit := &database.AuditEntry{
-			RealmID:       0, // system entry
-			Action:        "test action",
-			TargetID:      "testTargetID",
-			TargetDisplay: "test target",
-			ActorID:       "testActorID",
-			ActorDisplay:  "test actor",
-			CreatedAt:     eventTime,
-		}
-		harness.Database.RawDB().Save(audit)
-
-		// Create a browser runner.
 		browserCtx := browser.New(t)
 		taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 		defer done()
 
 		if err := chromedp.Run(taskCtx,
-			// Pre-authenticate the user.
 			browser.SetCookie(cookie),
-
-			// Visit /admin
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/events`),
-
-			// Wait for render.
-			chromedp.WaitVisible(`body#admin-events-index`, chromedp.ByQuery),
-
-			// Search from and hour before to and hour after our event
-			chromedp.SetValue(`#from`, eventTime.Add(-time.Hour).Format(rfc3339PartialLocal), chromedp.ByQuery),
-			chromedp.SetValue(`#to`, eventTime.Add(time.Hour).Format(rfc3339PartialLocal), chromedp.ByQuery),
-			chromedp.Submit(`form#search-form`, chromedp.ByQuery),
-
-			// Wait for the search result.
-			chromedp.WaitVisible(`#results #event`, chromedp.ByQuery),
-
-			// Search an hour before the event.
-			chromedp.SetValue(`#from`, eventTime.Add(-2*time.Hour).Format(rfc3339PartialLocal), chromedp.ByQuery),
-			chromedp.SetValue(`#to`, eventTime.Add(-time.Hour).Format(rfc3339PartialLocal), chromedp.ByQuery),
-			chromedp.Submit(`form#search-form`, chromedp.ByQuery),
-
-			// Assert no event found
-			chromedp.WaitNotPresent(`#results #event`, chromedp.ByQuery),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/users`),
+			chromedp.WaitVisible(`body#admin-users-index`, chromedp.ByQuery),
 		); err != nil {
 			t.Fatal(err)
+		}
+	})
+}
+
+func TestAdminUserShow(t *testing.T) {
+	t.Parallel()
+
+	ctx := project.TestContext(t)
+	harness := envstest.NewServer(t, testDatabaseInstance)
+
+	locales, err := i18n.Load(harness.Config.LocalesPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	middlewares := []mux.MiddlewareFunc{
+		middleware.InjectCurrentPath(),
+		middleware.ProcessLocale(locales),
+	}
+
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
+
+		mux := mux.NewRouter()
+		mux.Use(middlewares...)
+		mux.Handle("/{id}", c.HandleUserShow())
+		mux.Handle("/", c.HandleUserShow())
+
+		envstest.ExerciseSessionMissing(t, mux)
+		envstest.ExerciseIDNotFound(t, &database.Membership{}, mux)
+	})
+
+	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
+
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+		harness.Database.SetRawDB(envstest.NewFailingDatabase())
+
+		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+		mux := mux.NewRouter()
+		mux.Use(middlewares...)
+		mux.Handle("/", c.HandleUserShow()).Methods("GET")
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithUser(ctx, &database.User{})
+
+		r := httptest.NewRequest("GET", "/", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("shows", func(t *testing.T) {
+		t.Parallel()
+
+		mux := mux.NewRouter()
+		mux.Use(middlewares...)
+		mux.Handle("/{id}", c.HandleUserShow()).Methods("GET")
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithUser(ctx, &database.User{})
+
+		r := httptest.NewRequest("GET", "/1", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 200; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("renders", func(t *testing.T) {
+		t.Parallel()
+
+		_, admin, session, err := harness.ProvisionAndLogin()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cookie, err := harness.SessionCookie(session)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		browserCtx := browser.New(t)
+		taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+		defer done()
+
+		var email string
+		if err := chromedp.Run(taskCtx,
+			browser.SetCookie(cookie),
+			chromedp.Navigate(fmt.Sprintf(`http://`+harness.Server.Addr()+`/admin/users/%d`, admin.ID)),
+			chromedp.WaitVisible(`body#admin-users-show`, chromedp.ByQuery),
+			chromedp.Text(`#user-email`, &email, chromedp.ByQuery),
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := email, admin.Email; got != want {
+			t.Errorf("expected %q to be %q", got, want)
 		}
 	})
 }

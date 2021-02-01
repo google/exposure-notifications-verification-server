@@ -24,10 +24,12 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -39,24 +41,39 @@ func TestAdminCaches(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	cfg := &config.ServerConfig{}
+	locales, err := i18n.Load(harness.Config.LocalesPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	middlewares := []mux.MiddlewareFunc{
+		middleware.InjectCurrentPath(),
+		middleware.ProcessLocale(locales),
+	}
 
 	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c := admin.New(cfg, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-		envstest.ExerciseSessionMissing(t, c.HandleCachesClear())
+
+		mux := mux.NewRouter()
+		mux.Use(middlewares...)
+		mux.Handle("/{id}", c.HandleCachesClear())
+		mux.Handle("/", c.HandleCachesClear())
+
+		envstest.ExerciseSessionMissing(t, mux)
 	})
 
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
 		mux := mux.NewRouter()
+		mux.Use(middlewares...)
 		mux.Handle("/{id}", c.HandleCachesClear()).Methods("PUT")
 
 		session := &sessions.Session{
@@ -93,10 +110,62 @@ func TestAdminCaches(t *testing.T) {
 		}
 	})
 
+	t.Run("cacher_failure", func(t *testing.T) {
+		t.Parallel()
+
+		cacher, err := cache.NewInMemory(nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := cacher.Close(); err != nil {
+			t.Fatal(err)
+		}
+
+		c := admin.New(harness.Config, cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+
+		mux := mux.NewRouter()
+		mux.Use(middlewares...)
+		mux.Handle("/{id}", c.HandleCachesClear()).Methods("PUT")
+
+		session := &sessions.Session{
+			Values: map[interface{}]interface{}{},
+		}
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, session)
+
+		r := httptest.NewRequest("PUT", "/realms:", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+		r.Header.Set("Referer", "https://example.com/foo/bar")
+
+		w := httptest.NewRecorder()
+
+		mux.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 303; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+
+		flash := controller.Flash(session)
+		errs := flash.Errors()
+		if got, want := len(errs), 1; got != want {
+			t.Errorf("expected %d errors, got %d", want, got)
+		}
+		if got, want := errs[0], "Failed to clear cache"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
+
 	t.Run("clears", func(t *testing.T) {
 		t.Parallel()
 
 		mux := mux.NewRouter()
+		mux.Use(middlewares...)
 		mux.Handle("/{id}", c.HandleCachesClear()).Methods("PUT")
 
 		ctx := ctx

@@ -33,6 +33,12 @@ func (c *Controller) HandleMobileAppsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.BadRequest(w, r, c.h)

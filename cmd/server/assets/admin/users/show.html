@@ -9,7 +9,7 @@
   {{template "head" .}}
 </head>
 
-<body id="users-show" class="tab-content">
+<body id="admin-users-show" class="tab-content">
   {{template "admin/navbar" .}}
 
   <main role="main" class="container">
@@ -24,13 +24,13 @@
       <div class="card-header">Details</div>
       <div class="card-body">
         <h6 class="mb-2">Name</h6>
-        <div class="form-group">
+        <div id="user-name" class="form-group">
           {{$user.Name}}
         </div>
 
         <hr>
         <h6 class="mb-2">Email</h6>
-        <div class="form-group">
+        <div id="user-email" class="form-group">
           {{$user.Email}}
         </div>
 

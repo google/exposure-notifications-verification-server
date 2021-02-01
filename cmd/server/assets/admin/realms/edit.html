@@ -26,6 +26,8 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">Details</div>
       <div class="card-body">
+        {{template "errorSummary" $realm}}
+
         <form method="POST" action="/admin/realms/{{$realm.ID}}">
           {{ .csrfField }}
           <input type="hidden" name="_method" value="PATCH" />

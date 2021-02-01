@@ -130,8 +130,13 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
 		realm.CanUseSystemEmailConfig = form.CanUseSystemEmailConfig
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
-			flash.Error("Failed to create realm: %v", err)
-			c.renderNewRealm(ctx, w, realm, smsConfig, emailConfig)
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderNewRealm(ctx, w, realm, smsConfig, emailConfig)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 		flash.Alert("Created realm %q", realm.Name)
@@ -248,8 +253,13 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
 		realm.CanUseSystemEmailConfig = form.CanUseSystemEmailConfig
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
-			flash.Error("Failed to create realm: %v", err)
-			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, quotaLimit, quotaRemaining)
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, quotaLimit, quotaRemaining)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
@@ -293,12 +303,22 @@ func (c *Controller) HandleRealmsAdd() http.Handler {
 
 		realm, err := c.db.FindRealm(vars["realm_id"])
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
 		user, err := c.db.FindUser(vars["user_id"])
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
@@ -336,12 +356,22 @@ func (c *Controller) HandleRealmsRemove() http.Handler {
 
 		realm, err := c.db.FindRealm(vars["realm_id"])
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
 		user, err := c.db.FindUser(vars["user_id"])
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
@@ -349,13 +379,6 @@ func (c *Controller) HandleRealmsRemove() http.Handler {
 		// Delete the user from the realm.
 		if err := user.DeleteFromRealm(c.db, realm, currentUser); err != nil {
 			flash.Error("Failed to add %s to %s: %s", user.Name, realm.Name, err)
-			controller.Back(w, r, c.h)
-			return
-		}
-
-		// Save the user
-		if err := c.db.SaveUser(user, currentUser); err != nil {
-			flash.Error("Failed to remove %q from %q: %v", user.Name, realm.Name, err)
 			controller.Back(w, r, c.h)
 			return
 		}

@@ -64,6 +64,7 @@ func ExerciseMembershipMissing(t *testing.T, h http.Handler) {
 
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithUser(ctx, &database.User{})
 
 		r := httptest.NewRequest("GET", "/", nil)
 		r = r.Clone(ctx)
@@ -83,6 +84,34 @@ func ExerciseMembershipMissing(t *testing.T, h http.Handler) {
 	})
 }
 
+// ExerciseUserMissing tests that the proper response code and HTML error page
+// are rendered with there is no user in the context. It sets a session in the
+// context. This only applies to admin pages
+func ExerciseUserMissing(t *testing.T, h http.Handler) {
+	t.Run("user_missing", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := project.TestContext(t)
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+
+		r := httptest.NewRequest("GET", "/", nil)
+		r = r.Clone(ctx)
+		r.Header.Set("Content-Type", "text/html")
+
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, r)
+		w.Flush()
+
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "user missing"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
+}
+
 // ExercisePermissionMissing tests that the proper response code and HTML error
 // page are rendered when the requestor does not have permission to perform this
 // action.
@@ -93,6 +122,7 @@ func ExercisePermissionMissing(t *testing.T, h http.Handler) {
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{})
+		ctx = controller.WithUser(ctx, &database.User{})
 
 		r := httptest.NewRequest("GET", "/", nil)
 		r = r.Clone(ctx)
@@ -121,8 +151,9 @@ func ExerciseBadPagination(t *testing.T, membership *database.Membership, h http
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, membership)
+		ctx = controller.WithUser(ctx, membership.User)
 
-		r := httptest.NewRequest("GET", "/13940890", nil)
+		r := httptest.NewRequest("GET", "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -157,6 +188,7 @@ func ExerciseIDNotFound(t *testing.T, membership *database.Membership, h http.Ha
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, membership)
+		ctx = controller.WithUser(ctx, membership.User)
 
 		r := httptest.NewRequest("GET", "/13940890", nil)
 		r = r.Clone(ctx)
