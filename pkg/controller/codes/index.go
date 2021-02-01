@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
+// HandleIndex renders the html to show a list of recent codes and form to query code status.
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

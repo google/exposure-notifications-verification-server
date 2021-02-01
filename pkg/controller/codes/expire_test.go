@@ -15,13 +15,23 @@
 package codes_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/api"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/chromedp/chromedp"
 )
@@ -81,6 +91,79 @@ func TestHandleExpire_ExpireCode(t *testing.T) {
 
 	if err := <-confirmErrCh; err != nil {
 		t.Fatal(err)
+	}
+
+	now := time.Now().UTC()
+
+	if code, err := realm.FindVerificationCodeByUUID(harness.Database, vc.UUID); err != nil {
+		t.Fatal(err)
+	} else if code.ExpiresAt.After(now) {
+		t.Errorf("expected code expired. got %s but now is %s", code.ExpiresAt, now)
+	}
+}
+
+func TestHandleExpireAPI_ExpireCode(t *testing.T) {
+	t.Parallel()
+
+	ctx := project.TestContext(t)
+
+	harness := envstest.NewServer(t, testDatabaseInstance)
+
+	realm, _, _, err := harness.ProvisionAndLogin()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authApp := &database.AuthorizedApp{
+		RealmID: realm.ID,
+		Name:    "Appy",
+	}
+	if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+	ctx = controller.WithAuthorizedApp(ctx, authApp)
+
+	vc := &database.VerificationCode{
+		RealmID:       realm.ID,
+		Code:          "00000001",
+		LongCode:      "00000001ABC",
+		Claimed:       false,
+		TestType:      "confirmed",
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(time.Hour),
+		IssuingAppID:  authApp.ID,
+	}
+	if err := harness.Database.SaveVerificationCode(vc, realm); err != nil {
+		t.Fatal(err)
+	}
+
+	// Call the thing
+	config := &config.AdminAPIServerConfig{}
+	h, err := render.NewTest(ctx, project.Root()+"/cmd/server/assets", t)
+	if err != nil {
+		t.Fatalf("failed to create renderer: %v", err)
+	}
+	c := codes.NewAPI(ctx, config, harness.Database, h)
+
+	b, err := json.Marshal(api.ExpireCodeRequest{UUID: vc.UUID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+
+	handleFunc := c.HandleExpireAPI()
+	handleFunc.ServeHTTP(w, req)
+	result := w.Result()
+	defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+
+	if result.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 OK, got %d", result.StatusCode)
 	}
 
 	now := time.Now().UTC()
