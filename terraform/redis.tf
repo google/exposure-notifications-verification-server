@@ -56,7 +56,7 @@ resource "google_secret_manager_secret" "redis-auth" {
 
 resource "google_secret_manager_secret_version" "redis-auth" {
   secret      = google_secret_manager_secret.redis-auth.id
-  secret_data = google_redis_instance.cache.auth_string
+  secret_data = coalesce(google_redis_instance.cache.auth_string, "unused")
 }
 
 # Create secret for the HMAC cache keys
