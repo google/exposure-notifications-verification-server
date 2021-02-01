@@ -40,6 +40,11 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	realm.WelcomeMessage = "Welcome Test"
+	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
 	cookie, err := harness.SessionCookie(session)
 	if err != nil {
 		t.Fatal(err)

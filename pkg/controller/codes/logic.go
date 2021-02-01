@@ -26,7 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
-func (c *Controller) CheckCodeStatus(r *http.Request, uuid string) (*database.VerificationCode, int, *api.ErrorReturn) {
+func (c *Controller) checkCodeStatus(r *http.Request, uuid string) (*database.VerificationCode, int, *api.ErrorReturn) {
 	ctx := r.Context()
 
 	logger := logging.FromContext(ctx).Named("codes.CheckCodeStatus")
