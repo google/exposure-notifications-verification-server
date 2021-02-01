@@ -10,7 +10,7 @@
   {{template "head" .}}
 </head>
 
-<body class="tab-content">
+<body id="codes-show" class="tab-content">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -60,7 +60,7 @@
         {{end}}
         {{if and $canWrite .code.Expires}}
           <div class="list-group-item">
-            <a href="/codes/{{.code.UUID}}/expire" class="btn btn-danger d-block"
+            <a id="code-expire" href="/codes/{{.code.UUID}}/expire" class="btn btn-danger d-block"
               data-method="PATCH" data-confirm="Are you sure you want to expire this code?">
               Invalidate code now
             </a>

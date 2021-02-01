@@ -23,6 +23,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// HandleExpireAPI handles the verification code expiry API via JSON
 func (c *Controller) HandleExpireAPI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request api.ExpireCodeRequest
@@ -32,7 +33,7 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 		}
 
 		// Retrieve once to check permissions.
-		_, errCode, apiErr := c.CheckCodeStatus(r, request.UUID)
+		_, errCode, apiErr := c.checkCodeStatus(r, request.UUID)
 		if apiErr != nil {
 			c.h.RenderJSON(w, errCode, apiErr)
 			return
@@ -52,6 +53,7 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 	})
 }
 
+// HandleExpirePage handles the verification code expiry html page
 func (c *Controller) HandleExpirePage() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -78,7 +80,7 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		flash := controller.Flash(session)
 
 		// Retrieve once to check permissions.
-		code, _, apiErr := c.CheckCodeStatus(r, vars["uuid"])
+		code, _, apiErr := c.checkCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
 			flash.Error("Failed to expire code: %v.", apiErr.Error)
 			if err := c.renderStatus(ctx, w, currentRealm, currentUser, code); err != nil {
