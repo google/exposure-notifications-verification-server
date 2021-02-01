@@ -145,9 +145,6 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 	}
 	c := codes.NewAPI(ctx, config, harness.Database, h)
 
-	r := &http.Request{}
-	r = r.WithContext(ctx)
-
 	b, err := json.Marshal(api.ExpireCodeRequest{UUID: vc.UUID})
 	if err != nil {
 		t.Fatal(err)
