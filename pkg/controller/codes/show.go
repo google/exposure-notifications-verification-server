@@ -51,17 +51,6 @@ func (c *Controller) HandleShow() http.Handler {
 		currentRealm := membership.Realm
 		currentUser := membership.User
 
-		if vars["uuid"] == "" {
-			var code database.VerificationCode
-			code.AddError("uuid", "cannot be blank")
-
-			if err := c.renderStatus(ctx, w, currentRealm, currentUser, &code); err != nil {
-				controller.InternalError(w, r, c.h, err)
-				return
-			}
-			return
-		}
-
 		code, _, apiErr := c.checkCodeStatus(r, vars["uuid"])
 		if apiErr != nil {
 			var code database.VerificationCode
