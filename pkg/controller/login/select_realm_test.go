@@ -23,28 +23,41 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
-var testDatabaseInstance *database.TestInstance
-
-func TestMain(m *testing.M) {
-	testDatabaseInstance = database.MustTestInstance()
-	defer testDatabaseInstance.MustClose()
-	m.Run()
-}
-
-func TestHandleLogin_ShowLogin(t *testing.T) {
+func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
+
+	_, user, session, err := harness.ProvisionAndLogin()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	realm2 := database.NewRealmWithDefaults("another realm")
+	if err := harness.Database.SaveRealm(realm2, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := user.AddToRealm(harness.Database, realm2, rbac.LegacyRealmAdmin, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	cookie, err := harness.SessionCookie(session)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	browserCtx := browser.New(t)
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
 
 	if err := chromedp.Run(taskCtx,
-		chromedp.Navigate(`http://`+harness.Server.Addr()),
-		chromedp.WaitVisible(`body#login`, chromedp.ByQuery),
+		browser.SetCookie(cookie),
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/login/select-realm`),
+		chromedp.WaitVisible(`body#select-realm`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}
