@@ -16,6 +16,7 @@ package codes_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -71,6 +72,12 @@ func TestHandleShow_ShowCodeStatus(t *testing.T) {
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/`+vc.UUID),
 		chromedp.WaitVisible(`body#codes-show`, chromedp.ByQuery),
 		chromedp.WaitNotPresent(`body#code-expire`, chromedp.ByQuery),
+
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/invalidcode`),
+		chromedp.WaitVisible(`body#codes-index`, chromedp.ByQuery), // redirect to index
+
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/`+strings.ToUpper(vc.UUID)),
+		chromedp.WaitVisible(`body#codes-show`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)
 	}

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -121,7 +122,6 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 	if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
-	ctx = controller.WithAuthorizedApp(ctx, authApp)
 
 	vc := &database.VerificationCode{
 		RealmID:       realm.ID,
@@ -137,40 +137,102 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Call the thing
 	config := &config.AdminAPIServerConfig{}
-	h, err := render.NewTest(ctx, project.Root()+"/cmd/server/assets", t)
+	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
 	c := codes.NewAPI(ctx, config, harness.Database, h)
-
-	b, err := json.Marshal(api.ExpireCodeRequest{UUID: vc.UUID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Add("Content-Type", "application/json")
-
-	w := httptest.NewRecorder()
-
 	handleFunc := c.HandleExpireAPI()
-	handleFunc.ServeHTTP(w, req)
-	result := w.Result()
-	defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 
-	if result.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200 OK, got %d", result.StatusCode)
-	}
+	// not-authorized
+	func() {
+		b, err := json.Marshal(api.ExpireCodeRequest{UUID: vc.UUID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
 
-	now := time.Now().UTC()
+		w := httptest.NewRecorder()
+		handleFunc.ServeHTTP(w, req)
+		result := w.Result()
+		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 
-	if code, err := realm.FindVerificationCodeByUUID(harness.Database, vc.UUID); err != nil {
-		t.Fatal(err)
-	} else if code.ExpiresAt.After(now) {
-		t.Errorf("expected code expired. got %s but now is %s", code.ExpiresAt, now)
-	}
+		if result.StatusCode != http.StatusUnauthorized {
+			t.Errorf("expected status 404 OK, got %d", result.StatusCode)
+		}
+	}()
+
+	// successful request
+	ctx = controller.WithAuthorizedApp(ctx, authApp)
+	func() {
+		b, err := json.Marshal(api.ExpireCodeRequest{UUID: vc.UUID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		handleFunc.ServeHTTP(w, req)
+		result := w.Result()
+		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+
+		if result.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+		}
+
+		now := time.Now().UTC()
+
+		if code, err := realm.FindVerificationCodeByUUID(harness.Database, vc.UUID); err != nil {
+			t.Fatal(err)
+		} else if code.ExpiresAt.After(now) {
+			t.Errorf("expected code expired. got %s but now is %s", code.ExpiresAt, now)
+		}
+	}()
+
+	// invalid request
+	func() {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader("invalid request"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w := httptest.NewRecorder()
+		handleFunc.ServeHTTP(w, req)
+		result := w.Result()
+		defer result.Body.Close()
+		if result.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected status 400 OK, got %d", result.StatusCode)
+		}
+	}()
+
+	// not-found uuid
+	func() {
+		b, err := json.Marshal(api.ExpireCodeRequest{UUID: "123e4567-e89b-12d3-a456-426614174000"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		handleFunc.ServeHTTP(w, req)
+		result := w.Result()
+		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+
+		if result.StatusCode != http.StatusNotFound {
+			t.Errorf("expected status 404 OK, got %d", result.StatusCode)
+		}
+	}()
 }
