@@ -16,12 +16,20 @@ package login_test
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleChangePassword_ShowChangePassword(t *testing.T) {
@@ -50,4 +58,66 @@ func TestHandleChangePassword_ShowChangePassword(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestHandleChangePassword_SubmitChangePassword(t *testing.T) {
+	t.Parallel()
+
+	ctx := project.TestContext(t)
+
+	session := &sessions.Session{
+		Values: map[interface{}]interface{}{},
+	}
+	ctx = controller.WithSession(ctx, session)
+
+	harness := envstest.NewServer(t, testDatabaseInstance)
+
+	_, user, _, err := harness.ProvisionAndLogin()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
+	if err != nil {
+		t.Fatalf("failed to create renderer: %v", err)
+	}
+	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
+	handleFunc := c.HandleSubmitChangePassword()
+
+	// not-authorized
+	func() {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		handleFunc.ServeHTTP(w, req)
+		result := w.Result()
+		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+
+		if result.StatusCode != http.StatusInternalServerError {
+			t.Errorf("expected status 500 InternalServerError, got %d", result.StatusCode)
+		}
+	}()
+
+	// success
+	func() {
+		ctx = controller.WithUser(ctx, user)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		handleFunc.ServeHTTP(w, req)
+		result := w.Result()
+		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+
+		if result.StatusCode != http.StatusSeeOther {
+			t.Errorf("expected status 303 SeeOther, got %d", result.StatusCode)
+		}
+	}()
 }

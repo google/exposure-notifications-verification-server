@@ -45,7 +45,7 @@ func TestHandleReauth_ShowLogin(t *testing.T) {
 
 	if err := chromedp.Run(taskCtx,
 		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/login`),
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/login?redir=code/issue`),
 		chromedp.WaitVisible(`body#login`, chromedp.ByQuery),
 	); err != nil {
 		t.Fatal(err)

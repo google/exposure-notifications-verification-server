@@ -163,7 +163,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 
 		if result.StatusCode != http.StatusUnauthorized {
-			t.Errorf("expected status 404 OK, got %d", result.StatusCode)
+			t.Errorf("expected status 401 Unauthorized, got %d", result.StatusCode)
 		}
 	}()
 
@@ -210,7 +210,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 		if result.StatusCode != http.StatusBadRequest {
-			t.Errorf("expected status 400 OK, got %d", result.StatusCode)
+			t.Errorf("expected status 400 BadRequest, got %d", result.StatusCode)
 		}
 	}()
 
@@ -232,7 +232,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 
 		if result.StatusCode != http.StatusNotFound {
-			t.Errorf("expected status 404 OK, got %d", result.StatusCode)
+			t.Errorf("expected status 404 notFound, got %d", result.StatusCode)
 		}
 	}()
 }
