@@ -63,7 +63,8 @@ func (c *Controller) HandleSystemAdminCreate() http.Handler {
 				Name:  form.Name,
 			}
 
-			flash.Error("Failed to process form: %v", err)
+			user.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderNewUser(ctx, w, user)
 			return
 		}
@@ -85,8 +86,13 @@ func (c *Controller) HandleSystemAdminCreate() http.Handler {
 
 		user.SystemAdmin = true
 		if err := c.db.SaveUser(user, currentUser); err != nil {
-			flash.Error("Failed to create user: %v", err)
-			c.renderNewUser(ctx, w, user)
+			if database.IsValidationError(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				c.renderNewUser(ctx, w, user)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
@@ -97,12 +103,13 @@ func (c *Controller) HandleSystemAdminCreate() http.Handler {
 		}
 
 		if _, err := c.authProvider.CreateUser(ctx, form.Email, form.Email, "", true, inviteComposer); err != nil {
-			flash.Alert("Failed to create user: %v", err)
+			user.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderNewUser(ctx, w, user)
 		}
 
 		flash.Alert("Successfully created system admin '%v'", user.Name)
-		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/admin/users/%d", user.ID), http.StatusSeeOther)
 		return
 	})
 }
@@ -146,20 +153,68 @@ func (c *Controller) HandleSystemAdminRevoke() http.Handler {
 
 		if user.ID == currentUser.ID {
 			flash.Error("Cannot remove yourself!")
-			controller.Back(w, r, c.h)
+			http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
 			return
 		}
 
 		user.SystemAdmin = false
 		if err := c.db.SaveUser(user, currentUser); err != nil {
 			flash.Error("Failed to remove system admin: %v", err)
-			controller.Back(w, r, c.h)
+			http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
 			return
 		}
 
 		flash.Alert("Successfully removed %v as a system admin", user.Email)
-		controller.Back(w, r, c.h)
+		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
 		return
+	})
+}
+
+// HandleUserDelete deletes a user from the system.
+func (c *Controller) HandleUserDelete() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vars := mux.Vars(r)
+
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
+		currentUser := controller.UserFromContext(ctx)
+		if currentUser == nil {
+			controller.MissingUser(w, r, c.h)
+			return
+		}
+
+		user, err := c.db.FindUser(vars["id"])
+		if err != nil {
+			if database.IsNotFound(err) {
+				controller.Unauthorized(w, r, c.h)
+				return
+			}
+
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		if user.ID == currentUser.ID {
+			flash.Error("Cannot delete yourself!")
+			http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
+			return
+		}
+
+		if err := c.db.DeleteUser(user, currentUser); err != nil {
+			flash.Error("Failed to delete user: %v", err)
+			http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
+			return
+		}
+
+		flash.Alert("Successfully deleted %v.", user.Email)
+
+		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
 	})
 }
 

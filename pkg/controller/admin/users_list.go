@@ -29,6 +29,12 @@ func (c *Controller) HandleUsersIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
 			controller.BadRequest(w, r, c.h)
@@ -68,11 +74,17 @@ func (c *Controller) HandleUserShow() http.Handler {
 		ctx := r.Context()
 		vars := mux.Vars(r)
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
 		// Pull the user from the id.
 		user, err := c.db.FindUser(vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
-				controller.NotFound(w, r, c.h)
+				controller.Unauthorized(w, r, c.h)
 				return
 			}
 
@@ -91,53 +103,5 @@ func (c *Controller) HandleUserShow() http.Handler {
 		m["user"] = user
 		m["memberships"] = memberships
 		c.h.RenderHTML(w, "admin/users/show", m)
-	})
-}
-
-// HandleUserDelete deletes a user from the system.
-func (c *Controller) HandleUserDelete() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		vars := mux.Vars(r)
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-		flash := controller.Flash(session)
-
-		currentUser := controller.UserFromContext(ctx)
-		if currentUser == nil {
-			controller.MissingUser(w, r, c.h)
-			return
-		}
-
-		user, err := c.db.FindUser(vars["id"])
-		if err != nil {
-			if database.IsNotFound(err) {
-				controller.Unauthorized(w, r, c.h)
-				return
-			}
-
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		if user.ID == currentUser.ID {
-			flash.Error("Cannot remove yourself!")
-			controller.Back(w, r, c.h)
-			return
-		}
-
-		if err := c.db.DeleteUser(user, currentUser); err != nil {
-			flash.Error("Failed to delete user: %v", err)
-			controller.Back(w, r, c.h)
-			return
-		}
-
-		flash.Alert("Successfully deleted %v.", user.Email)
-
-		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
 	})
 }

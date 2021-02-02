@@ -45,6 +45,12 @@ func (c *Controller) HandleEventsShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
 		// Parse query params
 		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
