@@ -198,7 +198,7 @@ export RATE_LIMIT_TOKENS="60"
 export RATE_LIMIT_INTERVAL="1m"
 export RATE_LIMIT_REDIS_HOST="${google_redis_instance.cache.host}"
 export RATE_LIMIT_REDIS_PORT="${google_redis_instance.cache.port}"
-export RATE_LIMIT_REDIS_PASSWORD="secret://${google_secret_manager_secret_version.redis-auth.id}"
+export RATE_LIMIT_REDIS_PASSWORD=var.redis_enable_auth ? "secret://${google_secret_manager_secret_version.redis-auth.id}" : ""
 
 export CERTIFICATE_SIGNING_KEY="${trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
 export TOKEN_SIGNING_KEY="${trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")}"
