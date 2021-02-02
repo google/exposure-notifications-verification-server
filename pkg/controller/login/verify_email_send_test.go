@@ -16,12 +16,22 @@ package login_test
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/email"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleVerifyEmailSend_ShowVerifyEmail(t *testing.T) {
@@ -50,4 +60,58 @@ func TestHandleVerifyEmailSend_ShowVerifyEmail(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestHandleVerifyEmailSend_SubmitVerifyEmail(t *testing.T) {
+	t.Parallel()
+
+	ctx := project.TestContext(t)
+
+	session := &sessions.Session{
+		Values: map[interface{}]interface{}{},
+	}
+	ctx = controller.WithSession(ctx, session)
+
+	harness := envstest.NewServer(t, testDatabaseInstance)
+
+	realm, user, _, err := harness.ProvisionAndLogin()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	emailConfig := &database.EmailConfig{
+		RealmID:      realm.ID,
+		ProviderType: email.ProviderType(email.ProviderTypeNoop),
+		SMTPAccount:  "noreply@sendemails.meh",
+		SMTPPassword: "my-secret-ref",
+		SMTPHost:     "smtp.sendemails.meh",
+	}
+	if err := harness.Database.SaveEmailConfig(emailConfig); err != nil {
+		t.Fatal(err)
+	}
+
+	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
+	if err != nil {
+		t.Fatalf("failed to create renderer: %v", err)
+	}
+	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
+	handleFunc := c.HandleSubmitVerifyEmail()
+
+	// success
+	func() {
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			User:  user,
+			Realm: realm,
+		})
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		handleFunc.ServeHTTP(w, req)
+		result := w.Result()
+		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+	}()
 }

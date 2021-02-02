@@ -216,13 +216,13 @@ func (a *localAuth) SendEmailVerificationEmail(ctx context.Context, email string
 // passwordResetLink generates and returns the password reset link for the given
 // email (user).
 func (a *localAuth) passwordResetLink(ctx context.Context, email string) (string, error) {
-	return "", fmt.Errorf("not yet implemented for local auth")
+	return "test-link", nil
 }
 
 // emailVerificationLink generates an email verification link for the given
 // email.
 func (a *localAuth) emailVerificationLink(ctx context.Context, email string) (string, error) {
-	return "", fmt.Errorf("not yet implemented for local auth")
+	return "test-link", nil
 }
 
 type localCookieData struct {

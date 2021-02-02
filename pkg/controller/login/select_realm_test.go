@@ -36,15 +36,6 @@ func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	realm2 := database.NewRealmWithDefaults("another realm")
-	if err := harness.Database.SaveRealm(realm2, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := user.AddToRealm(harness.Database, realm2, rbac.LegacyRealmAdmin, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-
 	cookie, err := harness.SessionCookie(session)
 	if err != nil {
 		t.Fatal(err)
@@ -53,6 +44,26 @@ func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 	browserCtx := browser.New(t)
 	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
 	defer done()
+
+	// Member of one realm
+
+	if err := chromedp.Run(taskCtx,
+		browser.SetCookie(cookie),
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/login/select-realm`),
+		chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	// Member of two realms
+
+	realm2 := database.NewRealmWithDefaults("another realm")
+	if err := harness.Database.SaveRealm(realm2, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.AddToRealm(harness.Database, realm2, rbac.LegacyRealmAdmin, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := chromedp.Run(taskCtx,
 		browser.SetCookie(cookie),
