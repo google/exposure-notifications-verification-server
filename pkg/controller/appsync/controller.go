@@ -38,16 +38,16 @@ type Controller struct {
 }
 
 // New creates a new appsync controller.
-func New(config *config.AppSyncConfig, db *database.Database, h render.Renderer) (*Controller, error) {
-	appSyncClient, err := clients.NewAppSyncClient(config.AppSyncURL,
-		clients.WithTimeout(config.Timeout),
-		clients.WithMaxBodySize(config.FileSizeLimitBytes))
+func New(cfg *config.AppSyncConfig, db *database.Database, h render.Renderer) (*Controller, error) {
+	appSyncClient, err := clients.NewAppSyncClient(cfg.AppSyncURL,
+		clients.WithTimeout(cfg.Timeout),
+		clients.WithMaxBodySize(cfg.FileSizeLimitBytes))
 	if err != nil {
 		return nil, err
 	}
 
 	return &Controller{
-		config: config,
+		config: cfg,
 		db:     db,
 		h:      h,
 
