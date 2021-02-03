@@ -98,13 +98,12 @@ func (c *Controller) importUsers(ctx context.Context,
 			user = new(database.User)
 			user.Email = batchUser.Email
 			user.Name = batchUser.Name
-		} else {
-			addedUsers = append(addedUsers, &users[i])
-		}
-		if err := c.db.SaveUser(user, actor); err != nil {
-			logger.Errorw("error saving user", "error", err)
-			batchErr = multierror.Append(batchErr, err)
-			continue
+
+			if err := c.db.SaveUser(user, actor); err != nil {
+				logger.Errorw("error saving user", "error", err)
+				batchErr = multierror.Append(batchErr, err)
+				continue
+			}
 		}
 
 		// Create the user's membership in the realm.
@@ -134,6 +133,8 @@ func (c *Controller) importUsers(ctx context.Context,
 			batchErr = multierror.Append(batchErr, err)
 			continue
 		}
+
+		addedUsers = append(addedUsers, &users[i])
 	}
 	return addedUsers, batchErr
 }
