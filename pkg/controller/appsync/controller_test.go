@@ -17,13 +17,17 @@ package appsync
 import (
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 )
 
-var testDatabaseInstance *database.TestInstance
+func TestNew(t *testing.T) {
+	t.Parallel()
 
-func TestMain(m *testing.M) {
-	testDatabaseInstance = database.MustTestInstance()
-	defer testDatabaseInstance.MustClose()
-	m.Run()
+	cfg := &config.AppSyncConfig{
+		AppSyncURL: "totally invalid" + string(rune(0x7f)),
+	}
+
+	if _, err := New(cfg, nil, nil); err == nil {
+		t.Errorf("expected error")
+	}
 }

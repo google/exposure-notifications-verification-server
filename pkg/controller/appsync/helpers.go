@@ -17,78 +17,16 @@ package appsync
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/hashicorp/go-multierror"
 )
-
-// HandleSync performs the logic to sync mobile apps.
-func (c *Controller) HandleSync() http.Handler {
-	type AppSyncResult struct {
-		OK     bool     `json:"ok"`
-		Errors []string `json:"errors,omitempty"`
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		logger := logging.FromContext(ctx).Named("appsync.HandleSync")
-
-		ok, err := c.db.TryLock(ctx, appSyncLock, c.config.AppSyncMinPeriod)
-		if err != nil {
-			logger.Errorw("failed to acquire lock", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
-				OK:     false,
-				Errors: []string{err.Error()},
-			})
-			return
-		}
-		if !ok {
-			logger.Debugw("skipping (too early)")
-			c.h.RenderJSON(w, http.StatusOK, &AppSyncResult{
-				OK:     false,
-				Errors: []string{"too early"},
-			})
-			return
-		}
-
-		apps, err := c.appSyncClient.AppSync(ctx)
-		if err != nil {
-			controller.InternalError(w, r, c.h, err)
-			return
-		}
-
-		// If there are any errors, return them
-		if merr := c.syncApps(ctx, apps); merr != nil {
-			if errs := merr.WrappedErrors(); len(errs) > 0 {
-				// Convert error messages to strings to they appear correctly in JSON.
-				// See here for more information:
-				//
-				//   https://stackoverflow.com/questions/44989924/golang-error-types-are-empty-when-encoded-to-json
-				//
-				errMsgs := make([]string, len(errs))
-				for i, err := range errs {
-					errMsgs[i] = err.Error()
-				}
-
-				c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
-					OK:     false,
-					Errors: errMsgs,
-				})
-				return
-			}
-		}
-		c.h.RenderJSON(w, http.StatusOK, &AppSyncResult{OK: true})
-	})
-}
 
 // syncApps looks up the realm and associated list of MobileApps for each entry
 // of AppsResponse. Then it checks to see if there exists an app with the
