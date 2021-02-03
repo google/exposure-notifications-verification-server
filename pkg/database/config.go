@@ -96,6 +96,50 @@ func (c *Config) ConnectionString() string {
 	return strings.Join(p, " ")
 }
 
+// clone creates a deep copy of the configuration.
+func (c *Config) clone() *Config {
+	cfg := &Config{
+		Name:                  c.Name,
+		User:                  c.User,
+		Host:                  c.Host,
+		Port:                  c.Port,
+		SSLMode:               c.SSLMode,
+		ConnectionTimeout:     c.ConnectionTimeout,
+		Password:              c.Password,
+		SSLCertPath:           c.SSLCertPath,
+		SSLKeyPath:            c.SSLKeyPath,
+		SSLRootCertPath:       c.SSLRootCertPath,
+		MaxConnectionLifetime: c.MaxConnectionLifetime,
+		MaxConnectionIdleTime: c.MaxConnectionIdleTime,
+		Debug:                 c.Debug,
+		Keys: keys.Config{
+			KeyManagerType: c.Keys.KeyManagerType,
+			CreateHSMKeys:  c.Keys.CreateHSMKeys,
+			FilesystemRoot: c.Keys.FilesystemRoot,
+		},
+		KeyRing:        c.KeyRing,
+		MaxKeyVersions: c.MaxKeyVersions,
+		EncryptionKey:  c.EncryptionKey,
+		Secrets: secrets.Config{
+			SecretManagerType: c.Secrets.SecretManagerType,
+			SecretsDir:        c.Secrets.SecretsDir,
+			SecretCacheTTL:    c.Secrets.SecretCacheTTL,
+			SecretExpansion:   c.Secrets.SecretExpansion,
+		},
+	}
+
+	cfg.APIKeyDatabaseHMAC = make([]envconfig.Base64Bytes, len(c.APIKeyDatabaseHMAC))
+	copy(cfg.APIKeyDatabaseHMAC, c.APIKeyDatabaseHMAC)
+
+	cfg.APIKeySignatureHMAC = make([]envconfig.Base64Bytes, len(c.APIKeySignatureHMAC))
+	copy(cfg.APIKeySignatureHMAC, c.APIKeySignatureHMAC)
+
+	cfg.VerificationCodeDatabaseHMAC = make([]envconfig.Base64Bytes, len(c.VerificationCodeDatabaseHMAC))
+	copy(cfg.VerificationCodeDatabaseHMAC, c.VerificationCodeDatabaseHMAC)
+
+	return cfg
+}
+
 func dbValues(config *Config) map[string]string {
 	p := map[string]string{}
 	setIfNotEmpty(p, "dbname", config.Name)

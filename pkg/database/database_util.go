@@ -270,7 +270,7 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher) (*Databas
 	}
 
 	// Build the new connection to the new database name.
-	config := i.db.config
+	config := i.db.config.clone()
 	config.Name = newDatabaseName
 
 	// Create shared context.
