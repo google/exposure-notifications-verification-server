@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,5 +32,20 @@ func TestNoop_SendSMS(t *testing.T) {
 
 	if err := p.SendSMS(ctx, "+nobody", "noop"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestNoopFail_SendSMS(t *testing.T) {
+	t.Parallel()
+	ctx := project.TestContext(t)
+
+	c := &Config{ProviderType: ProviderTypeNoopFail}
+	p, err := ProviderFor(ctx, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := p.SendSMS(ctx, "+nobody", "noop"); err == nil {
+		t.Fatal("Noop fail should always fail")
 	}
 }
