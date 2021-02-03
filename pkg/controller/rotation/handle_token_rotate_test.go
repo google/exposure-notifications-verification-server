@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -31,8 +32,6 @@ func TestHandleRotate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	keyManager := keys.TestKeyManager(t)
 	keyManagerSigner, ok := keyManager.(keys.SigningKeyManager)
@@ -46,17 +45,20 @@ func TestHandleRotate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	config := &config.RotationConfig{
+	cfg := &config.RotationConfig{
 		TokenSigning: config.TokenSigningConfig{
 			TokenSigningKeys:   []string{tokenSigningKey},
 			TokenSigningKeyIDs: []string{"v1"},
 		},
 		TokenSigningKeyMaxAge: 30 * time.Second,
 	}
-	c := New(config, db, keyManagerSigner, h)
 
 	t.Run("rotates", func(t *testing.T) {
 		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+		c := New(cfg, db, keyManagerSigner, h)
 
 		// Rotating should create a new key since none exists.
 		{
@@ -133,6 +135,64 @@ func TestHandleRotate(t *testing.T) {
 			if got, want := len(keys), 2; got != want {
 				t.Errorf("got %d keys, expected %d", got, want)
 			}
+		}
+	})
+
+	t.Run("too_early", func(t *testing.T) {
+		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+		cfg := &config.RotationConfig{
+			TokenSigning: config.TokenSigningConfig{
+				TokenSigningKeys:   []string{tokenSigningKey},
+				TokenSigningKeyIDs: []string{"v1"},
+			},
+			TokenSigningKeyMaxAge: 30 * time.Second,
+			MinTTL:                5 * time.Minute,
+		}
+
+		c := New(cfg, db, keyManagerSigner, h)
+
+		r, err := http.NewRequest("GET", "/", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r = r.Clone(ctx)
+
+		w := httptest.NewRecorder()
+
+		c.HandleRotate().ServeHTTP(w, r)
+		if got, want := w.Code, 200; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+
+		// again
+		c.HandleRotate().ServeHTTP(w, r)
+		if got, want := w.Code, 200; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("database_error", func(t *testing.T) {
+		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+		db.SetRawDB(envstest.NewFailingDatabase())
+
+		c := New(cfg, db, keyManagerSigner, h)
+		r, err := http.NewRequest("GET", "/", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r = r.Clone(ctx)
+
+		w := httptest.NewRecorder()
+
+		c.HandleRotate().ServeHTTP(w, r)
+
+		if got, want := w.Code, 500; got != want {
+			t.Errorf("expected %d to be %d", got, want)
 		}
 	})
 }
