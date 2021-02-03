@@ -16,6 +16,8 @@ package rbac
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -24,7 +26,10 @@ func TestRequiredPermissions(t *testing.T) {
 
 	for perm, needs := range requiredPermission {
 		name := fmt.Sprintf("implied_by_%s", PermissionMap[perm][0])
+
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			actorPermission := perm
 			for _, n := range needs {
 				actorPermission |= n
@@ -39,6 +44,147 @@ func TestRequiredPermissions(t *testing.T) {
 				if !Can(got, n) {
 					t.Errorf("%v did not imply %v as expected", PermissionNames(perm), PermissionNames(n))
 				}
+			}
+		})
+	}
+
+	t.Run("missing", func(t *testing.T) {
+		t.Parallel()
+
+		if _, err := CompileAndAuthorize(0, []Permission{APIKeyRead}); err == nil {
+			t.Errorf("expected error")
+		}
+	})
+}
+
+func TestImpliedBy(t *testing.T) {
+	t.Parallel()
+
+	if got := ImpliedBy(APIKeyRead); !reflect.DeepEqual(got, []Permission{APIKeyWrite}) {
+		t.Errorf("expected %q to imply %q", APIKeyRead, APIKeyWrite)
+	}
+
+	if got := ImpliedBy(APIKeyWrite); len(got) != 0 {
+		t.Errorf("expected no implications, got %q", got)
+	}
+}
+
+func TestPermission_Implied(t *testing.T) {
+	t.Parallel()
+
+	if got := APIKeyWrite.Implied(); !reflect.DeepEqual(got, []Permission{APIKeyRead}) {
+		t.Errorf("expected %q to imply %q", APIKeyRead, APIKeyWrite)
+	}
+}
+
+func TestPermissionNames(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		p   Permission
+		exp string
+	}{
+		{0, ""},
+		{APIKeyWrite, "APIKeyWrite"},
+		{LegacyRealmUser, "CodeBulkIssue,CodeExpire,CodeIssue,CodeRead"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.p.String(), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := strings.Join(PermissionNames(tc.p), ","), tc.exp; !reflect.DeepEqual(got, want) {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestPermission_String(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		p   Permission
+		exp string
+	}{
+		{0, "Permission(0)"},
+		{APIKeyWrite, "APIKeyWrite"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.p.String(), func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := tc.p.String(), tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+		})
+	}
+}
+
+func TestPermission_Value(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		p   Permission
+		exp int64
+	}{
+		{0, 0},
+		{APIKeyWrite, 8},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.p.String(), func(t *testing.T) {
+			t.Parallel()
+
+			result, err := tc.p.Value()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			got, ok := result.(int64)
+			if !ok {
+				t.Fatalf("%T is not int64", result)
+			}
+
+			if got, want := got, tc.exp; got != want {
+				t.Errorf("expected %v to be %v", got, want)
+			}
+		})
+	}
+}
+
+func TestPermission_Description(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		p   Permission
+		exp string
+		err bool
+	}{
+		{0, "", true},
+		{APIKeyWrite, "create, update, and delete API keys", false},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.p.String(), func(t *testing.T) {
+			t.Parallel()
+
+			result, err := tc.p.Description()
+			if (err != nil) != tc.err {
+				t.Fatal(err)
+			}
+
+			if got, want := result, tc.exp; got != want {
+				t.Errorf("expected %q to be %q", got, want)
 			}
 		})
 	}
