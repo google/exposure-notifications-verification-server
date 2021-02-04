@@ -498,6 +498,10 @@ endpoints without notice.
 -   `/api/stats/realm.{csv,json}` - Daily statistics for the realm, including
     codes issued, codes claimed, tokens claimed, and invalid attempts.
 
+-  `/api/stats/realm/key-server.{csv,json}` - Daily statistics gathered from the
+   key-server if enabled for the realm. This includes publish requests, EN days
+   active before upload, and onset-to-upload distribution.
+
 -   `/api/stats/realm/users.{csv,json}` - Daily statistics for codes issued by
     realm user. These statistics only include codes issued by humans logged into
     the verification system.
@@ -512,7 +516,7 @@ endpoints without notice.
     codes issued. For _device_ API keys, the statistics will include codes
     claimed and codes invalid.
 
--   `/api/stats/realm/external-issusers.{csv,json}` - Daily statistics for codes
+-   `/api/stats/realm/external-issuers.{csv,json}` - Daily statistics for codes
     issued by external issuers. These statistics only include codes issued by
     the API where an `externalIssuer` field was provided.
 
