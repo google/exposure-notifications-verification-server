@@ -135,6 +135,7 @@ func Server(
 
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
+	checkIdleNoAuth := middleware.CheckSessionIdleNoAuth(h, cfg.SessionIdleTimeout)
 	requireEmailVerified := middleware.RequireEmailVerified(authProvider, h)
 	loadCurrentMembership := middleware.LoadCurrentMembership(h)
 	requireMembership := middleware.RequireMembership(h)
@@ -165,6 +166,12 @@ func Server(
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
+			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
+			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
+
+			sub = r.PathPrefix("").Subrouter()
+			sub.Use(rateLimit)
+			sub.Use(checkIdleNoAuth)
 
 			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
 			sub.Handle("/login/reset-password", loginController.HandleShowResetPassword()).Methods("GET")
@@ -175,8 +182,6 @@ func Server(
 				Queries("oobCode", "", "mode", "resetPassword").Methods("POST")
 			sub.Handle("/login/manage-account", loginController.HandleReceiveVerifyEmail()).
 				Queries("oobCode", "{oobCode:.+}", "mode", "{mode:(?:verifyEmail|recoverEmail)}").Methods("GET")
-			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
-			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
 
 			// Realm selection & account settings
 			sub = r.PathPrefix("").Subrouter()

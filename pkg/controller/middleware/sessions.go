@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
 )
@@ -94,6 +95,30 @@ func RequireSession(store sessions.Store, h render.Renderer) func(http.Handler) 
 				controller.InternalError(w, r, h, err)
 				return
 			}
+		})
+	}
+}
+
+// CheckSessionIdleNoAuth is an explicit check for session idleness. This check is also performed along with authentication
+// and is intended to be used when no other auth check is performed.
+func CheckSessionIdleNoAuth(h render.Renderer, sessionIdleTTL time.Duration) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			if session := controller.SessionFromContext(ctx); session != nil {
+				// Check session idle timeout.
+				if t := controller.LastActivityFromSession(session); !t.IsZero() {
+					// If it's been more than the TTL since we've seen this session,
+					// expire it by creating a new empty session.
+					if time.Since(t) > sessionIdleTTL {
+						controller.RedirectToLogout(w, r, h)
+						return
+					}
+				}
+			}
+
+			next.ServeHTTP(w, r)
 		})
 	}
 }
