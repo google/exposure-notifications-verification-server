@@ -316,8 +316,29 @@
     const $messageBubbles = $('div#message-bubbles');
     const $messageBubble = $('<div class="alert alert-secondary" role="alert"></div>');
 
+    // spanBoundary returns whether the substr crosses the smsLength boundary in
+    // body. If it would, it returns the index where it would happen, the start
+    // of the substring in index, and the remainder of substr in the next
+    // message.
+    function spansBoundary(body, substr) {
+      let idx = body.indexOf(substr);
+      if (idx < 0) {
+        return [0, 0, 0];
+      }
+
+      let msg = Math.floor(idx / smsLength);
+      let start = idx % smsLength;
+      let end = start + substr.length;
+      let rem = end - smsLength;
+
+      if (rem <= 0) {
+        return [0, 0, 0];
+      }
+
+      return [msg, start, rem];
+    }
+
     function buildTemplateSplits(target) {
-      $messageBubbles.empty();
       if(!target) {
         return;
       }
@@ -335,10 +356,50 @@
         return;
       }
 
+      // Build all the bubbles.
+      let bubbles = [];
       for(let i = 0; i < parts.length; i++) {
-        let msg = parts[i];
-        $messageBubble.clone().text(msg).appendTo($messageBubbles);
+        let msg = $('<div>').text(parts[i]).html();
+        let ensLinkEscaped = $('<div>').text(ensLink).html();
+        msg = msg.replace(ensLinkEscaped, `<span class="text-primary">${ensLinkEscaped}</span>`);
+
+        bubbles.push($messageBubble.clone().html(msg));
       }
+
+      // Check if any critical information spans a boundary and highlight.
+      let criticals = [shortCode, longCode, ensLink];
+      let anyCriticalsBreak = false;
+      for(let i = 0; i < criticals.length; i++) {
+        let field = criticals[i];
+
+        let [msg, start, rem] = spansBoundary(val, field)
+        if (rem === 0) {
+          continue;
+        }
+
+        anyCriticalsBreak = true;
+
+        let $thisBubble = $(bubbles[msg]);
+        let thisText = $thisBubble.text();
+        let thisSub = $('<div>').text(thisText.substring(start)).html();
+
+        let $nextBubble = $(bubbles[msg+1]);
+        let nextText = $nextBubble.text();
+        let nextSub = $('<div>').text(nextText.substring(0, rem)).html();
+
+        $thisBubble.html(thisText.replace(thisSub, `<span class="text-danger">${thisSub}</span>`));
+        $nextBubble.html(nextText.replace(nextSub, `<span class="text-danger">${nextSub}</span>`));
+      }
+
+      if (anyCriticalsBreak) {
+        bubbles.unshift($(`<div class="alert alert-danger">` +
+          `Critical information such as links or codes could be split across ` +
+          `an SMS boundary! These instances are highlighted in <span class="text-danger">red</span> ` +
+          `below.</div>`));
+      }
+
+      $messageBubbles.empty();
+      $messageBubbles.append(bubbles);
     }
 
     // When the textarea changes, rebuild the splits.
