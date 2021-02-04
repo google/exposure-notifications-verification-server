@@ -135,6 +135,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 
 		// Fail if there were no tokens remaining.
 		if !ok {
+			logger.Infow("rate limited", "key", key)
 			result = observability.ResultError("RATE_LIMITED")
 			w.Header().Set(httplimit.HeaderRetryAfter, resetTime)
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
@@ -154,16 +155,11 @@ func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKe
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
-		ctx := r.Context()
-
-		logger := logging.FromContext(ctx).Named("ratelimit.APIKeyFunc")
-
 		// Procss the API key
 		v := r.Header.Get("x-api-key")
 		if v != "" {
 			realmID := realmIDFromAPIKey(db, v)
 			if realmID != 0 {
-				logger.Debugw("limiting by realm from apikey")
 				dig, err := digest.HMAC(fmt.Sprintf("%d:%s", realmID, remoteIP(r)), hmacKey)
 				if err != nil {
 					return "", fmt.Errorf("failed to digest api key: %w", err)
@@ -182,14 +178,9 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 	ipAddrLimit := IPAddressKeyFunc(ctx, scope, hmacKey)
 
 	return func(r *http.Request) (string, error) {
-		ctx := r.Context()
-
-		logger := logging.FromContext(ctx).Named("ratelimit.UserIDKeyFunc")
-
 		// See if a user exists on the context
 		currentUser := controller.UserFromContext(ctx)
 		if currentUser != nil {
-			logger.Debugw("limiting by user", "user", currentUser.ID)
 			dig, err := digest.HMACUint(currentUser.ID, hmacKey)
 			if err != nil {
 				return "", fmt.Errorf("failed to digest user id: %w", err)
@@ -204,14 +195,9 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 // IPAddressKeyFunc uses the client IP to rate limit.
 func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
 	return func(r *http.Request) (string, error) {
-		ctx := r.Context()
-
-		logger := logging.FromContext(ctx).Named("ratelimit.IPAddressKeyFunc")
-
 		// Get the remote addr
 		ip := remoteIP(r)
 
-		logger.Debugw("limiting by ip", "ip", ip)
 		dig, err := digest.HMAC(ip, hmacKey)
 		if err != nil {
 			return "", fmt.Errorf("failed to digest ip: %w", err)
