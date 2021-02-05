@@ -148,6 +148,10 @@ Terraform module.
             FIREBASE_PRIVACY_POLICY_URL   = "TODO"
             FIREBASE_TERMS_OF_SERVICE_URL = "TODO"
           }
+
+          stats-puller = {
+            KEY_SERVER_URL = "https://example.com"
+          }
         }
       }
 
@@ -160,12 +164,17 @@ Terraform module.
           apiserver_hosts = ["apiserver.example.org"]
           server_hosts    = ["example.org"]
 
-          alert-notification-channels = {
+          alert_on_human_accessed_secret = false
+          alert_on_human_decrypted_value = false
+
+          alert-notification-channel-non-paging = {
               email = {
                   labels = {
                       email_address = "nobody@example.com"
                   }
               }
+          }
+          alert-notification-channel-paging = {
               slack = {
                   labels = {
                       channel_name = "#foo"
