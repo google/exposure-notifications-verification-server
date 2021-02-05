@@ -148,6 +148,10 @@ Terraform module.
             FIREBASE_PRIVACY_POLICY_URL   = "TODO"
             FIREBASE_TERMS_OF_SERVICE_URL = "TODO"
           }
+
+          stats-puller = {
+            KEY_SERVER_URL = "https://example.com"
+          }
         }
       }
 
@@ -160,12 +164,17 @@ Terraform module.
           apiserver_hosts = ["apiserver.example.org"]
           server_hosts    = ["example.org"]
 
-          alert-notification-channels = {
+          alert_on_human_accessed_secret = false
+          alert_on_human_decrypted_value = false
+
+          alert-notification-channel-non-paging = {
               email = {
                   labels = {
                       email_address = "nobody@example.com"
                   }
               }
+          }
+          alert-notification-channel-paging = {
               slack = {
                   labels = {
                       channel_name = "#foo"
@@ -186,29 +195,29 @@ Terraform module.
     inputs/parameters to the module definition. See the `variables.tf` file for
     the full list of configuration options.
 
-1.  (Optional if alerting is enabled): Manually create Google Cloud Monitoring
+2.  (Optional if alerting is enabled): Manually create Google Cloud Monitoring
     workspace: Go to
     https://console.cloud.google.com/monitoring/signup?project=${PROJECT_ID}&nextPath=monitoring
     and create the first workspace for the project. NOTE: as of Sep 2020 this
     can only be done on Google Cloud Console.
 
-1.  Run `terraform init`. Terraform will automatically download the plugins
+3.  Run `terraform init`. Terraform will automatically download the plugins
     required to execute this code. You only need to do this once per machine.
 
     ```text
     $ terraform init
     ```
 
-1.  Execute Terraform:
+4.  Execute Terraform:
 
     ```text
     $ terraform apply
     ```
 
-1.  After the initial provision, go to the Firebase admin console and enable
+5.  After the initial provision, go to the Firebase admin console and enable
     your desired login (Facebook, email/password, etc).
 
-1.  Moving forward, instruct Terraform to download new modules before you apply:
+6.  Moving forward, instruct Terraform to download new modules before you apply:
 
     ```text
     $ terraform get -update
