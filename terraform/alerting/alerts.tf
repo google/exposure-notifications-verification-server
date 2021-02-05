@@ -49,7 +49,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
       | group_by [metric.step, metric.test_type], [val: sum(value.request_count)]
       | ratio
       | window 1m
-      | condition ratio > 10 '%'
+      | condition ratio > 5 '%'
       EOT
       trigger {
         count = 1
@@ -60,7 +60,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
     content   = "${local.playbook_prefix}/E2ETestErrorRatioHigh.md"
     mime_type = "text/markdown"
   }
-  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -209,7 +209,7 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
