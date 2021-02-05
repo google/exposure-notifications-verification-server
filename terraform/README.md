@@ -195,29 +195,29 @@ Terraform module.
     inputs/parameters to the module definition. See the `variables.tf` file for
     the full list of configuration options.
 
-2.  (Optional if alerting is enabled): Manually create Google Cloud Monitoring
+1.  (Optional if alerting is enabled): Manually create Google Cloud Monitoring
     workspace: Go to
     https://console.cloud.google.com/monitoring/signup?project=${PROJECT_ID}&nextPath=monitoring
     and create the first workspace for the project. NOTE: as of Sep 2020 this
     can only be done on Google Cloud Console.
 
-3.  Run `terraform init`. Terraform will automatically download the plugins
+1.  Run `terraform init`. Terraform will automatically download the plugins
     required to execute this code. You only need to do this once per machine.
 
     ```text
     $ terraform init
     ```
 
-4.  Execute Terraform:
+1.  Execute Terraform:
 
     ```text
     $ terraform apply
     ```
 
-5.  After the initial provision, go to the Firebase admin console and enable
+1.  After the initial provision, go to the Firebase admin console and enable
     your desired login (Facebook, email/password, etc).
 
-6.  Moving forward, instruct Terraform to download new modules before you apply:
+1.  Moving forward, instruct Terraform to download new modules before you apply:
 
     ```text
     $ terraform get -update
