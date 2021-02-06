@@ -175,7 +175,7 @@ resource "google_compute_backend_service" "apiserver" {
   security_policy = google_compute_security_policy.cloud-armor.name
   log_config {
     enable      = var.enable_lb_logging
-    sample_rate = 1
+    sample_rate = var.enable_lb_logging ? 1 : null
   }
 }
 
