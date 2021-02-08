@@ -420,6 +420,7 @@
       },
       titlePosition: "out",
       title: `${smoothing} days from ` + claimStats[0].date.split("T")[0],
+      tooltip: {isHtml: true},
     };
 
     ageChart = new google.visualization.ColumnChart($div.get(0));
@@ -444,15 +445,19 @@
     dataTable.addColumn('number', 'count');
     dataTable.addColumn({type:'string', role:'style'})
     dataTable.addColumn({type:'string', role:'annotation'})
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
 
     // sum over last ${smoothing} days
     let table = new Array(claimStats[dateIndex].data.code_claim_age_distribution.length).fill(0);
     let i;
+    let total = 0;
     for (i = dateIndex; i < dateIndex + smoothing && i < claimStats.length; i++) {
       let row = claimStats[i].data;
       let j;
       for (j = 0; j < row.code_claim_age_distribution.length; j++) {
-        table[j] += row.code_claim_age_distribution[j];
+        let codes = parseInt(row.code_claim_age_distribution[j])
+        table[j] += codes;
+        total += codes;
       }
     }
 
@@ -460,11 +465,17 @@
       if (table[i] > ageVMax) {
         ageVMax = table[i]
       }
-      let r = [i+1, table[i],"",""]
+      let r = [i+1, table[i],"","",""]
       if (i == 9) {
         r[2] = "#6c757d";
         r[3] = ">1 day";
       }
+
+      r[4] =
+        "<ul class='chart-tooltip'>"+
+          "<li>Count: " + r[1] + "</li>" +
+          "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+
       dataTable.addRow(r);
     }
     ageCache.set(key, dataTable);
