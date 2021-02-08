@@ -425,9 +425,9 @@
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('number', 'days');
     dataTable.addColumn('number', 'count');
-    dataTable.addColumn({type:'string', role:'style'})
-    dataTable.addColumn({type:'string', role:'annotation'})
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    dataTable.addColumn({type:'string', role:'style'});
+    dataTable.addColumn({type:'string', role:'annotation'});
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
 
     // sum over last ${smoothing} days
     let table = new Array(stats[dateIndex].tek_age_distribution.length).fill(0);
@@ -531,9 +531,9 @@
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('number', 'days');
     dataTable.addColumn('number', 'count');
-    dataTable.addColumn({type:'string', role:'style'})
-    dataTable.addColumn({type:'string', role:'annotation'})
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    dataTable.addColumn({type:'string', role:'style'});
+    dataTable.addColumn({type:'string', role:'annotation'});
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
 
     // sum over last ${smoothing} days
     let table = new Array(stats[dateIndex].onset_to_upload_distribution.length).fill(0);
