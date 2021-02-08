@@ -121,6 +121,12 @@ main.container[role="main"] {
   color: #777;
 }
 
+ul.chart-tooltip {
+  width: 130px;
+  list-style-type: none;
+  padding: 5px;
+}
+
 /* Fallback for Edge
 -------------------------------------------------- */
 @supports (-ms-ime-align: auto) {
