@@ -306,14 +306,23 @@
 
     stats.reverse().forEach(function(row) {
       let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
+      let unknownCount = parseInt(row.publish_requests.unknown);
+      let androidCount = parseInt(row.publish_requests.android);
+      let iosCount = parseInt(row.publish_requests.ios);
 
       dataTable.addRow([utcDate(row.day),
         row.publish_requests.unknown,
-        "<strong>Unknown:</strong>" + row.publish_requests.unknown + " " +(row.publish_requests.unknown / total * 100).toPrecision(3) + "%",
+        "<ul class='chart-tooltip'><li><strong>Unknown:</strong></li>"+
+          "<li>Count: " + unknownCount + "</li>" +
+          "<li>Percent: " + (unknownCount / total * 100).toPrecision(3) + "%</li></ul>",
         row.publish_requests.android,
-        "<strong>Android:</strong>" + row.publish_requests.android + " " + (row.publish_requests.android / total * 10).toPrecision(3) + "%",
+        "<ul class='chart-tooltip'><li><strong>Android:</strong></li>"+
+          "<li>Count: " + androidCount  + "</li>" +
+          "<li>Percent: " + (androidCount  / total * 100).toPrecision(3)  + "%</li></ul>",
         row.publish_requests.ios,
-        "<strong>IOS:</strong>" + row.publish_requests.ios + " " + (row.publish_requests.ios / total * 100).toPrecision(3) + "%",
+        "<ul class='chart-tooltip'><li><strong>IOS:</strong></li>"+
+          "<li>Count: " + iosCount + "</li>" +
+          "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",
       ]);
     });
 
@@ -396,6 +405,7 @@
       },
       titlePosition: "out",
       title: `${smoothing} days from ` + stats[0].day.split("T")[0],
+      tooltip: {isHtml: true},
     };
 
     tekChart = new google.visualization.ColumnChart($div.get(0));
@@ -418,17 +428,21 @@
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('number', 'days');
     dataTable.addColumn('number', 'count');
-    dataTable.addColumn({type:'string', role:'style'})
-    dataTable.addColumn({type:'string', role:'annotation'})
+    dataTable.addColumn({type:'string', role:'style'});
+    dataTable.addColumn({type:'string', role:'annotation'});
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
 
     // sum over last ${smoothing} days
     let table = new Array(stats[dateIndex].tek_age_distribution.length).fill(0);
     let i;
+    let total = 0;
     for (i = dateIndex; i < dateIndex + smoothing && i < stats.length; i++) {
       let row = stats[i];
       let j;
       for (j = 0; j < row.tek_age_distribution.length; j++) {
-        table[j] += row.tek_age_distribution[j];
+        let count = parseInt(row.tek_age_distribution[j]);
+        table[j] += count;
+        total += count;
       }
     }
 
@@ -437,11 +451,18 @@
         maxVAxisTEKAge = table[i];
       }
 
-      let r = [i+1, table[i],"",""]
+      let r = [i+1, table[i],"","",""]
       if (i == 15) {
         r[2] = "#6c757d";
         r[3] = ">15 days";
       }
+
+      r[4] =
+        "<ul class='chart-tooltip'><li><strong>Days:</strong> "+ r[0] +"</li>"+
+          "<li>Count: " + r[1] + "</li>" +
+          "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+
+
       dataTable.addRow(r);
     }
     dataTableCache.set(key, dataTable);
@@ -491,6 +512,7 @@
       },
       titlePosition: "out",
       title: `${smoothing} days from ` + stats[0].day.split("T")[0],
+      tooltip: {isHtml: true},
     };
 
     onsetChart = new google.visualization.ColumnChart($div.get(0));
@@ -513,26 +535,37 @@
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('number', 'days');
     dataTable.addColumn('number', 'count');
-    dataTable.addColumn({type:'string', role:'style'})
-    dataTable.addColumn({type:'string', role:'annotation'})
+    dataTable.addColumn({type:'string', role:'style'});
+    dataTable.addColumn({type:'string', role:'annotation'});
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
 
     // sum over last ${smoothing} days
     let table = new Array(stats[dateIndex].onset_to_upload_distribution.length).fill(0);
     let i;
+    let total = 0;
     for (i = dateIndex; i < dateIndex + smoothing && i < stats.length; i++) {
       let row = stats[i];
       let j;
       for (j = 0; j < row.onset_to_upload_distribution.length; j++) {
-        table[j] += row.onset_to_upload_distribution[j];
+        let count = parseInt(row.onset_to_upload_distribution[j]);
+        table[j] += count;
+        total += count;
       }
     }
 
     for (i = 0; i < table.length; i++) {
-      let r = [i+1, table[i],"",""]
+      let r = [i+1, table[i],"","", ""]
       if (i == 30) {
         r[2] = "#6c757d";
         r[3] = ">30 days";
       }
+
+      r[4] =
+        "<ul class='chart-tooltip'><li><strong>Days:</strong> "+ r[0] +"</li>"+
+          "<li>Count: " + r[1] + "</li>" +
+          "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+
+
       dataTable.addRow(r);
       if (table[i] > onsetVAxisMax) {
         onsetVAxisMax = table[i];
