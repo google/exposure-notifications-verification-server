@@ -306,20 +306,23 @@
 
     stats.reverse().forEach(function(row) {
       let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
+      let unknownCount = parseInt(row.publish_requests.unknown);
+      let androidCount = parseInt(row.publish_requests.android);
+      let iosCount = parseInt(row.publish_requests.ios);
 
       dataTable.addRow([utcDate(row.day),
         row.publish_requests.unknown,
         "<ul class='chart-tooltip'><li><strong>Unknown:</strong></li>"+
-          "<li>Count: " + row.publish_requests.unknown + "</li>" +
-          "<li>Percent: " + (row.publish_requests.unknown / total * 100).toPrecision(3) + "%</li></ul>",
+          "<li>Count: " + unknownCount + "</li>" +
+          "<li>Percent: " + (unknownCount / total * 100).toPrecision(3) + "%</li></ul>",
         row.publish_requests.android,
         "<ul class='chart-tooltip'><li><strong>Android:</strong></li>"+
-          "<li>Count: " + row.publish_requests.android + "</li>" +
-          "<li>Percent: " + (row.publish_requests.android / total * 100).toPrecision(3)  + "%</li></ul>",
+          "<li>Count: " + androidCount  + "</li>" +
+          "<li>Percent: " + (androidCount  / total * 100).toPrecision(3)  + "%</li></ul>",
         row.publish_requests.ios,
         "<ul class='chart-tooltip'><li><strong>IOS:</strong></li>"+
-          "<li>Count: " + row.publish_requests.ios + "</li>" +
-          "<li>Percent: " + (row.publish_requests.ios / total * 100).toPrecision(3)  + "%</li></ul>",
+          "<li>Count: " + iosCount + "</li>" +
+          "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",
       ]);
     });
 
@@ -437,8 +440,9 @@
       let row = stats[i];
       let j;
       for (j = 0; j < row.tek_age_distribution.length; j++) {
-        table[j] += row.tek_age_distribution[j];
-        total += row.tek_age_distribution[j];
+        let count = parseInt(row.tek_age_distribution[j]);
+        table[j] += count;
+        total += count;
       }
     }
 
@@ -543,8 +547,9 @@
       let row = stats[i];
       let j;
       for (j = 0; j < row.onset_to_upload_distribution.length; j++) {
-        table[j] += row.onset_to_upload_distribution[j];
-        total += row.onset_to_upload_distribution[j];
+        let count = parseInt(row.onset_to_upload_distribution[j]);
+        table[j] += count;
+        total += count;
       }
     }
 
