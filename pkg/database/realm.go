@@ -1596,7 +1596,7 @@ func (r *Realm) ExternalIssuerStats(db *Database) (ExternalIssuerStats, error) {
 			d.date AS date,
 			$1 AS realm_id,
 			d.issuer_id AS issuer_id,
-			COALESCE(s.codes_issued, 0) AS codes_issued
+			COALESCE(s.codes_issued, 0) AS codes_issued,
 			COALESCE(s.codes_claimed, 0) AS codes_claimed
 		FROM (
 			SELECT
