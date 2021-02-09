@@ -38,42 +38,46 @@ func TestExternalIssuerStats_MarshalCSV(t *testing.T) {
 			name: "single",
 			stats: []*ExternalIssuerStat{
 				{
-					Date:        time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					RealmID:     1,
-					IssuerID:    "user:2",
-					CodesIssued: 10,
+					Date:         time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					RealmID:      1,
+					IssuerID:     "user:2",
+					CodesIssued:  10,
+					CodesClaimed: 7,
 				},
 			},
-			exp: `date,realm_id,issuer_id,codes_issued
-2020-02-03,1,user:2,10
+			exp: `date,realm_id,issuer_id,codes_issued,codes_claimed
+2020-02-03,1,user:2,10,7
 `,
 		},
 		{
 			name: "multi",
 			stats: []*ExternalIssuerStat{
 				{
-					Date:        time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					RealmID:     1,
-					IssuerID:    "user:2",
-					CodesIssued: 10,
+					Date:         time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					RealmID:      1,
+					IssuerID:     "user:2",
+					CodesIssued:  10,
+					CodesClaimed: 37,
 				},
 				{
-					Date:        time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
-					RealmID:     1,
-					IssuerID:    "user:2",
-					CodesIssued: 45,
+					Date:         time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
+					RealmID:      1,
+					IssuerID:     "user:2",
+					CodesIssued:  45,
+					CodesClaimed: 72,
 				},
 				{
-					Date:        time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
-					RealmID:     1,
-					IssuerID:    "user:2",
-					CodesIssued: 15,
+					Date:         time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
+					RealmID:      1,
+					IssuerID:     "user:2",
+					CodesIssued:  15,
+					CodesClaimed: 3,
 				},
 			},
-			exp: `date,realm_id,issuer_id,codes_issued
-2020-02-03,1,user:2,10
-2020-02-04,1,user:2,45
-2020-02-05,1,user:2,15
+			exp: `date,realm_id,issuer_id,codes_issued,codes_claimed
+2020-02-03,1,user:2,10,37
+2020-02-04,1,user:2,45,72
+2020-02-05,1,user:2,15,3
 `,
 		},
 	}

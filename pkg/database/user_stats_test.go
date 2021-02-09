@@ -38,50 +38,54 @@ func TestUserStats_MarshalCSV(t *testing.T) {
 			name: "single",
 			stats: []*UserStat{
 				{
-					Date:        time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					UserID:      1,
-					RealmID:     1,
-					CodesIssued: 10,
-					UserName:    "You",
-					UserEmail:   "you@example.com",
+					Date:         time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					UserID:       1,
+					RealmID:      1,
+					CodesIssued:  10,
+					CodesClaimed: 7,
+					UserName:     "You",
+					UserEmail:    "you@example.com",
 				},
 			},
-			exp: `date,realm_id,user_id,user_name,user_email,codes_issued
-2020-02-03,1,1,You,you@example.com,10
+			exp: `date,realm_id,user_id,user_name,user_email,codes_issued,codes_claimed
+2020-02-03,1,1,You,you@example.com,10,7
 `,
 		},
 		{
 			name: "multi",
 			stats: []*UserStat{
 				{
-					Date:        time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
-					UserID:      1,
-					RealmID:     1,
-					CodesIssued: 10,
-					UserName:    "You",
-					UserEmail:   "you@example.com",
+					Date:         time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					UserID:       1,
+					RealmID:      1,
+					CodesIssued:  10,
+					CodesClaimed: 7,
+					UserName:     "You",
+					UserEmail:    "you@example.com",
 				},
 				{
-					Date:        time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
-					UserID:      2,
-					RealmID:     1,
-					CodesIssued: 45,
-					UserName:    "Them",
-					UserEmail:   "them@example.com",
+					Date:         time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC),
+					UserID:       2,
+					RealmID:      1,
+					CodesIssued:  45,
+					CodesClaimed: 27,
+					UserName:     "Them",
+					UserEmail:    "them@example.com",
 				},
 				{
-					Date:        time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
-					UserID:      1,
-					RealmID:     3,
-					CodesIssued: 15,
-					UserName:    "Us",
-					UserEmail:   "us@example.com",
+					Date:         time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC),
+					UserID:       1,
+					RealmID:      3,
+					CodesIssued:  15,
+					CodesClaimed: 73,
+					UserName:     "Us",
+					UserEmail:    "us@example.com",
 				},
 			},
-			exp: `date,realm_id,user_id,user_name,user_email,codes_issued
-2020-02-03,1,1,You,you@example.com,10
-2020-02-04,1,2,Them,them@example.com,45
-2020-02-05,3,1,Us,us@example.com,15
+			exp: `date,realm_id,user_id,user_name,user_email,codes_issued,codes_claimed
+2020-02-03,1,1,You,you@example.com,10,7
+2020-02-04,1,2,Them,them@example.com,45,27
+2020-02-05,3,1,Us,us@example.com,15,73
 `,
 		},
 	}
