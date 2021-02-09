@@ -15,6 +15,8 @@
 - [API keys](#api-keys)
 - [ENX redirector service](#enx-redirector-service)
 - [Mobile apps](#mobile-apps)
+- [Statistics](#statistics)
+  - [Key server statistics](#key-server-statistics)
 - [Rotating certificate signing keys](#rotating-certificate-signing-keys)
   - [Automatic Rotation](#automatic-rotation)
   - [Manual Rotation](#manual-rotation)
@@ -250,6 +252,40 @@ Note that this process is separate from the Google and Apple app review
 processes. You still must submit your application for inclusion in the Play
 Store and App Store respectively, separate from this system.
 
+
+## Statistics
+
+The verification server provides statistics for various facets of the system.
+Most statistics are also available [via the API](api.md).
+
+### Key server statistics
+
+Some statistics are automatically collected, while other  statistics require
+opt-in consent. The system automatically collects information about the number
+of codes issued, codes claimed, and error rates.
+
+You can optionally enable
+enhanced statistics collection from the corresponding key server. **Enabling these statistics may require an update to your application's privacy policy or data handling agreement.** If enabled, enhanced statistics include information such as:
+
+- Total number of TEKs published: the total number of TEKs that have been
+  published to the key server (per day).
+
+- Requests with revisions: the total number of uploads that contained at least one TEK revision.
+
+- Requests missing onset: the total number of uploads where no onset date was provided.
+
+- Requests by operating system: a breakdown of requests by target operating
+  system (Android and iPhone).
+
+- TEK age distribution: this shows a distribution of the ages of TEKs by how
+  many days old each TEK is.
+
+- Onset upload distribution: reflects the distribution of the time between the
+  TEK's symptom onset time and when the key was uploaded.
+
+Here is an example of the statistics page:
+
+![stats](images/admin/stats.png "Verification server stats")
 
 ## Rotating certificate signing keys
 
