@@ -442,19 +442,6 @@ func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp, 
 			db.logger.Warnw("failed to update external-issuer stats", "error", err)
 		}
 	}
-
-	// Update the per-realm stats.
-	if vc.RealmID != 0 {
-		sql := `
-				INSERT INTO realm_stats(date, realm_id, codes_claimed)
-					VALUES ($1, $2, 1)
-				ON CONFLICT (date, realm_id) DO UPDATE
-					SET codes_claimed = realm_stats.codes_claimed + 1`
-
-		if err := db.db.Exec(sql, midnight, vc.RealmID).Error; err != nil {
-			db.logger.Warnw("failed to update realm stats", "error", err)
-		}
-	}
 }
 
 // updateStatsTokenInvalid updates the statistics, increasing the number of
