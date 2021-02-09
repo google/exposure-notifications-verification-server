@@ -446,6 +446,11 @@ func TestStatDates(t *testing.T) {
 	ctx := project.TestContext(t)
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := NewRealmWithDefaults("Test Realm")
+	user := &User{
+		Model: gorm.Model{
+			ID: 100,
+		},
+	}
 
 	now := time.Now().UTC()
 	nowStr := now.Format(project.RFC3339Date)
@@ -461,7 +466,7 @@ func TestStatDates(t *testing.T) {
 				TestType:          "negative",
 				ExpiresAt:         now.Add(time.Second),
 				LongExpiresAt:     now.Add(time.Second),
-				IssuingUserID:     100,        // need for RealmUserStats
+				IssuingUserID:     user.ID,    // need for RealmUserStats
 				IssuingAppID:      200,        // need for AuthorizedAppStats
 				IssuingExternalID: "aa-bb-cc", // need for ExternalIssuerStats
 				RealmID:           300,        // need for RealmStats
@@ -498,6 +503,11 @@ func TestStatDates(t *testing.T) {
 			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
+
+			_, err := user.Stats(db, realm)
+			if err != nil {
+				t.Fatalf("error getting stats: %v", err)
+			}
 		}
 
 		if len(test.code.IssuingExternalID) != 0 {
@@ -519,6 +529,11 @@ func TestStatDates(t *testing.T) {
 			}
 			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+
+			_, err := realm.ExternalIssuerStats(db)
+			if err != nil {
+				t.Fatalf("error getting stats: %v", err)
 			}
 		}
 
@@ -563,6 +578,11 @@ func TestStatDates(t *testing.T) {
 			}
 			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+
+			_, err := realm.Stats(db)
+			if err != nil {
+				t.Fatalf("error getting stats: %v", err)
 			}
 		}
 	}
