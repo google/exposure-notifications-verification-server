@@ -99,6 +99,16 @@ func TestUserStats_MarshalCSV(t *testing.T) {
 			if diff := cmp.Diff(string(b), tc.exp); diff != "" {
 				t.Errorf("bad csv (+got, -want): %s", diff)
 			}
+
+			b, err = tc.stats.MarshalJSON()
+			if err != nil {
+				t.Fatal(err)
+			}
+			a := &UserStats{}
+			err = a.UnmarshalJSON(b)
+			if err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
