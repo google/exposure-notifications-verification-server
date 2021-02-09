@@ -451,6 +451,11 @@ func TestStatDates(t *testing.T) {
 			ID: 100,
 		},
 	}
+	app := &AuthorizedApp{
+		Model: gorm.Model{
+			ID: 200,
+		},
+	}
 
 	now := time.Now().UTC()
 	nowStr := now.Format(project.RFC3339Date)
@@ -467,7 +472,7 @@ func TestStatDates(t *testing.T) {
 				ExpiresAt:         now.Add(time.Second),
 				LongExpiresAt:     now.Add(time.Second),
 				IssuingUserID:     user.ID,    // need for RealmUserStats
-				IssuingAppID:      200,        // need for AuthorizedAppStats
+				IssuingAppID:      app.ID,     // need for AuthorizedAppStats
 				IssuingExternalID: "aa-bb-cc", // need for ExternalIssuerStats
 				RealmID:           300,        // need for RealmStats
 			},
@@ -556,6 +561,11 @@ func TestStatDates(t *testing.T) {
 			}
 			if f := stats[0].Date.Format(project.RFC3339Date); f != test.statDate {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
+			}
+
+			_, err := app.Stats(db)
+			if err != nil {
+				t.Fatalf("error getting stats: %v", err)
 			}
 		}
 
