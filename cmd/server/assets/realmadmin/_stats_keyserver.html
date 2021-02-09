@@ -156,6 +156,9 @@
         <p>
           This graph shows a distribution of the ages of temporary exposure keys by how many days old each TEK is.
           Move the slider to see how the distribution has changed over time.
+
+          Each bar shows the number of keys that are less than N days old and greater than the previous bar.
+          Eg. "4" shows keys between 3 and 4 days old.
         </p>
       </div>
     </div>
@@ -175,6 +178,9 @@
         <p>
           This graph reflects the distribution of the time between the TEK's symptom onset time and when the key was uploaded.
           Move the slider to see how the distribution has changed over time.
+
+          Each bar shows the number of keys whose symptom onset-to-upload is less than N days old but greater than the previous bar.
+          Eg. "4" shows symptom-onset between 3 and 4 days old.
         </p>
       </div>
     </div>
@@ -396,7 +402,7 @@
       hAxis: {
         title: 'TEK days old',
         gridlines: { color: 'transparent' },
-        ticks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+        ticks: [{v:1, f:'<1'},2,3,4,5,6,7,8,9,10,11,12,13,14,15],
         showTextEvery: 1,
       },
       vAxis: {
@@ -503,7 +509,7 @@
       hAxis: {
         title: 'Days from onset to upload',
         gridlines: { color: 'transparent' },
-        ticks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],
+        ticks: [{v:1, f:'<1'},2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],
         showTextEvery: 1,
       },
       vAxis: {
