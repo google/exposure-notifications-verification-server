@@ -286,7 +286,7 @@ func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp,
 		return nil, err
 	}
 
-	go db.updateStatsCodeClaimed(t, authApp)
+	go db.updateStatsCodeClaimed(t, authApp, &vc)
 	go db.updateStatsAgeDistrib(t, authApp, &vc)
 	return tok, nil
 }
@@ -405,7 +405,7 @@ func (db *Database) updateStatsAgeDistrib(t time.Time, authApp *AuthorizedApp, v
 
 // updateStatsCodeClaimed updates the statistics, increasing the number of codes
 // claimed.
-func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp) {
+func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp, vc *VerificationCode) {
 	midnight := timeutils.UTCMidnight(t)
 	authAppSQL := `
 			INSERT INTO authorized_app_stats(date, authorized_app_id, codes_claimed)
@@ -414,7 +414,46 @@ func (db *Database) updateStatsCodeClaimed(t time.Time, authApp *AuthorizedApp) 
 				SET codes_claimed = authorized_app_stats.codes_claimed + 1
 		`
 	if err := db.db.Exec(authAppSQL, midnight, authApp.ID).Error; err != nil {
-		db.logger.Errorw("failed to update authorized app stats code claimed", "error", err)
+		db.logger.Warnw("failed to update authorized app stats code claimed", "error", err)
+	}
+
+	// If the issuer was a user, update the user stats for the day.
+	if vc.IssuingUserID != 0 {
+		sql := `
+				INSERT INTO user_stats (date, realm_id, user_id, codes_claimed)
+					VALUES ($1, $2, $3, 1)
+				ON CONFLICT (date, realm_id, user_id) DO UPDATE
+					SET codes_claimed = user_stats.codes_claimed + 1`
+
+		if err := db.db.Exec(sql, midnight, vc.RealmID, vc.IssuingUserID).Error; err != nil {
+			db.logger.Warnw("failed to update user stats", "error", err)
+		}
+	}
+
+	// If the request was an API request, we might have an external issuer ID.
+	if len(vc.IssuingExternalID) != 0 {
+		sql := `
+				INSERT INTO external_issuer_stats (date, realm_id, issuer_id, codes_claimed)
+					VALUES ($1, $2, $3, 1)
+				ON CONFLICT (date, realm_id, issuer_id) DO UPDATE
+					SET codes_claimed = external_issuer_stats.codes_claimed + 1`
+
+		if err := db.db.Exec(sql, midnight, vc.RealmID, vc.IssuingExternalID).Error; err != nil {
+			db.logger.Warnw("failed to update external-issuer stats", "error", err)
+		}
+	}
+
+	// Update the per-realm stats.
+	if vc.RealmID != 0 {
+		sql := `
+				INSERT INTO realm_stats(date, realm_id, codes_claimed)
+					VALUES ($1, $2, 1)
+				ON CONFLICT (date, realm_id) DO UPDATE
+					SET codes_claimed = realm_stats.codes_claimed + 1`
+
+		if err := db.db.Exec(sql, midnight, vc.RealmID).Error; err != nil {
+			db.logger.Warnw("failed to update realm stats", "error", err)
+		}
 	}
 }
 

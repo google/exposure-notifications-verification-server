@@ -34,10 +34,11 @@ type ExternalIssuerStats []*ExternalIssuerStat
 
 // ExternalIssuerStat represents statistics related to a user in the database.
 type ExternalIssuerStat struct {
-	Date        time.Time `gorm:"column:date; type:date;"`
-	RealmID     uint      `gorm:"column:realm_id; type:int"`
-	IssuerID    string    `gorm:"column:issuer_id; type:varchar(255)"`
-	CodesIssued uint      `gorm:"column:codes_issued; type:int;"`
+	Date         time.Time `gorm:"column:date; type:date;"`
+	RealmID      uint      `gorm:"column:realm_id; type:int"`
+	IssuerID     string    `gorm:"column:issuer_id; type:varchar(255)"`
+	CodesIssued  uint      `gorm:"column:codes_issued; type:int;"`
+	CodesClaimed uint      `gorm:"column:codes_claimed; type:int;"`
 }
 
 // MarshalCSV returns bytes in CSV format.
@@ -50,7 +51,7 @@ func (s ExternalIssuerStats) MarshalCSV() ([]byte, error) {
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 
-	if err := w.Write([]string{"date", "realm_id", "issuer_id", "codes_issued"}); err != nil {
+	if err := w.Write([]string{"date", "realm_id", "issuer_id", "codes_issued", "codes_claimed"}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
@@ -60,6 +61,7 @@ func (s ExternalIssuerStats) MarshalCSV() ([]byte, error) {
 			strconv.FormatUint(uint64(stat.RealmID), 10),
 			stat.IssuerID,
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
+			strconv.FormatUint(uint64(stat.CodesClaimed), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -84,8 +86,9 @@ type jsonExternalIssuerStatStats struct {
 }
 
 type jsonExternalIssuerStatIssuerData struct {
-	IssuerID    string `json:"issuer_id"`
-	CodesIssued uint   `json:"codes_issued"`
+	IssuerID     string `json:"issuer_id"`
+	CodesIssued  uint   `json:"codes_issued"`
+	CodesClaimed uint   `json:"codes_claimed"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -102,8 +105,9 @@ func (s ExternalIssuerStats) MarshalJSON() ([]byte, error) {
 		}
 
 		m[stat.Date] = append(m[stat.Date], &jsonExternalIssuerStatIssuerData{
-			IssuerID:    stat.IssuerID,
-			CodesIssued: stat.CodesIssued,
+			IssuerID:     stat.IssuerID,
+			CodesIssued:  stat.CodesIssued,
+			CodesClaimed: stat.CodesClaimed,
 		})
 	}
 
@@ -144,10 +148,11 @@ func (s *ExternalIssuerStats) UnmarshalJSON(b []byte) error {
 	for _, stat := range result.Stats {
 		for _, r := range stat.IssuerData {
 			*s = append(*s, &ExternalIssuerStat{
-				Date:        stat.Date,
-				RealmID:     result.RealmID,
-				IssuerID:    r.IssuerID,
-				CodesIssued: r.CodesIssued,
+				Date:         stat.Date,
+				RealmID:      result.RealmID,
+				IssuerID:     r.IssuerID,
+				CodesIssued:  r.CodesIssued,
+				CodesClaimed: r.CodesClaimed,
 			})
 		}
 	}

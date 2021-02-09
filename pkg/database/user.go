@@ -299,7 +299,8 @@ func (u *User) Stats(db *Database, realm *Realm) (UserStats, error) {
 			$2 AS user_id,
 			$3 AS user_name,
 			$4 AS user_email,
-			COALESCE(s.codes_issued, 0) AS codes_issued
+			COALESCE(s.codes_issued, 0) AS codes_issued,
+			COALESCE(s.codes_claimed, 0) AS codes_claimed
 		FROM (
 			SELECT date::date FROM generate_series($5, $6, '1 day'::interval) date
 		) d

@@ -36,12 +36,13 @@ type RealmUserStats []*RealmUserStat
 // statistic. It does not correspond to a single database table, but is rather a
 // join across multiple tables.
 type RealmUserStat struct {
-	Date        time.Time
-	RealmID     uint
-	UserID      uint
-	Name        string
-	Email       string
-	CodesIssued uint
+	Date         time.Time
+	RealmID      uint
+	UserID       uint
+	Name         string
+	Email        string
+	CodesIssued  uint
+	CodesClaimed uint
 }
 
 // MarshalCSV returns bytes in CSV format.
@@ -54,7 +55,7 @@ func (s RealmUserStats) MarshalCSV() ([]byte, error) {
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 
-	if err := w.Write([]string{"date", "realm_id", "user_id", "name", "email", "codes_issued"}); err != nil {
+	if err := w.Write([]string{"date", "realm_id", "user_id", "name", "email", "codes_issued", "codes_claimed"}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
@@ -66,6 +67,7 @@ func (s RealmUserStats) MarshalCSV() ([]byte, error) {
 			stat.Name,
 			stat.Email,
 			strconv.FormatUint(uint64(stat.CodesIssued), 10),
+			strconv.FormatUint(uint64(stat.CodesClaimed), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -90,10 +92,11 @@ type jsonRealmUserStatStats struct {
 }
 
 type jsonRealmUserStatIssuerData struct {
-	UserID      uint   `json:"user_id"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	CodesIssued uint   `json:"codes_issued"`
+	UserID       uint   `json:"user_id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	CodesIssued  uint   `json:"codes_issued"`
+	CodesClaimed uint   `json:"codes_claimed"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -110,10 +113,11 @@ func (s RealmUserStats) MarshalJSON() ([]byte, error) {
 		}
 
 		m[stat.Date] = append(m[stat.Date], &jsonRealmUserStatIssuerData{
-			UserID:      stat.UserID,
-			Name:        stat.Name,
-			Email:       stat.Email,
-			CodesIssued: stat.CodesIssued,
+			UserID:       stat.UserID,
+			Name:         stat.Name,
+			Email:        stat.Email,
+			CodesIssued:  stat.CodesIssued,
+			CodesClaimed: stat.CodesClaimed,
 		})
 	}
 
@@ -154,12 +158,13 @@ func (s *RealmUserStats) UnmarshalJSON(b []byte) error {
 	for _, stat := range result.Stats {
 		for _, r := range stat.IssuerData {
 			*s = append(*s, &RealmUserStat{
-				Date:        stat.Date,
-				RealmID:     result.RealmID,
-				UserID:      r.UserID,
-				Name:        r.Name,
-				Email:       r.Email,
-				CodesIssued: r.CodesIssued,
+				Date:         stat.Date,
+				RealmID:      result.RealmID,
+				UserID:       r.UserID,
+				Name:         r.Name,
+				Email:        r.Email,
+				CodesIssued:  r.CodesIssued,
+				CodesClaimed: r.CodesClaimed,
 			})
 		}
 	}

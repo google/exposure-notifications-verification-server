@@ -2094,6 +2094,21 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS code_claim_mean_age`)
 			},
 		},
+		{
+			ID: "00094-AddIssuingUserClaimStat",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE user_stats ADD COLUMN IF NOT EXISTS codes_claimed INTEGER NOT NULL DEFAULT 0`,
+					`ALTER TABLE external_issuer_stats ADD COLUMN IF NOT EXISTS codes_claimed INTEGER NOT NULL DEFAULT 0`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE user_stats DROP COLUMN IF EXISTS codes_claimed`,
+					`ALTER TABLE external_issuer_stats DROP COLUMN IF EXISTS codes_claimed`,
+				)
+			},
+		},
 	}
 }
 

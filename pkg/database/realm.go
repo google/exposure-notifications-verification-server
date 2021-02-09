@@ -1659,7 +1659,8 @@ func (r *Realm) UserStats(db *Database) (RealmUserStats, error) {
 			d.user_id AS user_id,
 			u.name AS name,
 			u.email AS email,
-			COALESCE(s.codes_issued, 0) AS codes_issued
+			COALESCE(s.codes_issued, 0) AS codes_issued,
+			COALESCE(s.codes_claimed, 0) AS codes_claimed
 		FROM (
 			SELECT
 				d.date AS date,
