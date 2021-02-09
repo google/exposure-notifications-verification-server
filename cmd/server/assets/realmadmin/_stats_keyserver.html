@@ -461,11 +461,11 @@
       let r = [i, table[i],"","",""]
       if (i == 15) {
         r[2] = "#6c757d";
-        r[3] = ">15 days";
+        r[3] = ">=15 days";
       }
 
       r[4] =
-        "<ul class='chart-tooltip'><li><strong>Days:</strong> "+ r[0] +"</li>"+
+        "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] +"-"+ (r[0]+1) +" days</li>"+
           "<li>Count: " + r[1] + "</li>" +
           "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
 
@@ -565,11 +565,11 @@
       let r = [i, table[i],"","", ""]
       if (i == 30) {
         r[2] = "#6c757d";
-        r[3] = ">30 days";
+        r[3] = ">=30 days";
       }
 
       r[4] =
-        "<ul class='chart-tooltip'><li><strong>Days:</strong> "+ r[0] +"</li>"+
+        "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] + "-" + (r[0]+1) +" days</li>"+
           "<li>Count: " + r[1] + "</li>" +
           "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
 
