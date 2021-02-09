@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -456,6 +457,10 @@ func TestStatDates(t *testing.T) {
 			ID: 200,
 		},
 	}
+	cacher, err := cache.NewInMemory(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	now := time.Now().UTC()
 	nowStr := now.Format(project.RFC3339Date)
@@ -509,8 +514,7 @@ func TestStatDates(t *testing.T) {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
 
-			_, err := user.Stats(db, realm)
-			if err != nil {
+			if _, err := user.StatsCached(ctx, db, cacher, realm); err != nil {
 				t.Fatalf("error getting stats: %v", err)
 			}
 		}
@@ -536,8 +540,7 @@ func TestStatDates(t *testing.T) {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
 
-			_, err := realm.ExternalIssuerStats(db)
-			if err != nil {
+			if _, err := realm.ExternalIssuerStatsCached(ctx, db, cacher); err != nil {
 				t.Fatalf("error getting stats: %v", err)
 			}
 		}
@@ -563,8 +566,7 @@ func TestStatDates(t *testing.T) {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
 
-			_, err := app.Stats(db)
-			if err != nil {
+			if _, err := app.StatsCached(ctx, db, cacher); err != nil {
 				t.Fatalf("error getting stats: %v", err)
 			}
 		}
@@ -590,8 +592,7 @@ func TestStatDates(t *testing.T) {
 				t.Errorf("[%d] expected stat.Date = %s, expected %s", i, f, test.statDate)
 			}
 
-			_, err := realm.Stats(db)
-			if err != nil {
+			if _, err := realm.StatsCached(ctx, db, cacher); err != nil {
 				t.Fatalf("error getting stats: %v", err)
 			}
 		}
