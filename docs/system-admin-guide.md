@@ -1,16 +1,17 @@
 <!-- TOC depthFrom:2 -->
 
-- [Account setup](#account-setup)
-- [Inviting new admins](#inviting-new-admins)
-- [Creating new realms](#creating-new-realms)
-- [View realm information](#view-realm-information)
-- [Joining realms](#joining-realms)
-- [Create system SMS configuration](#create-system-sms-configuration)
-- [Create system SMTP configuration](#create-system-smtp-configuration)
-- [Configure ENX redirect service](#configure-enx-redirect-service)
-- [Adding ENX redirect domains](#adding-enx-redirect-domains)
-- [Clearing caches](#clearing-caches)
-- [Getting system information](#getting-system-information)
+- [System admin guide](#system-admin-guide)
+  - [Account setup](#account-setup)
+  - [Inviting new admins](#inviting-new-admins)
+  - [Creating new realms](#creating-new-realms)
+  - [View realm information](#view-realm-information)
+  - [Joining realms](#joining-realms)
+  - [Create system SMS configuration](#create-system-sms-configuration)
+  - [Create system SMTP configuration](#create-system-smtp-configuration)
+  - [Configure ENX redirect service](#configure-enx-redirect-service)
+  - [Adding ENX redirect domains](#adding-enx-redirect-domains)
+  - [Clearing caches](#clearing-caches)
+  - [Getting system information](#getting-system-information)
 
 <!-- /TOC -->
 
@@ -28,6 +29,10 @@ will receive an email notification. If you are already a member of the system
 (as a non-system admin), you will be promoted. If you are not already a member
 of the system, an account will be provisioned automatically and you will be
 prompted to reset your password.
+
+Newly provisioned systems will be bootstrapped with
+[super@example.com](/docs/production.md#user-administration) from which you may
+create your first real accounts.
 
 ## Inviting new admins
 
