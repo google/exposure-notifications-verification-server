@@ -46,7 +46,7 @@ type BulkPermission struct {
 // is taken.
 //
 // For add operations, if the user already has the permission, no action is
-// taken. For remove opreations, if the user does not have the permission, no
+// taken. For remove operations, if the user does not have the permission, no
 // action is taken.
 //
 // Other permissions not in the list are unchanged.

@@ -15,49 +15,41 @@
 package codes_test
 
 import (
-	"net/http"
-	"net/http/httptest"
+	"context"
 	"testing"
+	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
+	"github.com/chromedp/chromedp"
+	"github.com/google/exposure-notifications-verification-server/internal/browser"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
-	"github.com/gorilla/sessions"
 )
 
 func TestRenderBulkIssue(t *testing.T) {
 	t.Parallel()
 
-	ctx := project.TestContext(t)
-	ctx = controller.WithSession(ctx, &sessions.Session{})
+	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	realm := database.NewRealmWithDefaults("Test Realm")
-	realm.AllowBulkUpload = true
-	ctx = controller.WithRealm(ctx, realm)
-	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatalf("failed to save realm: %v", err)
-	}
-
-	membership := &database.Membership{
-		RealmID:     realm.ID,
-		Realm:       realm,
-		Permissions: rbac.CodeBulkIssue,
-	}
-	ctx = controller.WithMembership(ctx, membership)
-	ctx = controller.WithMemberships(ctx, []*database.Membership{membership})
-
-	config := &config.ServerConfig{}
-	h, err := render.NewTest(ctx, project.Root()+"/cmd/server/assets", t)
+	realm, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
-		t.Fatalf("failed to create renderer: %v", err)
+		t.Fatal(err)
 	}
-	c := codes.NewServer(ctx, config, db, h)
+	cookie, err := harness.SessionCookie(session)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	realm.AllowBulkUpload = true
+	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := user.AddToRealm(harness.Database, realm,
+		rbac.LegacyRealmAdmin|rbac.CodeBulkIssue, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
 
 	sms := &database.SMSConfig{
 		RealmID:          realm.ID,
@@ -66,21 +58,19 @@ func TestRenderBulkIssue(t *testing.T) {
 		TwilioAuthToken:  "def123",
 		TwilioFromNumber: "+11234567890",
 	}
-	if err := db.SaveSMSConfig(sms); err != nil {
+	if err := harness.Database.SaveSMSConfig(sms); err != nil {
 		t.Fatalf("failed to save SMSConfig: %v", err)
 	}
 
-	r := &http.Request{}
-	r = r.WithContext(ctx)
+	browserCtx := browser.New(t)
+	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+	defer done()
 
-	w := httptest.NewRecorder()
-
-	handleFunc := c.HandleBulkIssue()
-	handleFunc.ServeHTTP(w, r)
-	result := w.Result()
-	defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
-
-	if result.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+	if err := chromedp.Run(taskCtx,
+		browser.SetCookie(cookie),
+		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/bulk-issue`),
+		chromedp.WaitVisible(`body#bulk-issue`, chromedp.ByQuery),
+	); err != nil {
+		t.Fatal(err)
 	}
 }
