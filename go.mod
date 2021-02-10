@@ -45,7 +45,6 @@ require (
 	github.com/hashicorp/go-plugin v1.3.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.8.1
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d // indirect
-	github.com/jba/templatecheck v0.5.0
 	github.com/jefferai/jsonx v1.0.1 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/keybase/go-crypto v0.0.0-20200123153347-de78d2cb44f4 // indirect
