@@ -28,11 +28,11 @@ type Controller struct {
 	cacher       cache.Cacher
 	config       *config.ServerConfig
 	db           *database.Database
-	h            render.Renderer
+	h            *render.Renderer
 }
 
 // New creates a new login controller.
-func New(authProvider auth.Provider, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, h render.Renderer) *Controller {
+func New(authProvider auth.Provider, cacher cache.Cacher, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
 		authProvider: authProvider,
 		cacher:       cacher,

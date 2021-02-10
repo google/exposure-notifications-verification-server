@@ -25,7 +25,7 @@ import (
 )
 
 // PopulateRequestID populates the request context with a random UUID.
-func PopulateRequestID(h render.Renderer) mux.MiddlewareFunc {
+func PopulateRequestID(h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

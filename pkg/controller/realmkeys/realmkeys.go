@@ -26,7 +26,7 @@ import (
 type Controller struct {
 	config         *config.ServerConfig
 	db             *database.Database
-	h              render.Renderer
+	h              *render.Renderer
 	publicKeyCache *keyutils.PublicKeyCache
 
 	// systemCertificateKeyManager is the key manager used for system
@@ -34,7 +34,7 @@ type Controller struct {
 	systemCertificateKeyManager keys.KeyManager
 }
 
-func New(cfg *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
+func New(cfg *config.ServerConfig, db *database.Database, systemCertificationKeyManager keys.KeyManager, publicKeyCache *keyutils.PublicKeyCache, h *render.Renderer) *Controller {
 	return &Controller{
 		config:         cfg,
 		db:             db,

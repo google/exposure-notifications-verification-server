@@ -25,7 +25,7 @@ import (
 
 // OnlyIfEnabled can be used to hide legitimate routes behind a 404
 // if the feature has been disabled.
-func OnlyIfEnabled(enabled bool, h render.Renderer) mux.MiddlewareFunc {
+func OnlyIfEnabled(enabled bool, h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !enabled {

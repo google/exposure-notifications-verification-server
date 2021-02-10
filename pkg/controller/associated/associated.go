@@ -39,10 +39,10 @@ type Controller struct {
 	hostnameToRegion map[string]string
 	cacher           cache.Cacher
 	db               *database.Database
-	h                render.Renderer
+	h                *render.Renderer
 }
 
-func New(config *config.RedirectConfig, db *database.Database, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
+func New(config *config.RedirectConfig, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
 	cfgMap, err := config.HostnameToRegion()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)

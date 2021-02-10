@@ -39,11 +39,11 @@ type Controller struct {
 	localCache *cache.Cache
 	limiter    limiter.Store
 	smsSigner  keys.KeyManager
-	h          render.Renderer
+	h          *render.Renderer
 }
 
 // New creates a new IssueAPI controller.
-func New(cfg config.IssueAPIConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h render.Renderer) *Controller {
+func New(cfg config.IssueAPIConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h *render.Renderer) *Controller {
 	localCache, _ := cache.New(5 * time.Minute)
 
 	return &Controller{

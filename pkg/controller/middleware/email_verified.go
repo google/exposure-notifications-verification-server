@@ -30,7 +30,7 @@ import (
 //
 // MUST first run RequireAuth to populate user and RequireRealm to populate the
 // realm.
-func RequireEmailVerified(authProvider auth.Provider, h render.Renderer) mux.MiddlewareFunc {
+func RequireEmailVerified(authProvider auth.Provider, h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

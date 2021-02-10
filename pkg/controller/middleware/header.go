@@ -25,7 +25,7 @@ import (
 
 // RequireHeader requires that the request have a certain header present. The
 // header just needs to exist - it does not need to have a specific value.
-func RequireHeader(header string, h render.Renderer) mux.MiddlewareFunc {
+func RequireHeader(header string, h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if v := r.Header.Get(header); v == "" {
@@ -40,7 +40,7 @@ func RequireHeader(header string, h render.Renderer) mux.MiddlewareFunc {
 
 // RequireHeaderValues requires that the request have a certain header present
 // and that the value be one of the supplied entries.
-func RequireHeaderValues(header string, allowed []string, h render.Renderer) mux.MiddlewareFunc {
+func RequireHeaderValues(header string, allowed []string, h *render.Renderer) mux.MiddlewareFunc {
 	want := make(map[string]struct{}, len(allowed))
 	for _, v := range allowed {
 		want[v] = struct{}{}

@@ -24,10 +24,10 @@ import (
 type Controller struct {
 	cacher cache.Cacher
 	db     *database.Database
-	h      render.Renderer
+	h      *render.Renderer
 }
 
-func New(cacher cache.Cacher, db *database.Database, h render.Renderer) *Controller {
+func New(cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
 		cacher: cacher,
 		db:     db,

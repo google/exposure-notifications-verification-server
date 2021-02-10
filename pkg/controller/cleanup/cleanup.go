@@ -29,11 +29,11 @@ type Controller struct {
 	config                 *config.CleanupConfig
 	db                     *database.Database
 	signingTokenKeyManager keys.SigningKeyManager
-	h                      render.Renderer
+	h                      *render.Renderer
 }
 
 // New creates a new cleanup controller.
-func New(config *config.CleanupConfig, db *database.Database, signingTokenKeyManager keys.SigningKeyManager, h render.Renderer) *Controller {
+func New(config *config.CleanupConfig, db *database.Database, signingTokenKeyManager keys.SigningKeyManager, h *render.Renderer) *Controller {
 	return &Controller{
 		config:                 config,
 		db:                     db,

@@ -32,13 +32,13 @@ const (
 type Controller struct {
 	config *config.AppSyncConfig
 	db     *database.Database
-	h      render.Renderer
+	h      *render.Renderer
 
 	appSyncClient *clients.AppSyncClient
 }
 
 // New creates a new appsync controller.
-func New(cfg *config.AppSyncConfig, db *database.Database, h render.Renderer) (*Controller, error) {
+func New(cfg *config.AppSyncConfig, db *database.Database, h *render.Renderer) (*Controller, error) {
 	appSyncClient, err := clients.NewAppSyncClient(cfg.AppSyncURL,
 		clients.WithTimeout(cfg.Timeout),
 		clients.WithMaxBodySize(cfg.FileSizeLimitBytes))

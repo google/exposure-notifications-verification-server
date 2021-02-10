@@ -26,12 +26,12 @@ import (
 type Controller struct {
 	config         *config.ServerConfig
 	db             *database.Database
-	h              render.Renderer
+	h              *render.Renderer
 	publicKeyCache *keyutils.PublicKeyCache
 }
 
 // New creates a new Controller
-func New(config *config.ServerConfig, db *database.Database, publicKeyCache *keyutils.PublicKeyCache, h render.Renderer) *Controller {
+func New(config *config.ServerConfig, db *database.Database, publicKeyCache *keyutils.PublicKeyCache, h *render.Renderer) *Controller {
 	return &Controller{
 		config:         config,
 		db:             db,

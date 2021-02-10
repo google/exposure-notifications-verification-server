@@ -28,10 +28,10 @@ type Controller struct {
 	db     *database.Database
 	cacher cache.Cacher
 	kms    keys.KeyManager
-	h      render.Renderer
+	h      *render.Renderer
 }
 
-func New(cfg *config.APIServerConfig, db *database.Database, cacher cache.Cacher, kms keys.KeyManager, h render.Renderer) *Controller {
+func New(cfg *config.APIServerConfig, db *database.Database, cacher cache.Cacher, kms keys.KeyManager, h *render.Renderer) *Controller {
 	return &Controller{
 		config: cfg,
 		db:     db,

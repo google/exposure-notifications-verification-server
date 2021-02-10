@@ -44,7 +44,7 @@ func init() {
 // Back goes back to the referrer. If the referrer is missing, or if the
 // referrer base URL does not match the request base URL, the redirect is to the
 // homepage.
-func Back(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func Back(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	logger := logging.FromContext(r.Context()).Named("controller.Back")
 
 	ref := r.Header.Get("Referer")
@@ -72,7 +72,7 @@ func Back(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 
 // InternalError handles an internal error, returning the right response to the
 // client.
-func InternalError(w http.ResponseWriter, r *http.Request, h render.Renderer, err error) {
+func InternalError(w http.ResponseWriter, r *http.Request, h *render.Renderer, err error) {
 	logger := logging.FromContext(r.Context())
 	logger.Errorw("internal error", "error", err)
 
@@ -90,7 +90,7 @@ func InternalError(w http.ResponseWriter, r *http.Request, h render.Renderer, er
 }
 
 // NotFound returns an error indicating the URL was not found.
-func NotFound(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
@@ -105,7 +105,7 @@ func NotFound(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 }
 
 // RedirectToLogout redirects the user to the logout page to terminate the session.
-func RedirectToLogout(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func RedirectToLogout(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
@@ -121,7 +121,7 @@ func RedirectToLogout(w http.ResponseWriter, r *http.Request, h render.Renderer)
 // Unauthorized returns an error indicating the request was unauthorized. The
 // system always returns 401 (even with authentication is provided but
 // authorization fails).
-func Unauthorized(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
@@ -136,7 +136,7 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 }
 
 // BadRequest indicates the client sent an invalid request.
-func BadRequest(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func BadRequest(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
@@ -152,7 +152,7 @@ func BadRequest(w http.ResponseWriter, r *http.Request, h render.Renderer) {
 
 // MissingMembership returns an error indicating that the request requires a
 // realm selection, but one was not present.
-func MissingMembership(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func MissingMembership(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	accept := strings.Split(r.Header.Get("Accept"), ",")
 	accept = append(accept, strings.Split(r.Header.Get("Content-Type"), ",")...)
 
@@ -170,31 +170,31 @@ func MissingMembership(w http.ResponseWriter, r *http.Request, h render.Renderer
 
 // MissingAuthorizedApp returns an internal error when the authorized app does
 // not exist.
-func MissingAuthorizedApp(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func MissingAuthorizedApp(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingAuthorizedApp)
 	return
 }
 
 // MissingSession returns an internal error when the session does not exist.
-func MissingSession(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func MissingSession(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingSession)
 	return
 }
 
 // MissingUser returns an internal error when the user does not exist.
-func MissingUser(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func MissingUser(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingUser)
 	return
 }
 
 // RedirectToMFA redirects to the MFA registration.
-func RedirectToMFA(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func RedirectToMFA(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	http.Redirect(w, r, "/login/register-phone", http.StatusSeeOther)
 	return
 }
 
 // RedirectToChangePassword redirects to the password reset page.
-func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h render.Renderer) {
+func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	http.Redirect(w, r, "/login/change-password", http.StatusSeeOther)
 	return
 }

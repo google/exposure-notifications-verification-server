@@ -24,7 +24,7 @@ import (
 // RenderCSV renders the input as a CSV. It attempts to gracefully handle
 // any rendering errors to avoid partial responses sent to the response by
 // writing to a buffer first, then flushing the buffer to the response.
-func (r *ProdRenderer) RenderCSV(w http.ResponseWriter, code int, filename string, data icsv.Marshaler) {
+func (r *Renderer) RenderCSV(w http.ResponseWriter, code int, filename string, data icsv.Marshaler) {
 	// Avoid marshaling nil data.
 	if data == nil {
 		w.Header().Set("Content-Type", "text/csv")

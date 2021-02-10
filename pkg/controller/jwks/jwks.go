@@ -35,7 +35,7 @@ import (
 
 // Controller holds all the pieces necessary to show the jwks encoded keys.
 type Controller struct {
-	h        render.Renderer
+	h        *render.Renderer
 	db       *database.Database
 	keyCache *keyutils.PublicKeyCache
 	cacher   cache.Cacher
@@ -127,7 +127,7 @@ func (c *Controller) HandleIndex() http.Handler {
 }
 
 // New creates a new jwks *Controller, and returns it.
-func New(ctx context.Context, db *database.Database, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
+func New(ctx context.Context, db *database.Database, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
 	kc, err := keyutils.NewPublicKeyCache(ctx, cacher, time.Minute)
 	if err != nil {
 		return nil, err

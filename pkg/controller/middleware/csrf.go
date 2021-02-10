@@ -29,7 +29,7 @@ import (
 
 // ConfigureCSRF injects the CSRF handling and populates the global template map
 // with the csrfToken and csrfTemplate.
-func ConfigureCSRF(config *config.ServerConfig, h render.Renderer) mux.MiddlewareFunc {
+func ConfigureCSRF(config *config.ServerConfig, h *render.Renderer) mux.MiddlewareFunc {
 	protect := csrf.Protect(config.CSRFAuthKey,
 		csrf.Secure(!config.DevMode),
 		csrf.ErrorHandler(handleCSRFError(h)),
@@ -58,7 +58,7 @@ func ConfigureCSRF(config *config.ServerConfig, h render.Renderer) mux.Middlewar
 // handleCSRFError is an http.HandlerFunc that can be installed in the gorilla
 // csrf protect middleware. It will respond w/ a JSON object containing error:
 // on API requests and a signout redirect to other requests.
-func handleCSRFError(h render.Renderer) http.Handler {
+func handleCSRFError(h *render.Renderer) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		logger := logging.FromContext(ctx).Named("middleware.handleCSRFError")

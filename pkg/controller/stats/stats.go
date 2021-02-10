@@ -45,11 +45,11 @@ const (
 type Controller struct {
 	cacher cache.Cacher
 	db     *database.Database
-	h      render.Renderer
+	h      *render.Renderer
 }
 
 // New creates a new stats controller.
-func New(cacher cache.Cacher, db *database.Database, h render.Renderer) *Controller {
+func New(cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
 		cacher: cacher,
 		db:     db,

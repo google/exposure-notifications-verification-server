@@ -25,11 +25,11 @@ import (
 type Controller struct {
 	config  *config.ServerConfig
 	db      *database.Database
-	h       render.Renderer
+	h       *render.Renderer
 	limiter limiter.Store
 }
 
-func New(config *config.ServerConfig, db *database.Database, limiter limiter.Store, h render.Renderer) *Controller {
+func New(config *config.ServerConfig, db *database.Database, limiter limiter.Store, h *render.Renderer) *Controller {
 	return &Controller{
 		config:  config,
 		db:      db,
