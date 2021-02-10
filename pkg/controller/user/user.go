@@ -26,10 +26,10 @@ type Controller struct {
 	authProvider auth.Provider
 	cacher       cache.Cacher
 	db           *database.Database
-	h            render.Renderer
+	h            *render.Renderer
 }
 
-func New(authProvider auth.Provider, cacher cache.Cacher, db *database.Database, h render.Renderer) *Controller {
+func New(authProvider auth.Provider, cacher cache.Cacher, db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
 		cacher:       cacher,
 		authProvider: authProvider,

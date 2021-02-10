@@ -37,12 +37,12 @@ type Controller struct {
 	config           *config.RedirectConfig
 	cacher           cache.Cacher
 	db               *database.Database
-	h                render.Renderer
+	h                *render.Renderer
 	hostnameToRegion map[string]string
 }
 
 // New creates a new redirect controller.
-func New(db *database.Database, config *config.RedirectConfig, cacher cache.Cacher, h render.Renderer) (*Controller, error) {
+func New(db *database.Database, config *config.RedirectConfig, cacher cache.Cacher, h *render.Renderer) (*Controller, error) {
 	cfgMap, err := config.HostnameToRegion()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)

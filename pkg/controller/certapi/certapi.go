@@ -37,13 +37,13 @@ type Controller struct {
 	config      *config.APIServerConfig
 	db          *database.Database
 	cacher      vcache.Cacher
-	h           render.Renderer
+	h           *render.Renderer
 	pubKeyCache *keyutils.PublicKeyCache // Cache of public keys for verification token verification.
 	signerCache *cache.Cache             // Cache signers on a per-realm basis.
 	kms         keys.KeyManager
 }
 
-func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, cacher vcache.Cacher, kms keys.KeyManager, h render.Renderer) (*Controller, error) {
+func New(ctx context.Context, config *config.APIServerConfig, db *database.Database, cacher vcache.Cacher, kms keys.KeyManager, h *render.Renderer) (*Controller, error) {
 	pubKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create public key cache, likely invalid duration: %w", err)

@@ -28,7 +28,7 @@ import (
 // RequireMFA checks the realm's MFA requirements and enforces them.
 // Use requireRealm before requireMFA to ensure the currently selected realm is on context.
 // If no realm is selected, this assumes MFA is required.
-func RequireMFA(authProvider auth.Provider, h render.Renderer) mux.MiddlewareFunc {
+func RequireMFA(authProvider auth.Provider, h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

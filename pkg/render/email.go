@@ -28,7 +28,7 @@ import (
 //
 // The buffers are fetched via a sync.Pool to reduce allocations and improve
 // performance.
-func (r *ProdRenderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
+func (r *Renderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 	if r.debug {
 		if err := r.loadTemplates(); err != nil {
 			return nil, fmt.Errorf("error loading templates %v", err)

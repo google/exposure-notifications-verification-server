@@ -22,7 +22,7 @@ import (
 )
 
 // RenderHTML calls RenderHTMLStatus with a http.StatusOK (200).
-func (r *ProdRenderer) RenderHTML(w http.ResponseWriter, tmpl string, data interface{}) {
+func (r *Renderer) RenderHTML(w http.ResponseWriter, tmpl string, data interface{}) {
 	r.RenderHTMLStatus(w, http.StatusOK, tmpl, data)
 }
 
@@ -37,7 +37,7 @@ func (r *ProdRenderer) RenderHTML(w http.ResponseWriter, tmpl string, data inter
 //
 // The buffers are fetched via a sync.Pool to reduce allocations and improve
 // performance.
-func (r *ProdRenderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string, data interface{}) {
+func (r *Renderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string, data interface{}) {
 	// Hello there reader! If you've made it here, you're likely wondering why
 	// you're getting an error about response codes. For client-interop, it's very
 	// important that we retain and maintain the allowed list of response codes.
@@ -93,7 +93,7 @@ func (r *ProdRenderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl st
 // RenderHTML500 renders the given error as HTML. In production mode, this always
 // renders a generic "server error" message. In debug, it returns the actual
 // error from the caller.
-func (r *ProdRenderer) RenderHTML500(w http.ResponseWriter, err error) {
+func (r *Renderer) RenderHTML500(w http.ResponseWriter, err error) {
 	code := http.StatusInternalServerError
 
 	if r.debug {

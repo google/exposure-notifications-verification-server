@@ -24,7 +24,7 @@ import (
 )
 
 // SendInviteEmailFunc returns a function capable of sending a new user invitation.
-func SendInviteEmailFunc(ctx context.Context, db *database.Database, h render.Renderer, email string,
+func SendInviteEmailFunc(ctx context.Context, db *database.Database, h *render.Renderer, email string,
 	realm *database.Realm) (auth.InviteUserEmailFunc, error) {
 	// Lookup the email provider
 	emailer, err := realm.EmailProvider(db)
@@ -72,7 +72,7 @@ func SendInviteEmailFunc(ctx context.Context, db *database.Database, h render.Re
 
 // SendPasswordResetEmailFunc returns a function capable of sending a password
 // reset for the given user.
-func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h render.Renderer, email string,
+func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h *render.Renderer, email string,
 	realm *database.Realm) (auth.ResetPasswordEmailFunc, error) {
 	// Lookup the email provider
 	emailer, err := realm.EmailProvider(db)
@@ -119,7 +119,7 @@ func SendPasswordResetEmailFunc(ctx context.Context, db *database.Database, h re
 
 // SendEmailVerificationEmailFunc returns a function capable of sending an email
 // verification email.
-func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, h render.Renderer, email string,
+func SendEmailVerificationEmailFunc(ctx context.Context, db *database.Database, h *render.Renderer, email string,
 	realm *database.Realm) (auth.EmailVerificationEmailFunc, error) {
 	// Lookup the email provider
 	emailer, err := realm.EmailProvider(db)

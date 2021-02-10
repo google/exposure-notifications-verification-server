@@ -31,13 +31,13 @@ type Controller struct {
 	defaultKeyServerClient *clients.KeyServerClient
 	config                 *config.StatsPullerConfig
 	db                     *database.Database
-	h                      render.Renderer
+	h                      *render.Renderer
 	kms                    keys.KeyManager
 	signerCache            *cache.Cache
 }
 
 // New creates a new stats-pull controller.
-func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, kms keys.KeyManager, h render.Renderer) (*Controller, error) {
+func New(cfg *config.StatsPullerConfig, db *database.Database, client *clients.KeyServerClient, kms keys.KeyManager, h *render.Renderer) (*Controller, error) {
 	// This has to be in-memory because the signer has state and connection pools.
 	signerCache, err := cache.New(cfg.CertificateSigning.SignerCacheDuration)
 	if err != nil {

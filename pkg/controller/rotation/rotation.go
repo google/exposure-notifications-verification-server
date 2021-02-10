@@ -31,10 +31,10 @@ type Controller struct {
 	config     *config.RotationConfig
 	db         *database.Database
 	keyManager keys.SigningKeyManager
-	h          render.Renderer
+	h          *render.Renderer
 }
 
-func New(cfg *config.RotationConfig, db *database.Database, keyManager keys.SigningKeyManager, h render.Renderer) *Controller {
+func New(cfg *config.RotationConfig, db *database.Database, keyManager keys.SigningKeyManager, h *render.Renderer) *Controller {
 	return &Controller{
 		config:     cfg,
 		db:         db,

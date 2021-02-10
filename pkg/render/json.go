@@ -37,7 +37,7 @@ import (
 //
 // The buffers are fetched via a sync.Pool to reduce allocations and improve
 // performance.
-func (r *ProdRenderer) RenderJSON(w http.ResponseWriter, code int, data interface{}) {
+func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{}) {
 	// Hello there reader! If you've made it here, you're likely wondering why
 	// you're getting an error about response codes. For client-interop, it's very
 	// important that we retain and maintain the allowed list of response codes.
@@ -110,7 +110,7 @@ func (r *ProdRenderer) RenderJSON(w http.ResponseWriter, code int, data interfac
 // RenderJSON500 renders the given error as JSON. In production mode, this always
 // renders a generic "server error" message. In debug, it returns the actual
 // error from the caller.
-func (r *ProdRenderer) RenderJSON500(w http.ResponseWriter, err error) {
+func (r *Renderer) RenderJSON500(w http.ResponseWriter, err error) {
 	code := http.StatusInternalServerError
 
 	if r.debug {

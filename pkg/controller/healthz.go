@@ -28,7 +28,7 @@ import (
 	"github.com/sethvargo/go-retry"
 )
 
-func HandleHealthz(db *database.Database, h render.Renderer) http.Handler {
+func HandleHealthz(db *database.Database, h *render.Renderer) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

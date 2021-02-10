@@ -29,11 +29,11 @@ type Controller struct {
 	serverconfig *config.ServerConfig
 	apiconfig    *config.AdminAPIServerConfig
 	db           *database.Database
-	h            render.Renderer
+	h            *render.Renderer
 }
 
 // NewServer creates a new controller for serving admin server requests.
-func NewServer(ctx context.Context, config *config.ServerConfig, db *database.Database, h render.Renderer) *Controller {
+func NewServer(ctx context.Context, config *config.ServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
 		serverconfig: config,
 		db:           db,
@@ -42,7 +42,7 @@ func NewServer(ctx context.Context, config *config.ServerConfig, db *database.Da
 }
 
 // NewAPI creates a new controller serving API requests.
-func NewAPI(ctx context.Context, config *config.AdminAPIServerConfig, db *database.Database, h render.Renderer) *Controller {
+func NewAPI(ctx context.Context, config *config.AdminAPIServerConfig, db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
 		apiconfig: config,
 		db:        db,

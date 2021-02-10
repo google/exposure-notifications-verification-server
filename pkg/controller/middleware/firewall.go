@@ -30,7 +30,7 @@ import (
 //
 // This must come after the realm has been loaded in the context, probably via a
 // different middleware.
-func ProcessFirewall(h render.Renderer, typ string) mux.MiddlewareFunc {
+func ProcessFirewall(h *render.Renderer, typ string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

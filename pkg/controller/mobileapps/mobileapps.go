@@ -26,10 +26,10 @@ import (
 
 type Controller struct {
 	db *database.Database
-	h  render.Renderer
+	h  *render.Renderer
 }
 
-func New(db *database.Database, h render.Renderer) *Controller {
+func New(db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
 		db: db,
 		h:  h,
