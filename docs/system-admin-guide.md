@@ -1,17 +1,16 @@
 <!-- TOC depthFrom:2 -->
 
-- [System admin guide](#system-admin-guide)
-  - [Account setup](#account-setup)
-  - [Inviting new admins](#inviting-new-admins)
-  - [Creating new realms](#creating-new-realms)
-  - [View realm information](#view-realm-information)
-  - [Joining realms](#joining-realms)
-  - [Create system SMS configuration](#create-system-sms-configuration)
-  - [Create system SMTP configuration](#create-system-smtp-configuration)
-  - [Configure ENX redirect service](#configure-enx-redirect-service)
-  - [Adding ENX redirect domains](#adding-enx-redirect-domains)
-  - [Clearing caches](#clearing-caches)
-  - [Getting system information](#getting-system-information)
+- [Account setup](#account-setup)
+- [Inviting new admins](#inviting-new-admins)
+- [Creating new realms](#creating-new-realms)
+- [View realm information](#view-realm-information)
+- [Joining realms](#joining-realms)
+- [Create system SMS configuration](#create-system-sms-configuration)
+- [Create system SMTP configuration](#create-system-smtp-configuration)
+- [Configure ENX redirect service](#configure-enx-redirect-service)
+- [Adding ENX redirect domains](#adding-enx-redirect-domains)
+- [Clearing caches](#clearing-caches)
+- [Getting system information](#getting-system-information)
 
 <!-- /TOC -->
 
