@@ -6,6 +6,17 @@ on:
     - 'main'
 
 jobs:
+  spellcheck:
+    name: spellcheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Spellcheck
+        uses: rojopolis/spellcheck-github-actions@0.10.0
+
   only-user-errors:
     name: errorw-bot
     runs-on: ubuntu-latest

@@ -46,11 +46,6 @@ bodyclose:
 	@go vet -vettool=$$(which bodyclose) ./...
 .PHONY: bodyclose
 
-spellcheck:
-	@command -v misspell > /dev/null 2>&1 || go get github.com/client9/misspell/cmd/misspell
-	@misspell -locale="US" -error -source="text" $(GO_FILES) $(HTML_FILES) $(MD_FILES)
-.PHONY: spellcheck
-
 staticcheck:
 	@command -v staticcheck > /dev/null 2>&1 || go get honnef.co/go/tools/cmd/staticcheck
 	@staticcheck -checks="all,-S1023" -tests $(GOFMT_FILES)

@@ -73,13 +73,6 @@ make bodyclose || {
 }
 
 
-echo "🐝 Verify spelling"
-make spellcheck || {
-  echo "✋ Found spelling errors."
-  exit 1
-}
-
-
 echo "↹ Verify tabs"
 make tabcheck || {
   echo "✋ Found tabs in html."

@@ -20,7 +20,6 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20201204063249-be40c824ad18
 	github.com/chromedp/chromedp v0.5.4
 	github.com/circonus-labs/circonusllhist v0.1.4 // indirect
-	github.com/client9/misspell v0.3.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.14.1
