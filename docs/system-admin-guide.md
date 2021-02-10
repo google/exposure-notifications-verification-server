@@ -30,7 +30,7 @@ will receive an email notification. If you are already a member of the system
 of the system, an account will be provisioned automatically and you will be
 prompted to reset your password.
 
-Newly provisioned systems will be bootstrapped with
+Newly provisioned databases will be bootstrapped with
 [super@example.com](/docs/production.md#user-administration) from which you may
 create your first real accounts.
 
