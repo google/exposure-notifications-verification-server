@@ -29,6 +29,10 @@ will receive an email notification. If you are already a member of the system
 of the system, an account will be provisioned automatically and you will be
 prompted to reset your password.
 
+Newly provisioned databases will be bootstrapped with
+[super@example.com](/docs/production.md#user-administration) from which you may
+create your first real accounts.
+
 ## Inviting new admins
 
 As a system admin, you can invite new system admins. Before inviting a system
