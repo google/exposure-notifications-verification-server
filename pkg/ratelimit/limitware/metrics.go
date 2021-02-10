@@ -15,7 +15,7 @@
 package limitware
 
 import (
-	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
@@ -31,11 +31,11 @@ var (
 )
 
 func init() {
-	enobservability.CollectViews(append(redis.ObservabilityMetricViews,
+	enobs.CollectViews(append(redis.ObservabilityMetricViews,
 		&view.View{
 			Name:        metricPrefix + "/request_count",
 			Measure:     mRequest,
 			Aggregation: view.Count(),
-			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
+			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey),
 		})...)
 }

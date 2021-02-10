@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/signatures"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
@@ -75,7 +75,7 @@ func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProv
 	err := func() error {
 		message, err := realm.BuildSMSText(result.VerCode.Code, result.VerCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 		if err != nil {
-			result.obsResult = observability.ResultError("FAILED_TO_BUILD_SMS")
+			result.obsResult = enobs.ResultError("FAILED_TO_BUILD_SMS")
 			return err
 		}
 
@@ -85,7 +85,7 @@ func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProv
 			var err error
 			message, err = signatures.SignSMS(signer, keyID, smsStart, signatures.SMSPurposeENReport, request.Phone, message)
 			if err != nil {
-				result.obsResult = observability.ResultError("FAILED_TO_SIGN_SMS")
+				result.obsResult = enobs.ResultError("FAILED_TO_SIGN_SMS")
 				return err
 			}
 		}
@@ -98,12 +98,12 @@ func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProv
 			}
 
 			logger.Infow("failed to send sms", "error", ScrubPhoneNumbers(err.Error()))
-			result.obsResult = observability.ResultError("FAILED_TO_SEND_SMS")
+			result.obsResult = enobs.ResultError("FAILED_TO_SEND_SMS")
 			return err
 		}
 		return nil
 	}()
-	observability.RecordLatency(ctx, smsStart, mSMSLatencyMs, &result.obsResult)
+	enobs.RecordLatency(ctx, smsStart, mSMSLatencyMs, &result.obsResult)
 	if err != nil {
 		result.HTTPCode = http.StatusBadRequest
 		result.ErrorReturn = api.Errorf("failed to send sms: %s", err).WithCode(api.ErrSMSFailure)

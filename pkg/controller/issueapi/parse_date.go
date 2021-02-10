@@ -20,10 +20,10 @@ import (
 	"net/http"
 	"time"
 
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 )
 
 type dateParseSettings struct {
@@ -64,7 +64,7 @@ func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseS
 	parsed, err := time.Parse(project.RFC3339Date, d)
 	if err != nil {
 		return nil, &IssueResult{
-			obsResult:   observability.ResultError(parseSettings.ParseError),
+			obsResult:   enobs.ResultError(parseSettings.ParseError),
 			HTTPCode:    http.StatusBadRequest,
 			ErrorReturn: api.Errorf("failed to process %s date: %v", parseSettings.Name, err).WithCode(api.ErrUnparsableRequest),
 		}
@@ -82,7 +82,7 @@ func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseS
 			parsed.Format(project.RFC3339Date),
 		)
 		return nil, &IssueResult{
-			obsResult:   observability.ResultError(parseSettings.ValidateError),
+			obsResult:   enobs.ResultError(parseSettings.ValidateError),
 			HTTPCode:    http.StatusBadRequest,
 			ErrorReturn: api.Error(err).WithCode(api.ErrInvalidDate),
 		}

@@ -15,7 +15,7 @@
 package issueapi
 
 import (
-	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"go.opencensus.io/plugin/ochttp"
@@ -34,7 +34,7 @@ var (
 )
 
 func init() {
-	enobservability.CollectViews([]*view.View{
+	enobs.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/request_count",
 			Measure:     mLatencyMs,
@@ -53,14 +53,14 @@ func init() {
 			Name:        metricPrefix + "/sms_request_count",
 			Measure:     mSMSLatencyMs,
 			Description: "The # of SMS requests",
-			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
+			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey),
 			Aggregation: view.Count(),
 		},
 		{
 			Name:        metricPrefix + "/sms_request_latency",
 			Measure:     mSMSLatencyMs,
 			Description: "The # of SMS requests",
-			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
+			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey),
 			Aggregation: ochttp.DefaultLatencyDistribution,
 		},
 		{

@@ -33,8 +33,9 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
+	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/jinzhu/gorm"
@@ -80,11 +81,11 @@ type Database struct {
 // Overrides the postgresql driver with
 func init() {
 	for _, v := range sql.Drivers() {
-		if v == enobservability.OCSQLDriverName {
+		if v == enobs.OCSQLDriverName {
 			return
 		}
 	}
-	sql.Register(enobservability.OCSQLDriverName, ocsql.Wrap(&postgres.Driver{}))
+	sql.Register(enobs.OCSQLDriverName, ocsql.Wrap(&postgres.Driver{}))
 }
 
 // SupportsPerRealmSigning returns true if the configuration supports
@@ -344,7 +345,7 @@ func callbackIncrementMetric(m *stats.Int64Measure, table string) func(scope *go
 			ctx = observability.WithRealmID(ctx, realmID)
 		}
 
-		ctx = observability.WithBuildInfo(ctx)
+		ctx = enobs.WithBuildInfo(ctx, buildinfo.VerificationServer)
 		stats.Record(ctx, m.M(1))
 	}
 }

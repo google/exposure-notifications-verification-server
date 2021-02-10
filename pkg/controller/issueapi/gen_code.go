@@ -23,9 +23,9 @@ import (
 	"strings"
 	"time"
 
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/sethvargo/go-retry"
 	"go.opencensus.io/stats"
 
@@ -46,7 +46,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 		key, err := realm.QuotaKey(c.config.GetRateLimitConfig().HMACKey)
 		if err != nil {
 			return &IssueResult{
-				obsResult:   observability.ResultError("FAILED_TO_GENERATE_HMAC"),
+				obsResult:   enobs.ResultError("FAILED_TO_GENERATE_HMAC"),
 				HTTPCode:    http.StatusInternalServerError,
 				ErrorReturn: api.Error(err).WithCode(api.ErrInternal),
 			}
@@ -55,7 +55,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 		if limit, _, reset, ok, err := c.limiter.Take(ctx, key); err != nil {
 			logger.Errorw("failed to take from limiter", "error", err)
 			return &IssueResult{
-				obsResult:   observability.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
+				obsResult:   enobs.ResultError("FAILED_TO_TAKE_FROM_LIMITER"),
 				HTTPCode:    http.StatusInternalServerError,
 				ErrorReturn: api.Errorf("failed to issue code, please try again in a few seconds").WithCode(api.ErrInternal),
 			}
@@ -67,7 +67,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 
 			if c.config.GetEnforceRealmQuotas() {
 				return &IssueResult{
-					obsResult:   observability.ResultError("QUOTA_EXCEEDED"),
+					obsResult:   enobs.ResultError("QUOTA_EXCEEDED"),
 					HTTPCode:    http.StatusTooManyRequests,
 					ErrorReturn: api.Errorf("exceeded daily realm quota configured from abuse prevention, please contact a realm administrator").WithCode(api.ErrQuotaExceeded),
 				}
@@ -79,7 +79,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 	if err := c.CommitCode(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
 		logger.Errorw("failed to issue code", "error", err)
 		return &IssueResult{
-			obsResult:   observability.ResultError("FAILED_TO_ISSUE_CODE"),
+			obsResult:   enobs.ResultError("FAILED_TO_ISSUE_CODE"),
 			HTTPCode:    http.StatusInternalServerError,
 			ErrorReturn: api.Errorf("failed to generate otp code, please try again").WithCode(api.ErrInternal),
 		}
@@ -88,7 +88,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 	return &IssueResult{
 		VerCode:   vCode,
 		HTTPCode:  http.StatusOK,
-		obsResult: observability.ResultOK(),
+		obsResult: enobs.ResultOK,
 	}
 }
 

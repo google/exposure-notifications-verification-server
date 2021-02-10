@@ -26,7 +26,7 @@ import (
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/util"
 	"github.com/google/exposure-notifications-server/pkg/verification"
 
@@ -61,12 +61,12 @@ var (
 )
 
 func init() {
-	enobservability.CollectViews([]*view.View{
+	enobs.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/request_count",
 			Measure:     mLatencyMs,
 			Description: "Count of e2e requests",
-			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey, stepTagKey, testTypeTagKey),
+			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey, stepTagKey, testTypeTagKey),
 			Aggregation: view.Count(),
 		},
 		{
@@ -120,11 +120,11 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 		nextInterval -= maxInterval
 	}
 
-	result := observability.ResultOK()
-	// Parameterize observability.RecordLatency()
+	result := enobs.ResultOK
+	// Parameterize enobs.RecordLatency()
 	recordLatency := func(ctx context.Context, start time.Time, step string) {
 		stepMutator := tag.Upsert(stepTagKey, step)
-		observability.RecordLatency(ctx, start, mLatencyMs, &stepMutator, &result)
+		enobs.RecordLatency(ctx, start, mLatencyMs, &stepMutator, &result)
 	}
 
 	for i := 0; i < iterations; i++ {
@@ -148,10 +148,10 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 			codeResp, err := adminAPIClient.IssueCode(ctx, codeReq)
 			defer logger.Debugw("issuing code", "request", codeReq, "response", codeResp)
 			if err != nil {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("error issuing verification code: %w", err)
 			} else if codeResp.Error != "" {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("issue API Error: %+v", codeResp)
 			}
 			return codeResp, nil
@@ -170,10 +170,10 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 			tokenResp, err := apiServerClient.Verify(ctx, tokenReq)
 			logger.Debugw("verifying code", "request", tokenReq, "response", tokenResp)
 			if err != nil {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("error verifying code: %w", err)
 			} else if tokenResp.Error != "" {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("verification API Error %+v", tokenResp)
 			}
 			return tokenResp, nil
@@ -191,14 +191,14 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 			statusResp, err := adminAPIClient.CheckCodeStatus(ctx, statusReq)
 			logger.Debugw("check code status", "request", statusReq, "response", statusResp)
 			if err != nil {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return fmt.Errorf("error check code status: %w", err)
 			} else if statusResp.Error != "" {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return fmt.Errorf("check code status Error: %+v", statusResp)
 			}
 			if !statusResp.Claimed {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return fmt.Errorf("expected claimed OTP code for %s", statusReq.UUID)
 			}
 			return nil
@@ -215,7 +215,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 			}
 			hmacValue, err := verification.CalculateExposureKeyHMAC(teks, hmacSecret)
 			if err != nil {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return nil, "", fmt.Errorf("error calculating tek HMAC: %w", err)
 			}
 			return hmacSecret, base64.StdEncoding.EncodeToString(hmacValue), nil
@@ -234,10 +234,10 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 			certResp, err := apiServerClient.Certificate(ctx, certReq)
 			logger.Debugw("get certificate", "request", certReq, "response", certResp)
 			if err != nil {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("error getting verification certificate: %w", err)
 			} else if certResp.Error != "" {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("certificate API Error: %+v", certResp)
 			}
 			return certResp, nil
@@ -270,7 +270,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 
 			httpResp, err := client.Post(cfg.KeyServer, "application/json", &b)
 			if err != nil {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("error making request to publish teks: %w", err)
 			}
 			defer httpResp.Body.Close()
@@ -281,7 +281,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 			}
 			defer logger.Debugw("publish", "request", publishReq, "response", publishResp)
 			if publishResp.ErrorMessage != "" {
-				result = observability.ResultNotOK()
+				result = enobs.ResultNotOK
 				logger.Infow("failed to publish teks", "error", err, "keys", teks)
 				return nil, fmt.Errorf("publish API error: %+v", publishResp)
 			}

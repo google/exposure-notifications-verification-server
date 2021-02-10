@@ -22,11 +22,11 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 )
@@ -41,16 +41,16 @@ func (c *Controller) HandleCertificate() http.Handler {
 
 		logger := logging.FromContext(ctx).Named("certapi.HandleCertificate")
 
-		var blame = observability.BlameNone
-		var result = observability.ResultOK()
+		var blame = enobs.BlameNone
+		var result = enobs.ResultOK
 
-		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
+		defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
 			logger.Errorf("missing authorized app")
-			blame = observability.BlameClient
-			result = observability.ResultError("MISSING_AUTHORIZED_APP")
+			blame = enobs.BlameClient
+			result = enobs.ResultError("MISSING_AUTHORIZED_APP")
 
 			controller.MissingAuthorizedApp(w, r, c.h)
 			return
@@ -59,8 +59,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 		var request api.VerificationCertificateRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			logger.Errorw("failed to parse json request", "error", err)
-			blame = observability.BlameClient
-			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			blame = enobs.BlameClient
+			result = enobs.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			return
@@ -69,8 +69,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Parse and validate the verification token.
 		tokenID, subject, err := c.validateToken(ctx, request.VerificationToken)
 		if err != nil {
-			blame = observability.BlameClient
-			result = observability.ResultError("FAILED_TO_VALIDATE_TOKEN")
+			blame = enobs.BlameClient
+			result = enobs.ResultError("FAILED_TO_VALIDATE_TOKEN")
 
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenInvalid))
 			return
@@ -80,8 +80,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 		hmacBytes, err := base64util.DecodeString(request.ExposureKeyHMAC)
 		if err != nil {
 			logger.Debugw("provided invalid hmac, not base64", "error", err)
-			blame = observability.BlameClient
-			result = observability.ResultError("FAILED_TO_DECODE_HMAC")
+			blame = enobs.BlameClient
+			result = enobs.ResultError("FAILED_TO_DECODE_HMAC")
 
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not a valid base64: %v", err).WithCode(api.ErrHMACInvalid))
@@ -89,8 +89,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 		}
 		if l := len(hmacBytes); l != HMACLength {
 			logger.Debugw("provided invalid hmac, wrong length", "length", l)
-			blame = observability.BlameClient
-			result = observability.ResultError("INVALID_HMAC_LENGTH")
+			blame = enobs.BlameClient
+			result = enobs.ResultError("INVALID_HMAC_LENGTH")
 
 			c.h.RenderJSON(w, http.StatusBadRequest,
 				api.Errorf("exposure key HMAC is not the correct length, want: %v got: %v", HMACLength, l).WithCode(api.ErrHMACInvalid))
@@ -102,8 +102,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 		if err != nil {
 			logger.Errorw("failed to get signer", "error", err)
 			// FIXME: should we blame server here?
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_GET_SIGNER")
+			blame = enobs.BlameServer
+			result = enobs.ResultError("FAILED_TO_GET_SIGNER")
 
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
@@ -130,8 +130,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 		certificate, err := jwthelper.SignJWT(certToken, signerInfo.Signer)
 		if err != nil {
 			logger.Errorw("failed to sign certificate", "error", err)
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_SIGN_JWT")
+			blame = enobs.BlameServer
+			result = enobs.ResultError("FAILED_TO_SIGN_JWT")
 
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.Error(err).WithCode(api.ErrInternal))
 			return
@@ -140,27 +140,27 @@ func (c *Controller) HandleCertificate() http.Handler {
 		// Do the transactional update to the database last so that if it fails, the
 		// client can retry.
 		if err := c.db.ClaimToken(now, authApp, tokenID, subject); err != nil {
-			blame = observability.BlameClient
+			blame = enobs.BlameClient
 			switch {
 			case errors.Is(err, database.ErrTokenExpired):
 				logger.Infow("failed to claim token, expired", "tokenID", tokenID, "error", err)
-				result = observability.ResultError("TOKEN_EXPIRED")
+				result = enobs.ResultError("TOKEN_EXPIRED")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrTokenExpired))
 				return
 			case errors.Is(err, database.ErrTokenUsed):
 				logger.Infow("failed to claim token, already used", "tokenID", tokenID, "error", err)
-				result = observability.ResultError("TOKEN_USED")
+				result = enobs.ResultError("TOKEN_USED")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 				return
 			case errors.Is(err, database.ErrTokenMetadataMismatch):
 				logger.Infow("failed to claim token, metadata mismatch", "tokenID", tokenID, "error", err)
-				result = observability.ResultError("TOKEN_METADATA_MISMATCH")
+				result = enobs.ResultError("TOKEN_METADATA_MISMATCH")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification token invalid").WithCode(api.ErrTokenExpired))
 				return
 			default:
-				blame = observability.BlameServer
+				blame = enobs.BlameServer
 				logger.Errorw("failed to claim token, unknown", "tokenID", tokenID, "error", err)
-				result = observability.ResultError("UNKNOWN_TOKEN_CLAIM_ERROR")
+				result = enobs.ResultError("UNKNOWN_TOKEN_CLAIM_ERROR")
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.Error(err))
 				return
 			}

@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/tag"
 )
@@ -62,13 +62,13 @@ func (c *Controller) HandleRotate() http.Handler {
 		// Token signing keys
 		func() {
 			item := tag.Upsert(itemTagKey, "TOKEN_SIGNING_KEYS")
-			result := observability.ResultOK()
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			result := enobs.ResultOK
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 
 			existing, err := c.db.ActiveTokenSigningKey()
 			if err != nil && !database.IsNotFound(err) {
 				merr = multierror.Append(merr, fmt.Errorf("failed to lookup existing signing key: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 				return
 			}
 			if existing != nil {
@@ -81,7 +81,7 @@ func (c *Controller) HandleRotate() http.Handler {
 			key, err := c.db.RotateTokenSigningKey(ctx, c.keyManager, c.config.TokenSigning.ParentKeyName(), RotationActor)
 			if err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to rotate token signing key: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 				return
 			}
 

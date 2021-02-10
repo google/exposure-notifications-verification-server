@@ -17,7 +17,7 @@ package certapi
 import (
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
-	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats"
@@ -31,7 +31,7 @@ var (
 )
 
 func init() {
-	enobservability.CollectViews([]*view.View{
+	enobs.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/request_count",
 			Measure:     mLatencyMs,

@@ -28,7 +28,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
+	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
