@@ -56,6 +56,10 @@ func TestSMS_scrubPhoneNumber(t *testing.T) {
 
 	for k, pattern := range patterns {
 		for i, tc := range cases {
+			k := k
+			pattern := pattern
+			tc := tc
+
 			t.Run(fmt.Sprintf("case_%s_%2d", k, i), func(t *testing.T) {
 				t.Parallel()
 
@@ -87,7 +91,7 @@ func TestSMS_sendSMS(t *testing.T) {
 
 	smsConfig := &database.SMSConfig{
 		RealmID:      realm.ID,
-		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
+		ProviderType: sms.ProviderTypeNoop,
 	}
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
