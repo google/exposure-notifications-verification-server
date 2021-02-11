@@ -18,7 +18,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -57,10 +56,6 @@ func TestSMS_scrubPhoneNumber(t *testing.T) {
 
 	for k, pattern := range patterns {
 		for i, tc := range cases {
-			k := k
-			pattern := pattern
-			tc := tc
-
 			t.Run(fmt.Sprintf("case_%s_%2d", k, i), func(t *testing.T) {
 				t.Parallel()
 
@@ -92,7 +87,7 @@ func TestSMS_sendSMS(t *testing.T) {
 
 	smsConfig := &database.SMSConfig{
 		RealmID:      realm.ID,
-		ProviderType: sms.ProviderTypeNoop,
+		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
 	}
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
@@ -144,16 +139,18 @@ func TestSMS_sendSMS(t *testing.T) {
 	result.VerCode.LongCode = "00000001ABC"
 
 	// Successful SMS send
-	if err := c.SendSMS(ctx, realm, smsProvider, nil, "", request, result); err != nil {
-		t.Fatal(err)
+	c.SendSMS(ctx, realm, smsProvider, nil, "", request, result)
+	if result.ErrorReturn != nil {
+		t.Fatalf("expected successful SMS, got %s", result.ErrorReturn)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); err != nil {
 		t.Errorf("couldn't find code got %s: %v", result.VerCode.UUID, err)
 	}
 
 	// Successful SMS send with signature
-	if err := c.SendSMS(ctx, realm, smsProvider, smsSigner, smsKeyID, request, result); err != nil {
-		t.Fatal(err)
+	c.SendSMS(ctx, realm, smsProvider, smsSigner, smsKeyID, request, result)
+	if result.ErrorReturn != nil {
+		t.Fatalf("expected successful SMS, got %s", result.ErrorReturn)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); err != nil {
 		t.Errorf("couldn't find code got %s: %v", result.VerCode.UUID, err)
@@ -164,8 +161,9 @@ func TestSMS_sendSMS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := c.SendSMS(ctx, realm, failingSMSProvider, nil, "", request, result); !errors.Is(err, sms.ErrNoop) {
-		t.Errorf("expected sms failure. got %v want %v", err, sms.ErrNoop)
+	c.SendSMS(ctx, realm, failingSMSProvider, nil, "", request, result)
+	if result.ErrorReturn == nil {
+		t.Fatal("expected failed SMS, but got no error response")
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {
 		t.Errorf("expected SMS failure to roll-back and delete code. got %v", err)

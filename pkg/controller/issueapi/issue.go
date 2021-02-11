@@ -37,6 +37,7 @@ type IssueResult struct {
 	obsResult   tag.Mutator
 }
 
+// IssueCodeResponse converts an IssueResult to the external api response.
 func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
 	if result.ErrorReturn != nil {
 		return &api.IssueCodeResponse{
@@ -56,11 +57,13 @@ func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
 	}
 }
 
+// IssueOne handles validating a single IssueCodeRequest, issuing a new code, and sending an SMS message.
 func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
 	results := c.IssueMany(ctx, []*api.IssueCodeRequest{request})
 	return results[0]
 }
 
+// IssueMany handles validating a list of IssueCodeRequest, issuing new codes, and sending SMS messages.
 func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
 	realm := controller.RealmFromContext(ctx)
 
@@ -106,9 +109,7 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 			wg.Add(1)
 			go func(request *api.IssueCodeRequest, r *IssueResult) {
 				defer wg.Done()
-				if err := c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r); err != nil {
-					r.ErrorReturn = api.Errorf("failed to send sms: %s", err)
-				}
+				c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r)
 			}(requests[i], result)
 		}
 		wg.Wait()
