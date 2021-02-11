@@ -88,6 +88,23 @@ jobs:
             -fail-on-error="true" \
             -level="error"
 
+      - name: tab-check
+        shell: bash
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |-
+          set -eEu
+          set +o pipefail
+
+          YEAR=$(date +"%Y")
+          make tabcheck | \
+          reviewdog -efm="%f:%l:%m" \
+            -name="tab-check" \
+            -reporter="github-pr-review" \
+            -filter-mode="diff_context" \
+            -fail-on-error="true" \
+            -level="error"
+
   zap-logger:
     name: zap-logger
     runs-on: ubuntu-latest
