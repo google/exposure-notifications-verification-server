@@ -20,8 +20,8 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20201204063249-be40c824ad18
 	github.com/chromedp/chromedp v0.5.4
 	github.com/circonus-labs/circonusllhist v0.1.4 // indirect
-	github.com/client9/misspell v0.3.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/fatih/color v1.10.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/gonum/blas v0.0.0-20181208220705-f22b278b28ac // indirect
@@ -48,14 +48,15 @@ require (
 	github.com/jefferai/jsonx v1.0.1 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/keybase/go-crypto v0.0.0-20200123153347-de78d2cb44f4 // indirect
+	github.com/klauspost/compress v1.11.0 // indirect
 	github.com/leonelquinteros/gotext v1.4.0
 	github.com/lib/pq v1.9.0
-	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.4
 	github.com/mikehelmick/go-chaff v0.4.1
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/oklog/run v1.1.0 // indirect
-	github.com/onsi/ginkgo v1.13.0 // indirect
+	github.com/onsi/ginkgo v1.14.2 // indirect
+	github.com/onsi/gomega v1.10.4 // indirect
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/oracle/oci-go-sdk v19.3.0+incompatible // indirect
 	github.com/ory/dockertest v3.3.5+incompatible
@@ -71,7 +72,7 @@ require (
 	github.com/sethvargo/zapw v0.1.0
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
-	github.com/timakin/bodyclose v0.0.0-20200424151742-cb6215831a94
+	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c // indirect
 	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.22.5
@@ -80,13 +81,12 @@ require (
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
 	golang.org/x/sys v0.0.0-20201223074533-0d417f636930 // indirect
 	golang.org/x/text v0.3.5
-	golang.org/x/tools v0.0.0-20201228204837-84d76fe3206d
+	golang.org/x/tools v0.0.0-20210105210202-9ed45478a130
 	google.golang.org/api v0.36.0
 	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/ini.v1 v1.56.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
-	honnef.co/go/tools v0.1.0
 	k8s.io/api v0.18.7-rc.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v3 v3.0.1-0.20200706213357-43c19bbb7fba // indirect
 )

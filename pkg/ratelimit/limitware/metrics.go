@@ -26,9 +26,7 @@ import (
 
 const metricPrefix = observability.MetricRoot + "/ratelimit/limitware"
 
-var (
-	mRequest = stats.Int64(metricPrefix+"/request", "requests seen by middleware", stats.UnitDimensionless)
-)
+var mRequest = stats.Int64(metricPrefix+"/request", "requests seen by middleware", stats.UnitDimensionless)
 
 func init() {
 	enobs.CollectViews(append(redis.ObservabilityMetricViews,

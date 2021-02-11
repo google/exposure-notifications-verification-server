@@ -50,13 +50,13 @@ func (c *Controller) HandleUpgrade() http.Handler {
 				flash.Error("Error upgrading realm: %v", err)
 				c.renderShow(ctx, w, r, currentRealm)
 				return
-			} else {
-				flash.Alert("Successfully switched to realm specific signing keys.")
 			}
-		} else {
+
 			flash.Error("Issuer and Audience settings not complete, cannot upgrade.")
+			c.redirectShow(ctx, w, r)
 		}
 
+		flash.Alert("Successfully switched to realm specific signing keys.")
 		c.redirectShow(ctx, w, r)
 	})
 }

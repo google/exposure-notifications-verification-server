@@ -88,7 +88,8 @@ type Config struct {
 // and method in particular would need to change.
 func (c *Config) ConnectionString() string {
 	vals := dbValues(c)
-	var p []string
+
+	p := make([]string, 0, len(vals))
 	for k, v := range vals {
 		p = append(p, fmt.Sprintf("%s=%s", k, v))
 	}

@@ -116,7 +116,7 @@ func realMain(ctx context.Context) error {
 		enxRedirectClient, err = clients.NewENXRedirectClient(u,
 			clients.WithTimeout(30*time.Second))
 		if err != nil {
-			return fmt.Errorf("failed to create enx-redirect client: %s", err)
+			return fmt.Errorf("failed to create enx-redirect client: %w", err)
 		}
 	}
 

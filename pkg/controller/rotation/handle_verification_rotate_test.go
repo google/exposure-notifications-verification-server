@@ -76,19 +76,19 @@ func TestHandleVerificationRotation(t *testing.T) {
 
 		// Wait the max age, and run the test.
 		time.Sleep(cfg.VerificationSigningKeyMaxAge + time.Second)
-		invokeRotate(t, ctx, c)
+		invokeRotate(ctx, t, c)
 		// There should be 2 keys on the realm now, the older one should still be the active one.
 		checkKeys(t, db, realm, 2, 1)
 
 		// Wait long enough for the activation delay.
 		time.Sleep(cfg.VerificationActivationDelay + time.Second)
-		invokeRotate(t, ctx, c)
+		invokeRotate(ctx, t, c)
 		// There should still be 2 signing keys, but now the first one should be active.
 		checkKeys(t, db, realm, 2, 0)
 
 		// Wait long enough for original key to be deleted.
 		time.Sleep(cfg.VerificationActivationDelay + time.Second)
-		invokeRotate(t, ctx, c)
+		invokeRotate(ctx, t, c)
 		// Original key should be destroyed, only 1 key and it's active now.
 		checkKeys(t, db, realm, 1, 0)
 	})
@@ -171,14 +171,13 @@ func checkKeys(tb testing.TB, db *database.Database, realm *database.Realm, coun
 	}
 }
 
-func invokeRotate(tb testing.TB, ctx context.Context, c *Controller) {
+func invokeRotate(ctx context.Context, tb testing.TB, c *Controller) {
 	tb.Helper()
 
-	r, err := http.NewRequest("GET", "/", nil)
+	r, err := http.NewRequestWithContext(ctx, "GET", "/", nil)
 	if err != nil {
 		tb.Fatal(err)
 	}
-	r = r.Clone(ctx)
 
 	w := httptest.NewRecorder()
 

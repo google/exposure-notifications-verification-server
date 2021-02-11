@@ -47,20 +47,20 @@ func BindJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
 		var unmarshalError *json.UnmarshalTypeError
 		switch {
 		case errors.As(err, &syntaxErr):
-			return fmt.Errorf("malformed json at position %v", syntaxErr.Offset)
+			return fmt.Errorf("malformed json at position %d", syntaxErr.Offset)
 		case errors.Is(err, io.ErrUnexpectedEOF):
 			return fmt.Errorf("malformed json")
 		case errors.As(err, &unmarshalError):
-			return fmt.Errorf("invalid value %v at position %v", unmarshalError.Field, unmarshalError.Offset)
+			return fmt.Errorf("invalid value %q at position %d", unmarshalError.Field, unmarshalError.Offset)
 		case strings.HasPrefix(err.Error(), "json: unknown field"):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-			return fmt.Errorf("unknown field %s", fieldName)
+			return fmt.Errorf("unknown field %q", fieldName)
 		case errors.Is(err, io.EOF):
 			return fmt.Errorf("body must not be empty")
 		case err.Error() == "http: request body too large":
 			return err
 		default:
-			return fmt.Errorf("failed to decode json %v", err)
+			return fmt.Errorf("failed to decode json: %w", err)
 		}
 	}
 	if d.More() {

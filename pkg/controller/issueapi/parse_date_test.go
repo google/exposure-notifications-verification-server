@@ -23,6 +23,8 @@ import (
 )
 
 func TestDateValidation(t *testing.T) {
+	t.Parallel()
+
 	utc, err := time.LoadLocation("UTC")
 	if err != nil {
 		t.Fatalf("error loading utc")
@@ -33,7 +35,7 @@ func TestDateValidation(t *testing.T) {
 		t.Fatalf("error parsing date")
 	}
 
-	tests := []struct {
+	cases := []struct {
 		v         string
 		max       time.Time
 		tzOffset  int
@@ -49,23 +51,29 @@ func TestDateValidation(t *testing.T) {
 		{"2020-07-30", aug1, -60, false, "2020-07-30"},
 		{"2020-07-29", aug1, -60, true, "2020-07-30"},
 	}
-	for i, test := range tests {
-		date, err := time.ParseInLocation(project.RFC3339Date, test.v, utc)
-		if err != nil {
-			t.Fatalf("[%d] error parsing date %q", i, test.v)
-		}
-		min := test.max.Add(-24 * time.Hour)
-		var newDate *time.Time
-		if newDate, err = issueapi.ValidateDate(date, min, test.max, test.tzOffset); newDate == nil {
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.v, func(t *testing.T) {
+			t.Parallel()
+
+			date, err := time.ParseInLocation(project.RFC3339Date, tc.v, utc)
 			if err != nil {
-				if !test.shouldErr {
-					t.Fatalf("[%d] validateDate returned an unexpected error: %q", i, err)
-				}
-			} else {
-				t.Fatalf("[%d] expected error", i)
+				t.Fatalf("error parsing date %q", tc.v)
 			}
-		} else if s := newDate.Format(project.RFC3339Date); s != test.expected {
-			t.Fatalf("[%d] validateDate returned a different date %q != %q", i, s, test.expected)
-		}
+			min := tc.max.Add(-24 * time.Hour)
+			var newDate *time.Time
+			if newDate, err = issueapi.ValidateDate(date, min, tc.max, tc.tzOffset); newDate == nil {
+				if err != nil {
+					if !tc.shouldErr {
+						t.Fatalf("validateDate returned an unexpected error: %q", err)
+					}
+				} else {
+					t.Fatalf("expected error")
+				}
+			} else if s := newDate.Format(project.RFC3339Date); s != tc.expected {
+				t.Fatalf("validateDate returned a different date %q != %q", s, tc.expected)
+			}
+		})
 	}
 }

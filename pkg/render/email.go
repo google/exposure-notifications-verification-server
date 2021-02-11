@@ -31,7 +31,7 @@ import (
 func (r *Renderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 	if r.debug {
 		if err := r.loadTemplates(); err != nil {
-			return nil, fmt.Errorf("error loading templates %v", err)
+			return nil, fmt.Errorf("error loading templates: %w", err)
 		}
 	}
 
@@ -42,7 +42,7 @@ func (r *Renderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 
 	// Render into the renderer
 	if err := r.executeTextTemplate(b, tmpl, data); err != nil {
-		return nil, fmt.Errorf("error executing email template %v", err)
+		return nil, fmt.Errorf("error executing email template: %w", err)
 	}
 	return bluemonday.UGCPolicy().SanitizeBytes(b.Bytes()), nil
 }

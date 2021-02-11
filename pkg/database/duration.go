@@ -21,8 +21,10 @@ import (
 	"time"
 )
 
-var _ sql.Scanner = (*DurationSeconds)(nil)
-var _ driver.Valuer = (*DurationSeconds)(nil)
+var (
+	_ sql.Scanner   = (*DurationSeconds)(nil)
+	_ driver.Valuer = (*DurationSeconds)(nil)
+)
 
 // DurationSeconds is a custom type for writing and reading a time.Duration to be stored
 // as seconds in the database.

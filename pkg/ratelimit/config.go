@@ -30,19 +30,19 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// RateLimitType represents a type of rate limiter.
-type RateLimitType string
+// Type represents a type of rate limiter.
+type Type string
 
 const (
-	RateLimiterTypeNoop   RateLimitType = "NOOP"
-	RateLimiterTypeMemory RateLimitType = "MEMORY"
-	RateLimiterTypeRedis  RateLimitType = "REDIS"
+	RateLimiterTypeNoop   Type = "NOOP"
+	RateLimiterTypeMemory Type = "MEMORY"
+	RateLimiterTypeRedis  Type = "REDIS"
 )
 
 // Config represents rate limiting configuration
 type Config struct {
 	// Common configuration
-	Type     RateLimitType `env:"RATE_LIMIT_TYPE, default=NOOP"`
+	Type     Type          `env:"RATE_LIMIT_TYPE, default=NOOP"`
 	Tokens   uint64        `env:"RATE_LIMIT_TOKENS, default=60"`
 	Interval time.Duration `env:"RATE_LIMIT_INTERVAL, default=1m"`
 

@@ -41,8 +41,9 @@ func (err *ErrorDetails) Error() string {
 }
 
 func (err *ErrorDetails) Is(target error) bool {
-	if tErr, ok := target.(*ErrorDetails); ok {
-		return err.Err == tErr.Err
+	var terr *ErrorDetails
+	if errors.As(err, &terr) {
+		return err.Err == terr.Err
 	}
 	return false
 }

@@ -144,7 +144,7 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 		return json.Marshal(struct{}{})
 	}
 
-	var stats []*jsonRealmStatStats
+	stats := make([]*jsonRealmStatStats, 0, len(s))
 	for _, stat := range s {
 		stats = append(stats, &jsonRealmStatStats{
 			Date: stat.Date,

@@ -82,7 +82,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 				name += " " + s
 			}
 
-			var playStoreURL = &url.URL{
+			playStoreURL := &url.URL{
 				Scheme:   "https",
 				Host:     playStoreHost,
 				RawQuery: "id=" + app.PackageName,

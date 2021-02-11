@@ -101,6 +101,8 @@ var (
 	ErrBadDateRange           = errors.New("bad date range")
 )
 
+var ENXRedirectDomain = os.Getenv("ENX_REDIRECT_DOMAIN")
+
 const (
 	maxCodeDuration     = time.Hour
 	maxLongCodeDuration = 24 * time.Hour
@@ -270,6 +272,10 @@ type Realm struct {
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
+
+	// enxRedirectDomainOverride is a value to override the global ENX redirect on
+	// a per-realm basis, primarily for testing.
+	enxRedirectDomainOverride string
 }
 
 // NewRealmWithDefaults initializes a new Realm with the default settings populated,
@@ -446,7 +452,7 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 	// Check expansion length based on settings.
 	fakeCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.CodeLength), 0)
 	fakeLongCode := fmt.Sprintf(fmt.Sprintf("\\%0%d\\%d", r.LongCodeLength), 0)
-	enxDomain := os.Getenv("ENX_REDIRECT_DOMAIN")
+	enxDomain := r.enxRedirectDomain()
 	expandedSMSText, err := r.BuildSMSText(fakeCode, fakeLongCode, enxDomain, label)
 	if err != nil {
 		r.AddError("smsTextTemplate", fmt.Sprintf("SMS template expansion failed: %s", err))
@@ -456,7 +462,14 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 		r.AddError("smsTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 		r.AddError(label, fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 	}
+}
 
+// enxRedirectDomain returns the configured ENX redirect domain for this realm.
+func (r *Realm) enxRedirectDomain() string {
+	if v := r.enxRedirectDomainOverride; v != "" {
+		return v
+	}
+	return ENXRedirectDomain
 }
 
 // GetCodeDurationMinutes is a helper for the HTML rendering to get a round
@@ -679,7 +692,7 @@ func (r *Realm) AbusePreventionEffectiveLimit() uint {
 	// Only maintain 3 digits of precision, since that's all we do in the
 	// database.
 	factor := math.Floor(float64(r.AbusePreventionLimitFactor)*100) / 100
-	return uint(math.Ceil(float64(r.AbusePreventionLimit) * float64(factor)))
+	return uint(math.Ceil(float64(r.AbusePreventionLimit) * factor))
 }
 
 // AbusePreventionEnabledRealmIDs returns the list of realm IDs that have abuse
@@ -1208,21 +1221,21 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 				audits = append(audits, audit)
 			}
 
-			if old, new := existing.AllowedCIDRsAdminAPI, r.AllowedCIDRsAdminAPI; !reflect.DeepEqual(old, new) {
+			if then, now := existing.AllowedCIDRsAdminAPI, r.AllowedCIDRsAdminAPI; !reflect.DeepEqual(then, now) {
 				audit := BuildAuditEntry(actor, "updated adminapi allowed cidrs", r, r.ID)
-				audit.Diff = stringSliceDiff(old, new)
+				audit.Diff = stringSliceDiff(then, now)
 				audits = append(audits, audit)
 			}
 
-			if old, new := existing.AllowedCIDRsAPIServer, r.AllowedCIDRsAPIServer; !reflect.DeepEqual(old, new) {
+			if then, now := existing.AllowedCIDRsAPIServer, r.AllowedCIDRsAPIServer; !reflect.DeepEqual(then, now) {
 				audit := BuildAuditEntry(actor, "updated apiserver allowed cidrs", r, r.ID)
-				audit.Diff = stringSliceDiff(old, new)
+				audit.Diff = stringSliceDiff(then, now)
 				audits = append(audits, audit)
 			}
 
-			if old, new := existing.AllowedCIDRsServer, r.AllowedCIDRsServer; !reflect.DeepEqual(old, new) {
+			if then, now := existing.AllowedCIDRsServer, r.AllowedCIDRsServer; !reflect.DeepEqual(then, now) {
 				audit := BuildAuditEntry(actor, "updated server allowed cidrs", r, r.ID)
-				audit.Diff = stringSliceDiff(old, new)
+				audit.Diff = stringSliceDiff(then, now)
 				audits = append(audits, audit)
 			}
 

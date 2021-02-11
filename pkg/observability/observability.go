@@ -24,13 +24,9 @@ import (
 	"go.opencensus.io/tag"
 )
 
-const (
-	MetricRoot = "en-verification-server"
-)
+const MetricRoot = "en-verification-server"
 
-var (
-	RealmTagKey = tag.MustNewKey("realm")
-)
+var RealmTagKey = tag.MustNewKey("realm")
 
 // CommonTagKeys returns the slice of common tag keys that should used in all
 // views.

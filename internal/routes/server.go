@@ -420,23 +420,23 @@ func realmSMSkeysRoutes(r *mux.Router, c *smskeys.Controller) {
 
 // statsRoutes are the statistics routes, rooted at /stats.
 func statsRoutes(r *mux.Router, c *stats.Controller) {
-	r.Handle("/realm.csv", c.HandleRealmStats(stats.StatsTypeCSV)).Methods("GET")
-	r.Handle("/realm.json", c.HandleRealmStats(stats.StatsTypeJSON)).Methods("GET")
+	r.Handle("/realm.csv", c.HandleRealmStats(stats.TypeCSV)).Methods("GET")
+	r.Handle("/realm.json", c.HandleRealmStats(stats.TypeJSON)).Methods("GET")
 
-	r.Handle("/realm/users.csv", c.HandleRealmUsersStats(stats.StatsTypeCSV)).Methods("GET")
-	r.Handle("/realm/users.json", c.HandleRealmUsersStats(stats.StatsTypeJSON)).Methods("GET")
+	r.Handle("/realm/users.csv", c.HandleRealmUsersStats(stats.TypeCSV)).Methods("GET")
+	r.Handle("/realm/users.json", c.HandleRealmUsersStats(stats.TypeJSON)).Methods("GET")
 
-	r.Handle("/realm/users/{id}.csv", c.HandleRealmUserStats(stats.StatsTypeCSV)).Methods("GET")
-	r.Handle("/realm/users/{id}.json", c.HandleRealmUserStats(stats.StatsTypeJSON)).Methods("GET")
+	r.Handle("/realm/users/{id}.csv", c.HandleRealmUserStats(stats.TypeCSV)).Methods("GET")
+	r.Handle("/realm/users/{id}.json", c.HandleRealmUserStats(stats.TypeJSON)).Methods("GET")
 
-	r.Handle("/realm/api-keys/{id}.csv", c.HandleRealmAuthorizedAppStats(stats.StatsTypeCSV)).Methods("GET")
-	r.Handle("/realm/api-keys/{id}.json", c.HandleRealmAuthorizedAppStats(stats.StatsTypeJSON)).Methods("GET")
+	r.Handle("/realm/api-keys/{id}.csv", c.HandleRealmAuthorizedAppStats(stats.TypeCSV)).Methods("GET")
+	r.Handle("/realm/api-keys/{id}.json", c.HandleRealmAuthorizedAppStats(stats.TypeJSON)).Methods("GET")
 
-	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.StatsTypeCSV)).Methods("GET")
-	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.StatsTypeJSON)).Methods("GET")
+	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.TypeCSV)).Methods("GET")
+	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.TypeJSON)).Methods("GET")
 
-	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.StatsTypeCSV)).Methods("GET")
-	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.StatsTypeJSON)).Methods("GET")
+	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.TypeCSV)).Methods("GET")
+	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.TypeJSON)).Methods("GET")
 }
 
 // realmadminRoutes are the realm admin routes.

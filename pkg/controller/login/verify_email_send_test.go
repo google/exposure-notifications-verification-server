@@ -81,7 +81,7 @@ func TestHandleVerifyEmailSend_SubmitVerifyEmail(t *testing.T) {
 
 	emailConfig := &database.EmailConfig{
 		RealmID:      realm.ID,
-		ProviderType: email.ProviderType(email.ProviderTypeNoop),
+		ProviderType: email.ProviderTypeNoop,
 		SMTPAccount:  "noreply@sendemails.meh",
 		SMTPPassword: "my-secret-ref",
 		SMTPHost:     "smtp.sendemails.meh",

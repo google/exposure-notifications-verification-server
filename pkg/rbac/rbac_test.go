@@ -25,6 +25,8 @@ func TestRequiredPermissions(t *testing.T) {
 	t.Parallel()
 
 	for perm, needs := range requiredPermission {
+		perm := perm
+		needs := needs
 		name := fmt.Sprintf("implied_by_%s", PermissionMap[perm][0])
 
 		t.Run(name, func(t *testing.T) {

@@ -23,9 +23,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var (
-	ErrCleanupWrongGeneration = errors.New("cleanup wrong generation")
-)
+var ErrCleanupWrongGeneration = errors.New("cleanup wrong generation")
 
 // CleanupStatus represents a distributed lock that spaces operations out.
 // These are only self expring locks (NotBefore) and are not explicitly

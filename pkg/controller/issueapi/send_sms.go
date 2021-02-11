@@ -29,22 +29,20 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
-var (
-	// scrubbers is a list of known Twilio error messages that contain the send to phone number.
-	scrubbers = []struct {
-		prefix string
-		suffix string
-	}{
-		{
-			prefix: "phone number: ",
-			suffix: ", ",
-		},
-		{
-			prefix: "'To' number ",
-			suffix: " is not",
-		},
-	}
-)
+// scrubbers is a list of known Twilio error messages that contain the send to phone number.
+var scrubbers = []struct {
+	prefix string
+	suffix string
+}{
+	{
+		prefix: "phone number: ",
+		suffix: ", ",
+	},
+	{
+		prefix: "'To' number ",
+		suffix: " is not",
+	},
+}
 
 // ScrubPhoneNumbers checks for phone numbers in known Twilio error strings that contains
 // user phone numbers.

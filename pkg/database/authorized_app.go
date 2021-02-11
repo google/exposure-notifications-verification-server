@@ -47,6 +47,8 @@ const (
 
 func (a APIKeyType) Display() string {
 	switch a {
+	case APIKeyTypeInvalid:
+		return "invalid"
 	case APIKeyTypeDevice:
 		return "device"
 	case APIKeyTypeAdmin:

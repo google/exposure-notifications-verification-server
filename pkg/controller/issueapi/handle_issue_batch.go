@@ -112,8 +112,7 @@ func (c *Controller) decodeAndBulkIssue(ctx context.Context, w http.ResponseWrit
 		return
 	}
 
-	l := len(request.Codes)
-	if l > maxBatchSize {
+	if l := len(request.Codes); l > maxBatchSize {
 		result.obsResult = enobs.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit [%d] exceeded", maxBatchSize))
 		return

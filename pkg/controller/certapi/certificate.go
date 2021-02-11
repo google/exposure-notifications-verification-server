@@ -41,9 +41,8 @@ func (c *Controller) HandleCertificate() http.Handler {
 
 		logger := logging.FromContext(ctx).Named("certapi.HandleCertificate")
 
-		var blame = enobs.BlameNone
-		var result = enobs.ResultOK
-
+		blame := enobs.BlameNone
+		result := enobs.ResultOK
 		defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &blame, &result)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)

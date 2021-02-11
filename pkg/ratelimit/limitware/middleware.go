@@ -94,7 +94,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		ctx := r.Context()
 		logger := logging.FromContext(ctx).Named("ratelimit.Handle")
 
-		var result = enobs.ResultOK
+		result := enobs.ResultOK
 
 		defer func(result *tag.Mutator) {
 			ctx, err := tag.New(ctx, *result)

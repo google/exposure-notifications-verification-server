@@ -106,7 +106,9 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 			wg.Add(1)
 			go func(request *api.IssueCodeRequest, r *IssueResult) {
 				defer wg.Done()
-				c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r)
+				if err := c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r); err != nil {
+					r.ErrorReturn = api.Errorf("failed to send sms: %s", err)
+				}
 			}(requests[i], result)
 		}
 		wg.Wait()

@@ -68,7 +68,7 @@ func (c *AppSyncConfig) Validate() error {
 	}
 
 	if url, err := url.Parse(c.AppSyncURL); err != nil {
-		return fmt.Errorf("unable to parse APP_SYNC_URL: %v", err)
+		return fmt.Errorf("unable to parse APP_SYNC_URL: %w", err)
 	} else if url == nil {
 		return errors.New("expecting a URL value for APP_SYNC_URL")
 	}

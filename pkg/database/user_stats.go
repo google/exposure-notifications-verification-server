@@ -105,7 +105,7 @@ func (s UserStats) MarshalJSON() ([]byte, error) {
 		return json.Marshal(struct{}{})
 	}
 
-	var stats []*jsonUserStatStats
+	stats := make([]*jsonUserStatStats, 0, len(s))
 	for _, stat := range s {
 		stats = append(stats, &jsonUserStatStats{
 			Date: stat.Date,

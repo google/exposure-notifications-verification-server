@@ -26,9 +26,7 @@ import (
 
 const metricPrefix = observability.MetricRoot + "/api/certificate"
 
-var (
-	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of certificate issue requests", stats.UnitMilliseconds)
-)
+var mLatencyMs = stats.Float64(metricPrefix+"/request", "# of certificate issue requests", stats.UnitMilliseconds)
 
 func init() {
 	enobs.CollectViews([]*view.View{

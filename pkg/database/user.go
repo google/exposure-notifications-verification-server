@@ -219,9 +219,9 @@ func (u *User) AddToRealm(db *Database, r *Realm, permissions rbac.Permission, a
 		}
 
 		// Audit if permissions were changed.
-		if old, new := existing.Permissions, permissions; old != new {
+		if then, now := existing.Permissions, permissions; then != now {
 			audit := BuildAuditEntry(actor, "updated user permissions", u, r.ID)
-			audit.Diff = stringSliceDiff(rbac.PermissionNames(old), rbac.PermissionNames(new))
+			audit.Diff = stringSliceDiff(rbac.PermissionNames(then), rbac.PermissionNames(now))
 			if err := tx.Save(audit).Error; err != nil {
 				return fmt.Errorf("failed to save audit: %w", err)
 			}

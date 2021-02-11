@@ -40,7 +40,7 @@ func TestEmailConfig_Validate(t *testing.T) {
 			name: "missing password and host",
 			emailConfig: &EmailConfig{
 				RealmID:      realm.ID,
-				ProviderType: email.ProviderType(email.ProviderTypeSMTP),
+				ProviderType: email.ProviderTypeSMTP,
 				SMTPAccount:  "noreply@sendemails.meh",
 			},
 			err: "validation failed",
@@ -89,7 +89,7 @@ func TestEmailConfig_Lifecycle(t *testing.T) {
 	// Create email config on the realm
 	emailConfig := &EmailConfig{
 		RealmID:      realm.ID,
-		ProviderType: email.ProviderType(email.ProviderTypeSMTP),
+		ProviderType: email.ProviderTypeSMTP,
 		SMTPAccount:  "noreply@sendemails.meh",
 		SMTPPassword: "my-secret-ref",
 		SMTPHost:     "smtp.sendemails.meh",
@@ -176,7 +176,7 @@ func TestEmailProvider(t *testing.T) {
 
 	emailConfig := &EmailConfig{
 		RealmID:      realm.ID,
-		ProviderType: email.ProviderType(email.ProviderTypeSMTP),
+		ProviderType: email.ProviderTypeSMTP,
 		SMTPAccount:  "noreply@sendemails.meh",
 		SMTPPassword: "my-secret-ref",
 		SMTPHost:     "smtp.sendemails.meh",
@@ -195,6 +195,8 @@ func TestEmailProvider(t *testing.T) {
 }
 
 func TestSystemEmailProvider(t *testing.T) {
+	t.Parallel()
+
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	realm := NewRealmWithDefaults("test-email-realm-1")
@@ -212,7 +214,7 @@ func TestSystemEmailProvider(t *testing.T) {
 
 	emailConfig := &EmailConfig{
 		RealmID:      realm.ID,
-		ProviderType: email.ProviderType(email.ProviderTypeSMTP),
+		ProviderType: email.ProviderTypeSMTP,
 		SMTPAccount:  "noreply@sendemails.meh",
 		SMTPPassword: "my-secret-ref",
 		SMTPHost:     "smtp.sendemails.meh",

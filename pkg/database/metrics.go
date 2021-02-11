@@ -25,9 +25,7 @@ import (
 
 const metricPrefix = observability.MetricRoot + "/database"
 
-var (
-	mAuditEntryCreated = stats.Int64(metricPrefix+"/audit_entry_created", "The number of times an audit entry was created", stats.UnitDimensionless)
-)
+var mAuditEntryCreated = stats.Int64(metricPrefix+"/audit_entry_created", "The number of times an audit entry was created", stats.UnitDimensionless)
 
 func init() {
 	enobs.CollectViews([]*view.View{

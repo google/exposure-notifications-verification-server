@@ -110,8 +110,8 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 	curDayInterval := timeToInterval(now)
 	nextInterval := curDayInterval
 
-	teks := make([]verifyapi.ExposureKey, 14)
-	for i := 0; i < len(teks); i++ {
+	teks := make([]verifyapi.ExposureKey, 0, 14)
+	for i := 0; i < cap(teks); i++ {
 		key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
 		if err != nil {
 			return fmt.Errorf("not enough entropy: %w", err)
@@ -268,7 +268,13 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 				return nil, err
 			}
 
-			httpResp, err := client.Post(cfg.KeyServer, "application/json", &b)
+			httpReq, err := http.NewRequestWithContext(ctx, "POST", cfg.KeyServer, &b)
+			if err != nil {
+				return nil, err
+			}
+			httpReq.Header.Set("Content-Type", "application/json")
+
+			httpResp, err := client.Do(httpReq)
 			if err != nil {
 				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("error making request to publish teks: %w", err)

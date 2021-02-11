@@ -207,15 +207,15 @@ func (db *Database) SaveTokenSigningKey(key *TokenSigningKey, actor Auditable) e
 			audit := BuildAuditEntry(actor, "created token signing key", key, 0)
 			audits = append(audits, audit)
 		} else {
-			if old, new := existing.KeyVersionID, key.KeyVersionID; old != new {
+			if then, now := existing.KeyVersionID, key.KeyVersionID; then != now {
 				audit := BuildAuditEntry(actor, "updated key version id", key, 0)
-				audit.Diff = stringDiff(old, new)
+				audit.Diff = stringDiff(then, now)
 				audits = append(audits, audit)
 			}
 
-			if old, new := existing.IsActive, key.IsActive; old != new {
+			if then, now := existing.IsActive, key.IsActive; then != now {
 				audit := BuildAuditEntry(actor, "updated active state", key, 0)
-				audit.Diff = boolDiff(old, new)
+				audit.Diff = boolDiff(then, now)
 				audits = append(audits, audit)
 			}
 		}
@@ -282,7 +282,7 @@ func (db *Database) ActivateTokenSigningKey(id interface{}, actor Auditable) err
 // creating the upstream key fails, an error is returned. If the upstream key is
 // successfully created, a new TokenSigningKey record is created in the database
 // (not yet active). Finally, the new key is set as the active key.
-func (db *Database) RotateTokenSigningKey(ctx context.Context, kms keys.SigningKeyManager, parent string, actor Auditable) (*TokenSigningKey, error) {
+func (db *Database) RotateTokenSigningKey(ctx context.Context, kms keys.KeyVersionCreator, parent string, actor Auditable) (*TokenSigningKey, error) {
 	result, err := kms.CreateKeyVersion(ctx, parent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key version in upstream kms: %w", err)

@@ -31,15 +31,13 @@ var (
 	mClaimRequests = stats.Int64(metricPrefix+"/claim_requests", "The number of cleanup claim requests.", stats.UnitDimensionless)
 )
 
-var (
-	// itemTagKey indicating what type of items is cleaned up in this step.
-	// Potential values:
-	// VERIFICATION_CODE
-	// VERIFICATION_TOKEN
-	// MOBILE_APP
-	// AUDIT_ENTRY
-	itemTagKey = tag.MustNewKey("item")
-)
+// itemTagKey indicating what type of items is cleaned up in this step.
+// Potential values:
+// VERIFICATION_CODE
+// VERIFICATION_TOKEN
+// MOBILE_APP
+// AUDIT_ENTRY
+var itemTagKey = tag.MustNewKey("item")
 
 func init() {
 	enobs.CollectViews([]*view.View{
@@ -65,5 +63,4 @@ func init() {
 			Aggregation: view.Count(),
 		},
 	}...)
-
 }

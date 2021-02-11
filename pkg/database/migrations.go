@@ -27,9 +27,11 @@ import (
 	"gopkg.in/gormigrate.v1"
 )
 
-const initState = "00000-Init"
-const VerCodesCodeUniqueIndex = "uix_verification_codes_realm_code"
-const VerCodesLongCodeUniqueIndex = "uix_verification_codes_realm_long_code"
+const (
+	initState                   = "00000-Init"
+	VerCodesCodeUniqueIndex     = "uix_verification_codes_realm_code"
+	VerCodesLongCodeUniqueIndex = "uix_verification_codes_realm_long_code"
+)
 
 func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 	logger := logging.FromContext(ctx)
@@ -339,7 +341,6 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00016-MigrateSMSConfigs",
 			Migrate: func(tx *gorm.DB) error {
-
 				var sms SMSConfig
 				rows, err := tx.Model(&SMSConfig{}).Rows()
 				if err != nil {
@@ -362,7 +363,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 
 						// Save the plaintext back on the model. The model's hook will
 						// encrypt this with the KMS configuration.
-						sms.TwilioAuthToken = string(val)
+						sms.TwilioAuthToken = val
 						if err := db.SaveSMSConfig(&sms); err != nil {
 							return err
 						}
@@ -380,7 +381,6 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				err := tx.AutoMigrate(&VerificationCode{}, &UserStat{}, &AuthorizedAppStat{}).Error
 				return err
-
 			},
 			Rollback: func(tx *gorm.DB) error {
 				if tx.NewScope(&VerificationCode{}).HasColumn("issuing_user_id") {
@@ -422,13 +422,14 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00020-HMACAPIKeys",
 			Migrate: func(tx *gorm.DB) error {
-
 				var apps []AuthorizedApp
 				if err := tx.Model(AuthorizedApp{}).Find(&apps).Error; err != nil {
 					return err
 				}
 
 				for _, app := range apps {
+					app := app
+
 					// If the key has a preview, it's v2
 					if app.APIKeyPreview != "" {
 						continue
@@ -465,7 +466,6 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00022-AddUUIDToVerificationCodes",
 			Migrate: func(tx *gorm.DB) error {
-
 				if err := tx.AutoMigrate(VerificationCode{}).Error; err != nil {
 					return fmt.Errorf("failed to auto migrate: %w", err)
 				}
@@ -491,7 +491,6 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00023-MakeUUIDVerificationCodesNotNull",
 			Migrate: func(tx *gorm.DB) error {
-
 				if err := tx.Exec("ALTER TABLE verification_codes ALTER COLUMN uuid SET NOT NULL").Error; err != nil {
 					return fmt.Errorf("failed to set null: %w", err)
 				}
@@ -509,7 +508,6 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00024-AddTestTypesToRealms",
 			Migrate: func(tx *gorm.DB) error {
-
 				sql := fmt.Sprintf("ALTER TABLE realms ADD COLUMN IF NOT EXISTS allowed_test_types INTEGER DEFAULT %d",
 					TestTypeConfirmed|TestTypeLikely|TestTypeNegative)
 				if err := tx.Exec(sql).Error; err != nil {
@@ -529,7 +527,6 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00025-SetTestTypesNotNull",
 			Migrate: func(tx *gorm.DB) error {
-
 				if err := tx.Exec("ALTER TABLE realms ALTER COLUMN allowed_test_types SET NOT NULL").Error; err != nil {
 					return err
 				}
@@ -667,6 +664,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				}
 
 				for _, code := range codes {
+					code := code
 					changed := false
 
 					// Sanity
@@ -704,7 +702,6 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00031-AlterStatsColumns",
 			Migrate: func(tx *gorm.DB) error {
-
 				sqls := []string{
 					// AuthorizedApps
 					"CREATE UNIQUE INDEX IF NOT EXISTS idx_authorized_app_stats_date_authorized_app_id ON authorized_app_stats (date, authorized_app_id)",
@@ -993,12 +990,12 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				// ensures people who are already running a system don't get a random
 				// admin user.
 				var user User
-				if err := db.db.Model(&User{}).First(&user).Error; err == nil {
+				err := db.db.Model(&User{}).First(&user).Error
+				if err == nil {
 					return nil
-				} else {
-					if !IsNotFound(err) {
-						return err
-					}
+				}
+				if !IsNotFound(err) {
+					return err
 				}
 
 				user = User{
@@ -1595,7 +1592,6 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00067-AddRealmAllowBulkUpload",
 			Migrate: func(tx *gorm.DB) error {
-
 				sqls := []string{
 					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS allow_bulk_upload BOOL`,
 					`UPDATE realms SET allow_bulk_upload = FALSE WHERE allow_bulk_upload IS NULL`,

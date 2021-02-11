@@ -50,8 +50,8 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		now := time.Now().UTC()
 
-		var blame = enobs.BlameNone
-		var result = enobs.ResultOK
+		blame := enobs.BlameNone
+		result := enobs.ResultOK
 		defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)

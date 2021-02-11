@@ -348,7 +348,7 @@ func (db *Database) updateStatsAgeDistrib(t time.Time, authApp *AuthorizedApp, v
 
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
 		var existing RealmStat
-		new := false
+		isNewRecord := false
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Table("realm_stats").
@@ -357,7 +357,7 @@ func (db *Database) updateStatsAgeDistrib(t time.Time, authApp *AuthorizedApp, v
 			Take(&existing).
 			Error; err != nil {
 			if IsNotFound(err) {
-				new = true
+				isNewRecord = true
 			} else {
 				return err
 			}
@@ -386,7 +386,7 @@ func (db *Database) updateStatsAgeDistrib(t time.Time, authApp *AuthorizedApp, v
 		sel := tx.Table("realm_stats").
 			Where("realm_id = ?", authApp.RealmID).
 			Where("date = ?", midnight)
-		if new {
+		if isNewRecord {
 			existing.RealmID = authApp.RealmID
 			existing.Date = midnight
 			if err := sel.Create(&existing).Error; err != nil {

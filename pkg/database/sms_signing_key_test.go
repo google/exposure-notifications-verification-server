@@ -26,13 +26,15 @@ func TestDatabase_FindSMSSigningKey(t *testing.T) {
 	ctx := project.TestContext(t)
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	t.Run("not_found", func(t *testing.T) {
+	// not found
+	{
 		if _, err := db.FindSMSSigningKey(123456); !IsNotFound(err) {
 			t.Errorf("expected %v to be NotFound", err)
 		}
-	})
+	}
 
-	t.Run("finds", func(t *testing.T) {
+	// found
+	{
 		realm, err := db.FindRealm(1)
 		if err != nil {
 			t.Fatal(err)
@@ -49,5 +51,5 @@ func TestDatabase_FindSMSSigningKey(t *testing.T) {
 		if got, want := result.RealmID, realm.ID; got != want {
 			t.Errorf("expected %d to be %d", got, want)
 		}
-	})
+	}
 }

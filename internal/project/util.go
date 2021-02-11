@@ -22,7 +22,7 @@ import (
 
 const (
 	// PasswordSentinel is the password string inserted into forms.
-	PasswordSentinel = "very-nice-try-maybe-next-time"
+	PasswordSentinel = "very-nice-try-maybe-next-time" //nolint:gosec
 )
 
 var _, self, _, _ = runtime.Caller(0)

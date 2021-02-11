@@ -32,6 +32,8 @@ type OSType int
 // forms are suddenly broken.
 func (o OSType) Display() string {
 	switch o {
+	case OSTypeUnknown:
+		return "Unknown"
 	case OSTypeIOS:
 		return "iOS"
 	case OSTypeAndroid:

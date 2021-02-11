@@ -6,6 +6,20 @@ on:
     - 'main'
 
 jobs:
+  golangci-lint:
+    name: go-lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.36.0
+          only-new-issues: true
+
   only-user-errors:
     name: errorw-bot
     runs-on: ubuntu-latest

@@ -83,7 +83,9 @@ func SignJWT(token *jwt.Token, signer crypto.Signer) (string, error) {
 	// 3. Concatenate the two octet sequences in the order R and then S.
 	//	 	(Note that many ECDSA implementations will directly produce this
 	//	 	concatenation as their output.)
-	sig = append(rBytesPadded, sBytesPadded...)
+	sig = make([]byte, 0, len(rBytesPadded)+len(sBytesPadded))
+	sig = append(sig, rBytesPadded...)
+	sig = append(sig, sBytesPadded...)
 
 	return strings.Join([]string{signingString, jwt.EncodeSegment(sig)}, "."), nil
 }

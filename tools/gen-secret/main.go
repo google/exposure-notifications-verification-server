@@ -92,7 +92,7 @@ func realMain(ctx context.Context) error {
 	// Call the API to create the secret.
 	secret, err := client.CreateSecret(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to create secret: %v", err)
+		return fmt.Errorf("failed to create secret: %w", err)
 	}
 	if secret != nil {
 		logger.Infow("created secret", "secret", secret)
