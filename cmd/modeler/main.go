@@ -21,7 +21,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
+	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"

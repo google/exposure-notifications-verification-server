@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/tag"
 )
@@ -63,133 +63,133 @@ func (c *Controller) HandleCleanup() http.Handler {
 
 		// API keys
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "API_KEYS")
 			if count, err := c.db.PurgeAuthorizedApps(c.config.AuthorizedAppMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge authorized apps: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged authorized apps", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Verification codes - purge codes from database entirely.
 		// Their code/long_code hmac values will have been set to "".
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_CODE")
 			if count, err := c.db.PurgeVerificationCodes(c.config.VerificationCodeStatusMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged verification codes", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Verification codes - recycle codes. Zero out the code/long_code values
 		// so status can be reported, but codes couldn't be recalculated or checked.
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_CODE_RECYCLE")
 			if count, err := c.db.RecycleVerificationCodes(c.config.VerificationCodeMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification codes: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("recycled verification codes", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Verification tokens
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_TOKEN")
 			if count, err := c.db.PurgeTokens(c.config.VerificationTokenMaxAge); err != nil {
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge tokens: %w", err))
 			} else {
 				logger.Infow("purged verification tokens", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Mobile apps
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "MOBILE_APP")
 			if count, err := c.db.PurgeMobileApps(c.config.MobileAppMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge mobile apps: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged mobile apps", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Audit entries
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "AUDIT_ENTRY")
 			if count, err := c.db.PurgeAuditEntries(c.config.AuditEntryMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge audit entries: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged audit entries", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Users
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "USER")
 			if count, err := c.db.PurgeUsers(c.config.UserPurgeMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge users: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged user entries", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Token signing keys
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "TOKEN_SIGNING_KEY")
 			if count, err := c.db.PurgeTokenSigningKeys(ctx, c.signingTokenKeyManager, c.config.SigningTokenKeyMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge token signing keys: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged token signing keys", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Verification signing key references.
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_SIGNING_KEY")
 			if count, err := c.db.PurgeSigningKeys(c.config.VerificationSigningKeyMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge verification signing keys: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged verification signing keys", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 
 		// Key server stats
 		func() {
-			defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "KEY_SERVER_STATS")
 			if count, err := c.db.DeleteOldKeyServerStatsDays(c.config.KeyServerStatsMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge key-server stats: %w", err))
-				result = observability.ResultError("FAILED")
+				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged key-server stats", "count", count)
-				result = observability.ResultOK()
+				result = enobs.ResultOK
 			}
 		}()
 

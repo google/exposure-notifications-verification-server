@@ -17,7 +17,7 @@ package user
 import (
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
-	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
@@ -29,7 +29,7 @@ func init() {
 	{
 		name := observability.MetricRoot + "/user/upstream_user_recreate"
 		mUpstreamUserRecreates = stats.Int64(name, "user was re-created in auth provider", stats.UnitDimensionless)
-		enobservability.CollectViews([]*view.View{
+		enobs.CollectViews([]*view.View{
 			{
 				Name:        name + "_count",
 				Measure:     mUpstreamUserRecreates,

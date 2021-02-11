@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -65,11 +65,11 @@ func (c *Controller) BatchIssueWithAPIAuth(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	result := &IssueResult{
 		HTTPCode:  http.StatusOK,
-		obsResult: observability.ResultOK(),
+		obsResult: enobs.ResultOK,
 	}
 
 	if authorizedApp := controller.AuthorizedAppFromContext(ctx); authorizedApp == nil {
-		result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+		result.obsResult = enobs.ResultError("MISSING_AUTHORIZED_APP")
 		controller.MissingAuthorizedApp(w, r, c.h)
 		return result
 	}
@@ -82,12 +82,12 @@ func (c *Controller) BatchIssueWithUIAuth(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 	result := &IssueResult{
 		HTTPCode:  http.StatusOK,
-		obsResult: observability.ResultOK(),
+		obsResult: enobs.ResultOK,
 	}
 
 	membership := controller.MembershipFromContext(ctx)
 	if !membership.Can(rbac.CodeBulkIssue) {
-		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ALLOWED")
+		result.obsResult = enobs.ResultError("BULK_ISSUE_NOT_ALLOWED")
 		controller.Unauthorized(w, r, c.h)
 		return result
 	}
@@ -100,21 +100,21 @@ func (c *Controller) BatchIssueWithUIAuth(w http.ResponseWriter, r *http.Request
 func (c *Controller) decodeAndBulkIssue(ctx context.Context, w http.ResponseWriter, r *http.Request, result *IssueResult) {
 	// Ensure bulk upload is enabled on this realm.
 	if currentRealm := controller.RealmFromContext(ctx); currentRealm == nil || !currentRealm.AllowBulkUpload {
-		result.obsResult = observability.ResultError("BULK_ISSUE_NOT_ENABLED")
+		result.obsResult = enobs.ResultError("BULK_ISSUE_NOT_ENABLED")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("bulk issuing is not enabled on this realm"))
 		return
 	}
 
 	var request api.BatchIssueCodeRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
-		result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+		result.obsResult = enobs.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 		return
 	}
 
 	l := len(request.Codes)
 	if l > maxBatchSize {
-		result.obsResult = observability.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
+		result.obsResult = enobs.ResultError("BATCH_SIZE_LIMIT_EXCEEDED")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("batch size limit [%d] exceeded", maxBatchSize))
 		return
 	}

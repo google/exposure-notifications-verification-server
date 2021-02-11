@@ -20,7 +20,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/buildinfo"
+	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 

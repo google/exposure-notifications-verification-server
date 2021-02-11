@@ -15,7 +15,7 @@
 package cleanup
 
 import (
-	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"go.opencensus.io/plugin/ochttp"
@@ -42,26 +42,26 @@ var (
 )
 
 func init() {
-	enobservability.CollectViews([]*view.View{
+	enobs.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/requests_count",
 			Measure:     mLatencyMs,
 			Description: "The count of the cleanup requests",
-			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey, itemTagKey),
+			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey, itemTagKey),
 			Aggregation: view.Count(),
 		},
 		{
 			Name:        metricPrefix + "/requests_latency",
 			Measure:     mLatencyMs,
 			Description: "The latency distribution of the cleanup requests",
-			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey, itemTagKey),
+			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey, itemTagKey),
 			Aggregation: ochttp.DefaultLatencyDistribution,
 		},
 		{
 			Name:        metricPrefix + "/claim_requests_count",
 			Measure:     mClaimRequests,
 			Description: "The count of the cleanup claim requests",
-			TagKeys:     append(observability.CommonTagKeys(), observability.ResultTagKey),
+			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey),
 			Aggregation: view.Count(),
 		},
 	}...)

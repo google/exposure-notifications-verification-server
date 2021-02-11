@@ -23,3 +23,19 @@ var (
 	// BuildTag is the git tag from which this build was created.
 	BuildTag string = "unknown"
 )
+
+// buildinfo provides the build information about the key server.
+type buildinfo struct{}
+
+// ID returns the build ID.
+func (buildinfo) ID() string {
+	return BuildID
+}
+
+// Tag returns the build tag.
+func (buildinfo) Tag() string {
+	return BuildTag
+}
+
+// VerificationServer provides the build information about the key server.
+var VerificationServer buildinfo

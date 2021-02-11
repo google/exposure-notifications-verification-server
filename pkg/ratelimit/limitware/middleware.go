@@ -24,10 +24,10 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/httplimit"
@@ -94,7 +94,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		ctx := r.Context()
 		logger := logging.FromContext(ctx).Named("ratelimit.Handle")
 
-		var result = observability.ResultOK()
+		var result = enobs.ResultOK
 
 		defer func(result *tag.Mutator) {
 			ctx, err := tag.New(ctx, *result)
@@ -109,7 +109,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		key, err := m.keyFunc(r)
 		if err != nil {
 			logger.Errorw("could not call key function", "error", err)
-			result = observability.ResultError("FAILED_TO_CALL_KEY_FUNCTION")
+			result = enobs.ResultError("FAILED_TO_CALL_KEY_FUNCTION")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -120,7 +120,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 			logger.Errorw("failed to take", "error", err)
 
 			if !m.allowOnError {
-				result = observability.ResultError("FAILED_TO_TAKE")
+				result = enobs.ResultError("FAILED_TO_TAKE")
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -136,7 +136,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		// Fail if there were no tokens remaining.
 		if !ok {
 			logger.Infow("rate limited", "key", key)
-			result = observability.ResultError("RATE_LIMITED")
+			result = enobs.ResultError("RATE_LIMITED")
 			w.Header().Set(httplimit.HeaderRetryAfter, resetTime)
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return

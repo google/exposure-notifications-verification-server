@@ -18,17 +18,18 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/gorilla/mux"
 )
 
 // WithObservability sets common observability context fields.
 func WithObservability(ctx context.Context) (context.Context, mux.MiddlewareFunc) {
-	ctx = observability.WithBuildInfo(ctx)
+	ctx = enobs.WithBuildInfo(ctx, buildinfo.VerificationServer)
 
 	return ctx, func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := observability.WithBuildInfo(r.Context())
+			ctx := enobs.WithBuildInfo(r.Context(), buildinfo.VerificationServer)
 			r = r.Clone(ctx)
 			next.ServeHTTP(w, r)
 		})

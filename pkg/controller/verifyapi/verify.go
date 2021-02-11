@@ -25,11 +25,11 @@ import (
 	"net/http"
 	"time"
 
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -50,14 +50,14 @@ func (c *Controller) HandleVerify() http.Handler {
 
 		now := time.Now().UTC()
 
-		var blame = observability.BlameNone
-		var result = observability.ResultOK()
-		defer observability.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
+		var blame = enobs.BlameNone
+		var result = enobs.ResultOK
+		defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &blame)
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
-			blame = observability.BlameClient
-			result = observability.ResultError("MISSING_AUTHORIZED_APP")
+			blame = enobs.BlameClient
+			result = enobs.ResultError("MISSING_AUTHORIZED_APP")
 			controller.MissingAuthorizedApp(w, r, c.h)
 			return
 		}
@@ -65,8 +65,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		var request api.VerifyCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			logger.Errorw("bad request", "error", err)
-			blame = observability.BlameClient
-			result = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+			blame = enobs.BlameClient
+			result = enobs.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 			return
@@ -85,8 +85,8 @@ func (c *Controller) HandleVerify() http.Handler {
 				logger.Errorw("no token signing key in database, falling back to legacy signing key", "error", err)
 			} else {
 				logger.Errorw("failed to get active token signing key", "error", err)
-				blame = observability.BlameServer
-				result = observability.ResultError("FAILED_TO_GET_ACTIVE_TOKEN_SIGNING_KEY")
+				blame = enobs.BlameServer
+				result = enobs.ResultError("FAILED_TO_GET_ACTIVE_TOKEN_SIGNING_KEY")
 
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 				return
@@ -106,8 +106,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		signer, err := c.kms.NewSigner(ctx, keyRef)
 		if err != nil {
 			logger.Errorw("failed to get signer", "error", err)
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_GET_SIGNER")
+			blame = enobs.BlameServer
+			result = enobs.ResultError("FAILED_TO_GET_SIGNER")
 
 			c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 			return
@@ -117,8 +117,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		acceptTypes, err := request.GetAcceptedTestTypes()
 		if err != nil {
 			logger.Errorf("invalid accept test types", "error", err)
-			blame = observability.BlameClient
-			result = observability.ResultError("INVALID_ACCEPT_TEST_TYPES")
+			blame = enobs.BlameClient
+			result = enobs.ResultError("INVALID_ACCEPT_TEST_TYPES")
 
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInvalidTestType))
 			return
@@ -128,27 +128,27 @@ func (c *Controller) HandleVerify() http.Handler {
 		// The token can be used to sign TEKs later.
 		verificationToken, err := c.db.VerifyCodeAndIssueToken(now, authApp, request.VerificationCode, acceptTypes, c.config.VerificationTokenDuration)
 		if err != nil {
-			blame = observability.BlameClient
+			blame = enobs.BlameClient
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
-				result = observability.ResultError("VERIFICATION_CODE_EXPIRED")
+				result = enobs.ResultError("VERIFICATION_CODE_EXPIRED")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
 				return
 			case errors.Is(err, database.ErrVerificationCodeUsed):
-				result = observability.ResultError("VERIFICATION_CODE_INVALID")
+				result = enobs.ResultError("VERIFICATION_CODE_INVALID")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 				return
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
-				result = observability.ResultError("VERIFICATION_CODE_NOT_FOUND")
+				result = enobs.ResultError("VERIFICATION_CODE_NOT_FOUND")
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
 				return
 			case errors.Is(err, database.ErrUnsupportedTestType):
-				result = observability.ResultError("VERIFICATION_CODE_UNSUPPORTED_TEST_TYPE")
+				result = enobs.ResultError("VERIFICATION_CODE_UNSUPPORTED_TEST_TYPE")
 				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
 				return
 			default:
 				logger.Errorw("failed to issue verification token", "error", err)
-				result = observability.ResultError("UNKNOWN_ERROR")
+				result = enobs.ResultError("UNKNOWN_ERROR")
 				c.h.RenderJSON(w, http.StatusInternalServerError, api.InternalError())
 				return
 			}
@@ -177,8 +177,8 @@ func (c *Controller) HandleVerify() http.Handler {
 		if err != nil {
 			logger.Errorw("failed to sign token", "error", err)
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrInternal))
-			blame = observability.BlameServer
-			result = observability.ResultError("FAILED_TO_SIGN_TOKEN")
+			blame = enobs.BlameServer
+			result = enobs.ResultError("FAILED_TO_SIGN_TOKEN")
 			return
 		}
 

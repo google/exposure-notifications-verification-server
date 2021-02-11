@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"time"
 
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
@@ -62,11 +62,11 @@ func (c *Controller) IssueWithAPIAuth(w http.ResponseWriter, r *http.Request) *I
 	ctx := r.Context()
 	result := &IssueResult{
 		HTTPCode:  http.StatusOK,
-		obsResult: observability.ResultOK(),
+		obsResult: enobs.ResultOK,
 	}
 
 	if authorizedApp := controller.AuthorizedAppFromContext(ctx); authorizedApp == nil {
-		result.obsResult = observability.ResultError("MISSING_AUTHORIZED_APP")
+		result.obsResult = enobs.ResultError("MISSING_AUTHORIZED_APP")
 		controller.MissingAuthorizedApp(w, r, c.h)
 		return result
 	}
@@ -79,12 +79,12 @@ func (c *Controller) IssueWithUIAuth(w http.ResponseWriter, r *http.Request) *Is
 	ctx := r.Context()
 	result := &IssueResult{
 		HTTPCode:  http.StatusOK,
-		obsResult: observability.ResultOK(),
+		obsResult: enobs.ResultOK,
 	}
 
 	membership := controller.MembershipFromContext(ctx)
 	if !membership.Can(rbac.CodeIssue) {
-		result.obsResult = observability.ResultError("ISSUE_NOT_ALLOWED")
+		result.obsResult = enobs.ResultError("ISSUE_NOT_ALLOWED")
 		controller.Unauthorized(w, r, c.h)
 		return result
 	}
@@ -97,7 +97,7 @@ func (c *Controller) IssueWithUIAuth(w http.ResponseWriter, r *http.Request) *Is
 func (c *Controller) decodeAndIssue(ctx context.Context, w http.ResponseWriter, r *http.Request, result *IssueResult) {
 	var request api.IssueCodeRequest
 	if err := controller.BindJSON(w, r, &request); err != nil {
-		result.obsResult = observability.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+		result.obsResult = enobs.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 		return
 	}

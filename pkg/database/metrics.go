@@ -17,7 +17,7 @@ package database
 import (
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 
-	enobservability "github.com/google/exposure-notifications-server/pkg/observability"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
@@ -30,7 +30,7 @@ var (
 )
 
 func init() {
-	enobservability.CollectViews([]*view.View{
+	enobs.CollectViews([]*view.View{
 		{
 			Name:        metricPrefix + "/audit_entry_created_count",
 			Measure:     mAuditEntryCreated,
