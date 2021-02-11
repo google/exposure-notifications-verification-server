@@ -279,7 +279,6 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 				result = enobs.ResultNotOK
 				return nil, fmt.Errorf("error making request to publish teks: %w", err)
 			}
-			defer httpResp.Body.Close()
 
 			var publishResp verifyapi.PublishResponse
 			if err := json.NewDecoder(httpResp.Body).Decode(&publishResp); err != nil {

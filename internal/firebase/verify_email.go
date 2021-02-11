@@ -55,7 +55,6 @@ func (c *Client) SendEmailVerification(ctx context.Context, idToken string) erro
 	if err != nil {
 		return fmt.Errorf("failed to send password reset email: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if status := resp.StatusCode; status != http.StatusOK {
 		b, err := ioutil.ReadAll(resp.Body)
