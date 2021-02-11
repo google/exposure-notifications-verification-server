@@ -18,6 +18,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -56,6 +57,10 @@ func TestSMS_scrubPhoneNumber(t *testing.T) {
 
 	for k, pattern := range patterns {
 		for i, tc := range cases {
+			k := k
+			pattern := pattern
+			tc := tc
+
 			t.Run(fmt.Sprintf("case_%s_%2d", k, i), func(t *testing.T) {
 				t.Parallel()
 
@@ -87,7 +92,7 @@ func TestSMS_sendSMS(t *testing.T) {
 
 	smsConfig := &database.SMSConfig{
 		RealmID:      realm.ID,
-		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
+		ProviderType: sms.ProviderTypeNoop,
 	}
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
@@ -159,7 +164,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := c.SendSMS(ctx, realm, failingSMSProvider, nil, "", request, result); err != sms.ErrNoop {
+	if err := c.SendSMS(ctx, realm, failingSMSProvider, nil, "", request, result); !errors.Is(err, sms.ErrNoop) {
 		t.Errorf("expected sms failure. got %v want %v", err, sms.ErrNoop)
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {

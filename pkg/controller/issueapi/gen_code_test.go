@@ -138,41 +138,6 @@ func TestIssueCode(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServerConfig(t, testDatabaseInstance)
-	db := harness.Database
-
-	// Enable quota on the realm
-	realm, err := db.FindRealm(1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	realm.AbusePreventionEnabled = true
-	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatalf("failed to save realm: %v", err)
-	}
-
-	existingCode := &database.VerificationCode{
-		RealmID:       realm.ID,
-		Code:          "00000001",
-		LongCode:      "00000001ABC",
-		Claimed:       true,
-		TestType:      "confirmed",
-		ExpiresAt:     time.Now().Add(time.Hour),
-		LongExpiresAt: time.Now().Add(time.Hour),
-	}
-	if err := db.SaveVerificationCode(existingCode, realm); err != nil {
-		t.Fatal(err)
-	}
-
-	key, err := realm.QuotaKey(harness.Config.GetRateLimitConfig().HMACKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := harness.RateLimiter.Set(ctx, key, 0, time.Hour); err != nil {
-		t.Fatal(err)
-	}
-
-	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
 
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour)
 	expires := time.Now().UTC().Add(48 * time.Hour)
@@ -217,7 +182,46 @@ func TestIssueCode(t *testing.T) {
 
 	for _, tc := range cases {
 		tc := tc
+
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			harness := envstest.NewServerConfig(t, testDatabaseInstance)
+			db := harness.Database
+
+			// Enable quota on the realm
+			realm, err := db.FindRealm(1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			realm.AbusePreventionEnabled = true
+			if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+				t.Fatalf("failed to save realm: %v", err)
+			}
+
+			existingCode := &database.VerificationCode{
+				RealmID:       realm.ID,
+				Code:          "00000001",
+				LongCode:      "00000001ABC",
+				Claimed:       true,
+				TestType:      "confirmed",
+				ExpiresAt:     time.Now().Add(time.Hour),
+				LongExpiresAt: time.Now().Add(time.Hour),
+			}
+			if err := db.SaveVerificationCode(existingCode, realm); err != nil {
+				t.Fatal(err)
+			}
+
+			key, err := realm.QuotaKey(harness.Config.GetRateLimitConfig().HMACKey)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := harness.RateLimiter.Set(ctx, key, 0, time.Hour); err != nil {
+				t.Fatal(err)
+			}
+
+			c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
+
 			harness.Config.EnforceRealmQuotas = tc.enforceRealmQuotas
 			result := c.IssueCode(ctx, tc.vCode, realm)
 

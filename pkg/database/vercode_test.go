@@ -306,7 +306,7 @@ func TestVerCodeValidate(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
 
-			if err := tc.Code.Validate(realm); err != tc.Err {
+			if err := tc.Code.Validate(realm); !errors.Is(err, tc.Err) {
 				t.Fatalf("wrong error, want %v, got: %v", tc.Err, err)
 			}
 		})
@@ -422,7 +422,6 @@ func TestVerificationCodesCleanup(t *testing.T) {
 
 	// Find first two by UUID, expect a not found error
 	for i, vc := range testData {
-
 		got, err := realm.FindVerificationCodeByUUID(db, vc.UUID)
 		if i <= cleanUpTo {
 			if err == nil {

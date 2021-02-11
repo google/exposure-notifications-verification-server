@@ -23,7 +23,7 @@ import (
 )
 
 // HandleRealmExternalIssuersStats renders statistics for the current realm.
-func (c *Controller) HandleRealmExternalIssuersStats(typ StatsType) http.Handler {
+func (c *Controller) HandleRealmExternalIssuersStats(typ Type) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -40,10 +40,10 @@ func (c *Controller) HandleRealmExternalIssuersStats(typ StatsType) http.Handler
 		}
 
 		switch typ {
-		case StatsTypeCSV:
+		case TypeCSV:
 			c.h.RenderCSV(w, http.StatusOK, csvFilename("external-issuer-stats"), stats)
 			return
-		case StatsTypeJSON:
+		case TypeJSON:
 			c.h.RenderJSON(w, http.StatusOK, stats)
 			return
 		default:

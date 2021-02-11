@@ -19,6 +19,7 @@ package jwks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -56,11 +57,15 @@ func (c *Controller) HandleIndex() http.Handler {
 		// fetch function also depends on the cacher to lookup pubic keys and
 		// results in a deadlock.
 		var encoded []*jwk.JWK
-		if err := c.cacher.Read(ctx, key, &encoded); err == nil {
+		if err := c.cacher.Read(ctx, key, &encoded); err != nil {
+			if !errors.Is(err, cache.ErrNotFound) {
+				controller.InternalError(w, r, c.h, err)
+				return
+			}
+
+			// Fall-through to lookup logic
+		} else {
 			c.h.RenderJSON(w, http.StatusOK, encoded)
-			return
-		} else if err != cache.ErrNotFound {
-			controller.InternalError(w, r, c.h, err)
 			return
 		}
 

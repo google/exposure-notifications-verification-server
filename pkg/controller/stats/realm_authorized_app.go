@@ -27,7 +27,7 @@ import (
 
 // HandleRealmAuthorizedAppStats renders statistics for an authorized app in the
 // current realm.
-func (c *Controller) HandleRealmAuthorizedAppStats(typ StatsType) http.Handler {
+func (c *Controller) HandleRealmAuthorizedAppStats(typ Type) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vars := mux.Vars(r)
@@ -56,11 +56,11 @@ func (c *Controller) HandleRealmAuthorizedAppStats(typ StatsType) http.Handler {
 		}
 
 		switch typ {
-		case StatsTypeCSV:
+		case TypeCSV:
 			filename := notFilenameRe.ReplaceAllString(strings.ToLower(authorizedApp.Name), "-")
 			c.h.RenderCSV(w, http.StatusOK, csvFilename(filename), stats)
 			return
-		case StatsTypeJSON:
+		case TypeJSON:
 			c.h.RenderJSON(w, http.StatusOK, stats)
 			return
 		default:

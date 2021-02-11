@@ -53,11 +53,11 @@ func (c *Controller) renderShow(ctx context.Context, w http.ResponseWriter, r *h
 		}
 		pk, err := c.publicKeyCache.GetPublicKey(ctx, k.KeyID, c.db.KeyManager())
 		if err != nil {
-			publicKeys[k.GetKID()] = fmt.Errorf("error loading public key: %v", err).Error()
+			publicKeys[k.GetKID()] = fmt.Errorf("error loading public key: %w", err).Error()
 		} else {
 			pem, err := keyutils.EncodePublicKey(pk)
 			if err != nil {
-				publicKeys[k.GetKID()] = fmt.Errorf("error decoding public key: %v", err).Error()
+				publicKeys[k.GetKID()] = fmt.Errorf("error decoding public key: %w", err).Error()
 			} else {
 				publicKeys[k.GetKID()] = pem
 				if k.Active {

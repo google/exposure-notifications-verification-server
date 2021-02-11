@@ -107,14 +107,15 @@ func TestDatabase_ActiveTokenSigningKey(t *testing.T) {
 		KeyVersionID: "foo/bar/baz",
 	}
 
-	// Note: intentionally NOT parallel
-	t.Run("none", func(t *testing.T) {
+	// none
+	{
 		if _, err := db.ActiveTokenSigningKey(); !IsNotFound(err) {
 			t.Errorf("expected err to be NotFound, got %v", err)
 		}
-	})
+	}
 
-	t.Run("exists_not_active", func(t *testing.T) {
+	// exists not active
+	{
 		if err := db.SaveTokenSigningKey(key, SystemTest); err != nil {
 			t.Fatal(err)
 		}
@@ -122,9 +123,10 @@ func TestDatabase_ActiveTokenSigningKey(t *testing.T) {
 		if _, err := db.ActiveTokenSigningKey(); !IsNotFound(err) {
 			t.Errorf("expected err to be NotFound, got %v", err)
 		}
-	})
+	}
 
-	t.Run("active", func(t *testing.T) {
+	// active
+	{
 		if err := db.ActivateTokenSigningKey(key.ID, SystemTest); err != nil {
 			t.Fatal(err)
 		}
@@ -137,7 +139,7 @@ func TestDatabase_ActiveTokenSigningKey(t *testing.T) {
 		if got, want := result.ID, result.ID; got != want {
 			t.Errorf("expected %d to be %d", got, want)
 		}
-	})
+	}
 }
 
 func TestDatabase_ListTokenSigningKeys(t *testing.T) {
@@ -145,8 +147,8 @@ func TestDatabase_ListTokenSigningKeys(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	// Note: intentionally NOT parallel
-	t.Run("none", func(t *testing.T) {
+	// none
+	{
 		result, err := db.ListTokenSigningKeys()
 		if err != nil {
 			t.Fatal(err)
@@ -155,9 +157,10 @@ func TestDatabase_ListTokenSigningKeys(t *testing.T) {
 		if result == nil {
 			t.Fatal("result should not be nil")
 		}
-	})
+	}
 
-	t.Run("lists", func(t *testing.T) {
+	// lists
+	{
 		key := &TokenSigningKey{
 			KeyVersionID: "foo/bar/baz",
 		}
@@ -176,7 +179,7 @@ func TestDatabase_ListTokenSigningKeys(t *testing.T) {
 		if got, want := list[0].ID, key.ID; got != want {
 			t.Errorf("expected %d to be %d", got, want)
 		}
-	})
+	}
 }
 
 func TestDatabase_RotateTokenSigningKey(t *testing.T) {
@@ -297,6 +300,8 @@ func TestDatabase_ActivateTokenSigningKey(t *testing.T) {
 	}
 
 	t.Run("activates", func(t *testing.T) {
+		t.Parallel()
+
 		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 		key := &TokenSigningKey{
@@ -325,6 +330,8 @@ func TestDatabase_ActivateTokenSigningKey(t *testing.T) {
 	})
 
 	t.Run("audits", func(t *testing.T) {
+		t.Parallel()
+
 		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 		key := &TokenSigningKey{

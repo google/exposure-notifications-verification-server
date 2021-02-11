@@ -145,7 +145,6 @@ func TestUser_Lifecycle(t *testing.T) {
 			t.Fatalf("expected not found, got %v", err)
 		}
 	}
-
 }
 
 func TestDatabase_PurgeUsers(t *testing.T) {

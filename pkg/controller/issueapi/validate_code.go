@@ -16,6 +16,7 @@ package issueapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -121,14 +122,14 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.Iss
 	vCode.Code = "placeholder"
 	vCode.LongCode = "placeholder"
 	if err := vCode.Validate(realm); err != nil {
-		switch err {
-		case database.ErrInvalidTestType:
+		switch {
+		case errors.Is(err, database.ErrInvalidTestType):
 			return nil, &IssueResult{
 				obsResult:   enobs.ResultError("INVALID_TEST_TYPE"),
 				HTTPCode:    http.StatusBadRequest,
 				ErrorReturn: api.Errorf("invalid test type").WithCode(api.ErrInvalidTestType),
 			}
-		case database.ErrUnsupportedTestType:
+		case errors.Is(err, database.ErrUnsupportedTestType):
 			return nil, &IssueResult{
 				obsResult:   enobs.ResultError("UNSUPPORTED_TEST_TYPE"),
 				HTTPCode:    http.StatusBadRequest,

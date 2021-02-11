@@ -153,7 +153,7 @@ func (c *redisCacher) Fetch(ctx context.Context, k *Key, out interface{}, ttl ti
 			return nil, fmt.Errorf("failed to MULTI: %w", err)
 		}
 
-		if _, err := conn.DoContext(ctx, "PSETEX", key, int64(ttl.Milliseconds()), encoded.String()); err != nil {
+		if _, err := conn.DoContext(ctx, "PSETEX", key, ttl.Milliseconds(), encoded.String()); err != nil {
 			err = fmt.Errorf("failed to PSETEX: %w", err)
 
 			if _, derr := conn.DoContext(ctx, "DISCARD"); derr != nil {
@@ -210,7 +210,7 @@ func (c *redisCacher) Write(ctx context.Context, k *Key, value interface{}, ttl 
 			return fmt.Errorf("failed to encode value: %w", err)
 		}
 
-		if _, err := redigo.String(conn.DoContext(ctx, "PSETEX", key, int64(ttl.Milliseconds()), encoded.String())); err != nil {
+		if _, err := redigo.String(conn.DoContext(ctx, "PSETEX", key, ttl.Milliseconds(), encoded.String())); err != nil {
 			return fmt.Errorf("failed to PSETEX value: %w", err)
 		}
 		return nil
@@ -244,7 +244,6 @@ func (c *redisCacher) Read(ctx context.Context, k *Key, out interface{}) error {
 		}
 		return nil
 	})
-
 }
 
 // Delete removes an item from the cache, if it exists, regardless of TTL.

@@ -38,7 +38,7 @@ var (
 )
 
 func init() {
-	gob.Register(*new(sessionKey))
+	gob.Register(sessionKey(""))
 }
 
 // Back goes back to the referrer. If the referrer is missing, or if the

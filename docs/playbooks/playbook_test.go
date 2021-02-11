@@ -49,11 +49,14 @@ type config struct {
 }
 
 func allPlaybookNames(t *testing.T) []string {
+	t.Helper()
+
 	files, err := filepath.Glob(playbooksGlob)
 	if err != nil {
 		t.Fatalf("failed to find all playbooks: %s", err)
 	}
-	var ret []string
+
+	ret := make([]string, 0, len(files))
 	for _, x := range files {
 		basename := filepath.Base(x)
 		ret = append(ret, basename[:len(basename)-len(".md")])
@@ -62,6 +65,8 @@ func allPlaybookNames(t *testing.T) []string {
 }
 
 func allAlertNames(t *testing.T) []string {
+	t.Helper()
+
 	hcl, diag := hclparse.NewParser().ParseHCLFile(alertTF)
 	if diag.HasErrors() {
 		t.Fatalf("failed to parse alerts.tf: %v", diag)
@@ -71,7 +76,8 @@ func allAlertNames(t *testing.T) []string {
 	if diag.HasErrors() {
 		t.Fatalf("failed to decode body: %v", diag)
 	}
-	var ret []string
+
+	ret := make([]string, 0, len(c.Resources))
 	for _, res := range c.Resources {
 		if res.Type != "google_monitoring_alert_policy" {
 			continue
@@ -103,7 +109,8 @@ func setDiff(xs, ys []string) []string {
 			delete(s1, k)
 		}
 	}
-	var ret []string
+
+	ret := make([]string, 0, len(s1))
 	for k := range s1 {
 		ret = append(ret, k)
 	}
@@ -114,6 +121,8 @@ func setDiff(xs, ys []string) []string {
 // Test to ensure every playbook has a corresponding alert, and every alert has
 // a corresponding laybook.
 func TestPlaybooks(t *testing.T) {
+	t.Parallel()
+
 	playbooks := allPlaybookNames(t)
 	alerts := allAlertNames(t)
 	for _, x := range setDiff(playbooks, alerts) {

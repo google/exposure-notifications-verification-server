@@ -22,6 +22,8 @@ import (
 )
 
 func TestGetAcceptedTestTypes(t *testing.T) {
+	t.Parallel()
+
 	allTypes := AcceptTypes{
 		"confirmed": struct{}{},
 		"likely":    struct{}{},
@@ -80,7 +82,11 @@ func TestGetAcceptedTestTypes(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		tc := tc
+
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			v := VerifyCodeRequest{
 				AcceptTestTypes: tc.input,
 			}

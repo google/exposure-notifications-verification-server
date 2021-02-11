@@ -19,6 +19,8 @@ import (
 )
 
 func TestRandomHexString(t *testing.T) {
+	t.Parallel()
+
 	length := 255
 	s, err := RandomHexString(length)
 	if err != nil {
@@ -31,6 +33,8 @@ func TestRandomHexString(t *testing.T) {
 }
 
 func TestRandomBase64String(t *testing.T) {
+	t.Parallel()
+
 	length := 255
 	s, err := RandomBase64String(length)
 	if err != nil {
@@ -43,6 +47,8 @@ func TestRandomBase64String(t *testing.T) {
 }
 
 func TestRandomBytes(t *testing.T) {
+	t.Parallel()
+
 	length := 255
 	b, err := RandomBytes(length)
 	if err != nil {

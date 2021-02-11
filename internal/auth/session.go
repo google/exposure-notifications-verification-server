@@ -25,7 +25,7 @@ type sessionKey string
 
 // init registers the session key gob.
 func init() {
-	gob.Register(*new(sessionKey))
+	gob.Register(sessionKey(""))
 }
 
 // sessionSet sets the value in the session.

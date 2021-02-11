@@ -21,6 +21,8 @@ import (
 )
 
 func TestTestContext(t *testing.T) {
+	t.Parallel()
+
 	ctx := TestContext(t)
 	logger := logging.FromContext(ctx)
 

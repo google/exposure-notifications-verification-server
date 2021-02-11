@@ -62,10 +62,8 @@ const (
 	defaultPostgresImageRef = "postgres:13-alpine"
 )
 
-var (
-	// ApproxTime is a compare helper for clock skew.
-	ApproxTime = cmp.Options{cmpopts.EquateApproxTime(1 * time.Second)}
-)
+// ApproxTime is a compare helper for clock skew.
+var ApproxTime = cmp.Options{cmpopts.EquateApproxTime(1 * time.Second)}
 
 // TestInstance is a wrapper around the Docker-based database instance.
 type TestInstance struct {
@@ -341,7 +339,7 @@ func (i *TestInstance) clone() (string, error) {
 // runMigrations runs the migrations for the database.
 func runMigrations(db *Database) error {
 	if err := db.MigrateTo(context.Background(), "", false); err != nil {
-		return fmt.Errorf("failed to migrate database: %v", err)
+		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 	return nil
 }

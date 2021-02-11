@@ -30,7 +30,7 @@ const (
 )
 
 func init() {
-	gob.Register(*new(flashKey))
+	gob.Register(flashKey(""))
 }
 
 // Flash is a collection of data that is discarded on read. It's designed to be

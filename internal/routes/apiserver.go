@@ -99,7 +99,7 @@ func APIServer(
 	// Make verify chaff tracker.
 	verifyChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyResponse), chaff.DefaultCapacity)
 	if err != nil {
-		return nil, closer, fmt.Errorf("error creating verify chaffer: %v", err)
+		return nil, closer, fmt.Errorf("error creating verify chaffer: %w", err)
 	}
 	closer = func() {
 		verifyChaffTracker.Close()
@@ -108,7 +108,7 @@ func APIServer(
 	// Make cert chaff tracker.
 	certChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeCertificateResponse), chaff.DefaultCapacity)
 	if err != nil {
-		return nil, closer, fmt.Errorf("error creating cert chaffer: %v", err)
+		return nil, closer, fmt.Errorf("error creating cert chaffer: %w", err)
 	}
 	closer = func() {
 		verifyChaffTracker.Close()

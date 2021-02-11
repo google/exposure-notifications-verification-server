@@ -63,8 +63,8 @@ func TestSMSFromNumbers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var labels []string
-	var values []string
+	labels := make([]string, 0, len(smsFromNumbers))
+	values := make([]string, 0, len(smsFromNumbers))
 	for _, v := range smsFromNumbers {
 		labels = append(labels, v.Label)
 		values = append(values, v.Value)

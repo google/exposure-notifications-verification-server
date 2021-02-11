@@ -25,9 +25,7 @@ import (
 
 const metricPrefix = observability.MetricRoot + "/api/verify"
 
-var (
-	mLatencyMs = stats.Float64(metricPrefix+"/request", "verify requests latency", stats.UnitMilliseconds)
-)
+var mLatencyMs = stats.Float64(metricPrefix+"/request", "verify requests latency", stats.UnitMilliseconds)
 
 func init() {
 	enobs.CollectViews([]*view.View{

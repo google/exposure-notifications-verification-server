@@ -43,7 +43,7 @@ func TestIssueOne(t *testing.T) {
 
 	smsConfig := &database.SMSConfig{
 		RealmID:      realm.ID,
-		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
+		ProviderType: sms.ProviderTypeNoop,
 	}
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)

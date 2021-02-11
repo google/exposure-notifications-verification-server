@@ -14,6 +14,8 @@
 
 // Package main provides a utility that bootstraps the initial database with
 // users and realms.
+//
+//nolint:gosec // We don't need crypto/rand here
 package main
 
 import (
@@ -41,9 +43,7 @@ import (
 	"github.com/sethvargo/go-signalcontext"
 )
 
-var (
-	flagStats = flag.Bool("stats", false, "generate codes and statistics")
-)
+var flagStats = flag.Bool("stats", false, "generate codes and statistics")
 
 func main() {
 	flag.Parse()
@@ -470,9 +470,9 @@ func generateKeyServerStats(db *database.Database, realm *database.Realm) error 
 	return nil
 }
 
-func randArr63n(n, len int64) []int64 {
-	arr := make([]int64, len)
-	for i := int64(0); i < len; i++ {
+func randArr63n(n, length int64) []int64 {
+	arr := make([]int64, length)
+	for i := int64(0); i < length; i++ {
 		arr[i] = rand.Int63n(n)
 	}
 	return arr

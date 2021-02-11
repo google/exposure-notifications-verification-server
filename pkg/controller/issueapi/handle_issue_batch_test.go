@@ -58,7 +58,7 @@ func TestIssueBatch(t *testing.T) {
 
 	smsConfig := &database.SMSConfig{
 		RealmID:      realm.ID,
-		ProviderType: sms.ProviderType(sms.ProviderTypeNoop),
+		ProviderType: sms.ProviderTypeNoop,
 	}
 	if err := harness.Database.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)

@@ -130,7 +130,7 @@ func passwordRedirectRequired(ctx context.Context, user *database.User, realm *d
 	session := controller.SessionFromContext(ctx)
 	flash := controller.Flash(session)
 
-	if err == errPasswordChangeRequired {
+	if errors.Is(err, errPasswordChangeRequired) {
 		flash.Error(strings.Title(err.Error() + "."))
 		return true
 	}

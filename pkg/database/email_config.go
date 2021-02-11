@@ -63,7 +63,7 @@ func (e *EmailConfig) BeforeSave(tx *gorm.DB) error {
 func (e *EmailConfig) Provider() (email.Provider, error) {
 	ctx := context.Background()
 	provider, err := email.ProviderFor(ctx, &email.Config{
-		ProviderType: email.ProviderType(e.ProviderType),
+		ProviderType: e.ProviderType,
 		User:         e.SMTPAccount,
 		Password:     e.SMTPPassword,
 		SMTPHost:     e.SMTPHost,

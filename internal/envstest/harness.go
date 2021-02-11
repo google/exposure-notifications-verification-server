@@ -173,10 +173,10 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 	}
 }
 
-func randomBytes(tb testing.TB, len int) []byte {
+func randomBytes(tb testing.TB, length int) []byte {
 	tb.Helper()
 
-	b, err := project.RandomBytes(len)
+	b, err := project.RandomBytes(length)
 	if err != nil {
 		tb.Fatal(err)
 	}

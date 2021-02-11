@@ -17,7 +17,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -137,7 +136,7 @@ func TestAuthRequirement_String(t *testing.T) {
 }
 
 func TestRealm_BeforeSave(t *testing.T) {
-	os.Setenv("ENX_REDIRECT_DOMAIN", "https://en.express")
+	t.Parallel()
 
 	valid := "State of Wonder, COVID-19 Exposure Verification code [code]. Expires in [expires] minutes. Act now!"
 
@@ -378,6 +377,8 @@ func TestRealm_BeforeSave(t *testing.T) {
 
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
+
+			tc.Input.enxRedirectDomainOverride = "https://en.express"
 
 			if err := tc.Input.BeforeSave(&gorm.DB{}); err != nil {
 				if tc.Error != "" {
@@ -746,7 +747,9 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 	// Find that key and activate it.
 	for _, k := range list {
 		if k.GetKID() == thirdKID {
-			realm1.SetActiveSigningKey(db, k.ID, SystemTest)
+			if _, err := realm1.SetActiveSigningKey(db, k.ID, SystemTest); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 
@@ -819,7 +822,9 @@ func TestRealm_CreateSMSSigningKeyVersion(t *testing.T) {
 	// Find that key and activate it.
 	for _, k := range list {
 		if k.GetKID() == thirdKID {
-			realm1.SetActiveSMSSigningKey(db, k.ID, SystemTest)
+			if _, err := realm1.SetActiveSMSSigningKey(db, k.ID, SystemTest); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 

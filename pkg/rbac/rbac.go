@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	// PermissionsMap is the list of permissions mapped to their name and
+	// PermissionMap is the list of permissions mapped to their name and
 	// description.
 	PermissionMap = map[Permission][2]string{
 		AuditRead:      {"AuditRead", "read event and audit logs"},
@@ -128,7 +128,7 @@ func (p Permission) Value() (driver.Value, error) {
 	return int64(p), nil
 }
 
-// Description returns the description
+// Description returns the description.
 func (p Permission) Description() (string, error) {
 	if v, ok := PermissionMap[p]; ok {
 		return v[1], nil

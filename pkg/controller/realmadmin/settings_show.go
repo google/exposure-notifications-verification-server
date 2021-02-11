@@ -110,7 +110,8 @@ func (c *Controller) renderSettings(
 		0: {
 			Label: defaultSMSTemplateLabel,
 			Value: realm.SMSTextTemplate,
-		}}
+		},
+	}
 	if realm.SMSTextAlternateTemplates != nil {
 		i := 0
 		for k, v := range realm.SMSTextAlternateTemplates {

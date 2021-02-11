@@ -62,7 +62,7 @@ func PaginateFn(query *gorm.DB, page, limit uint64, populateFn func(query *gorm.
 	if page < 1 {
 		page = 1 // pages start at 1
 	}
-	offset := uint64((page - 1) * limit)
+	offset := (page - 1) * limit
 
 	// Get the list of records, limiting and offsetting as needed.
 	if err := populateFn(query, offset); err != nil {

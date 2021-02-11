@@ -16,19 +16,19 @@ package controller
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-retry"
 )
 
-func HandleHealthz(db *database.Database, h *render.Renderer) http.Handler {
+func HandleHealthz(pinger driver.Pinger, h *render.Renderer) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -46,7 +46,7 @@ func HandleHealthz(db *database.Database, h *render.Renderer) http.Handler {
 				return
 			}
 			if err := retry.Do(ctx, retry.WithMaxRetries(5, b), func(ctx context.Context) error {
-				if err := db.Ping(ctx); err != nil {
+				if err := pinger.Ping(ctx); err != nil {
 					return retry.RetryableError(err)
 				}
 				return nil

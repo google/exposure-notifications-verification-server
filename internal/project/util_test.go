@@ -52,7 +52,11 @@ func TestAllDigits(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		tc := tc
+
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			if got := AllDigits(tc.testString); got != tc.expect {
 				t.Errorf("wrong result for %q. got %t want %t", tc.testString, got, tc.expect)
 			}

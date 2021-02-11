@@ -104,7 +104,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_root_404", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -127,7 +127,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_apple-app-site-association_missing_region", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/apple-app-site-association", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -150,7 +150,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_apple-app-site-association_invalid_region", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/apple-app-site-association", nil)
 		req.Host = "not-real"
 		if err != nil {
 			t.Fatal(err)
@@ -175,7 +175,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_apple-app-site-association_misconfigured", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/apple-app-site-association", nil)
 		req.Host = "bad"
 		if err != nil {
 			t.Fatal(err)
@@ -199,7 +199,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_apple-app-site-association_no_data", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/apple-app-site-association", nil)
 		req.Host = "empty"
 		if err != nil {
 			t.Fatal(err)
@@ -223,7 +223,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_apple-app-site-association_result", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/apple-app-site-association", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/apple-app-site-association", nil)
 		req.Host = "okay"
 		if err != nil {
 			t.Fatal(err)
@@ -247,7 +247,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_assetlinksjson_missing_region", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/assetlinks.json", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -270,7 +270,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_assetlinksjson_invalid_region", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/assetlinks.json", nil)
 		req.Host = "not-real"
 		if err != nil {
 			t.Fatal(err)
@@ -295,7 +295,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_assetlinksjson_misconfigured", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/assetlinks.json", nil)
 		req.Host = "bad"
 		if err != nil {
 			t.Fatal(err)
@@ -319,7 +319,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_assetlinksjson_no_data", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/assetlinks.json", nil)
 		req.Host = "empty"
 		if err != nil {
 			t.Fatal(err)
@@ -343,7 +343,7 @@ func TestIndex(t *testing.T) {
 	t.Run("well-known_assetlinksjson_result", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequest("GET", srv.URL+"/.well-known/assetlinks.json", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/.well-known/assetlinks.json", nil)
 		req.Host = "okay"
 		if err != nil {
 			t.Fatal(err)
@@ -362,5 +362,4 @@ func TestIndex(t *testing.T) {
 			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
 	})
-
 }
