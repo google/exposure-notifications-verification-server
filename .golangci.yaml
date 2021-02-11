@@ -23,6 +23,9 @@ run:
   # default: ''
   modules-download-mode: 'readonly'
 
+  # default: false
+  allow-parallel-runners: true
+
 linters:
   enable:
   - 'asciicheck'

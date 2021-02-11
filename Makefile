@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VETTERS = "asmdecl,assign,atomic,bools,buildtag,cgocall,composites,copylocks,errorsas,httpresponse,loopclosure,lostcancel,nilfunc,printf,shift,stdmethods,structtag,tests,unmarshal,unreachable,unsafeptr,unusedresult"
 GOFMT_FILES = $(shell go list -f '{{.Dir}}' ./...)
 HTML_FILES = $(shell find . -name \*.html)
 GO_FILES = $(shell find . -name \*.go)
@@ -27,7 +26,7 @@ lint:
 .PHONY: lint
 
 tabcheck:
-	@FINDINGS="$$(awk '/\t/ {printf "%s:%s:found tab character",FILENAME,FNR}' $(HTML_FILES))"; \
+	@FINDINGS="$$(awk '/\t/ {printf "%s:%s:found tab character\n",FILENAME,FNR}' $(HTML_FILES))"; \
 		if [ -n "$${FINDINGS}" ]; then \
 			echo "$${FINDINGS}\n\n"; \
 			exit 1; \
@@ -39,7 +38,6 @@ test:
 		-count=1 \
 		-short \
 		-timeout=5m \
-		-vet="${VETTERS}" \
 		./...
 .PHONY: test
 
@@ -48,7 +46,6 @@ test-acc:
 		-count=1 \
 		-race \
 		-timeout=10m \
-		-vet="${VETTERS}" \
 		./... \
 		-coverprofile=coverage.out
 .PHONY: test-acc
