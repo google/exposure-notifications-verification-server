@@ -37,7 +37,7 @@ fi
 
 
 echo "📚 Fetch dependencies"
-OUT="$(go get -t -tags=performance,e2e ./... 2>&1)" || {
+OUT="$(go get -t ./... 2>&1)" || {
   echo "✋ Error fetching dependencies"
   echo "\n\n${OUT}\n\n"
   exit 1
@@ -45,16 +45,9 @@ OUT="$(go get -t -tags=performance,e2e ./... 2>&1)" || {
 
 
 echo "📚 Fetch test dependencies"
-OUT="$(go test -i -tags=performance,e2e ./... 2>&1)" || {
+OUT="$(go test -i ./... 2>&1)" || {
   echo "✋ Error fetching test dependencies"
   echo "\n\n${OUT}\n\n"
-  exit 1
-}
-
-
-echo "↹ Verify tabs"
-make tabcheck || {
-  echo "✋ Found tabs in html."
   exit 1
 }
 

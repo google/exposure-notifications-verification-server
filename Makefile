@@ -27,9 +27,9 @@ lint:
 .PHONY: lint
 
 tabcheck:
-	@CHANGES="$$(awk '/\t/ {print FILENAME,FNR}' $(HTML_FILES))"; \
-		if [ -n "$${CHANGES}" ]; then \
-			echo "$${CHANGES}\n\n"; \
+	@FINDINGS="$$(awk '/\t/ {printf "%s:%s:found tab character",FILENAME,FNR}' $(HTML_FILES))"; \
+		if [ -n "$${FINDINGS}" ]; then \
+			echo "$${FINDINGS}\n\n"; \
 			exit 1; \
 		fi
 .PHONY: tabcheck
