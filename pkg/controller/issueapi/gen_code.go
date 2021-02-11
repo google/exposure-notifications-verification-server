@@ -96,16 +96,13 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 // the paremters provided. It returns the short code, long code, a UUID for
 // accessing the code, and any errors.
 func (c *Controller) CommitCode(ctx context.Context, vCode *database.VerificationCode, realm *database.Realm, retryCount uint) error {
-	var err error
-
 	b, err := retry.NewConstant(50 * time.Millisecond)
 	if err != nil {
 		return err
 	}
 
-	retry.Do(ctx, retry.WithMaxRetries(uint64(retryCount), b), func(ctx context.Context) error {
-		var code string
-		code, err = GenerateCode(realm.CodeLength)
+	if err := retry.Do(ctx, retry.WithMaxRetries(uint64(retryCount), b), func(ctx context.Context) error {
+		code, err := GenerateCode(realm.CodeLength)
 		if err != nil {
 			return err
 		}
@@ -133,8 +130,7 @@ func (c *Controller) CommitCode(ctx context.Context, vCode *database.Verificatio
 		default:
 			return err // err not retryable
 		}
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
