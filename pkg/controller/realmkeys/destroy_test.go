@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 
@@ -31,9 +30,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/mux"
 )
 
-func TestRealmKeys_SubmitActivate(t *testing.T) {
+func TestRealmKeys_SubmitDestroy(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -56,7 +56,7 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
-	handler := c.HandleActivate()
+	handler := c.HandleDestroy()
 
 	envstest.ExerciseSessionMissing(t, handler)
 	envstest.ExerciseMembershipMissing(t, handler)
@@ -68,30 +68,9 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		Permissions: rbac.SettingsWrite,
 	})
 
-	// no form bound
+	// no 'id' var
 	func() {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		// shows original page with error flash
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
-		}
-	}()
-
-	// no key exists
-	func() {
-		form := url.Values{}
-		form.Add("id", "1")
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,21 +97,22 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 
 	// success
 	func() {
-		form := url.Values{}
-		form.Add("id", fmt.Sprint(list[0].ID))
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
 		if err != nil {
 			t.Fatal(err)
 		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		req = mux.SetURLVars(req, map[string]string{"id": fmt.Sprint(list[0].ID)})
+		req.Header.Set("Accept", "text/html")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 
-		if result.StatusCode != http.StatusSeeOther {
-			t.Errorf("expected status 301 SeeOther, got %d", result.StatusCode)
+		// shows original page with error flash
+		if result.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
 		}
 	}()
 }

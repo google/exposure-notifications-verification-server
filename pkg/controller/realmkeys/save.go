@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
+// HandleSave handles saving certificate settings to the current realm.
 func (c *Controller) HandleSave() http.Handler {
 	type FormData struct {
 		Issuer         string `form:"certificateIssuer"`

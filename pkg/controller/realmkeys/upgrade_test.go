@@ -15,10 +15,8 @@
 package realmkeys_test
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 
@@ -33,7 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-func TestRealmKeys_SubmitActivate(t *testing.T) {
+func TestRealmKeys_SubmitUpgrade(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -56,7 +54,7 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
-	handler := c.HandleActivate()
+	handler := c.HandleUpgrade()
 
 	envstest.ExerciseSessionMissing(t, handler)
 	envstest.ExerciseMembershipMissing(t, handler)
@@ -68,7 +66,7 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		Permissions: rbac.SettingsWrite,
 	})
 
-	// no form bound
+	// success
 	func() {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
 		if err != nil {
@@ -81,46 +79,17 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		// shows original page with error flash
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+		if result.StatusCode != http.StatusSeeOther {
+			t.Errorf("expected status 301 SeeOther, got %d", result.StatusCode)
 		}
 	}()
 
-	// no key exists
+	// success - use realm certificate
 	func() {
-		form := url.Values{}
-		form.Add("id", "1")
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		realm.CertificateIssuer = "foo"
+		realm.CertificateAudience = "bar"
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		// shows original page with error flash
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
-		}
-	}()
-
-	if _, err := realm.CreateSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-	list, err := realm.ListSigningKeys(harness.Database)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// success
-	func() {
-		form := url.Values{}
-		form.Add("id", fmt.Sprint(list[0].ID))
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
 		if err != nil {
 			t.Fatal(err)
 		}
