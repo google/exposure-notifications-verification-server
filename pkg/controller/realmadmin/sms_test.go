@@ -62,7 +62,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 
 	// Create a browser runner.
 	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+	taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
 	defer done()
 
 	var twilioAccountSid string

@@ -112,7 +112,7 @@ func TestHandleIndex(t *testing.T) {
 		t.Parallel()
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
 		defer done()
 
 		if err := chromedp.Run(taskCtx,

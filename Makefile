@@ -49,11 +49,11 @@ test-acc:
 		-race \
 		-timeout=10m \
 		./... \
-		-coverprofile=coverage.out
+		-coverprofile=./coverage.out
 .PHONY: test-acc
 
 test-coverage:
-	@go tool cover -func ./coverage.out | grep total
+	@go tool cover -func=./coverage.out
 .PHONY: test-coverage
 
 zapcheck:

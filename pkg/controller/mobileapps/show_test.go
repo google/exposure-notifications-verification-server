@@ -127,7 +127,7 @@ func TestHandleShow(t *testing.T) {
 		}
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
 		defer done()
 
 		u := fmt.Sprintf("http://%s/realm/mobile-apps/%d", harness.Server.Addr(), app.ID)

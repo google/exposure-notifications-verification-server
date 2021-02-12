@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
     - 'terraform/**'
-    - 'terraform-e2e-ci/**'
     - '.github/workflows/terraform*'
 
 jobs:
@@ -14,6 +13,11 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
+    - name: Cancel previous
+      uses: styfle/cancel-workflow-action@0.7.0
+      with:
+        access_token: ${{ github.token }}
+
     - name: 'checkout'
       uses: 'actions/checkout@v2'
 
@@ -40,6 +44,11 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
+    - name: Cancel previous
+      uses: styfle/cancel-workflow-action@0.7.0
+      with:
+        access_token: ${{ github.token }}
+
     - name: 'checkout'
       uses: 'actions/checkout@v2'
 
@@ -58,56 +67,4 @@ jobs:
 
     - name: 'fmt'
       working-directory: './terraform/alerting'
-      run: 'terraform fmt -diff -check'
-
-  # mirror
-  mirror:
-    name: 'mirror'
-    runs-on: 'ubuntu-latest'
-
-    steps:
-    - name: 'checkout'
-      uses: 'actions/checkout@v2'
-
-    - name: 'setup-terraform'
-      uses: 'hashicorp/setup-terraform@v1'
-      with:
-        terraform_version: '0.14.5'
-
-    - name: 'init'
-      working-directory: './terraform/mirror'
-      run: 'terraform init'
-
-    - name: 'validate'
-      working-directory: './terraform/mirror'
-      run: 'terraform validate'
-
-    - name: 'fmt'
-      working-directory: './terraform/mirror'
-      run: 'terraform fmt -diff -check'
-
-  # terraform-e2e-ci
-  terraform-e2e-ci:
-    name: 'e2e'
-    runs-on: 'ubuntu-latest'
-
-    steps:
-    - name: 'checkout'
-      uses: 'actions/checkout@v2'
-
-    - name: 'setup-terraform'
-      uses: 'hashicorp/setup-terraform@v1'
-      with:
-        terraform_version: '0.14.5'
-
-    - name: 'init'
-      working-directory: './terraform-e2e-ci'
-      run: 'terraform init'
-
-    - name: 'validate'
-      working-directory: './terraform-e2e-ci'
-      run: 'terraform validate'
-
-    - name: 'fmt'
-      working-directory: './terraform-e2e-ci'
       run: 'terraform fmt -diff -check'

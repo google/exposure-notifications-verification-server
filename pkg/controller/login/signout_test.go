@@ -40,7 +40,7 @@ func TestHandleSignout_ShowLogin(t *testing.T) {
 	}
 
 	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+	taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
 	defer done()
 
 	if err := chromedp.Run(taskCtx,

@@ -177,7 +177,7 @@ func TestHandleUpdate(t *testing.T) {
 		t.Parallel()
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 30*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
 		defer done()
 
 		u := fmt.Sprintf(`http://`+harness.Server.Addr()+`/realm/users/%d/edit`, user.ID)

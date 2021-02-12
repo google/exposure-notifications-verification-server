@@ -19,7 +19,6 @@
 *.terraform/
 *.tfvars
 terraform/state.tf
-terraform-e2e-ci/state.tf
 */crash.log
 
 # Local things
