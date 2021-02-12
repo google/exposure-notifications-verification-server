@@ -31,7 +31,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/email"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/sessions"
 )
 
 func TestHandleVerifyEmailSend_ShowVerifyEmail(t *testing.T) {
@@ -66,18 +65,13 @@ func TestHandleVerifyEmailSend_SubmitVerifyEmail(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-
-	session := &sessions.Session{
-		Values: map[interface{}]interface{}{},
-	}
-	ctx = controller.WithSession(ctx, session)
-
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, user, _, err := harness.ProvisionAndLogin()
+	realm, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
 	emailConfig := &database.EmailConfig{
 		RealmID:      realm.ID,
@@ -90,12 +84,15 @@ func TestHandleVerifyEmailSend_SubmitVerifyEmail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
-	handleFunc := c.HandleSubmitVerifyEmail()
+	handler := c.HandleSubmitVerifyEmail()
+
+	envstest.ExerciseSessionMissing(t, handler)
+	envstest.ExerciseMembershipMissing(t, handler)
 
 	// success
 	func() {
@@ -110,8 +107,8 @@ func TestHandleVerifyEmailSend_SubmitVerifyEmail(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
-		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+		defer result.Body.Close()
 	}()
 }

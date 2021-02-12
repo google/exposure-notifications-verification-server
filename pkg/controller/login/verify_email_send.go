@@ -55,6 +55,10 @@ func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
 		flash := controller.Flash(session)
 
 		membership := controller.MembershipFromContext(ctx)
+		if membership == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
 		currentUser := membership.User
 
 		var form FormData

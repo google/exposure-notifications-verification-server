@@ -29,41 +29,38 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/sessions"
 )
 
 func TestHandleImportBatch(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-
-	session := &sessions.Session{
-		Values: map[interface{}]interface{}{},
-	}
-	ctx = controller.WithSession(ctx, session)
-
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, testUser, _, err := harness.ProvisionAndLogin()
+	realm, testUser, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
-	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-	handleFunc := c.HandleImportBatch()
+	handler := c.HandleImportBatch()
+
+	envstest.ExerciseMembershipMissing(t, handler)
+	envstest.ExercisePermissionMissing(t, handler)
+
+	ctx = controller.WithMembership(ctx, &database.Membership{
+		Realm:       realm,
+		User:        testUser,
+		Permissions: rbac.UserWrite,
+	})
 
 	// success
 	func() {
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        testUser,
-			Permissions: rbac.UserWrite,
-		})
-
 		b, err := json.Marshal(api.UserBatchRequest{
 			Users: []api.BatchUser{
 				{
@@ -83,7 +80,7 @@ func TestHandleImportBatch(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 
@@ -94,12 +91,6 @@ func TestHandleImportBatch(t *testing.T) {
 
 	// invalid user
 	func() {
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        testUser,
-			Permissions: rbac.UserWrite,
-		})
-
 		b, err := json.Marshal(api.UserBatchRequest{
 			Users: []api.BatchUser{
 				{
@@ -123,7 +114,7 @@ func TestHandleImportBatch(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 

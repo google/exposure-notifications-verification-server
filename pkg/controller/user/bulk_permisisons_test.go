@@ -29,32 +29,30 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/sessions"
 )
 
 func TestHandleBulkPermissions(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-
-	session := &sessions.Session{
-		Values: map[interface{}]interface{}{},
-	}
-	ctx = controller.WithSession(ctx, session)
-
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, testUser, _, err := harness.ProvisionAndLogin()
+	realm, testUser, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
-	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-	handleFunc := c.HandleBulkPermissions(database.BulkPermissionActionAdd)
+	handler := c.HandleBulkPermissions(database.BulkPermissionActionAdd)
+
+	envstest.ExerciseSessionMissing(t, handler)
+	envstest.ExerciseMembershipMissing(t, handler)
+	envstest.ExercisePermissionMissing(t, handler)
 
 	// success
 	func() {
@@ -74,7 +72,7 @@ func TestHandleBulkPermissions(t *testing.T) {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 
@@ -101,35 +99,12 @@ func TestHandleBulkPermissions(t *testing.T) {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 
 		if result.StatusCode != http.StatusSeeOther {
 			t.Errorf("expected status 303 SeeOther, got %d", result.StatusCode)
-		}
-	}()
-
-	// Needs userwrite
-	func() {
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm: realm,
-			User:  testUser,
-		})
-
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusUnauthorized {
-			t.Errorf("expected status 401 Unauthorized, got %d", result.StatusCode)
 		}
 	}()
 }

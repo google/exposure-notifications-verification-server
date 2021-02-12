@@ -21,9 +21,10 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
+// HandleActivate handles the endpoint for activating signing keys
 func (c *Controller) HandleActivate() http.Handler {
 	type FormData struct {
-		SigningKeyID uint `form:"id"`
+		SigningKeyID uint `form:"id,required"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -12,107 +12,128 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package user_test
+package realmkeys_test
 
 import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/mux"
 )
 
-func TestHandleResetPassword(t *testing.T) {
+func TestRealmKeys_SubmitActivate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, testUser, session, err := harness.ProvisionAndLogin()
+	realm, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx = controller.WithSession(ctx, session)
 
+	cfg := &config.ServerConfig{}
+
 	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
-	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-	router := mux.NewRouter()
-	router.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods("POST")
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+	handler := c.HandleActivate()
 
-	// Needs membership
+	envstest.ExerciseSessionMissing(t, handler)
+	envstest.ExerciseMembershipMissing(t, handler)
+	envstest.ExercisePermissionMissing(t, handler)
+
+	ctx = controller.WithMembership(ctx, &database.Membership{
+		User:        user,
+		Realm:       realm,
+		Permissions: rbac.SettingsWrite,
+	})
+
+	// no form bound
 	func() {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/%d/reset-password", testUser.ID), strings.NewReader(""))
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
 		if err != nil {
 			t.Fatal(err)
 		}
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 
-		if result.StatusCode != http.StatusBadRequest {
-			t.Errorf("expected status 400 BadRequest, got %d", result.StatusCode)
+		// shows original page with error flash
+		if result.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
 		}
 	}()
 
-	// Needs userwrite
+	// no key exists
 	func() {
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm: realm,
-			User:  testUser,
-		})
-
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/%d/reset-password", testUser.ID), strings.NewReader(""))
+		form := url.Values{}
+		form.Add("id", "1")
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
 		if err != nil {
 			t.Fatal(err)
 		}
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 
-		if result.StatusCode != http.StatusUnauthorized {
-			t.Errorf("expected status 401 Unauthorized, got %d", result.StatusCode)
+		// shows original page with error flash
+		if result.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
 		}
 	}()
+
+	if _, err := realm.CreateSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+	list, err := realm.ListSigningKeys(harness.Database)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// success
 	func() {
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        testUser,
-			Permissions: rbac.UserWrite,
-		})
-
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/%d/reset-password", testUser.ID), strings.NewReader(""))
+		form := url.Values{}
+		form.Add("id", fmt.Sprint(list[0].ID))
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
 		if err != nil {
 			t.Fatal(err)
 		}
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 
+		// shows original page with error flash
 		if result.StatusCode != http.StatusSeeOther {
-			t.Errorf("expected status 303 SeeOther, got %d", result.StatusCode)
+			t.Errorf("expected status 301 SeeOther, got %d", result.StatusCode)
 		}
 	}()
 }
