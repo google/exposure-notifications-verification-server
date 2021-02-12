@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
+// HandleUpgrade handles an endpoint to update a realm to use its own certificate settings.
 func (c *Controller) HandleUpgrade() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

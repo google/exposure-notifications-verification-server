@@ -22,6 +22,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// HandleDestroy deletes a signing key version
 func (c *Controller) HandleDestroy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

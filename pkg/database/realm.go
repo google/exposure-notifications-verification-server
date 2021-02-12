@@ -1373,7 +1373,7 @@ func (r *Realm) CreateSigningKeyVersion(ctx context.Context, db *Database, actor
 	return r.createManagedSigningKey(ctx, db, r.certificateSigningKMSKeyName(), &SigningKey{}, actor)
 }
 
-// CreateSMSSigningKeyVersion creates a new SMS signing key versino on the key manager
+// CreateSMSSigningKeyVersion creates a new SMS signing key version on the key manager
 // and saves a reference to the new key version in the database.
 func (r *Realm) CreateSMSSigningKeyVersion(ctx context.Context, db *Database, actor Auditable) (string, error) {
 	return r.createManagedSigningKey(ctx, db, r.smsSigningKMSKeyName(), &SMSSigningKey{}, actor)

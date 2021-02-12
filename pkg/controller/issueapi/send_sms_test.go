@@ -168,6 +168,8 @@ func TestSMS_sendSMS(t *testing.T) {
 	c.SendSMS(ctx, realm, failingSMSProvider, nil, "", request, result)
 	if result.ErrorReturn == nil {
 		t.Fatal("expected failed SMS, but got no error response")
+	} else if result.ErrorReturn.ErrorCode != api.ErrSMSFailure {
+		t.Fatal("expected SMS failure code")
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {
 		t.Errorf("expected SMS failure to roll-back and delete code. got %v", err)

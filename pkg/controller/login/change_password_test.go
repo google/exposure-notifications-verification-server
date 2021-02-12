@@ -29,7 +29,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/sessions"
 )
 
 func TestHandleChangePassword_ShowChangePassword(t *testing.T) {
@@ -64,25 +63,22 @@ func TestHandleChangePassword_SubmitChangePassword(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-
-	session := &sessions.Session{
-		Values: map[interface{}]interface{}{},
-	}
-	ctx = controller.WithSession(ctx, session)
-
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	_, user, _, err := harness.ProvisionAndLogin()
+	_, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
-	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
-	handleFunc := c.HandleSubmitChangePassword()
+	handler := c.HandleSubmitChangePassword()
+
+	envstest.ExerciseSessionMissing(t, handler)
 
 	// not-authorized
 	func() {
@@ -93,7 +89,7 @@ func TestHandleChangePassword_SubmitChangePassword(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 
@@ -112,7 +108,7 @@ func TestHandleChangePassword_SubmitChangePassword(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 

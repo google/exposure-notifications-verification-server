@@ -138,12 +138,12 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 	}
 
 	config := &config.AdminAPIServerConfig{}
-	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
 	c := codes.NewAPI(ctx, config, harness.Database, h)
-	handleFunc := c.HandleExpireAPI()
+	handler := c.HandleExpireAPI()
 
 	// not-authorized
 	func() {
@@ -158,7 +158,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 
@@ -181,7 +181,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 
@@ -206,7 +206,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close()
 		if result.StatusCode != http.StatusBadRequest {
@@ -227,7 +227,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
 		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
 

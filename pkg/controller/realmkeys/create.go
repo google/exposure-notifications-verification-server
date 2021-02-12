@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
+// HandleCreateKey creates a new signing key version.
 func (c *Controller) HandleCreateKey() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

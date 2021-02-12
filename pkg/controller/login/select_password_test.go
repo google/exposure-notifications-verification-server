@@ -30,7 +30,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/sessions"
 )
 
 func TestHandleSelectPassword_ShowSelectPassword(t *testing.T) {
@@ -65,25 +64,22 @@ func TestHandleSelectPassword_SubmitNewPassword(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-
-	session := &sessions.Session{
-		Values: map[interface{}]interface{}{},
-	}
-	ctx = controller.WithSession(ctx, session)
-
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	_, user, _, err := harness.ProvisionAndLogin()
+	_, user, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
-	h, err := render.New(ctx, project.Root()+"/cmd/server/assets", true)
+	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatalf("failed to create renderer: %v", err)
 	}
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
-	handleFunc := c.HandleSubmitNewPassword()
+	handler := c.HandleSubmitNewPassword()
+
+	envstest.ExerciseSessionMissing(t, handler)
 
 	// success
 	func() {
@@ -97,9 +93,9 @@ func TestHandleSelectPassword_SubmitNewPassword(t *testing.T) {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 		w := httptest.NewRecorder()
-		handleFunc.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req)
 		result := w.Result()
-		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
+		defer result.Body.Close()
 
 		if result.StatusCode != http.StatusOK {
 			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
