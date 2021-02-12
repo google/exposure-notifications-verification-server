@@ -143,19 +143,15 @@ func SetCookie(c *http.Cookie) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		exp := cdp.TimeSinceEpoch(time.Now().Add(24 * time.Hour))
 
-		ok, err := network.
+		if err := network.
 			SetCookie(c.Name, c.Value).
 			WithPath(c.Path).
 			WithDomain(c.Domain).
 			WithExpires(&exp).
 			WithSecure(c.Secure).
 			WithHTTPOnly(c.HttpOnly).
-			Do(ctx)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return fmt.Errorf("failed to set cookie %q", c.Name)
+			Do(ctx); err != nil {
+			return fmt.Errorf("failed to set cookie: %w", err)
 		}
 		return nil
 	})

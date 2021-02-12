@@ -45,7 +45,7 @@ func ProcessWith(ctx context.Context, spec interface{}, l envconfig.Lookuper) er
 			return fmt.Errorf("unable to process secret configuration: %w", err)
 		}
 
-		sm, err := secrets.SecretManagerFor(ctx, smConfig.SecretManagerType)
+		sm, err := secrets.SecretManagerFor(ctx, &smConfig)
 		if err != nil {
 			return fmt.Errorf("unable to connect to secret manager: %w", err)
 		}

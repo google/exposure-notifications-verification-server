@@ -52,25 +52,32 @@ func realMain(ctx context.Context) error {
 	}
 
 	localDir := filepath.Join(filepath.Dir(self), "../../local")
-	kms, err := keys.NewFilesystem(ctx, localDir)
+	kms, err := keys.NewFilesystem(ctx, &keys.Config{
+		FilesystemRoot: localDir,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to build certificate key manager: %w", err)
 	}
 
 	// Create certificate keys
 	{
-		parent, err := kms.CreateSigningKey(ctx, "system", "certificate-signing")
+		kmst, ok := kms.(keys.SigningKeyManager)
+		if !ok {
+			return fmt.Errorf("key manager cannot sign: %T", kms)
+		}
+
+		parent, err := kmst.CreateSigningKey(ctx, "system", "certificate-signing")
 		if err != nil {
 			return fmt.Errorf("failed to create certificate signing key: %w", err)
 		}
-		list, err := kms.SigningKeyVersions(ctx, parent)
+		list, err := kmst.SigningKeyVersions(ctx, parent)
 		if err != nil {
 			return fmt.Errorf("failed to list signing key versions: %w", err)
 		}
 
 		var latest string
 		if len(list) == 0 {
-			latest, err = kms.CreateKeyVersion(ctx, parent)
+			latest, err = kmst.CreateKeyVersion(ctx, parent)
 			if err != nil {
 				return fmt.Errorf("failed to create certificate signing key version: %w", err)
 			}
@@ -84,11 +91,16 @@ func realMain(ctx context.Context) error {
 
 	// Create database keys
 	{
-		parent, err := kms.CreateEncryptionKey(ctx, "system", "database-encryption")
+		kmst, ok := kms.(keys.EncryptionKeyManager)
+		if !ok {
+			return fmt.Errorf("key manager cannot sign: %T", kms)
+		}
+
+		parent, err := kmst.CreateEncryptionKey(ctx, "system", "database-encryption")
 		if err != nil {
 			return fmt.Errorf("failed to create database encryption key")
 		}
-		if _, err := kms.CreateKeyVersion(ctx, parent); err != nil {
+		if _, err := kmst.CreateKeyVersion(ctx, parent); err != nil {
 			return fmt.Errorf("failed to create database encryption key version: %w", err)
 		}
 
@@ -104,18 +116,23 @@ func realMain(ctx context.Context) error {
 
 	// Create token keys
 	{
-		parent, err := kms.CreateSigningKey(ctx, "system", "token-signing")
+		kmst, ok := kms.(keys.SigningKeyManager)
+		if !ok {
+			return fmt.Errorf("key manager cannot sign: %T", kms)
+		}
+
+		parent, err := kmst.CreateSigningKey(ctx, "system", "token-signing")
 		if err != nil {
 			return fmt.Errorf("failed to create token signing key: %w", err)
 		}
-		list, err := kms.SigningKeyVersions(ctx, parent)
+		list, err := kmst.SigningKeyVersions(ctx, parent)
 		if err != nil {
 			return fmt.Errorf("failed to list signing key versions: %w", err)
 		}
 
 		var latest string
 		if len(list) == 0 {
-			latest, err = kms.CreateKeyVersion(ctx, parent)
+			latest, err = kmst.CreateKeyVersion(ctx, parent)
 			if err != nil {
 				return fmt.Errorf("failed to create token signing key version: %w", err)
 			}

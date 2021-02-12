@@ -107,7 +107,7 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 	logger := logging.FromContext(ctx).Named("database")
 
 	// Create the secret manager.
-	secretManager, err := secrets.SecretManagerFor(ctx, c.Secrets.SecretManagerType)
+	secretManager, err := secrets.SecretManagerFor(ctx, &c.Secrets)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret manager: %w", err)
 	}

@@ -183,11 +183,11 @@ func NewTestInstance() (*TestInstance, error) {
 		Password: databasePassword,
 		SSLMode:  "disable",
 		Secrets: secrets.Config{
-			SecretManagerType: secrets.SecretManagerTypeInMemory,
+			Type: "IN_MEMORY",
 		},
 
 		Keys: keys.Config{
-			KeyManagerType: keys.KeyManagerTypeFilesystem,
+			Type: "FILESYSTEM",
 		},
 
 		KeyRing:        filepath.Join(project.Root(), "local", "test", "certificates"),

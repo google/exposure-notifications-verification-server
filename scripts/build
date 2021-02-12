@@ -35,6 +35,7 @@ fi
 echo "🎉 Building all services in ${PROJECT_ID}"
 
 SUBS="_TAG=${TAG}"
+SUBS="${SUBS},_GO_TAGS=${GO_TAGS:-"google"}"
 SUBS="${SUBS},_BINAUTHZ_ATTESTOR=${BINAUTHZ_ATTESTOR:-""}"
 SUBS="${SUBS},_BINAUTHZ_KEY_VERSION=${BINAUTHZ_KEY_VERSION:-""}"
 
