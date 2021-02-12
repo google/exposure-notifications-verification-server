@@ -35,14 +35,16 @@ tabcheck:
 
 test:
 	@go test \
-		-count=1 \
 		-short \
+		-tags=all \
+		-count=1 \
 		-timeout=5m \
 		./...
 .PHONY: test
 
 test-acc:
 	@go test \
+		-tags=all \
 		-count=1 \
 		-race \
 		-timeout=10m \

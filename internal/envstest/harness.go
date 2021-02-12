@@ -126,12 +126,14 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 			tb.Fatal(err)
 		}
 	})
-	keyManager, err := keys.NewFilesystem(context.Background(), tmpdir)
+	keyManager, err := keys.NewFilesystem(context.Background(), &keys.Config{
+		FilesystemRoot: tmpdir,
+	})
 	if err != nil {
 		tb.Fatal(err)
 	}
 	keyManagerConfig := &keys.Config{
-		KeyManagerType: keys.KeyManagerTypeFilesystem,
+		Type:           "FILESYSTEM",
 		FilesystemRoot: tmpdir,
 	}
 

@@ -114,7 +114,7 @@ func (c *Config) clone() *Config {
 		MaxConnectionIdleTime: c.MaxConnectionIdleTime,
 		Debug:                 c.Debug,
 		Keys: keys.Config{
-			KeyManagerType: c.Keys.KeyManagerType,
+			Type:           c.Keys.Type,
 			CreateHSMKeys:  c.Keys.CreateHSMKeys,
 			FilesystemRoot: c.Keys.FilesystemRoot,
 		},
@@ -122,10 +122,10 @@ func (c *Config) clone() *Config {
 		MaxKeyVersions: c.MaxKeyVersions,
 		EncryptionKey:  c.EncryptionKey,
 		Secrets: secrets.Config{
-			SecretManagerType: c.Secrets.SecretManagerType,
-			SecretsDir:        c.Secrets.SecretsDir,
-			SecretCacheTTL:    c.Secrets.SecretCacheTTL,
-			SecretExpansion:   c.Secrets.SecretExpansion,
+			Type:            c.Secrets.Type,
+			SecretsDir:      c.Secrets.SecretsDir,
+			SecretCacheTTL:  c.Secrets.SecretCacheTTL,
+			SecretExpansion: c.Secrets.SecretExpansion,
 		},
 	}
 
