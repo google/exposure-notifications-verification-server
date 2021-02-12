@@ -61,7 +61,7 @@ func TestHandleStats(t *testing.T) {
 		t.Parallel()
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
 		defer done()
 
 		errCh := envstest.CaptureJavascriptErrors(taskCtx)

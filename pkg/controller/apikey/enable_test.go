@@ -129,7 +129,7 @@ func TestHandleEnable(t *testing.T) {
 		}
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 10*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
 		defer done()
 
 		// Click "confirm" when it pops up.

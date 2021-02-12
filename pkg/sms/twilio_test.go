@@ -17,7 +17,6 @@ package sms
 import (
 	"context"
 	"os"
-	"strconv"
 	"testing"
 )
 
@@ -28,18 +27,10 @@ func TestTwilio_SendSMS(t *testing.T) {
 		t.Skipf("🚧 Skipping twilio tests (short)!")
 	}
 
-	if skip, _ := strconv.ParseBool(os.Getenv("SKIP_TWILIO_TESTS")); skip {
-		t.Skipf("🚧 Skipping twilio tests (SKIP_TWILIO_TESTS is set)!")
-	}
-
 	accountSid := os.Getenv("TWILIO_ACCOUNT_SID")
-	if accountSid == "" {
-		t.Fatalf("missing TWILIO_ACCOUNT_SID")
-	}
-
 	authToken := os.Getenv("TWILIO_AUTH_TOKEN")
-	if authToken == "" {
-		t.Fatalf("missing TWILIO_AUTH_TOKEN")
+	if accountSid == "" || authToken == "" {
+		t.Skipf("🚧 🚧 Skipping twilio tests (missing TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN)")
 	}
 
 	cases := []struct {
