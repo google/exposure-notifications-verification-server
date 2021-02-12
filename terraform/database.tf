@@ -406,7 +406,7 @@ resource "google_cloud_scheduler_job" "backup-database-worker" {
   attempt_deadline = "1800s"
 
   retry_config {
-    retry_count = 1
+    retry_count = 3
   }
 
   http_target {
@@ -418,7 +418,7 @@ resource "google_cloud_scheduler_job" "backup-database-worker" {
         fileType  = "SQL"
         uri       = "gs://${google_storage_bucket.backups.name}/database/${google_sql_database.db.name}",
         databases = [google_sql_database.db.name]
-        offload   = true,
+        offload   = false,
       }
     }))
 
