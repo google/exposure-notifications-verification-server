@@ -50,6 +50,24 @@ func TestHandleSession_HandleSubmit(t *testing.T) {
 
 	envstest.ExerciseSessionMissing(t, handler)
 
+	// session requires form token
+	func() {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		result := w.Result()
+		defer result.Body.Close()
+
+		if result.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected status 400 BadRequest, got %d", result.StatusCode)
+		}
+	}()
+
 	// session info missing (because localauth requires extra info in the cookie)
 	func() {
 		form := url.Values{}
@@ -66,7 +84,7 @@ func TestHandleSession_HandleSubmit(t *testing.T) {
 		defer result.Body.Close()
 
 		if result.StatusCode != http.StatusUnauthorized {
-			t.Errorf("expected status401 Unauthorized, got %d", result.StatusCode)
+			t.Errorf("expected status 401 Unauthorized, got %d", result.StatusCode)
 		}
 	}()
 }
