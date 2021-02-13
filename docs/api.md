@@ -1,4 +1,24 @@
-<!-- TOC depthFrom:1 -->autoauto- [API access](#api-access)auto- [API usage](#api-usage)auto    - [Authenticating](#authenticating)auto    - [Error reporting](#error-reporting)auto- [API Methods](#api-methods)auto    - [`/api/verify`](#apiverify)auto    - [`/api/certificate`](#apicertificate)auto- [Admin APIs](#admin-apis)auto    - [`/api/issue`](#apiissue)auto        - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)auto    - [`/api/batch-issue`](#apibatch-issue)auto        - [Handling batch partial success/failure](#handling-batch-partial-successfailure)auto    - [`/api/checkcodestatus`](#apicheckcodestatus)auto    - [`/api/expirecode`](#apiexpirecode)auto    - [`/api/stats/*`](#apistats)auto- [Chaffing requests](#chaffing-requests)auto- [Response codes overview](#response-codes-overview)autoauto<!-- /TOC -->
+<!-- TOC depthFrom:1 -->
+
+- [API access](#api-access)
+- [API usage](#api-usage)
+  - [Authenticating](#authenticating)
+  - [Error reporting](#error-reporting)
+- [API Methods](#api-methods)
+  - [`/api/verify`](#apiverify)
+  - [`/api/certificate`](#apicertificate)
+- [Admin APIs](#admin-apis)
+  - [`/api/issue`](#apiissue)
+    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
+  - [`/api/batch-issue`](#apibatch-issue)
+    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
+  - [`/api/checkcodestatus`](#apicheckcodestatus)
+  - [`/api/expirecode`](#apiexpirecode)
+  - [`/api/stats/*`](#apistats)
+- [Chaffing requests](#chaffing-requests)
+- [Response codes overview](#response-codes-overview)
+
+<!-- /TOC -->
 
 # API access
 
