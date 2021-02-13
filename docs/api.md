@@ -1,24 +1,4 @@
-<!-- TOC depthFrom:1 -->
-
-- [API access](#api-access)
-- [API usage](#api-usage)
-  - [Authenticating](#authenticating)
-  - [Error reporting](#error-reporting)
-- [API Methods](#api-methods)
-  - [`/api/verify`](#apiverify)
-  - [`/api/certificate`](#apicertificate)
-- [Admin APIs](#admin-apis)
-  - [`/api/issue`](#apiissue)
-    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
-  - [`/api/batch-issue`](#apibatch-issue)
-    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
-  - [`/api/checkcodestatus`](#apicheckcodestatus)
-  - [`/api/expirecode`](#apiexpirecode)
-  - [`/api/stats/*`](#apistats)
-- [Chaffing requests](#chaffing-requests)
-- [Response codes overview](#response-codes-overview)
-
-<!-- /TOC -->
+<!-- TOC depthFrom:1 -->autoauto- [API access](#api-access)auto- [API usage](#api-usage)auto    - [Authenticating](#authenticating)auto    - [Error reporting](#error-reporting)auto- [API Methods](#api-methods)auto    - [`/api/verify`](#apiverify)auto    - [`/api/certificate`](#apicertificate)auto- [Admin APIs](#admin-apis)auto    - [`/api/issue`](#apiissue)auto        - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)auto    - [`/api/batch-issue`](#apibatch-issue)auto        - [Handling batch partial success/failure](#handling-batch-partial-successfailure)auto    - [`/api/checkcodestatus`](#apicheckcodestatus)auto    - [`/api/expirecode`](#apiexpirecode)auto    - [`/api/stats/*`](#apistats)auto- [Chaffing requests](#chaffing-requests)auto- [Response codes overview](#response-codes-overview)autoauto<!-- /TOC -->
 
 # API access
 
@@ -550,12 +530,6 @@ curl https://apiserver.example.com/api/verify \
   --request POST \
   --data '{"padding":"base64 encoded padding"}'
 ```
-
-If the `X-Chaff` header has a value of "daily" (case-insensitive), the request
-will be counted toward the realm's daily active user count. Since the server
-records data in UTC time, clients should send this value once **per UTC day** if
-they are collecting server-side adoption metrics. The server will still respond
-with fake data that should be ignored per guidance below.
 
 The client should still send a real request with a real request body (the body
 will not be processed). The server will respond with a fake response that your
