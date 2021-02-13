@@ -34,8 +34,5 @@ func BindForm(w http.ResponseWriter, r *http.Request, data interface{}) error {
 	// don't need to be captured. By default schema decoder is very struct.
 	decoder.IgnoreUnknownKeys(true)
 
-	if err := decoder.Decode(data, r.PostForm); err != nil {
-		return err
-	}
-	return nil
+	return decoder.Decode(data, r.PostForm)
 }

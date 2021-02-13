@@ -45,7 +45,7 @@ func TestRequireEmailVerified(t *testing.T) {
 	requireEmailVerified := middleware.RequireEmailVerified(authProvider, h)
 
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	})
 
 	cases := []struct {
@@ -54,84 +54,75 @@ func TestRequireEmailVerified(t *testing.T) {
 		prompted      bool
 		membership    *database.Membership
 		code          int
-	}{
-		{
-			name:       "missing_membership",
-			membership: nil,
-			code:       400,
-		},
-		{
-			name:          "optional_verified",
-			emailVerified: true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptional,
-				},
+	}{{
+		name:       "missing_membership",
+		membership: nil,
+		code:       http.StatusBadRequest,
+	}, {
+		name:          "optional_verified",
+		emailVerified: true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				EmailVerifiedMode: database.MFAOptional,
 			},
-			code: 200,
 		},
-		{
-			name:          "optional_not_verified",
-			emailVerified: false,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptional,
-				},
+		code: http.StatusOK,
+	}, {
+		name:          "optional_not_verified",
+		emailVerified: false,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				EmailVerifiedMode: database.MFAOptional,
 			},
-			code: 200,
 		},
-		{
-			name:          "optional_prompt_verified",
-			emailVerified: true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptionalPrompt,
-				},
+		code: http.StatusOK,
+	}, {
+		name:          "optional_prompt_verified",
+		emailVerified: true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				EmailVerifiedMode: database.MFAOptionalPrompt,
 			},
-			code: 200,
 		},
-		{
-			name:          "optional_prompt_not_verified",
-			emailVerified: false,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptionalPrompt,
-				},
+		code: http.StatusOK,
+	}, {
+		name:          "optional_prompt_not_verified",
+		emailVerified: false,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				EmailVerifiedMode: database.MFAOptionalPrompt,
 			},
-			code: 303,
 		},
-		{
-			name:          "optional_prompt_not_verified_prompted",
-			emailVerified: false,
-			prompted:      true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFAOptionalPrompt,
-				},
+		code: http.StatusSeeOther,
+	}, {
+		name:          "optional_prompt_not_verified_prompted",
+		emailVerified: false,
+		prompted:      true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				EmailVerifiedMode: database.MFAOptionalPrompt,
 			},
-			code: 200,
 		},
-		{
-			name:          "required_verified",
-			emailVerified: true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFARequired,
-				},
+		code: http.StatusOK,
+	}, {
+		name:          "required_verified",
+		emailVerified: true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				EmailVerifiedMode: database.MFARequired,
 			},
-			code: 200,
 		},
-		{
-			name:          "required_not_verified",
-			emailVerified: false,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					EmailVerifiedMode: database.MFARequired,
-				},
+		code: http.StatusOK,
+	}, {
+		name:          "required_not_verified",
+		emailVerified: false,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				EmailVerifiedMode: database.MFARequired,
 			},
-			code: 303,
 		},
-	}
+		code: http.StatusSeeOther,
+	}}
 
 	for _, tc := range cases {
 		tc := tc
@@ -160,7 +151,7 @@ func TestRequireEmailVerified(t *testing.T) {
 				controller.StoreSessionEmailVerificationPrompted(session, true)
 			}
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Content-Type", "application/json")
 

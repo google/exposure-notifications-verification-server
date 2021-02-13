@@ -36,7 +36,7 @@ const (
 
 	// MaxLimit is the maximum size for a single pagination. If a limit higher
 	// than this is provided, it's capped.
-	MaxLimit = uint64(100)
+	MaxLimit = 100
 )
 
 // PageParams are the page parameters including the current page and per page
