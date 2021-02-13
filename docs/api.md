@@ -551,12 +551,6 @@ curl https://apiserver.example.com/api/verify \
   --data '{"padding":"base64 encoded padding"}'
 ```
 
-If the `X-Chaff` header has a value of "daily" (case-insensitive), the request
-will be counted toward the realm's daily active user count. Since the server
-records data in UTC time, clients should send this value once **per UTC day** if
-they are collecting server-side adoption metrics. The server will still respond
-with fake data that should be ignored per guidance below.
-
 The client should still send a real request with a real request body (the body
 will not be processed). The server will respond with a fake response that your
 client **MUST NOT** process or parse. The response will not be a valid JSON
