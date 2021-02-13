@@ -126,6 +126,7 @@ func TestRequireEmailVerified(t *testing.T) {
 
 	for _, tc := range cases {
 		tc := tc
+		ctx := ctx
 
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -142,7 +143,6 @@ func TestRequireEmailVerified(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ctx := ctx
 			ctx = controller.WithSession(ctx, session)
 			if tc.membership != nil {
 				ctx = controller.WithMembership(ctx, tc.membership)
@@ -160,7 +160,7 @@ func TestRequireEmailVerified(t *testing.T) {
 			w.Flush()
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("expected %d to be %d", got, want)
+				t.Errorf("Status = %d, want: %d", got, want)
 			}
 		})
 	}

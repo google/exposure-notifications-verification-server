@@ -25,9 +25,7 @@ import (
 
 // TestContext returns a context with test values pre-populated.
 func TestContext(tb testing.TB) context.Context {
-	ctx := context.Background()
-	ctx = logging.WithLogger(ctx, TestLogger(tb))
-	return ctx
+	return logging.WithLogger(context.Background(), TestLogger(tb))
 }
 
 // TestLogger returns a logger configured for test. See the following link for

@@ -15,6 +15,7 @@
 package middleware_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -50,113 +51,103 @@ func TestRequireMFA(t *testing.T) {
 		prompted    bool
 		membership  *database.Membership
 		code        int
-	}{
-		{
-			name:       "missing_membership",
-			membership: nil,
-			code:       400,
-		},
-		{
-			name:        "optional_verified",
-			mfaVerified: true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode: database.MFAOptional,
-				},
+	}{{
+		name:       "missing_membership",
+		membership: nil,
+		code:       http.StatusBadRequest,
+	}, {
+		name:        "optional_verified",
+		mfaVerified: true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode: database.MFAOptional,
 			},
-			code: 200,
 		},
-		{
-			name:        "optional_not_verified",
-			mfaVerified: false,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode: database.MFAOptional,
-				},
+		code: http.StatusOK,
+	}, {
+		name:        "optional_not_verified",
+		mfaVerified: false,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode: database.MFAOptional,
 			},
-			code: 200,
 		},
-		{
-			name:        "optional_prompt_verified",
-			mfaVerified: true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode: database.MFAOptionalPrompt,
-				},
+		code: http.StatusOK,
+	}, {
+		name:        "optional_prompt_verified",
+		mfaVerified: true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode: database.MFAOptionalPrompt,
 			},
-			code: 200,
 		},
-		{
-			name:        "optional_prompt_not_verified",
-			mfaVerified: false,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode: database.MFAOptionalPrompt,
-				},
+		code: http.StatusOK,
+	}, {
+		name:        "optional_prompt_not_verified",
+		mfaVerified: false,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode: database.MFAOptionalPrompt,
 			},
-			code: 303,
 		},
-		{
-			name:        "optional_prompt_not_verified_prompted",
-			mfaVerified: false,
-			prompted:    true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode: database.MFAOptionalPrompt,
-				},
+		code: http.StatusSeeOther,
+	}, {
+		name:        "optional_prompt_not_verified_prompted",
+		mfaVerified: false,
+		prompted:    true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode: database.MFAOptionalPrompt,
 			},
-			code: 200,
 		},
-		{
-			name:        "required_verified",
-			mfaVerified: true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode: database.MFAOptionalPrompt,
-				},
+		code: http.StatusOK,
+	}, {
+		name:        "required_verified",
+		mfaVerified: true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode: database.MFAOptionalPrompt,
 			},
-			code: 200,
 		},
-		{
-			name:        "required_not_verified",
-			mfaVerified: false,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode: database.MFAOptionalPrompt,
-				},
+		code: http.StatusOK,
+	}, {
+		name:        "required_not_verified",
+		mfaVerified: false,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode: database.MFAOptionalPrompt,
 			},
-			code: 303,
 		},
-		{
-			name:        "required_not_grace_allowed",
-			mfaVerified: false,
-			prompted:    true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode:                database.MFARequired,
-					MFARequiredGracePeriod: database.FromDuration(7 * 24 * time.Hour),
-				},
-				CreatedAt: time.Now().UTC(),
+		code: http.StatusSeeOther,
+	}, {
+		name:        "required_not_grace_allowed",
+		mfaVerified: false,
+		prompted:    true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode:                database.MFARequired,
+				MFARequiredGracePeriod: database.FromDuration(7 * 24 * time.Hour),
 			},
-			code: 200,
+			CreatedAt: time.Now().UTC(),
 		},
-		{
-			name:        "required_not_grace_expired",
-			mfaVerified: false,
-			prompted:    true,
-			membership: &database.Membership{
-				Realm: &database.Realm{
-					MFAMode:                database.MFARequired,
-					MFARequiredGracePeriod: database.FromDuration(7 * 24 * time.Hour),
-				},
-				CreatedAt: time.Now().UTC().Add(-30 * 24 * time.Hour),
+		code: http.StatusOK,
+	}, {
+		name:        "required_not_grace_expired",
+		mfaVerified: false,
+		prompted:    true,
+		membership: &database.Membership{
+			Realm: &database.Realm{
+				MFAMode:                database.MFARequired,
+				MFARequiredGracePeriod: database.FromDuration(7 * 24 * time.Hour),
 			},
-			code: 303,
+			CreatedAt: time.Now().UTC().Add(-30 * 24 * time.Hour),
 		},
-	}
+		code: http.StatusSeeOther,
+	}}
 
 	for _, tc := range cases {
 		tc := tc
+		ctx := ctx
 
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -173,7 +164,6 @@ func TestRequireMFA(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ctx := ctx
 			ctx = controller.WithSession(ctx, session)
 			if tc.membership != nil {
 				ctx = controller.WithMembership(ctx, tc.membership)
@@ -182,7 +172,7 @@ func TestRequireMFA(t *testing.T) {
 				controller.StoreSessionMFAPrompted(session, true)
 			}
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Content-Type", "application/json")
 
@@ -191,12 +181,11 @@ func TestRequireMFA(t *testing.T) {
 			w.Flush()
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("expected %d to be %d", got, want)
+				t.Errorf("Status = %d, want: %d", got, want)
 			}
-			if tc.code == 200 {
-				stored := controller.MFAPromptedFromSession(session)
-				if !stored {
-					t.Errorf("expected mfa prompted to have been stored")
+			if tc.code == http.StatusOK {
+				if stored := controller.MFAPromptedFromSession(session); !stored {
+					t.Error("Expected MFA prompted to have been stored")
 				}
 			}
 		})
