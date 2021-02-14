@@ -54,75 +54,84 @@ func TestRequireEmailVerified(t *testing.T) {
 		prompted      bool
 		membership    *database.Membership
 		code          int
-	}{{
-		name:       "missing_membership",
-		membership: nil,
-		code:       http.StatusBadRequest,
-	}, {
-		name:          "optional_verified",
-		emailVerified: true,
-		membership: &database.Membership{
-			Realm: &database.Realm{
-				EmailVerifiedMode: database.MFAOptional,
-			},
+	}{
+		{
+			name:       "missing_membership",
+			membership: nil,
+			code:       http.StatusBadRequest,
 		},
-		code: http.StatusOK,
-	}, {
-		name:          "optional_not_verified",
-		emailVerified: false,
-		membership: &database.Membership{
-			Realm: &database.Realm{
-				EmailVerifiedMode: database.MFAOptional,
+		{
+			name:          "optional_verified",
+			emailVerified: true,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					EmailVerifiedMode: database.MFAOptional,
+				},
 			},
+			code: http.StatusOK,
 		},
-		code: http.StatusOK,
-	}, {
-		name:          "optional_prompt_verified",
-		emailVerified: true,
-		membership: &database.Membership{
-			Realm: &database.Realm{
-				EmailVerifiedMode: database.MFAOptionalPrompt,
+		{
+			name:          "optional_not_verified",
+			emailVerified: false,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					EmailVerifiedMode: database.MFAOptional,
+				},
 			},
+			code: http.StatusOK,
 		},
-		code: http.StatusOK,
-	}, {
-		name:          "optional_prompt_not_verified",
-		emailVerified: false,
-		membership: &database.Membership{
-			Realm: &database.Realm{
-				EmailVerifiedMode: database.MFAOptionalPrompt,
+		{
+			name:          "optional_prompt_verified",
+			emailVerified: true,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					EmailVerifiedMode: database.MFAOptionalPrompt,
+				},
 			},
+			code: http.StatusOK,
 		},
-		code: http.StatusSeeOther,
-	}, {
-		name:          "optional_prompt_not_verified_prompted",
-		emailVerified: false,
-		prompted:      true,
-		membership: &database.Membership{
-			Realm: &database.Realm{
-				EmailVerifiedMode: database.MFAOptionalPrompt,
+		{
+			name:          "optional_prompt_not_verified",
+			emailVerified: false,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					EmailVerifiedMode: database.MFAOptionalPrompt,
+				},
 			},
+			code: http.StatusSeeOther,
 		},
-		code: http.StatusOK,
-	}, {
-		name:          "required_verified",
-		emailVerified: true,
-		membership: &database.Membership{
-			Realm: &database.Realm{
-				EmailVerifiedMode: database.MFARequired,
+		{
+			name:          "optional_prompt_not_verified_prompted",
+			emailVerified: false,
+			prompted:      true,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					EmailVerifiedMode: database.MFAOptionalPrompt,
+				},
 			},
+			code: http.StatusOK,
 		},
-		code: http.StatusOK,
-	}, {
-		name:          "required_not_verified",
-		emailVerified: false,
-		membership: &database.Membership{
-			Realm: &database.Realm{
-				EmailVerifiedMode: database.MFARequired,
+		{
+			name:          "required_verified",
+			emailVerified: true,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					EmailVerifiedMode: database.MFARequired,
+				},
 			},
+			code: http.StatusOK,
 		},
-		code: http.StatusSeeOther,
-	}}
+		{
+			name:          "required_not_verified",
+			emailVerified: false,
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					EmailVerifiedMode: database.MFARequired,
+				},
+			},
+			code: http.StatusSeeOther,
+		},
+	}
 
 	for _, tc := range cases {
 		tc := tc

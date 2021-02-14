@@ -45,79 +45,91 @@ func TestProcessFirewall(t *testing.T) {
 		remoteAddr string
 		xff        string
 		code       int
-	}{{
-		name: "no_realm",
-		ctx:  ctx,
-		code: 400,
-	}, {
-		name: "realm_in_context",
-		ctx:  controller.WithRealm(ctx, &database.Realm{}),
-		code: http.StatusOK,
-	}, {
-		name: "membership_in_context",
-		ctx: controller.WithMembership(ctx, &database.Membership{
-			Realm: &database.Realm{},
-		}),
-		code: http.StatusOK,
-	}, {
-		name: "all_allowed4",
-		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"0.0.0.0/0"},
-		}),
-		remoteAddr: "1.2.3.4",
-		code:       http.StatusOK,
-	}, {
-		name: "all_allowed6",
-		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"::/0"},
-		}),
-		remoteAddr: "2001:db8::8a2e:370:7334",
-		code:       http.StatusOK,
-	}, {
-		name: "single_allowed_ip4",
-		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"1.2.3.4/32"},
-		}),
-		remoteAddr: "1.2.3.4",
-		code:       http.StatusOK,
-	}, {
-		name: "single_allowed_ip6",
-		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"2001::/0"},
-		}),
-		remoteAddr: "2001:db8::8a2e:370:7334",
-		code:       http.StatusOK,
-	}, {
-		name: "single_allowed_xff",
-		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"1.2.3.4/32"},
-		}),
-		remoteAddr: "9.8.7.6",
-		xff:        "1.2.3.4, 5.6.7.8",
-		code:       http.StatusOK,
-	}, {
-		name: "single_reject_ip4",
-		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"1.2.3.4/32"},
-		}),
-		remoteAddr: "9.8.7.6",
-		code:       http.StatusUnauthorized,
-	}, {
-		name: "single_reject_ip6",
-		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"2000::/64"},
-		}),
-		remoteAddr: "2001:db8::8a2e:370:7334",
-		code:       http.StatusUnauthorized,
-	}, {
-		name: "single_reject_xff",
-		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"1.2.3.4/32"},
-		}),
-		remoteAddr: "1.2.3.4",          // xff is preferred over remote ip
-		xff:        "5.6.7.8, 1.2.3.4", // Only trusts the first value in xff
-		code:       http.StatusUnauthorized,
-	}}
+	}{
+		{
+			name: "no_realm",
+			ctx:  ctx,
+			code: 400,
+		},
+		{
+			name: "realm_in_context",
+			ctx:  controller.WithRealm(ctx, &database.Realm{}),
+			code: http.StatusOK,
+		},
+		{
+			name: "membership_in_context",
+			ctx: controller.WithMembership(ctx, &database.Membership{
+				Realm: &database.Realm{},
+			}),
+			code: http.StatusOK,
+		},
+		{
+			name: "all_allowed4",
+			ctx: controller.WithRealm(ctx, &database.Realm{
+				AllowedCIDRsServer: []string{"0.0.0.0/0"},
+			}),
+			remoteAddr: "1.2.3.4",
+			code:       http.StatusOK,
+		},
+		{
+			name: "all_allowed6",
+			ctx: controller.WithRealm(ctx, &database.Realm{
+				AllowedCIDRsServer: []string{"::/0"},
+			}),
+			remoteAddr: "2001:db8::8a2e:370:7334",
+			code:       http.StatusOK,
+		},
+		{
+			name: "single_allowed_ip4",
+			ctx: controller.WithRealm(ctx, &database.Realm{
+				AllowedCIDRsServer: []string{"1.2.3.4/32"},
+			}),
+			remoteAddr: "1.2.3.4",
+			code:       http.StatusOK,
+		},
+		{
+			name: "single_allowed_ip6",
+			ctx: controller.WithRealm(ctx, &database.Realm{
+				AllowedCIDRsServer: []string{"2001::/0"},
+			}),
+			remoteAddr: "2001:db8::8a2e:370:7334",
+			code:       http.StatusOK,
+		},
+		{
+			name: "single_allowed_xff",
+			ctx: controller.WithRealm(ctx, &database.Realm{
+				AllowedCIDRsServer: []string{"1.2.3.4/32"},
+			}),
+			remoteAddr: "9.8.7.6",
+			xff:        "1.2.3.4, 5.6.7.8",
+			code:       http.StatusOK,
+		},
+		{
+			name: "single_reject_ip4",
+			ctx: controller.WithRealm(ctx, &database.Realm{
+				AllowedCIDRsServer: []string{"1.2.3.4/32"},
+			}),
+			remoteAddr: "9.8.7.6",
+			code:       http.StatusUnauthorized,
+		},
+		{
+			name: "single_reject_ip6",
+			ctx: controller.WithRealm(ctx, &database.Realm{
+				AllowedCIDRsServer: []string{"2000::/64"},
+			}),
+			remoteAddr: "2001:db8::8a2e:370:7334",
+			code:       http.StatusUnauthorized,
+		},
+		{
+			name: "single_reject_xff",
+			ctx: controller.WithRealm(ctx, &database.Realm{
+				AllowedCIDRsServer: []string{"1.2.3.4/32"},
+			}),
+			remoteAddr: "1.2.3.4",          // xff is preferred over remote ip
+			xff:        "5.6.7.8, 1.2.3.4", // Only trusts the first value in xff
+			code:       http.StatusUnauthorized,
+		},
+	}
 
 	for _, tc := range cases {
 		tc := tc
@@ -142,7 +154,7 @@ func TestProcessFirewall(t *testing.T) {
 			w.Flush()
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("Status Code = %d; want: %d", got, want
+				t.Errorf("Status Code = %d; want: %d", got, want)
 			}
 		})
 	}
