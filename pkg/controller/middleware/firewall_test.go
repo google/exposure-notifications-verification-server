@@ -154,7 +154,7 @@ func TestProcessFirewall(t *testing.T) {
 			w.Flush()
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("Status Code = %d; want: %d", got, want)
+				t.Errorf("Expected %d to be %d", got, want)
 			}
 		})
 	}

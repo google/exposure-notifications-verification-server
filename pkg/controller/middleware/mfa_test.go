@@ -194,7 +194,7 @@ func TestRequireMFA(t *testing.T) {
 			w.Flush()
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("Status = %d, want: %d", got, want)
+				t.Errorf("Expected %d to be %d", got, want)
 			}
 			if tc.code == http.StatusOK {
 				if stored := controller.MFAPromptedFromSession(session); !stored {
