@@ -50,7 +50,7 @@ func ExerciseSessionMissing(t *testing.T, h http.Handler) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "session missing in request context"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 }
@@ -79,7 +79,7 @@ func ExerciseMembershipMissing(t *testing.T, h http.Handler) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "/login/select-realm"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 }
@@ -107,7 +107,7 @@ func ExerciseUserMissing(t *testing.T, h http.Handler) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "user missing"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 }
@@ -137,7 +137,7 @@ func ExercisePermissionMissing(t *testing.T, h http.Handler) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 }
@@ -170,7 +170,7 @@ func ExerciseBadPagination(t *testing.T, membership *database.Membership, h http
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Bad request"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 }
@@ -203,7 +203,7 @@ func ExerciseIDNotFound(t *testing.T, membership *database.Membership, h http.Ha
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 }

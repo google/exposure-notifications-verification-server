@@ -718,7 +718,7 @@ func TestRealm_CreateSigningKeyVersion(t *testing.T) {
 		t.Fatal("expected error")
 	}
 	if got, want := err.Error(), "too many available certificate signing keys"; !strings.Contains(got, want) {
-		t.Errorf("expected %q to contain %q", got, want)
+		t.Errorf("Expected %q to contain %q", got, want)
 	}
 
 	// Delete one
@@ -793,7 +793,7 @@ func TestRealm_CreateSMSSigningKeyVersion(t *testing.T) {
 		t.Fatal("expected error")
 	}
 	if got, want := err.Error(), "too many available SMS signing keys"; !strings.Contains(got, want) {
-		t.Errorf("expected %q to contain %q", got, want)
+		t.Errorf("Expected %q to contain %q", got, want)
 	}
 
 	// Delete one

@@ -100,7 +100,7 @@ func TestHandleActivate(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -134,7 +134,7 @@ func TestHandleActivate(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "does not exist"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -181,7 +181,7 @@ func TestHandleActivate(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/realm/sms-keys"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 
 		// Check key was marked active

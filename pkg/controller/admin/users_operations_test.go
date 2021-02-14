@@ -313,7 +313,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 
 		flash := controller.Flash(session)
 		if got, want := strings.Join(flash.Errors(), ", "), "Cannot remove yourself"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -483,7 +483,7 @@ func TestHandleUserDelete(t *testing.T) {
 
 		flash := controller.Flash(session)
 		if got, want := strings.Join(flash.Errors(), ", "), "Cannot delete yourself"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 

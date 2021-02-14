@@ -76,7 +76,7 @@ func TestAdminEmail(t *testing.T) {
 			t.Errorf("expected %d to be %d: %#v", got, want, w.Header())
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 

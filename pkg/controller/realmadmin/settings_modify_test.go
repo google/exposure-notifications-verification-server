@@ -89,7 +89,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -347,7 +347,7 @@ func TestHandleSettings(t *testing.T) {
 				}
 
 				if got, want := errs[0], "invalid CIDR address"; !strings.Contains(got, want) {
-					t.Errorf("expected %q to contain %q", got, want)
+					t.Errorf("Expected %q to contain %q", got, want)
 				}
 			})
 		}
@@ -574,7 +574,7 @@ func TestHandleSettings(t *testing.T) {
 		}
 
 		if got, want := errs[0], "must be at least 6"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -608,7 +608,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 }
