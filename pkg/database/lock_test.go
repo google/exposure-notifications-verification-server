@@ -69,7 +69,7 @@ func TestDatabase_CreateLock(t *testing.T) {
 	}
 
 	if got, want := cleanup1.ID, cleanup2.ID; got != want {
-		t.Errorf("expected %d to be %d", got, want)
+		t.Errorf("Expected %d to be %d", got, want)
 	}
 }
 
@@ -89,7 +89,7 @@ func TestDatabase_FindLockStatus(t *testing.T) {
 	}
 
 	if got, want := got.ID, want.ID; got != want {
-		t.Errorf("expected %d to be %d", got, want)
+		t.Errorf("Expected %d to be %d", got, want)
 	}
 }
 

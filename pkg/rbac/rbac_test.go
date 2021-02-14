@@ -225,7 +225,7 @@ func TestRBAC_Permissions(t *testing.T) {
 			t.Parallel()
 
 			if got, want := int64(tc.p), tc.exp; got != want {
-				t.Errorf("expected %d to be %d", got, want)
+				t.Errorf("Expected %d to be %d", got, want)
 			}
 		})
 	}

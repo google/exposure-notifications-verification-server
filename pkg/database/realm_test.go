@@ -51,7 +51,7 @@ func TestTestType(t *testing.T) {
 			t.Parallel()
 
 			if got, want := int(tc.t), tc.exp; got != want {
-				t.Errorf("expected %d to be %d", got, want)
+				t.Errorf("Expected %d to be %d", got, want)
 			}
 		})
 	}
@@ -104,7 +104,7 @@ func TestAuthRequirement(t *testing.T) {
 			t.Parallel()
 
 			if got, want := int(tc.t), tc.exp; got != want {
-				t.Errorf("expected %d to be %d", got, want)
+				t.Errorf("Expected %d to be %d", got, want)
 			}
 		})
 	}
@@ -565,7 +565,7 @@ func TestRealm_FindVerificationCodeByUUID(t *testing.T) {
 
 			if code != nil {
 				if got, want := code.ID, tc.expID; got != want {
-					t.Errorf("expected %d to be %d", got, want)
+					t.Errorf("Expected %d to be %d", got, want)
 				}
 			}
 		})
@@ -878,7 +878,7 @@ func TestRealm_ListMemberships(t *testing.T) {
 		t.Fatalf("expected %#v to have 1 element", memberships)
 	}
 	if got, want := memberships[0].UserID, user.ID; got != want {
-		t.Errorf("expected %d to be %d", got, want)
+		t.Errorf("Expected %d to be %d", got, want)
 	}
 }
 

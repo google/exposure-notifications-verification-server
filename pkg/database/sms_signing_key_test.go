@@ -49,7 +49,7 @@ func TestDatabase_FindSMSSigningKey(t *testing.T) {
 			t.Fatal(err)
 		}
 		if got, want := result.RealmID, realm.ID; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	}
 }

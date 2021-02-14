@@ -116,13 +116,13 @@ func TestHandleVerificationRotation(t *testing.T) {
 
 		c.HandleVerificationRotate().ServeHTTP(w, r)
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		// again
 		c.HandleVerificationRotate().ServeHTTP(w, r)
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -150,7 +150,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 		c.HandleVerificationRotate().ServeHTTP(w, r)
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 }

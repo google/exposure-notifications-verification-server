@@ -44,7 +44,7 @@ func TestOSType(t *testing.T) {
 			t.Parallel()
 
 			if got, want := int(tc.t), tc.exp; got != want {
-				t.Errorf("expected %d to be %d", got, want)
+				t.Errorf("Expected %d to be %d", got, want)
 			}
 		})
 	}

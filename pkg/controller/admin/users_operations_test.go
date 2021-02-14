@@ -102,7 +102,7 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -131,7 +131,7 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "cannot be blank"; !strings.Contains(got, want) {
 			t.Errorf("expected %s to contain %s", got, want)
@@ -160,7 +160,7 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -194,7 +194,7 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 }
@@ -262,7 +262,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -305,7 +305,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
@@ -352,7 +352,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
@@ -432,7 +432,7 @@ func TestHandleUserDelete(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -475,7 +475,7 @@ func TestHandleUserDelete(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
@@ -508,7 +508,7 @@ func TestHandleUserDelete(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
 			t.Errorf("expected %q to be %q", got, want)

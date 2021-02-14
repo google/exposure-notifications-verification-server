@@ -164,13 +164,13 @@ func TestHandleRotate(t *testing.T) {
 
 		c.HandleRotate().ServeHTTP(w, r)
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		// again
 		c.HandleRotate().ServeHTTP(w, r)
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -192,7 +192,7 @@ func TestHandleRotate(t *testing.T) {
 		c.HandleRotate().ServeHTTP(w, r)
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 }

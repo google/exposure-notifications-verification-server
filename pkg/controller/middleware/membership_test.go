@@ -144,7 +144,7 @@ func TestLoadCurrentMembership(t *testing.T) {
 			})).ServeHTTP(w, r)
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("expected %d to be %d", got, want)
+				t.Errorf("Expected %d to be %d", got, want)
 			}
 		})
 	}
@@ -204,7 +204,7 @@ func TestRequireMembership(t *testing.T) {
 			requireMembership(emptyHandler()).ServeHTTP(w, r)
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("expected %d to be %d", got, want)
+				t.Errorf("Expected %d to be %d", got, want)
 			}
 		})
 	}

@@ -86,7 +86,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 401; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
@@ -128,7 +128,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -187,7 +187,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -205,13 +205,13 @@ func TestHandleSettings(t *testing.T) {
 			t.Errorf("expected %t to be %t", got, want)
 		}
 		if got, want := realm.CodeLength, uint(7); got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := realm.CodeDuration.Duration, 60*time.Minute; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
 		if got, want := realm.LongCodeLength, uint(22); got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := realm.LongCodeDuration.Duration, 24*time.Hour; got != want {
 			t.Errorf("expected %q to be %q", got, want)
@@ -259,7 +259,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -338,7 +338,7 @@ func TestHandleSettings(t *testing.T) {
 				w.Flush()
 
 				if got, want := w.Code, 422; got != want {
-					t.Errorf("expected %d to be %d", got, want)
+					t.Errorf("Expected %d to be %d", got, want)
 				}
 
 				errs := realm.ErrorsFor(tc.column)
@@ -389,7 +389,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -440,7 +440,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -489,7 +489,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "all must be specified or all must be blank"; !strings.Contains(got, want) {
 			t.Errorf("expected %s to include %s", got, want)
@@ -530,7 +530,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "all must be specified or all must be blank"; !strings.Contains(got, want) {
 			t.Errorf("expected %s to include %s", got, want)
@@ -565,7 +565,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		errs := realm.ErrorsFor("codeLength")
@@ -605,7 +605,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
