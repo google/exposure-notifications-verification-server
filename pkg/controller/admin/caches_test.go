@@ -103,7 +103,7 @@ func TestAdminCaches(t *testing.T) {
 		flash := controller.Flash(session)
 		errs := flash.Errors()
 		if got, want := len(errs), 1; got != want {
-			t.Errorf("expected %d errors, got %d", want, got)
+			t.Errorf("Expected %d errors, got %d", want, got)
 		}
 		if got, want := errs[0], "Unknown cache type"; !strings.Contains(got, want) {
 			t.Errorf("Expected %q to contain %q", got, want)
@@ -154,7 +154,7 @@ func TestAdminCaches(t *testing.T) {
 		flash := controller.Flash(session)
 		errs := flash.Errors()
 		if got, want := len(errs), 1; got != want {
-			t.Errorf("expected %d errors, got %d", want, got)
+			t.Errorf("Expected %d errors, got %d", want, got)
 		}
 		if got, want := errs[0], "Failed to clear cache"; !strings.Contains(got, want) {
 			t.Errorf("Expected %q to contain %q", got, want)
