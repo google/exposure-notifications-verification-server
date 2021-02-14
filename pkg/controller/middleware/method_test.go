@@ -40,14 +40,14 @@ func TestMutateMethod(t *testing.T) {
 		{
 			name: "no_body",
 			r:    nil,
-			exp:  "POST",
+			exp:  http.MethodPost,
 		},
 		{
 			name: "no_key",
 			r: strings.NewReader(url.Values{
 				"foo": []string{"bar"},
 			}.Encode()),
-			exp: "POST",
+			exp: http.MethodPost,
 		},
 		{
 			name: "overrides",
@@ -64,7 +64,7 @@ func TestMutateMethod(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := httptest.NewRequest("POST", "/", tc.r)
+			r := httptest.NewRequest(http.MethodPost, "/", tc.r)
 			r = r.Clone(ctx)
 			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 

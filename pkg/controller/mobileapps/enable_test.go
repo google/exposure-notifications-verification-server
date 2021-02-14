@@ -17,6 +17,7 @@ package mobileapps_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -86,7 +87,7 @@ func TestHandleEnable(t *testing.T) {
 		c := mobileapps.New(harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleEnable()).Methods("PUT")
+		mux.Handle("/{id}", c.HandleEnable()).Methods(http.MethodPut)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -96,7 +97,7 @@ func TestHandleEnable(t *testing.T) {
 			Permissions: rbac.MobileAppWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/1", nil)
+		r := httptest.NewRequest(http.MethodPut, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

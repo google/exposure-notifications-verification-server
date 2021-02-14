@@ -16,6 +16,7 @@ package mobileapps_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
@@ -90,7 +91,7 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.MobileAppWrite,
 		})
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
 			"name":   []string{"banana"},
 			"url":    []string{"http://example.com"},
 			"os":     []string{"1"},
@@ -132,7 +133,7 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.MobileAppWrite,
 		})
 
-		r := httptest.NewRequest("POST", "/", nil)
+		r := httptest.NewRequest(http.MethodPost, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")

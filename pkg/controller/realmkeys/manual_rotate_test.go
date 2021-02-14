@@ -15,6 +15,7 @@
 package realmkeys_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -79,7 +80,7 @@ func TestHandleManualRotate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -119,7 +120,7 @@ func TestHandleManualRotate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -160,7 +161,7 @@ func TestHandleManualRotate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

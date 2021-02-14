@@ -160,7 +160,7 @@ func TestRequireEmailVerified(t *testing.T) {
 				controller.StoreSessionEmailVerificationPrompted(session, true)
 			}
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Content-Type", "application/json")
 

@@ -17,6 +17,7 @@ package mobileapps_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -85,7 +86,7 @@ func TestHandleShow(t *testing.T) {
 		c := mobileapps.New(harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleShow()).Methods("GET")
+		mux.Handle("/{id}", c.HandleShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -95,7 +96,7 @@ func TestHandleShow(t *testing.T) {
 			Permissions: rbac.MobileAppRead,
 		})
 
-		r := httptest.NewRequest("GET", "/1", nil)
+		r := httptest.NewRequest(http.MethodGet, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

@@ -16,6 +16,7 @@ package user_test
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -80,7 +81,7 @@ func TestHandleExport(t *testing.T) {
 		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/", c.HandleExport()).Methods("GET")
+		mux.Handle("/", c.HandleExport()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -90,7 +91,7 @@ func TestHandleExport(t *testing.T) {
 			Permissions: rbac.UserRead,
 		})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -113,7 +114,7 @@ func TestHandleExport(t *testing.T) {
 		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/", c.HandleExport()).Methods("GET")
+		mux.Handle("/", c.HandleExport()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -123,7 +124,7 @@ func TestHandleExport(t *testing.T) {
 			Permissions: rbac.UserRead,
 		})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

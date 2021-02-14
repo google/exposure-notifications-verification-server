@@ -17,6 +17,7 @@ package mobileapps_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -91,7 +92,7 @@ func TestHandleIndex(t *testing.T) {
 			Permissions: rbac.MobileAppRead,
 		})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

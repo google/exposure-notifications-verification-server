@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -74,7 +75,7 @@ func TestAdminCaches(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleCachesClear()).Methods("PUT")
+		mux.Handle("/{id}", c.HandleCachesClear()).Methods(http.MethodPut)
 
 		session := &sessions.Session{
 			Values: map[interface{}]interface{}{},
@@ -83,7 +84,7 @@ func TestAdminCaches(t *testing.T) {
 		ctx := ctx
 		ctx = controller.WithSession(ctx, session)
 
-		r := httptest.NewRequest("PUT", "/1", nil)
+		r := httptest.NewRequest(http.MethodPut, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 		r.Header.Set("Referer", "https://example.com/foo/bar")
@@ -125,7 +126,7 @@ func TestAdminCaches(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleCachesClear()).Methods("PUT")
+		mux.Handle("/{id}", c.HandleCachesClear()).Methods(http.MethodPut)
 
 		session := &sessions.Session{
 			Values: map[interface{}]interface{}{},
@@ -134,7 +135,7 @@ func TestAdminCaches(t *testing.T) {
 		ctx := ctx
 		ctx = controller.WithSession(ctx, session)
 
-		r := httptest.NewRequest("PUT", "/realms:", nil)
+		r := httptest.NewRequest(http.MethodPut, "/realms:", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 		r.Header.Set("Referer", "https://example.com/foo/bar")
@@ -166,12 +167,12 @@ func TestAdminCaches(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleCachesClear()).Methods("PUT")
+		mux.Handle("/{id}", c.HandleCachesClear()).Methods(http.MethodPut)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		r := httptest.NewRequest("PUT", "/realms:", nil)
+		r := httptest.NewRequest(http.MethodPut, "/realms:", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 		r.Header.Set("Referer", "https://example.com/foo/bar")

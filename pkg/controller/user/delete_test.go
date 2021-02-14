@@ -17,6 +17,7 @@ package user_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -97,7 +98,7 @@ func TestHandleDelete(t *testing.T) {
 		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleDelete()).Methods("DELETE")
+		mux.Handle("/{id}", c.HandleDelete()).Methods(http.MethodDelete)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -108,7 +109,7 @@ func TestHandleDelete(t *testing.T) {
 		})
 
 		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest("DELETE", u, nil)
+		r := httptest.NewRequest(http.MethodDelete, u, nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

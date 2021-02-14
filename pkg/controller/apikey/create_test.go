@@ -16,6 +16,7 @@ package apikey_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
@@ -90,7 +91,7 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.APIKeyWrite,
 		})
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
 			"name": []string{"banana"},
 			"type": []string{"1"},
 		}.Encode()))
@@ -130,7 +131,7 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.APIKeyWrite,
 		})
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
 			"type": []string{"-1"},
 		}.Encode()))
 		r = r.Clone(ctx)

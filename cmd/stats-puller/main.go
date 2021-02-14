@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
@@ -128,7 +129,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to stats controller: %w", err)
 	}
-	r.Handle("/", statsController.HandlePullStats()).Methods("GET")
+	r.Handle("/", statsController.HandlePullStats()).Methods(http.MethodGet)
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {

@@ -40,7 +40,7 @@ func TestRequireSession(t *testing.T) {
 
 	requireSession := middleware.RequireSession(store, h)
 
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r = r.Clone(ctx)
 	r.Header.Set("Accept", "application/json")
 

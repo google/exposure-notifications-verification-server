@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -120,7 +121,7 @@ func (c *redisCacher) Fetch(ctx context.Context, k *Key, out interface{}, ttl ti
 	}
 
 	fn := func(conn redigo.ConnWithContext) (io.Reader, error) {
-		cached, err := redigo.String(conn.DoContext(ctx, "GET", key))
+		cached, err := redigo.String(conn.DoContext(ctx, http.MethodGet, key))
 		if err != nil && !errors.Is(err, redigo.ErrNil) {
 			return nil, fmt.Errorf("failed to GET key: %w", err)
 		}
@@ -230,7 +231,7 @@ func (c *redisCacher) Read(ctx context.Context, k *Key, out interface{}) error {
 	}
 
 	return c.withConn(func(conn redigo.ConnWithContext) error {
-		val, err := redigo.String(conn.DoContext(ctx, "GET", key))
+		val, err := redigo.String(conn.DoContext(ctx, http.MethodGet, key))
 		if err != nil && !errors.Is(err, redigo.ErrNil) {
 			return fmt.Errorf("failed to GET value: %w", err)
 		}

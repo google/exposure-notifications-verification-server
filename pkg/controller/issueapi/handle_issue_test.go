@@ -105,7 +105,7 @@ func TestIssue(t *testing.T) {
 
 			ctx := controller.WithRealm(ctx, realm)
 			ctx = controller.WithAuthorizedApp(ctx, authApp)
-			r, err := http.NewRequestWithContext(ctx, "POST", "/", &b)
+			r, err := http.NewRequestWithContext(ctx, http.MethodPost, "/", &b)
 			if err != nil {
 				t.Fatal(err)
 			}

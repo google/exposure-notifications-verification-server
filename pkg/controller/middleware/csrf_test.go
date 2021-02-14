@@ -46,7 +46,7 @@ func TestConfigureCSRF(t *testing.T) {
 
 	configureCSRF := middleware.ConfigureCSRF(cfg, h)
 
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r.Header.Set("Accept", "application/json")
 
 	w := httptest.NewRecorder()

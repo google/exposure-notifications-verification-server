@@ -126,7 +126,7 @@ func TestIndex(t *testing.T) {
 	t.Run("bad_path", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/css/appiew/main/gift.css", nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/css/appiew/main/gift.css", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -149,7 +149,7 @@ func TestIndex(t *testing.T) {
 	t.Run("no_matching_region", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
 		req.Host = "not-real"
 		if err != nil {
 			t.Fatal(err)
@@ -173,7 +173,7 @@ func TestIndex(t *testing.T) {
 	t.Run("matching_region_no_realm", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
 		req.Host = "bad"
 		if err != nil {
 			t.Fatal(err)
@@ -197,7 +197,7 @@ func TestIndex(t *testing.T) {
 	t.Run("matching_region_no_apps", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/app?c=123456", nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/app?c=123456", nil)
 		req.Host = "realm1"
 		if err != nil {
 			t.Fatal(err)
@@ -221,7 +221,7 @@ func TestIndex(t *testing.T) {
 	t.Run("not_mobile_user_agent", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
 		req.Host = "realm2"
 		req.Header.Set("User-Agent", "bananarama")
 		if err != nil {
@@ -251,7 +251,7 @@ func TestIndex(t *testing.T) {
 	t.Run("not_mobile_user_agent", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/app?c=123456", nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/app?c=123456", nil)
 		req.Host = "realm2"
 		req.Header.Set("User-Agent", "bananarama")
 		if err != nil {
@@ -276,7 +276,7 @@ func TestIndex(t *testing.T) {
 	t.Run("android_redirect", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/app?c=123456", nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/app?c=123456", nil)
 		req.Host = "realm2"
 		req.Header.Set("User-Agent", "android")
 		if err != nil {
@@ -306,7 +306,7 @@ func TestIndex(t *testing.T) {
 	t.Run("android_redirect_enx", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/app?c=123456", nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/app?c=123456", nil)
 		req.Host = "realm3"
 		req.Header.Set("User-Agent", "android")
 		if err != nil {
@@ -335,7 +335,7 @@ func TestIndex(t *testing.T) {
 	t.Run("ios_redirect", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/app?c=123456", nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/app?c=123456", nil)
 		req.Host = "realm2"
 		req.Header.Set("User-Agent", "iphone")
 		if err != nil {
@@ -364,7 +364,7 @@ func TestIndex(t *testing.T) {
 	t.Run("ios_redirect_enx", func(t *testing.T) {
 		t.Parallel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", srv.URL+"/app?c=123456", nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/app?c=123456", nil)
 		req.Host = "realm3"
 		req.Header.Set("User-Agent", "iphone")
 		if err != nil {

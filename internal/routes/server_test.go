@@ -78,19 +78,19 @@ func TestRoutes_codesRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/issue", nil),
+			req: httptest.NewRequest(http.MethodGet, "/issue", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/bulk-issue", nil),
+			req: httptest.NewRequest(http.MethodGet, "/bulk-issue", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/status", nil),
+			req: httptest.NewRequest(http.MethodGet, "/status", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/aaa-aaa-aaa-aaa", nil),
+			req: httptest.NewRequest(http.MethodGet, "/aaa-aaa-aaa-aaa", nil),
 		},
 		{
-			req: httptest.NewRequest("PATCH", "/aaa-aaa-aaa-aaa/expire", nil),
+			req: httptest.NewRequest(http.MethodPatch, "/aaa-aaa-aaa-aaa/expire", nil),
 		},
 	}
 
@@ -110,22 +110,22 @@ func TestRoutes_mobileappsRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/new", nil),
+			req: httptest.NewRequest(http.MethodGet, "/new", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/12345/edit", nil),
+			req: httptest.NewRequest(http.MethodGet, "/12345/edit", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/12345", nil),
+			req: httptest.NewRequest(http.MethodGet, "/12345", nil),
 		},
 		{
-			req: httptest.NewRequest("PATCH", "/12345", nil),
+			req: httptest.NewRequest(http.MethodPatch, "/12345", nil),
 		},
 		{
-			req: httptest.NewRequest("PATCH", "/12345/disable", nil),
+			req: httptest.NewRequest(http.MethodPatch, "/12345/disable", nil),
 		},
 		{
-			req: httptest.NewRequest("PATCH", "/12345/enable", nil),
+			req: httptest.NewRequest(http.MethodPatch, "/12345/enable", nil),
 		},
 	}
 
@@ -145,22 +145,22 @@ func TestRoutes_apikeyRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/new", nil),
+			req: httptest.NewRequest(http.MethodGet, "/new", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/12345/edit", nil),
+			req: httptest.NewRequest(http.MethodGet, "/12345/edit", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/12345", nil),
+			req: httptest.NewRequest(http.MethodGet, "/12345", nil),
 		},
 		{
-			req: httptest.NewRequest("PATCH", "/12345", nil),
+			req: httptest.NewRequest(http.MethodPatch, "/12345", nil),
 		},
 		{
-			req: httptest.NewRequest("PATCH", "/12345/disable", nil),
+			req: httptest.NewRequest(http.MethodPatch, "/12345/disable", nil),
 		},
 		{
-			req: httptest.NewRequest("PATCH", "/12345/enable", nil),
+			req: httptest.NewRequest(http.MethodPatch, "/12345/enable", nil),
 		},
 	}
 
@@ -180,28 +180,28 @@ func TestRoutes_userRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/new", nil),
+			req: httptest.NewRequest(http.MethodGet, "/new", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/import", nil),
+			req: httptest.NewRequest(http.MethodGet, "/import", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/import", nil),
+			req: httptest.NewRequest(http.MethodPost, "/import", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/12345/edit", nil),
+			req: httptest.NewRequest(http.MethodGet, "/12345/edit", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/12345", nil),
+			req: httptest.NewRequest(http.MethodGet, "/12345", nil),
 		},
 		{
-			req: httptest.NewRequest("PATCH", "/12345", nil),
+			req: httptest.NewRequest(http.MethodPatch, "/12345", nil),
 		},
 		{
-			req: httptest.NewRequest("DELETE", "/12345", nil),
+			req: httptest.NewRequest(http.MethodDelete, "/12345", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/12345/reset-password", nil),
+			req: httptest.NewRequest(http.MethodPost, "/12345/reset-password", nil),
 		},
 	}
 
@@ -221,23 +221,23 @@ func TestRoutes_realmkeysRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/keys", nil),
+			req: httptest.NewRequest(http.MethodGet, "/keys", nil),
 		},
 		{
-			req:  httptest.NewRequest("DELETE", "/keys/12345", nil),
+			req:  httptest.NewRequest(http.MethodDelete, "/keys/12345", nil),
 			vars: map[string]string{"id": "12345"},
 		},
 		{
-			req: httptest.NewRequest("POST", "/keys/create", nil),
+			req: httptest.NewRequest(http.MethodPost, "/keys/create", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/keys/upgrade", nil),
+			req: httptest.NewRequest(http.MethodPost, "/keys/upgrade", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/keys/save", nil),
+			req: httptest.NewRequest(http.MethodPost, "/keys/save", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/keys/activate", nil),
+			req: httptest.NewRequest(http.MethodPost, "/keys/activate", nil),
 		},
 	}
 
@@ -257,22 +257,22 @@ func TestRoutes_realmSMSkeysRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/sms-keys", nil),
+			req: httptest.NewRequest(http.MethodGet, "/sms-keys", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/sms-keys", nil),
+			req: httptest.NewRequest(http.MethodPost, "/sms-keys", nil),
 		},
 		{
-			req: httptest.NewRequest("PUT", "/sms-keys/enable", nil),
+			req: httptest.NewRequest(http.MethodPut, "/sms-keys/enable", nil),
 		},
 		{
-			req: httptest.NewRequest("PUT", "/sms-keys/disable", nil),
+			req: httptest.NewRequest(http.MethodPut, "/sms-keys/disable", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/sms-keys/activate", nil),
+			req: httptest.NewRequest(http.MethodPost, "/sms-keys/activate", nil),
 		},
 		{
-			req:  httptest.NewRequest("DELETE", "/sms-keys/12345", nil),
+			req:  httptest.NewRequest(http.MethodDelete, "/sms-keys/12345", nil),
 			vars: map[string]string{"id": "12345"},
 		},
 	}
@@ -293,34 +293,34 @@ func TestRoutes_statsRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/realm.csv", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm.csv", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm.json", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm.json", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm/users.csv", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm/users.csv", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm/users.json", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm/users.json", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm/users/12345.csv", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm/users/12345.csv", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm/users/12345.json", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm/users/12345.json", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm/api-keys/12345.csv", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm/api-keys/12345.csv", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm/api-keys/12345.json", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm/api-keys/12345.json", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm/external-issuers.csv", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm/external-issuers.csv", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realm/external-issuers.json", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realm/external-issuers.json", nil),
 		},
 	}
 
@@ -340,22 +340,22 @@ func TestRoutes_realmadminRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/settings", nil),
+			req: httptest.NewRequest(http.MethodGet, "/settings", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/settings", nil),
+			req: httptest.NewRequest(http.MethodPost, "/settings", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/settings/enable-express", nil),
+			req: httptest.NewRequest(http.MethodPost, "/settings/enable-express", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/settings/disable-express", nil),
+			req: httptest.NewRequest(http.MethodPost, "/settings/disable-express", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/stats", nil),
+			req: httptest.NewRequest(http.MethodGet, "/stats", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/events", nil),
+			req: httptest.NewRequest(http.MethodGet, "/events", nil),
 		},
 	}
 
@@ -375,7 +375,7 @@ func TestRoutes_jwksRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req:  httptest.NewRequest("GET", "/12345", nil),
+			req:  httptest.NewRequest(http.MethodGet, "/12345", nil),
 			vars: map[string]string{"realm_id": "12345"},
 		},
 	}
@@ -396,75 +396,75 @@ func TestRoutes_systemAdminRoutes(t *testing.T) {
 		vars map[string]string
 	}{
 		{
-			req: httptest.NewRequest("GET", "/", nil),
+			req: httptest.NewRequest(http.MethodGet, "/", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realms", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realms", nil),
 		},
 		{
-			req: httptest.NewRequest("POST", "/realms", nil),
+			req: httptest.NewRequest(http.MethodPost, "/realms", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/realms/new", nil),
+			req: httptest.NewRequest(http.MethodGet, "/realms/new", nil),
 		},
 		{
-			req:  httptest.NewRequest("GET", "/realms/12345/edit", nil),
+			req:  httptest.NewRequest(http.MethodGet, "/realms/12345/edit", nil),
 			vars: map[string]string{"id": "12345"},
 		},
 		{
-			req:  httptest.NewRequest("PATCH", "/realms/12345", nil),
+			req:  httptest.NewRequest(http.MethodPatch, "/realms/12345", nil),
 			vars: map[string]string{"id": "12345"},
 		},
 		{
-			req:  httptest.NewRequest("PATCH", "/realms/12345/add/67890", nil),
+			req:  httptest.NewRequest(http.MethodPatch, "/realms/12345/add/67890", nil),
 			vars: map[string]string{"realm_id": "12345", "user_id": "67890"},
 		},
 		{
-			req:  httptest.NewRequest("PATCH", "/realms/12345/remove/67890", nil),
+			req:  httptest.NewRequest(http.MethodPatch, "/realms/12345/remove/67890", nil),
 			vars: map[string]string{"realm_id": "12345", "user_id": "67890"},
 		},
 		{
-			req: httptest.NewRequest("GET", "/users", nil),
+			req: httptest.NewRequest(http.MethodGet, "/users", nil),
 		},
 		{
-			req:  httptest.NewRequest("GET", "/users/12345", nil),
+			req:  httptest.NewRequest(http.MethodGet, "/users/12345", nil),
 			vars: map[string]string{"id": "12345"},
 		},
 		{
-			req:  httptest.NewRequest("DELETE", "/users/12345", nil),
+			req:  httptest.NewRequest(http.MethodDelete, "/users/12345", nil),
 			vars: map[string]string{"id": "12345"},
 		},
 		{
-			req: httptest.NewRequest("POST", "/users", nil),
+			req: httptest.NewRequest(http.MethodPost, "/users", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/users/new", nil),
+			req: httptest.NewRequest(http.MethodGet, "/users/new", nil),
 		},
 		{
-			req:  httptest.NewRequest("DELETE", "/users/12345/revoke", nil),
+			req:  httptest.NewRequest(http.MethodDelete, "/users/12345/revoke", nil),
 			vars: map[string]string{"id": "12345"},
 		},
 		{
-			req: httptest.NewRequest("GET", "/mobile-apps", nil),
+			req: httptest.NewRequest(http.MethodGet, "/mobile-apps", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/sms", nil),
+			req: httptest.NewRequest(http.MethodGet, "/sms", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/email", nil),
+			req: httptest.NewRequest(http.MethodGet, "/email", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/events", nil),
+			req: httptest.NewRequest(http.MethodGet, "/events", nil),
 		},
 		{
-			req: httptest.NewRequest("GET", "/caches", nil),
+			req: httptest.NewRequest(http.MethodGet, "/caches", nil),
 		},
 		{
-			req:  httptest.NewRequest("POST", "/caches/clear/banana", nil),
+			req:  httptest.NewRequest(http.MethodPost, "/caches/clear/banana", nil),
 			vars: map[string]string{"id": "banana"},
 		},
 		{
-			req: httptest.NewRequest("GET", "/info", nil),
+			req: httptest.NewRequest(http.MethodGet, "/info", nil),
 		},
 	}
 

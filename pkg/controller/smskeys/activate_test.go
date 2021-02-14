@@ -16,6 +16,7 @@ package smskeys_test
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -86,7 +87,7 @@ func TestHandleActivate(t *testing.T) {
 
 		u := &url.Values{"id": []string{"123456"}}
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(u.Encode()))
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(u.Encode()))
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -120,7 +121,7 @@ func TestHandleActivate(t *testing.T) {
 
 		u := &url.Values{"id": []string{"123456"}}
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(u.Encode()))
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(u.Encode()))
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -167,7 +168,7 @@ func TestHandleActivate(t *testing.T) {
 
 		u := &url.Values{"id": []string{fmt.Sprintf("%d", signingKey.ID)}}
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(u.Encode()))
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(u.Encode()))
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")

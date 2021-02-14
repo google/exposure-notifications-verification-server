@@ -62,7 +62,7 @@ func TestHandleRotate(t *testing.T) {
 
 		// Rotating should create a new key since none exists.
 		{
-			r, err := http.NewRequest("GET", "/", nil)
+			r, err := http.NewRequest(http.MethodGet, "/", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -94,7 +94,7 @@ func TestHandleRotate(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			r, err := http.NewRequest("GET", "/", nil)
+			r, err := http.NewRequest(http.MethodGet, "/", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -117,7 +117,7 @@ func TestHandleRotate(t *testing.T) {
 		// Rotating again should not create a new key (not enough time has elapsed
 		// since TokenSigningKeyMaxAge).
 		{
-			r, err := http.NewRequest("GET", "/", nil)
+			r, err := http.NewRequest(http.MethodGet, "/", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -154,7 +154,7 @@ func TestHandleRotate(t *testing.T) {
 
 		c := New(cfg, db, keyManagerSigner, h)
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -181,7 +181,7 @@ func TestHandleRotate(t *testing.T) {
 		db.SetRawDB(envstest.NewFailingDatabase())
 
 		c := New(cfg, db, keyManagerSigner, h)
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}

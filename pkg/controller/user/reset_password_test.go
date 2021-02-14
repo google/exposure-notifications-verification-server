@@ -49,7 +49,7 @@ func TestHandleResetPassword(t *testing.T) {
 	}
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 	router := mux.NewRouter()
-	router.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods("POST")
+	router.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods(http.MethodPost)
 
 	// Needs membership
 	func() {

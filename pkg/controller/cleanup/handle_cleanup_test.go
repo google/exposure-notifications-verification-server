@@ -75,7 +75,7 @@ func TestHandleCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,7 +118,7 @@ func TestHandleCleanup(t *testing.T) {
 
 		time.Sleep(5 * time.Second)
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -158,7 +158,7 @@ func TestHandleCleanup(t *testing.T) {
 
 		time.Sleep(5 * time.Second)
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -206,7 +206,7 @@ func TestHandleCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -237,7 +237,7 @@ func TestHandleCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -275,7 +275,7 @@ func TestHandleCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}

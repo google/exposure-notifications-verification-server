@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -63,7 +64,7 @@ func TestAdminEmail(t *testing.T) {
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

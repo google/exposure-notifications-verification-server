@@ -15,6 +15,7 @@
 package smskeys_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -79,7 +80,7 @@ func TestHandleDisable(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -117,7 +118,7 @@ func TestHandleDisable(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")

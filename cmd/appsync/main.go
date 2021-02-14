@@ -18,6 +18,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -113,7 +114,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cleanup controller: %w", err)
 	}
-	r.Handle("/", appSyncController.HandleSync()).Methods("GET")
+	r.Handle("/", appSyncController.HandleSync()).Methods(http.MethodGet)
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {

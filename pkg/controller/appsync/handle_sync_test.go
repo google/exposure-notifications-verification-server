@@ -60,7 +60,7 @@ func TestHandleSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -81,7 +81,7 @@ func TestHandleSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +117,7 @@ func TestHandleSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,7 +142,7 @@ func TestHandleSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
