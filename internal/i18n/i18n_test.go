@@ -100,7 +100,7 @@ func TestLocaleMap_Lookup(t *testing.T) {
 
 		name := langOf(localeMap.Lookup("es"))
 		if got, want := name, "es"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -109,7 +109,7 @@ func TestLocaleMap_Lookup(t *testing.T) {
 
 		name := langOf(localeMap.Lookup("totes_not_a_real_language"))
 		if got, want := name, "en"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }
@@ -165,7 +165,7 @@ func TestLocaleMap_Canonicalize(t *testing.T) {
 			}
 
 			if got, want := result, tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}

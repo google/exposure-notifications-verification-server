@@ -99,13 +99,13 @@ func TestHandleSettings_SMS(t *testing.T) {
 
 	// Check form
 	if got, want := twilioAccountSid, "accountSid"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := twilioAuthToken, project.PasswordSentinel; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := twilioFromNumber, "+1234567890"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 
 	{
@@ -119,13 +119,13 @@ func TestHandleSettings_SMS(t *testing.T) {
 		}
 
 		if got, want := smsConfig.TwilioAccountSid, "accountSid"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := smsConfig.TwilioAuthToken, "authToken"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := smsConfig.TwilioFromNumber, "+1234567890"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	}
 
@@ -164,14 +164,14 @@ func TestHandleSettings_SMS(t *testing.T) {
 		}
 
 		if got, want := smsConfig.TwilioAccountSid, "accountSid-new"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := smsConfig.TwilioAuthToken, "authToken"; got != want {
 			// should not change
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := smsConfig.TwilioFromNumber, "+1987654320"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	}
 

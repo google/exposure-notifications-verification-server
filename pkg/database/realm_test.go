@@ -77,7 +77,7 @@ func TestTestType_Display(t *testing.T) {
 			t.Parallel()
 
 			if got, want := tc.t.Display(), tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}
@@ -129,7 +129,7 @@ func TestAuthRequirement_String(t *testing.T) {
 			t.Parallel()
 
 			if got, want := tc.t.String(), tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}
@@ -383,7 +383,7 @@ func TestRealm_BeforeSave(t *testing.T) {
 			if err := tc.Input.BeforeSave(&gorm.DB{}); err != nil {
 				if tc.Error != "" {
 					if got, want := strings.Join(tc.Input.ErrorMessages(), ","), tc.Error; !strings.Contains(got, want) {
-						t.Errorf("expected %q to be %q", got, want)
+						t.Errorf("Expected %q to be %q", got, want)
 					}
 				} else {
 					t.Errorf("bad error: %s", err)
@@ -427,7 +427,7 @@ func TestRealm_BuildInviteEmail(t *testing.T) {
 	realm.EmailInviteTemplate = "Welcome to [realmname] [invitelink]."
 
 	if got, want := realm.BuildInviteEmail("https://join.now"), "Welcome to test https://join.now."; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 }
 
@@ -438,7 +438,7 @@ func TestRealm_BuildPasswordResetEmail(t *testing.T) {
 	realm.EmailPasswordResetTemplate = "Hey [realmname] reset [passwordresetlink]."
 
 	if got, want := realm.BuildPasswordResetEmail("https://reset.now"), "Hey test reset https://reset.now."; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 }
 
@@ -449,7 +449,7 @@ func TestRealm_BuildVerifyEmail(t *testing.T) {
 	realm.EmailVerifyTemplate = "Hey [realmname] verify [verifylink]."
 
 	if got, want := realm.BuildVerifyEmail("https://verify.now"), "Hey test verify https://verify.now."; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 }
 

@@ -91,7 +91,7 @@ func TestBuildEnsURL(t *testing.T) {
 
 			got, want := buildEnsURL(tc.path, tc.query, tc.region), tc.exp
 			if got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}
@@ -171,7 +171,7 @@ func TestBuildIntentURL(t *testing.T) {
 			fallback := "https://play.google.com/store/apps/details?id=gov.moosylvania.app"
 			got, want := buildIntentURL(tc.path, tc.query, tc.region, appID, fallback), tc.exp
 			if got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}

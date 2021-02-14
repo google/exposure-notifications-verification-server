@@ -318,7 +318,7 @@ func TestHandleRealmsCreate(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/realms/2/edit"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }
@@ -447,7 +447,7 @@ func TestHandleRealmsUpdate(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/realms/1/edit"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }
@@ -601,7 +601,7 @@ func TestHandleRealmsAdd(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(1)
@@ -772,7 +772,7 @@ func TestHandleRealmsRemove(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(1)

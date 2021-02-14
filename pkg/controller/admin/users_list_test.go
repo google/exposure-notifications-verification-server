@@ -294,7 +294,7 @@ func TestAdminUserShow(t *testing.T) {
 		}
 
 		if got, want := email, admin.Email; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }

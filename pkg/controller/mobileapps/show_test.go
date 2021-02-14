@@ -145,7 +145,7 @@ func TestHandleShow(t *testing.T) {
 		}
 
 		if got, want := strings.TrimSpace(name), app.Name; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }

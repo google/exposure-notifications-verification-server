@@ -308,7 +308,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		flash := controller.Flash(session)
@@ -355,7 +355,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		updatedUser, err := harness.Database.FindUser(user.ID)
@@ -478,7 +478,7 @@ func TestHandleUserDelete(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		flash := controller.Flash(session)
@@ -511,7 +511,7 @@ func TestHandleUserDelete(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }

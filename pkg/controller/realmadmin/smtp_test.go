@@ -82,13 +82,13 @@ func TestHandleSettings_SMTP(t *testing.T) {
 
 	// Check form
 	if got, want := smtpAccount, "myAccount"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := smtpPassword, project.PasswordSentinel; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := smtpHost, "1.1.1.1"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 
 	{
@@ -102,13 +102,13 @@ func TestHandleSettings_SMTP(t *testing.T) {
 		}
 
 		if got, want := emailConfig.SMTPAccount, "myAccount"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := emailConfig.SMTPPassword, "superSecret"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := emailConfig.SMTPHost, "1.1.1.1"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	}
 
@@ -147,13 +147,13 @@ func TestHandleSettings_SMTP(t *testing.T) {
 		}
 
 		if got, want := emailConfig.SMTPAccount, "myAccount-new"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := emailConfig.SMTPPassword, "superSecret"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := emailConfig.SMTPHost, "1.1.1.1-new"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	}
 

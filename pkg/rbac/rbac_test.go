@@ -98,7 +98,7 @@ func TestPermissionNames(t *testing.T) {
 			t.Parallel()
 
 			if got, want := strings.Join(PermissionNames(tc.p), ","), tc.exp; !reflect.DeepEqual(got, want) {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}
@@ -122,7 +122,7 @@ func TestPermission_String(t *testing.T) {
 			t.Parallel()
 
 			if got, want := tc.p.String(), tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}
@@ -186,7 +186,7 @@ func TestPermission_Description(t *testing.T) {
 			}
 
 			if got, want := result, tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}

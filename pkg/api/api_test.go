@@ -25,13 +25,13 @@ func TestInternalError(t *testing.T) {
 	result := InternalError()
 
 	if got, want := result.Error, "internal error"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := result.ErrorCode, "internal_server_error"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := result.ErrorCodeLegacy, "internal_server_error"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 }
 
@@ -41,10 +41,10 @@ func TestErrorf(t *testing.T) {
 	result := Errorf("hello %s", "world")
 
 	if got, want := result.Error, "hello world"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := result.ErrorCode, ""; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 }
 
@@ -55,10 +55,10 @@ func TestError(t *testing.T) {
 		result := Error(fmt.Errorf("oops"))
 
 		if got, want := result.Error, "oops"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := result.ErrorCode, ""; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	}
 

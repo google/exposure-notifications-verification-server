@@ -144,10 +144,10 @@ func TestAndroidData(t *testing.T) {
 		})
 
 		if got, want := data[0].Target.Fingerprints, []string{app1.SHA}; !reflect.DeepEqual(got, want) {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := data[1].Target.Fingerprints, []string{app2.SHA}; !reflect.DeepEqual(got, want) {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }

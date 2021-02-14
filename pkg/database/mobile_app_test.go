@@ -70,7 +70,7 @@ func TestOSType_Display(t *testing.T) {
 			t.Parallel()
 
 			if got, want := tc.t.Display(), tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}

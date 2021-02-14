@@ -199,7 +199,7 @@ func TestHandleUpdate(t *testing.T) {
 		}
 
 		if got, want := record.Name, "Updated name"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := record.DisableRedirect, true; got != want {
 			t.Errorf("expected %t to be %t", got, want)

@@ -71,7 +71,7 @@ func TestMutateMethod(t *testing.T) {
 			w := httptest.NewRecorder()
 			mutateMethod(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if got, want := r.Method, tc.exp; got != want {
-					t.Errorf("expected %q to be %q", got, want)
+					t.Errorf("Expected %q to be %q", got, want)
 				}
 			})).ServeHTTP(w, r)
 		})

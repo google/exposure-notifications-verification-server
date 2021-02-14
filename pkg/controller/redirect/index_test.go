@@ -243,7 +243,7 @@ func TestIndex(t *testing.T) {
 
 		exp := "https://www.google.com/covid19/exposurenotifications/"
 		if got, want := resp.Header.Get("Location"), exp; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -298,7 +298,7 @@ func TestIndex(t *testing.T) {
 
 		exp := "intent://app?c=123456&r=BB#Intent;scheme=ens;package=com.example.app2;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=https%3A%2F%2Fapp2.example.com%2F;end"
 		if got, want := resp.Header.Get("Location"), exp; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -327,7 +327,7 @@ func TestIndex(t *testing.T) {
 		}
 
 		if got, want := resp.Header.Get("Location"), "ens://app?c=123456&r=CC"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -356,7 +356,7 @@ func TestIndex(t *testing.T) {
 		}
 
 		if got, want := resp.Header.Get("Location"), "https://app1.example.com/"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -385,7 +385,7 @@ func TestIndex(t *testing.T) {
 		}
 
 		if got, want := resp.Header.Get("Location"), "ens://app?c=123456&r=CC"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }

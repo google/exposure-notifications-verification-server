@@ -150,7 +150,7 @@ func TestHandleDestroy(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/realm/sms-keys"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		updatedRealm, err := harness.Database.FindRealm(realm.ID)
