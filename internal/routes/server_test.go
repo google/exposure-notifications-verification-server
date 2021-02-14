@@ -493,7 +493,7 @@ func testRoute(t *testing.T, m *mux.Router, r *http.Request, vars map[string]str
 			}
 
 			if got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		}
 	})

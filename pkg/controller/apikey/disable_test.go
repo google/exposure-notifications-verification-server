@@ -113,10 +113,10 @@ func TestHandleDisable(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 

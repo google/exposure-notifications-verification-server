@@ -51,7 +51,7 @@ func TestDatabase_FindTokenSigningKey(t *testing.T) {
 		}
 
 		if got, want := result.ID, result.ID; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 }
@@ -137,7 +137,7 @@ func TestDatabase_ActiveTokenSigningKey(t *testing.T) {
 		}
 
 		if got, want := result.ID, result.ID; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	}
 }
@@ -177,7 +177,7 @@ func TestDatabase_ListTokenSigningKeys(t *testing.T) {
 		}
 
 		if got, want := list[0].ID, key.ID; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	}
 }

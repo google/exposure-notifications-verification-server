@@ -98,7 +98,7 @@ func TestProcessLocale(t *testing.T) {
 				}
 
 				if got, want := locale.Get("nav.issue-code"), tc.exp; got != want {
-					t.Errorf("expected %q to be %q", got, want)
+					t.Errorf("Expected %q to be %q", got, want)
 				}
 			})).ServeHTTP(w, r)
 		})

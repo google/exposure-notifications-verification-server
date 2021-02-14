@@ -31,6 +31,6 @@ func TestErrorsToStrings(t *testing.T) {
 	})
 
 	if got, want := result, []string{"oh no", "goodbye"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 }

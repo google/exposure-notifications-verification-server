@@ -123,17 +123,17 @@ func TestShowAdminSMS(t *testing.T) {
 
 	aaa := smsFromNumbers[0]
 	if got, want := aaa.Label, "aaa"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := aaa.Value, wantFromNumber1; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 
 	zzz := smsFromNumbers[1]
 	if got, want := zzz.Label, "zzz"; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 	if got, want := zzz.Value, wantFromNumber2; got != want {
-		t.Errorf("expected %q to be %q", got, want)
+		t.Errorf("Expected %q to be %q", got, want)
 	}
 }

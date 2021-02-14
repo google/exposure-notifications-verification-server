@@ -48,10 +48,10 @@ func TestPopulateTemplateVariables(t *testing.T) {
 		m := controller.TemplateMapFromContext(ctx)
 
 		if got, want := m["server"], cfg.ServerName; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := m["title"], cfg.ServerName; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if _, ok := m["buildID"]; !ok {
 			t.Errorf("expected buildID to be populated in template map")

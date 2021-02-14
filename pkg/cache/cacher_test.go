@@ -91,7 +91,7 @@ func TestKeyCompute(t *testing.T) {
 			}
 
 			if got, want := result, tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}
@@ -164,7 +164,7 @@ func TestMultiKeyFunc(t *testing.T) {
 			}
 
 			if got, want := result, tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}
@@ -216,7 +216,7 @@ func TestHashKeyFunc(t *testing.T) {
 			}
 
 			if got, want := result, tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}
@@ -256,7 +256,7 @@ func TestHMACKeyFunc(t *testing.T) {
 			}
 
 			if got, want := result, tc.exp; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}

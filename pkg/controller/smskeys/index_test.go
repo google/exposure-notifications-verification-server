@@ -92,7 +92,7 @@ func TestHandleIndex(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		if !strings.Contains(w.Body.String(), "There are no SMS signing keys active for this realm.") {

@@ -86,10 +86,10 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 401; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -128,7 +128,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -137,13 +137,13 @@ func TestHandleSettings(t *testing.T) {
 		}
 
 		if got, want := realm.Name, "new-realmy"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.RegionCode, "TT2"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.WelcomeMessage, "hello there"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -187,7 +187,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -196,7 +196,7 @@ func TestHandleSettings(t *testing.T) {
 		}
 
 		if got, want := realm.AllowedTestTypes, database.TestTypeConfirmed; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.RequireDate, true; got != want {
 			t.Errorf("expected %t to be %t", got, want)
@@ -205,16 +205,16 @@ func TestHandleSettings(t *testing.T) {
 			t.Errorf("expected %t to be %t", got, want)
 		}
 		if got, want := realm.CodeLength, uint(7); got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := realm.CodeDuration.Duration, 60*time.Minute; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.LongCodeLength, uint(22); got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := realm.LongCodeDuration.Duration, 24*time.Hour; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -259,7 +259,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -268,28 +268,28 @@ func TestHandleSettings(t *testing.T) {
 		}
 
 		if got, want := realm.EmailVerifiedMode, database.MFAOptional; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.MFAMode, database.MFAOptional; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.MFARequiredGracePeriod.Duration, 24*time.Hour; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.PasswordRotationPeriodDays, uint(7); got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.PasswordRotationWarningDays, uint(3); got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.AllowedCIDRsAdminAPI, pq.StringArray([]string{"0.0.0.0/0", "1.1.1.1/0"}); !reflect.DeepEqual(got, want) {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.AllowedCIDRsAPIServer, pq.StringArray([]string{"0.0.0.0/0", "2.2.2.2/0"}); !reflect.DeepEqual(got, want) {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := realm.AllowedCIDRsServer, pq.StringArray([]string{"0.0.0.0/0", "3.3.3.3/0"}); !reflect.DeepEqual(got, want) {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -338,7 +338,7 @@ func TestHandleSettings(t *testing.T) {
 				w.Flush()
 
 				if got, want := w.Code, 422; got != want {
-					t.Errorf("expected %d to be %d", got, want)
+					t.Errorf("Expected %d to be %d", got, want)
 				}
 
 				errs := realm.ErrorsFor(tc.column)
@@ -347,7 +347,7 @@ func TestHandleSettings(t *testing.T) {
 				}
 
 				if got, want := errs[0], "invalid CIDR address"; !strings.Contains(got, want) {
-					t.Errorf("expected %q to contain %q", got, want)
+					t.Errorf("Expected %q to contain %q", got, want)
 				}
 			})
 		}
@@ -389,7 +389,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -440,7 +440,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
@@ -449,7 +449,7 @@ func TestHandleSettings(t *testing.T) {
 		}
 
 		if got, want := realm.SMSTextTemplate, "[longcode]"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 
@@ -489,7 +489,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "all must be specified or all must be blank"; !strings.Contains(got, want) {
 			t.Errorf("expected %s to include %s", got, want)
@@ -530,7 +530,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "all must be specified or all must be blank"; !strings.Contains(got, want) {
 			t.Errorf("expected %s to include %s", got, want)
@@ -565,7 +565,7 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		errs := realm.ErrorsFor("codeLength")
@@ -574,7 +574,7 @@ func TestHandleSettings(t *testing.T) {
 		}
 
 		if got, want := errs[0], "must be at least 6"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -605,10 +605,10 @@ func TestHandleSettings(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 }

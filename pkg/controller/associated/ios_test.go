@@ -141,10 +141,10 @@ func TestIOSData(t *testing.T) {
 		})
 
 		if got, want := details[0].AppID, app1.AppID; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 		if got, want := details[1].AppID, app2.AppID; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		// Apps should exist, but be empty (Apple requirement)

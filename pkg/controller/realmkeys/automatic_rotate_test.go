@@ -91,10 +91,10 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "must upgrade to realm-specific signing keys"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -131,10 +131,10 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "is already enabled"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -174,10 +174,10 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -218,10 +218,10 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/realm/keys"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		updatedRealm, err := harness.Database.FindRealm(realm.ID)

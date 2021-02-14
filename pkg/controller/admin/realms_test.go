@@ -101,7 +101,7 @@ func TestHandleRealmsIndex(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -126,7 +126,7 @@ func TestHandleRealmsIndex(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -225,7 +225,7 @@ func TestHandleRealmsCreate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -253,10 +253,10 @@ func TestHandleRealmsCreate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 422; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "cannot be blank"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to contain %q", got, want)
+			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
@@ -281,7 +281,7 @@ func TestHandleRealmsCreate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -315,10 +315,10 @@ func TestHandleRealmsCreate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/realms/2/edit"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }
@@ -390,7 +390,7 @@ func TestHandleRealmsUpdate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -415,7 +415,7 @@ func TestHandleRealmsUpdate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 200; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -444,10 +444,10 @@ func TestHandleRealmsUpdate(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/realms/1/edit"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
 }
@@ -514,7 +514,7 @@ func TestHandleRealmsAdd(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 401; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -540,7 +540,7 @@ func TestHandleRealmsAdd(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 401; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -571,7 +571,7 @@ func TestHandleRealmsAdd(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -598,10 +598,10 @@ func TestHandleRealmsAdd(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(1)
@@ -685,7 +685,7 @@ func TestHandleRealmsRemove(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 401; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -711,7 +711,7 @@ func TestHandleRealmsRemove(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 401; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -742,7 +742,7 @@ func TestHandleRealmsRemove(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
@@ -769,10 +769,10 @@ func TestHandleRealmsRemove(t *testing.T) {
 		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
-			t.Errorf("expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+			t.Errorf("Expected %q to be %q", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(1)

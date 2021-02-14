@@ -73,12 +73,12 @@ func Test_SMSSignature(t *testing.T) {
 					// Next is date
 					date := tc.time.UTC().Format("0102")
 					if got, want := part, date; got != want {
-						t.Errorf("expected %q to be %q", got, want)
+						t.Errorf("Expected %q to be %q", got, want)
 					}
 				case 2:
 					// Next is key id
 					if got, want := part, tc.keyID; got != want {
-						t.Errorf("expected %q to be %q", got, want)
+						t.Errorf("Expected %q to be %q", got, want)
 					}
 				case 3:
 					// Next is signature
