@@ -71,7 +71,7 @@ func TestProcessFirewall(t *testing.T) {
 		ctx: controller.WithRealm(ctx, &database.Realm{
 			AllowedCIDRsServer: []string{"::/0"},
 		}),
-		remoteAddr: "http.StatusOK1:db8::8a2e:370:7334",
+		remoteAddr: "2001:db8::8a2e:370:7334",
 		code:       http.StatusOK,
 	}, {
 		name: "single_allowed_ip4",
@@ -83,9 +83,9 @@ func TestProcessFirewall(t *testing.T) {
 	}, {
 		name: "single_allowed_ip6",
 		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"http.StatusOK1::/0"},
+			AllowedCIDRsServer: []string{"2001::/0"},
 		}),
-		remoteAddr: "http.StatusOK1:db8::8a2e:370:7334",
+		remoteAddr: "2001:db8::8a2e:370:7334",
 		code:       http.StatusOK,
 	}, {
 		name: "single_allowed_xff",
@@ -105,9 +105,9 @@ func TestProcessFirewall(t *testing.T) {
 	}, {
 		name: "single_reject_ip6",
 		ctx: controller.WithRealm(ctx, &database.Realm{
-			AllowedCIDRsServer: []string{"http.StatusOK0::/64"},
+			AllowedCIDRsServer: []string{"2000::/64"},
 		}),
-		remoteAddr: "http.StatusOK1:db8::8a2e:370:7334",
+		remoteAddr: "2001:db8::8a2e:370:7334",
 		code:       http.StatusUnauthorized,
 	}, {
 		name: "single_reject_xff",
@@ -142,7 +142,7 @@ func TestProcessFirewall(t *testing.T) {
 			w.Flush()
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("Status Code = %d; want: %d", got, want)
+				t.Errorf("Status Code = %d; want: %d", got, want
 			}
 		})
 	}
