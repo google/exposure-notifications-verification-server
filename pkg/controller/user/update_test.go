@@ -22,7 +22,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
@@ -178,7 +177,7 @@ func TestHandleUpdate(t *testing.T) {
 		t.Parallel()
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
 		defer done()
 
 		u := fmt.Sprintf(`http://`+harness.Server.Addr()+`/realm/users/%d/edit`, user.ID)

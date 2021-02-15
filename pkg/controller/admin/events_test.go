@@ -214,7 +214,7 @@ func TestAdminEvents(t *testing.T) {
 
 		// Create a browser runner.
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
 		defer done()
 
 		if err := chromedp.Run(taskCtx,

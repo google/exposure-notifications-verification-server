@@ -21,7 +21,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
@@ -125,7 +124,7 @@ func TestHandleShow(t *testing.T) {
 		t.Parallel()
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
 		defer done()
 
 		u := fmt.Sprintf("http://%s/realm/apikeys/%d", harness.Server.Addr(), authApp.ID)

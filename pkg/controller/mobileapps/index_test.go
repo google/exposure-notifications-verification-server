@@ -21,7 +21,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-verification-server/internal/browser"
@@ -124,7 +123,7 @@ func TestHandleIndex(t *testing.T) {
 		}
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
 		defer done()
 
 		if err := chromedp.Run(taskCtx,

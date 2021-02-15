@@ -59,7 +59,7 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 	}
 
 	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
+	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
 	defer done()
 
 	yesterday := time.Now().Add(-24 * time.Hour).Format(project.RFC3339Date)
