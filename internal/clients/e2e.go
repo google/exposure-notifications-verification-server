@@ -110,7 +110,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 	curDayInterval := timeToInterval(now)
 	nextInterval := curDayInterval
 
-	teks := make([]verifyapi.ExposureKey, 0, 14)
+	teks := make([]verifyapi.ExposureKey, 14)
 	for i := 0; i < cap(teks); i++ {
 		key, err := util.RandomExposureKey(nextInterval, maxInterval, 0)
 		if err != nil {
