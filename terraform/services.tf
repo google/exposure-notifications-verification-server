@@ -18,7 +18,10 @@ locals {
   }
 
   gcp_config = {
-    PROJECT_ID = var.project
+    PROJECT_ID     = var.project
+    KEY_MANAGER    = "GOOGLE_CLOUD_KMS"
+    SECRET_MANAGER = "GOOGLE_SECRET_MANAGER"
+    BLOBSTORE      = "GOOGLE_CLOUD_STORAGE"
   }
 
   csrf_config = {
@@ -83,7 +86,7 @@ locals {
     SMS_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
 
     # TODO(sethvargo): in 0.22+, this should be the parent crypto key (not the
-    # cryptp key version).
+    # crypto key version).
     TOKEN_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
     TOKEN_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
   }
